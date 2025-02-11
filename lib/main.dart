@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:remixicon/remixicon.dart';
 
 part 'main.freezed.dart';
 part 'main.g.dart';
@@ -59,8 +60,21 @@ class CanvasNotifier extends StateNotifier<List<WidgetConfig>> {
 
   void removeWidget(int index) {
     _saveStateForUndo();
-    state =
-        state.where((element) => state.indexOf(element) != index).toList();
+    final newList = List<WidgetConfig>.from(state);
+    newList.removeAt(index);
+    state = newList;
+  }
+  
+  // 추가: 위젯의 순서를 드래그로 변경하기 위한 메서드
+  void reorderWidget(int oldIndex, int newIndex) {
+    _saveStateForUndo();
+    final List<WidgetConfig> newList = List.from(state);
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+    final item = newList.removeAt(oldIndex);
+    newList.insert(newIndex, item);
+    state = newList;
   }
 
   void undo() {
@@ -143,8 +157,8 @@ class BuilderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 48, // AppBar 높이를 48로 변경
-        automaticallyImplyLeading: false, // 기본 왼쪽 아이콘 제거
+        toolbarHeight: 48, // AppBar 높이 48
+        automaticallyImplyLeading: false,
         titleSpacing: 0,
         title: Row(
           children: [
@@ -165,6 +179,19 @@ class BuilderScreen extends ConsumerWidget {
               },
             ),
             IconButton(
+              icon: const Icon(Icons.delete),
+              tooltip: 'Delete Selected Widget',
+              onPressed: () {
+                final selectedNotifier =
+                    ref.read(selectedWidgetProvider.notifier);
+                final selectedIndex = selectedNotifier.selectedIndex;
+                if (selectedIndex != null) {
+                  ref.read(canvasProvider.notifier).removeWidget(selectedIndex);
+                  selectedNotifier.clear();
+                }
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.remove_red_eye),
               tooltip: 'Preview',
               onPressed: () => Navigator.push(
@@ -172,8 +199,8 @@ class BuilderScreen extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const PreviewScreen()),
               ),
             ),
-            const SizedBox(width: 8),
-            const Text('Web Builder'),
+            //const SizedBox(width: 8),
+            //const Text('Web Builder'),
           ],
         ),
       ),
@@ -183,12 +210,11 @@ class BuilderScreen extends ConsumerWidget {
             children: const [
               SidebarMenu(),
               WidgetPalette(),
-              CanvasArea(),
-              PreviewPanel(),
-              PropertyEditor(),
+              WidgetTree(),
+              LayoutPanel(),
+              Expanded(child: PropertyEditor()),
             ],
           ),
-          // 프레임 레이트 모니터를 오른쪽 상단에 오버레이
           const FrameRateMonitor(),
         ],
       ),
@@ -204,8 +230,8 @@ class SidebarMenu extends StatelessWidget {
     return Container(
       width: 48,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        border: Border.all(color: const Color(0xFFFF0000), width: 1),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
       ),
       child: const Center(child: Text('Menu')),
     );
@@ -215,141 +241,364 @@ class SidebarMenu extends StatelessWidget {
 /// 위젯팔레트: 고정 너비 48
 class WidgetPalette extends StatelessWidget {
   const WidgetPalette({super.key});
+
   final List<Map<String, dynamic>> widgets = const [
     {
-      'type': 'Text',
-      'icon': Icons.text_fields,
+      'label': 'Container',
+      'icon': Remix.layout_line, // Remixicon에서 layout 관련 아이콘 사용 (예시)
       'config': WidgetConfig(
-        type: 'Text',
-        properties: {'text': 'New Text', 'fontSize': 16.0, 'color': '#000000'},
+        type: 'Container',
+        properties: {'children': []},
+        size: {'width': 200, 'height': 200},
       )
     },
     {
-      'type': 'Button',
-      'icon': Icons.smart_button,
+      'label': 'Input',
+      'icon': Remix.t_box_line,
+      'config': WidgetConfig(
+        type: 'Input',
+        properties: {'placeholder': 'Enter text...'},
+        size: {'width': 100, 'height': 48.0},
+      )
+    },
+    {
+      'label': 'Button',
+      'icon': Remix.checkbox_blank_line,
       'config': WidgetConfig(
         type: 'Button',
-        properties: {
-          'text': 'Click Me',
-          'backgroundColor': '#2196F3',
-          'textColor': '#FFFFFF',
-          'elevation': 2.0,
-          'borderRadius': 4.0,
-        },
+        properties: {'text': 'Button'},
+        size: {'width': 100.0, 'height': 48.0},
       )
     },
     {
-      'type': 'Select',
-      'icon': Icons.arrow_drop_down_circle,
+      'label': 'Select',
+      'icon': Remix.dropdown_list,
       'config': WidgetConfig(
         type: 'Select',
         properties: {
           'options': ['Option 1', 'Option 2'],
           'hint': 'Select...'
         },
+        size: {'width': 120.0, 'height': 48.0},
+      )
+    },
+    {
+      'label': 'Image',
+      'icon': Remix.image_line,
+      'config': WidgetConfig(
+        type: 'Image',
+        properties: {'src': 'https://example.com/image.png'},
+        size: {'width': 62.0, 'height': 62.0},
+      )
+    },
+    {
+      'label': 'Check',
+      'icon': Remix.checkbox_line,
+      'config': WidgetConfig(
+        type: 'Check',
+        properties: {'value': false},
+        size: {'width': 62.0, 'height': 62.0},
+      )
+    },
+    {
+      'label': 'Radio',
+      'icon': Remix.radio_button_line,
+      'config': WidgetConfig(
+        type: 'Radio',
+        properties: {'value': false},
+        size: {'width': 62.0, 'height': 48.0},
+      )
+    },
+    {
+      'label': 'Calendar',
+      'icon': Remix.calendar_line,
+      'config': WidgetConfig(
+        type: 'Calendar',
+        properties: {'date': '2025-02-10'},
+        size: {'width': 62.0, 'height': 62.0},
+      )
+    },
+    {
+      'label': 'Toggle',
+      'icon': Remix.toggle_line,
+      'config': WidgetConfig(
+        type: 'Toggle',
+        properties: {'value': false},
+        size: {'width': 62.0, 'height': 48.0},
+      )
+    },
+    {
+      'label': 'Table',
+      'icon': Remix.table_view,
+      'config': WidgetConfig(
+        type: 'Table',
+        properties: {'data': []},
+        size: {'width': 400.0, 'height': 400.0},
+      )
+    },
+    {
+      'label': 'Chart',
+      'icon': Remix.bar_chart_box_line,
+      'config': WidgetConfig(
+        type: 'Chart',
+        properties: {'data': []},
+        size: {'width': 400.0, 'height': 400.0},
       )
     },
   ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
+      width: 166,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border.all(color: const Color(0xFFFF0000), width: 1),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
       ),
-      child: ListView.builder(
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 0,
+          childAspectRatio: 1,
+        ),
         itemCount: widgets.length,
         itemBuilder: (context, index) => Draggable<WidgetConfig>(
           data: widgets[index]['config'] as WidgetConfig,
           feedback: Container(
-            width: 48,
-            height: 40,
-            // 변경: Colors.white.withOpacity(0.9) 대신 Color.fromRGBO 사용
-            color: Color.fromRGBO(255, 255, 255, 0.9),
-            child: Icon(
-              widgets[index]['icon'] as IconData,
-              color: Colors.blue,
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: const Color.fromRGBO(255, 255, 255, 0.9),
+              border: Border.all(width: 1),
+            ),
+            child: Center(
+              child: Icon(
+                widgets[index]['icon'] as IconData,
+                color: Colors.grey,
+              ),
             ),
           ),
-          child: IconButton(
-            icon: Icon(widgets[index]['icon'] as IconData),
-            onPressed: () {},
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(width: 0.5),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widgets[index]['icon'] as IconData,
+                  color: Colors.grey,
+                ),
+                Text(
+                  widgets[index]['label'] as String,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-
-/// 캔버스영역: 고정 너비 240
-class CanvasArea extends ConsumerWidget {
-  const CanvasArea({super.key});
+/// 캔버스영역 (이제 WidgetTree): 위젯 트리 구조로 표시
+class WidgetTree extends ConsumerWidget {
+  const WidgetTree({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final widgets = ref.watch(canvasProvider);
-    final selected = ref.watch(selectedWidgetProvider);
     return Container(
       width: 240,
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFFF0000), width: 1),
+        border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
       ),
-      child: DragTarget<WidgetConfig>(
-        onAcceptWithDetails: (details) {
-          ref.read(canvasProvider.notifier).addWidget(details.data);
+      child: ReorderableListView(
+        onReorder: (oldIndex, newIndex) {
+          ref.read(canvasProvider.notifier).reorderWidget(oldIndex, newIndex);
         },
-        builder: (context, candidateData, rejectedData) {
-          return ReorderableListView(
-            padding: const EdgeInsets.all(16),
-            onReorder: (oldIndex, newIndex) {
-              if (newIndex > oldIndex) newIndex -= 1;
-              final item = widgets[oldIndex];
-              final List<WidgetConfig> newList = List.from(widgets);
-              newList.removeAt(oldIndex);
-              newList.insert(newIndex, item);
-              ref.read(canvasProvider.notifier).setWidgets(newList);
-            },
-            children: [
-              for (int i = 0; i < widgets.length; i++)
-                GestureDetector(
-                  key: ValueKey(i),
-                  onTap: () {
-                    ref
-                        .read(selectedWidgetProvider.notifier)
-                        .select(widgets[i], i);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: selected == widgets[i]
-                            ? Colors.blue
-                            : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    child: buildWidget(widgets[i]),
-                  ),
-                ),
-            ],
-          );
-        },
+        // 각 항목에 고유한 key를 부여합니다.
+        children: widgets.asMap().entries.map((entry) {
+          final index = entry.key;
+          final config = entry.value;
+          return _buildNode(config, ref, index, key: ValueKey(config));
+        }).toList(),
       ),
     );
   }
 
-  Widget buildWidget(WidgetConfig config) {
+  Widget _buildNode(WidgetConfig config, WidgetRef ref, int index,
+      {Key? key}) {
+    // Container 위젯: 자식들을 ReorderableListView로 감싸 드래그로 순서 변경 가능
+    if (config.properties.containsKey('children')) {
+      final List<WidgetConfig> children = (config.properties['children']
+              as List<dynamic>? ??
+          [])
+          .map((e) => e as WidgetConfig)
+          .toList();
+      return ExpansionTile(
+        key: key,
+        title: Row(
+          children: [
+            Icon(_resolveIcon(config)),
+            const SizedBox(width: 6),
+            Text(config.type),
+          ],
+        ),
+        children: [
+          Container(
+            // 리스트뷰에 내부 패딩 설정
+            padding: const EdgeInsets.only(left: 12.0),
+            child: ReorderableListView(
+              shrinkWrap: true,
+              physics: const ClampingScrollPhysics(),
+              onReorder: (oldIndex, newIndex) {
+                List<WidgetConfig> newChildren =
+                    List.from(children);
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final moved = newChildren.removeAt(oldIndex);
+                newChildren.insert(newIndex, moved);
+                // Container의 children 업데이트
+                final updatedConfig = config.copyWith(
+                  properties: {
+                    ...config.properties,
+                    'children': newChildren,
+                  },
+                );
+                final canvasWidgets = ref.read(canvasProvider);
+                final containerIndex = canvasWidgets.indexOf(config);
+                if (containerIndex != -1) {
+                  ref
+                      .read(canvasProvider.notifier)
+                      .updateWidget(containerIndex, updatedConfig);
+                }
+              },
+              children: children.asMap().entries.map((childEntry) {
+                final childIndex = childEntry.key;
+                final childConfig = childEntry.value;
+                return ListTile(
+                  key: ValueKey(childConfig),
+                  title: _buildNode(childConfig, ref, childIndex,
+                      key: ValueKey(childConfig)),
+                );
+              }).toList(),
+            ),
+          )
+        ],
+        onExpansionChanged: (expanded) {
+          if (expanded) {
+            ref.read(selectedWidgetProvider.notifier).select(config, index);
+          }
+        },
+      );
+    } else {
+      return ListTile(
+        key: key,
+        title: Row(
+          children: [
+            Icon(_resolveIcon(config)),
+            const SizedBox(width: 6),
+            Text(config.type),
+          ],
+        ),
+        onTap: () {
+          ref.read(selectedWidgetProvider.notifier).select(config, index);
+        },
+      );
+    }
+  }
+
+  IconData _resolveIcon(WidgetConfig config) {
+    switch (config.type) {
+      case 'Input':
+        return Remix.t_box_line;
+      case 'Button':
+        return Remix.checkbox_blank_line;
+      case 'Select':
+        return Remix.dropdown_list;
+      case 'Image':
+        return Remix.image_line;
+      case 'Check':
+        return Remix.checkbox_line;
+      case 'Radio':
+        return Remix.radio_button_line;
+      case 'Calendar':
+        return Remix.calendar_line;
+      case 'Toggle':
+        return Remix.toggle_line;
+      case 'Table':
+        return Remix.table_view;
+      case 'Chart':
+        return Remix.bar_chart_box_line;
+      case 'Container':
+        return Icons.widgets;
+      default:
+        return Icons.device_unknown;
+    }
+  }
+}
+/// 레이아웃패널: 가변 너비 (Expanded 사용)
+class LayoutPanel extends ConsumerWidget {
+  const LayoutPanel({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final widgets = ref.watch(canvasProvider);
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
+        ),
+        child: DragTarget<WidgetConfig>(
+          onAcceptWithDetails: (details) {
+            ref.read(canvasProvider.notifier).addWidget(details.data);
+          },
+          builder: (context, candidateData, rejectedData) {
+            return InteractiveViewer(
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.1,
+              maxScale: 4.0,
+              child: Stack(
+                children: widgets.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final config = entry.value;
+                  return Positioned(
+                    left: config.position['x']!,
+                    top: config.position['y']!,
+                    child: GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(selectedWidgetProvider.notifier)
+                            .select(config, index);
+                      },
+                      child: SizedBox(
+                        width: config.size['width']!,
+                        height: config.size['height']!,
+                        child: _buildPreviewWidget(config),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildPreviewWidget(WidgetConfig config, {void Function(WidgetConfig)? onUpdate}) {
+    Widget child;
     switch (config.type) {
       case 'Text':
-        return Text(
-          config.properties['text'],
-          style: TextStyle(
-            fontSize: (config.properties['fontSize'] as num?)?.toDouble() ?? 16.0,
-            color: _parseColor(config.properties['color']),
-          ),
-        );
+        child = Text(config.properties['text'] ?? '');
+        break;
       case 'Button':
-        return ElevatedButton(
+        child = ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: _parseColor(config.properties['backgroundColor']),
             foregroundColor: _parseColor(config.properties['textColor']),
@@ -360,25 +609,109 @@ class CanvasArea extends ConsumerWidget {
               ),
             ),
           ),
-          onPressed: () {},
-          child: Text(config.properties['text']),
+          onPressed: () {}, // 동작하지 않도록 빈 콜백
+          child: Text(config.properties['text'] ?? ''),
         );
+        break;
       case 'Select':
-        return DropdownButtonFormField<String>(
-          items: (config.properties['options'] as List<dynamic>)
-              .map(
-                (e) => DropdownMenuItem(
-                  value: e.toString(),
-                  child: Text(e.toString()),
-                ),
-              )
+        child = DropdownButton<String>(
+          items: (config.properties['options'] as List<dynamic>? ?? [])
+              .map((e) => DropdownMenuItem(
+                    value: e.toString(),
+                    child: Text(e.toString()),
+                  ))
               .toList(),
-          hint: Text(config.properties['hint']),
-          onChanged: (value) {},
+          hint: Text(config.properties['hint'] ?? ''),
+          onChanged: (value) {}, // 동작하지 않음
         );
+        break;
+      case 'Container':
+        child = Consumer(builder: (context, ref, childWidget) {
+          final canvasWidgets = ref.watch(canvasProvider);
+          final containerIndex = canvasWidgets.indexOf(config);
+          final List<dynamic> childrenList =
+              config.properties['children'] as List<dynamic>? ?? [];
+          return DragTarget<WidgetConfig>(
+            onWillAcceptWithDetails: (details) => true,
+            onAcceptWithDetails: (details) {
+              final incoming = details.data;
+              final updatedChildren = List<WidgetConfig>.from(
+                childrenList.map((e) => e as WidgetConfig),
+              );
+              final adjustedWidget = incoming.copyWith(
+                position: {
+                  'x': 0.0,
+                  'y': childrenList.isEmpty
+                      ? 0.0
+                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                },
+              );
+              updatedChildren.add(adjustedWidget);
+              final updatedConfig = config.copyWith(
+                properties: {
+                  ...config.properties,
+                  'children': updatedChildren,
+                },
+              );
+              if (containerIndex != -1) {
+                ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
+              } else if (onUpdate != null) {
+                onUpdate(updatedConfig);
+              }
+            },
+            builder: (context, candidateData, rejectedData) {
+              return Container(
+                width: config.size['width'],
+                height: config.size['height'],
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: candidateData.isNotEmpty ? Colors.green : Colors.blueAccent,
+                    width: 1,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Container'),
+                      ...childrenList.map((childConfig) {
+                        final childWidget = childConfig as WidgetConfig;
+                        return Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: SizedBox(
+                            width: childWidget.size['width']!,
+                            height: childWidget.size['height']!,
+                            child: _buildPreviewWidget(childWidget, onUpdate: (updatedChild) {
+                              // 업데이트 로직
+                            }),
+                          ),
+                        );
+                      }),
+                      if (candidateData.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          color: Colors.green.withOpacity(0.3),
+                          child: const Text(
+                            'Drop Here',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        });
+        break;
       default:
-        return const Placeholder();
+        child = const Placeholder();
     }
+    // Container 위젯은 드랍 기능을 위해 AbsorbPointer를 적용하지 않음
+    if (config.type == 'Container') {
+      return child;
+    }
+    return AbsorbPointer(child: child);
   }
 
   Color _parseColor(dynamic colorStr) {
@@ -390,7 +723,6 @@ class CanvasArea extends ConsumerWidget {
     return Colors.black;
   }
 }
-
 /// 프리뷰패널: 가변 너비 (Expanded 사용)
 class PreviewPanel extends ConsumerWidget {
   const PreviewPanel({super.key});
@@ -402,34 +734,50 @@ class PreviewPanel extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFFF0000), width: 1),
+          border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
         ),
-        child: InteractiveViewer(
-          boundaryMargin: const EdgeInsets.all(20),
-          minScale: 0.1,
-          maxScale: 4.0,
-          child: Stack(
-            children: widgets
-                .map((config) => Positioned(
-                      left: config.position['x']!,
-                      top: config.position['y']!,
+        child: DragTarget<WidgetConfig>(
+          onAcceptWithDetails: (details) {
+            ref.read(canvasProvider.notifier).addWidget(details.data);
+          },
+          builder: (context, candidateData, rejectedData) {
+            return InteractiveViewer(
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.1,
+              maxScale: 4.0,
+              child: Stack(
+                children: widgets.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final config = entry.value;
+                  return Positioned(
+                    left: config.position['x']!,
+                    top: config.position['y']!,
+                    child: GestureDetector(
+                      onTap: () {
+                        ref
+                            .read(selectedWidgetProvider.notifier)
+                            .select(config, index);
+                      },
                       child: SizedBox(
                         width: config.size['width']!,
                         height: config.size['height']!,
-                        child: buildPreviewWidget(config),
+                        child: _buildPreviewWidget(config),
                       ),
-                    ))
-                .toList(),
-          ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget buildPreviewWidget(WidgetConfig config) {
+  Widget _buildPreviewWidget(WidgetConfig config, {void Function(WidgetConfig)? onUpdate}) {
     switch (config.type) {
       case 'Text':
-        return Text(config.properties['text']);
+        return Text(config.properties['text'] ?? '');
       case 'Button':
         return ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -443,11 +791,11 @@ class PreviewPanel extends ConsumerWidget {
             ),
           ),
           onPressed: () {},
-          child: Text(config.properties['text']),
+          child: Text(config.properties['text'] ?? ''),
         );
       case 'Select':
         return DropdownButton<String>(
-          items: (config.properties['options'] as List<dynamic>)
+          items: (config.properties['options'] as List<dynamic>? ?? [])
               .map(
                 (e) => DropdownMenuItem(
                   value: e.toString(),
@@ -455,12 +803,119 @@ class PreviewPanel extends ConsumerWidget {
                 ),
               )
               .toList(),
-          hint: Text(config.properties['hint']),
+          hint: Text(config.properties['hint'] ?? ''),
           onChanged: (value) {},
         );
+      case 'Container':
+        return Consumer(builder: (context, ref, child) {
+          final canvasWidgets = ref.watch(canvasProvider);
+          final containerIndex = canvasWidgets.indexOf(config);
+          final List<dynamic> childrenList =
+              config.properties['children'] as List<dynamic>? ?? [];
+          return DragTarget<WidgetConfig>(
+            onWillAccept: (incoming) => true,
+            onAccept: (incoming) {
+              final updatedChildren = List<WidgetConfig>.from(
+                childrenList.map((e) => e as WidgetConfig),
+              );
+              final adjustedWidget = incoming.copyWith(
+                position: {
+                  'x': 0.0,
+                  'y': childrenList.isEmpty
+                      ? 0.0
+                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                },
+              );
+              updatedChildren.add(adjustedWidget);
+              final updatedConfig = config.copyWith(
+                properties: {
+                  ...config.properties,
+                  'children': updatedChildren,
+                },
+              );
+              if (containerIndex != -1) {
+                ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
+              } else if (onUpdate != null) {
+                onUpdate(updatedConfig);
+              }
+            },
+            builder: (context, candidateData, rejectedData) {
+              return Container(
+                width: config.size['width'],
+                height: config.size['height'],
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: candidateData.isNotEmpty ? Colors.green : Colors.blueAccent,
+                    width: 1,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Container'),
+                      ...childrenList.map((childConfig) {
+                        final child = childConfig as WidgetConfig;
+                        return Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: SizedBox(
+                            width: child.size['width']!,
+                            height: child.size['height']!, // height 추가
+                            child: _buildPreviewWidget(child, onUpdate: (updatedChild) {
+                              // 자식 컨테이너 업데이트 시, 현재 컨테이너의 children 목록에 반영합니다.
+                              final updatedChildren = List<WidgetConfig>.from(
+                                childrenList.map((e) => e as WidgetConfig),
+                              );
+                              final childIndex = updatedChildren.indexWhere((element) => element == child);
+                              if (childIndex != -1) {
+                                updatedChildren[childIndex] = updatedChild;
+                                final updatedConfig = config.copyWith(
+                                  properties: {
+                                    ...config.properties,
+                                    'children': updatedChildren,
+                                  },
+                                );
+                                if (containerIndex != -1) {
+                                  ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
+                                } else if (onUpdate != null) {
+                                  onUpdate(updatedConfig);
+                                }
+                              }
+                            }),
+                          ),
+                        );
+                      }).toList(),
+                      if (candidateData.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          color: Colors.green.withOpacity(0.3),
+                          child: const Text(
+                            'Drop Here',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        });
       default:
         return const Placeholder();
     }
+  }
+
+  // 헬퍼: children 리스트를 위젯으로 변환 (재귀적으로 _buildPreviewWidget 사용)
+  List<Widget> updatedChildren(List<dynamic> childrenList) {
+    return childrenList.map<Widget>((childConfig) {
+      final wc = childConfig as WidgetConfig;
+      return SizedBox(
+        width: wc.size['width']!,
+        height: wc.size['height']!,
+        child: _buildPreviewWidget(wc), // 재귀 호출
+      );
+    }).toList();
   }
 
   Color _parseColor(dynamic colorStr) {
@@ -472,7 +927,6 @@ class PreviewPanel extends ConsumerWidget {
     return Colors.black;
   }
 }
-
 /// 프로퍼티에디터: 고정 너비 240
 class PropertyEditor extends ConsumerWidget {
   const PropertyEditor({super.key});
@@ -480,11 +934,12 @@ class PropertyEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(selectedWidgetProvider);
     return Container(
-      width: 240,
+      width: 240, // width 240으로 설정
+      height: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFFF0000), width: 1),
+        border: Border.all(color: const Color(0xFFFF0000), width: 0.5),
       ),
       child: selected == null
           ? const Center(child: Text('위젯을 선택하세요'))
@@ -526,10 +981,23 @@ class PropertyEditor extends ConsumerWidget {
           _buildOptionsEditor(config, ref),
         ];
         break;
+      case 'Container':
+        fields = [
+          const Text('Container 위젯은 레이아웃 역할을 합니다.'),
+          const Text('자식 위젯들은 NodeArea에서 별도로 편집하세요.'),
+          ElevatedButton(
+            onPressed: () {
+              // Container에 자식 위젯 추가 로직 구현
+              // 예: ref.read(canvasProvider.notifier).addWidget(WidgetConfig(...));
+            },
+            child: const Text('자식 위젯 추가'),
+          ),
+        ];
+        break;
       default:
         fields = [const Text('지원되지 않는 위젯 유형')];
     }
-    // 위치 조정 필드 (모든 위젯 공통)
+    // 공통 위치 조정 필드
     fields.add(const Divider());
     fields.add(const Text(
       '위치 조정',
@@ -686,10 +1154,10 @@ class PreviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPreviewWidget(WidgetConfig config) {
+  Widget _buildPreviewWidget(WidgetConfig config, {void Function(WidgetConfig)? onUpdate}) {
     switch (config.type) {
       case 'Text':
-        return Text(config.properties['text']);
+        return Text(config.properties['text'] ?? '');
       case 'Button':
         return ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -703,11 +1171,11 @@ class PreviewScreen extends ConsumerWidget {
             ),
           ),
           onPressed: () {},
-          child: Text(config.properties['text']),
+          child: Text(config.properties['text'] ?? ''),
         );
       case 'Select':
         return DropdownButton<String>(
-          items: (config.properties['options'] as List<dynamic>)
+          items: (config.properties['options'] as List<dynamic>? ?? [])
               .map(
                 (e) => DropdownMenuItem(
                   value: e.toString(),
@@ -715,12 +1183,119 @@ class PreviewScreen extends ConsumerWidget {
                 ),
               )
               .toList(),
-          hint: Text(config.properties['hint']),
+          hint: Text(config.properties['hint'] ?? ''),
           onChanged: (value) {},
         );
+      case 'Container':
+        return Consumer(builder: (context, ref, child) {
+          final canvasWidgets = ref.watch(canvasProvider);
+          final containerIndex = canvasWidgets.indexOf(config);
+          final List<dynamic> childrenList =
+              config.properties['children'] as List<dynamic>? ?? [];
+          return DragTarget<WidgetConfig>(
+            onWillAccept: (incoming) => true,
+            onAccept: (incoming) {
+              final updatedChildren = List<WidgetConfig>.from(
+                childrenList.map((e) => e as WidgetConfig),
+              );
+              final adjustedWidget = incoming.copyWith(
+                position: {
+                  'x': 0.0,
+                  'y': childrenList.isEmpty
+                      ? 0.0
+                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                },
+              );
+              updatedChildren.add(adjustedWidget);
+              final updatedConfig = config.copyWith(
+                properties: {
+                  ...config.properties,
+                  'children': updatedChildren,
+                },
+              );
+              if (containerIndex != -1) {
+                ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
+              } else if (onUpdate != null) {
+                onUpdate(updatedConfig);
+              }
+            },
+            builder: (context, candidateData, rejectedData) {
+              return Container(
+                width: config.size['width'],
+                height: config.size['height'],
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: candidateData.isNotEmpty ? Colors.green : Colors.blueAccent,
+                    width: 1,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Container'),
+                      ...childrenList.map((childConfig) {
+                        final child = childConfig as WidgetConfig;
+                        return Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: SizedBox(
+                            width: child.size['width']!,
+                            height: child.size['height']!, // height 추가
+                            child: _buildPreviewWidget(child, onUpdate: (updatedChild) {
+                              // 자식 컨테이너 업데이트 시, 현재 컨테이너의 children 목록에 반영합니다.
+                              final updatedChildren = List<WidgetConfig>.from(
+                                childrenList.map((e) => e as WidgetConfig),
+                              );
+                              final childIndex = updatedChildren.indexWhere((element) => element == child);
+                              if (childIndex != -1) {
+                                updatedChildren[childIndex] = updatedChild;
+                                final updatedConfig = config.copyWith(
+                                  properties: {
+                                    ...config.properties,
+                                    'children': updatedChildren,
+                                  },
+                                );
+                                if (containerIndex != -1) {
+                                  ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
+                                } else if (onUpdate != null) {
+                                  onUpdate(updatedConfig);
+                                }
+                              }
+                            }),
+                          ),
+                        );
+                      }).toList(),
+                      if (candidateData.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          color: Colors.green.withOpacity(0.3),
+                          child: const Text(
+                            'Drop Here',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        });
       default:
         return const Placeholder();
     }
+  }
+
+  // 헬퍼: children 리스트를 위젯으로 변환 (재귀적으로 _buildPreviewWidget 사용)
+  List<Widget> updatedChildren(List<dynamic> childrenList) {
+    return childrenList.map<Widget>((childConfig) {
+      final wc = childConfig as WidgetConfig;
+      return SizedBox(
+        width: wc.size['width']!,
+        height: wc.size['height']!,
+        child: _buildPreviewWidget(wc), // 재귀 호출
+      );
+    }).toList();
   }
 
   Color _parseColor(dynamic colorStr) {
@@ -732,47 +1307,46 @@ class PreviewScreen extends ConsumerWidget {
     return Colors.black;
   }
 }
-
 /// FrameRateMonitor 위젯 (프레임 레이트 표시)
 class FrameRateMonitor extends StatefulWidget {
   const FrameRateMonitor({super.key});
 
   @override
-  _FrameRateMonitorState createState() => _FrameRateMonitorState();
+  FrameRateMonitorState createState() => FrameRateMonitorState();
 }
 
-class _FrameRateMonitorState extends State<FrameRateMonitor>
+class FrameRateMonitorState extends State<FrameRateMonitor>
     with WidgetsBindingObserver {
-  Ticker? _ticker;
-  int _frameCount = 0;
-  int _lastFrameTime = 0;
-  double _fps = 0.0;
-  final List<double> _fpsHistory = [];
-  final int _maxHistoryLength = 30;
+  Ticker? ticker;
+  int frameCount = 0;
+  int lastFrameTime = 0;
+  double fps = 0.0;
+  final List<double> fpsHistory = [];
+  final int maxHistoryLength = 30;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _ticker = Ticker(_onTick)..start();
+    ticker = Ticker(onTick)..start();
   }
 
-  void _onTick(Duration duration) {
+  void onTick(Duration duration) {
     int currentTime = duration.inMilliseconds;
-    _frameCount++;
+    frameCount++;
 
-    int elapsed = currentTime - _lastFrameTime;
+    int elapsed = currentTime - lastFrameTime;
     // 500ms 간격으로 FPS 계산
     if (elapsed >= 500) {
       setState(() {
-        _fps = (_frameCount / elapsed) * 1000;
-        _frameCount = 0;
-        _lastFrameTime = currentTime;
+        fps = (frameCount / elapsed) * 1000;
+        frameCount = 0;
+        lastFrameTime = currentTime;
 
-        if (_fpsHistory.length >= _maxHistoryLength) {
-          _fpsHistory.removeAt(0);
+        if (fpsHistory.length >= maxHistoryLength) {
+          fpsHistory.removeAt(0);
         }
-        _fpsHistory.add(_fps);
+        fpsHistory.add(fps);
       });
     }
   }
@@ -780,7 +1354,7 @@ class _FrameRateMonitorState extends State<FrameRateMonitor>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _ticker?.dispose();
+    ticker?.dispose();
     super.dispose();
   }
 
@@ -793,7 +1367,7 @@ class _FrameRateMonitorState extends State<FrameRateMonitor>
         padding: const EdgeInsets.all(8),
         color: Colors.black54,
         child: Text(
-          '${_fps.toStringAsFixed(1)} FPS',
+          '${fps.toStringAsFixed(1)} FPS',
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
       ),
