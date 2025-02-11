@@ -638,7 +638,7 @@ class LayoutPanel extends ConsumerWidget {
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
-              final adjustedWidget = incoming.copyWith(
+              final adjustedWidget = details.data.copyWith(
                 position: {
                   'x': 0.0,
                   'y': childrenList.isEmpty
@@ -813,12 +813,12 @@ class PreviewPanel extends ConsumerWidget {
           final List<dynamic> childrenList =
               config.properties['children'] as List<dynamic>? ?? [];
           return DragTarget<WidgetConfig>(
-            onWillAccept: (incoming) => true,
-            onAccept: (incoming) {
+            onWillAcceptWithDetails: (incoming) => true,
+            onAcceptWithDetails: (incoming) {
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
-              final adjustedWidget = incoming.copyWith(
+              final adjustedWidget = incoming.data.copyWith(
                 position: {
                   'x': 0.0,
                   'y': childrenList.isEmpty
@@ -884,7 +884,7 @@ class PreviewPanel extends ConsumerWidget {
                             }),
                           ),
                         );
-                      }).toList(),
+                      }),
                       if (candidateData.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.all(4),
@@ -1193,12 +1193,12 @@ class PreviewScreen extends ConsumerWidget {
           final List<dynamic> childrenList =
               config.properties['children'] as List<dynamic>? ?? [];
           return DragTarget<WidgetConfig>(
-            onWillAccept: (incoming) => true,
-            onAccept: (incoming) {
+            onWillAcceptWithDetails: (incoming) => true,
+            onAcceptWithDetails: (incoming) {
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
-              final adjustedWidget = incoming.copyWith(
+              final adjustedWidget = incoming.data.copyWith(
                 position: {
                   'x': 0.0,
                   'y': childrenList.isEmpty
@@ -1264,7 +1264,7 @@ class PreviewScreen extends ConsumerWidget {
                             }),
                           ),
                         );
-                      }).toList(),
+                      }),
                       if (candidateData.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.all(4),
