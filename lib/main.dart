@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:remixicon/remixicon.dart';
+import 'dart:io';
+import 'dart:convert';
 
 part 'main.freezed.dart';
 part 'main.g.dart';
@@ -13,26 +16,19 @@ class WidgetConfig with _$WidgetConfig {
   const factory WidgetConfig({
     required String type,
     required Map<String, dynamic> properties,
-    @Default(<String, double>{'width': 100.0, 'height': 40.0})
-        Map<String, double> size,
-    @Default(<String, double>{'x': 0.0, 'y': 0.0})
-        Map<String, double> position,
+    @Default(<String, double>{'width': 100.0, 'height': 40.0}) Map<String, double> size,
+    @Default(<String, double>{'x': 0.0, 'y': 0.0}) Map<String, double> position,
   }) = _WidgetConfig;
 
   /// JSON 직렬화 기능
-  factory WidgetConfig.fromJson(Map<String, dynamic> json) =>
-      _$WidgetConfigFromJson(json);
+  factory WidgetConfig.fromJson(Map<String, dynamic> json) => _$WidgetConfigFromJson(json);
 }
 
 /// 캔버스에 추가된 위젯 목록 상태 (Undo/Redo 기능 포함)
-final canvasProvider =
-    StateNotifierProvider<CanvasNotifier, List<WidgetConfig>>(
-        (ref) => CanvasNotifier());
+final canvasProvider = StateNotifierProvider<CanvasNotifier, List<WidgetConfig>>((ref) => CanvasNotifier());
 
 /// 선택된 위젯 상태
-final selectedWidgetProvider =
-    StateNotifierProvider<SelectedWidgetNotifier, WidgetConfig?>(
-        (ref) => SelectedWidgetNotifier());
+final selectedWidgetProvider = StateNotifierProvider<SelectedWidgetNotifier, WidgetConfig?>((ref) => SelectedWidgetNotifier());
 
 class CanvasNotifier extends StateNotifier<List<WidgetConfig>> {
   CanvasNotifier() : super([]);
@@ -64,7 +60,7 @@ class CanvasNotifier extends StateNotifier<List<WidgetConfig>> {
     newList.removeAt(index);
     state = newList;
   }
-  
+
   // 추가: 위젯의 순서를 드래그로 변경하기 위한 메서드
   void reorderWidget(int oldIndex, int newIndex) {
     _saveStateForUndo();
@@ -90,7 +86,7 @@ class CanvasNotifier extends StateNotifier<List<WidgetConfig>> {
       state = _redoStack.removeLast();
     }
   }
-  
+
   // 추가: 상태 할당용 메서드
   void setWidgets(List<WidgetConfig> newWidgets) {
     state = newWidgets;
@@ -126,7 +122,7 @@ class SelectedWidgetNotifier extends StateNotifier<WidgetConfig?> {
     state = newConfig;
     ref.read(canvasProvider.notifier).updateWidget(selectedIndex!, newConfig);
   }
-  
+
   // 추가: 상태 클리어 메서드
   void clear() {
     state = null;
@@ -134,8 +130,119 @@ class SelectedWidgetNotifier extends StateNotifier<WidgetConfig?> {
   }
 }
 
-void main() {
+/*void main() {
   runApp(const ProviderScope(child: MyApp()));
+}*/
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'http://localhost:8000',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE',
+  );
+
+  runApp(MyApp());
+}
+
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({Key? key}) : super(key: key);
+
+  @override
+  _SignUpPageState createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      /*
+      final AuthResponse res = await supabase.auth.signUp(
+  email: 'example@email.com',
+  password: 'example-password',
+);
+final Session? session = res.session;
+final User? user = res.user;
+      */
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final response = await Supabase.instance.client.auth.signUp(email: email, password: password);
+      if (response.user == null) {
+        setState(() {
+          _errorMessage = '회원가입 실패. 다시 시도해주세요.';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입 성공! 확인 이메일을 발송했습니다.')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sign Up')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_errorMessage != null)
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _signUp,
+                        child: const Text('회원가입'),
+                      ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -146,7 +253,8 @@ class MyApp extends StatelessWidget {
       title: 'Web Builder',
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      home: const BuilderScreen(),
+      //home: const BuilderScreen(),
+      home: SignUpPage(),
     );
   }
 }
@@ -182,8 +290,7 @@ class BuilderScreen extends ConsumerWidget {
               icon: const Icon(Icons.delete),
               tooltip: 'Delete Selected Widget',
               onPressed: () {
-                final selectedNotifier =
-                    ref.read(selectedWidgetProvider.notifier);
+                final selectedNotifier = ref.read(selectedWidgetProvider.notifier);
                 final selectedIndex = selectedNotifier.selectedIndex;
                 if (selectedIndex != null) {
                   ref.read(canvasProvider.notifier).removeWidget(selectedIndex);
@@ -199,8 +306,11 @@ class BuilderScreen extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const PreviewScreen()),
               ),
             ),
-            //const SizedBox(width: 8),
-            //const Text('Web Builder'),
+            IconButton(
+              icon: const Icon(Icons.save),
+              tooltip: 'Save to main.dart',
+              onPressed: () => _saveToMainDart(context, ref),
+            ),
           ],
         ),
       ),
@@ -219,6 +329,35 @@ class BuilderScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _saveToMainDart(BuildContext context, WidgetRef ref) async {
+    try {
+      final widgets = ref.read(canvasProvider);
+      final file = File('/Users/admin/workspace/uxai/lib/main2.dart');
+
+      // 위젯 설정을 JSON으로 변환
+      final widgetsJson = widgets.map((w) => w.toJson()).toList();
+      final jsonString = JsonEncoder.withIndent('  ').convert(widgetsJson);
+      debugPrint('위젯 JSON 데이터: $jsonString'); // print 대신 debugPrint 사용
+
+      // 파일이 존재하는지 확인
+      if (!file.existsSync()) {
+        debugPrint('파일이 존재하지 않습니다: ${file.path}');
+        return;
+      }
+
+      // 현재 파일의 내용을 읽어옴
+      String content = await file.readAsString();
+      debugPrint('파일 읽기 성공');
+    } catch (e) {
+      debugPrint('에러 발생: $e'); // 에러 내용도 출력
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving file: $e')),
+        );
+      }
+    }
   }
 }
 
@@ -403,6 +542,7 @@ class WidgetPalette extends StatelessWidget {
     );
   }
 }
+
 /// 캔버스영역 (이제 WidgetTree): 위젯 트리 구조로 표시
 class WidgetTree extends ConsumerWidget {
   const WidgetTree({super.key});
@@ -428,15 +568,10 @@ class WidgetTree extends ConsumerWidget {
     );
   }
 
-  Widget _buildNode(WidgetConfig config, WidgetRef ref, int index,
-      {Key? key}) {
+  Widget _buildNode(WidgetConfig config, WidgetRef ref, int index, {Key? key}) {
     // Container 위젯: 자식들을 ReorderableListView로 감싸 드래그로 순서 변경 가능
     if (config.properties.containsKey('children')) {
-      final List<WidgetConfig> children = (config.properties['children']
-              as List<dynamic>? ??
-          [])
-          .map((e) => e as WidgetConfig)
-          .toList();
+      final List<WidgetConfig> children = (config.properties['children'] as List<dynamic>? ?? []).map((e) => e as WidgetConfig).toList();
       return ExpansionTile(
         key: key,
         title: Row(
@@ -454,8 +589,7 @@ class WidgetTree extends ConsumerWidget {
               shrinkWrap: true,
               physics: const ClampingScrollPhysics(),
               onReorder: (oldIndex, newIndex) {
-                List<WidgetConfig> newChildren =
-                    List.from(children);
+                List<WidgetConfig> newChildren = List.from(children);
                 if (newIndex > oldIndex) {
                   newIndex -= 1;
                 }
@@ -471,9 +605,7 @@ class WidgetTree extends ConsumerWidget {
                 final canvasWidgets = ref.read(canvasProvider);
                 final containerIndex = canvasWidgets.indexOf(config);
                 if (containerIndex != -1) {
-                  ref
-                      .read(canvasProvider.notifier)
-                      .updateWidget(containerIndex, updatedConfig);
+                  ref.read(canvasProvider.notifier).updateWidget(containerIndex, updatedConfig);
                 }
               },
               children: children.asMap().entries.map((childEntry) {
@@ -481,8 +613,7 @@ class WidgetTree extends ConsumerWidget {
                 final childConfig = childEntry.value;
                 return ListTile(
                   key: ValueKey(childConfig),
-                  title: _buildNode(childConfig, ref, childIndex,
-                      key: ValueKey(childConfig)),
+                  title: _buildNode(childConfig, ref, childIndex, key: ValueKey(childConfig)),
                 );
               }).toList(),
             ),
@@ -540,6 +671,7 @@ class WidgetTree extends ConsumerWidget {
     }
   }
 }
+
 /// 레이아웃패널: 가변 너비 (Expanded 사용)
 class LayoutPanel extends ConsumerWidget {
   const LayoutPanel({super.key});
@@ -571,9 +703,7 @@ class LayoutPanel extends ConsumerWidget {
                     top: config.position['y']!,
                     child: GestureDetector(
                       onTap: () {
-                        ref
-                            .read(selectedWidgetProvider.notifier)
-                            .select(config, index);
+                        ref.read(selectedWidgetProvider.notifier).select(config, index);
                       },
                       child: SizedBox(
                         width: config.size['width']!,
@@ -590,7 +720,7 @@ class LayoutPanel extends ConsumerWidget {
       ),
     );
   }
-  
+
   Widget _buildPreviewWidget(WidgetConfig config, {void Function(WidgetConfig)? onUpdate}) {
     Widget child;
     switch (config.type) {
@@ -629,21 +759,17 @@ class LayoutPanel extends ConsumerWidget {
         child = Consumer(builder: (context, ref, childWidget) {
           final canvasWidgets = ref.watch(canvasProvider);
           final containerIndex = canvasWidgets.indexOf(config);
-          final List<dynamic> childrenList =
-              config.properties['children'] as List<dynamic>? ?? [];
+          final List<dynamic> childrenList = config.properties['children'] as List<dynamic>? ?? [];
           return DragTarget<WidgetConfig>(
             onWillAcceptWithDetails: (details) => true,
             onAcceptWithDetails: (details) {
-              final incoming = details.data;
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
               final adjustedWidget = details.data.copyWith(
                 position: {
                   'x': 0.0,
-                  'y': childrenList.isEmpty
-                      ? 0.0
-                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                  'y': childrenList.isEmpty ? 0.0 : (childrenList.last as WidgetConfig).position['y']! + 50.0,
                 },
               );
               updatedChildren.add(adjustedWidget);
@@ -723,6 +849,7 @@ class LayoutPanel extends ConsumerWidget {
     return Colors.black;
   }
 }
+
 /// 프리뷰패널: 가변 너비 (Expanded 사용)
 class PreviewPanel extends ConsumerWidget {
   const PreviewPanel({super.key});
@@ -754,9 +881,7 @@ class PreviewPanel extends ConsumerWidget {
                     top: config.position['y']!,
                     child: GestureDetector(
                       onTap: () {
-                        ref
-                            .read(selectedWidgetProvider.notifier)
-                            .select(config, index);
+                        ref.read(selectedWidgetProvider.notifier).select(config, index);
                       },
                       child: SizedBox(
                         width: config.size['width']!,
@@ -810,20 +935,17 @@ class PreviewPanel extends ConsumerWidget {
         return Consumer(builder: (context, ref, child) {
           final canvasWidgets = ref.watch(canvasProvider);
           final containerIndex = canvasWidgets.indexOf(config);
-          final List<dynamic> childrenList =
-              config.properties['children'] as List<dynamic>? ?? [];
+          final List<dynamic> childrenList = config.properties['children'] as List<dynamic>? ?? [];
           return DragTarget<WidgetConfig>(
             onWillAcceptWithDetails: (incoming) => true,
-            onAcceptWithDetails: (incoming) {
+            onAcceptWithDetails: (details) {
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
-              final adjustedWidget = incoming.data.copyWith(
+              final adjustedWidget = details.data.copyWith(
                 position: {
                   'x': 0.0,
-                  'y': childrenList.isEmpty
-                      ? 0.0
-                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                  'y': childrenList.isEmpty ? 0.0 : (childrenList.last as WidgetConfig).position['y']! + 50.0,
                 },
               );
               updatedChildren.add(adjustedWidget);
@@ -927,6 +1049,7 @@ class PreviewPanel extends ConsumerWidget {
     return Colors.black;
   }
 }
+
 /// 프로퍼티에디터: 고정 너비 240
 class PropertyEditor extends ConsumerWidget {
   const PropertyEditor({super.key});
@@ -1011,12 +1134,9 @@ class PropertyEditor extends ConsumerWidget {
   Widget _buildTextField(String key, String label, WidgetRef ref) {
     return TextFormField(
       decoration: InputDecoration(labelText: label),
-      initialValue:
-          ref.watch(selectedWidgetProvider)?.properties[key]?.toString(),
+      initialValue: ref.watch(selectedWidgetProvider)?.properties[key]?.toString(),
       onChanged: (value) {
-        ref
-            .read(selectedWidgetProvider.notifier)
-            .updateProperty(key, value, ref);
+        ref.read(selectedWidgetProvider.notifier).updateProperty(key, value, ref);
       },
     );
   }
@@ -1025,23 +1145,18 @@ class PropertyEditor extends ConsumerWidget {
     return TextFormField(
       keyboardType: TextInputType.number,
       decoration: InputDecoration(labelText: label),
-      initialValue:
-          ref.watch(selectedWidgetProvider)?.properties[key]?.toString(),
+      initialValue: ref.watch(selectedWidgetProvider)?.properties[key]?.toString(),
       onChanged: (value) {
         double? number = double.tryParse(value);
         if (number != null) {
-          ref
-              .read(selectedWidgetProvider.notifier)
-              .updateProperty(key, number, ref);
+          ref.read(selectedWidgetProvider.notifier).updateProperty(key, number, ref);
         }
       },
     );
   }
 
   Widget _buildColorField(String key, String label, WidgetRef ref) {
-    final colorStr =
-        ref.watch(selectedWidgetProvider)?.properties[key]?.toString() ??
-            '#000000';
+    final colorStr = ref.watch(selectedWidgetProvider)?.properties[key]?.toString() ?? '#000000';
     return ListTile(
       title: Text(label),
       trailing: Container(
@@ -1071,24 +1186,18 @@ class PropertyEditor extends ConsumerWidget {
             trailing: IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () {
-                final newOptions = List<String>.from(
-                    options.map((e) => e.toString()));
+                final newOptions = List<String>.from(options.map((e) => e.toString()));
                 newOptions.remove(option.toString());
-                ref
-                    .read(selectedWidgetProvider.notifier)
-                    .updateProperty('options', newOptions, ref);
+                ref.read(selectedWidgetProvider.notifier).updateProperty('options', newOptions, ref);
               },
             ),
           ),
         ),
         TextButton(
           onPressed: () {
-            final newOptions = List<String>.from(
-                options.map((e) => e.toString()));
+            final newOptions = List<String>.from(options.map((e) => e.toString()));
             newOptions.add('New Option');
-            ref
-                .read(selectedWidgetProvider.notifier)
-                .updateProperty('options', newOptions, ref);
+            ref.read(selectedWidgetProvider.notifier).updateProperty('options', newOptions, ref);
           },
           child: const Text('옵션 추가'),
         ),
@@ -1106,9 +1215,7 @@ class PropertyEditor extends ConsumerWidget {
       onChanged: (value) {
         double? number = double.tryParse(value);
         if (number != null) {
-          ref
-              .read(selectedWidgetProvider.notifier)
-              .updatePosition(key, number, ref);
+          ref.read(selectedWidgetProvider.notifier).updatePosition(key, number, ref);
         }
       },
     );
@@ -1190,20 +1297,17 @@ class PreviewScreen extends ConsumerWidget {
         return Consumer(builder: (context, ref, child) {
           final canvasWidgets = ref.watch(canvasProvider);
           final containerIndex = canvasWidgets.indexOf(config);
-          final List<dynamic> childrenList =
-              config.properties['children'] as List<dynamic>? ?? [];
+          final List<dynamic> childrenList = config.properties['children'] as List<dynamic>? ?? [];
           return DragTarget<WidgetConfig>(
             onWillAcceptWithDetails: (incoming) => true,
-            onAcceptWithDetails: (incoming) {
+            onAcceptWithDetails: (details) {
               final updatedChildren = List<WidgetConfig>.from(
                 childrenList.map((e) => e as WidgetConfig),
               );
-              final adjustedWidget = incoming.data.copyWith(
+              final adjustedWidget = details.data.copyWith(
                 position: {
                   'x': 0.0,
-                  'y': childrenList.isEmpty
-                      ? 0.0
-                      : (childrenList.last as WidgetConfig).position['y']! + 50.0,
+                  'y': childrenList.isEmpty ? 0.0 : (childrenList.last as WidgetConfig).position['y']! + 50.0,
                 },
               );
               updatedChildren.add(adjustedWidget);
@@ -1307,6 +1411,7 @@ class PreviewScreen extends ConsumerWidget {
     return Colors.black;
   }
 }
+
 /// FrameRateMonitor 위젯 (프레임 레이트 표시)
 class FrameRateMonitor extends StatefulWidget {
   const FrameRateMonitor({super.key});
@@ -1315,8 +1420,7 @@ class FrameRateMonitor extends StatefulWidget {
   FrameRateMonitorState createState() => FrameRateMonitorState();
 }
 
-class FrameRateMonitorState extends State<FrameRateMonitor>
-    with WidgetsBindingObserver {
+class FrameRateMonitorState extends State<FrameRateMonitor> with WidgetsBindingObserver {
   Ticker? ticker;
   int frameCount = 0;
   int lastFrameTime = 0;
