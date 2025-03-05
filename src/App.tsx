@@ -1,34 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { Link, BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Login from './auth/Login';
+import Signup from './auth/Signup';
+import Builder from './builder';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+    <Router>
+      <>
+        <h1>xstudio</h1>
+        <div className="card">
+          <Link to="/auth">
+            <button>Login</button>
+          </Link>
+          <Link to="/signup">
+            <button>Signup</button>
+          </Link>
+        </div>
+        <p className="read-the-docs">
+          Click on the Vite and React logos to learn more
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+        <Routes>
+          <Route path="/" element={<h1>Welcome to xstudio</h1>} />
+          <Route path="/auth" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/builder" element={<Builder />} />
+        </Routes>
+      </>
+    </Router>
   )
 }
 
