@@ -17,8 +17,15 @@ function Builder() {
 
   return (
     <div>
-      <h1>Welcome to the Builder Page</h1>
-      <button onClick={handleLogout}>Logout</button>
+      <div>
+        <main>main</main>
+        <aside>sidebar</aside>
+        <aside>inspector</aside>
+        <nav>header</nav>
+        <footer>footer</footer>
+        <h1>Welcome to the Builder Page</h1>
+        <button onClick={handleLogout}>Logout</button>
+      </div>
     </div>
   );
 }
