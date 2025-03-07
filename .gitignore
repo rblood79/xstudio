@@ -1,0 +1,17 @@
+node_modules
+
+/.cache
+/build
+.env
+
+.cache
+.vercel
+.output
+
+/build/
+/public/build
+/api/index.js
+/api/index.js.map
+/api/_assets
+/public/s/uploads
+/public/cgi/asset
