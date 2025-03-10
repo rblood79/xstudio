@@ -1,2 +1,5 @@
 import Dashboard from "../dashboard/index";
-export default Dashboard;
+
+export default function DashboardRoute() {
+    return <Dashboard />;
+}
