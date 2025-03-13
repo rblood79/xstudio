@@ -132,7 +132,7 @@ function Builder({ projectId }: BuilderProps) {
                     setSelectedElementId(el.id);
                 },
                 style: {
-                    border: selectedElementId === el.id ? "1px solid blue" : undefined,
+                    outline: selectedElementId === el.id ? "1px solid blue" : undefined,
                     ...el.props.style,
                 },
             },
@@ -147,31 +147,45 @@ function Builder({ projectId }: BuilderProps) {
         return elements.filter((el) => !el.parent_id).map(el => renderElement(el));
     };
 
-    // 추가: 요소를 계층구조로 렌더링하는 함수
+    // 기존: 요소를 계층구조로 렌더링하는 함수 (ul-li 구조)
     const renderElementsList = (parentId: string | null = null): React.ReactNode => {
         return (
-            <ul>
+            <>
                 {elements
                     .filter((el) => el.parent_id === parentId)
                     .map((el) => (
-                        <li
+                        <div
                             key={el.id}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedElementId(el.id);
                             }}
                             style={{
-                                border:
+                                outline:
                                     selectedElementId === el.id
                                         ? "1px solid blue"
                                         : undefined,
                             }}
                         >
-                            {el.tag}-{el.id}
+                            {el.tag}
+                            <button
+                                onClick={async () => {
+                                    const { error } = await supabase
+                                        .from("elements")
+                                        .delete()
+                                        .eq("id", el.id);
+                                    if (error) {
+                                        console.error("요소 삭제 에러:", error);
+                                    } else {
+                                        setElements((prev) =>
+                                            prev.filter((e) => e.id !== el.id)
+                                        );
+                                    }
+                                }}>del</button>
                             {renderElementsList(el.id)}
-                        </li>
+                        </div>
                     ))}
-            </ul>
+            </>
         );
     };
 
@@ -179,17 +193,19 @@ function Builder({ projectId }: BuilderProps) {
         <div>
             <div>
                 <main>
-                    <div>
-                        {elements.length === 0 ? (
-                            "No elements available"
-                        ) : (
-                            renderElementsTree()
-                        )}
+                    <div className="bg">
+                        <div className="workspace">
+                            {elements.length === 0 ? (
+                                "No elements available"
+                            ) : (
+                                renderElementsTree()
+                            )}
+                        </div>
                     </div>
                 </main>
                 <aside className="sidebar">
-                    <div className="sidebar_nav">navigation</div>
-                    <div>
+                    <div className="sidebar_nav">nav</div>
+                    <div className="sidebar_pages">
                         <h3>Pages</h3>
                         <div>
                             <div>
@@ -218,9 +234,9 @@ function Builder({ projectId }: BuilderProps) {
                                     Add
                                 </button>
                             </div>
-                            <ul>
+                            <div>
                                 {pages.map((page) => (
-                                    <li key={page.id}>
+                                    <div key={page.id}>
                                         <span
                                             style={{ cursor: "pointer" }}
                                             onClick={() => fetchElements(page.id)}
@@ -244,20 +260,22 @@ function Builder({ projectId }: BuilderProps) {
                                         >
                                             Delete
                                         </button>
-                                    </li>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
                     </div>
+                    <div className="sidebar_elements">
+                        <h3>Elements Node</h3>
+                        <div>
+                            <button onClick={handleAddDivElement}>add elm</button>
+                            <button onClick={handleDeleteSelectedElement}>del elm</button>
+                        </div>
 
-                    <div>
-                        <button onClick={handleAddDivElement}>add elm</button>
-                        <button onClick={handleDeleteSelectedElement}>del elm</button>
-                    </div>
-
-                    {/* 기존 flat 리스트 대신 계층구조 리스트로 교체 */}
-                    <div>
-                        {renderElementsList()}
+                        {/* 기존 flat 리스트 대신 계층구조 리스트로 교체 */}
+                        <div className="elements-node">
+                            {renderElementsList()}
+                        </div>
                     </div>
                 </aside>
                 <aside className="inspector">inspector</aside>

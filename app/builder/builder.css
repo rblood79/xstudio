@@ -10,7 +10,37 @@ main {
 
 :root {
     --sizes-sidebarWidth: 240px;
+    --sizes-navigatorWidth: 0px;
 }
+
+* {
+    box-sizing: border-box;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+        list-style: none;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        padding-left: 16px;
+    }
+}
+
+h3 {
+    margin: 0;
+    padding: 8px;
+    font-size: 12px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
 
 html,
 body {
@@ -25,14 +55,15 @@ body {
         display: none;
     }
 
-    > div {
+    >div {
         display: contents;
 
-        > div {
+        >div {
             height: 100vh;
             overflow: hidden;
             display: grid;
-            grid-template-columns: auto var(--sizes-sidebarWidth) 1fr var(--sizes-sidebarWidth);
+            grid-template-columns: auto var(--sizes-navigatorWidth) 1fr var(--sizes-sidebarWidth);
+            grid-template-rows: auto 1fr auto;
             grid-template-areas:
                 "header header header header"
                 "sidebar navigator main inspector"
@@ -48,18 +79,61 @@ body {
 
             aside.sidebar {
                 grid-area: sidebar;
+                display: flex;
 
                 .sidebar_nav {
                     width: 48px;
+                    background-color: #ddd;
+                }
+
+                .sidebar_pages {
+                    width: var(--sizes-sidebarWidth);
+                    border-left: 1px solid #eee;
+                }
+
+                .sidebar_elements {
+                    width: var(--sizes-sidebarWidth);
+                    border-left: 1px solid #eee;
+
+                    .elements-node {
+                        >div {
+                            div {
+                                padding: 4px 4px 4px 16px;
+                            }
+                        }
+                    }
                 }
             }
 
             aside.inspector {
                 grid-area: inspector;
+                border-left: 1px solid #eee;
             }
 
             main {
                 grid-area: main;
+                display: flex;
+                flex-wrap: nowrap;
+                flex-direction: column;
+                position: relative;
+
+                .bg {
+                    flex-grow: 1;
+                    position: relative;
+                    background-color: #eee;
+
+                    .workspace {
+                        width: 767px;
+                        height: 100%;
+
+                        left: 50%;
+                        transform: scale(1) translateX(-50%);
+                        background: #ffffff;
+                        position: absolute;
+                        transform-origin: 0px 0px;
+                        will-change: transform;
+                    }
+                }
             }
 
             footer {
