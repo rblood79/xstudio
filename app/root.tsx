@@ -6,7 +6,7 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { supabase, Session } from './supabaseClient';
+import { supabase, Session } from './supabase.client';
 
 export default function Root() {
   const [session, setSession] = useState<Session | null>(null);
