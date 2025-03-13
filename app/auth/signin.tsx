@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@remix-run/react"; // 추가: useNavigate import
-import { supabase } from "../supabaseClient";
+import { supabase } from "../supabase.client";
 
 export default function Signin() {
   const [email, setEmail] = useState("");
@@ -23,27 +23,22 @@ export default function Signin() {
 
   return (
     <div>
+      <h2>SignIn</h2>
       <form onSubmit={handleSubmit}>
-        <label>
-          Email:
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </label>
-        <br />
-        <label>
-          Password:
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        <br />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
         {error && <p style={{ color: "red" }}>{error}</p>}
         <button type="submit">Signin</button>
       </form>

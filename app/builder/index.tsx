@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../supabase.client";
 import { Workspace } from "./features/workspace/index";
 
 import "./builder.css";
