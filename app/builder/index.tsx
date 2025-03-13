@@ -257,11 +257,7 @@ function Builder({ projectId }: BuilderProps) {
 
                     {/* 기존 flat 리스트 대신 계층구조 리스트로 교체 */}
                     <div>
-                        {elements.length === 0 ? (
-                            "No elements available"
-                        ) : (
-                            renderElementsList()
-                        )}
+                        {renderElementsList()}
                     </div>
                 </aside>
                 <aside className="inspector">inspector</aside>
