@@ -39,7 +39,7 @@ function Dashboard() {
     // Step 1: projects 테이블에 새 프로젝트 생성
     const { data: projectData, error: projectError } = await supabase
       .from("projects")
-      .insert([{ name: newProjectName, created_by: userId, oder_num: 0 }])
+      .insert([{ name: newProjectName, created_by: userId }])
       .select(); // 삽입된 데이터 반환
     if (projectError) {
       console.error("프로젝트 추가 에러:", projectError);
