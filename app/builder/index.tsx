@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
 import { supabase } from "../env/supabase.client";
 import { Workspace } from "./features/workspace/index";
+import { RiFileAddLine,RiNodeTree } from "@remixicon/react";
 
 import "./builder.css";
 interface BuilderProps {
@@ -171,21 +172,22 @@ function Builder({ projectId }: BuilderProps) {
                                         : undefined,
                             }}
                         >
-                            {el.tag}
-                            <button
-                                onClick={async () => {
-                                    const { error } = await supabase
-                                        .from("elements")
-                                        .delete()
-                                        .eq("id", el.id);
-                                    if (error) {
-                                        console.error("요소 삭제 에러:", error);
-                                    } else {
-                                        setElements((prev) =>
-                                            prev.filter((e) => e.id !== el.id)
-                                        );
-                                    }
-                                }}>del</button>
+                            <div>
+                                <span>{el.tag}</span>
+                                <button
+                                    onClick={async () => {
+                                        const { error } = await supabase
+                                            .from("elements")
+                                            .delete()
+                                            .eq("id", el.id);
+                                        if (error) {
+                                            console.error("요소 삭제 에러:", error);
+                                        } else {
+                                            setElements((prev) =>
+                                                prev.filter((e) => e.id !== el.id)
+                                            );
+                                        }
+                                    }}>del</button></div>
                             {renderElementsList(el.id)}
                         </div>
                     ))}
@@ -193,22 +195,68 @@ function Builder({ projectId }: BuilderProps) {
         );
     };
 
+    // iframe에 요소 데이터를 전달하는 useEffect 추가
+    useEffect(() => {
+        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
+        }
+    }, [elements]);
+
+    // 부모와 iframe 간 통신을 위한 메시지 수신 처리 (예: iframe에서 element 선택 시)
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            // 필요시 event.origin 검증 추가
+            if (event.data.type === "ELEMENT_SELECTED") {
+                setSelectedElementId(event.data.elementId);
+            }
+        };
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
+
     return (
         <div className="app">
             <div className="contents">
                 <main>
                     <div className="bg">
-                        <div className="workspace">
+                        {/*<div className="workspace">
                             {elements.length === 0 ? (
                                 "No elements available"
                             ) : (
                                 renderElementsTree()
                             )}
+                        </div>*/}
+
+                        <div className="workspace">
+                            {/* iframe을 통해 preview.tsx와 통신 */}
+                            <iframe
+                                id="previewFrame"
+                                src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
+                                style={{ width: "100%", height: "100%", border: "none" }}
+                            />
                         </div>
                     </div>
                 </main>
                 <aside className="sidebar">
-                    <div className="sidebar_nav">nav</div>
+                    <div className="sidebar_nav">
+                        <div className="sidebar_group">
+                        <button>
+                                <RiFileAddLine
+                                    size={24} // set custom `width` and `height`
+                                    color="red" // set `fill` color
+                                    className="ri-file-add-line" // add custom class name
+                                />
+                            </button>
+                            <button>
+                                <RiNodeTree
+                                    size={24} // set custom `width` and `height`
+                                    color="red" // set `fill` color
+                                    className="ri-node-tree" // add custom class name
+                                />
+                            </button>
+                        </div>
+                    </div>
                     <div className="sidebar_pages">
                         <h3>Pages</h3>
                         <div>
@@ -293,3 +341,4 @@ function Builder({ projectId }: BuilderProps) {
 }
 
 export default Builder;
+
