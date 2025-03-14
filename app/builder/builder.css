@@ -36,7 +36,20 @@ main {
 
             .sidebar_nav {
                 width: 48px;
-                background-color: #ddd;
+                background-color: #fff;
+                border-right: 1px solid #e6e6e6;
+                .sidebar_group{
+
+                    button{
+                        width: 48px;
+                        height: 48px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background-color: transparent;
+                        padding: 0;
+                    }
+                }
             }
 
             .sidebar_pages {
@@ -50,16 +63,20 @@ main {
 
                 .elements-node {
                     
-                    >div {
-                        .element {
+                    .element {
+                        > div {
                             display: flex;
                             flex-direction: row;
                             justify-content: space-between;
                         }
-                        div {
-                            
-                            padding: 4px 4px 4px 16px;
+                        .element{
+                            display: flex;
+                            flex-direction: column;
+                            padding-left: 16px;
                         }
+                        /*display: flex;
+                        flex-direction: row;
+                        justify-content: space-between;*/
                     }
                 }
             }
@@ -78,6 +95,7 @@ main {
             position: relative;
 
             .bg {
+                padding: 0;
                 flex-grow: 1;
                 position: relative;
                 background-color: #eee;
@@ -85,6 +103,8 @@ main {
                 .workspace {
                     width: 767px;
                     height: 100%;
+
+                    padding: 0;
 
                     left: 50%;
                     transform: scale(1) translateX(-50%);

@@ -53,6 +53,7 @@ import type { LinksFunction } from "@remix-run/node";
 import { useEffect, useState } from "react";
 import { supabase, Session } from './env/supabase.client';
 
+
 import "./tailwind.css";
 import "./root.css";
 
@@ -77,6 +78,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+      
         {children}
         <ScrollRestoration />
         <Scripts />
