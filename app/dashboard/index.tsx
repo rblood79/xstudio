@@ -1,5 +1,5 @@
 import { useNavigate } from "@remix-run/react";
-import { supabase } from "../supabase.client";
+import { supabase } from "../env/supabase.client";
 import Project from "./projects/projects";
 import { useState, useEffect } from "react";
 

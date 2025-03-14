@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from "@remix-run/react"; // 추가: useNavigate import
-import { supabase } from '../supabase.client';
+import { supabase } from '../env/supabase.client';
 
 
 function Signup() {

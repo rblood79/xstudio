@@ -1,3 +1,4 @@
+
 main {
     div {
         border: 1px solid #f00;
@@ -7,142 +8,99 @@ main {
         padding: 8px;
     }
 }
+.app {
+    display: contents;
 
-:root {
-    --sizes-sidebarWidth: 240px;
-    --sizes-navigatorWidth: 0px;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-
-    li {
-        list-style: none;
+    .contents {
+        height: 100vh;
         overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        padding-left: 16px;
-    }
-}
+        display: grid;
+        grid-template-columns: auto var(--sizes-navigatorWidth) 1fr var(--sizes-sidebarWidth);
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+            "header header header header"
+            "sidebar navigator main inspector"
+            "footer footer footer footer";
 
-h3 {
-    margin: 0;
-    padding: 8px;
-    font-size: 12px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #eee;
-}
+        nav.header {
+            grid-area: header;
+            position: relative;
+            display: flex;
+            background-color: oklch(0.147 0.004 49.25);
+            height: 48px;
+        }
 
+        aside.sidebar {
+            grid-area: sidebar;
+            display: flex;
 
-html,
-body {
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-    overscroll-behavior: contain;
-    -webkit-font-smoothing: antialiased;
-
-    header {
-        display: none;
-    }
-
-    >div {
-        display: contents;
-
-        >div {
-            height: 100vh;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: auto var(--sizes-navigatorWidth) 1fr var(--sizes-sidebarWidth);
-            grid-template-rows: auto 1fr auto;
-            grid-template-areas:
-                "header header header header"
-                "sidebar navigator main inspector"
-                "footer footer footer footer";
-
-            nav.header {
-                grid-area: header;
-                position: relative;
-                display: flex;
-                background: #2d2d2d;
-                height: 48px;
+            .sidebar_nav {
+                width: 48px;
+                background-color: #ddd;
             }
 
-            aside.sidebar {
-                grid-area: sidebar;
-                display: flex;
+            .sidebar_pages {
+                width: var(--sizes-sidebarWidth);
+                border-left: 1px solid #eee;
+            }
 
-                .sidebar_nav {
-                    width: 48px;
-                    background-color: #ddd;
-                }
+            .sidebar_elements {
+                width: var(--sizes-sidebarWidth);
+                border-left: 1px solid #eee;
 
-                .sidebar_pages {
-                    width: var(--sizes-sidebarWidth);
-                    border-left: 1px solid #eee;
-                }
-
-                .sidebar_elements {
-                    width: var(--sizes-sidebarWidth);
-                    border-left: 1px solid #eee;
-
-                    .elements-node {
-                        >div {
-                            div {
-                                padding: 4px 4px 4px 16px;
-                            }
+                .elements-node {
+                    
+                    >div {
+                        .element {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: space-between;
+                        }
+                        div {
+                            
+                            padding: 4px 4px 4px 16px;
                         }
                     }
                 }
             }
+        }
 
-            aside.inspector {
-                grid-area: inspector;
-                border-left: 1px solid #eee;
-            }
+        aside.inspector {
+            grid-area: inspector;
+            border-left: 1px solid #eee;
+        }
 
-            main {
-                grid-area: main;
-                display: flex;
-                flex-wrap: nowrap;
-                flex-direction: column;
+        main {
+            grid-area: main;
+            display: flex;
+            flex-wrap: nowrap;
+            flex-direction: column;
+            position: relative;
+
+            .bg {
+                flex-grow: 1;
                 position: relative;
+                background-color: #eee;
 
-                .bg {
-                    flex-grow: 1;
-                    position: relative;
-                    background-color: #eee;
+                .workspace {
+                    width: 767px;
+                    height: 100%;
 
-                    .workspace {
-                        width: 767px;
-                        height: 100%;
-
-                        left: 50%;
-                        transform: scale(1) translateX(-50%);
-                        background: #ffffff;
-                        position: absolute;
-                        transform-origin: 0px 0px;
-                        will-change: transform;
-                    }
+                    left: 50%;
+                    transform: scale(1) translateX(-50%);
+                    background: #ffffff;
+                    position: absolute;
+                    transform-origin: 0px 0px;
+                    will-change: transform;
                 }
             }
+        }
 
-            footer {
-                isolation: isolate;
-                grid-area: footer;
-                height: 40px;
-                background: #2d2d2d;
-            }
+        footer {
+            isolation: isolate;
+            grid-area: footer;
+            height: 40px;
+            background: #2d2d2d;
         }
     }
-
 }

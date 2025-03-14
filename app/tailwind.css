@@ -3,25 +3,11 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-*{
-  box-sizing: border-box;
-}
-
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
-
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-
-  overflow: hidden;
-  overscroll-behavior: contain;
-  -webkit-font-smoothing: antialiased;
+@theme {
+  --color-*: initial;
+  --color-white: #fff;
+  --color-purple: #3f3cbb;
+  --color-midnight: #121063;
+  --color-tahiti: #3ab7bf;
+  --color-bermuda: #78dcca;
 }

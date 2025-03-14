@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
-import { supabase } from "../supabase.client";
+import { supabase } from "../env/supabase.client";
 import { Workspace } from "./features/workspace/index";
 
 import "./builder.css";
@@ -34,9 +34,15 @@ function Builder({ projectId }: BuilderProps) {
         }
     }, [projectId]);
 
+    useEffect(() => {
+        if (!selectedPageId && pages.length > 0) {
+            fetchElements(pages[0].id);
+        }
+    }, [pages]);
+
     const fetchElements = async (pageId: string) => {
         setSelectedPageId(pageId);
-        console.log("pageId:", pageId);
+        setSelectedElementId(null); // 페이지 전환 시 선택된 element 초기화
         const { data, error } = await supabase
             .from("elements")
             .select("*")
@@ -57,11 +63,8 @@ function Builder({ projectId }: BuilderProps) {
         const newElement: any = {
             page_id: selectedPageId,
             tag: "div",
-            props: {
-                style: {}
-            },
-            // 선택된 element가 있다면 parent_id로 할당
-            ...(selectedElementId && { parent_id: selectedElementId }),
+            props: { style: {} },
+            parent_id: selectedElementId ? selectedElementId : null, // parent_id를 명시적으로 null 처리
         };
 
         const { data, error } = await supabase
@@ -160,6 +163,7 @@ function Builder({ projectId }: BuilderProps) {
                                 e.stopPropagation();
                                 setSelectedElementId(el.id);
                             }}
+                            className="element"
                             style={{
                                 outline:
                                     selectedElementId === el.id
@@ -190,8 +194,8 @@ function Builder({ projectId }: BuilderProps) {
     };
 
     return (
-        <div>
-            <div>
+        <div className="app">
+            <div className="contents">
                 <main>
                     <div className="bg">
                         <div className="workspace">
