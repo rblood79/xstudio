@@ -238,6 +238,9 @@ function Builder({ projectId }: BuilderProps) {
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                                 style={{ width: "100%", height: "100%", border: "none" }}
                             />
+                            <div className="workspace_overlay">
+
+                            </div>
                         </div>
                     </div>
                 </main>
