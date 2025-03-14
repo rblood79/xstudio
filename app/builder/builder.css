@@ -8,12 +8,6 @@ main {
     }
 }
 
-nav {
-
-
-    
-}
-
 
 .app {
     display: contents;
@@ -160,7 +154,7 @@ nav {
                 background-color: oklch(.967 .001 286.375);
 
                 .workspace {
-                    width: 767px;
+                    width: 479px;
                     height: 100%;
 
                     padding: 0;
@@ -171,6 +165,12 @@ nav {
                     position: absolute;
                     transform-origin: 0px 0px;
                     will-change: transform;
+
+                    .workspace_overlay {
+                        position: absolute;
+                        transform-origin: 0px 0px;
+                        will-change: transform;
+                    }
                 }
             }
         }
