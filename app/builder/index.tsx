@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
 import { supabase } from "../env/supabase.client";
 import { Workspace } from "./features/workspace/index";
-import { RiFileAddLine,RiNodeTree } from "@remixicon/react";
+import { RiMenuLine, RiSmartphoneFill, RiMacbookFill, RiComputerFill, RiFunctionFill, RiFileAddLine, RiAttachment2, RiDropdownList, RiImageAddLine, RiAddBoxLine, RiDatabase2Line, RiTeamLine, RiSettingsLine, RiEye2Line, RiPlayFill } from "@remixicon/react";
 
 import "./builder.css";
 interface BuilderProps {
@@ -173,7 +173,9 @@ function Builder({ projectId }: BuilderProps) {
                             }}
                         >
                             <div>
-                                <span>{el.tag}</span>
+                                <span>
+                                    {el.tag}
+                                </span>
                                 <button
                                     onClick={async () => {
                                         const { error } = await supabase
@@ -187,7 +189,8 @@ function Builder({ projectId }: BuilderProps) {
                                                 prev.filter((e) => e.id !== el.id)
                                             );
                                         }
-                                    }}>del</button></div>
+                                    }}>del</button>
+                            </div>
                             {renderElementsList(el.id)}
                         </div>
                     ))}
@@ -241,18 +244,73 @@ function Builder({ projectId }: BuilderProps) {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                        <button>
+                            <button>
+                                <RiFunctionFill
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-function-fill"
+                                />
+                            </button>
+
+                            <button>
                                 <RiFileAddLine
-                                    size={24} // set custom `width` and `height`
-                                    color="red" // set `fill` color
-                                    className="ri-file-add-line" // add custom class name
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-file-add-line"
                                 />
                             </button>
                             <button>
-                                <RiNodeTree
-                                    size={24} // set custom `width` and `height`
-                                    color="red" // set `fill` color
-                                    className="ri-node-tree" // add custom class name
+                                <RiAddBoxLine
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-add-box-line"
+                                />
+                            </button>
+                            <button>
+                                <RiDropdownList
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-dropdown-list"
+                                />
+                            </button>
+                            <button>
+                                <RiAttachment2
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-attachment-2"
+                                />
+                            </button>
+                            <button>
+                                <RiImageAddLine
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-image-add-line"
+                                />
+                            </button>
+                            <button>
+                                <RiDatabase2Line
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-database-2-line"
+                                />
+                            </button>
+
+
+                        </div>
+
+                        <div className="sidebar_group">
+                            <button>
+                                <RiTeamLine
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-team-line"
+                                />
+                            </button>
+                            <button>
+                                <RiSettingsLine
+                                    size={21}
+                                    color="#171717"
+                                    className="ri-settings-line"
                                 />
                             </button>
                         </div>
@@ -286,9 +344,9 @@ function Builder({ projectId }: BuilderProps) {
                                     Add
                                 </button>
                             </div>
-                            <div>
+                            <div className="elements">
                                 {pages.map((page) => (
-                                    <div key={page.id}>
+                                    <div key={page.id} className="element">
                                         <span
                                             style={{ cursor: "pointer" }}
                                             onClick={() => fetchElements(page.id)}
@@ -325,15 +383,59 @@ function Builder({ projectId }: BuilderProps) {
                         </div>
 
                         {/* 기존 flat 리스트 대신 계층구조 리스트로 교체 */}
-                        <div className="elements-node">
+                        <div className="elements">
                             {renderElementsList()}
                         </div>
                     </div>
                 </aside>
                 <aside className="inspector">inspector</aside>
+
                 <nav className="header">
-                    header {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
+                    <div className="header_contents header_left">
+                        <button>
+                            <RiMenuLine
+                                size={21}
+                                color="#171717"
+                                className="button ri-menu-line"
+                            />
+                        </button>
+                        {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
+                    </div>
+                    <div className="header_contents screen_size">
+                        <button>1920</button>
+                        <button><RiSmartphoneFill
+                            size={21}
+                            color="#171717"
+                            className="button ri-smartphone-fill"
+                        /></button>
+
+                        <button><RiComputerFill
+                            size={21}
+                            color="#171717"
+                            className="button ri-computer-fill"
+                        /></button>
+                    </div>
+                    <div className="header_contents header_right">
+                        <button>
+                            <RiEye2Line
+                                size={21}
+                                color="#171717"
+                                className="button ri-eye-2-line"
+                            />
+                        </button>
+                        <button>
+                            <RiPlayFill
+                                size={21}
+                                color="#171717"
+                                className="button ri-play-fill"
+                            />
+                        </button>
+                        <button>
+                            Publish
+                        </button>
+                    </div>
                 </nav>
+
                 <footer className="footer">footer</footer>
             </div>
         </div>
