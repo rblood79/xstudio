@@ -1,0 +1,1 @@
+import{e as t,j as o}from"./index-BHE-KyRT.js";import{B as e}from"./index-CjC8eJDC.js";import"./supabase.client-C2dMp-kt.js";function i(){const{projectId:r}=t();return o.jsx(e,{projectId:r})}export{i as default};
