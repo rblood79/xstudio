@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '16' # Specify the Node.js version
+          node-version: '18' # Node.js 버전을 18로 업데이트
 
       - name: Install dependencies
         run: npm install
