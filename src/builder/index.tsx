@@ -5,6 +5,7 @@ import 'remixicon/fonts/remixicon.css'
 //import { Workspace } from "./features/workspace/index";
 //import { RiMenuLine, RiSmartphoneFill, RiComputerFill, RiFunctionFill, RiFileAddLine, RiAttachment2, RiDropdownList, RiImageAddLine, RiAddBoxLine, RiDatabase2Line, RiTeamLine, RiSettingsLine, RiEye2Line, RiPlayFill } from "@remixicon/react";
 import SelectionOverlay from "./overlay";
+import Inspector from "./inspector";
 
 import "./builder.css";
 
@@ -58,7 +59,7 @@ function Builder() {
         if (!selectedPageId && pages.length > 0) {
             fetchElements(pages[0].id);
         }
-    }, [pages]);
+    }, [pages, selectedPageId]);
 
     const fetchElements = async (pageId: string) => {
         // 페이지 변경 시 overlay 초기화를 위한 메시지 전송
@@ -100,6 +101,23 @@ function Builder() {
         } else if (data) {
             setElements((prev) => [...prev, data[0]]);
             console.log("새 DIV 요소 추가:", data[0]);
+            // DOM 업데이트 후 iframe내 새 요소의 bounding rect를 재계산하여 postMessage 전송
+            setTimeout(() => {
+                const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+                if (iframe && iframe.contentDocument) {
+                    const newElem = iframe.contentDocument.querySelector(
+                        `[data-element-id="${data[0].id}"]`
+                    ) as HTMLElement | null;
+                    if (newElem) {
+                        const rect = newElem.getBoundingClientRect();
+                        window.postMessage({
+                            type: "ELEMENT_SELECTED",
+                            elementId: data[0].id,
+                            payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height } }
+                        }, "*");
+                    }
+                }
+            }, 0);
         }
     };
 
@@ -400,7 +418,9 @@ function Builder() {
                         </div>
                     </div>
                 </aside>
-                <aside className="inspector">inspector</aside>
+                <aside className="inspector">
+                    <Inspector/>
+                </aside>
 
                 <nav className="header">
                     <div className="header_contents header_left">

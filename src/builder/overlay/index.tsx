@@ -1,14 +1,22 @@
 // 예시: apps/builder/app/components/SelectionOverlay.tsx
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
+
+interface Rect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
 
 export default function SelectionOverlay() {
-  const [overlayRect, setOverlayRect] = useState<DOMRect | null>(null);
+  const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // 보안상 event.origin 체크 필요 (생략)
-      if (event.data.type === "ELEMENT_SELECTED") {
-        setOverlayRect(event.data.payload.rect);
+      if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
+        const { top, left, width, height } = event.data.payload.rect;
+        setOverlayRect({ top, left, width, height });
       }
       if (event.data.type === "CLEAR_OVERLAY") {
         setOverlayRect(null);
