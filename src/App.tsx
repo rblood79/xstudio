@@ -1,15 +1,13 @@
-
+import { useNavigate } from 'react-router';
 import './App.css'
 
 function App() {
-
+  const navigate = useNavigate();
 
   return (
-    <main className="grid justify-center items-center h-screen">
-      <h1 className="text-3xl font-bold underline text-blue-600/25 dark:text-sky-400/25">
-        Hello world!
-      </h1>
-      <button className='btn btn-primary'>sign in</button>
+    <main className="grid justify-center items-center h-screen ">
+      
+      <button onClick={() => navigate("/signin")} className='btn btn-primary'>sign in</button>
       <div className="bg-white dark:bg-gray-800 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900/5">
         <div>
           <span className="inline-flex items-center justify-center rounded-md bg-indigo-500 p-2 shadow-lg">

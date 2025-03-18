@@ -76,6 +76,7 @@
                 button {
                     width: 48px;
                     height: 48px;
+                    box-shadow: none;
                     display: flex;
                     justify-content: center;
                     align-items: center;

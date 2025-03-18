@@ -61,20 +61,20 @@ export default function SelectionOverlay() {
       </div>
         */}
       <div
-        className="absolute pointer-events-none ring-1 ring-sky-500 dark:bg-gray-900 dark:ring-sky-400 "
+        className="absolute pointer-events-none ring-1 ring-sky-500 transition-all duration-150 ease-in-out"
         style={{
           top: overlayRect.top,
           left: overlayRect.left,
           width: overlayRect.width,
-          height: overlayRect.height,
+          height: overlayRect.height
         }}
       >
         {/* 필요에 따라 리사이즈 핸들 등의 추가 UI 제공*/}
 
-
-        <div className="relative z-1 h-full w-full bg-sky-500 ring-1 ring-sky-500 opacity-10" />
+        <div className=" bg-sky-500 bottom-full absolute font-mono px-4" style={{ marginLeft: "-0.08rem" }}>Button</div>
+        <div className="relative z-1 h-full w-full bg-sky-500 ring-1 ring-sky-500 opacity-5" />
         <div className="absolute inset-0">
-          <div className="h-full text-black/10 dark:text-white/12.5 bg-[size:8px_8px] bg-left-top bg-[image:repeating-linear-gradient(315deg,currentColor_0,currentColor_1px,transparent_0,transparent_50%)]" />
+          <div className="h-full text-black/10  bg-[size:8px_8px] bg-left-top bg-[image:repeating-linear-gradient(315deg,currentColor_0,currentColor_1px,transparent_0,transparent_50%)]" />
         </div>
       </div>
     </div>

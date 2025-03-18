@@ -23,9 +23,10 @@ const Signin = () => {
   };
 
   return (
-    <div>
-      <h2>로그인</h2>
-      <form onSubmit={handleSubmit}>
+    <main>
+      <div className='flex flex-col justify-center items-center h-screen'>
+      <h2 className='title'>Sign In</h2>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-2'>
         <input
           type="email"
           placeholder="이메일"
@@ -43,7 +44,8 @@ const Signin = () => {
         </button>
       </form>
       {error && <p>{error}</p>}
-    </div>
+      </div>
+    </main>
   );
 };
 
