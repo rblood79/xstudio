@@ -1,1 +1,0 @@
-import{j as o}from"./index-BHE-KyRT.js";import{P as t}from"./preview-DZhJoF5f.js";import{k as e}from"./components-DN1P8sXB.js";function m(){const{projectId:r}=e();return o.jsx(t,{projectId:r})}export{m as default};
