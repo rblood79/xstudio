@@ -1,4 +1,4 @@
-import React, { useEffect, useState, JSX } from 'react';
+import { useEffect, useState, JSX } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import './index.css'
