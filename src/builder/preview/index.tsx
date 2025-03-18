@@ -14,7 +14,7 @@ function Preview() {
     }
 
     const [elements, setElements] = useState<Element[]>([]);
-    
+
     // 부모(Builder)에서 postMessage로 전달한 데이터를 수신
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -93,8 +93,8 @@ function Preview() {
 
     return (
         <div className="main" id={projectId ? projectId : undefined}>
-                {elements.length === 0 ? "No elements available" : renderElementsTree()}
-            </div>
+            {elements.length === 0 ? "No elements available" : renderElementsTree()}
+        </div>
     );
 }
 
