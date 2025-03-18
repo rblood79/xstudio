@@ -46,7 +46,10 @@ function Preview() {
                 window.parent.postMessage({
                     type: "ELEMENT_SELECTED",
                     elementId: el.id,
-                    payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height } }
+                    payload: {
+                        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                        props: el.props  // 추가: 선택된 element의 props 정보 전달
+                    }
                 }, "*");
             }
         };
@@ -60,13 +63,14 @@ function Preview() {
         );
     };
 
-    // 추가: builder에서 보낸 ELEMENT_SELECTED 메시지 처리 (payload 없는 경우)
+    // 추가: builder에서 보낸 ELEMENT_SELECTED 메시지 처리
     useEffect(() => {
         const handleSelection = (event: MessageEvent) => {
-            // payload가 없는 경우 builder에서 보낸 메시지로 간주
-            if (event.data.type === "ELEMENT_SELECTED" && !event.data.payload) {
+            if (event.data.type === "ELEMENT_SELECTED") { // 조건에서 payload 여부 제거
                 const elementId: string = event.data.elementId;
-                const domElement = document.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement | null;
+                const domElement = document.querySelector(
+                    `[data-element-id="${elementId}"]`
+                ) as HTMLElement | null;
                 if (domElement) {
                     const rect = domElement.getBoundingClientRect();
                     // 부모(빌더)로 rect payload 전송
