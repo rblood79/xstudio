@@ -4,7 +4,7 @@
 # Supabase
 # Tailwind
 
-# block to block Sutio
+# block to block Studio
 #                Easy builder
 #          fast X core
 #                y
