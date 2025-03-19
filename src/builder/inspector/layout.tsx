@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../env/supabase.client';
 
 function Layout() {
     const [display, setDisplay] = useState('block');
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-    const [selectedProps, setSelectedProps] = useState<Record<string, string | number | boolean>>({});
+    interface StyleProps {
+        [key: string]: string | number | boolean;
+    }
+
+    const [selectedProps, setSelectedProps] = useState<Record<string, string | number | boolean | StyleProps | Record<string, unknown>>>({});
 
     const handleDisplayChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setDisplay(event.target.value);
-        // TODO: iframe에서 선택된 element의 display 변경 로직 추가
-        console.log('Display changed:', event.target.value);
+        const value = event.target.value;
+        setDisplay(value);
+        if (selectedElementId) {
+            const currentStyle = (selectedProps.style && typeof selectedProps.style === 'object') ? selectedProps.style : {};
+            const updatedStyle = { ...currentStyle, display: value };
+            handlePropChange("style", updatedStyle);
+        }
     };
 
     useEffect(() => {
@@ -22,16 +31,33 @@ function Layout() {
         return () => window.removeEventListener("message", handleSelectedMessage);
     }, []);
 
-    const handlePropChange = (key: string, value: string | number | boolean) => {
-        setSelectedProps(prev => {
-            const updated = { ...prev, [key]: value };
-            window.parent.postMessage({
+    const handlePropChange = async (
+        key: string,
+        value: string | number | boolean | Record<string, string | number | boolean | StyleProps>
+    ) => {
+        const updatedProps = { ...selectedProps, [key]: value };
+        setSelectedProps(updatedProps);
+
+        // supabase 업데이트
+        const { error } = await supabase
+            .from('elements')
+            .update({ props: updatedProps })
+            .eq('id', selectedElementId);
+
+        if (error) {
+            console.error('Supabase update error:', error);
+            return;
+        }
+
+        // 업데이트 성공 시 메시지 전송
+        window.parent.postMessage(
+            {
                 type: "UPDATE_ELEMENT_PROPS",
                 elementId: selectedElementId,
-                payload: { props: updated }
-            }, "*");
-            return updated;
-        });
+                payload: { props: updatedProps }
+            },
+            "*"
+        );
     };
 
     return (
@@ -44,7 +70,6 @@ function Layout() {
                     <option value="block">block</option>
                     <option value="inline">inline</option>
                     <option value="none">none</option>
-                    {/* 추가 옵션 필요 시 여기에 추가 */}
                 </select>
             </div>
             {selectedElementId && (
@@ -55,7 +80,7 @@ function Layout() {
                             <label>{key}:</label>
                             <input
                                 type="text"
-                                value={typeof selectedProps[key] === 'boolean' ? String(selectedProps[key]) : selectedProps[key]}
+                                value={typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
                                 onChange={(e) => handlePropChange(key, e.target.value)}
                             />
                         </div>
