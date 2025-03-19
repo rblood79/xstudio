@@ -2,24 +2,21 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router";
 
 function Preview() {
-
     const { projectId } = useParams<{ projectId: string }>();
 
-    // 상태 변수 추가: 부모로부터 전달받은 elements
     interface Element {
         id: string;
         tag: string;
-        props: { [key: string]: string | number | boolean };
+        props: { [key: string]: string | number | boolean | React.CSSProperties };
         parent_id?: string;
     }
 
     const [elements, setElements] = useState<Element[]>([]);
 
-    // 부모(Builder)에서 postMessage로 전달한 데이터를 수신
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // 필요시 event.origin 검증 추가
             if (event.data.type === "UPDATE_ELEMENTS") {
+                console.log("Preview received elements:", event.data.elements); // 디버깅 로그 추가
                 setElements(event.data.elements);
             }
         };
@@ -27,18 +24,16 @@ function Preview() {
         return () => window.removeEventListener("message", handleMessage);
     }, []);
 
-    // iframe 로드시 부모에게 업데이트 요청
     useEffect(() => {
         window.parent.postMessage({ type: "REQUEST_UPDATE" }, "*");
     }, []);
 
-    // 수정된 renderElement 함수: 클릭 시 부모로 메시지 전송
     const renderElement = (el: Element): React.ReactNode => {
         const children = elements.filter((child) => child.parent_id === el.id);
         const newProps = {
             ...el.props,
             key: el.id,
-            "data-element-id": el.id, // 추가: 각 요소에 식별자 부여
+            "data-element-id": el.id,
             onClick: (e: React.MouseEvent) => {
                 e.stopPropagation();
                 const target = e.currentTarget as HTMLElement;
@@ -48,7 +43,7 @@ function Preview() {
                     elementId: el.id,
                     payload: {
                         rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
-                        props: el.props  // 추가: 선택된 element의 props 정보 전달
+                        props: el.props
                     }
                 }, "*");
             }
@@ -63,17 +58,15 @@ function Preview() {
         );
     };
 
-    // 추가: builder에서 보낸 ELEMENT_SELECTED 메시지 처리
     useEffect(() => {
         const handleSelection = (event: MessageEvent) => {
-            if (event.data.type === "ELEMENT_SELECTED") { // 조건에서 payload 여부 제거
+            if (event.data.type === "ELEMENT_SELECTED") {
                 const elementId: string = event.data.elementId;
                 const domElement = document.querySelector(
                     `[data-element-id="${elementId}"]`
                 ) as HTMLElement | null;
                 if (domElement) {
                     const rect = domElement.getBoundingClientRect();
-                    // 부모(빌더)로 rect payload 전송
                     window.parent.postMessage({
                         type: "ELEMENT_SELECTED",
                         elementId,
@@ -86,7 +79,6 @@ function Preview() {
         return () => window.removeEventListener("message", handleSelection);
     }, []);
 
-    // 최상위 요소부터 renderElementsTree 구현
     const renderElementsTree = (): React.ReactNode => {
         return elements.filter((el) => !el.parent_id).map(el => renderElement(el));
     };

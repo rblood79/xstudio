@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { supabase } from "../env/supabase.client";
-import 'remixicon/fonts/remixicon.css'
-//import { Workspace } from "./features/workspace/index";
-//import { RiMenuLine, RiSmartphoneFill, RiComputerFill, RiFunctionFill, RiFileAddLine, RiAttachment2, RiDropdownList, RiImageAddLine, RiAddBoxLine, RiDatabase2Line, RiTeamLine, RiSettingsLine, RiEye2Line, RiPlayFill } from "@remixicon/react";
+import 'remixicon/fonts/remixicon.css';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
-
 import "./builder.css";
 
 function Builder() {
-    // useParams를 통해 projectId 추출
     const { projectId } = useParams<{ projectId: string }>();
 
     interface Page {
@@ -34,7 +30,6 @@ function Builder() {
 
     const [elements, setElements] = useState<Element[]>([]);
     const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
-    // 새롭게 선택된 element의 id 상태 추가
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -62,10 +57,9 @@ function Builder() {
     }, [pages, selectedPageId]);
 
     const fetchElements = async (pageId: string) => {
-        // 페이지 변경 시 overlay 초기화를 위한 메시지 전송
         window.postMessage({ type: "CLEAR_OVERLAY" }, "*");
         setSelectedPageId(pageId);
-        setSelectedElementId(null); // 페이지 전환 시 선택된 element 초기화
+        setSelectedElementId(null);
         const { data, error } = await supabase
             .from("elements")
             .select("*")
@@ -84,11 +78,11 @@ function Builder() {
             return;
         }
         const newElement: Element = {
-            id: crypto.randomUUID(), // or any other method to generate a unique id
+            id: crypto.randomUUID(),
             page_id: selectedPageId,
             tag: "div",
             props: { style: {} },
-            parent_id: selectedElementId ? selectedElementId : null, // parent_id를 명시적으로 null 처리
+            parent_id: selectedElementId ? selectedElementId : null,
         };
 
         const { data, error } = await supabase
@@ -101,7 +95,6 @@ function Builder() {
         } else if (data) {
             setElements((prev) => [...prev, data[0]]);
             console.log("새 DIV 요소 추가:", data[0]);
-            // DOM 업데이트 후 iframe내 새 요소의 bounding rect를 재계산하여 postMessage 전송
             setTimeout(() => {
                 const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
                 if (iframe && iframe.contentDocument) {
@@ -133,7 +126,6 @@ function Builder() {
         if (error) {
             console.error("요소 삭제 에러:", error);
         } else {
-            // 삭제 시 DB의 cascade 옵션에 의해 자식 요소들도 함께 삭제됨
             if (selectedPageId) {
                 const { data, error } = await supabase
                     .from("elements")
@@ -149,26 +141,6 @@ function Builder() {
         }
     };
 
-    /*const handleDeleteProject = async (id: string) => {
-        const { error } = await supabase.from("pages").delete().eq("id", id);
-        if (error) {
-            console.error("페이지 삭제 에러:", error);
-        } else {
-            setPages((prev) => prev.filter((p) => p.id !== id));
-        }
-    };
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        navigate("/");
-    };*/
-
-
-    /*const renderElementsTree = (): React.ReactNode => {
-        return elements.filter((el) => !el.parent_id).map(el => renderElement(el));
-    };*/
-
-    // 기존: 요소를 계층구조로 렌더링하는 함수 (ul-li 구조)
     const renderElementsList = (parentId: string | null = null): React.ReactNode => {
         return (
             <>
@@ -190,9 +162,7 @@ function Builder() {
                             }}
                         >
                             <div>
-                                <span>
-                                    {el.tag}
-                                </span>
+                                <span>{el.tag}</span>
                                 <button
                                     onClick={async () => {
                                         const { error } = await supabase
@@ -215,7 +185,6 @@ function Builder() {
         );
     };
 
-    // iframe에 요소 데이터를 전달하는 useEffect 추가
     useEffect(() => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe && iframe.contentWindow) {
@@ -223,10 +192,8 @@ function Builder() {
         }
     }, [elements]);
 
-    // 부모와 iframe 간 통신을 위한 메시지 수신 처리 (예: iframe에서 element 선택 시)
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // 필요시 event.origin 검증 추가
             if (event.data.type === "ELEMENT_SELECTED") {
                 setSelectedElementId(event.data.elementId);
             }
@@ -248,7 +215,6 @@ function Builder() {
         return () => window.removeEventListener("message", handleRequest);
     }, [elements]);
 
-    // 추가: builder에서 선택한 요소를 iframe에 전달
     useEffect(() => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe && iframe.contentWindow && selectedElementId) {
@@ -259,21 +225,28 @@ function Builder() {
         }
     }, [selectedElementId]);
 
+    // 추가: UPDATE_ELEMENT_PROPS 메시지 처리
+    useEffect(() => {
+        const handlePropUpdate = (event: MessageEvent) => {
+            if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
+                const { elementId, payload } = event.data;
+                setElements((prevElements) =>
+                    prevElements.map((el) =>
+                        el.id === elementId ? { ...el, props: payload.props } : el
+                    )
+                );
+            }
+        };
+        window.addEventListener("message", handlePropUpdate);
+        return () => window.removeEventListener("message", handlePropUpdate);
+    }, []);
+
     return (
         <div className="app">
             <div className="contents">
                 <main>
                     <div className="bg">
-                        {/*<div className="workspace">
-                            {elements.length === 0 ? (
-                                "No elements available"
-                            ) : (
-                                renderElementsTree()
-                            )}
-                        </div>*/}
-
                         <div className="workspace">
-                            {/* iframe을 통해 preview.tsx와 통신 */}
                             <iframe
                                 id="previewFrame"
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
@@ -292,57 +265,17 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <button>
-                                <i
-                                    className="ri-function-fill"
-                                />
-                            </button>
-
-                            <button>
-                                <i
-                                    className="ri-file-add-line"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-add-box-line"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-dropdown-list"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-attachment-2"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-image-add-line"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-database-2-line"
-                                />
-                            </button>
-
-
+                            <button><i className="ri-function-fill" /></button>
+                            <button><i className="ri-file-add-line" /></button>
+                            <button><i className="ri-add-box-line" /></button>
+                            <button><i className="ri-dropdown-list" /></button>
+                            <button><i className="ri-attachment-2" /></button>
+                            <button><i className="ri-image-add-line" /></button>
+                            <button><i className="ri-database-2-line" /></button>
                         </div>
-
                         <div className="sidebar_group">
-                            <button>
-                                <i
-                                    className="ri-team-line"
-                                />
-                            </button>
-                            <button>
-                                <i
-                                    className="ri-settings-line"
-                                />
-                            </button>
+                            <button><i className="ri-team-line" /></button>
+                            <button><i className="ri-settings-line" /></button>
                         </div>
                     </div>
                     <div className="sidebar_pages">
@@ -411,53 +344,30 @@ function Builder() {
                             <button onClick={handleAddDivElement}>add elm</button>
                             <button onClick={handleDeleteSelectedElement}>del elm</button>
                         </div>
-
-                        {/* 기존 flat 리스트 대신 계층구조 리스트로 교체 */}
                         <div className="elements">
                             {renderElementsList()}
                         </div>
                     </div>
                 </aside>
                 <aside className="inspector">
-                    <Inspector/>
+                    <Inspector />
                 </aside>
-
                 <nav className="header">
                     <div className="header_contents header_left">
-                        <button>
-                            <i
-                                className="button ri-menu-line"
-                            />
-                        </button>
+                        <button><i className="button ri-menu-line" /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen_size">
                         <button>1920</button>
-                        <button><i
-                            className="button ri-smartphone-fill"
-                        /></button>
-
-                        <button><i
-                            className="button ri-computer-fill"
-                        /></button>
+                        <button><i className="button ri-smartphone-fill" /></button>
+                        <button><i className="button ri-computer-fill" /></button>
                     </div>
                     <div className="header_contents header_right">
-                        <button>
-                            <i
-                                className="button ri-eye-2-line"
-                            />
-                        </button>
-                        <button>
-                            <i
-                                className="button ri-play-fill"
-                            />
-                        </button>
-                        <button>
-                            Publish
-                        </button>
+                        <button><i className="button ri-eye-2-line" /></button>
+                        <button><i className="button ri-play-fill" /></button>
+                        <button>Publish</button>
                     </div>
                 </nav>
-
                 <footer className="footer">footer</footer>
             </div>
         </div>
@@ -465,4 +375,3 @@ function Builder() {
 }
 
 export default Builder;
-
