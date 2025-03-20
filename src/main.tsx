@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import './index.css'
 import App from './App.tsx'
 import Dashboard from './dashboard';
-import Builder from './builder';
+import Builder from './builder/builder.tsx';
 import Preview from './builder/preview/index.tsx';
 import Signin from './auth/Signin';
 import { supabase, Session } from './env/supabase.client';
