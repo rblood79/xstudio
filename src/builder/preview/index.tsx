@@ -3,6 +3,8 @@ import { useParams } from "react-router";
 import { useStore } from '@nanostores/react';
 import { elementsStore, setElements, Element } from '../stores/elements';
 
+import "./index.css";
+
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore(elementsStore);
@@ -25,6 +27,7 @@ function Preview() {
     const newProps = {
         ...el.props,
         key: el.id,
+        
         "data-element-id": el.id,
         onClick: (e: React.MouseEvent) => {
             e.stopPropagation();
@@ -36,7 +39,8 @@ function Preview() {
                 elementId: el.id,
                 payload: {
                     rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
-                    props: el.props
+                    props: el.props,
+                    tag: el.tag, // tag 추가
                 }
             }, window.location.origin);
         }
@@ -45,7 +49,7 @@ function Preview() {
         el.tag,
         newProps,
         <>
-            <span>{el.tag} - {el.id}</span>
+            {el.props.text}
             {children.map(child => renderElement(child))}
         </>
     );
