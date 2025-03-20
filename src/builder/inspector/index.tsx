@@ -3,7 +3,7 @@ import Layout from './layout';
 function Inspector() {
     return (
         <div>
-            <div>layout</div>
+            <h3>Props</h3>
             <Layout />
         </div>
     );

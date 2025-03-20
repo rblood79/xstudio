@@ -64,6 +64,7 @@ function Builder() {
         if (iframe?.contentDocument) {
             const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
             if (element) {
+                const selectedElement = elements.find(el => el.id === elementId);
                 const rect = element.getBoundingClientRect();
                 //const iframeRect = iframe.getBoundingClientRect();
                 //console.log("Raw rect from iframe:", rect);
@@ -82,6 +83,7 @@ function Builder() {
                     elementId,
                     payload: {
                         rect: adjustedRect,
+                        tag: selectedElement?.tag || "Unknown",
                         props
                     },
                     source: "builder"
@@ -98,7 +100,7 @@ function Builder() {
         }
     };
 
-    const handleAddDivElement = async () => {
+    const handleAddElement = async (...args: [string, string]) => {
         if (!selectedPageId) {
             alert("먼저 페이지를 선택하세요.");
             return;
@@ -106,16 +108,19 @@ function Builder() {
         const newElement: Element = {
             id: crypto.randomUUID(),
             page_id: selectedPageId,
-            tag: "div",
-            props: { style: {} },
+            tag: args[0], // 전달된 tag 사용
+            props: {
+                ...(args[1] ? { text: args[1] } : {}), // args[1]이 있는 경우에만 text 추가
+                style: {}
+            },
             parent_id: selectedElementId || null,
         };
-
+        // ...existing code...
         const { data, error } = await supabase
             .from("elements")
             .insert([newElement])
             .select();
-
+    
         if (error) {
             console.error("요소 추가 에러:", error);
         } else if (data) {
@@ -159,7 +164,7 @@ function Builder() {
                             }}
                             className="element"
                             style={{
-                                outline: selectedElementId === el.id ? "1px solid blue" : undefined,
+                                outline: selectedElementId === el.id ? "1px solid var(--color-sky-500)" : undefined,
                             }}
                         >
                             <div>
@@ -310,7 +315,9 @@ function Builder() {
                     <div className="sidebar_elements">
                         <h3>Elements Node</h3>
                         <div>
-                            <button onClick={handleAddDivElement}>add elm</button>
+                            <button onClick={() => handleAddElement("div", "")}>+ DIV</button>
+                            <button onClick={() => handleAddElement("section","")}>+ SECTION</button>
+                            <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
                             <button onClick={handleDeleteSelectedElement}>del elm</button>
                         </div>
                         <div className="elements">
@@ -321,6 +328,43 @@ function Builder() {
                 <aside className="inspector">
                     <Inspector />
                 </aside>
+                <nav className="header">
+                    <div className="header_contents header_left">
+                        <button>
+                            <i
+                                className="button ri-menu-line"
+                            />
+                        </button>
+                        {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
+                    </div>
+                    <div className="header_contents screen_size">
+                        <button>1920</button>
+                        <button><i
+                            className="button ri-smartphone-fill"
+                        /></button>
+
+                        <button><i
+                            className="button ri-computer-fill"
+                        /></button>
+                    </div>
+                    <div className="header_contents header_right">
+                        <button>
+                            <i
+                                className="button ri-eye-2-line"
+                            />
+                        </button>
+                        <button>
+                            <i
+                                className="button ri-play-fill"
+                            />
+                        </button>
+                        <button>
+                            Publish
+                        </button>
+                    </div>
+                </nav>
+
+                <footer className="footer">footer</footer>
             </div>
         </div>
     );

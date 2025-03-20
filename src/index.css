@@ -29,7 +29,18 @@ html {
 
 @layer utilities {
   input{
-    @apply py-2 px-4 rounded-sm shadow-sm;
+    @apply py-1 px-4 rounded-sm shadow-sm;
+    outline: none;
+    border: 1px solid var(--color-gray-200);
+    background-color: #fff;
+    transition: border-color 0.2s ease;
+    &:hover, &:focus, &:focus-visible {
+      border: 1px solid var(--primary);
+    }
+  }
+
+  select{
+    @apply py-1 px-4 rounded-sm shadow-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
@@ -40,7 +51,7 @@ html {
   }
 
   button {
-    @apply py-2 px-8 rounded-sm shadow-sm;
+    @apply py-1 px-8 rounded-sm shadow-sm;
     background-color: var(--color-sky-500);
     color: white;
     border: 1px solid var(--color-sky-600);
@@ -50,6 +61,12 @@ html {
       background-color: var(--color-sky-600);
     }
   }
+
+  .div {
+    @apply border border-gray-200;
+  }
+
+  
 }
 
 h3 {
