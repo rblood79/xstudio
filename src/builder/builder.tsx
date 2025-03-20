@@ -120,7 +120,7 @@ function Builder() {
             .from("elements")
             .insert([newElement])
             .select();
-    
+
         if (error) {
             console.error("요소 추가 에러:", error);
         } else if (data) {
@@ -253,34 +253,33 @@ function Builder() {
                         </div>
                     </div>
                     <div className="sidebar_pages">
-                        <h3>Pages</h3>
+                        <div className="flex flex-row justify-between">
+                            <h3>Pages</h3>
+                            <button
+                                className="bg-transparent border-none text-red-500 shadow-none"
+                                onClick={async () => {
+                                    const title = prompt("Enter page title:");
+                                    const slug = prompt("Enter page slug:");
+                                    if (!title || !slug) {
+                                        alert("Title and slug are required.");
+                                        return;
+                                    }
+                                    const newPage = { title, project_id: projectId, slug };
+                                    const { data, error } = await supabase
+                                        .from("pages")
+                                        .insert([newPage])
+                                        .select();
+                                    if (error) {
+                                        console.error("페이지 생성 에러:", error);
+                                    } else {
+                                        if (data) {
+                                            setPages((prevPages) => [...prevPages, ...data]);
+                                        }
+                                    }
+                                }}
+                            >+</button>
+                        </div>
                         <div>
-                            <div>
-                                <button
-                                    onClick={async () => {
-                                        const title = prompt("Enter page title:");
-                                        const slug = prompt("Enter page slug:");
-                                        if (!title || !slug) {
-                                            alert("Title and slug are required.");
-                                            return;
-                                        }
-                                        const newPage = { title, project_id: projectId, slug };
-                                        const { data, error } = await supabase
-                                            .from("pages")
-                                            .insert([newPage])
-                                            .select();
-                                        if (error) {
-                                            console.error("페이지 생성 에러:", error);
-                                        } else {
-                                            if (data) {
-                                                setPages((prevPages) => [...prevPages, ...data]);
-                                            }
-                                        }
-                                    }}
-                                >
-                                    Add
-                                </button>
-                            </div>
                             <div className="elements">
                                 {pages.map((page) => (
                                     <div key={page.id} className="element">
@@ -316,7 +315,7 @@ function Builder() {
                         <h3>Elements Node</h3>
                         <div>
                             <button onClick={() => handleAddElement("div", "")}>+ DIV</button>
-                            <button onClick={() => handleAddElement("section","")}>+ SECTION</button>
+                            <button onClick={() => handleAddElement("section", "")}>+ SECTION</button>
                             <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
                             <button onClick={handleDeleteSelectedElement}>del elm</button>
                         </div>
