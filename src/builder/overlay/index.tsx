@@ -12,7 +12,12 @@ export default function SelectionOverlay() {
 
   useLayoutEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      console.log("SelectionOverlay received message:", event.data); // 디버깅 로그 추가
+      // 출처 검증
+      if (event.origin !== window.location.origin) {
+        console.warn("Received message from untrusted origin:", event.origin);
+        return;
+      }
+      //console.log("SelectionOverlay received message:", event.data); // 디버깅 로그 추가
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
         const { top, left, width, height } = event.data.payload.rect;
         setOverlayRect({ top, left, width, height });
