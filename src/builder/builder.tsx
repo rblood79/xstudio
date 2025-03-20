@@ -14,7 +14,7 @@ function Builder() {
     const selectedElementId = useStore(selectedElementIdStore);
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
-    const lastSentElementId = useRef<string | null>(null); // 마지막으로 보낸 elementId 추적
+    const lastSentElementId = useRef<string | null>(null);
 
     interface Page {
         id: string;
@@ -45,7 +45,7 @@ function Builder() {
     }, [pages, selectedPageId]);
 
     const fetchElements = async (pageId: string) => {
-        window.postMessage({ type: "CLEAR_OVERLAY" }, "*");
+        window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
         setSelectedPageId(pageId);
         setSelectedElement(null);
         const { data, error } = await supabase
@@ -65,19 +65,31 @@ function Builder() {
             const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
             if (element) {
                 const rect = element.getBoundingClientRect();
+                //const iframeRect = iframe.getBoundingClientRect();
+                //console.log("Raw rect from iframe:", rect);
+                //console.log("iframeRect:", iframeRect);
+                const adjustedRect = {
+                    //top: rect.top + iframeRect.top + window.scrollY, // iframe 상단 보정
+                    //left: rect.left + iframeRect.left + window.scrollX, // iframe 왼쪽 보정
+                    top: rect.top + window.scrollY, // iframe 상단 보정
+                    left: rect.left + window.scrollX, // iframe 왼쪽 보정
+                    width: rect.width,
+                    height: rect.height
+                };
+                //console.log("Adjusted rect:", adjustedRect);
                 const message = {
                     type: "ELEMENT_SELECTED",
                     elementId,
                     payload: {
-                        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                        rect: adjustedRect,
                         props
                     },
                     source: "builder"
                 };
-                if (lastSentElementId.current !== elementId) { // 동일한 ID 중복 전송 방지
-                    console.log("Sending ELEMENT_SELECTED from Builder to parent:", { elementId, rect });
-                    window.postMessage(message, "*");
-                    iframe.contentWindow?.postMessage(message, "*");
+                if (lastSentElementId.current !== elementId) {
+                    //console.log("Sending ELEMENT_SELECTED from Builder to parent:", { elementId, rect: adjustedRect });
+                    window.postMessage(message, window.location.origin);
+                    iframe.contentWindow?.postMessage(message, window.location.origin);
                     lastSentElementId.current = elementId;
                 }
             } else {
@@ -108,10 +120,10 @@ function Builder() {
             console.error("요소 추가 에러:", error);
         } else if (data) {
             addElement(data[0]);
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 setSelectedElement(data[0].id, data[0].props);
                 sendElementSelectedMessage(data[0].id, data[0].props);
-            }, 100);
+            });
         }
     };
 
@@ -143,7 +155,7 @@ function Builder() {
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedElement(el.id, el.props);
-                                setTimeout(() => sendElementSelectedMessage(el.id, el.props), 100); // DOM 업데이트 후 메시지 전송
+                                requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
                             }}
                             className="element"
                             style={{
@@ -175,13 +187,17 @@ function Builder() {
     useEffect(() => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe?.contentWindow) {
-            iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
+            iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
         }
     }, [elements]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            console.log("Builder received message:", event.data);
+            if (event.origin !== window.location.origin) {
+                console.warn("Received message from untrusted origin:", event.origin);
+                return;
+            }
+            //console.log("Builder received message:", event.data);
             if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
                 setSelectedElement(event.data.elementId, event.data.payload?.props);
             }
@@ -207,7 +223,7 @@ function Builder() {
                                 onLoad={() => {
                                     const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
                                     if (iframe?.contentWindow) {
-                                        iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
+                                        iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
                                     }
                                 }}
                             />

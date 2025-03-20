@@ -23,32 +23,33 @@ function Preview() {
   const renderElement = (el: Element): React.ReactNode => {
     const children = elements.filter((child) => child.parent_id === el.id);
     const newProps = {
-      ...el.props,
-      key: el.id,
-      "data-element-id": el.id,
-      onClick: (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-        window.parent.postMessage({
-          type: "ELEMENT_SELECTED",
-          elementId: el.id,
-          payload: {
-            rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
-            props: el.props
-          }
-        }, "*");
-      }
+        ...el.props,
+        key: el.id,
+        "data-element-id": el.id,
+        onClick: (e: React.MouseEvent) => {
+            e.stopPropagation();
+            const target = e.currentTarget as HTMLElement;
+            const rect = target.getBoundingClientRect();
+            //console.log("Preview rect:", rect);
+            window.parent.postMessage({
+                type: "ELEMENT_SELECTED",
+                elementId: el.id,
+                payload: {
+                    rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                    props: el.props
+                }
+            }, window.location.origin);
+        }
     };
     return React.createElement(
-      el.tag,
-      newProps,
-      <>
-        <span>{el.tag} - {el.id}</span>
-        {children.map(child => renderElement(child))}
-      </>
+        el.tag,
+        newProps,
+        <>
+            <span>{el.tag} - {el.id}</span>
+            {children.map(child => renderElement(child))}
+        </>
     );
-  };
+};
 
   const renderElementsTree = (): React.ReactNode => {
     return elements.filter((el) => !el.parent_id).map(el => renderElement(el));
