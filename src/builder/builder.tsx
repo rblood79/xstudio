@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router";
+import { useStore } from '@nanostores/react';
 import { supabase } from "../env/supabase.client";
 import 'remixicon/fonts/remixicon.css';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import "./builder.css";
+import { elementsStore, setElements, addElement, setSelectedElement, selectedElementIdStore, updateElementProps, Element } from './stores/elements';
 
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
+    const elements = useStore(elementsStore);
+    const selectedElementId = useStore(selectedElementIdStore);
+    const [pages, setPages] = React.useState<Page[]>([]);
+    const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
+    const lastSentElementId = useRef<string | null>(null); // 마지막으로 보낸 elementId 추적
 
     interface Page {
         id: string;
@@ -15,22 +22,6 @@ function Builder() {
         project_id: string;
         slug: string;
     }
-
-    const [pages, setPages] = useState<Page[]>([]);
-    interface Element {
-        id: string;
-        tag: string;
-        props: {
-            style: React.CSSProperties;
-            [key: string]: unknown;
-        };
-        parent_id: string | null;
-        page_id: string;
-    }
-
-    const [elements, setElements] = useState<Element[]>([]);
-    const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
-    const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -42,12 +33,9 @@ function Builder() {
                 console.error("프로젝트 조회 에러:", error);
             } else {
                 setPages(data);
-                console.log("프로젝트 조회 결과:", data);
             }
         };
-        if (projectId) {
-            fetchProjects();
-        }
+        if (projectId) fetchProjects();
     }, [projectId]);
 
     useEffect(() => {
@@ -59,7 +47,7 @@ function Builder() {
     const fetchElements = async (pageId: string) => {
         window.postMessage({ type: "CLEAR_OVERLAY" }, "*");
         setSelectedPageId(pageId);
-        setSelectedElementId(null);
+        setSelectedElement(null);
         const { data, error } = await supabase
             .from("elements")
             .select("*")
@@ -68,7 +56,33 @@ function Builder() {
             console.error("요소 조회 에러:", error);
         } else {
             setElements(data);
-            console.log("요소 조회 결과:", data);
+        }
+    };
+
+    const sendElementSelectedMessage = (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => {
+        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+        if (iframe?.contentDocument) {
+            const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+            if (element) {
+                const rect = element.getBoundingClientRect();
+                const message = {
+                    type: "ELEMENT_SELECTED",
+                    elementId,
+                    payload: {
+                        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                        props
+                    },
+                    source: "builder"
+                };
+                if (lastSentElementId.current !== elementId) { // 동일한 ID 중복 전송 방지
+                    console.log("Sending ELEMENT_SELECTED from Builder to parent:", { elementId, rect });
+                    window.postMessage(message, "*");
+                    iframe.contentWindow?.postMessage(message, "*");
+                    lastSentElementId.current = elementId;
+                }
+            } else {
+                console.warn("Element not found in iframe for ID:", elementId);
+            }
         }
     };
 
@@ -82,7 +96,7 @@ function Builder() {
             page_id: selectedPageId,
             tag: "div",
             props: { style: {} },
-            parent_id: selectedElementId ? selectedElementId : null,
+            parent_id: selectedElementId || null,
         };
 
         const { data, error } = await supabase
@@ -93,24 +107,11 @@ function Builder() {
         if (error) {
             console.error("요소 추가 에러:", error);
         } else if (data) {
-            setElements((prev) => [...prev, data[0]]);
-            console.log("새 DIV 요소 추가:", data[0]);
+            addElement(data[0]);
             setTimeout(() => {
-                const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-                if (iframe && iframe.contentDocument) {
-                    const newElem = iframe.contentDocument.querySelector(
-                        `[data-element-id="${data[0].id}"]`
-                    ) as HTMLElement | null;
-                    if (newElem) {
-                        const rect = newElem.getBoundingClientRect();
-                        window.postMessage({
-                            type: "ELEMENT_SELECTED",
-                            elementId: data[0].id,
-                            payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height } }
-                        }, "*");
-                    }
-                }
-            }, 0);
+                setSelectedElement(data[0].id, data[0].props);
+                sendElementSelectedMessage(data[0].id, data[0].props);
+            }, 100);
         }
     };
 
@@ -126,18 +127,8 @@ function Builder() {
         if (error) {
             console.error("요소 삭제 에러:", error);
         } else {
-            if (selectedPageId) {
-                const { data, error } = await supabase
-                    .from("elements")
-                    .select("*")
-                    .eq("page_id", selectedPageId);
-                if (error) {
-                    console.error("요소 조회 에러:", error);
-                } else {
-                    setElements(data);
-                }
-            }
-            setSelectedElementId(null);
+            setElements(elements.filter(el => el.id !== selectedElementId));
+            setSelectedElement(null);
         }
     };
 
@@ -151,14 +142,12 @@ function Builder() {
                             key={el.id}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedElementId(el.id);
+                                setSelectedElement(el.id, el.props);
+                                setTimeout(() => sendElementSelectedMessage(el.id, el.props), 100); // DOM 업데이트 후 메시지 전송
                             }}
                             className="element"
                             style={{
-                                outline:
-                                    selectedElementId === el.id
-                                        ? "1px solid blue"
-                                        : undefined,
+                                outline: selectedElementId === el.id ? "1px solid blue" : undefined,
                             }}
                         >
                             <div>
@@ -172,9 +161,7 @@ function Builder() {
                                         if (error) {
                                             console.error("요소 삭제 에러:", error);
                                         } else {
-                                            setElements((prev) =>
-                                                prev.filter((e) => e.id !== el.id)
-                                            );
+                                            setElements(elements.filter((e) => e.id !== el.id));
                                         }
                                     }}>del</button>
                             </div>
@@ -187,58 +174,24 @@ function Builder() {
 
     useEffect(() => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
+        if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
         }
     }, [elements]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            if (event.data.type === "ELEMENT_SELECTED") {
-                setSelectedElementId(event.data.elementId);
+            console.log("Builder received message:", event.data);
+            if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
+                setSelectedElement(event.data.elementId, event.data.payload?.props);
+            }
+            if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
+                const props = event.data.payload.props as Record<string, string | number | boolean | React.CSSProperties>;
+                updateElementProps(event.data.elementId, props);
             }
         };
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
-    }, []);
-
-    useEffect(() => {
-        const handleRequest = (event: MessageEvent) => {
-            if (event.data.type === "REQUEST_UPDATE") {
-                const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-                if (iframe && iframe.contentWindow) {
-                    iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
-                }
-            }
-        };
-        window.addEventListener("message", handleRequest);
-        return () => window.removeEventListener("message", handleRequest);
-    }, [elements]);
-
-    useEffect(() => {
-        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow && selectedElementId) {
-            iframe.contentWindow.postMessage(
-                { type: "ELEMENT_SELECTED", elementId: selectedElementId },
-                "*"
-            );
-        }
-    }, [selectedElementId]);
-
-    // 추가: UPDATE_ELEMENT_PROPS 메시지 처리
-    useEffect(() => {
-        const handlePropUpdate = (event: MessageEvent) => {
-            if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
-                const { elementId, payload } = event.data;
-                setElements((prevElements) =>
-                    prevElements.map((el) =>
-                        el.id === elementId ? { ...el, props: payload.props } : el
-                    )
-                );
-            }
-        };
-        window.addEventListener("message", handlePropUpdate);
-        return () => window.removeEventListener("message", handlePropUpdate);
     }, []);
 
     return (
@@ -253,7 +206,7 @@ function Builder() {
                                 style={{ width: "100%", height: "100%", border: "none" }}
                                 onLoad={() => {
                                     const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-                                    if (iframe && iframe.contentWindow) {
+                                    if (iframe?.contentWindow) {
                                         iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
                                     }
                                 }}
@@ -352,23 +305,6 @@ function Builder() {
                 <aside className="inspector">
                     <Inspector />
                 </aside>
-                <nav className="header">
-                    <div className="header_contents header_left">
-                        <button><i className="button ri-menu-line" /></button>
-                        {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
-                    </div>
-                    <div className="header_contents screen_size">
-                        <button>1920</button>
-                        <button><i className="button ri-smartphone-fill" /></button>
-                        <button><i className="button ri-computer-fill" /></button>
-                    </div>
-                    <div className="header_contents header_right">
-                        <button><i className="button ri-eye-2-line" /></button>
-                        <button><i className="button ri-play-fill" /></button>
-                        <button>Publish</button>
-                    </div>
-                </nav>
-                <footer className="footer">footer</footer>
             </div>
         </div>
     );
