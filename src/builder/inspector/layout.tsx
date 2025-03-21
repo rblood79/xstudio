@@ -57,14 +57,34 @@ function Layout() {
     if (error) {
       console.error('Supabase update error:', error);
     } else {
-      window.parent.postMessage(
-        {
-          type: "UPDATE_ELEMENT_PROPS",
-          elementId: selectedElementId,
-          payload: { props: updatedProps }
-        },
-        "*"
-      );
+      // preview iframe selector 수정: name 대신 id 사용
+      const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
+      if (previewIframe && previewIframe.contentWindow) {
+        const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
+        let rect = null;
+        if (element) {
+          const boundingRect = element.getBoundingClientRect();
+          rect = {
+            top: boundingRect.top,
+            left: boundingRect.left,
+            width: boundingRect.width,
+            height: boundingRect.height
+          };
+        }
+
+        window.parent.postMessage(
+          {
+            type: "UPDATE_ELEMENT_PROPS",
+            elementId: selectedElementId,
+            payload: {
+              props: updatedProps,
+              rect: rect,
+              tag: (element as HTMLElement)?.tagName?.toLowerCase() || ''
+            }
+          },
+          "*"
+        );
+      }
     }
   };
 
@@ -80,17 +100,16 @@ function Layout() {
   }, []);
 
   return (
-    <div className='p-4'>
-      <div className='className_panel'>
+    <div className='flex flex-col gap-4 p-4'>
+      <div className='panel className_panel'>
         <label>Class Name</label>
         <input
-          type="text"
           value={typeof selectedProps.className === 'string' ? selectedProps.className : ''}
           onChange={(e) => handlePropChange('className', e.target.value)}
         />
       </div>
 
-      <div className='text_panel'>
+      <div className='panel text_panel'>
         <label>Text</label>
         <input
           type="text"
@@ -99,7 +118,7 @@ function Layout() {
         />
       </div>
 
-      <div className='display_panel'>
+      <div className='panel display_panel'>
         <label>Display</label>
         {/* display select를 재사용 가능한 컴포넌트로 교체 */}
         <ReusableSelect
@@ -109,7 +128,7 @@ function Layout() {
         />
       </div>
 
-      <div className='flex_panel'>
+      <div className='panel flex_panel'>
         <label>Flex Direction</label>
         {/* flexDirection select도 재사용 */}
         <ReusableSelect
@@ -119,7 +138,7 @@ function Layout() {
         />
       </div>
 
-      <div className='align_items_panel'>
+      <div className='panel align_items_panel'>
         <label>Align Items</label>
         {/* alignItems select도 재사용 */}
         <ReusableSelect
@@ -129,7 +148,7 @@ function Layout() {
         />
       </div>
 
-      <div className='justify_content_panel'>
+      <div className='panel justify_content_panel'>
         <label>Justify Content</label>
         {/* justifyContent select도 재사용 */}
         <ReusableSelect
@@ -139,7 +158,7 @@ function Layout() {
         />
       </div>
 
-      <div className='gap_panel'>
+      <div className='panel gap_panel'>
         <label>Gap</label>
         {/* gap select 추가 */}
         <ReusableSelect
@@ -149,7 +168,7 @@ function Layout() {
         />
       </div>
 
-      <div className='padding_panel'>
+      <div className='panel padding_panel'>
         <label>Padding</label>
         {/* padding select 추가 */}
         <ReusableSelect
@@ -159,16 +178,18 @@ function Layout() {
         />
       </div>
 
-      <div className='size_panel'>
+      <div className='panel size_panel'>
         <label>Size(W * H)</label>
         {/* flexDirection select도 재사용 */}
-        <div className='flex flex-row flex-[3_1_auto]'>
+        <div className='flex flex-row'>
           <input
+            className='w-full'
             type="text"
             value={typeof selectedProps.style === 'object' && 'width' in selectedProps.style ? selectedProps.style.width : ''}
             onChange={(e) => handleStyleChange('width', e.target.value)}
           />
           <input
+            className='w-full'
             type="text"
             value={typeof selectedProps.style === 'object' && 'height' in selectedProps.style ? selectedProps.style.height : ''}
             onChange={(e) => handleStyleChange('height', e.target.value)}
@@ -176,21 +197,23 @@ function Layout() {
         </div>
       </div>
 
-      {selectedElementId && (
-        <div>
-          <h3>Edit Props for {selectedElementId}</h3>
-          {Object.keys(selectedProps).map(key => (
-            <div key={key}>
-              <label>{key}:</label>
-              <input
-                type="text"
-                value={typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
-                onChange={(e) => handlePropChange(key, parsePropValue(e.target.value, key))}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      {
+        selectedElementId && (
+          <div>
+            <h3>Edit Props for {selectedElementId}</h3>
+            {Object.keys(selectedProps).map(key => (
+              <div key={key}>
+                <label>{key}</label>
+                <textarea
+                  value={typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
+                  onChange={(e) => handlePropChange(key, parsePropValue(e.target.value, key))}
+                />
+              </div>
+            ))
+            }
+          </div>
+        )
+      }
 
     </div>
   );

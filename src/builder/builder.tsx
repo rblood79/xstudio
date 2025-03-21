@@ -66,18 +66,23 @@ function Builder() {
             if (element) {
                 const selectedElement = elements.find(el => el.id === elementId);
                 const rect = element.getBoundingClientRect();
-                //const iframeRect = iframe.getBoundingClientRect();
-                //console.log("Raw rect from iframe:", rect);
-                //console.log("iframeRect:", iframeRect);
+                const computedStyle = window.getComputedStyle(element);
+                // 새롭게 모든 computedStyle을 평범한 객체로 변환
+                const computedStyleObj: Record<string, string> = {};
+                for (let i = 0; i < computedStyle.length; i++) {
+                    const key = computedStyle[i];
+                    computedStyleObj[key] = computedStyle.getPropertyValue(key);
+                }
                 const adjustedRect = {
-                    //top: rect.top + iframeRect.top + window.scrollY, // iframe 상단 보정
-                    //left: rect.left + iframeRect.left + window.scrollX, // iframe 왼쪽 보정
-                    top: rect.top + window.scrollY, // iframe 상단 보정
-                    left: rect.left + window.scrollX, // iframe 왼쪽 보정
-                    width: rect.width,
-                    height: rect.height
+                    top: rect.top + window.scrollY, // 위치는 그대로 사용
+                    left: rect.left + window.scrollX, // 위치는 그대로 사용
+                    width: parseFloat(computedStyle.width) || rect.width, // getComputedStyle 우선
+                    height: parseFloat(computedStyle.height) || rect.height, // getComputedStyle 우선
                 };
-                //console.log("Adjusted rect:", adjustedRect);
+
+                // 기존 props와 computedStyleObj를 병합
+                //const mergedProps = { ...computedStyleObj, ...props };
+
                 const message = {
                     type: "ELEMENT_SELECTED",
                     elementId,
@@ -85,11 +90,11 @@ function Builder() {
                         rect: adjustedRect,
                         tag: selectedElement?.tag || "Unknown",
                         props
+                        //props: mergedProps
                     },
                     source: "builder"
                 };
                 if (lastSentElementId.current !== elementId) {
-                    //console.log("Sending ELEMENT_SELECTED from Builder to parent:", { elementId, rect: adjustedRect });
                     window.postMessage(message, window.location.origin);
                     iframe.contentWindow?.postMessage(message, window.location.origin);
                     lastSentElementId.current = elementId;
@@ -170,6 +175,7 @@ function Builder() {
                             <div>
                                 <span>{el.tag}</span>
                                 <button
+                                    className="iconButton "
                                     onClick={async () => {
                                         const { error } = await supabase
                                             .from("elements")
@@ -180,7 +186,7 @@ function Builder() {
                                         } else {
                                             setElements(elements.filter((e) => e.id !== el.id));
                                         }
-                                    }}>del</button>
+                                    }}><i className="ri-delete-bin-line text-xl"></i></button>
                             </div>
                             {renderElementsList(el.id)}
                         </div>
@@ -253,10 +259,10 @@ function Builder() {
                         </div>
                     </div>
                     <div className="sidebar_pages">
-                        <div className="flex flex-row justify-between">
+                        <div className="relative">
                             <h3>Pages</h3>
                             <button
-                                className="bg-transparent border-none text-red-500 shadow-none"
+                                className="iconButton absolute right-0 top-0"
                                 onClick={async () => {
                                     const title = prompt("Enter page title:");
                                     const slug = prompt("Enter page slug:");
@@ -277,7 +283,7 @@ function Builder() {
                                         }
                                     }
                                 }}
-                            >+</button>
+                            ><i className="ri-add-line text-2xl"></i></button>
                         </div>
                         <div>
                             <div className="elements">
@@ -290,6 +296,7 @@ function Builder() {
                                             {page.title}
                                         </span>
                                         <button
+                                            className="iconButton"
                                             onClick={async () => {
                                                 const { error } = await supabase
                                                     .from("pages")
@@ -303,8 +310,7 @@ function Builder() {
                                                     );
                                                 }
                                             }}
-                                        >
-                                            Delete
+                                        ><i className="ri-delete-bin-line text-xl"></i>
                                         </button>
                                     </div>
                                 ))}
@@ -327,7 +333,7 @@ function Builder() {
                 <aside className="inspector">
                     <Inspector />
                 </aside>
-                <nav className="header">
+                <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between">
                     <div className="header_contents header_left">
                         <button>
                             <i
