@@ -62,8 +62,6 @@ function Layout() {
       if (previewIframe && previewIframe.contentWindow) {
         const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
         let rect = null;
-        let computedStyleObj: Record<string, string> = {};
-        
         if (element) {
           const boundingRect = element.getBoundingClientRect();
           rect = {
@@ -71,35 +69,6 @@ function Layout() {
             left: boundingRect.left,
             width: boundingRect.width,
             height: boundingRect.height
-          };
-
-          // computedStyle 가져오기
-          const computedStyle = previewIframe.contentWindow.getComputedStyle(element);
-          computedStyleObj = {};
-          
-          // 자주 사용되는 스타일 속성만 선택
-          const relevantStyles = [
-            'display', 'flexDirection', 'alignItems', 'justifyContent',
-            'width', 'height', 'padding', 'margin', 'gap',
-            'backgroundColor', 'color', 'fontSize', 'fontWeight',
-            'border', 'borderRadius', 'boxShadow'
-          ];
-
-          relevantStyles.forEach(prop => {
-            const value = computedStyle.getPropertyValue(prop);
-            // 기본값이 아닌 경우에만 추가
-            if (value && value !== 'initial' && value !== 'normal') {
-              computedStyleObj[prop] = value;
-            }
-          });
-        }
-
-        // style 속성인 경우 computedStyle과 병합
-        if (key === 'style') {
-          const styleValue = value as React.CSSProperties;
-          updatedProps.style = {
-            ...computedStyleObj,
-            ...styleValue
           };
         }
 
