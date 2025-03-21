@@ -8,9 +8,10 @@ interface Rect {
 }
 
 export default function SelectionOverlay() {
+
     const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>(""); // tag 상태 추가
-
+    //console.log("overlayRect", overlayRect);
     useLayoutEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             if (event.origin !== window.location.origin) {
@@ -24,6 +25,14 @@ export default function SelectionOverlay() {
                 setSelectedTag(event.data.payload.tag || "Unknown"); // tag 설정
                 //console.log("overlayRect set to:", { top, left, width, height });
             }
+            //
+            if (event.data.type === "UPDATE_ELEMENT_PROPS") {
+                if (event.data.payload?.rect) {
+                    // 새 객체로 업데이트하여 리렌더링 유도
+                    setOverlayRect({ ...event.data.payload.rect });
+                }
+            }
+            //
             if (event.data.type === "CLEAR_OVERLAY") {
                 setOverlayRect(null);
                 setSelectedTag("");
@@ -43,7 +52,7 @@ export default function SelectionOverlay() {
     return (
         <div className="overlay">
             <div
-                className="absolute pointer-events-none ring-1 ring-sky-500 transition-all duration-150 ease-in-out"
+                className="absolute pointer-events-none ring-1 ring-sky-500 transition-all duration-30 ease-in-out"
                 style={{
                     top: overlayRect.top,
                     left: overlayRect.left,

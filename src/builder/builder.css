@@ -20,12 +20,7 @@
         nav.header {
             grid-area: header;
             position: relative;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            background-color: oklch(.274 .006 286.033);
             height: 48px;
-            color: #fff;
 
             .header_contents {
                 display: flex;
@@ -136,6 +131,9 @@
         aside.inspector {
             grid-area: inspector;
             border-left: 1px solid #eee;
+            .panel{
+                @apply flex flex-col;
+            }
         }
 
         main {
