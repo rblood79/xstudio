@@ -2,7 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router";
 import { useStore } from '@nanostores/react';
 import { supabase } from "../env/supabase.client";
-import 'remixicon/fonts/remixicon.css';
+import { Icon, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles } from 'lucide-react';
+import { layoutGridMoveVertical } from '@lucide/lab';
+//import 'remixicon/fonts/remixicon.css';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import "./builder.css";
@@ -15,6 +17,8 @@ function Builder() {
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
+
+    const [iconProps] = React.useState({ color: "#171717", stroke: 1.5, size: 21 });
 
     interface Page {
         id: string;
@@ -63,16 +67,19 @@ function Builder() {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe?.contentDocument) {
             const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+
             if (element) {
                 const selectedElement = elements.find(el => el.id === elementId);
                 const rect = element.getBoundingClientRect();
                 const computedStyle = window.getComputedStyle(element);
                 // 새롭게 모든 computedStyle을 평범한 객체로 변환
-                const computedStyleObj: Record<string, string> = {};
+
+                /*const computedStyleObj: Record<string, string> = {};
                 for (let i = 0; i < computedStyle.length; i++) {
                     const key = computedStyle[i];
                     computedStyleObj[key] = computedStyle.getPropertyValue(key);
-                }
+                }*/
+
                 const adjustedRect = {
                     top: rect.top + window.scrollY, // 위치는 그대로 사용
                     left: rect.left + window.scrollX, // 위치는 그대로 사용
@@ -137,7 +144,7 @@ function Builder() {
         }
     };
 
-    const handleDeleteSelectedElement = async () => {
+    /*const handleDeleteSelectedElement = async () => {
         if (!selectedElementId) {
             alert("선택된 element가 없습니다.");
             return;
@@ -152,7 +159,7 @@ function Builder() {
             setElements(elements.filter(el => el.id !== selectedElementId));
             setSelectedElement(null);
         }
-    };
+    };*/
 
     const renderElementsList = (parentId: string | null = null): React.ReactNode => {
         return (
@@ -186,7 +193,9 @@ function Builder() {
                                         } else {
                                             setElements(elements.filter((e) => e.id !== el.id));
                                         }
-                                    }}><i className="ri-delete-bin-line text-xl"></i></button>
+                                    }}>
+                                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </button>
                             </div>
                             {renderElementsList(el.id)}
                         </div>
@@ -195,9 +204,16 @@ function Builder() {
         );
     };
 
-    useEffect(() => {
+    /*useEffect(() => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
+        }
+    }, [elements]);*/
+
+    useEffect(() => {
+        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+        if (iframe?.contentWindow && elements.length > 0) {
             iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
         }
     }, [elements]);
@@ -223,6 +239,7 @@ function Builder() {
 
     return (
         <div className="app">
+            
             <div className="contents">
                 <main>
                     <div className="bg">
@@ -245,17 +262,38 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <button><i className="ri-function-fill" /></button>
-                            <button><i className="ri-file-add-line" /></button>
-                            <button><i className="ri-add-box-line" /></button>
-                            <button><i className="ri-dropdown-list" /></button>
-                            <button><i className="ri-attachment-2" /></button>
-                            <button><i className="ri-image-add-line" /></button>
-                            <button><i className="ri-database-2-line" /></button>
+                            <button>
+                                <LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                            <WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                         </div>
                         <div className="sidebar_group">
-                            <button><i className="ri-team-line" /></button>
-                            <button><i className="ri-settings-line" /></button>
+                            <button>
+                                <Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
+                            <button>
+                                <Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                         </div>
                     </div>
                     <div className="sidebar_pages">
@@ -283,13 +321,16 @@ function Builder() {
                                         }
                                     }
                                 }}
-                            ><i className="ri-add-line text-2xl"></i></button>
+                            >
+                                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                         </div>
                         <div>
                             <div className="elements">
                                 {pages.map((page) => (
-                                    <div key={page.id} className="element">
+                                    <div key={page.id} className="element flex flex-row justify-between">
                                         <span
+                                            className="flex-1 flex items-center text-sm pl-2.5"
                                             style={{ cursor: "pointer" }}
                                             onClick={() => fetchElements(page.id)}
                                         >
@@ -310,7 +351,8 @@ function Builder() {
                                                     );
                                                 }
                                             }}
-                                        ><i className="ri-delete-bin-line text-xl"></i>
+                                        >
+                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                         </button>
                                     </div>
                                 ))}
@@ -323,7 +365,7 @@ function Builder() {
                             <button onClick={() => handleAddElement("div", "")}>+ DIV</button>
                             <button onClick={() => handleAddElement("section", "")}>+ SECTION</button>
                             <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
-                            <button onClick={handleDeleteSelectedElement}>del elm</button>
+                            <button onClick={() => handleAddElement("table", "")}>+ TABLE</button>
                         </div>
                         <div className="elements">
                             {renderElementsList()}
@@ -336,32 +378,26 @@ function Builder() {
                 <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between">
                     <div className="header_contents header_left">
                         <button>
-                            <i
-                                className="button ri-menu-line"
-                            />
+                            <Menu color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         </button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen_size">
                         <button>1920</button>
-                        <button><i
-                            className="button ri-smartphone-fill"
-                        /></button>
+                        <button>
+                            <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
 
-                        <button><i
-                            className="button ri-computer-fill"
-                        /></button>
+                        <button>
+                            <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
                     </div>
                     <div className="header_contents header_right">
                         <button>
-                            <i
-                                className="button ri-eye-2-line"
-                            />
+                            <Eye color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         </button>
                         <button>
-                            <i
-                                className="button ri-play-fill"
-                            />
+                            <Play color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         </button>
                         <button>
                             Publish
