@@ -61,7 +61,7 @@ html {
   }
 
   button {
-    @apply py-1 px-8 rounded-sm;
+    @apply py-1 px-4 rounded-sm;
     background-color: var(--color-sky-500);
     color: white;
     border: 1px solid var(--color-sky-600);

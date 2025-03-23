@@ -67,6 +67,7 @@
 
                 width: 48px;
                 background-color: #fff;
+                border-right: 1px solid var(--color-gray-200);
 
                 button {
                     width: 48px;
@@ -89,14 +90,13 @@
 
             .sidebar_pages {
                 width: var(--sizes-sidebarWidth);
-                border-left: 1px solid #eee;
+                
 
                 
             }
 
             .sidebar_elements {
                 width: var(--sizes-sidebarWidth);
-                border-left: 1px solid #eee;
 
                 .elements {
 
@@ -117,6 +117,14 @@
                         }
                     }
                 }
+            }
+
+            .sidebar_components {
+                background: var(--color-gray-200);
+                button {
+                    text-align: start;
+                    border-radius: 0;
+                };
             }
         }
 
