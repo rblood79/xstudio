@@ -91,36 +91,16 @@
             .sidebar_pages {
                 width: var(--sizes-sidebarWidth);
                 
-
-                
             }
 
             .sidebar_elements {
                 width: var(--sizes-sidebarWidth);
-
-                .elements {
-
-                    .element {
-
-                        >div {
-                            width: 100%;
-                            display: flex;
-                            flex-direction: row;
-                            align-items: center;
-                            justify-content: space-between;
-                        }
-
-                        .element {
-                            display: flex;
-                            flex-direction: column;
-                            padding-left: 16px;
-                        }
-                    }
-                }
             }
 
             .sidebar_components {
                 background: var(--color-gray-200);
+                display: flex;
+                flex-direction: column;
                 button {
                     text-align: start;
                     border-radius: 0;
