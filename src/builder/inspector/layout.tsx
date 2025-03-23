@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
-import { useStore } from '@nanostores/react';
 import { supabase } from '../../env/supabase.client';
-import { selectedElementIdStore, selectedElementPropsStore, updateElementProps } from '../stores/elements';
+import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
 
-// 재사용 가능한 Select 컴포넌트 추가
+// 재사용 가능한 Select 컴포넌트
 const ReusableSelect = ({ value, onChange, options }: { value: string, onChange: React.ChangeEventHandler<HTMLSelectElement>, options: string[] }) => {
   return (
     <select value={value} onChange={onChange}>
-      {options.map(opt => (
+      {options.map((opt) => (
         <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
@@ -15,12 +14,12 @@ const ReusableSelect = ({ value, onChange, options }: { value: string, onChange:
 };
 
 function Layout() {
-  const selectedElementId = useStore(selectedElementIdStore);
-  const selectedProps = useStore(selectedElementPropsStore);
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const selectedProps = useStore((state) => state.selectedElementProps);
+  const { updateElementProps } = useStore();
   const display = (selectedProps.style as React.CSSProperties)?.display || 'block';
   const flexDirection = (selectedProps.style as React.CSSProperties)?.flexDirection || 'column';
 
-  // 공통의 style 변경 핸들러 추가
   const handleStyleChange = (prop: keyof React.CSSProperties, newValue: string) => {
     if (selectedElementId) {
       const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
@@ -33,9 +32,9 @@ function Layout() {
   const parsePropValue = (value: string, key: string): string | number | boolean | React.CSSProperties => {
     if (key === 'style') {
       try {
-        return JSON.parse(value) as React.CSSProperties; // 문자열을 CSSProperties로 파싱
+        return JSON.parse(value) as React.CSSProperties;
       } catch {
-        return value; // 파싱 실패 시 문자열로 유지
+        return value;
       }
     }
     if (value === 'true') return true;
@@ -57,30 +56,19 @@ function Layout() {
     if (error) {
       console.error('Supabase update error:', error);
     } else {
-      // preview iframe selector 수정: name 대신 id 사용
       const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
       if (previewIframe && previewIframe.contentWindow) {
         const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
         let rect = null;
         if (element) {
           const boundingRect = element.getBoundingClientRect();
-          rect = {
-            top: boundingRect.top,
-            left: boundingRect.left,
-            width: boundingRect.width,
-            height: boundingRect.height
-          };
+          rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
         }
-
         window.parent.postMessage(
           {
             type: "UPDATE_ELEMENT_PROPS",
             elementId: selectedElementId,
-            payload: {
-              props: updatedProps,
-              rect: rect,
-              tag: (element as HTMLElement)?.tagName?.toLowerCase() || ''
-            }
+            payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
           },
           "*"
         );
@@ -91,13 +79,12 @@ function Layout() {
   useEffect(() => {
     const handleSelectedMessage = (event: MessageEvent) => {
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.props) {
-        const props = event.data.payload.props as Record<string, string | number | boolean | React.CSSProperties>;
-        updateElementProps(event.data.elementId, props);
+        updateElementProps(event.data.elementId, event.data.payload.props);
       }
     };
     window.addEventListener("message", handleSelectedMessage);
     return () => window.removeEventListener("message", handleSelectedMessage);
-  }, []);
+  }, [updateElementProps]);
 
   return (
     <div className='flex flex-col gap-4 p-4'>
@@ -120,7 +107,6 @@ function Layout() {
 
       <div className='panel display_panel'>
         <label>Display</label>
-        {/* display select를 재사용 가능한 컴포넌트로 교체 */}
         <ReusableSelect
           value={display}
           onChange={(e) => handleStyleChange('display', e.target.value)}
@@ -130,7 +116,6 @@ function Layout() {
 
       <div className='panel flex_panel'>
         <label>Flex Direction</label>
-        {/* flexDirection select도 재사용 */}
         <ReusableSelect
           value={flexDirection}
           onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
@@ -140,7 +125,6 @@ function Layout() {
 
       <div className='panel align_items_panel'>
         <label>Align Items</label>
-        {/* alignItems select도 재사용 */}
         <ReusableSelect
           value={(selectedProps.style as React.CSSProperties)?.alignItems || 'stretch'}
           onChange={(e) => handleStyleChange('alignItems', e.target.value)}
@@ -150,7 +134,6 @@ function Layout() {
 
       <div className='panel justify_content_panel'>
         <label>Justify Content</label>
-        {/* justifyContent select도 재사용 */}
         <ReusableSelect
           value={(selectedProps.style as React.CSSProperties)?.justifyContent || 'flex-start'}
           onChange={(e) => handleStyleChange('justifyContent', e.target.value)}
@@ -160,7 +143,6 @@ function Layout() {
 
       <div className='panel gap_panel'>
         <label>Gap</label>
-        {/* gap select 추가 */}
         <ReusableSelect
           value={String((selectedProps.style as React.CSSProperties)?.gap || '0')}
           onChange={(e) => handleStyleChange('gap', e.target.value)}
@@ -170,7 +152,6 @@ function Layout() {
 
       <div className='panel padding_panel'>
         <label>Padding</label>
-        {/* padding select 추가 */}
         <ReusableSelect
           value={String((selectedProps.style as React.CSSProperties)?.padding || '0')}
           onChange={(e) => handleStyleChange('padding', e.target.value)}
@@ -180,7 +161,6 @@ function Layout() {
 
       <div className='panel size_panel'>
         <label>Size(W * H)</label>
-        {/* flexDirection select도 재사용 */}
         <div className='flex flex-row'>
           <input
             className='w-full'
@@ -197,24 +177,20 @@ function Layout() {
         </div>
       </div>
 
-      {
-        selectedElementId && (
-          <div>
-            <h3>Edit Props for {selectedElementId}</h3>
-            {Object.keys(selectedProps).map(key => (
-              <div key={key}>
-                <label>{key}</label>
-                <textarea
-                  value={typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
-                  onChange={(e) => handlePropChange(key, parsePropValue(e.target.value, key))}
-                />
-              </div>
-            ))
-            }
-          </div>
-        )
-      }
-
+      {selectedElementId && (
+        <div>
+          <h3>Edit Props for {selectedElementId}</h3>
+          {Object.keys(selectedProps).map((key) => (
+            <div key={key}>
+              <label>{key}</label>
+              <textarea
+                value={typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
+                onChange={(e) => handlePropChange(key, parsePropValue(e.target.value, key))}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import { atom, map } from 'nanostores';
-//import type { ReactNode } from 'react';
+// src/builder/stores/elements.ts
+import { create } from 'zustand';
+import { produce } from 'immer';
 
-// Element Interface
 export interface Element {
   id: string;
   tag: string;
@@ -10,36 +10,71 @@ export interface Element {
   page_id?: string;
 }
 
-// Stores
-export const elementsStore = atom<Element[]>([]);
-export const selectedElementIdStore = atom<string | null>(null);
-export const selectedElementPropsStore = map<Record<string, string | number | boolean | React.CSSProperties>>({});
+interface Page {
+  id: string;
+  title: string;
+  project_id: string;
+  slug: string;
+}
 
-// Utility functions
-export const setElements = (elements: Element[]) => {
-  elementsStore.set(elements);
-};
+interface Store {
+  elements: Element[];
+  selectedElementId: string | null;
+  selectedElementProps: Record<string, string | number | boolean | React.CSSProperties>;
+  pages: Page[];
+  setElements: (elements: Element[]) => void;
+  addElement: (element: Element) => void;
+  updateElementProps: (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => void;
+  setSelectedElement: (elementId: string | null, props?: Record<string, string | number | boolean | React.CSSProperties>) => void;
+  setPages: (pages: Page[]) => void;
+}
 
-export const addElement = (element: Element) => {
-  elementsStore.set([...elementsStore.get(), element]);
-};
-
-export const updateElementProps = (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => {
-  const elements = elementsStore.get();
-  const updatedElements = elements.map(el => 
-    el.id === elementId ? { ...el, props: { ...el.props, ...props } } : el
-  );
-  elementsStore.set(updatedElements);
-  if (selectedElementIdStore.get() === elementId) {
-    selectedElementPropsStore.set({ ...props });
-  }
-};
-
-export const setSelectedElement = (elementId: string | null, props?: Record<string, string | number | boolean | React.CSSProperties>) => {
-  selectedElementIdStore.set(elementId);
-  if (elementId && props) {
-    selectedElementPropsStore.set({ ...props });
-  } else {
-    selectedElementPropsStore.set({});
-  }
-};
+export const useStore = create<Store>((set) => ({
+  elements: [],
+  selectedElementId: null,
+  selectedElementProps: {},
+  pages: [],
+  setElements: (elements) =>
+    set(
+      produce((state) => {
+        state.elements = elements;
+      })
+    ),
+  addElement: (element) =>
+    set(
+      produce((state) => {
+        state.elements.push(element);
+      })
+    ),
+  updateElementProps: (elementId, props) =>
+    set(
+      produce((state) => {
+        const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
+        if (element) {
+          element.props = { ...element.props, ...props };
+          if (state.selectedElementId === elementId) {
+            state.selectedElementProps = { ...element.props };
+          }
+        }
+      })
+    ),
+  setSelectedElement: (elementId, props) =>
+    set(
+      produce((state) => {
+        state.selectedElementId = elementId;
+        if (elementId && props) {
+          state.selectedElementProps = { ...props };
+          const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
+          if (element) element.props = { ...element.props, ...props };
+        } else {
+          state.selectedElementProps = {};
+        }
+      })
+    ),
+  setPages: (pages) =>
+    set(
+      produce((state) => {
+        state.pages = pages;
+      })
+    ),
+}));
