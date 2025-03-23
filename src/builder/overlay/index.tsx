@@ -60,8 +60,8 @@ export default function SelectionOverlay() {
                     height: overlayRect.height
                 }}
             >
-                <div className="pointer-events-auto bg-sky-500 text-neutral-100 bottom-full absolute font-mono px-2 font-bold " style={{ marginLeft: "-0.08rem" }}>
-                    selected:{selectedTag}
+                <div className="pointer-events-auto bg-sky-500 text-neutral-100 bottom-full absolute font-mono py-2 px-2 font-bold " style={{ marginLeft: "-0.08rem" }}>
+                    {selectedTag}
                 </div>
 
                 <div className="relative z-1 h-full w-full bg-sky-500 ring-1 ring-sky-500 opacity-5" />

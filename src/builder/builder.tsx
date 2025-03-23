@@ -35,7 +35,7 @@ function Builder() {
             if (error) {
                 console.error("프로젝트 조회 에러:", error);
             } else {
-                console.log("Fetched pages:", data);
+                //console.log("Fetched pages:", data);
                 setPages(data);
             }
         };
@@ -52,7 +52,7 @@ function Builder() {
             .eq("page_id", pageId);
         if (error) console.error("요소 조회 에러:", error);
         else {
-            console.log("Fetched elements for pageId:", pageId, "data:", data);
+            //console.log("Fetched elements for pageId:", pageId, "data:", data);
             setElements(data);
         }
     }, [setSelectedPageId, setSelectedElement, setElements]);
@@ -142,10 +142,10 @@ function Builder() {
                         }}
                         className="element flex flex-col"
                         style={{
-                            outline: selectedElementId === item.id ? "1px solid var(--color-sky-500)" : undefined,
+                            background: selectedElementId === item.id || selectedPageId === item.id ? "var(--color-gray-200)" : undefined,
                         }}
                     >
-                        <div className="flex-1 flex  justify-between items-center text-sm pl-2.5">
+                        <div className="elementItem flex-1 flex justify-between items-center text-sm">
                             <span>{getLabel(item)}</span>
                             <button
                                 className="iconButton"
@@ -154,7 +154,7 @@ function Builder() {
                                     await onDelete(item);
                                 }}
                             >
-                                <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Trash color={'var(--color-gray-500)'} strokeWidth={iconProps.stroke} size={iconProps.size} />
                             </button>
                         </div>
                         {renderTree(items, getLabel, onClick, onDelete, item.id)}
@@ -226,67 +226,69 @@ function Builder() {
                             <button><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                     </div>
-                    <div className="sidebar_pages">
-                        <div className="relative">
-                            <h3>Pages</h3>
-                            <button
-                                className="iconButton absolute right-0 top-0"
-                                onClick={async () => {
-                                    const title = prompt("Enter page title:");
-                                    const slug = prompt("Enter page slug:");
-                                    if (!title || !slug) {
-                                        alert("Title and slug are required.");
-                                        return;
-                                    }
-                                    const newPage = { title, project_id: projectId, slug };
-                                    const { data, error } = await supabase
-                                        .from("pages")
-                                        .insert([newPage])
-                                        .select();
-                                    if (error) console.error("페이지 생성 에러:", error);
-                                    else if (data) setPages((prevPages) => [...prevPages, ...data]);
-                                }}
-                            >
-                                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            </button>
+                    <div>
+                        <div className="sidebar_pages">
+                            <div className="relative">
+                                <h3>Pages</h3>
+                                <button
+                                    className="iconButton absolute right-0 top-0"
+                                    onClick={async () => {
+                                        const title = prompt("Enter page title:");
+                                        const slug = prompt("Enter page slug:");
+                                        if (!title || !slug) {
+                                            alert("Title and slug are required.");
+                                            return;
+                                        }
+                                        const newPage = { title, project_id: projectId, slug };
+                                        const { data, error } = await supabase
+                                            .from("pages")
+                                            .insert([newPage])
+                                            .select();
+                                        if (error) console.error("페이지 생성 에러:", error);
+                                        else if (data) setPages((prevPages) => [...prevPages, ...data]);
+                                    }}
+                                >
+                                    <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </button>
+                            </div>
+                            <div className="elements">
+                                {pages.length === 0 ? (
+                                    <p>No pages available</p>
+                                ) : (
+                                    renderTree(
+                                        pages,
+                                        (page) => page.title,
+                                        (page) => fetchElements(page.id),
+                                        async (page) => {
+                                            const { error } = await supabase.from("pages").delete().eq("id", page.id);
+                                            if (error) console.error("페이지 삭제 에러:", error);
+                                            else setPages((prev) => prev.filter((p) => p.id !== page.id));
+                                        }
+                                    )
+                                )}
+                            </div>
                         </div>
-                        <div className="elements">
-                            {pages.length === 0 ? (
-                                <p>No pages available</p>
-                            ) : (
-                                renderTree(
-                                    pages,
-                                    (page) => page.title,
-                                    (page) => fetchElements(page.id),
-                                    async (page) => {
-                                        const { error } = await supabase.from("pages").delete().eq("id", page.id);
-                                        if (error) console.error("페이지 삭제 에러:", error);
-                                        else setPages((prev) => prev.filter((p) => p.id !== page.id));
-                                    }
-                                )
-                            )}
-                        </div>
-                    </div>
-                    <div className="sidebar_elements">
-                        <h3>Elements Node</h3>
-                        <div className="elements">
-                            {elements.length === 0 ? (
-                                <p>No elements available</p>
-                            ) : (
-                                renderTree(
-                                    elements,
-                                    (el) => el.tag,
-                                    (el) => {
-                                        setSelectedElement(el.id, el.props);
-                                        requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
-                                    },
-                                    async (el) => {
-                                        const { error } = await supabase.from("elements").delete().eq("id", el.id);
-                                        if (error) console.error("요소 삭제 에러:", error);
-                                        else setElements(elements.filter((e) => e.id !== el.id));
-                                    }
-                                )
-                            )}
+                        <div className="sidebar_elements">
+                            <h3>Elements Node</h3>
+                            <div className="elements">
+                                {elements.length === 0 ? (
+                                    <p>No elements available</p>
+                                ) : (
+                                    renderTree(
+                                        elements,
+                                        (el) => el.tag,
+                                        (el) => {
+                                            setSelectedElement(el.id, el.props);
+                                            requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
+                                        },
+                                        async (el) => {
+                                            const { error } = await supabase.from("elements").delete().eq("id", el.id);
+                                            if (error) console.error("요소 삭제 에러:", error);
+                                            else setElements(elements.filter((e) => e.id !== el.id));
+                                        }
+                                    )
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className="sidebar_components">

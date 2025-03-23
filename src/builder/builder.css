@@ -1,8 +1,3 @@
-
-
-
-
-
 .app {
     display: contents;
 
@@ -38,7 +33,8 @@
                     justify-content: flex-end;
                     flex: 1;
                 }
-                button{
+
+                button {
                     background-color: transparent;
                     border: none;
                     color: #fff;
@@ -49,7 +45,8 @@
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    i{
+
+                    i {
                         font-size: 18px;
                     }
                 }
@@ -80,7 +77,8 @@
                     border: none;
                     padding: 0;
                     color: oklch(.967 .001 286.375);
-                    i{
+
+                    i {
                         font-size: 20px;
                         color: #171717;
                     }
@@ -90,28 +88,61 @@
 
             .sidebar_pages {
                 width: var(--sizes-sidebarWidth);
-                
+
+                .element {
+                    padding-left: 16px;
+                }
+
             }
 
             .sidebar_elements {
                 width: var(--sizes-sidebarWidth);
+
+                .element {
+                    padding-left: 16px;
+                    position: relative;
+
+                    /*&::before {
+                        content: "";
+                        position: absolute;
+                        border-left: 1px solid #f00;
+                        display: block;
+                        height: calc(100% - 48px);
+                        left: 0px;
+                        width: 8px;
+                        top: calc(24px);
+                    }
+
+                    .elementItem {
+                        position: relative;
+                        &::before {
+                            content: "a";
+                            position: absolute;
+                            border-top: 1px solid #f00;
+                        }
+                    }*/
+                }
             }
 
             .sidebar_components {
                 background: var(--color-gray-200);
                 display: flex;
                 flex-direction: column;
+
                 button {
                     text-align: start;
                     border-radius: 0;
-                };
+                }
+
+                ;
             }
         }
 
         aside.inspector {
             grid-area: inspector;
             border-left: 1px solid #eee;
-            .panel{
+
+            .panel {
                 @apply flex flex-col;
             }
         }
