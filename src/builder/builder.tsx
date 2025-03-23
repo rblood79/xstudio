@@ -8,6 +8,14 @@ import Inspector from "./inspector";
 import "./builder.css";
 import { useStore } from './stores/elements';
 
+interface Page {
+    id: string;
+    title: string;
+    project_id: string;
+    slug: string;
+    parent_id?: string | null;
+}
+
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
     const elements = useStore((state) => state.elements);
@@ -18,21 +26,18 @@ function Builder() {
     const lastSentElementId = useRef<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1.5, size: 21 });
 
-    interface Page {
-        id: string;
-        title: string;
-        project_id: string;
-        slug: string;
-    }
-
     useEffect(() => {
         const fetchProjects = async () => {
             const { data, error } = await supabase
                 .from("pages")
                 .select("*")
                 .eq("project_id", projectId);
-            if (error) console.error("프로젝트 조회 에러:", error);
-            else setPages(data);
+            if (error) {
+                console.error("프로젝트 조회 에러:", error);
+            } else {
+                console.log("Fetched pages:", data);
+                setPages(data);
+            }
         };
         if (projectId) fetchProjects();
     }, [projectId]);
@@ -46,7 +51,10 @@ function Builder() {
             .select("*")
             .eq("page_id", pageId);
         if (error) console.error("요소 조회 에러:", error);
-        else setElements(data);
+        else {
+            console.log("Fetched elements for pageId:", pageId, "data:", data);
+            setElements(data);
+        }
     }, [setSelectedPageId, setSelectedElement, setElements]);
 
     useEffect(() => {
@@ -112,43 +120,46 @@ function Builder() {
         }
     };
 
-    const renderElementsList = (parentId: string | null = null): React.ReactNode => {
+    const renderTree = <T extends { id: string; parent_id?: string | null }>(
+        items: T[],
+        getLabel: (item: T) => string,
+        onClick: (item: T) => void,
+        onDelete: (item: T) => Promise<void>,
+        parentId: string | null = null
+    ): React.ReactNode => {
+        //console.log("Rendering tree with items:", items, "parentId:", parentId);
+        const filteredItems = items.filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined));
+        //console.log("Filtered items:", filteredItems);
+        if (filteredItems.length === 0) return null;
         return (
             <>
-                {elements
-                    .filter((el) => el.parent_id === parentId)
-                    .map((el) => (
-                        <div
-                            key={el.id}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedElement(el.id, el.props);
-                                requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
-                            }}
-                            className="element"
-                            style={{
-                                outline: selectedElementId === el.id ? "1px solid var(--color-sky-500)" : undefined,
-                            }}
-                        >
-                            <div>
-                                <span>{el.tag}</span>
-                                <button
-                                    className="iconButton"
-                                    onClick={async () => {
-                                        const { error } = await supabase
-                                            .from("elements")
-                                            .delete()
-                                            .eq("id", el.id);
-                                        if (error) console.error("요소 삭제 에러:", error);
-                                        else setElements(elements.filter((e) => e.id !== el.id));
-                                    }}
-                                >
-                                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
-                            </div>
-                            {renderElementsList(el.id)}
+                {filteredItems.map((item) => (
+                    <div
+                        key={item.id}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick(item);
+                        }}
+                        className="element flex flex-col"
+                        style={{
+                            outline: selectedElementId === item.id ? "1px solid var(--color-sky-500)" : undefined,
+                        }}
+                    >
+                        <div className="flex-1 flex  justify-between items-center text-sm pl-2.5">
+                            <span>{getLabel(item)}</span>
+                            <button
+                                className="iconButton"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    await onDelete(item);
+                                }}
+                            >
+                                <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                         </div>
-                    ))}
+                        {renderTree(items, getLabel, onClick, onDelete, item.id)}
+                    </div>
+                ))}
             </>
         );
     };
@@ -215,84 +226,84 @@ function Builder() {
                             <button><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                     </div>
-                    <div>
-                        <div className="sidebar_pages">
-                            <div className="relative">
-                                <h3>Pages</h3>
-                                <button
-                                    className="iconButton absolute right-0 top-0"
-                                    onClick={async () => {
-                                        const title = prompt("Enter page title:");
-                                        const slug = prompt("Enter page slug:");
-                                        if (!title || !slug) {
-                                            alert("Title and slug are required.");
-                                            return;
-                                        }
-                                        const newPage = { title, project_id: projectId, slug };
-                                        const { data, error } = await supabase
-                                            .from("pages")
-                                            .insert([newPage])
-                                            .select();
-                                        if (error) console.error("페이지 생성 에러:", error);
-                                        else if (data) setPages((prevPages) => [...prevPages, ...data]);
-                                    }}
-                                >
-                                    <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
-                            </div>
-
-                            <div>
-                                <div className="elements">
-                                    {pages.map((page) => (
-                                        <div key={page.id} className="element flex flex-row justify-between">
-                                            <span
-                                                className="flex-1 flex items-center text-sm pl-2.5"
-                                                style={{ cursor: "pointer" }}
-                                                onClick={() => fetchElements(page.id)}
-                                            >
-                                                {page.title}
-                                            </span>
-                                            <button
-                                                className="iconButton"
-                                                onClick={async () => {
-                                                    const { error } = await supabase
-                                                        .from("pages")
-                                                        .delete()
-                                                        .eq("id", page.id);
-                                                    if (error) console.error("페이지 삭제 에러:", error);
-                                                    else setPages((prevPages) => prevPages.filter((p) => p.id !== page.id));
-                                                }}
-                                            >
-                                                <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    <div className="sidebar_pages">
+                        <div className="relative">
+                            <h3>Pages</h3>
+                            <button
+                                className="iconButton absolute right-0 top-0"
+                                onClick={async () => {
+                                    const title = prompt("Enter page title:");
+                                    const slug = prompt("Enter page slug:");
+                                    if (!title || !slug) {
+                                        alert("Title and slug are required.");
+                                        return;
+                                    }
+                                    const newPage = { title, project_id: projectId, slug };
+                                    const { data, error } = await supabase
+                                        .from("pages")
+                                        .insert([newPage])
+                                        .select();
+                                    if (error) console.error("페이지 생성 에러:", error);
+                                    else if (data) setPages((prevPages) => [...prevPages, ...data]);
+                                }}
+                            >
+                                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                         </div>
-                        <div className="sidebar_elements">
-                            <h3>Elements Node</h3>
-                            <div className="elements">{renderElementsList()}</div>
+                        <div className="elements">
+                            {pages.length === 0 ? (
+                                <p>No pages available</p>
+                            ) : (
+                                renderTree(
+                                    pages,
+                                    (page) => page.title,
+                                    (page) => fetchElements(page.id),
+                                    async (page) => {
+                                        const { error } = await supabase.from("pages").delete().eq("id", page.id);
+                                        if (error) console.error("페이지 삭제 에러:", error);
+                                        else setPages((prev) => prev.filter((p) => p.id !== page.id));
+                                    }
+                                )
+                            )}
                         </div>
                     </div>
-                    <div className="sidebar_components flex flex-col">
+                    <div className="sidebar_elements">
+                        <h3>Elements Node</h3>
+                        <div className="elements">
+                            {elements.length === 0 ? (
+                                <p>No elements available</p>
+                            ) : (
+                                renderTree(
+                                    elements,
+                                    (el) => el.tag,
+                                    (el) => {
+                                        setSelectedElement(el.id, el.props);
+                                        requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
+                                    },
+                                    async (el) => {
+                                        const { error } = await supabase.from("elements").delete().eq("id", el.id);
+                                        if (error) console.error("요소 삭제 에러:", error);
+                                        else setElements(elements.filter((e) => e.id !== el.id));
+                                    }
+                                )
+                            )}
+                        </div>
+                    </div>
+                    <div className="sidebar_components">
                         <button onClick={() => handleAddElement("div", "")}>+ DIV</button>
                         <button onClick={() => handleAddElement("section", "")}>+ SECTION</button>
                         <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
                         <button onClick={() => handleAddElement("table", "")}>+ TABLE</button>
-                        <button onClick={() => handleAddElement("h1", "Heading 1")}>+ H1</button>
-                        <button onClick={() => handleAddElement("p", "Paragraph")}>+ P</button>
-                        <button onClick={() => handleAddElement("input", "type write")}>+ Input</button>
                     </div>
                 </aside>
                 <aside className="inspector"><Inspector /></aside>
-                <nav className="header bg-gray-700 text-neutral-100 flex flex-row justify-between">
+                <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between">
                     <div className="header_contents header_left">
                         <button><Menu color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen_size">
-                        <button>1920</button>
+                        <button>767</button>
                         <button><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
