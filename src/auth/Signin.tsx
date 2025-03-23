@@ -25,7 +25,7 @@ const Signin = () => {
   return (
     <main>
       <div className='flex flex-col justify-center items-center h-screen'>
-      <h2 className='title'>Sign In</h2>
+      <h2 className='title'>SIGN IN</h2>
       <form onSubmit={handleSubmit} className='flex flex-col gap-2'>
         <input
           type="email"
