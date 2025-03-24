@@ -90,8 +90,8 @@ function Dashboard() {
   };
 
   const handleProject = async (project: Project) => {
-    //const url = project ? `https://${project}.localhost:5137` : `/builder/${project}`; // 기본 경로
-    const url = `/builder/${project.id}`
+    // 변경: project.name을 쿼리 파라미터에 추가
+    const url = `/builder/${encodeURIComponent(project.id)}?name=${encodeURIComponent(project.name)}`;
     navigate(url);
   };
 
