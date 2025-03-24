@@ -7,12 +7,22 @@
         height: 100vh;
         overflow: hidden;
         display: grid;
-        grid-template-columns: auto var(--sizes-navigatorWidth) 1fr var(--sizes-sidebarWidth);
+
         grid-template-rows: auto 1fr auto;
+
+        grid-template-columns: auto 1fr var(--sizes-inspectorWidth);
+        grid-template-areas:
+            "header header header"
+            "sidebar main inspector"
+            "footer footer footer";
+
+        grid-template-columns: auto var(--sizes-sidebarWidth) 1fr var(--sizes-sidebarWidth);
         grid-template-areas:
             "header header header header"
             "sidebar navigator main inspector"
             "footer footer footer footer";
+
+
 
         nav.header {
             grid-area: header;
@@ -58,6 +68,7 @@
         aside.sidebar {
             grid-area: sidebar;
             display: flex;
+            position: relative;
 
             .sidebar_nav {
                 display: flex;
@@ -83,6 +94,14 @@
 
             }
 
+            .sidebar_content {
+                flex-grow: 1;
+                position: absolute;
+                top: 0px;
+                left: 100%;
+                height: 100%;
+            }
+
             .sidebar_pages {
                 width: var(--sizes-sidebarWidth);
 
@@ -98,26 +117,6 @@
                 .element {
                     padding-left: 16px;
                     position: relative;
-
-                    /*&::before {
-                        content: "";
-                        position: absolute;
-                        border-left: 1px solid #f00;
-                        display: block;
-                        height: calc(100% - 48px);
-                        left: 0px;
-                        width: 8px;
-                        top: calc(24px);
-                    }
-
-                    .elementItem {
-                        position: relative;
-                        &::before {
-                            content: "a";
-                            position: absolute;
-                            border-top: 1px solid #f00;
-                        }
-                    }*/
                 }
             }
 
@@ -125,10 +124,13 @@
                 background: var(--color-gray-200);
                 display: flex;
                 flex-direction: column;
+                position: absolute;
+                left: 100%;
 
                 button {
                     text-align: start;
                     border-radius: 0;
+                    min-width: 120px;
                 }
 
                 ;

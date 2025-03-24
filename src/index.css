@@ -16,6 +16,7 @@
 
   --sizes-sidebarWidth: 240px;
   --sizes-navigatorWidth: 0px;
+  --sizes-inspectorWidth: 240px;
 
   --primary: oklch(0.588 0.158 241.966);
   --secondary: oklch(0.588 0.158 241.966);

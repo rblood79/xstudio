@@ -88,11 +88,20 @@ function Layout() {
 
   return (
     <div className='flex flex-col gap-4 p-4'>
+      
       <div className='panel className_panel'>
         <label>Class Name</label>
         <input
           value={typeof selectedProps.className === 'string' ? selectedProps.className : ''}
           onChange={(e) => handlePropChange('className', e.target.value)}
+        />
+      </div>
+
+      <div className='panel id_panel'>
+        <label>Id</label>
+        <input
+          value={typeof selectedProps.id === 'string' ? selectedProps.id : ''}
+          onChange={(e) => handlePropChange('id', e.target.value)}
         />
       </div>
 

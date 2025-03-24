@@ -1,4 +1,3 @@
-// src/builder/stores/elements.ts
 import { create } from 'zustand';
 import { produce } from 'immer';
 
@@ -22,11 +21,15 @@ interface Store {
   selectedElementId: string | null;
   selectedElementProps: Record<string, string | number | boolean | React.CSSProperties>;
   pages: Page[];
+  history: Element[][]; // 이력 배열
+  historyIndex: number; // 현재 이력 위치
   setElements: (elements: Element[]) => void;
   addElement: (element: Element) => void;
   updateElementProps: (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => void;
   setSelectedElement: (elementId: string | null, props?: Record<string, string | number | boolean | React.CSSProperties>) => void;
   setPages: (pages: Page[]) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useStore = create<Store>((set) => ({
@@ -34,27 +37,41 @@ export const useStore = create<Store>((set) => ({
   selectedElementId: null,
   selectedElementProps: {},
   pages: [],
+  history: [[]], // 초기 상태
+  historyIndex: 0,
   setElements: (elements) =>
     set(
       produce((state) => {
         state.elements = elements;
+        const newHistory = state.history.slice(0, state.historyIndex + 1);
+        newHistory.push(elements);
+        state.history = newHistory;
+        state.historyIndex = newHistory.length - 1;
       })
     ),
   addElement: (element) =>
     set(
       produce((state) => {
         state.elements.push(element);
+        const newHistory = state.history.slice(0, state.historyIndex + 1);
+        newHistory.push([...state.elements]);
+        state.history = newHistory;
+        state.historyIndex = newHistory.length - 1;
       })
     ),
   updateElementProps: (elementId, props) =>
     set(
       produce((state) => {
-        const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
+        const element = state.elements.find((el: Element) => el.id === elementId);
         if (element) {
           element.props = { ...element.props, ...props };
           if (state.selectedElementId === elementId) {
             state.selectedElementProps = { ...element.props };
           }
+          const newHistory = state.history.slice(0, state.historyIndex + 1);
+          newHistory.push([...state.elements]);
+          state.history = newHistory;
+          state.historyIndex = newHistory.length - 1;
         }
       })
     ),
@@ -64,7 +81,7 @@ export const useStore = create<Store>((set) => ({
         state.selectedElementId = elementId;
         if (elementId && props) {
           state.selectedElementProps = { ...props };
-          const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
+          const element = state.elements.find((el: Element) => el.id === elementId);
           if (element) element.props = { ...element.props, ...props };
         } else {
           state.selectedElementProps = {};
@@ -75,6 +92,28 @@ export const useStore = create<Store>((set) => ({
     set(
       produce((state) => {
         state.pages = pages;
+      })
+    ),
+  undo: () =>
+    set(
+      produce((state) => {
+        if (state.historyIndex > 0) {
+          state.historyIndex -= 1;
+          state.elements = state.history[state.historyIndex];
+            const selectedElement: Element | undefined = state.elements.find((el: Element) => el.id === state.selectedElementId);
+          state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
+        }
+      })
+    ),
+  redo: () =>
+    set(
+      produce((state) => {
+        if (state.historyIndex < state.history.length - 1) {
+          state.historyIndex += 1;
+          state.elements = state.history[state.historyIndex];
+            const selectedElement: Element | undefined = state.elements.find((el: Element) => el.id === state.selectedElementId);
+          state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
+        }
       })
     ),
 }));

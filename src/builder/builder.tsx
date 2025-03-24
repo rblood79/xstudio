@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router";
 import { supabase } from "../env/supabase.client";
-import { Icon, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles } from 'lucide-react';
+import { Icon, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
 import { layoutGridMoveVertical } from '@lucide/lab';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
@@ -18,9 +18,10 @@ interface Page {
 
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
+
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
-    const { setElements, addElement, setSelectedElement, updateElementProps } = useStore();
+    const { setElements, addElement, setSelectedElement, updateElementProps, undo, redo } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
@@ -35,7 +36,6 @@ function Builder() {
             if (error) {
                 console.error("프로젝트 조회 에러:", error);
             } else {
-                //console.log("Fetched pages:", data);
                 setPages(data);
             }
         };
@@ -52,7 +52,6 @@ function Builder() {
             .eq("page_id", pageId);
         if (error) console.error("요소 조회 에러:", error);
         else {
-            //console.log("Fetched elements for pageId:", pageId, "data:", data);
             setElements(data);
         }
     }, [setSelectedPageId, setSelectedElement, setElements]);
@@ -120,6 +119,42 @@ function Builder() {
         }
     };
 
+    const handleUndo = async () => {
+        undo();
+        const updatedElements = useStore.getState().elements;
+        try {
+            const { error } = await supabase
+                .from("elements")
+                .upsert(updatedElements, { onConflict: "id" });
+            if (error) throw error;
+
+            const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements: updatedElements }, window.location.origin);
+            }
+        } catch (error) {
+            console.error("Undo error:", error);
+        }
+    };
+
+    const handleRedo = async () => {
+        redo();
+        const updatedElements = useStore.getState().elements;
+        try {
+            const { error } = await supabase
+                .from("elements")
+                .upsert(updatedElements, { onConflict: "id" });
+            if (error) throw error;
+
+            const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements: updatedElements }, window.location.origin);
+            }
+        } catch (error) {
+            console.error("Redo error:", error);
+        }
+    };
+
     const renderTree = <T extends { id: string; parent_id?: string | null }>(
         items: T[],
         getLabel: (item: T) => string,
@@ -127,9 +162,7 @@ function Builder() {
         onDelete: (item: T) => Promise<void>,
         parentId: string | null = null
     ): React.ReactNode => {
-        //console.log("Rendering tree with items:", items, "parentId:", parentId);
         const filteredItems = items.filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined));
-        //console.log("Filtered items:", filteredItems);
         if (filteredItems.length === 0) return null;
         return (
             <>
@@ -226,7 +259,7 @@ function Builder() {
                             <div className="sidebar_item"><button ><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
                         </div>
                     </div>
-                    <div>
+                    <div className="sidebar_content">
                         <div className="sidebar_pages">
                             <div className="relative">
                                 <h3>Pages</h3>
@@ -296,6 +329,8 @@ function Builder() {
                         <button onClick={() => handleAddElement("section", "")}>+ SECTION</button>
                         <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
                         <button onClick={() => handleAddElement("table", "")}>+ TABLE</button>
+                        <button onClick={handleUndo} className="undoRedoButton"><Undo color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button onClick={handleRedo} className="undoRedoButton"><Redo color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                 </aside>
                 <aside className="inspector"><Inspector /></aside>
