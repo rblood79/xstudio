@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .app {
     display: contents;
 
@@ -66,23 +68,18 @@
                 background-color: #fff;
                 border-right: 1px solid var(--color-gray-200);
 
-                button {
-                    width: 48px;
-                    height: 48px;
-                    box-shadow: none;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    background-color: transparent;
-                    border: none;
-                    padding: 0;
-                    color: oklch(.967 .001 286.375);
+                .sidebar_group {
+                    .sidebar_item {
+                        @apply p-[8px];
 
-                    i {
-                        font-size: 20px;
-                        color: #171717;
+                        button {
+                            @apply size-[32px] flex justify-center items-center p-0 bg-transparent border-none;
+
+                        }
                     }
+
                 }
+
 
             }
 

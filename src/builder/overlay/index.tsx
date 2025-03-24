@@ -52,7 +52,7 @@ export default function SelectionOverlay() {
     return (
         <div className="overlay">
             <div
-                className="absolute pointer-events-none ring-1 ring-sky-500 transition-all duration-300 ease-in-out"
+                className="absolute pointer-events-none ring-1 ring-sky-500 transition-all duration-100 ease-in-out"
                 style={{
                     top: overlayRect.top,
                     left: overlayRect.left,
@@ -60,7 +60,7 @@ export default function SelectionOverlay() {
                     height: overlayRect.height
                 }}
             >
-                <div className="pointer-events-auto bg-sky-500 text-neutral-100 bottom-full absolute font-mono py-2 px-2 font-bold " style={{ marginLeft: "-0.08rem" }}>
+                <div className="pointer-events-auto bg-sky-500 text-neutral-100 bottom-full absolute font-mono py-2 px-2 font-bold cursor-default" style={{ marginLeft: "-0.08rem" }}>
                     {selectedTag}
                 </div>
 

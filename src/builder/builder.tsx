@@ -154,7 +154,7 @@ function Builder() {
                                     await onDelete(item);
                                 }}
                             >
-                            <Trash color={'var(--color-gray-500)'} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                <Trash color={'var(--color-gray-500)'} strokeWidth={iconProps.stroke} size={iconProps.size} />
                             </button>
                         </div>
                         {renderTree(items, getLabel, onClick, onDelete, item.id)}
@@ -212,18 +212,18 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <button><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <div className="sidebar_item"><button ><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
                         </div>
                         <div className="sidebar_group">
-                            <button><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <div className="sidebar_item"><button ><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <div className="sidebar_item"><button ><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
                         </div>
                     </div>
                     <div>
@@ -269,7 +269,7 @@ function Builder() {
                             </div>
                         </div>
                         <div className="sidebar_elements">
-                            <h3>Elements Node</h3>
+                            <h3>Elements</h3>
                             <div className="elements">
                                 {elements.length === 0 ? (
                                     <p>No elements available</p>
@@ -299,12 +299,13 @@ function Builder() {
                     </div>
                 </aside>
                 <aside className="inspector"><Inspector /></aside>
-                <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between">
+
+                <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between items-center">
                     <div className="header_contents header_left">
                         <button><Menu color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
-                    <div className="header_contents screen_size">
+                    <div className="header_contents screen_size rounded-lg h-10 bg-gray-500">
                         <button>767</button>
                         <button><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
@@ -315,6 +316,7 @@ function Builder() {
                         <button>Publish</button>
                     </div>
                 </nav>
+
                 <footer className="footer">footer</footer>
             </div>
         </div>
