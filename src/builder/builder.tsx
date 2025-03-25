@@ -7,6 +7,7 @@ import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import "./builder.css";
 import { useStore } from './stores/elements';
+import { debounce } from 'lodash';
 
 interface Page {
     id: string;
@@ -27,6 +28,9 @@ function Builder() {
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1.5, size: 21 });
+
+    // 진행 중 여부를 추적하는 플래그
+    let isProcessing = false;
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -124,15 +128,23 @@ function Builder() {
         }
     };
 
-    const handleUndo = async () => {
-        undo();
-        const updatedElements = useStore.getState().elements;
+    const handleUndo = debounce(async () => {
+        if (isProcessing) return; // 진행 중이면 실행 중단
+        isProcessing = true;
+    
         try {
+            // 1. Zustand 상태 변경
+            undo();
+            await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
+            const updatedElements = useStore.getState().elements;
+    
+            // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
-
+    
+            // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
                 iframe.contentWindow.postMessage(
@@ -144,18 +156,28 @@ function Builder() {
             }
         } catch (error) {
             console.error("Undo error:", error);
+        } finally {
+            isProcessing = false; // 작업 완료 후 플래그 해제
         }
-    };
-
-    const handleRedo = async () => {
-        redo();
-        const updatedElements = useStore.getState().elements;
+    }, 300); // 300ms 디바운싱
+    
+    const handleRedo = debounce(async () => {
+        if (isProcessing) return; // 진행 중이면 실행 중단
+        isProcessing = true;
+    
         try {
+            // 1. Zustand 상태 변경
+            redo();
+            await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
+            const updatedElements = useStore.getState().elements;
+    
+            // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
-
+    
+            // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
                 iframe.contentWindow.postMessage(
@@ -167,8 +189,10 @@ function Builder() {
             }
         } catch (error) {
             console.error("Redo error:", error);
+        } finally {
+            isProcessing = false; // 작업 완료 후 플래그 해제
         }
-    };
+    }, 300); // 300ms 디바운싱
 
     const renderTree = <T extends { id: string; parent_id?: string | null }>(
         items: T[],
