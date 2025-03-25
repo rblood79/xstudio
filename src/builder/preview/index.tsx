@@ -54,7 +54,7 @@ function Preview() {
       el.tag,
       newProps,
       <>
-        {el.props.text}
+        {String(el.props.text)}
         {children.map((child) => renderElement(child))}
       </>
     );
