@@ -23,7 +23,9 @@ function Builder() {
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
-    const { setElements, addElement, setSelectedElement, updateElementProps, undo, redo } = useStore();
+    const historyIndex = useStore((state) => state.historyIndex);
+    const history = useStore((state) => state.history);
+    const { setElements, addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
@@ -57,9 +59,9 @@ function Builder() {
             .eq("page_id", pageId);
         if (error) console.error("요소 조회 에러:", error);
         else {
-            setElements(data);
+            loadPageElements(data);
         }
-    }, [setSelectedPageId, setSelectedElement, setElements]);
+    }, [setSelectedPageId, setSelectedElement, loadPageElements]);
 
     useEffect(() => {
         if (!selectedPageId && pages.length > 0) {
@@ -131,19 +133,19 @@ function Builder() {
     const handleUndo = debounce(async () => {
         if (isProcessing) return; // 진행 중이면 실행 중단
         isProcessing = true;
-    
+
         try {
             // 1. Zustand 상태 변경
             undo();
             await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
             const updatedElements = useStore.getState().elements;
-    
+
             // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
-    
+
             // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
@@ -160,23 +162,23 @@ function Builder() {
             isProcessing = false; // 작업 완료 후 플래그 해제
         }
     }, 300); // 300ms 디바운싱
-    
+
     const handleRedo = debounce(async () => {
         if (isProcessing) return; // 진행 중이면 실행 중단
         isProcessing = true;
-    
+
         try {
             // 1. Zustand 상태 변경
             redo();
             await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
             const updatedElements = useStore.getState().elements;
-    
+
             // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
-    
+
             // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
@@ -221,6 +223,7 @@ function Builder() {
                             <span>{getLabel(item)}</span>
                             <button
                                 className="iconButton"
+                                aria-label={`Delete ${getLabel(item)}`}
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     await onDelete(item);
@@ -310,18 +313,18 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <button ><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Layout Grid"><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Add File"><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Add Square"><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Move Grid"><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Library"><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Database"><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Palette"><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Magic Wand"><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                         <div className="sidebar_group">
-                            <button ><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button ><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Users"><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button aria-label="Settings"><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                     </div>
                     <div className="sidebar_content">
@@ -330,6 +333,7 @@ function Builder() {
                                 <h3>Pages</h3>
                                 <button
                                     className="iconButton absolute right-0 top-0"
+                                    aria-label="Add Page"
                                     onClick={async () => {
                                         const title = prompt("Enter page title:");
                                         const slug = prompt("Enter page slug:");
@@ -382,7 +386,13 @@ function Builder() {
                                         async (el) => {
                                             const { error } = await supabase.from("elements").delete().eq("id", el.id);
                                             if (error) console.error("요소 삭제 에러:", error);
-                                            else setElements(elements.filter((e) => e.id !== el.id));
+                                            else {
+                                                if (el.id === selectedElementId) {
+                                                    setSelectedElement(null);
+                                                    window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
+                                                }
+                                                setElements(elements.filter((e) => e.id !== el.id));
+                                            }
                                         }
                                     )
                                 )}
@@ -390,30 +400,46 @@ function Builder() {
                         </div>
                     </div>
                     <div className="sidebar_components">
-                        <button onClick={() => handleAddElement("div", "")}>+ DIV</button>
-                        <button onClick={() => handleAddElement("section", "")}>+ SECTION</button>
-                        <button onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
-                        <button onClick={() => handleAddElement("table", "")}>+ TABLE</button>
-                        <button onClick={handleUndo} className="undoRedoButton"><Undo color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        <button onClick={handleRedo} className="undoRedoButton"><Redo color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>+ DIV</button>
+                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>+ SECTION</button>
+                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
+                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>+ TABLE</button>
+
                     </div>
                 </aside>
                 <aside className="inspector"><Inspector /></aside>
 
                 <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between items-center">
                     <div className="header_contents header_left">
-                        <button><Menu color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Menu"><Menu color={'#fff'} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
-                        <button>767</button>
-                        <button><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        <button><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <span>{historyIndex + 1}/{history.length}</span>
+                        <button aria-label="Screen Width 767">767</button>
+                        <button aria-label="Mobile View"><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Desktop View"><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                     <div className="header_contents header_right">
-                        <button><Eye color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        <button><Play color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        <button>Publish</button>
+                        <button 
+                          aria-label="Undo" 
+                          onClick={handleUndo}
+                          disabled={historyIndex < 0}
+                          className={historyIndex < 0 ? "disabled" : ""}
+                        >
+                          <Undo color={historyIndex < 0 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
+                        <button 
+                          aria-label="Redo" 
+                          onClick={handleRedo}
+                          disabled={historyIndex >= history.length - 1}
+                          className={historyIndex >= history.length - 1 ? "disabled" : ""}
+                        >
+                          <Redo color={historyIndex >= history.length - 1 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
+                        <button aria-label="Preview"><Eye color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Play"><Play color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Publish" className="publish">Publish</button>
                     </div>
                 </nav>
 
