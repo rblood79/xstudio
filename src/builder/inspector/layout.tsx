@@ -87,40 +87,78 @@ function Layout() {
     if (e.key === 'Enter' && selectedElementId) {
       const value = tempInputValues[key];
       if (value !== undefined) {
-        // 값을 적절한 타입으로 변환
-        const parsedValue = parsePropValue(value, key);
-        const updatedProps = { ...selectedProps, [key]: parsedValue };
-        updateElementProps(selectedElementId, updatedProps);
-        
-        // Supabase 업데이트
-        supabase
-          .from('elements')
-          .update({ props: updatedProps })
-          .eq('id', selectedElementId)
-          .then(({ error }) => {
-            if (error) {
-              console.error('Supabase update error:', error);
-            } else {
-              // iframe 업데이트
-              const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
-              if (previewIframe && previewIframe.contentWindow) {
-                const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
-                let rect = null;
-                if (element) {
-                  const boundingRect = element.getBoundingClientRect();
-                  rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
+        // width와 height는 style 객체 안에 저장
+        if (key === 'width' || key === 'height') {
+          const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
+          const updatedStyle = { ...currentStyle, [key]: value };
+          const updatedProps = { ...selectedProps, style: updatedStyle };
+          updateElementProps(selectedElementId, updatedProps);
+          
+          // Supabase 업데이트
+          supabase
+            .from('elements')
+            .update({ props: updatedProps })
+            .eq('id', selectedElementId)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Supabase update error:', error);
+              } else {
+                // iframe 업데이트
+                const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
+                if (previewIframe && previewIframe.contentWindow) {
+                  const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
+                  let rect = null;
+                  if (element) {
+                    const boundingRect = element.getBoundingClientRect();
+                    rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
+                  }
+                  window.parent.postMessage(
+                    {
+                      type: "UPDATE_ELEMENT_PROPS",
+                      elementId: selectedElementId,
+                      payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
+                    },
+                    "*"
+                  );
                 }
-                window.parent.postMessage(
-                  {
-                    type: "UPDATE_ELEMENT_PROPS",
-                    elementId: selectedElementId,
-                    payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
-                  },
-                  "*"
-                );
               }
-            }
-          });
+            });
+        } else {
+          // 다른 속성들은 기존 로직대로 처리
+          const parsedValue = parsePropValue(value, key);
+          const updatedProps = { ...selectedProps, [key]: parsedValue };
+          updateElementProps(selectedElementId, updatedProps);
+          
+          // Supabase 업데이트
+          supabase
+            .from('elements')
+            .update({ props: updatedProps })
+            .eq('id', selectedElementId)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Supabase update error:', error);
+              } else {
+                // iframe 업데이트
+                const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
+                if (previewIframe && previewIframe.contentWindow) {
+                  const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
+                  let rect = null;
+                  if (element) {
+                    const boundingRect = element.getBoundingClientRect();
+                    rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
+                  }
+                  window.parent.postMessage(
+                    {
+                      type: "UPDATE_ELEMENT_PROPS",
+                      elementId: selectedElementId,
+                      payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
+                    },
+                    "*"
+                  );
+                }
+              }
+            });
+        }
       }
     }
   };
@@ -245,24 +283,26 @@ function Layout() {
 
       <div className='panel size_panel'>
         <div className='flex flex-col gap-2'>
-          <label htmlFor="elementWidth">Width</label>
-          <input
-            id="elementWidth"
-            aria-label="Element Width"
-            className='w-full'
-            type="text"
-            value={typeof selectedProps.style === 'object' && 'width' in selectedProps.style ? selectedProps.style.width : ''}
-            onChange={(e) => handleStyleChange('width', e.target.value)}
-          />
-          <label htmlFor="elementHeight">Height</label>
-          <input
-            id="elementHeight"
-            aria-label="Element Height"
-            className='w-full'
-            type="text"
-            value={typeof selectedProps.style === 'object' && 'height' in selectedProps.style ? selectedProps.style.height : ''}
-            onChange={(e) => handleStyleChange('height', e.target.value)}
-          />
+          <label htmlFor="element-width">Size(W * H)</label>
+          <div className="size_inputs">
+            <input
+              id="element-width"
+              type="text"
+              value={tempInputValues['width'] ?? (selectedProps.style as React.CSSProperties)?.width ?? ''}
+              onChange={(e) => handleTextInputChange('width', e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'width')}
+              aria-label="Width"
+            />
+            <span>*</span>
+            <input
+              id="element-height"
+              type="text"
+              value={tempInputValues['height'] ?? (selectedProps.style as React.CSSProperties)?.height ?? ''}
+              onChange={(e) => handleTextInputChange('height', e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'height')}
+              aria-label="Height"
+            />
+          </div>
         </div>
       </div>
 
