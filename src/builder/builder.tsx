@@ -286,18 +286,18 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <div className="sidebar_item"><button ><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <button ><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                         <div className="sidebar_group">
-                            <div className="sidebar_item"><button ><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
-                            <div className="sidebar_item"><button ><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button></div>
+                            <button ><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                            <button ><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         </div>
                     </div>
                     <div className="sidebar_content">
@@ -381,7 +381,7 @@ function Builder() {
                         <button><Menu color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
-                    <div className="header_contents screen_size rounded-lg h-10 bg-gray-500">
+                    <div className="header_contents screen">
                         <button>767</button>
                         <button><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
