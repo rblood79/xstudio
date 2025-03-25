@@ -18,6 +18,7 @@ interface Page {
 
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
+    const iframeRef = useRef<HTMLIFrameElement>(null); // iframe 참조
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
@@ -63,7 +64,7 @@ function Builder() {
     }, [pages, selectedPageId, fetchElements]);
 
     const sendElementSelectedMessage = (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => {
-        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+        const iframe = iframeRef.current;
         if (iframe?.contentDocument) {
             const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
             if (element) {
@@ -84,7 +85,11 @@ function Builder() {
                 };
                 if (lastSentElementId.current !== elementId) {
                     window.postMessage(message, window.location.origin);
-                    iframe.contentWindow?.postMessage(message, window.location.origin);
+                    if (iframe.contentWindow) {
+                        iframe.contentWindow.postMessage(message, window.location.origin);
+                    } else {
+                        console.warn("iframe contentWindow not available for element selection:", elementId);
+                    }
                     lastSentElementId.current = elementId;
                 }
             } else {
@@ -128,9 +133,14 @@ function Builder() {
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
 
-            const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+            const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements: updatedElements }, window.location.origin);
+                iframe.contentWindow.postMessage(
+                    { type: "UPDATE_ELEMENTS", elements: updatedElements },
+                    window.location.origin
+                );
+            } else {
+                console.warn("iframe contentWindow not available during undo");
             }
         } catch (error) {
             console.error("Undo error:", error);
@@ -146,9 +156,14 @@ function Builder() {
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
 
-            const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
+            const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements: updatedElements }, window.location.origin);
+                iframe.contentWindow.postMessage(
+                    { type: "UPDATE_ELEMENTS", elements: updatedElements },
+                    window.location.origin
+                );
+            } else {
+                console.warn("iframe contentWindow not available during redo");
             }
         } catch (error) {
             console.error("Redo error:", error);
@@ -198,9 +213,29 @@ function Builder() {
     };
 
     useEffect(() => {
-        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-        if (iframe?.contentWindow && elements.length > 0) {
-            iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
+        const iframe = iframeRef.current;
+        const sendUpdateElements = () => {
+            if (!iframe) {
+                console.warn("iframe not found");
+                return;
+            }
+            if (!iframe.contentWindow) {
+                console.warn("iframe contentWindow not accessible");
+                return;
+            }
+            if (elements.length > 0) {
+                iframe.contentWindow.postMessage(
+                    { type: "UPDATE_ELEMENTS", elements },
+                    window.location.origin
+                );
+            }
+        };
+
+        if (iframe?.contentDocument?.readyState === "complete") {
+            sendUpdateElements();
+        } else {
+            iframe?.addEventListener("load", sendUpdateElements);
+            return () => iframe?.removeEventListener("load", sendUpdateElements);
         }
     }, [elements]);
 
@@ -228,13 +263,19 @@ function Builder() {
                     <div className="bg">
                         <div className="workspace">
                             <iframe
+                                ref={iframeRef}
                                 id="previewFrame"
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                                 style={{ width: "100%", height: "100%", border: "none" }}
                                 onLoad={() => {
-                                    const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-                                    if (iframe?.contentWindow) {
-                                        iframe.contentWindow.postMessage({ type: "UPDATE_ELEMENTS", elements }, window.location.origin);
+                                    const iframe = iframeRef.current;
+                                    if (iframe?.contentWindow && elements.length > 0) {
+                                        iframe.contentWindow.postMessage(
+                                            { type: "UPDATE_ELEMENTS", elements },
+                                            window.location.origin
+                                        );
+                                    } else {
+                                        console.warn("iframe contentWindow not available on load");
                                     }
                                 }}
                             />
