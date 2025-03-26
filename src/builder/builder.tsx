@@ -15,6 +15,7 @@ interface Page {
     project_id: string;
     slug: string;
     parent_id?: string | null;
+    order_num?: number;
 }
 
 function Builder() {
@@ -39,7 +40,8 @@ function Builder() {
             const { data, error } = await supabase
                 .from("pages")
                 .select("*")
-                .eq("project_id", projectId);
+                .eq("project_id", projectId)
+                .order('order_num', { ascending: true });
             if (error) {
                 console.error("프로젝트 조회 에러:", error);
             } else {
@@ -56,7 +58,8 @@ function Builder() {
         const { data, error } = await supabase
             .from("elements")
             .select("*")
-            .eq("page_id", pageId);
+            .eq("page_id", pageId)
+            .order('order_num', { ascending: true });
         if (error) console.error("요소 조회 에러:", error);
         else {
             loadPageElements(data);
@@ -109,13 +112,20 @@ function Builder() {
             alert("먼저 페이지를 선택하세요.");
             return;
         }
+        
+        // Get max order_num from existing elements
+        const maxOrderNum = elements.reduce((max, el) => 
+            Math.max(max, el.order_num || 0), 0);
+        
         const newElement = {
             id: crypto.randomUUID(),
             page_id: selectedPageId,
             tag: args[0],
             props: { ...(args[1] ? { text: args[1] } : {}), style: {} },
             parent_id: selectedElementId || null,
+            order_num: maxOrderNum + 1, // Add order_num to new elements
         };
+        
         const { data, error } = await supabase
             .from("elements")
             .insert([newElement])
@@ -196,14 +206,16 @@ function Builder() {
         }
     }, 300); // 300ms 디바운싱
 
-    const renderTree = <T extends { id: string; parent_id?: string | null }>(
+    const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
         items: T[],
         getLabel: (item: T) => string,
         onClick: (item: T) => void,
         onDelete: (item: T) => Promise<void>,
         parentId: string | null = null
     ): React.ReactNode => {
-        const filteredItems = items.filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined));
+        const filteredItems = items
+            .filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined))
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
         if (filteredItems.length === 0) return null;
         return (
             <>
@@ -283,6 +295,44 @@ function Builder() {
         return () => window.removeEventListener("message", handleMessage);
     }, [setSelectedElement, updateElementProps]);
 
+    const handleAddPage = async () => {
+        const title = prompt("Enter page title:");
+        const slug = prompt("Enter page slug:");
+        if (!title || !slug) {
+            alert("Title and slug are required.");
+            return;
+        }
+
+        // 현재 페이지들의 order_num 값을 정렬하여 가져옴
+        const sortedPages = [...pages].sort((a, b) => 
+            (a.order_num || 0) - (b.order_num || 0)
+        );
+
+        // 새 페이지의 order_num 계산
+        let newOrderNum;
+        if (sortedPages.length === 0) {
+            newOrderNum = 1000; // 첫 페이지
+        } else {
+            const lastPage = sortedPages[sortedPages.length - 1];
+            newOrderNum = (lastPage.order_num || 0) + 1000; // 간격을 1000으로 설정
+        }
+
+        const newPage = { 
+            title, 
+            project_id: projectId, 
+            slug,
+            order_num: newOrderNum 
+        };
+
+        const { data, error } = await supabase
+            .from("pages")
+            .insert([newPage])
+            .select();
+
+        if (error) console.error("페이지 생성 에러:", error);
+        else if (data) setPages((prevPages) => [...prevPages, ...data]);
+    };
+
     return (
         <div className="app">
             <div className="contents">
@@ -294,6 +344,7 @@ function Builder() {
                                 id="previewFrame"
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                                 style={{ width: "100%", height: "100%", border: "none" }}
+                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                                 onLoad={() => {
                                     const iframe = iframeRef.current;
                                     if (iframe?.contentWindow && elements.length > 0) {
@@ -334,21 +385,7 @@ function Builder() {
                                 <button
                                     className="iconButton absolute right-0 top-0"
                                     aria-label="Add Page"
-                                    onClick={async () => {
-                                        const title = prompt("Enter page title:");
-                                        const slug = prompt("Enter page slug:");
-                                        if (!title || !slug) {
-                                            alert("Title and slug are required.");
-                                            return;
-                                        }
-                                        const newPage = { title, project_id: projectId, slug };
-                                        const { data, error } = await supabase
-                                            .from("pages")
-                                            .insert([newPage])
-                                            .select();
-                                        if (error) console.error("페이지 생성 에러:", error);
-                                        else if (data) setPages((prevPages) => [...prevPages, ...data]);
-                                    }}
+                                    onClick={handleAddPage}
                                 >
                                     <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </button>

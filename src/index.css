@@ -31,7 +31,7 @@ html {
 
 @layer utilities {
   textarea{
-    @apply py-1 px-4 rounded-sm;
+    @apply py-1 px-2 rounded-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
@@ -41,7 +41,7 @@ html {
     }
   }
   input{
-    @apply py-1 px-4 rounded-sm;
+    @apply py-1 px-2 rounded-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
@@ -52,7 +52,7 @@ html {
   }
 
   select{
-    @apply py-1 px-4 rounded-sm;
+    @apply py-1 px-2 rounded-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
@@ -63,7 +63,7 @@ html {
   }
 
   button {
-    @apply py-1 px-4 rounded-sm;
+    @apply py-1 px-2 rounded-sm;
     background-color: var(--color-sky-500);
     color: white;
     border: 1px solid var(--color-sky-600);
