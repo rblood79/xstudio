@@ -9,6 +9,7 @@ interface Element {
   tag: string;
   props: Record<string, string | number | boolean | CSSProperties | undefined>;
   parent_id?: string | null;
+  order_num?: number;
 }
 
 function Preview() {
@@ -34,7 +35,9 @@ function Preview() {
   }, [handleMessage]); // handleMessage에 의존
 
   const renderElement = (el: Element): React.ReactNode => {
-    const children = elements.filter((child) => child.parent_id === el.id);
+    const children = elements
+      .filter((child) => child.parent_id === el.id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     const newProps = {
       ...el.props,
       key: el.id,
@@ -61,7 +64,10 @@ function Preview() {
   };
 
   const renderElementsTree = (): React.ReactNode => {
-    return elements.filter((el) => !el.parent_id).map((el) => renderElement(el));
+    const sortedRootElements = elements
+      .filter((el) => !el.parent_id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    return sortedRootElements.map((el) => renderElement(el));
   };
 
   return (

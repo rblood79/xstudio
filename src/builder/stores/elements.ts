@@ -9,6 +9,7 @@ export interface Element {
   props: { [key: string]: string | number | boolean | React.CSSProperties };
   parent_id?: string | null;
   page_id?: string;
+  order_num?: number;
 }
 
 interface Page {
@@ -16,6 +17,8 @@ interface Page {
   title: string;
   project_id: string;
   slug: string;
+  parent_id?: string | null;
+  order_num?: number;
 }
 
 interface Store {
