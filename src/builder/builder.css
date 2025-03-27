@@ -115,7 +115,11 @@
             }
 
             .elementItem {
-                @apply flex-1 flex justify-between items-center text-sm;
+                @apply flex justify-between items-center text-sm;
+            }
+
+            .no_element {
+                @apply text-sm text-red-500 p-[16px];
             }
 
             .sidebar_components {

@@ -63,6 +63,13 @@ function Builder() {
         if (error) console.error("요소 조회 에러:", error);
         else {
             loadPageElements(data);
+            const iframe = iframeRef.current;
+            if (iframe?.contentWindow) {
+                iframe.contentWindow.postMessage(
+                    { type: "UPDATE_ELEMENTS", elements: data || [] },
+                    window.location.origin
+                );
+            }
         }
     }, [setSelectedPageId, setSelectedElement, loadPageElements]);
 
@@ -380,19 +387,17 @@ function Builder() {
                     </div>
                     <div className="sidebar_content">
                         <div className="sidebar_pages">
-                            <div className="relative">
-                                <h3>Pages</h3>
-                                <button
-                                    className="iconButton absolute right-0 top-0"
-                                    aria-label="Add Page"
-                                    onClick={handleAddPage}
-                                >
-                                    <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
-                            </div>
+                            <h3>Pages</h3>
+                            <button
+                                className="iconButton absolute right-0 top-0"
+                                aria-label="Add Page"
+                                onClick={handleAddPage}
+                            >
+                                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </button>
                             <div className="elements">
                                 {pages.length === 0 ? (
-                                    <p>No pages available</p>
+                                    <p className="no_element">No pages available</p>
                                 ) : (
                                     renderTree(
                                         pages,
@@ -411,7 +416,7 @@ function Builder() {
                             <h3>Elements</h3>
                             <div className="elements">
                                 {elements.length === 0 ? (
-                                    <p>No elements available</p>
+                                    <p className="no_element">No element available</p>
                                 ) : (
                                     renderTree(
                                         elements,

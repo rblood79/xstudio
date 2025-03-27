@@ -20,19 +20,19 @@ function Preview() {
   const handleMessage = useCallback(
     (event: MessageEvent) => {
       if (event.data.type === "UPDATE_ELEMENTS") {
-        setElements(event.data.elements);
+        setElements(event.data.elements || []);
       }
       if (event.data.type === "REQUEST_UPDATE") {
         window.parent.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
       }
     },
-    [elements, setElements] // 의존성: elements와 setElements
+    [elements, setElements]
   );
 
   useEffect(() => {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [handleMessage]); // handleMessage에 의존
+  }, [handleMessage]);
 
   const renderElement = (el: Element): React.ReactNode => {
     const children = elements
