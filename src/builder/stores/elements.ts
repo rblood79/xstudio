@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { produce, produceWithPatches, Patch, applyPatches, enablePatches, WritableDraft } from 'immer';
+import { produce, Patch, enablePatches } from 'immer';
 
 enablePatches();
 
@@ -26,7 +26,7 @@ interface Store {
   selectedElementId: string | null;
   selectedElementProps: Record<string, string | number | boolean | React.CSSProperties>;
   pages: Page[];
-  history: { patches: Patch[]; inversePatches: Patch[] }[]; // 패치 히스토리
+  history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[]; // 패치 히스토리
   historyIndex: number;
   setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[]) => void;
@@ -48,115 +48,119 @@ export const useStore = create<Store>((set) => ({
   setElements: (elements) =>
     set(
       produce((state) => {
-        const result = produceWithPatches(state, (draft: WritableDraft<Store>) => {
-          draft.elements = elements;
-        }) as unknown as [Store, Patch[], Patch[]];
-        const [nextState, patches, inversePatches] = result;
-        
-        Object.assign(state, nextState);
-        const newHistory = state.history.slice(0, state.historyIndex + 1);
-        newHistory.push({ patches, inversePatches });
-        state.history = newHistory;
-        state.historyIndex = newHistory.length - 1;
+        const prevState = [...state.elements];
+        state.elements = elements;
+
+        state.history = [
+          ...state.history.slice(0, state.historyIndex + 1),
+          {
+            patches: [],
+            inversePatches: [],
+            snapshot: {
+              prev: prevState,
+              current: [...elements]
+            }
+          }
+        ];
+        state.historyIndex = state.history.length - 1;
       })
     ),
   loadPageElements: (elements) =>
     set(
       produce((state) => {
-        state.elements = elements;
+        // 상태를 완전히 초기화
+        state.elements = Array.isArray(elements) ? [...elements] : [];
+        state.selectedElementId = null;
+        state.selectedElementProps = {};
+        state.history = [];
+        state.historyIndex = -1;
+
+        // 이벤트 발생: elements가 비어있거나 있을 때 모두 처리
+        //console.log("Sending UPDATE_ELEMENTS event with elements:", state.elements);
+        window.postMessage({ type: "UPDATE_ELEMENTS", elements: state.elements }, window.location.origin);
       })
     ),
   addElement: (element) =>
     set(
       produce((state) => {
+        // 현재 상태의 스냅샷 저장
+        const prevState = [...state.elements];
+
+        // 요소 추가
         state.elements.push(element);
-        const newHistory = state.history.slice(0, state.historyIndex + 1);
-        newHistory.push({ patches: [], inversePatches: [] });
-        state.history = newHistory;
-        state.historyIndex = newHistory.length - 1;
+
+        // 히스토리에 변경사항 추가
+        state.history = [
+          ...state.history.slice(0, state.historyIndex + 1),
+          {
+            patches: [],
+            inversePatches: [],
+            snapshot: {
+              prev: prevState,
+              current: [...state.elements]
+            }
+          }
+        ];
+        state.historyIndex = state.history.length - 1;
       })
     ),
   updateElementProps: (elementId, props) =>
     set(
       produce((state) => {
-        // 현재 요소 찾기
         const element = state.elements.find((el: Element) => el.id === elementId);
         if (!element) return;
 
-        // 변경 전 속성과 변경할 속성이 같은지 비교하기 위한 함수
-        const isEqual = (obj1: unknown, obj2: unknown): boolean => {
-          if (obj1 === obj2) return true;
-          
-          // 객체가 아닌 경우 단순 비교
-          if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
-            return obj1 === obj2;
-          }
-          
-          const keys1 = Object.keys(obj1 as object);
-          const keys2 = Object.keys(obj2 as object);
-          
-          if (keys1.length !== keys2.length) return false;
-          
-          return keys1.every(key => {
-            if (!keys2.includes(key)) return false;
-            return isEqual((obj1 as Record<string, unknown>)[key], (obj2 as Record<string, unknown>)[key]);
-          });
-        };
-
-        // 변경될 속성 생성
-        const updatedProps = { ...element.props };
+        // 변경 전 속성과 변경할 속성이 같은지 비교
         let hasChanges = false;
-        
-        // 각 속성별로 변경 여부 확인
         Object.keys(props).forEach(key => {
-          if (!isEqual(updatedProps[key], props[key])) {
-            updatedProps[key] = props[key];
+          if (JSON.stringify(element.props[key]) !== JSON.stringify(props[key])) {
             hasChanges = true;
           }
         });
 
-        // 변경된 부분이 없으면 history에 저장하지 않음
-        if (!hasChanges) return;
+        // 변경사항이 있을 때만 히스토리 업데이트
+        if (hasChanges) {
+          const prevState = state.elements.map((el: Element) => ({
+            ...el,
+            props: { ...el.props }
+          }));
 
-        // 변경 사항이 있는 경우에만 patches 생성 및 history 저장
-        const result = produceWithPatches(state, (draft: WritableDraft<Store>) => {
-          const elementToUpdate = draft.elements.find((el: Element) => el.id === elementId);
-          if (elementToUpdate) {
-            elementToUpdate.props = updatedProps;
-            if (draft.selectedElementId === elementId) {
-              draft.selectedElementProps = { ...updatedProps };
+          // props 업데이트
+          element.props = { ...element.props, ...props };
+
+          // 히스토리 업데이트
+          state.history = [
+            ...state.history.slice(0, state.historyIndex + 1),
+            {
+              patches: [],
+              inversePatches: [],
+              snapshot: {
+                prev: prevState,
+                current: state.elements.map((el: Element) => ({
+                  ...el,
+                  props: { ...el.props }
+                }))
+              }
             }
-          }
-        }) as unknown as [Store, Patch[], Patch[]];
-        
-        const [nextState, patches, inversePatches] = result;
-
-        // 패치가 비어있지 않은 경우에만 히스토리에 추가
-        if (patches.length > 0) {
-          Object.assign(state, nextState);
-          const newHistory = state.history.slice(0, state.historyIndex + 1);
-          newHistory.push({ patches, inversePatches });
-          state.history = newHistory;
-          state.historyIndex = newHistory.length - 1;
+          ];
+          state.historyIndex = state.history.length - 1;
         } else {
-          // 실제 변경이 없는 경우 상태만 업데이트
-          Object.assign(state, nextState);
+          // 변경사항이 없어도 props는 업데이트
+          element.props = { ...element.props, ...props };
+        }
+
+        // 선택된 요소의 props는 항상 업데이트
+        if (state.selectedElementId === elementId) {
+          state.selectedElementProps = { ...element.props };
         }
       })
     ),
   setSelectedElement: (elementId, props) =>
-    set(
-      produce((state) => {
-        state.selectedElementId = elementId;
-        if (elementId && props) {
-          state.selectedElementProps = { ...props };
-          const element = state.elements.find((el: Element) => el.id === elementId);
-          if (element) element.props = { ...element.props, ...props };
-        } else {
-          state.selectedElementProps = {};
-        }
-      })
-    ),
+    set((state) => ({
+      ...state,
+      selectedElementId: elementId,
+      selectedElementProps: elementId && props ? { ...props } : {}
+    })),
   setPages: (pages) =>
     set(
       produce((state) => {
@@ -167,10 +171,13 @@ export const useStore = create<Store>((set) => ({
     set(
       produce((state) => {
         if (state.historyIndex >= 0) {
-          const { inversePatches } = state.history[state.historyIndex];
-          applyPatches(state, inversePatches);
+          const currentHistory = state.history[state.historyIndex];
+          if (currentHistory.snapshot) {
+            state.elements = [...currentHistory.snapshot.prev];
+          }
           state.historyIndex -= 1;
-          
+
+          // 선택된 요소 상태 업데이트
           const selectedElement = state.elements.find((el: Element) => el.id === state.selectedElementId);
           state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
         }
@@ -181,9 +188,12 @@ export const useStore = create<Store>((set) => ({
       produce((state) => {
         if (state.historyIndex < state.history.length - 1) {
           state.historyIndex += 1;
-          const { patches } = state.history[state.historyIndex];
-          applyPatches(state, patches);
-          
+          const currentHistory = state.history[state.historyIndex];
+          if (currentHistory.snapshot) {
+            state.elements = [...currentHistory.snapshot.current];
+          }
+
+          // 선택된 요소 상태 업데이트
           const selectedElement = state.elements.find((el: Element) => el.id === state.selectedElementId);
           state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
         }
