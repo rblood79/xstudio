@@ -139,17 +139,16 @@
             }
 
             .sidebar_components {
-                background: var(--color-gray-200);
                 display: flex;
                 flex-direction: inherit;
                 position: absolute;
-                left: calc(50vw - calc(var(--sizes-sideNavWidth) * 2));
+                left: calc(50vw - calc(var(--sizes-sideNavWidth) * 2) + var(--sizes-sideNavWidth)*0.5);
                 bottom: 100px;
                 width: calc(var(--sizes-sideNavWidth) * 4);
                 flex-wrap: wrap;
 
                 button {
-                    text-align: start;
+                    text-align: center;
                     border-radius: 0;
                     width: var(--sizes-sideNavWidth);
                     height: var(--sizes-sideNavWidth);

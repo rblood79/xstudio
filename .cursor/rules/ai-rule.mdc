@@ -1,4 +1,9 @@
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: 프로젝트 코딩 규칙 및 Tailwind CSS v4 가이드라인
 globs: ["**/*.{tsx,ts,css}"]
 alwaysApply: true
@@ -179,7 +184,7 @@ CREATE TABLE public.elements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   page_id UUID NOT NULL,
   parent_id UUID,  -- 최상위 요소는 NULL
-  type TEXT NOT NULL,  -- 예: "div", "text", "button", "image" 등
+  tag TEXT NOT NULL,  -- 예: "div", "text", "button", "image" 등
   props JSONB DEFAULT '{}' ,  -- 요소의 스타일, 내용 등 속성을 JSON 형태로 저장
   order_num INT DEFAULT 0,      -- 같은 부모 내에서의 순서
   created_at TIMESTAMP DEFAULT now(),

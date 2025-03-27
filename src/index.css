@@ -23,34 +23,44 @@
 }
 
 @layer utilities {
-  textarea{
+  textarea {
     @apply py-1 px-2 rounded-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
     transition: border-color 0.2s ease;
-    &:hover, &:focus, &:focus-visible {
-      border: 1px solid var(--primary);
-    }
-  }
-  input{
-    @apply py-1 px-2 rounded-sm;
-    outline: none;
-    border: 1px solid var(--color-gray-200);
-    background-color: #fff;
-    transition: border-color 0.2s ease;
-    &:hover, &:focus, &:focus-visible {
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
       border: 1px solid var(--primary);
     }
   }
 
-  select{
+  input {
     @apply py-1 px-2 rounded-sm;
     outline: none;
     border: 1px solid var(--color-gray-200);
     background-color: #fff;
     transition: border-color 0.2s ease;
-    &:hover, &:focus, &:focus-visible {
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
+      border: 1px solid var(--primary);
+    }
+  }
+
+  select {
+    @apply py-1 px-2 rounded-sm;
+    outline: none;
+    border: 1px solid var(--color-gray-200);
+    background-color: #fff;
+    transition: border-color 0.2s ease;
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
       border: 1px solid var(--primary);
     }
   }
@@ -62,13 +72,16 @@
     border: 1px solid var(--color-sky-600);
     cursor: pointer;
     transition: all 0.2s ease;
-    &:hover, &:focus, &:focus-visible {
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
       background-color: var(--color-sky-600);
     }
   }
 
   .div {
-    @apply border border-gray-200;
+    @apply border border-gray-200 bg-amber-300;
   }
 
   .iconButton {
@@ -80,7 +93,10 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    &:hover, &:focus, &:focus-visible {
+
+    &:hover,
+    &:focus,
+    &:focus-visible {
       border: none;
       background-color: transparent;
       color: var(--color-sky-600);

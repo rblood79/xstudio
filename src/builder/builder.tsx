@@ -310,7 +310,7 @@ function Builder() {
         return () => window.removeEventListener("message", handleMessage);
     }, [setSelectedElement, updateElementProps]);
 
-    const handleAddPage = async () => {
+    /*const handleAddPage = async () => {
         const title = prompt("Enter page title:");
         const slug = prompt("Enter page slug:");
         if (!title || !slug) {
@@ -346,6 +346,64 @@ function Builder() {
 
         if (error) console.error("페이지 생성 에러:", error);
         else if (data) setPages((prevPages) => [...prevPages, ...data]);
+    };*/
+    const handleAddPage = async () => {
+        const title = prompt("Enter page title:");
+        const slug = prompt("Enter page slug:");
+        if (!title || !slug) {
+            alert("Title and slug are required.");
+            return;
+        }
+
+        const sortedPages = [...pages].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const newOrderNum = sortedPages.length === 0 ? 1000 : (sortedPages[sortedPages.length - 1].order_num || 0) + 1000;
+
+        const newPage = {
+            title,
+            project_id: projectId,
+            slug,
+            order_num: newOrderNum,
+        };
+
+        const { data: pageData, error: pageError } = await supabase
+            .from("pages")
+            .insert([newPage])
+            .select();
+
+        if (pageError) {
+            console.error("페이지 생성 에러:", pageError);
+            return;
+        }
+
+        if (pageData) {
+            const createdPage = pageData[0];
+
+            // Body 요소 생성 (tag 사용)
+            const bodyElement = {
+                id: crypto.randomUUID(),
+                page_id: createdPage.id,
+                parent_id: null,
+                tag: "body", // 데이터베이스에 "tag"로 저장
+                props: { style: { margin: 0 } },
+                order_num: 0,
+            };
+
+            const { data: elementData, error: elementError } = await supabase
+                .from("elements")
+                .insert([bodyElement])
+                .select();
+
+            if (elementError) {
+                console.error("Body 요소 생성 에러:", elementError);
+                return;
+            }
+
+            setPages((prevPages) => [...prevPages, createdPage]);
+            if (elementData) {
+                addElement(elementData[0]);
+                fetchElements(createdPage.id);
+            }
+        }
     };
 
     return (
@@ -450,11 +508,11 @@ function Builder() {
                         </div>
                     </div>
                     <div className="sidebar_components">
-                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>DIV</button>
-                        <button aria-label="Add span" onClick={() => handleAddElement("span", "")}>TEXT</button>
-                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>SEC</button>
-                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>BTN</button>
-                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TBL</button>
+                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>D</button>
+                        <button aria-label="Add span" onClick={() => handleAddElement("span", "")}>T</button>
+                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>S</button>
+                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>B</button>
+                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TL</button>
 
                     </div>
                 </aside>
