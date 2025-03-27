@@ -25,25 +25,25 @@ const Signin = () => {
   return (
     <main>
       <div className='flex flex-col justify-center items-center h-screen'>
-      <h2 className='title'>SIGN IN</h2>
-      <form onSubmit={handleSubmit} className='flex flex-col gap-2'>
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? '로딩 중...' : '로그인'}
-        </button>
-      </form>
-      {error && <p>{error}</p>}
+        <h2 className='title'>SIGN IN</h2>
+        <form onSubmit={handleSubmit} className='flex flex-col gap-2'>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit" disabled={loading}>
+            {loading ? 'LOADING...' : 'SIGN IN'}
+          </button>
+        </form>
+        {error && <p>{error}</p>}
       </div>
     </main>
   );
