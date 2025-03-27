@@ -93,14 +93,7 @@ export const useStore = create<Store>((set, get) => ({
         // 새 페이지의 히스토리 초기화 또는 기존 히스토리 사용
         const pageHistory = state.pageHistories[pageId] || {
           elements: newElements,
-          history: [{
-            patches: [],
-            inversePatches: [],
-            snapshot: {
-              prev: [],
-              current: newElements
-            }
-          }],
+          history: [], // 빈 배열로 시작
           historyIndex: -1
         };
 
@@ -113,6 +106,7 @@ export const useStore = create<Store>((set, get) => ({
         state.historyIndex = pageHistory.historyIndex;
         state.pageHistories[pageId] = pageHistory;
 
+        // 첫 로드 시에는 postMessage만 하고 히스토리는 생성하지 않음
         try {
           window.postMessage({
             type: "UPDATE_ELEMENTS",

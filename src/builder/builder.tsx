@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router";
 import { supabase } from "../env/supabase.client";
-import { Icon, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
+import { Icon, PanelTop, Layers2, Settings2, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
 import { layoutGridMoveVertical } from '@lucide/lab';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
@@ -31,6 +31,7 @@ function Builder() {
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1.5, size: 21 });
+    const [iconEditProps] = React.useState({ color: "#171717", stroke: 1.5, size: 16 });
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
@@ -218,7 +219,8 @@ function Builder() {
         getLabel: (item: T) => string,
         onClick: (item: T) => void,
         onDelete: (item: T) => Promise<void>,
-        parentId: string | null = null
+        parentId: string | null = null,
+        depth: number = 0
     ): React.ReactNode => {
         const filteredItems = items
             .filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined))
@@ -229,29 +231,35 @@ function Builder() {
                 {filteredItems.map((item) => (
                     <div
                         key={item.id}
+                        data-depth={depth}
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick(item);
                         }}
                         className="element"
-                        style={{
-                            background: selectedElementId === item.id || selectedPageId === item.id ? "var(--color-gray-200)" : undefined,
-                        }}
+
                     >
-                        <div className="elementItem">
+                        <div className={`elementItem ${selectedElementId === item.id || selectedPageId === item.id ? 'active' : ''}`} style={{
+                            paddingLeft: `${(depth * 16) + 16}px`
+                        }}>
                             <span>{getLabel(item)}</span>
-                            <button
-                                className="iconButton"
-                                aria-label={`Delete ${getLabel(item)}`}
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    await onDelete(item);
-                                }}
-                            >
-                                <Trash color={'var(--color-gray-500)'} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            </button>
+                            <div className="elementItemActions">
+                                <button className="iconButton" aria-label="Settings">
+                                    <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                                <button
+                                    className="iconButton"
+                                    aria-label={`Delete ${getLabel(item)}`}
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await onDelete(item);
+                                    }}
+                                >
+                                    <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                            </div>
                         </div>
-                        {renderTree(items, getLabel, onClick, onDelete, item.id)}
+                        {renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
                     </div>
                 ))}
             </>
@@ -387,13 +395,13 @@ function Builder() {
                     </div>
                     <div className="sidebar_content">
                         <div className="sidebar_pages">
-                            <h3>Pages</h3>
+                            <h3><PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Pages</h3>
                             <button
                                 className="iconButton absolute right-0 top-0"
                                 aria-label="Add Page"
                                 onClick={handleAddPage}
                             >
-                                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                <CirclePlus color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
                             </button>
                             <div className="elements">
                                 {pages.length === 0 ? (
@@ -413,7 +421,7 @@ function Builder() {
                             </div>
                         </div>
                         <div className="sidebar_elements">
-                            <h3>Elements</h3>
+                            <h3><Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Layers</h3>
                             <div className="elements">
                                 {elements.length === 0 ? (
                                     <p className="no_element">No element available</p>
@@ -443,9 +451,10 @@ function Builder() {
                     </div>
                     <div className="sidebar_components">
                         <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>DIV</button>
-                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>SECTION</button>
-                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>BUTTON</button>
-                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TABLE</button>
+                        <button aria-label="Add span" onClick={() => handleAddElement("span", "")}>TEXT</button>
+                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>SEC</button>
+                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>BTN</button>
+                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TBL</button>
 
                     </div>
                 </aside>
