@@ -21,6 +21,12 @@ interface Page {
   order_num?: number;
 }
 
+interface PageHistory {
+  elements: Element[];
+  history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[];
+  historyIndex: number;
+}
+
 interface Store {
   elements: Element[];
   selectedElementId: string | null;
@@ -28,23 +34,37 @@ interface Store {
   pages: Page[];
   history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[]; // 패치 히스토리
   historyIndex: number;
+  pageHistories: Record<string, PageHistory>;  // 페이지별 히스토리 관리
+  currentPageId: string | null;
   setElements: (elements: Element[]) => void;
-  loadPageElements: (elements: Element[]) => void;
+  loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => void;
   updateElementProps: (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => void;
   setSelectedElement: (elementId: string | null, props?: Record<string, string | number | boolean | React.CSSProperties>) => void;
   setPages: (pages: Page[]) => void;
+  setCurrentPageId: (pageId: string) => void;
   undo: () => void;
   redo: () => void;
 }
 
-export const useStore = create<Store>((set) => ({
+const sanitizeElement = (el: Element) => ({
+  id: el.id,
+  tag: el.tag,
+  props: JSON.parse(JSON.stringify(el.props)), // Deep clone to remove non-serializable values
+  parent_id: el.parent_id,
+  page_id: el.page_id,
+  order_num: el.order_num
+});
+
+export const useStore = create<Store>((set, get) => ({
   elements: [],
   selectedElementId: null,
   selectedElementProps: {},
   pages: [],
   history: [], // 초기 상태
   historyIndex: -1,
+  pageHistories: {},
+  currentPageId: null,
   setElements: (elements) =>
     set(
       produce((state) => {
@@ -65,43 +85,50 @@ export const useStore = create<Store>((set) => ({
         state.historyIndex = state.history.length - 1;
       })
     ),
-  loadPageElements: (elements) =>
+  loadPageElements: (elements, pageId) =>
     set(
       produce((state) => {
-        // 상태를 완전히 초기화
-        state.elements = Array.isArray(elements) ? [...elements] : [];
+        const newElements = Array.isArray(elements) ? [...elements] : [];
+
+        // 새 페이지의 히스토리 초기화 또는 기존 히스토리 사용
+        const pageHistory = state.pageHistories[pageId] || {
+          elements: newElements,
+          history: [{
+            patches: [],
+            inversePatches: [],
+            snapshot: {
+              prev: [],
+              current: newElements
+            }
+          }],
+          historyIndex: -1
+        };
+
+        // 상태 업데이트
+        state.elements = newElements;
         state.selectedElementId = null;
         state.selectedElementProps = {};
-        state.history = [];
-        state.historyIndex = -1;
+        state.currentPageId = pageId;
+        state.history = pageHistory.history;
+        state.historyIndex = pageHistory.historyIndex;
+        state.pageHistories[pageId] = pageHistory;
 
-        // 이벤트 발생: elements가 비어있거나 있을 때 모두 처리
-        //console.log("Sending UPDATE_ELEMENTS event with elements:", state.elements);
-        window.postMessage({ type: "UPDATE_ELEMENTS", elements: state.elements }, window.location.origin);
+        try {
+          window.postMessage({
+            type: "UPDATE_ELEMENTS",
+            elements: newElements.map(sanitizeElement)
+          }, window.location.origin);
+        } catch (error) {
+          console.error("Failed to send message:", error);
+        }
       })
     ),
   addElement: (element) =>
     set(
       produce((state) => {
-        // 현재 상태의 스냅샷 저장
         const prevState = [...state.elements];
-
-        // 요소 추가
         state.elements.push(element);
-
-        // 히스토리에 변경사항 추가
-        state.history = [
-          ...state.history.slice(0, state.historyIndex + 1),
-          {
-            patches: [],
-            inversePatches: [],
-            snapshot: {
-              prev: prevState,
-              current: [...state.elements]
-            }
-          }
-        ];
-        state.historyIndex = state.history.length - 1;
+        updateHistory(state, prevState, [...state.elements]);
       })
     ),
   updateElementProps: (elementId, props) =>
@@ -110,7 +137,6 @@ export const useStore = create<Store>((set) => ({
         const element = state.elements.find((el: Element) => el.id === elementId);
         if (!element) return;
 
-        // 변경 전 속성과 변경할 속성이 같은지 비교
         let hasChanges = false;
         Object.keys(props).forEach(key => {
           if (JSON.stringify(element.props[key]) !== JSON.stringify(props[key])) {
@@ -118,38 +144,21 @@ export const useStore = create<Store>((set) => ({
           }
         });
 
-        // 변경사항이 있을 때만 히스토리 업데이트
         if (hasChanges) {
           const prevState = state.elements.map((el: Element) => ({
             ...el,
             props: { ...el.props }
           }));
 
-          // props 업데이트
           element.props = { ...element.props, ...props };
-
-          // 히스토리 업데이트
-          state.history = [
-            ...state.history.slice(0, state.historyIndex + 1),
-            {
-              patches: [],
-              inversePatches: [],
-              snapshot: {
-                prev: prevState,
-                current: state.elements.map((el: Element) => ({
-                  ...el,
-                  props: { ...el.props }
-                }))
-              }
-            }
-          ];
-          state.historyIndex = state.history.length - 1;
+          updateHistory(state, prevState, state.elements.map((el: Element) => ({
+            ...el,
+            props: { ...el.props }
+          })));
         } else {
-          // 변경사항이 없어도 props는 업데이트
           element.props = { ...element.props, ...props };
         }
 
-        // 선택된 요소의 props는 항상 업데이트
         if (state.selectedElementId === elementId) {
           state.selectedElementProps = { ...element.props };
         }
@@ -167,36 +176,122 @@ export const useStore = create<Store>((set) => ({
         state.pages = pages;
       })
     ),
-  undo: () =>
+  setCurrentPageId: (pageId) =>
+    set(() => ({ currentPageId: pageId })),
+  undo: () => {
+    const state = get();
+    if (!state.currentPageId) return;
+
     set(
       produce((state) => {
-        if (state.historyIndex >= 0) {
-          const currentHistory = state.history[state.historyIndex];
-          if (currentHistory.snapshot) {
-            state.elements = [...currentHistory.snapshot.prev];
-          }
-          state.historyIndex -= 1;
+        const pageHistory = state.pageHistories[state.currentPageId!];
+        if (!pageHistory || pageHistory.historyIndex < 0) return;
 
-          // 선택된 요소 상태 업데이트
-          const selectedElement = state.elements.find((el: Element) => el.id === state.selectedElementId);
-          state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
+        const currentHistory = pageHistory.history[pageHistory.historyIndex];
+        if (currentHistory?.snapshot) {
+          const elements = currentHistory.snapshot.prev.map((el: Element) => ({
+            id: el.id,
+            tag: el.tag,
+            props: { ...el.props },
+            parent_id: el.parent_id,
+            page_id: el.page_id,
+            order_num: el.order_num
+          }));
+
+          state.elements = elements;
+          pageHistory.historyIndex -= 1;
+
+          try {
+            window.postMessage({
+              type: "UPDATE_ELEMENTS",
+              elements: elements.map(sanitizeElement)
+            }, window.location.origin);
+          } catch (error) {
+            console.error("Failed to send message:", error);
+          }
         }
       })
-    ),
-  redo: () =>
+    );
+  },
+  redo: () => {
+    const state = get();
+    if (!state.currentPageId) return;
+
     set(
       produce((state) => {
-        if (state.historyIndex < state.history.length - 1) {
-          state.historyIndex += 1;
-          const currentHistory = state.history[state.historyIndex];
-          if (currentHistory.snapshot) {
-            state.elements = [...currentHistory.snapshot.current];
-          }
+        const pageHistory = state.pageHistories[state.currentPageId!];
+        if (!pageHistory || pageHistory.historyIndex >= pageHistory.history.length - 1) return;
 
-          // 선택된 요소 상태 업데이트
-          const selectedElement = state.elements.find((el: Element) => el.id === state.selectedElementId);
-          state.selectedElementProps = selectedElement ? { ...selectedElement.props } : {};
+        const nextHistory = pageHistory.history[pageHistory.historyIndex + 1];
+        if (nextHistory?.snapshot) {
+          const elements = nextHistory.snapshot.current.map((el: Element) => ({
+            id: el.id,
+            tag: el.tag,
+            props: { ...el.props },
+            parent_id: el.parent_id,
+            page_id: el.page_id,
+            order_num: el.order_num
+          }));
+
+          state.elements = elements;
+          pageHistory.historyIndex += 1;
+
+          try {
+            window.postMessage({
+              type: "UPDATE_ELEMENTS",
+              elements: elements.map(sanitizeElement)
+            }, window.location.origin);
+          } catch (error) {
+            console.error("Failed to send message:", error);
+          }
         }
       })
-    ),
+    );
+  },
 }));
+
+// addElement, updateElementProps 등의 상태 변경 함수들에서 공통으로 사용할 히스토리 업데이트 로직
+const updateHistory = (state: Store, prevState: Element[], currentState: Element[]) => {
+  if (!state.currentPageId) return;
+
+  const newHistoryEntry = {
+    patches: [],
+    inversePatches: [],
+    snapshot: {
+      prev: prevState.map(el => ({
+        id: el.id,
+        tag: el.tag,
+        props: { ...el.props },
+        parent_id: el.parent_id,
+        page_id: el.page_id,
+        order_num: el.order_num
+      })),
+      current: currentState.map(el => ({
+        id: el.id,
+        tag: el.tag,
+        props: { ...el.props },
+        parent_id: el.parent_id,
+        page_id: el.page_id,
+        order_num: el.order_num
+      }))
+    }
+  };
+
+  // 현재 페이지의 히스토리 업데이트
+  const pageHistory = state.pageHistories[state.currentPageId] || {
+    elements: [],
+    history: [],
+    historyIndex: -1
+  };
+
+  pageHistory.history = [
+    ...pageHistory.history.slice(0, pageHistory.historyIndex + 1),
+    newHistoryEntry
+  ];
+  pageHistory.historyIndex = pageHistory.history.length - 1;
+  pageHistory.elements = currentState;
+
+  state.history = pageHistory.history;
+  state.historyIndex = pageHistory.historyIndex;
+  state.pageHistories[state.currentPageId] = pageHistory;
+};
