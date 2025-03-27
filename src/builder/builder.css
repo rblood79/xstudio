@@ -26,6 +26,7 @@
 
         nav.header {
             grid-area: header;
+            @apply bg-gray-600 text-neutral-100 flex flex-row justify-between items-center;
             position: relative;
             height: 48px;
 
@@ -41,17 +42,18 @@
                 &:first-child {
                     justify-content: flex-start;
                     flex: 1;
-                    button {
-                        
-                    }
+
+                    button {}
                 }
 
                 &:last-child {
                     justify-content: flex-end;
                     flex: 1;
+
                     button {
                         @apply bg-gray-500;
                     }
+
                     .publish {
                         width: 96px;
                     }
@@ -81,14 +83,13 @@
 
                 .sidebar_group {
                     @apply p-[8px] gap-[16px] flex flex-col items-center justify-center;
+
                     button {
                         @apply size-[32px] flex justify-center items-center p-0 bg-transparent border-none;
 
                     }
 
                 }
-
-
             }
 
             .sidebar_content {
@@ -102,20 +103,19 @@
 
             .sidebar_pages {
                 width: var(--sizes-sidebarWidth);
-
-                .element {
-                    padding-left: 16px;
-                }
-
             }
 
             .sidebar_elements {
                 width: var(--sizes-sidebarWidth);
+            }
 
-                .element {
-                    padding-left: 16px;
-                    position: relative;
-                }
+            .element {
+                padding-left: 16px;
+                position: relative;
+            }
+
+            .elementItem {
+                @apply flex-1 flex justify-between items-center text-sm;
             }
 
             .sidebar_components {
