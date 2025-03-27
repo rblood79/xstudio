@@ -31,7 +31,7 @@
             height: 48px;
 
             .header_contents {
-                @apply flex items-center justify-center p-[8px] gap-[8px];
+                @apply flex items-center justify-center p-[8px] gap-[4px];
 
                 &.screen {
                     @apply flex rounded-lg bg-gray-500 p-[2px] gap-1;
@@ -110,12 +110,28 @@
             }
 
             .element {
-                padding-left: 16px;
                 position: relative;
             }
 
+            .elementItemLabel {
+                @apply text-sm;
+            }
+
+            .elementItemActions {
+                display: flex;
+                flex-direction: row;
+
+                .iconButton {
+                    @apply p-[0px] size-[32px];
+                }
+            }
+
             .elementItem {
-                @apply flex justify-between items-center text-sm;
+                @apply flex justify-between items-center text-sm p-[8px];
+
+                &.active {
+                    @apply bg-sky-100;
+                }
             }
 
             .no_element {
@@ -125,14 +141,18 @@
             .sidebar_components {
                 background: var(--color-gray-200);
                 display: flex;
-                flex-direction: column;
+                flex-direction: inherit;
                 position: absolute;
-                left: calc(100% + var(--sizes-sidebarWidth));
+                left: calc(50vw - calc(var(--sizes-sideNavWidth) * 2));
+                bottom: 100px;
+                width: calc(var(--sizes-sideNavWidth) * 4);
+                flex-wrap: wrap;
 
                 button {
                     text-align: start;
                     border-radius: 0;
-                    min-width: 120px;
+                    width: var(--sizes-sideNavWidth);
+                    height: var(--sizes-sideNavWidth);
                 }
 
                 ;
