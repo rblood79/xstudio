@@ -112,11 +112,11 @@ function Builder() {
             alert("먼저 페이지를 선택하세요.");
             return;
         }
-        
+
         // Get max order_num from existing elements
-        const maxOrderNum = elements.reduce((max, el) => 
+        const maxOrderNum = elements.reduce((max, el) =>
             Math.max(max, el.order_num || 0), 0);
-        
+
         const newElement = {
             id: crypto.randomUUID(),
             page_id: selectedPageId,
@@ -125,7 +125,7 @@ function Builder() {
             parent_id: selectedElementId || null,
             order_num: maxOrderNum + 1, // Add order_num to new elements
         };
-        
+
         const { data, error } = await supabase
             .from("elements")
             .insert([newElement])
@@ -226,12 +226,12 @@ function Builder() {
                             e.stopPropagation();
                             onClick(item);
                         }}
-                        className="element flex flex-col"
+                        className="element"
                         style={{
                             background: selectedElementId === item.id || selectedPageId === item.id ? "var(--color-gray-200)" : undefined,
                         }}
                     >
-                        <div className="elementItem flex-1 flex justify-between items-center text-sm">
+                        <div className="elementItem">
                             <span>{getLabel(item)}</span>
                             <button
                                 className="iconButton"
@@ -304,7 +304,7 @@ function Builder() {
         }
 
         // 현재 페이지들의 order_num 값을 정렬하여 가져옴
-        const sortedPages = [...pages].sort((a, b) => 
+        const sortedPages = [...pages].sort((a, b) =>
             (a.order_num || 0) - (b.order_num || 0)
         );
 
@@ -317,11 +317,11 @@ function Builder() {
             newOrderNum = (lastPage.order_num || 0) + 1000; // 간격을 1000으로 설정
         }
 
-        const newPage = { 
-            title, 
-            project_id: projectId, 
+        const newPage = {
+            title,
+            project_id: projectId,
             slug,
-            order_num: newOrderNum 
+            order_num: newOrderNum
         };
 
         const { data, error } = await supabase
@@ -446,7 +446,7 @@ function Builder() {
                 </aside>
                 <aside className="inspector"><Inspector /></aside>
 
-                <nav className="header bg-gray-600 text-neutral-100 flex flex-row justify-between items-center">
+                <nav className="header ">
                     <div className="header_contents header_left">
                         <button aria-label="Menu"><Menu color={'#fff'} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
@@ -458,21 +458,21 @@ function Builder() {
                         <button aria-label="Desktop View"><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                     <div className="header_contents header_right">
-                        <button 
-                          aria-label="Undo" 
-                          onClick={handleUndo}
-                          disabled={historyIndex < 0}
-                          className={historyIndex < 0 ? "disabled" : ""}
+                        <button
+                            aria-label="Undo"
+                            onClick={handleUndo}
+                            disabled={historyIndex < 0}
+                            className={historyIndex < 0 ? "disabled" : ""}
                         >
-                          <Undo color={historyIndex < 0 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Undo color={historyIndex < 0 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         </button>
-                        <button 
-                          aria-label="Redo" 
-                          onClick={handleRedo}
-                          disabled={historyIndex >= history.length - 1}
-                          className={historyIndex >= history.length - 1 ? "disabled" : ""}
+                        <button
+                            aria-label="Redo"
+                            onClick={handleRedo}
+                            disabled={historyIndex >= history.length - 1}
+                            className={historyIndex >= history.length - 1 ? "disabled" : ""}
                         >
-                          <Redo color={historyIndex >= history.length - 1 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Redo color={historyIndex >= history.length - 1 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         </button>
                         <button aria-label="Preview"><Eye color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button aria-label="Play"><Play color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
