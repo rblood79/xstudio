@@ -24,8 +24,8 @@ function Builder() {
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
-    const historyIndex = useStore((state) => state.historyIndex);
-    const history = useStore((state) => state.history);
+    const currentPageId = useStore((state) => state.currentPageId);
+    const pageHistories = useStore((state) => state.pageHistories);
     const { setElements, addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
@@ -62,7 +62,7 @@ function Builder() {
             .order('order_num', { ascending: true });
         if (error) console.error("요소 조회 에러:", error);
         else {
-            loadPageElements(data);
+            loadPageElements(data, pageId);
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
                 iframe.contentWindow.postMessage(
@@ -442,10 +442,10 @@ function Builder() {
                         </div>
                     </div>
                     <div className="sidebar_components">
-                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>+ DIV</button>
-                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>+ SECTION</button>
-                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>+ BUTTON</button>
-                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>+ TABLE</button>
+                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>DIV</button>
+                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>SECTION</button>
+                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>BUTTON</button>
+                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TABLE</button>
 
                     </div>
                 </aside>
@@ -457,7 +457,12 @@ function Builder() {
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
-                        <span>{historyIndex + 1}/{history.length}</span>
+                        <span>
+                            {currentPageId && pageHistories[currentPageId]
+                                ? `${pageHistories[currentPageId].historyIndex + 1}/${pageHistories[currentPageId].history.length}`
+                                : '0/0'
+                            }
+                        </span>
                         <button aria-label="Screen Width 767">767</button>
                         <button aria-label="Mobile View"><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button aria-label="Desktop View"><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
@@ -466,18 +471,32 @@ function Builder() {
                         <button
                             aria-label="Undo"
                             onClick={handleUndo}
-                            disabled={historyIndex < 0}
-                            className={historyIndex < 0 ? "disabled" : ""}
+                            disabled={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex < 0}
+                            className={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex < 0 ? "disabled" : ""}
                         >
-                            <Undo color={historyIndex < 0 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Undo
+                                color={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex < 0
+                                    ? "#999"
+                                    : iconProps.color
+                                }
+                                strokeWidth={iconProps.stroke}
+                                size={iconProps.size}
+                            />
                         </button>
                         <button
                             aria-label="Redo"
                             onClick={handleRedo}
-                            disabled={historyIndex >= history.length - 1}
-                            className={historyIndex >= history.length - 1 ? "disabled" : ""}
+                            disabled={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex >= pageHistories[currentPageId].history.length - 1}
+                            className={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex >= pageHistories[currentPageId].history.length - 1 ? "disabled" : ""}
                         >
-                            <Redo color={historyIndex >= history.length - 1 ? "#999" : iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Redo
+                                color={!currentPageId || !pageHistories[currentPageId] || pageHistories[currentPageId].historyIndex >= pageHistories[currentPageId].history.length - 1
+                                    ? "#999"
+                                    : iconProps.color
+                                }
+                                strokeWidth={iconProps.stroke}
+                                size={iconProps.size}
+                            />
                         </button>
                         <button aria-label="Preview"><Eye color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         <button aria-label="Play"><Play color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
