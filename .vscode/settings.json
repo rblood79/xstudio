@@ -1,0 +1,25 @@
+{
+    "css.validate": false,
+    "scss.validate": false,
+    "editor.quickSuggestions": {
+        "strings": true
+    },
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "@apply\\s+([^;]*);",
+            "[\"'`]([^\"'`]*).*?[\"'`]"
+        ]
+    ],
+    "files.associations": {
+        "*.css": "css"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    },
+    "editor.formatOnSave": true,
+    // Tailwind CSS v4 관련 커스텀 힌트
+    "tailwindCSS.includeLanguages": {
+        "typescript": "javascript",
+        "typescriptreact": "javascript"
+    }
+}
