@@ -3,6 +3,7 @@ import { PanelTop, Layers2, File, SquarePlus, LibraryBig, Database, Users, Setti
 import { supabase } from "../../env/supabase.client";
 import { useStore } from '../stores/elements';
 import "./index.css";
+import Components from '../components';
 
 interface Page {
     id: string;
@@ -19,9 +20,10 @@ interface SidebarProps {
     handleAddPage: () => Promise<void>;
     handleAddElement: (tag: string, text: string) => Promise<void>;
     fetchElements: (pageId: string) => Promise<void>;
+    selectedPageId: string | null;
 }
 
-export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements }: SidebarProps) {
+export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId }: SidebarProps) {
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
     const { setElements, setSelectedElement } = useStore();
@@ -52,10 +54,14 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                         }}
                         className="element"
                     >
-                        <div className={`elementItem ${selectedElementId === item.id ? 'active' : ''}`} style={{
-                            paddingLeft: `${(depth * 16) + 16}px`
-                        }}>
-                            <span>{getLabel(item)}</span>
+                        <div className={`elementItem ${('title' in item && selectedPageId === item.id) ||
+                            ('tag' in item && selectedElementId === item.id)
+                            ? 'active'
+                            : ''
+                            }`} style={{
+                                paddingLeft: `${(depth * 16) + 16}px`
+                            }}>
+                            <span className="elementItemLabel">{getLabel(item)}</span>
                             <div className="elementItemActions">
                                 <button className="iconButton" aria-label="Settings">
                                     <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
@@ -178,14 +184,9 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                         )}
                     </div>
                 </div>
+
             </div>
-            <div className="sidebar_components">
-                <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>D</button>
-                <button aria-label="Add span" onClick={() => handleAddElement("span", "")}>T</button>
-                <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>S</button>
-                <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>B</button>
-                <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TL</button>
-            </div>
+            <Components handleAddElement={handleAddElement} />
         </aside>
     );
 } 

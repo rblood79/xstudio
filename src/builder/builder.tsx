@@ -302,7 +302,9 @@ function Builder() {
                     handleAddPage={handleAddPage}
                     handleAddElement={handleAddElement}
                     fetchElements={fetchElements}
+                    selectedPageId={selectedPageId}
                 />
+
 
                 <aside className="inspector"><Inspector /></aside>
 
