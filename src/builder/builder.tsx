@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router";
 import { supabase } from "../env/supabase.client";
-import { PanelTop, Layers2, Settings2, Menu, Play, Eye, Smartphone, Monitor, File, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
-//import { layoutGridMoveVertical } from '@lucide/lab';
+import { Menu, Eye, Smartphone, Monitor, Undo, Redo, Play } from 'lucide-react';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
+import Sidebar from "./sidebar";
 import "./builder.css";
 import { useStore } from './stores/elements';
 import { debounce } from 'lodash';
@@ -20,18 +20,16 @@ interface Page {
 
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
-    const iframeRef = useRef<HTMLIFrameElement>(null); // iframe 참조
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
     const currentPageId = useStore((state) => state.currentPageId);
     const pageHistories = useStore((state) => state.pageHistories);
-    const { setElements, addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
+    const { addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
-    const lastSentElementId = useRef<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
-    const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
@@ -80,48 +78,12 @@ function Builder() {
         }
     }, [pages, selectedPageId, fetchElements]);
 
-    const sendElementSelectedMessage = (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => {
-        const iframe = iframeRef.current;
-        if (iframe?.contentDocument) {
-            const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
-            if (element) {
-                const selectedElement = elements.find((el) => el.id === elementId);
-                const rect = element.getBoundingClientRect();
-                const computedStyle = window.getComputedStyle(element);
-                const adjustedRect = {
-                    top: rect.top + window.scrollY,
-                    left: rect.left + window.scrollX,
-                    width: parseFloat(computedStyle.width) || rect.width,
-                    height: parseFloat(computedStyle.height) || rect.height,
-                };
-                const message = {
-                    type: "ELEMENT_SELECTED",
-                    elementId,
-                    payload: { rect: adjustedRect, tag: selectedElement?.tag || "Unknown", props },
-                    source: "builder",
-                };
-                if (lastSentElementId.current !== elementId) {
-                    window.postMessage(message, window.location.origin);
-                    if (iframe.contentWindow) {
-                        iframe.contentWindow.postMessage(message, window.location.origin);
-                    } else {
-                        console.warn("iframe contentWindow not available for element selection:", elementId);
-                    }
-                    lastSentElementId.current = elementId;
-                }
-            } else {
-                console.warn("Element not found in iframe for ID:", elementId);
-            }
-        }
-    };
-
     const handleAddElement = async (...args: [string, string]) => {
         if (!selectedPageId) {
             alert("먼저 페이지를 선택하세요.");
             return;
         }
 
-        // Get max order_num from existing elements
         const maxOrderNum = elements.reduce((max, el) =>
             Math.max(max, el.order_num || 0), 0);
 
@@ -131,7 +93,7 @@ function Builder() {
             tag: args[0],
             props: { ...(args[1] ? { text: args[1] } : {}), style: {} },
             parent_id: selectedElementId || null,
-            order_num: maxOrderNum + 1, // Add order_num to new elements
+            order_num: maxOrderNum + 1,
         };
 
         const { data, error } = await supabase
@@ -143,128 +105,65 @@ function Builder() {
             addElement(data[0]);
             requestAnimationFrame(() => {
                 setSelectedElement(data[0].id, data[0].props);
-                sendElementSelectedMessage(data[0].id, data[0].props);
             });
         }
     };
 
     const handleUndo = debounce(async () => {
-        if (isProcessing) return; // 진행 중이면 실행 중단
+        if (isProcessing) return;
         isProcessing = true;
 
         try {
-            // 1. Zustand 상태 변경
             undo();
-            await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
+            await new Promise((resolve) => setTimeout(resolve, 0));
             const updatedElements = useStore.getState().elements;
 
-            // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
 
-            // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
                 iframe.contentWindow.postMessage(
                     { type: "UPDATE_ELEMENTS", elements: updatedElements },
                     window.location.origin
                 );
-            } else {
-                console.warn("iframe contentWindow not available during undo");
             }
         } catch (error) {
             console.error("Undo error:", error);
         } finally {
-            isProcessing = false; // 작업 완료 후 플래그 해제
+            isProcessing = false;
         }
-    }, 300); // 300ms 디바운싱
+    }, 300);
 
     const handleRedo = debounce(async () => {
-        if (isProcessing) return; // 진행 중이면 실행 중단
+        if (isProcessing) return;
         isProcessing = true;
 
         try {
-            // 1. Zustand 상태 변경
             redo();
-            await new Promise((resolve) => setTimeout(resolve, 0)); // 상태 반영 대기
+            await new Promise((resolve) => setTimeout(resolve, 0));
             const updatedElements = useStore.getState().elements;
 
-            // 2. Supabase에 업데이트
             const { error } = await supabase
                 .from("elements")
                 .upsert(updatedElements, { onConflict: "id" });
             if (error) throw error;
 
-            // 3. iframe에 메시지 전송
             const iframe = iframeRef.current;
             if (iframe?.contentWindow) {
                 iframe.contentWindow.postMessage(
                     { type: "UPDATE_ELEMENTS", elements: updatedElements },
                     window.location.origin
                 );
-            } else {
-                console.warn("iframe contentWindow not available during redo");
             }
         } catch (error) {
             console.error("Redo error:", error);
         } finally {
-            isProcessing = false; // 작업 완료 후 플래그 해제
+            isProcessing = false;
         }
-    }, 300); // 300ms 디바운싱
-
-    const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
-        items: T[],
-        getLabel: (item: T) => string,
-        onClick: (item: T) => void,
-        onDelete: (item: T) => Promise<void>,
-        parentId: string | null = null,
-        depth: number = 0
-    ): React.ReactNode => {
-        const filteredItems = items
-            .filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined))
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-        if (filteredItems.length === 0) return null;
-        return (
-            <>
-                {filteredItems.map((item) => (
-                    <div
-                        key={item.id}
-                        data-depth={depth}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClick(item);
-                        }}
-                        className="element"
-
-                    >
-                        <div className={`elementItem ${selectedElementId === item.id || selectedPageId === item.id ? 'active' : ''}`} style={{
-                            paddingLeft: `${(depth * 16) + 16}px`
-                        }}>
-                            <span>{getLabel(item)}</span>
-                            <div className="elementItemActions">
-                                <button className="iconButton" aria-label="Settings">
-                                    <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                </button>
-                                <button
-                                    className="iconButton"
-                                    aria-label={`Delete ${getLabel(item)}`}
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-                                        await onDelete(item);
-                                    }}
-                                >
-                                    <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                </button>
-                            </div>
-                        </div>
-                        {renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
-                    </div>
-                ))}
-            </>
-        );
-    };
+    }, 300);
 
     useEffect(() => {
         const iframe = iframeRef.current;
@@ -310,43 +209,6 @@ function Builder() {
         return () => window.removeEventListener("message", handleMessage);
     }, [setSelectedElement, updateElementProps]);
 
-    /*const handleAddPage = async () => {
-        const title = prompt("Enter page title:");
-        const slug = prompt("Enter page slug:");
-        if (!title || !slug) {
-            alert("Title and slug are required.");
-            return;
-        }
-
-        // 현재 페이지들의 order_num 값을 정렬하여 가져옴
-        const sortedPages = [...pages].sort((a, b) =>
-            (a.order_num || 0) - (b.order_num || 0)
-        );
-
-        // 새 페이지의 order_num 계산
-        let newOrderNum;
-        if (sortedPages.length === 0) {
-            newOrderNum = 1000; // 첫 페이지
-        } else {
-            const lastPage = sortedPages[sortedPages.length - 1];
-            newOrderNum = (lastPage.order_num || 0) + 1000; // 간격을 1000으로 설정
-        }
-
-        const newPage = {
-            title,
-            project_id: projectId,
-            slug,
-            order_num: newOrderNum
-        };
-
-        const { data, error } = await supabase
-            .from("pages")
-            .insert([newPage])
-            .select();
-
-        if (error) console.error("페이지 생성 에러:", error);
-        else if (data) setPages((prevPages) => [...prevPages, ...data]);
-    };*/
     const handleAddPage = async () => {
         const title = prompt("Enter page title:");
         const slug = prompt("Enter page slug:");
@@ -378,12 +240,11 @@ function Builder() {
         if (pageData) {
             const createdPage = pageData[0];
 
-            // Body 요소 생성 (tag 사용)
             const bodyElement = {
                 id: crypto.randomUUID(),
                 page_id: createdPage.id,
                 parent_id: null,
-                tag: "body", // 데이터베이스에 "tag"로 저장
+                tag: "body",
                 props: { style: { margin: 0 } },
                 order_num: 0,
             };
@@ -434,91 +295,18 @@ function Builder() {
                         </div>
                     </div>
                 </main>
-                <aside className="sidebar">
-                    <div className="sidebar_nav">
-                        <div className="sidebar_group">
 
-                            <button aria-label="Add File"><File color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Add Square"><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                <Sidebar
+                    pages={pages}
+                    setPages={setPages}
+                    handleAddPage={handleAddPage}
+                    handleAddElement={handleAddElement}
+                    fetchElements={fetchElements}
+                />
 
-                            <button aria-label="Library"><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Database"><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Palette"><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Magic Wand"><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        </div>
-                        <div className="sidebar_group">
-                            <button aria-label="Users"><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Settings"><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        </div>
-                    </div>
-                    <div className="sidebar_content">
-                        <div className="sidebar_pages">
-                            <h3><PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Pages</h3>
-                            <button
-                                className="iconButton absolute right-0 top-0"
-                                aria-label="Add Page"
-                                onClick={handleAddPage}
-                            >
-                                <CirclePlus color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                            </button>
-                            <div className="elements">
-                                {pages.length === 0 ? (
-                                    <p className="no_element">No pages available</p>
-                                ) : (
-                                    renderTree(
-                                        pages,
-                                        (page) => page.title,
-                                        (page) => fetchElements(page.id),
-                                        async (page) => {
-                                            const { error } = await supabase.from("pages").delete().eq("id", page.id);
-                                            if (error) console.error("페이지 삭제 에러:", error);
-                                            else setPages((prev) => prev.filter((p) => p.id !== page.id));
-                                        }
-                                    )
-                                )}
-                            </div>
-                        </div>
-                        <div className="sidebar_elements">
-                            <h3><Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Layers</h3>
-                            <div className="elements">
-                                {elements.length === 0 ? (
-                                    <p className="no_element">No element available</p>
-                                ) : (
-                                    renderTree(
-                                        elements,
-                                        (el) => el.tag,
-                                        (el) => {
-                                            setSelectedElement(el.id, el.props);
-                                            requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
-                                        },
-                                        async (el) => {
-                                            const { error } = await supabase.from("elements").delete().eq("id", el.id);
-                                            if (error) console.error("요소 삭제 에러:", error);
-                                            else {
-                                                if (el.id === selectedElementId) {
-                                                    setSelectedElement(null);
-                                                    window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
-                                                }
-                                                setElements(elements.filter((e) => e.id !== el.id));
-                                            }
-                                        }
-                                    )
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="sidebar_components">
-                        <button aria-label="Add Div" onClick={() => handleAddElement("div", "")}>D</button>
-                        <button aria-label="Add span" onClick={() => handleAddElement("span", "")}>T</button>
-                        <button aria-label="Add Section" onClick={() => handleAddElement("section", "")}>S</button>
-                        <button aria-label="Add Button" onClick={() => handleAddElement("button", "btn")}>B</button>
-                        <button aria-label="Add Table" onClick={() => handleAddElement("table", "")}>TL</button>
-
-                    </div>
-                </aside>
                 <aside className="inspector"><Inspector /></aside>
 
-                <nav className="header ">
+                <nav className="header">
                     <div className="header_contents header_left">
                         <button aria-label="Menu"><Menu color={'#fff'} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
