@@ -111,7 +111,7 @@ function Preview() {
   };
 
   return (
-    <div className="main" id={projectId || undefined}>
+    <div className={styles.main} id={projectId || undefined}>
       {elements.length === 0 ? "No elements available" : renderElementsTree()}
     </div>
   );
