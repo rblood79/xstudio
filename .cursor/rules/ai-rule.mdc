@@ -280,41 +280,29 @@ CREATE TABLE public.element_design_tokens (
 );
 
 
-# Tailwind CSS v4 규칙
+# mcp
 
-## 스타일링 기본 원칙
-- CSS 파일에서는 반드시 `@import "tailwindcss";` 사용
-- `@tailwind` 디렉티브 사용 금지
-- PostCSS 설정에서 `@tailwindcss/postcss` 플러그인 사용
+{
+    "mcpServers": {
+        "server-sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@smithery/cli@latest",
+                "run",
+                "@smithery-ai/server-sequential-thinking",
+                "--config",
+                "{}"
+            ]
+        },
+        "browser-tools": {
+            "command": "npx",
+            "args": [
+                "@agentdeskai/browser-tools-mcp@1.2.0"
+            ],
+            "enabled": true
+        }
+    }
+}
 
-## 패키지 버전
-- "@tailwindcss/postcss": "^4.0.17"
-- "tailwindcss": "^4.0.14"
-- "postcss": "^8.5.3"
-
-## CSS 작성 규칙
-✅ 올바른 사용:
-```css
-@import "tailwindcss";
-```
-
-❌ 사용하지 않음:
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
-
-## PostCSS 설정
-```javascript
-// postcss.config.js
-export default {
-    plugins: {
-        "@tailwindcss/postcss": {},    // tailwindcss가 아닌 @tailwindcss/postcss 사용
-        autoprefixer: {},
-    },
-};
-```
-
-이 규칙을 따라 모든 Tailwind CSS 관련 작업을 수행하세요.
 
