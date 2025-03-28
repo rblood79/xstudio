@@ -57,6 +57,7 @@
     position: absolute;
     top: 0;
     left: var(--sidebar-nav-width);
+    width: var(--sidebar-width);
     height: 100%;
     background-color: #fff;
     overflow: auto;
@@ -84,7 +85,8 @@
     justify-content: space-between;
     padding: var(--element-padding);
     font-size: 0.875rem;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.3s ease-in-out;
+    overflow: hidden;
 }
 
 .elementItem:hover {
@@ -100,15 +102,21 @@
     font-size: 0.875rem;
     height: var(--icon-button-size);
     line-height: var(--icon-button-size);
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .elementItemActions {
-    display: none;
+    display: flex;
+    flex-direction: row;
+    transition: transform 0.2s ease-in-out;
+    transform: translateX(110%);
     gap: 4px;
 }
 
-.elementItem:hover .elementItemActions {
-    display: flex;
+.elementItem:hover .elementItemActions,
+.elementItem.active .elementItemActions {
+    transform: translateX(0%);
 }
 
 .elementItemActions .iconButton {

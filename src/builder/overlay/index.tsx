@@ -114,7 +114,10 @@ export default function SelectionOverlay() {
                 <div className="overlay-tag">
                     {selectedTag}
                 </div>
+                <div title="Drag to resize" className="resize-handle" />
+
                 <div className="overlay-background" />
+
                 <div className="overlay-pattern">
                     <div className="overlay-pattern-inner" />
                 </div>
