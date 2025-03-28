@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+.overlay-element {
+    position: absolute;
+    pointer-events: none;
+    @apply ring-1 ring-sky-500;
+}
+
+.overlay-tag {
+    pointer-events: auto;
+    background-color: var(--color-sky-500);
+    color: var(--color-neutral-100);
+    bottom: 100%;
+    position: absolute;
+    font-family: monospace;
+    padding: 0.5rem;
+    font-weight: bold;
+    cursor: default;
+    margin-left: -0.04rem;
+}
+
+.overlay-background {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    width: 100%;
+    background-color: var(--color-sky-500);
+    @apply ring-1 ring-sky-500 opacity-5;
+}
+
+.overlay-pattern {
+    position: absolute;
+    inset: 0;
+}
+
+.overlay-pattern-inner {
+    height: 100%;
+    color: rgba(0, 0, 0, 0.1);
+    background-size: 8px 8px;
+    background-position: left top;
+    background-image: repeating-linear-gradient(315deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%);
+}

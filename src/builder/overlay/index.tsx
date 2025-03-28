@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useStore } from "../stores/elements";
 
+import "./index.css";
 interface Rect {
     top: number;
     left: number;
@@ -102,7 +103,7 @@ export default function SelectionOverlay() {
     return (
         <div className="overlay">
             <div
-                className="absolute pointer-events-none ring-1 ring-sky-500"
+                className="overlay-element"
                 style={{
                     top: overlayRect.top,
                     left: overlayRect.left,
@@ -110,15 +111,12 @@ export default function SelectionOverlay() {
                     height: overlayRect.height,
                 }}
             >
-                <div
-                    className="pointer-events-auto bg-sky-500 text-neutral-100 bottom-full absolute font-mono py-2 px-2 font-bold cursor-default"
-                    style={{ marginLeft: "-0.08rem" }}
-                >
+                <div className="overlay-tag">
                     {selectedTag}
                 </div>
-                <div className="relative z-1 h-full w-full bg-sky-500 ring-1 ring-sky-500 opacity-5" />
-                <div className="absolute inset-0">
-                    <div className="h-full text-black/10 bg-[size:8px_8px] bg-left-top bg-[image:repeating-linear-gradient(315deg,currentColor_0,currentColor_1px,transparent_0,transparent_50%)]" />
+                <div className="overlay-background" />
+                <div className="overlay-pattern">
+                    <div className="overlay-pattern-inner" />
                 </div>
             </div>
         </div>

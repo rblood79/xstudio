@@ -122,12 +122,12 @@
                 flex-direction: row;
 
                 .iconButton {
-                    @apply p-[0px] size-[32px];
+                    @apply p-[0px] size-[24px];
                 }
             }
 
             .elementItem {
-                @apply flex justify-between items-center text-sm p-[8px];
+                @apply flex justify-between items-center text-sm p-[8px] cursor-pointer;
 
                 &.active {
                     @apply bg-sky-100;

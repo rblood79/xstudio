@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router";
 import { supabase } from "../env/supabase.client";
-import { Icon, PanelTop, Layers2, Settings2, Menu, Play, Eye, Smartphone, Monitor, LayoutGrid, FilePlus2, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
-import { layoutGridMoveVertical } from '@lucide/lab';
+import { PanelTop, Layers2, Settings2, Menu, Play, Eye, Smartphone, Monitor, File, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Undo, Redo } from 'lucide-react';
+//import { layoutGridMoveVertical } from '@lucide/lab';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import "./builder.css";
@@ -30,8 +30,8 @@ function Builder() {
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const lastSentElementId = useRef<string | null>(null);
-    const [iconProps] = React.useState({ color: "#171717", stroke: 1.5, size: 21 });
-    const [iconEditProps] = React.useState({ color: "#171717", stroke: 1.5, size: 16 });
+    const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
+    const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
@@ -437,10 +437,10 @@ function Builder() {
                 <aside className="sidebar">
                     <div className="sidebar_nav">
                         <div className="sidebar_group">
-                            <button aria-label="Layout Grid"><LayoutGrid color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Add File"><FilePlus2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+
+                            <button aria-label="Add File"><File color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                             <button aria-label="Add Square"><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                            <button aria-label="Move Grid"><Icon iconNode={layoutGridMoveVertical} color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+
                             <button aria-label="Library"><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                             <button aria-label="Database"><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                             <button aria-label="Palette"><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
