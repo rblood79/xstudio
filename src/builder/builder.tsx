@@ -278,17 +278,29 @@ function Builder() {
                                 id="previewFrame"
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                                 style={{ width: "100%", height: "100%", border: "none" }}
-                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                sandbox="allow-scripts allow-same-origin allow-forms"
                                 onLoad={() => {
                                     const iframe = iframeRef.current;
-                                    if (iframe?.contentWindow && elements.length > 0) {
-                                        iframe.contentWindow.postMessage(
-                                            { type: "UPDATE_ELEMENTS", elements },
-                                            window.location.origin
-                                        );
-                                    } else {
+                                    if (!iframe?.contentWindow) {
                                         console.warn("iframe contentWindow not available on load");
+                                        return;
                                     }
+
+                                    // iframe이 완전히 로드될 때까지 대기
+                                    const checkContentWindow = () => {
+                                        if (iframe.contentWindow?.document.readyState === "complete") {
+                                            if (elements.length > 0) {
+                                                iframe.contentWindow.postMessage(
+                                                    { type: "UPDATE_ELEMENTS", elements },
+                                                    window.location.origin
+                                                );
+                                            }
+                                        } else {
+                                            setTimeout(checkContentWindow, 100);
+                                        }
+                                    };
+
+                                    checkContentWindow();
                                 }}
                             />
                             <SelectionOverlay />
