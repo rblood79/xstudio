@@ -16,6 +16,8 @@
     padding: 0.5rem;
     font-weight: bold;
     cursor: default;
+    -webkit-user-select: none;
+    user-select: none;
     margin-left: -0.04rem;
 }
 
@@ -39,4 +41,20 @@
     background-size: 8px 8px;
     background-position: left top;
     background-image: repeating-linear-gradient(315deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%);
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 6px;
+    height: 48px;
+    background: var(--color-slate-500);
+    top: 50%;
+    transform: translateY(-50%);
+    left: calc(100% + 8px);
+    border-radius: 48px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    ;
 }

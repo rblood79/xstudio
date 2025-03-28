@@ -26,7 +26,7 @@
 
         nav.header {
             grid-area: header;
-            @apply bg-gray-600 text-neutral-100 flex flex-row justify-between items-center;
+            @apply bg-gray-950 text-neutral-100 flex flex-row justify-between items-center;
             position: relative;
             height: 48px;
 
@@ -82,7 +82,7 @@
                 padding: 0;
                 flex-grow: 1;
                 position: relative;
-                background-color: oklch(.967 .001 286.375);
+                background-color: var(--color-slate-50);
 
                 .workspace {
                     width: 679px;
@@ -110,7 +110,7 @@
             isolation: isolate;
             grid-area: footer;
             height: 40px;
-            background: oklch(.274 .006 286.033);
+            @apply bg-gray-950 text-neutral-100 flex flex-row justify-between items-center;
         }
     }
 }

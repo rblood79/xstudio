@@ -1,0 +1,53 @@
+html,
+body,
+#root {
+    height: 100%;
+}
+
+.projects {
+    width: calc(240px *3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-flow: row;
+    flex-wrap: wrap;
+}
+
+.project-item {
+    border: 1px solid #f00;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: var(--color-neutral-100);
+    width: 240px;
+    height: 240px;
+}
+
+.overlay-background {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    width: 100%;
+}
+
+.overlay-pattern {
+    position: absolute;
+    inset: 0;
+}
+
+.overlay-pattern-inner {
+    height: 100%;
+    color: rgba(0, 0, 0, 0.1);
+    background-size: 8px 8px;
+    background-position: left top;
+    background-image: repeating-linear-gradient(315deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%);
+}
+
+.contents {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

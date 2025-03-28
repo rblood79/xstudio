@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
-
 :root {
   font-family: system-ui, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-size: 14px;
   font-weight: 400;
+
+  --spacing: 1px;
+  --radius-lg: 0.5rem;
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,6 +24,7 @@
   --primary: var(--color-sky-500);
   --secondary: var(--color-sky-600);
   --tertiary: var(--color-sky-700);
+
 }
 
 @layer utilities {
@@ -80,6 +85,25 @@
     }
   }
 
+  p {
+    font-size: var(--text-base);
+  }
+
+  img {
+    border-radius: var(--radius-lg);
+  }
+
+  h3 {
+    margin: 0;
+    padding: 0 8px;
+    font-size: 12px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+  }
+
   .div {
     @apply border border-gray-200 bg-amber-300;
   }
@@ -102,15 +126,4 @@
       color: var(--color-sky-600);
     }
   }
-}
-
-h3 {
-  margin: 0;
-  padding: 0 8px;
-  font-size: 12px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
 }

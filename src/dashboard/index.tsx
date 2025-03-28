@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router';
 import { supabase } from "../env/supabase.client";
 import { useState, useEffect } from "react";
 
+import "./index.css";
+
 function Dashboard() {
   const navigate = useNavigate();
   interface Project {
@@ -103,10 +105,11 @@ function Dashboard() {
 
 
   return (
-    <div>
-      <div>
+    <div id="app">
+      <div className='contents h-full'>
+
         <button onClick={handleLogout}>로그아웃</button>
-        <main>
+        <main className='overlay-pattern-inner'>
           <h2>Projects List</h2>
           <form onSubmit={handleAddProject}>
             <input
@@ -118,14 +121,17 @@ function Dashboard() {
             />
             <button type="submit">프로젝트 추가</button>
           </form>
-          <ul>
+
+          <section className='projects'>
             {projects.map((project) => (
-              <li key={project.id}>
-                <button onClick={() => handleProject(project)}>{project.name}</button> - {project.updated_at}
+              <div key={project.id} className='project-item'>
+                <div>{project.name}</div>
+                <div>{project.updated_at}</div>
+                <button onClick={() => handleProject(project)}>빌더 열기</button>
                 <button onClick={() => handleDeleteProject(project.id)}>삭제</button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </section>
         </main>
         <aside>left-sidebar</aside>
         <nav>header</nav>
