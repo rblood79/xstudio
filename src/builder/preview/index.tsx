@@ -1,21 +1,22 @@
 import React, { useEffect, useCallback } from "react";
 import { useParams } from "react-router";
-import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
+import { useStore } from '../stores/elements';
+import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
-import { CSSProperties } from "react";
 //import "./index.css";
 
-interface Element {
+interface PreviewElement {
   id: string;
   tag: string;
-  props: Record<string, string | number | boolean | CSSProperties | undefined>;
+  props: ElementProps;
   parent_id?: string | null;
+  page_id?: string;
   order_num?: number;
 }
 
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
-  const elements = useStore((state) => state.elements);
+  const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements } = useStore();
 
   const handleMessage = useCallback(
@@ -37,7 +38,7 @@ function Preview() {
 
   document.documentElement.classList.add(styles.root);
 
-  const renderElement = (el: Element): React.ReactNode => {
+  const renderElement = (el: PreviewElement): React.ReactNode => {
     // body 태그인 경우 자식 요소들만 렌더링하고 실제 body에 속성들 추가
     if (el.tag === "body") {
       const children = elements
@@ -54,7 +55,7 @@ function Preview() {
 
       // 다른 props들도 적용 (style 제외)
       Object.entries(el.props).forEach(([key, value]) => {
-        if (key !== 'style' && key !== 'text') {
+        if (key !== 'style' && key !== 'text' && value !== undefined && value !== null) {
           document.body.setAttribute(key, String(value));
         }
       });
@@ -93,14 +94,12 @@ function Preview() {
       },
     };
 
-    return React.createElement(
-      el.tag,
-      newProps,
-      <>
-        {String(el.props.text)}
-        {children.map((child) => renderElement(child))}
-      </>
-    );
+    const content = [
+      el.props.text && String(el.props.text),
+      ...children.map((child) => renderElement(child))
+    ].filter(Boolean);
+
+    return React.createElement(el.tag, newProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {

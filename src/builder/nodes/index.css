@@ -1,0 +1,69 @@
+/* Content */
+
+.sidebar_pages,
+.sidebar_elements {
+    width: var(--sidebar-width);
+    position: relative;
+}
+
+/* Elements */
+.elements {
+    padding: 0;
+}
+
+.element {
+    position: relative;
+    cursor: pointer;
+}
+
+.elementItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--element-padding);
+    font-size: 0.875rem;
+    transition: background-color 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+.elementItem:hover {
+    background-color: var(--hover-bg);
+}
+
+.elementItem.active {
+    background-color: var(--active-bg);
+    color: var(--active-color);
+}
+
+.elementItemLabel {
+    font-size: 0.875rem;
+    height: var(--icon-button-size);
+    line-height: var(--icon-button-size);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.elementItemActions {
+    display: flex;
+    flex-direction: row;
+    transition: transform 0.2s ease-in-out;
+    transform: translateX(110%);
+    gap: 4px;
+}
+
+.elementItem:hover .elementItemActions,
+.elementItem.active .elementItemActions {
+    transform: translateX(0%);
+}
+
+.elementItemActions .iconButton {
+    width: var(--icon-button-size);
+    height: var(--icon-button-size);
+    padding: 0;
+}
+
+.no_element {
+    padding: var(--element-padding) calc(var(--element-padding) * 2);
+    color: #999;
+    font-size: 0.875rem;
+}

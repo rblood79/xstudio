@@ -1,18 +1,20 @@
-import React from "react";
-import { PanelTop, Layers2, File, SquarePlus, LibraryBig, Database, Users, Settings, CirclePlus, Trash, Palette, WandSparkles, Settings2 } from 'lucide-react';
-import { supabase } from "../../env/supabase.client";
-import { useStore } from '../stores/elements';
 import "./index.css";
+import React from "react";
+import { Settings2, Trash } from 'lucide-react';
+import { useStore } from '../stores/elements';
+import { Database, ElementProps } from '../../types/supabase';
+import { Nodes } from '../nodes';
 import Components from '../components';
+import Library from '../library';
+import Dataset from '../dataset';
+import Theme from '../theme';
+import AI from '../ai';
+import User from '../user';
+import Setting from '../setting';
+import { SidebarNav, Tab } from './SidebarNav';
 
-interface Page {
-    id: string;
-    title: string;
-    project_id: string;
-    slug: string;
-    parent_id?: string | null;
-    order_num?: number;
-}
+type Page = Database['public']['Tables']['pages']['Row'];
+type Element = Database['public']['Tables']['elements']['Row'];
 
 interface SidebarProps {
     pages: Page[];
@@ -24,11 +26,19 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId }: SidebarProps) {
-    const elements = useStore((state) => state.elements);
+    const elements = useStore((state) => state.elements) as Element[];
     const selectedElementId = useStore((state) => state.selectedElementId);
-    const { setElements, setSelectedElement } = useStore();
-    const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
+    const { setElements: storeSetElements, setSelectedElement } = useStore();
+    const [activeTab, setActiveTab] = React.useState<Tab>('nodes');
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
+
+    const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
+        if (typeof elementsOrFn === 'function') {
+            storeSetElements(elementsOrFn(elements));
+        } else {
+            storeSetElements(elementsOrFn);
+        }
+    };
 
     const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
         items: T[],
@@ -85,7 +95,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         );
     };
 
-    const sendElementSelectedMessage = (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => {
+    const sendElementSelectedMessage = (elementId: string, props: ElementProps) => {
         const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
         if (iframe?.contentDocument) {
             const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
@@ -113,80 +123,46 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         }
     };
 
-    return (
-        <aside className="sidebar">
-            <div className="sidebar_nav">
-                <div className="sidebar_group">
-                    <button aria-label="Add File"><File color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Add Square"><SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Library"><LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Database"><Database color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Palette"><Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Magic Wand"><WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                </div>
-                <div className="sidebar_group">
-                    <button aria-label="Users"><Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                    <button aria-label="Settings"><Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                </div>
-            </div>
-            <div className="sidebar_content">
-                <div className="sidebar_pages">
-                    <h3><PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Pages</h3>
-                    <button
-                        className="iconButton absolute right-0 top-0"
-                        aria-label="Add Page"
-                        onClick={handleAddPage}
-                    >
-                        <CirclePlus color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                    </button>
-                    <div className="elements">
-                        {pages.length === 0 ? (
-                            <p className="no_element">No pages available</p>
-                        ) : (
-                            renderTree(
-                                pages,
-                                (page) => page.title,
-                                (page) => fetchElements(page.id),
-                                async (page) => {
-                                    const { error } = await supabase.from("pages").delete().eq("id", page.id);
-                                    if (error) console.error("페이지 삭제 에러:", error);
-                                    else setPages((prev) => prev.filter((p) => p.id !== page.id));
-                                }
-                            )
-                        )}
-                    </div>
-                </div>
-                <div className="sidebar_elements">
-                    <h3><Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Layers</h3>
-                    <div className="elements">
-                        {elements.length === 0 ? (
-                            <p className="no_element">No element available</p>
-                        ) : (
-                            renderTree(
-                                elements,
-                                (el) => el.tag,
-                                (el) => {
-                                    setSelectedElement(el.id, el.props);
-                                    requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
-                                },
-                                async (el) => {
-                                    const { error } = await supabase.from("elements").delete().eq("id", el.id);
-                                    if (error) console.error("요소 삭제 에러:", error);
-                                    else {
-                                        if (el.id === selectedElementId) {
-                                            setSelectedElement(null);
-                                            window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
-                                        }
-                                        setElements(elements.filter((e) => e.id !== el.id));
-                                    }
-                                }
-                            )
-                        )}
-                    </div>
-                </div>
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'nodes':
+                return (
+                    <Nodes
+                        pages={pages}
+                        setPages={setPages}
+                        handleAddPage={handleAddPage}
+                        renderTree={renderTree}
+                        fetchElements={fetchElements}
+                        elements={elements}
+                        setElements={setElements}
+                        selectedElementId={selectedElementId}
+                        setSelectedElement={setSelectedElement}
+                        sendElementSelectedMessage={sendElementSelectedMessage}
+                    />
+                );
+            case 'components':
+                return <Components handleAddElement={handleAddElement} />;
+            case 'library':
+                return <Library />;
+            case 'dataset':
+                return <Dataset />;
+            case 'theme':
+                return <Theme />;
+            case 'ai':
+                return <AI />;
+            case 'user':
+                return <User />;
+            case 'settings':
+                return <Setting />;
+            default:
+                return null;
+        }
+    };
 
-            </div>
-            <Components handleAddElement={handleAddElement} />
-        </aside>
+    return (
+        <div className="sidebar">
+            <SidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
+            {renderContent()}
+        </div>
     );
 } 
