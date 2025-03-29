@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { produce, Patch, enablePatches } from 'immer';
+import { ElementProps } from '../../types/supabase';
 
 enablePatches();
 
 export interface Element {
   id: string;
   tag: string;
-  props: { [key: string]: string | number | boolean | React.CSSProperties };
+  props: ElementProps;
   parent_id?: string | null;
   page_id?: string;
   order_num?: number;
@@ -30,7 +31,7 @@ interface PageHistory {
 interface Store {
   elements: Element[];
   selectedElementId: string | null;
-  selectedElementProps: Record<string, string | number | boolean | React.CSSProperties>;
+  selectedElementProps: ElementProps;
   pages: Page[];
   history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[]; // 패치 히스토리
   historyIndex: number;
@@ -39,8 +40,8 @@ interface Store {
   setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => void;
-  updateElementProps: (elementId: string, props: Record<string, string | number | boolean | React.CSSProperties>) => void;
-  setSelectedElement: (elementId: string | null, props?: Record<string, string | number | boolean | React.CSSProperties>) => void;
+  updateElementProps: (elementId: string, props: ElementProps) => void;
+  setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   setPages: (pages: Page[]) => void;
   setCurrentPageId: (pageId: string) => void;
   undo: () => void;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
+import { ElementProps } from '../../types/supabase';
 
 // 재사용 가능한 Select 컴포넌트
 const ReusableSelect = ({ value, onChange, options, id }: { value: string, onChange: React.ChangeEventHandler<HTMLSelectElement>, options: string[], id: string }) => {
@@ -13,9 +14,9 @@ const ReusableSelect = ({ value, onChange, options, id }: { value: string, onCha
   );
 };
 
-function Layout() {
+export default function Layout() {
   const selectedElementId = useStore((state) => state.selectedElementId);
-  const selectedProps = useStore((state) => state.selectedElementProps);
+  const selectedProps = useStore((state) => state.selectedElementProps) as ElementProps;
   const { updateElementProps } = useStore();
   const [tempInputValues, setTempInputValues] = useState<Record<string, string>>({});
   const display = (selectedProps.style as React.CSSProperties)?.display || 'block';
@@ -30,7 +31,7 @@ function Layout() {
     }
   };
 
-  const parsePropValue = (value: string, key: string): string | number | boolean | React.CSSProperties => {
+  const parsePropValue = (value: string, key: string): string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] | undefined => {
     if (key === 'style') {
       try {
         return JSON.parse(value) as React.CSSProperties;
@@ -44,121 +45,58 @@ function Layout() {
     return isNaN(numValue) ? value : numValue;
   };
 
-  const handlePropChange = async (key: string, value: string | number | boolean | React.CSSProperties) => {
-    if (!selectedElementId) return;
-    const updatedProps = { ...selectedProps, [key]: value };
-    updateElementProps(selectedElementId, updatedProps);
+  const handlePropChange = async (key: string, value: string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] | undefined) => {
+    if (selectedElementId) {
+      const newProps = { [key]: value } as unknown as ElementProps;
+      updateElementProps(selectedElementId, newProps);
 
-    const { error } = await supabase
-      .from('elements')
-      .update({ props: updatedProps })
-      .eq('id', selectedElementId);
+      const { error } = await supabase
+        .from('elements')
+        .update({ props: { [key]: value } })
+        .eq('id', selectedElementId);
 
-    if (error) {
-      console.error('Supabase update error:', error);
-    } else {
-      const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
-      if (previewIframe && previewIframe.contentWindow) {
-        const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
-        let rect = null;
-        if (element) {
-          const boundingRect = element.getBoundingClientRect();
-          rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
+      if (error) {
+        console.error('Supabase update error:', error);
+      } else {
+        const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
+        if (previewIframe && previewIframe.contentWindow) {
+          const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
+          let rect = null;
+          if (element) {
+            const boundingRect = element.getBoundingClientRect();
+            rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
+          }
+          window.parent.postMessage(
+            {
+              type: "UPDATE_ELEMENT_PROPS",
+              elementId: selectedElementId,
+              payload: { props: { [key]: value }, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
+            },
+            "*"
+          );
         }
-        window.parent.postMessage(
-          {
-            type: "UPDATE_ELEMENT_PROPS",
-            elementId: selectedElementId,
-            payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
-          },
-          "*"
-        );
       }
     }
   };
 
   // 텍스트 입력용 임시 상태 관리
   const handleTextInputChange = (key: string, value: string) => {
-    setTempInputValues(prev => ({ ...prev, [key]: value }));
+    setTempInputValues((prev) => ({ ...prev, [key]: value }));
   };
 
   // 엔터키 입력 시 프로퍼티 변경 적용
-  const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
-    if (e.key === 'Enter' && selectedElementId) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>, key: string) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       const value = tempInputValues[key];
       if (value !== undefined) {
-        // width와 height는 style 객체 안에 저장
-        if (key === 'width' || key === 'height') {
-          const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
-          const updatedStyle = { ...currentStyle, [key]: value };
-          const updatedProps = { ...selectedProps, style: updatedStyle };
-          updateElementProps(selectedElementId, updatedProps);
-          
-          // Supabase 업데이트
-          supabase
-            .from('elements')
-            .update({ props: updatedProps })
-            .eq('id', selectedElementId)
-            .then(({ error }) => {
-              if (error) {
-                console.error('Supabase update error:', error);
-              } else {
-                // iframe 업데이트
-                const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
-                if (previewIframe && previewIframe.contentWindow) {
-                  const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
-                  let rect = null;
-                  if (element) {
-                    const boundingRect = element.getBoundingClientRect();
-                    rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
-                  }
-                  window.parent.postMessage(
-                    {
-                      type: "UPDATE_ELEMENT_PROPS",
-                      elementId: selectedElementId,
-                      payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
-                    },
-                    "*"
-                  );
-                }
-              }
-            });
-        } else {
-          // 다른 속성들은 기존 로직대로 처리
-          const parsedValue = parsePropValue(value, key);
-          const updatedProps = { ...selectedProps, [key]: parsedValue };
-          updateElementProps(selectedElementId, updatedProps);
-          
-          // Supabase 업데이트
-          supabase
-            .from('elements')
-            .update({ props: updatedProps })
-            .eq('id', selectedElementId)
-            .then(({ error }) => {
-              if (error) {
-                console.error('Supabase update error:', error);
-              } else {
-                // iframe 업데이트
-                const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
-                if (previewIframe && previewIframe.contentWindow) {
-                  const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
-                  let rect = null;
-                  if (element) {
-                    const boundingRect = element.getBoundingClientRect();
-                    rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
-                  }
-                  window.parent.postMessage(
-                    {
-                      type: "UPDATE_ELEMENT_PROPS",
-                      elementId: selectedElementId,
-                      payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
-                    },
-                    "*"
-                  );
-                }
-              }
-            });
-        }
+        const parsedValue = parsePropValue(value, key);
+        handlePropChange(key, parsedValue);
+        setTempInputValues((prev) => {
+          const newValues = { ...prev };
+          delete newValues[key];
+          return newValues;
+        });
       }
     }
   };
@@ -186,7 +124,7 @@ function Layout() {
 
   return (
     <div className='flex flex-col gap-4 p-4'>
-      
+
       <div className='panel className_panel'>
         <label htmlFor="className">Class Name</label>
         <input
@@ -222,24 +160,42 @@ function Layout() {
       </div>
 
       <div className='panel display_panel'>
-        <label htmlFor="displaySelect">Display</label>
-        <ReusableSelect
-          id="displaySelect"
-          value={display}
-          onChange={(e) => handleStyleChange('display', e.target.value)}
-          options={["flex", "grid", "block", "inline", "none"]}
-        />
+        <div className='flex flex-col gap-2'>
+          <label htmlFor="element-display">Display</label>
+          <select
+            id="element-display"
+            value={display}
+            onChange={(e) => handleStyleChange('display', e.target.value)}
+            aria-label="Display"
+          >
+            <option value="block">Block</option>
+            <option value="flex">Flex</option>
+            <option value="grid">Grid</option>
+            <option value="inline">Inline</option>
+            <option value="inline-block">Inline Block</option>
+            <option value="none">None</option>
+          </select>
+        </div>
       </div>
 
-      <div className='panel flex_panel'>
-        <label htmlFor="flexDirectionSelect">Flex Direction</label>
-        <ReusableSelect
-          id="flexDirectionSelect"
-          value={flexDirection}
-          onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
-          options={["column", "row", "row-reverse", "column-reverse", "initial", "inherit"]}
-        />
-      </div>
+      {display === 'flex' && (
+        <div className='panel flex_panel'>
+          <div className='flex flex-col gap-2'>
+            <label htmlFor="element-flex-direction">Flex Direction</label>
+            <select
+              id="element-flex-direction"
+              value={flexDirection}
+              onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
+              aria-label="Flex Direction"
+            >
+              <option value="row">Row</option>
+              <option value="column">Column</option>
+              <option value="row-reverse">Row Reverse</option>
+              <option value="column-reverse">Column Reverse</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       <div className='panel align_items_panel'>
         <label htmlFor="alignItemsSelect">Align Items</label>
@@ -326,5 +282,3 @@ function Layout() {
     </div>
   );
 }
-
-export default Layout;

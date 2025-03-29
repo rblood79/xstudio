@@ -267,6 +267,36 @@ function Builder() {
         }
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const iframe = iframeRef.current;
+            const target = event.target as HTMLElement;
+
+            // UI 요소들을 클릭한 경우는 무시
+            if (target.closest('.selection-overlay') ||
+                target.closest('.sidebar') ||
+                target.closest('.inspector') ||
+                target.closest('.header') ||
+                target.closest('.footer') ||
+                iframe?.contains(target)
+            ) {
+                return;
+            }
+
+            // workspace나 bg 클래스를 가진 요소를 클릭했을 때만 선택 해제
+            const isWorkspaceBackground = target.classList.contains('workspace') || target.classList.contains('bg');
+            if (isWorkspaceBackground) {
+                setSelectedElement(null);
+                window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [setSelectedElement]);
+
     return (
         <div className="app">
             <div className="contents">

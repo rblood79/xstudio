@@ -16,7 +16,7 @@
             "sidebar main inspector"
             "footer footer footer";
 
-        grid-template-columns: auto var(--sizes-sidebarWidth) 1fr var(--sizes-sidebarWidth);
+        grid-template-columns: auto var(--sizes-sidebarWidth) 1fr var(--sizes-inspectorWidth);
         grid-template-areas:
             "header header header header"
             "sidebar navigator main inspector"
@@ -94,12 +94,12 @@
                     transform: scale(1) translateX(-50%);
                     background: #ffffff;
                     position: absolute;
-                    transform-origin: 0px 0px;
+                    transform-origin: center;
                     will-change: transform;
 
                     .workspace_overlay {
                         position: absolute;
-                        transform-origin: 0px 0px;
+                        transform-origin: center;
                         will-change: transform;
                     }
                 }

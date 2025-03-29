@@ -10,7 +10,7 @@ interface ComponentsProps {
 
 function Components({ handleAddElement }: ComponentsProps) {
     return (
-        <div className="sidebar_components">
+        <div className="sidebar-content components">
             <ComponentList handleAddElement={handleAddElement} />
         </div>
     );
