@@ -1,5 +1,5 @@
 import { PanelTop, CirclePlus } from 'lucide-react';
-import { iconProps, iconEditProps } from '../../builder/constants';
+import { iconProps } from '../../builder/constants';
 import { Database } from '../../types/supabase';
 import { supabase } from '../../lib/supabase';
 
@@ -27,7 +27,7 @@ export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElement
                 aria-label="Add Page"
                 onClick={handleAddPage}
             >
-                <CirclePlus color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
             </button>
             <div className="elements">
                 {pages.length === 0 ? (
