@@ -23,9 +23,10 @@ interface SidebarProps {
     handleAddElement: (tag: string, text: string) => Promise<void>;
     fetchElements: (pageId: string) => Promise<void>;
     selectedPageId: string | null;
+    children?: React.ReactNode;
 }
 
-export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId }: SidebarProps) {
+export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
     const elements = useStore((state) => state.elements) as Element[];
     const selectedElementId = useStore((state) => state.selectedElementId);
     const { setElements: storeSetElements, setSelectedElement } = useStore();
@@ -163,6 +164,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         <div className="sidebar">
             <SidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
             {renderContent()}
+            {children}
         </div>
     );
 } 
