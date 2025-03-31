@@ -301,7 +301,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     });
 
     return (
-        <div className="p-4">
+        <div className="sidebar-content theme">
             <h2 className="text-xl font-bold mb-4">Theme Editor</h2>
 
             {error && (
