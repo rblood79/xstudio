@@ -43,7 +43,7 @@
 
   button {
     @apply py-1 px-2 rounded-sm;
-    background-color: var(--color-sky-500);
+    background-color: var(--primary-color);
     color: white;
     border: 1px solid var(--color-sky-600);
     cursor: pointer;

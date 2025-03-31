@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../env/supabase.client';
+import { useDesignTokens } from '../../hooks/useDesignTokens';
 
 type TokenType = 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
 
@@ -96,6 +97,9 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Apply design tokens as CSS variables
+    useDesignTokens(projectId);
 
     const fetchTokens = useCallback(async () => {
         if (!projectId) return;
@@ -244,12 +248,18 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         switch (newToken.type) {
             case 'color': {
                 const colorValue = newToken.value as ColorValue;
+                const rgbToHex = (r: number, g: number, b: number) => {
+                    return '#' + [r, g, b].map(x => {
+                        const hex = x.toString(16);
+                        return hex.length === 1 ? '0' + hex : hex;
+                    }).join('');
+                };
                 return (
                     <div className="flex flex-col gap-2">
                         <label>Color Value</label>
                         <input
                             type="color"
-                            value={`rgb(${colorValue.r},${colorValue.g},${colorValue.b})`}
+                            value={rgbToHex(colorValue.r, colorValue.g, colorValue.b)}
                             onChange={(e) => {
                                 const hex = e.target.value;
                                 const r = parseInt(hex.slice(1, 3), 16);
@@ -388,7 +398,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
 
                             <button
                                 type="submit"
-                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+                                className="add-token px-4 py-2 rounded disabled:opacity-50"
                                 disabled={isLoading}
                             >
                                 {isLoading ? 'Processing...' : isEditing ? 'Update Token' : 'Add Token'}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { TokenValue } from './designTokens';
 
 type AriaRole = 'button' | 'checkbox' | 'menuitem' | 'menubar' | 'navigation' | 'progressbar' | 'separator' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'presentation' | undefined;
 
@@ -74,6 +75,16 @@ export interface Database {
                     order_num?: number;
                     created_at?: string;
                     updated_at?: string;
+                };
+            };
+            design_tokens: {
+                Row: {
+                    id: string;
+                    project_id: string;
+                    name: string;
+                    type: string;
+                    value: TokenValue;
+                    created_at?: string;
                 };
             };
         };
