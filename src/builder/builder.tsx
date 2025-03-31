@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router";
+import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
 import { Menu, Eye, Smartphone, Monitor, Undo, Redo, Play } from 'lucide-react';
 import SelectionOverlay from "./overlay";
-import Inspector from "./inspector";
+import Inspector from "./inspector/layout";
 import Sidebar from "./sidebar";
 import "./builder.css";
 import { useStore } from './stores/elements';
@@ -297,6 +297,30 @@ function Builder() {
         };
     }, [setSelectedElement]);
 
+    const handleIframeLoad = () => {
+        const iframe = iframeRef.current;
+        if (!iframe?.contentWindow) {
+            console.warn("iframe contentWindow not available on load");
+            return;
+        }
+
+        // iframe이 완전히 로드될 때까지 대기
+        const checkContentWindow = () => {
+            if (iframe.contentWindow?.document.readyState === "complete") {
+                if (elements.length > 0) {
+                    iframe.contentWindow.postMessage(
+                        { type: "UPDATE_ELEMENTS", elements },
+                        window.location.origin
+                    );
+                }
+            } else {
+                setTimeout(checkContentWindow, 100);
+            }
+        };
+
+        checkContentWindow();
+    };
+
     return (
         <div className="app">
             <div className="contents">
@@ -309,29 +333,7 @@ function Builder() {
                                 src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                                 style={{ width: "100%", height: "100%", border: "none" }}
                                 sandbox="allow-scripts allow-same-origin allow-forms"
-                                onLoad={() => {
-                                    const iframe = iframeRef.current;
-                                    if (!iframe?.contentWindow) {
-                                        console.warn("iframe contentWindow not available on load");
-                                        return;
-                                    }
-
-                                    // iframe이 완전히 로드될 때까지 대기
-                                    const checkContentWindow = () => {
-                                        if (iframe.contentWindow?.document.readyState === "complete") {
-                                            if (elements.length > 0) {
-                                                iframe.contentWindow.postMessage(
-                                                    { type: "UPDATE_ELEMENTS", elements },
-                                                    window.location.origin
-                                                );
-                                            }
-                                        } else {
-                                            setTimeout(checkContentWindow, 100);
-                                        }
-                                    };
-
-                                    checkContentWindow();
-                                }}
+                                onLoad={handleIframeLoad}
                             />
                             <SelectionOverlay />
                         </div>
@@ -345,14 +347,18 @@ function Builder() {
                     handleAddElement={handleAddElement}
                     fetchElements={fetchElements}
                     selectedPageId={selectedPageId}
-                />
+                >
+                </Sidebar>
 
-
-                <aside className="inspector"><Inspector /></aside>
+                <aside className="inspector">
+                    <Inspector />
+                </aside>
 
                 <nav className="header">
                     <div className="header_contents header_left">
-                        <button aria-label="Menu"><Menu color={'#fff'} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Menu">
+                            <Menu color={'#fff'} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
@@ -363,8 +369,12 @@ function Builder() {
                             }
                         </span>
                         <button aria-label="Screen Width 767">767</button>
-                        <button aria-label="Mobile View"><Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
-                        <button aria-label="Desktop View"><Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                        <button aria-label="Mobile View">
+                            <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
+                        <button aria-label="Desktop View">
+                            <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        </button>
                     </div>
                     <div className="header_contents header_right">
                         <button
