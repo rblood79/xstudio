@@ -6,3 +6,8 @@
     background: #fff;
     height: 100%;
 }
+
+
+.add-token {
+    background-color: var(--primary-color);
+}
