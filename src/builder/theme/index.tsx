@@ -9,7 +9,7 @@ export default function Theme() {
 
     if (!projectId) {
         return (
-            <div className="p-4">
+            <div className="sidebar-content theme">
                 <p className="text-red-500">Project ID is required</p>
             </div>
         );

@@ -2,7 +2,7 @@
     position: absolute;
     left: 48px;
     border: 1px solid #f00;
-    width: calc(100vw - var(--sizes-sidebarWidth) - var(--sizes-sideNavWidth));
+    width: calc(100vw - var(--sizes-sideNavWidth));
     background: #fff;
     height: 100%;
 }
