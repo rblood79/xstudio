@@ -3,12 +3,49 @@ import { supabase } from '../../env/supabase.client';
 import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
 import { ElementProps } from '../../types/supabase';
 
-// 재사용 가능한 Select 컴포넌트
-const ReusableSelect = ({ value, onChange, options, id }: { value: string, onChange: React.ChangeEventHandler<HTMLSelectElement>, options: string[], id: string }) => {
+// CSS 속성 옵션 상수
+const DISPLAY_OPTIONS = [
+  'block',
+  'flex',
+  'grid',
+  'inline',
+  'inline-block',
+  'none',
+  'contents',
+  'flow-root',
+  'inline-flex',
+  'inline-grid'
+] as const;
+
+const FLEX_DIRECTION_OPTIONS = [
+  'row',
+  'column',
+  'row-reverse',
+  'column-reverse'
+] as const;
+
+type DisplayValue = typeof DISPLAY_OPTIONS[number];
+type FlexDirectionValue = typeof FLEX_DIRECTION_OPTIONS[number];
+
+interface ReusableSelectProps {
+  id: string;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: readonly string[];
+}
+
+const ReusableSelect: React.FC<ReusableSelectProps> = ({ id, value, onChange, options }) => {
   return (
-    <select id={id} value={value} onChange={onChange} aria-label="Select option">
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
+    <select
+      id={id}
+      value={value}
+      onChange={onChange}
+      className="w-full p-2 border border-gray-300 rounded"
+    >
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option.charAt(0).toUpperCase() + option.slice(1).replace('-', ' ')}
+        </option>
       ))}
     </select>
   );
@@ -19,16 +56,90 @@ export default function Layout() {
   const selectedProps = useStore((state) => state.selectedElementProps) as ElementProps;
   const { updateElementProps } = useStore();
   const [tempInputValues, setTempInputValues] = useState<Record<string, string>>({});
-  const display = (selectedProps.style as React.CSSProperties)?.display || 'block';
-  const flexDirection = (selectedProps.style as React.CSSProperties)?.flexDirection || 'column';
+  const display = ((selectedProps.style as React.CSSProperties)?.display || 'block') as DisplayValue;
+  const currentFlexDirection = ((selectedProps.style as React.CSSProperties)?.flexDirection || 'column') as FlexDirectionValue;
 
-  const handleStyleChange = (prop: keyof React.CSSProperties, newValue: string) => {
+  // 스타일 변경을 실제로 적용하는 함수
+  const applyStyleChange = async (prop: keyof React.CSSProperties, newValue: string) => {
     if (selectedElementId) {
       const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
-      const updatedStyle = { ...currentStyle, [prop]: newValue };
-      updateElementProps(selectedElementId, { style: updatedStyle });
-      handlePropChange("style", updatedStyle);
+      const updatedStyle = { ...currentStyle };
+
+      if (newValue === '') {
+        delete updatedStyle[prop];
+      } else {
+        (updatedStyle[prop] as unknown) = newValue;
+      }
+
+      const updatedProps = {
+        ...selectedProps,
+        style: updatedStyle
+      };
+
+      // First update local state
+      updateElementProps(selectedElementId, updatedProps);
+
+      // Immediately update DOM
+      const previewIframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+      if (previewIframe?.contentDocument) {
+        const element = previewIframe.contentDocument.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
+        if (element) {
+          // Apply the style directly to the element
+          Object.assign(element.style, updatedStyle);
+        }
+      }
+
+      // Then update Supabase
+      const { error } = await supabase
+        .from('elements')
+        .update({ props: updatedProps })
+        .eq('id', selectedElementId);
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        return;
+      }
+
+      // Update parent window about the changes
+      const element = previewIframe?.contentDocument?.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        window.parent.postMessage(
+          {
+            type: "UPDATE_ELEMENT_PROPS",
+            elementId: selectedElementId,
+            payload: {
+              props: updatedProps,
+              rect: {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+              },
+              tag: element.tagName.toLowerCase()
+            },
+          },
+          "*"
+        );
+      }
     }
+  };
+
+  // 크기 입력 완료 시 스타일 적용
+  const handleSizeInputComplete = async (prop: 'width' | 'height', value: string) => {
+    if (!value.trim()) {
+      if (selectedElementId) {
+        const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
+        const updatedStyle = { ...currentStyle };
+        delete updatedStyle[prop];
+        await applyStyleChange(prop, '');
+      }
+      return;
+    }
+
+    // 숫자만 입력된 경우 px 단위 추가
+    const processedValue = /^\d+$/.test(value) ? `${value}px` : value;
+    await applyStyleChange(prop, processedValue);
   };
 
   const parsePropValue = (value: string, key: string): string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] | undefined => {
@@ -104,10 +215,14 @@ export default function Layout() {
   // 컴포넌트 마운트 시 초기 값 설정
   useEffect(() => {
     if (selectedElementId) {
-      const initialValues: Record<string, string> = {};
-      if (typeof selectedProps.className === 'string') initialValues['className'] = selectedProps.className;
-      if (typeof selectedProps.id === 'string') initialValues['id'] = selectedProps.id;
-      if (typeof selectedProps.text === 'string') initialValues['text'] = selectedProps.text;
+      const currentStyle = selectedProps.style as React.CSSProperties;
+      const initialValues: Record<string, string> = {
+        ...(typeof selectedProps.className === 'string' ? { className: selectedProps.className } : {}),
+        ...(typeof selectedProps.id === 'string' ? { id: selectedProps.id } : {}),
+        ...(typeof selectedProps.text === 'string' ? { text: selectedProps.text } : {}),
+        ...(currentStyle?.width ? { width: currentStyle.width.toString() } : {}),
+        ...(currentStyle?.height ? { height: currentStyle.height.toString() } : {})
+      };
       setTempInputValues(initialValues);
     }
   }, [selectedElementId, selectedProps]);
@@ -121,6 +236,24 @@ export default function Layout() {
     window.addEventListener("message", handleSelectedMessage);
     return () => window.removeEventListener("message", handleSelectedMessage);
   }, [updateElementProps]);
+
+  useEffect(() => {
+    if (selectedElementId) {
+      // Fetch current element data when selected element changes
+      const fetchElementData = async () => {
+        const { data: currentElement } = await supabase
+          .from('elements')
+          .select('props')
+          .eq('id', selectedElementId)
+          .single();
+
+        if (currentElement?.props) {
+          updateElementProps(selectedElementId, currentElement.props);
+        }
+      };
+      fetchElementData();
+    }
+  }, [selectedElementId]);
 
   return (
     <div className='flex flex-col gap-4 p-4'>
@@ -162,19 +295,12 @@ export default function Layout() {
       <div className='panel display_panel'>
         <div className='flex flex-col gap-2'>
           <label htmlFor="element-display">Display</label>
-          <select
+          <ReusableSelect
             id="element-display"
             value={display}
-            onChange={(e) => handleStyleChange('display', e.target.value)}
-            aria-label="Display"
-          >
-            <option value="block">Block</option>
-            <option value="flex">Flex</option>
-            <option value="grid">Grid</option>
-            <option value="inline">Inline</option>
-            <option value="inline-block">Inline Block</option>
-            <option value="none">None</option>
-          </select>
+            onChange={(e) => applyStyleChange('display', e.target.value)}
+            options={DISPLAY_OPTIONS}
+          />
         </div>
       </div>
 
@@ -182,17 +308,12 @@ export default function Layout() {
         <div className='panel flex_panel'>
           <div className='flex flex-col gap-2'>
             <label htmlFor="element-flex-direction">Flex Direction</label>
-            <select
+            <ReusableSelect
               id="element-flex-direction"
-              value={flexDirection}
-              onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
-              aria-label="Flex Direction"
-            >
-              <option value="row">Row</option>
-              <option value="column">Column</option>
-              <option value="row-reverse">Row Reverse</option>
-              <option value="column-reverse">Column Reverse</option>
-            </select>
+              value={currentFlexDirection}
+              onChange={(e) => applyStyleChange('flexDirection', e.target.value)}
+              options={FLEX_DIRECTION_OPTIONS}
+            />
           </div>
         </div>
       )}
@@ -202,7 +323,7 @@ export default function Layout() {
         <ReusableSelect
           id="alignItemsSelect"
           value={(selectedProps.style as React.CSSProperties)?.alignItems || 'stretch'}
-          onChange={(e) => handleStyleChange('alignItems', e.target.value)}
+          onChange={(e) => applyStyleChange('alignItems', e.target.value)}
           options={["stretch", "flex-start", "flex-end", "center", "baseline", "initial", "inherit"]}
         />
       </div>
@@ -212,7 +333,7 @@ export default function Layout() {
         <ReusableSelect
           id="justifyContentSelect"
           value={(selectedProps.style as React.CSSProperties)?.justifyContent || 'flex-start'}
-          onChange={(e) => handleStyleChange('justifyContent', e.target.value)}
+          onChange={(e) => applyStyleChange('justifyContent', e.target.value)}
           options={["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly", "initial", "inherit"]}
         />
       </div>
@@ -222,7 +343,7 @@ export default function Layout() {
         <ReusableSelect
           id="gapSelect"
           value={String((selectedProps.style as React.CSSProperties)?.gap || '0')}
-          onChange={(e) => handleStyleChange('gap', e.target.value)}
+          onChange={(e) => applyStyleChange('gap', e.target.value)}
           options={["0", "4px", "8px", "16px", "32px"]}
         />
       </div>
@@ -232,7 +353,7 @@ export default function Layout() {
         <ReusableSelect
           id="paddingSelect"
           value={String((selectedProps.style as React.CSSProperties)?.padding || '0')}
-          onChange={(e) => handleStyleChange('padding', e.target.value)}
+          onChange={(e) => applyStyleChange('padding', e.target.value)}
           options={["0", "4px", "8px", "16px", "32px"]}
         />
       </div>
@@ -244,18 +365,32 @@ export default function Layout() {
             <input
               id="element-width"
               type="text"
-              value={tempInputValues['width'] ?? (selectedProps.style as React.CSSProperties)?.width ?? ''}
+              value={tempInputValues['width'] || ''}
               onChange={(e) => handleTextInputChange('width', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, 'width')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSizeInputComplete('width', e.currentTarget.value);
+                }
+              }}
+              onBlur={(e) => handleSizeInputComplete('width', e.target.value)}
+              placeholder="auto"
               aria-label="Width"
             />
             <span>*</span>
             <input
               id="element-height"
               type="text"
-              value={tempInputValues['height'] ?? (selectedProps.style as React.CSSProperties)?.height ?? ''}
+              value={tempInputValues['height'] || ''}
               onChange={(e) => handleTextInputChange('height', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, 'height')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSizeInputComplete('height', e.currentTarget.value);
+                }
+              }}
+              onBlur={(e) => handleSizeInputComplete('height', e.target.value)}
+              placeholder="auto"
               aria-label="Height"
             />
           </div>

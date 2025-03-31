@@ -106,10 +106,10 @@ function Dashboard() {
 
   return (
     <div id="app">
-      <div className='contents h-full'>
+      <div className='contents'>
 
-        <button onClick={handleLogout}>로그아웃</button>
-        <main className='overlay-pattern-inner'>
+
+        <main className='main'>
           <h2>Projects List</h2>
           <form onSubmit={handleAddProject}>
             <input
@@ -133,9 +133,9 @@ function Dashboard() {
             ))}
           </section>
         </main>
-        <aside>left-sidebar</aside>
-        <nav>header</nav>
-        <footer>footer</footer>
+        <aside className='left-sidebar'>left-sidebar</aside>
+        <nav className='header'>header<button onClick={handleLogout}>로그아웃</button></nav>
+        <footer className='footer'>footer</footer>
       </div>
     </div>
   );
