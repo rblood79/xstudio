@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../env/supabase.client';
 import { convertTokensToCSS } from '../utils/tokensToCss';
 import { ColorValue, DesignToken, TokenType } from '../types/designTokens';
@@ -17,56 +17,58 @@ export function useDesignTokens(projectId: string): UseDesignTokensReturn {
   const cacheRef = useRef<{
     tokens: DesignToken[];
     timestamp: number;
+    projectId: string;
   } | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  useEffect(() => {
-    const fetchAndApplyTokens = async (forceFetch = false) => {
-      try {
-        let currentTokens;
+  const fetchAndApplyTokens = useCallback(async (forceFetch = false) => {
+    try {
+      let currentTokens;
 
-        // Check cache first
-        if (!forceFetch && cacheRef.current) {
-          const isCacheValid = Date.now() - cacheRef.current.timestamp < CACHE_DURATION;
-          if (isCacheValid) {
-            currentTokens = cacheRef.current.tokens;
-          }
+      // Check cache first
+      if (!forceFetch && cacheRef.current && cacheRef.current.projectId === projectId) {
+        const isCacheValid = Date.now() - cacheRef.current.timestamp < CACHE_DURATION;
+        if (isCacheValid) {
+          currentTokens = cacheRef.current.tokens;
         }
+      }
 
-        // Fetch if no valid cache
-        if (!currentTokens) {
-          const { data, error } = await supabase
-            .from('design_tokens')
-            .select('*')
-            .eq('project_id', projectId);
+      // Fetch if no valid cache
+      if (!currentTokens) {
+        const { data, error } = await supabase
+          .from('design_tokens')
+          .select('*')
+          .eq('project_id', projectId);
 
-          if (error) throw error;
-          currentTokens = data || [];
+        if (error) throw error;
+        currentTokens = data || [];
 
-          // Update cache
-          cacheRef.current = {
-            tokens: currentTokens,
-            timestamp: Date.now()
-          };
-        }
+        // Update cache
+        cacheRef.current = {
+          tokens: currentTokens,
+          timestamp: Date.now(),
+          projectId
+        };
+      }
 
-        setTokens(currentTokens);
+      setTokens(currentTokens);
 
-        // Remove existing style element if it exists
+      // Apply CSS only if tokens have changed
+      const cssText = convertTokensToCSS(currentTokens);
+      if (styleElementRef.current?.textContent !== cssText) {
         if (styleElementRef.current) {
           styleElementRef.current.remove();
         }
-
-        // Create new style element
         styleElementRef.current = document.createElement('style');
-        styleElementRef.current.textContent = convertTokensToCSS(currentTokens);
+        styleElementRef.current.textContent = cssText;
         document.head.appendChild(styleElementRef.current);
-      } catch (error) {
-        console.error('Error fetching design tokens:', error);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching design tokens:', error);
+    }
+  }, [projectId]);
 
-    // Initial fetch
+  useEffect(() => {
     fetchAndApplyTokens();
 
     // Set up subscription for real-time updates
@@ -81,8 +83,10 @@ export function useDesignTokens(projectId: string): UseDesignTokensReturn {
           filter: `project_id=eq.${projectId}`
         },
         () => {
-          // Clear cache and debounce the update
-          cacheRef.current = null;
+          // Clear cache only for the current project
+          if (cacheRef.current?.projectId === projectId) {
+            cacheRef.current = null;
+          }
 
           if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
@@ -105,9 +109,9 @@ export function useDesignTokens(projectId: string): UseDesignTokensReturn {
       }
       subscription.unsubscribe();
     };
-  }, [projectId]);
+  }, [projectId, fetchAndApplyTokens]);
 
-  const updateToken = async (name: string, token: { type: TokenType; value: ColorValue }) => {
+  const updateToken = useCallback(async (name: string, token: { type: TokenType; value: ColorValue }) => {
     try {
       const { error } = await supabase
         .from('design_tokens')
@@ -119,7 +123,7 @@ export function useDesignTokens(projectId: string): UseDesignTokensReturn {
     } catch (error) {
       console.error('Error updating token:', error);
     }
-  };
+  }, [projectId]);
 
   return { tokens, updateToken };
 } 

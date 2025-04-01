@@ -26,6 +26,17 @@ body,
     height: 240px;
 }
 
+.open-builder {
+    background-color: #141414;
+    color: white;
+}
+
+.close-builder {
+    background-color: #141414;
+    color: white;
+}
+
+
 .overlay-background {
     position: relative;
     z-index: 1;

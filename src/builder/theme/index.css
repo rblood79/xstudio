@@ -1,11 +1,11 @@
 .theme {
-    position: relative;
+    position: absolute;
     left: 48px;
     border: 1px solid #f00;
-    width: calc(100vw - 48px);
-    /*var(--sizes-sidebarWidth);*/
+    width: calc(100vw - var(--sizes-sideNavWidth));
     background: #fff;
     height: 100%;
+    overflow: auto;
 }
 
 

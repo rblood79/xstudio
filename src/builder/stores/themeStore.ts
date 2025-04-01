@@ -1,71 +1,81 @@
 import { create } from 'zustand';
 import { supabase } from '../../env/supabase.client';
-import { ColorValue } from '../../types/designTokens';
+import { DesignToken, ColorValue } from '../../types/designTokens';
 
-interface DesignToken {
-    id: string;
-    project_id: string;
-    name: string;
-    type: 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
-    value: ColorValue;
-    created_at: string;
+interface ThemeStore {
+  projectId: string | null;
+  tokens: DesignToken[];
+  lastFetch: number;
+  setProjectId: (id: string) => void;
+  fetchTokens: (projectId: string) => Promise<void>;
+  updateIframeStyles: () => void;
+  getStyleObject: () => Record<string, string>;
 }
 
-interface ThemeState {
-    tokens: DesignToken[];
-    projectId: string | null;
-    setProjectId: (projectId: string) => void;
-    setTokens: (tokens: DesignToken[]) => void;
-    fetchTokens: (projectId: string) => Promise<void>;
-    getStyleObject: () => Record<string, string>;
-    updateIframeStyles: () => void;
-}
+const CACHE_DURATION = 5000; // 5 seconds cache
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
-    tokens: [],
-    projectId: null,
-    setProjectId: (projectId: string) => set({ projectId }),
-    setTokens: (tokens: DesignToken[]) => set({ tokens }),
-    fetchTokens: async (projectId: string) => {
-        const { data, error } = await supabase
-            .from('design_tokens')
-            .select('*')
-            .eq('project_id', projectId);
-
-        if (error) {
-            console.error('Error fetching tokens:', error);
-            return;
-        }
-
-        set({ tokens: data || [] });
-    },
-    getStyleObject: () => {
-        const { tokens } = get();
-        const styleObject: Record<string, string> = {};
-
-        tokens.forEach(token => {
-            const value = token.value;
-            if (token.type === 'color' && typeof value === 'object' && 'h' in value) {
-                const colorValue = value as ColorValue;
-                styleObject[`--color-${token.name}`] = `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`;
-            }
-        });
-
-        return styleObject;
-    },
-    updateIframeStyles: () => {
-        const styleObject = get().getStyleObject();
-
-        requestAnimationFrame(() => {
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                if (iframe.contentWindow) {
-                    iframe.contentWindow.postMessage(
-                        { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
-                        window.location.origin
-                    );
-                }
-            });
-        });
+export const useThemeStore = create<ThemeStore>((set, get) => ({
+  projectId: null,
+  tokens: [],
+  lastFetch: 0,
+  
+  setProjectId: (id) => set({ projectId: id }),
+  
+  fetchTokens: async (projectId) => {
+    const now = Date.now();
+    const { lastFetch } = get();
+    
+    // Prevent fetching if the last fetch was too recent
+    if (now - lastFetch < CACHE_DURATION) {
+      return;
     }
+
+    try {
+      const { data, error } = await supabase
+        .from('design_tokens')
+        .select('*')
+        .eq('project_id', projectId);
+
+      if (error) throw error;
+      
+      set({ 
+        tokens: data || [],
+        lastFetch: now
+      });
+    } catch (error) {
+      console.error('Error fetching tokens:', error);
+    }
+  },
+
+  getStyleObject: () => {
+    const { tokens } = get();
+    const styleObject: Record<string, string> = {};
+
+    tokens.forEach(token => {
+      const value = token.value;
+      if (token.type === 'color' && typeof value === 'object' && 'h' in value) {
+        const colorValue = value as ColorValue;
+        styleObject[`--color-${token.name}`] = `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`;
+      }
+    });
+
+    return styleObject;
+  },
+
+  updateIframeStyles: () => {
+    const { getStyleObject } = get();
+    const styleObject = getStyleObject();
+
+    requestAnimationFrame(() => {
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage(
+            { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
+            window.location.origin
+          );
+        }
+      });
+    });
+  }
 })); 
