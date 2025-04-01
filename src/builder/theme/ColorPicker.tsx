@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ColorValue } from '../../types/designTokens';
 
 interface ColorPickerProps {
