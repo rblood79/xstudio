@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useDesignTokens } from '../../hooks/useDesignTokens';
+import { useThemeStore } from '../stores/themeStore';
 
 type TokenType = 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
 
@@ -97,6 +98,8 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const setThemeTokens = useThemeStore(state => state.setTokens);
+    const setThemeProjectId = useThemeStore(state => state.setProjectId);
 
     // Apply design tokens as CSS variables
     useDesignTokens(projectId);
@@ -116,21 +119,24 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             console.error('Error fetching tokens:', error);
             setError('Failed to fetch tokens');
             setTokens([]);
+            setThemeTokens([]);
         } else {
             setTokens(data || []);
+            setThemeTokens(data || []);
             setError(null);
         }
 
         setIsLoading(false);
-    }, [projectId]);
+    }, [projectId, setThemeTokens]);
 
     useEffect(() => {
         if (!projectId) {
             setError('Project ID is required');
             return;
         }
+        setThemeProjectId(projectId);
         fetchTokens();
-    }, [projectId, fetchTokens]);
+    }, [projectId, fetchTokens, setThemeProjectId]);
 
     const handleTypeChange = (type: TokenType) => {
         setNewToken(prev => ({
@@ -165,6 +171,46 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    const updateIframeStyles = useCallback((tokens: DesignToken[]) => {
+        const styleObject: Record<string, string> = {};
+
+        tokens.forEach(token => {
+            const value = token.value;
+            if (token.type === 'color' && typeof value === 'object' && 'r' in value) {
+                styleObject[`--${token.name}`] = `rgba(${value.r}, ${value.g}, ${value.b}, ${value.a})`;
+            } else if (token.type === 'typography' && typeof value === 'object') {
+                const typographyValue = value as TypographyValue;
+                styleObject[`--${token.name}-font-family`] = typographyValue.fontFamily;
+                styleObject[`--${token.name}-font-size`] = typographyValue.fontSize;
+                styleObject[`--${token.name}-font-weight`] = String(typographyValue.fontWeight);
+                styleObject[`--${token.name}-line-height`] = String(typographyValue.lineHeight);
+            } else if (token.type === 'spacing') {
+                styleObject[`--${token.name}`] = String(value);
+            } else if (token.type === 'shadow' && typeof value === 'object') {
+                const shadowValue = value as ShadowValue;
+                styleObject[`--${token.name}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
+            } else if (token.type === 'border' && typeof value === 'object') {
+                const borderValue = value as BorderValue;
+                styleObject[`--${token.name}`] = `${borderValue.width} ${borderValue.style} ${borderValue.color}`;
+            }
+        });
+
+        // Send message to all iframes in the document
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            if (iframe.contentWindow) {
+                iframe.contentWindow.postMessage(
+                    { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
+                    window.location.origin
+                );
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        updateIframeStyles(tokens);
+    }, [tokens, updateIframeStyles]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -206,18 +252,18 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                 if (error) throw error;
             }
 
-            setNewToken({
-                name: '',
-                type: 'color',
-                value: DEFAULT_VALUES.color
-            });
             await fetchTokens();
-        } catch (err) {
-            console.error('Error saving token:', err);
-            setError(err instanceof Error ? err.message : 'Failed to save token');
-        } finally {
-            setIsLoading(false);
+        } catch (error) {
+            console.error('Error saving token:', error);
+            setError('Failed to save token');
         }
+
+        setIsLoading(false);
+        setNewToken({
+            name: '',
+            type: 'color',
+            value: DEFAULT_VALUES.color
+        });
     };
 
     const handleCancelEdit = () => {
@@ -411,7 +457,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                             <p className="text-gray-500">Loading tokens...</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             {filteredTokens.map(token => (
                                 <div key={token.id} className="border p-4 rounded">
                                     <div className="flex justify-between items-start mb-2">
