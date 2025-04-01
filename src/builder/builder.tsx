@@ -7,6 +7,7 @@ import Inspector from "./inspector/layout";
 import Sidebar from "./sidebar";
 import "./builder.css";
 import { useStore } from './stores/elements';
+import { useThemeStore } from './stores/themeStore';
 import { debounce } from 'lodash';
 
 interface Page {
@@ -21,6 +22,7 @@ interface Page {
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const themeStore = useThemeStore();
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
@@ -198,6 +200,27 @@ function Builder() {
                 console.warn("Received message from untrusted origin:", event.origin);
                 return;
             }
+
+            if (event.data.type === "UPDATE_THEME_TOKENS") {
+                const iframe = iframeRef.current;
+                if (!iframe?.contentDocument) return;
+
+                // Create or update style element
+                let styleElement = iframe.contentDocument.getElementById('theme-tokens');
+                if (!styleElement) {
+                    styleElement = iframe.contentDocument.createElement('style');
+                    styleElement.id = 'theme-tokens';
+                    iframe.contentDocument.head.appendChild(styleElement);
+                }
+
+                // Convert style object to CSS string
+                const cssString = `:root {\n${Object.entries(event.data.styles)
+                    .map(([key, value]) => `  ${key}: ${value};`)
+                    .join('\n')}\n}`;
+
+                styleElement.textContent = cssString;
+            }
+
             if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
                 setSelectedElement(event.data.elementId, event.data.payload?.props);
             }
@@ -297,6 +320,34 @@ function Builder() {
         };
     }, [setSelectedElement]);
 
+    const applyThemeTokens = useCallback(() => {
+        const iframe = iframeRef.current;
+        if (!iframe?.contentDocument) return;
+
+        const styleObject = themeStore.getStyleObject();
+
+        // Create or update style element
+        let styleElement = iframe.contentDocument.getElementById('theme-tokens');
+        if (!styleElement) {
+            styleElement = iframe.contentDocument.createElement('style');
+            styleElement.id = 'theme-tokens';
+            iframe.contentDocument.head.appendChild(styleElement);
+        }
+
+        // Convert style object to CSS string
+        const cssString = `:root {\n${Object.entries(styleObject)
+            .map(([key, value]) => `  ${key}: ${value};`)
+            .join('\n')}\n}`;
+
+        styleElement.textContent = cssString;
+    }, [themeStore]);
+
+    useEffect(() => {
+        if (projectId) {
+            themeStore.fetchTokens(projectId);
+        }
+    }, [projectId, themeStore]);
+
     const handleIframeLoad = () => {
         const iframe = iframeRef.current;
         if (!iframe?.contentWindow) {
@@ -313,6 +364,7 @@ function Builder() {
                         window.location.origin
                     );
                 }
+                applyThemeTokens();
             } else {
                 setTimeout(checkContentWindow, 100);
             }
@@ -320,6 +372,10 @@ function Builder() {
 
         checkContentWindow();
     };
+
+    useEffect(() => {
+        applyThemeTokens();
+    }, [applyThemeTokens]);
 
     return (
         <div className="app">
