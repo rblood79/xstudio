@@ -155,13 +155,14 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
 
     // Generate token updates based on color changes
     const generateTokenUpdates = (key: keyof ThemeColors, color: ColorValue): TokenUpdate[] => {
-        const baseTokens = {
+        const baseTokens: Record<keyof ThemeColors, string[]> = {
             accent: ['primary', 'secondary', 'accent'],
             gray: ['gray', 'neutral', 'text'],
             background: ['background', 'surface']
         };
 
-        return baseTokens[key].map(name => ({
+        const tokenNames = baseTokens[key] || [];
+        return tokenNames.map(name => ({
             name,
             value: color
         }));

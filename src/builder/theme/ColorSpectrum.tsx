@@ -188,9 +188,9 @@ export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
     ];
 
     return (
-        <div className="color-spectrum grid gap-8">
+        <div className="color-spectrum flex flex-row gap-16">
             {sections.map(section => (
-                <div key={section.title} className="spectrum-section">
+                <div key={section.title} className="spectrum-section flex-1">
                     <div className="mb-4">
                         <h3 className="text-lg font-medium">{section.title}</h3>
                         <p className="text-sm text-gray-600">{section.description}</p>
@@ -204,7 +204,7 @@ export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
                                     className="flex items-center gap-4"
                                 >
                                     <div
-                                        className="w-12 h-12 rounded-md flex items-center justify-center text-xs"
+                                        className="w-24 h-24 flex items-center justify-center text-xs"
                                         style={{
                                             backgroundColor: colorToHsl(color),
                                             color: color.l < 50 ? 'white' : 'black'
