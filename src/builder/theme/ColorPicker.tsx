@@ -16,7 +16,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
     };
 
     return (
-        <div className="color-picker">
+        <div className="color-picker flex-1">
             <div className="flex justify-between items-center mb-3">
                 <label className="text-sm font-medium">{label}</label>
                 <div className="text-xs font-mono text-gray-500">
@@ -26,7 +26,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
             <div className="flex gap-4 items-start">
                 <div className="relative">
                     <div
-                        className="w-20 h-20 rounded-lg shadow-sm border border-gray-200"
+                        className="w-36 h-36 rounded-lg shadow-sm border border-gray-200"
                         style={{
                             backgroundColor: `hsl(${value.h}deg ${value.s}% ${value.l}% / ${value.a})`
                         }}

@@ -44,7 +44,6 @@
   button {
     @apply py-1 px-2 rounded-sm;
     background-color: var(--color-primary);
-    color: white;
     border: 2px solid var(--color-secondary);
     cursor: pointer;
     transition: all 0.2s ease;

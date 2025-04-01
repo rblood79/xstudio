@@ -81,19 +81,37 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     const [mode, setMode] = useState<'light' | 'dark'>('light');
     const [colors, setColors] = useState<ThemeColors>(defaultColors);
 
-    useEffect(() => {
+    // Memoize fetchTokens call
+    const fetchTokensForProject = useCallback(() => {
         if (projectId) {
-            setProjectId(projectId);
             fetchTokens(projectId);
         }
-    }, [projectId, setProjectId, fetchTokens]);
+    }, [projectId, fetchTokens]);
 
-    // Apply design tokens as CSS variables
+    // Memoize project ID setting
+    const initializeProject = useCallback(() => {
+        if (projectId) {
+            setProjectId(projectId);
+            fetchTokensForProject();
+        }
+    }, [projectId, setProjectId, fetchTokensForProject]);
+
+    // Initialize project only once when mounted or when project ID changes
     useEffect(() => {
-        if (tokens) {
+        initializeProject();
+    }, [initializeProject]);
+
+    // Memoize styles update
+    const updateStyles = useCallback(() => {
+        if (tokens && tokens.length > 0) {
             updateIframeStyles();
         }
     }, [tokens, updateIframeStyles]);
+
+    // Update styles when tokens change
+    useEffect(() => {
+        updateStyles();
+    }, [updateStyles]);
 
     const handleTypeChange = (type: TokenType) => {
         setNewToken({
@@ -122,7 +140,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleColorChange = (key: keyof ThemeColors) => (color: ColorValue) => {
+    const handleColorChange = useCallback((key: keyof ThemeColors) => (color: ColorValue) => {
         setColors(prev => ({
             ...prev,
             [key]: color
@@ -133,7 +151,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         tokenUpdates.forEach(({ name, value }) => {
             updateToken?.(name, { type: 'color', value });
         });
-    };
+    }, [updateToken]);
 
     // Generate token updates based on color changes
     const generateTokenUpdates = (key: keyof ThemeColors, color: ColorValue): TokenUpdate[] => {
@@ -258,10 +276,11 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                 const colorValue = token.value as ColorValue;
                 return (
                     <div
-                        className="w-8 h-8 rounded"
-                        style={{
-                            backgroundColor: `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`
-                        }}
+                        className="w-8 h-8 rounded color-preview"
+                        data-h={`${colorValue.h}deg`}
+                        data-s={`${colorValue.s}%`}
+                        data-l={`${colorValue.l}%`}
+                        data-a={colorValue.a}
                     />
                 );
             }
@@ -315,7 +334,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             <div className="grid gap-8 mb-8">
                 <div className="color-section">
                     <h3 className="text-lg font-medium mb-4">Primary Colors</h3>
-                    <div className="grid gap-6">
+                    <div className="flex flex-row gap-8">
                         <ColorPicker
                             label="Accent Color"
                             value={colors.accent}
@@ -371,6 +390,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                                 value={filterType}
                                 onChange={handleFilterChange}
                                 className="p-2 border rounded"
+                                aria-label="Filter token type"
                             >
                                 <option value="all">All Types</option>
                                 {TOKEN_TYPES.map(type => (
@@ -406,6 +426,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                                         onChange={(e) => setNewToken(prev => ({ ...prev, name: e.target.value }))}
                                         className="w-full p-2 border rounded"
                                         required
+                                        aria-label="Token name"
                                     />
                                 </div>
 
@@ -416,6 +437,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                                         onChange={(e) => handleTypeChange(e.target.value as TokenType)}
                                         className="w-full p-2 border rounded"
                                         disabled={isEditing}
+                                        aria-label="Token type"
                                     >
                                         {TOKEN_TYPES.map(type => (
                                             <option key={type} value={type}>

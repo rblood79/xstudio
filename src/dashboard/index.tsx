@@ -127,8 +127,8 @@ function Dashboard() {
               <div key={project.id} className='project-item'>
                 <div>{project.name}</div>
                 <div>{project.updated_at}</div>
-                <button onClick={() => handleProject(project)}>빌더 열기</button>
-                <button onClick={() => handleDeleteProject(project.id)}>삭제</button>
+                <button className='open-builder' onClick={() => handleProject(project)}>빌더 열기</button>
+                <button className='close-builder' onClick={() => handleDeleteProject(project.id)}>삭제</button>
               </div>
             ))}
           </section>
