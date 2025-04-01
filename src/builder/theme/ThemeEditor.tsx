@@ -1,15 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useDesignTokens } from '../../hooks/useDesignTokens';
 import { useThemeStore } from '../stores/themeStore';
+import ColorPicker from './ColorPicker';
 
 type TokenType = 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
 
 interface ColorValue {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
+    h: number; // hue (0-360)
+    s: number; // saturation (0-100)
+    l: number; // lightness (0-100)
+    a: number; // alpha (0-1)
 }
 
 interface TypographyValue {
@@ -57,7 +58,7 @@ const TOKEN_TYPES = [
 ] as const;
 
 const DEFAULT_VALUES: Record<TokenType, TokenValue> = {
-    color: { r: 0, g: 0, b: 0, a: 1 },
+    color: { h: 210, s: 100, l: 50, a: 1 }, // Default blue color
     typography: {
         fontFamily: 'Arial',
         fontSize: '16px',
@@ -70,12 +71,12 @@ const DEFAULT_VALUES: Record<TokenType, TokenValue> = {
         offsetY: '2px',
         blur: '4px',
         spread: '0px',
-        color: 'rgba(0,0,0,0.1)'
+        color: 'hsla(0, 0%, 0%, 0.1)'
     },
     border: {
         width: '1px',
         style: 'solid',
-        color: '#000000'
+        color: 'hsl(0, 0%, 0%)'
     }
 };
 
@@ -146,13 +147,6 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         }));
     };
 
-    const handleValueChange = (value: TokenValue) => {
-        setNewToken(prev => ({
-            ...prev,
-            value
-        }));
-    };
-
     const handleEditToken = (token: DesignToken) => {
         setEditingToken(token);
         setNewToken({
@@ -175,42 +169,53 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     const updateIframeStyles = useCallback((tokens: DesignToken[]) => {
         const styleObject: Record<string, string> = {};
 
-        tokens.forEach(token => {
-            const value = token.value;
-            if (token.type === 'color' && typeof value === 'object' && 'r' in value) {
-                styleObject[`--${token.name}`] = `rgba(${value.r}, ${value.g}, ${value.b}, ${value.a})`;
-            } else if (token.type === 'typography' && typeof value === 'object') {
-                const typographyValue = value as TypographyValue;
-                styleObject[`--${token.name}-font-family`] = typographyValue.fontFamily;
-                styleObject[`--${token.name}-font-size`] = typographyValue.fontSize;
-                styleObject[`--${token.name}-font-weight`] = String(typographyValue.fontWeight);
-                styleObject[`--${token.name}-line-height`] = String(typographyValue.lineHeight);
-            } else if (token.type === 'spacing') {
-                styleObject[`--${token.name}`] = String(value);
-            } else if (token.type === 'shadow' && typeof value === 'object') {
-                const shadowValue = value as ShadowValue;
-                styleObject[`--${token.name}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
-            } else if (token.type === 'border' && typeof value === 'object') {
-                const borderValue = value as BorderValue;
-                styleObject[`--${token.name}`] = `${borderValue.width} ${borderValue.style} ${borderValue.color}`;
-            }
-        });
+        requestAnimationFrame(() => {
+            tokens.forEach(token => {
+                const value = token.value;
+                if (token.type === 'color' && typeof value === 'object' && 'h' in value) {
+                    const colorValue = value as ColorValue;
+                    styleObject[`--color-${token.name}`] = `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`;
+                } else if (token.type === 'typography' && typeof value === 'object' && 'fontFamily' in value) {
+                    const typographyValue = value as TypographyValue;
+                    styleObject[`--typography-${token.name}-family`] = typographyValue.fontFamily;
+                    styleObject[`--typography-${token.name}-size`] = typographyValue.fontSize;
+                    styleObject[`--typography-${token.name}-weight`] = String(typographyValue.fontWeight);
+                    styleObject[`--typography-${token.name}-line-height`] = String(typographyValue.lineHeight);
+                } else if (token.type === 'spacing' && typeof value === 'string') {
+                    styleObject[`--spacing-${token.name}`] = value;
+                } else if (token.type === 'shadow' && typeof value === 'object' && 'offsetX' in value) {
+                    const shadowValue = value as ShadowValue;
+                    styleObject[`--shadow-${token.name}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
+                } else if (token.type === 'border' && typeof value === 'object' && 'width' in value) {
+                    const borderValue = value as BorderValue;
+                    styleObject[`--border-${token.name}-width`] = borderValue.width;
+                    styleObject[`--border-${token.name}-style`] = borderValue.style;
+                    styleObject[`--border-${token.name}-color`] = borderValue.color;
+                }
+            });
 
-        // Send message to all iframes in the document
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach(iframe => {
-            if (iframe.contentWindow) {
-                iframe.contentWindow.postMessage(
-                    { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
-                    window.location.origin
-                );
-            }
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                if (iframe.contentWindow) {
+                    iframe.contentWindow.postMessage(
+                        { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
+                        window.location.origin
+                    );
+                }
+            });
         });
     }, []);
 
     useEffect(() => {
         updateIframeStyles(tokens);
     }, [tokens, updateIframeStyles]);
+
+    const handleColorChange = useCallback((color: ColorValue) => {
+        setNewToken(prev => ({
+            ...prev,
+            value: color
+        }));
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -224,15 +229,17 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         setError(null);
 
         try {
+            const tokenData = {
+                project_id: projectId,
+                name: newToken.name,
+                type: newToken.type,
+                value: newToken.value
+            };
+
             if (isEditing && editingToken) {
                 const { error } = await supabase
                     .from('design_tokens')
-                    .update({
-                        name: newToken.name,
-                        type: newToken.type,
-                        value: newToken.value,
-                        project_id: projectId
-                    })
+                    .update(tokenData)
                     .eq('id', editingToken.id);
 
                 if (error) throw error;
@@ -242,28 +249,23 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             } else {
                 const { error } = await supabase
                     .from('design_tokens')
-                    .insert({
-                        project_id: projectId,
-                        name: newToken.name,
-                        type: newToken.type,
-                        value: newToken.value
-                    });
+                    .insert([tokenData]);
 
                 if (error) throw error;
             }
 
             await fetchTokens();
+            setNewToken({
+                name: '',
+                type: 'color',
+                value: DEFAULT_VALUES.color
+            });
         } catch (error) {
             console.error('Error saving token:', error);
             setError('Failed to save token');
         }
 
         setIsLoading(false);
-        setNewToken({
-            name: '',
-            type: 'color',
-            value: DEFAULT_VALUES.color
-        });
     };
 
     const handleCancelEdit = () => {
@@ -290,46 +292,31 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         fetchTokens();
     };
 
-    const renderValueEditor = () => {
+    const renderTokenEditor = useCallback(() => {
         switch (newToken.type) {
-            case 'color': {
-                const colorValue = newToken.value as ColorValue;
-                const rgbToHex = (r: number, g: number, b: number) => {
-                    return '#' + [r, g, b].map(x => {
-                        const hex = x.toString(16);
-                        return hex.length === 1 ? '0' + hex : hex;
-                    }).join('');
-                };
+            case 'color':
                 return (
-                    <div className="flex flex-col gap-2">
-                        <label>Color Value</label>
-                        <input
-                            type="color"
-                            value={rgbToHex(colorValue.r, colorValue.g, colorValue.b)}
-                            onChange={(e) => {
-                                const hex = e.target.value;
-                                const r = parseInt(hex.slice(1, 3), 16);
-                                const g = parseInt(hex.slice(3, 5), 16);
-                                const b = parseInt(hex.slice(5, 7), 16);
-                                handleValueChange({ r, g, b, a: colorValue.a });
-                            }}
-                        />
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.1"
-                            value={colorValue.a}
-                            onChange={(e) => handleValueChange({ ...colorValue, a: parseFloat(e.target.value) })}
-                        />
-                    </div>
+                    <ColorPicker
+                        value={newToken.value as ColorValue}
+                        onChange={handleColorChange}
+                    />
                 );
-            }
-            // ... other cases for typography, spacing, shadow, and border ...
+            case 'typography':
+                // ... typography editor ...
+                break;
+            case 'spacing':
+                // ... spacing editor ...
+                break;
+            case 'shadow':
+                // ... shadow editor ...
+                break;
+            case 'border':
+                // ... border editor ...
+                break;
             default:
                 return null;
         }
-    };
+    }, [newToken.type, newToken.value, handleColorChange]);
 
     const renderTokenPreview = (token: DesignToken) => {
         switch (token.type) {
@@ -339,7 +326,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                     <div
                         className="w-8 h-8 rounded"
                         style={{
-                            backgroundColor: `rgba(${colorValue.r},${colorValue.g},${colorValue.b},${colorValue.a})`
+                            backgroundColor: `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`
                         }}
                     />
                 );
@@ -350,11 +337,21 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         }
     };
 
-    const filteredTokens = tokens.filter(token => {
-        const matchesSearch = token.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = filterType === 'all' || token.type === filterType;
-        return matchesSearch && matchesType;
-    });
+    const filteredTokens = useMemo(() => {
+        return tokens.filter(token => {
+            const matchesSearch = token.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesType = filterType === 'all' || token.type === filterType;
+            return matchesSearch && matchesType;
+        });
+    }, [tokens, searchQuery, filterType]);
+
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+    }, []);
+
+    const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        setFilterType(e.target.value as TokenType | 'all');
+    }, []);
 
     return (
         <div className="sidebar-content theme">
@@ -378,13 +375,13 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                                 type="text"
                                 placeholder="Search tokens..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={handleSearchChange}
                                 className="w-full p-2 border rounded"
                             />
                         </div>
                         <select
                             value={filterType}
-                            onChange={(e) => setFilterType(e.target.value as TokenType | 'all')}
+                            onChange={handleFilterChange}
                             className="p-2 border rounded"
                         >
                             <option value="all">All Types</option>
@@ -440,7 +437,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                                 </select>
                             </div>
 
-                            {renderValueEditor()}
+                            {renderTokenEditor()}
 
                             <button
                                 type="submit"
