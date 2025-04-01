@@ -2,10 +2,10 @@ import { create } from 'zustand';
 import { supabase } from '../../env/supabase.client';
 
 interface ColorValue {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
+    h: number; // hue (0-360)
+    s: number; // saturation (0-100)
+    l: number; // lightness (0-100)
+    a: number; // alpha (0-1)
 }
 
 interface TypographyValue {
@@ -73,23 +73,25 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
         tokens.forEach(token => {
             const value = token.value;
-            if (token.type === 'color' && typeof value === 'object' && 'r' in value) {
+            if (token.type === 'color' && typeof value === 'object' && 'h' in value) {
                 const colorValue = value as ColorValue;
-                styleObject[`--${token.name}-${token.type}`] = `rgba(${colorValue.r}, ${colorValue.g}, ${colorValue.b}, ${colorValue.a})`;
+                styleObject[`--color-${token.name}`] = `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`;
             } else if (token.type === 'typography' && typeof value === 'object' && 'fontFamily' in value) {
                 const typographyValue = value as TypographyValue;
-                styleObject[`--${token.name}-${token.type}-font-family`] = typographyValue.fontFamily;
-                styleObject[`--${token.name}-${token.type}-font-size`] = typographyValue.fontSize;
-                styleObject[`--${token.name}-${token.type}-font-weight`] = String(typographyValue.fontWeight);
-                styleObject[`--${token.name}-${token.type}-line-height`] = String(typographyValue.lineHeight);
+                styleObject[`--typography-${token.name}-family`] = typographyValue.fontFamily;
+                styleObject[`--typography-${token.name}-size`] = typographyValue.fontSize;
+                styleObject[`--typography-${token.name}-weight`] = String(typographyValue.fontWeight);
+                styleObject[`--typography-${token.name}-line-height`] = String(typographyValue.lineHeight);
             } else if (token.type === 'spacing' && typeof value === 'string') {
-                styleObject[`--${token.name}-${token.type}`] = value;
+                styleObject[`--spacing-${token.name}`] = value;
             } else if (token.type === 'shadow' && typeof value === 'object' && 'offsetX' in value) {
                 const shadowValue = value as ShadowValue;
-                styleObject[`--${token.name}-${token.type}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
+                styleObject[`--shadow-${token.name}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
             } else if (token.type === 'border' && typeof value === 'object' && 'width' in value) {
                 const borderValue = value as BorderValue;
-                styleObject[`--${token.name}-${token.type}`] = `${borderValue.width} ${borderValue.style} ${borderValue.color}`;
+                styleObject[`--border-${token.name}-width`] = borderValue.width;
+                styleObject[`--border-${token.name}-style`] = borderValue.style;
+                styleObject[`--border-${token.name}-color`] = borderValue.color;
             }
         });
 
