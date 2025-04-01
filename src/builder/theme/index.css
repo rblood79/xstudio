@@ -1,13 +1,14 @@
 .theme {
-    position: absolute;
+    position: relative;
     left: 48px;
     border: 1px solid #f00;
-    width: var(--sizes-sidebarWidth);
+    width: calc(100vw - 48px);
+    /*var(--sizes-sidebarWidth);*/
     background: #fff;
     height: 100%;
 }
 
 
 .add-token {
-    background-color: var(--primary-color);
+    background-color: #f00;
 }

@@ -1,10 +1,10 @@
 export type TokenType = 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
 
 export interface ColorValue {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
+    h: number; // hue (0-360)
+    s: number; // saturation (0-100)
+    l: number; // lightness (0-100)
+    a: number; // alpha (0-1)
 }
 
 export interface TypographyValue {

@@ -2,52 +2,32 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useDesignTokens } from '../../hooks/useDesignTokens';
 import { useThemeStore } from '../stores/themeStore';
-import ColorPicker from './ColorPicker';
+import { ColorPicker } from './ColorPicker';
+import { ColorSpectrum } from './ColorSpectrum';
+import { ColorValue, TokenType, TokenValue, DesignToken } from '../../types/designTokens';
 
-type TokenType = 'color' | 'typography' | 'spacing' | 'shadow' | 'border';
-
-interface ColorValue {
-    h: number; // hue (0-360)
-    s: number; // saturation (0-100)
-    l: number; // lightness (0-100)
-    a: number; // alpha (0-1)
-}
-
-interface TypographyValue {
-    fontFamily: string;
-    fontSize: string;
-    fontWeight: number;
-    lineHeight: number;
-}
-
-interface ShadowValue {
-    offsetX: string;
-    offsetY: string;
-    blur: string;
-    spread: string;
-    color: string;
-}
-
-interface BorderValue {
-    width: string;
-    style: string;
-    color: string;
-}
-
-type TokenValue = ColorValue | TypographyValue | ShadowValue | BorderValue | string;
-
-interface DesignToken {
-    id: string;
-    project_id: string;
+interface TokenState {
     name: string;
     type: TokenType;
     value: TokenValue;
-    created_at: string;
 }
 
-interface ThemeEditorProps {
-    projectId: string;
+interface ThemeColors {
+    accent: ColorValue;
+    gray: ColorValue;
+    background: ColorValue;
 }
+
+interface TokenUpdate {
+    name: string;
+    value: ColorValue;
+}
+
+const defaultColors: ThemeColors = {
+    accent: { h: 220, s: 90, l: 50, a: 1 },
+    gray: { h: 220, s: 10, l: 50, a: 1 },
+    background: { h: 0, s: 0, l: 100, a: 1 }
+};
 
 const TOKEN_TYPES = [
     'color',
@@ -58,7 +38,7 @@ const TOKEN_TYPES = [
 ] as const;
 
 const DEFAULT_VALUES: Record<TokenType, TokenValue> = {
-    color: { h: 210, s: 100, l: 50, a: 1 }, // Default blue color
+    color: { h: 210, s: 100, l: 50, a: 1 },
     typography: {
         fontFamily: 'Arial',
         fontSize: '16px',
@@ -80,14 +60,13 @@ const DEFAULT_VALUES: Record<TokenType, TokenValue> = {
     }
 };
 
-interface TokenState {
-    name: string;
-    type: TokenType;
-    value: TokenValue;
+interface ThemeEditorProps {
+    projectId: string;
 }
 
 export default function ThemeEditor({ projectId }: ThemeEditorProps) {
-    const [tokens, setTokens] = useState<DesignToken[]>([]);
+    const { tokens = [], updateToken } = useDesignTokens(projectId) || {};
+    const { updateIframeStyles, setProjectId, fetchTokens } = useThemeStore();
     const [newToken, setNewToken] = useState<TokenState>({
         name: '',
         type: 'color',
@@ -99,52 +78,29 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const setThemeTokens = useThemeStore(state => state.setTokens);
-    const setThemeProjectId = useThemeStore(state => state.setProjectId);
-
-    // Apply design tokens as CSS variables
-    useDesignTokens(projectId);
-
-    const fetchTokens = useCallback(async () => {
-        if (!projectId) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        const { data, error } = await supabase
-            .from('design_tokens')
-            .select('*')
-            .eq('project_id', projectId);
-
-        if (error) {
-            console.error('Error fetching tokens:', error);
-            setError('Failed to fetch tokens');
-            setTokens([]);
-            setThemeTokens([]);
-        } else {
-            setTokens(data || []);
-            setThemeTokens(data || []);
-            setError(null);
-        }
-
-        setIsLoading(false);
-    }, [projectId, setThemeTokens]);
+    const [mode, setMode] = useState<'light' | 'dark'>('light');
+    const [colors, setColors] = useState<ThemeColors>(defaultColors);
 
     useEffect(() => {
-        if (!projectId) {
-            setError('Project ID is required');
-            return;
+        if (projectId) {
+            setProjectId(projectId);
+            fetchTokens(projectId);
         }
-        setThemeProjectId(projectId);
-        fetchTokens();
-    }, [projectId, fetchTokens, setThemeProjectId]);
+    }, [projectId, setProjectId, fetchTokens]);
+
+    // Apply design tokens as CSS variables
+    useEffect(() => {
+        if (tokens) {
+            updateIframeStyles();
+        }
+    }, [tokens, updateIframeStyles]);
 
     const handleTypeChange = (type: TokenType) => {
-        setNewToken(prev => ({
-            ...prev,
+        setNewToken({
+            name: '',
             type,
             value: DEFAULT_VALUES[type]
-        }));
+        });
     };
 
     const handleEditToken = (token: DesignToken) => {
@@ -166,60 +122,35 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const updateIframeStyles = useCallback((tokens: DesignToken[]) => {
-        const styleObject: Record<string, string> = {};
-
-        requestAnimationFrame(() => {
-            tokens.forEach(token => {
-                const value = token.value;
-                if (token.type === 'color' && typeof value === 'object' && 'h' in value) {
-                    const colorValue = value as ColorValue;
-                    styleObject[`--color-${token.name}`] = `hsl(${colorValue.h}deg ${colorValue.s}% ${colorValue.l}% / ${colorValue.a})`;
-                } else if (token.type === 'typography' && typeof value === 'object' && 'fontFamily' in value) {
-                    const typographyValue = value as TypographyValue;
-                    styleObject[`--typography-${token.name}-family`] = typographyValue.fontFamily;
-                    styleObject[`--typography-${token.name}-size`] = typographyValue.fontSize;
-                    styleObject[`--typography-${token.name}-weight`] = String(typographyValue.fontWeight);
-                    styleObject[`--typography-${token.name}-line-height`] = String(typographyValue.lineHeight);
-                } else if (token.type === 'spacing' && typeof value === 'string') {
-                    styleObject[`--spacing-${token.name}`] = value;
-                } else if (token.type === 'shadow' && typeof value === 'object' && 'offsetX' in value) {
-                    const shadowValue = value as ShadowValue;
-                    styleObject[`--shadow-${token.name}`] = `${shadowValue.offsetX} ${shadowValue.offsetY} ${shadowValue.blur} ${shadowValue.spread} ${shadowValue.color}`;
-                } else if (token.type === 'border' && typeof value === 'object' && 'width' in value) {
-                    const borderValue = value as BorderValue;
-                    styleObject[`--border-${token.name}-width`] = borderValue.width;
-                    styleObject[`--border-${token.name}-style`] = borderValue.style;
-                    styleObject[`--border-${token.name}-color`] = borderValue.color;
-                }
-            });
-
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                if (iframe.contentWindow) {
-                    iframe.contentWindow.postMessage(
-                        { type: 'UPDATE_THEME_TOKENS', styles: styleObject },
-                        window.location.origin
-                    );
-                }
-            });
-        });
-    }, []);
-
-    useEffect(() => {
-        updateIframeStyles(tokens);
-    }, [tokens, updateIframeStyles]);
-
-    const handleColorChange = useCallback((color: ColorValue) => {
-        setNewToken(prev => ({
+    const handleColorChange = (key: keyof ThemeColors) => (color: ColorValue) => {
+        setColors(prev => ({
             ...prev,
+            [key]: color
+        }));
+
+        // Update corresponding design tokens
+        const tokenUpdates = generateTokenUpdates(key, color);
+        tokenUpdates.forEach(({ name, value }) => {
+            updateToken?.(name, { type: 'color', value });
+        });
+    };
+
+    // Generate token updates based on color changes
+    const generateTokenUpdates = (key: keyof ThemeColors, color: ColorValue): TokenUpdate[] => {
+        const baseTokens = {
+            accent: ['primary', 'secondary', 'accent'],
+            gray: ['gray', 'neutral', 'text'],
+            background: ['background', 'surface']
+        };
+
+        return baseTokens[key].map(name => ({
+            name,
             value: color
         }));
-    }, []);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!projectId) {
             setError('Project ID is required');
             return;
@@ -254,7 +185,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                 if (error) throw error;
             }
 
-            await fetchTokens();
+            await fetchTokens(projectId);
             setNewToken({
                 name: '',
                 type: 'color',
@@ -279,6 +210,8 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     };
 
     const handleDeleteToken = async (tokenId: string) => {
+        if (!projectId) return;
+
         const { error } = await supabase
             .from('design_tokens')
             .delete()
@@ -289,7 +222,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             return;
         }
 
-        fetchTokens();
+        await fetchTokens(projectId);
     };
 
     const renderTokenEditor = useCallback(() => {
@@ -297,8 +230,9 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             case 'color':
                 return (
                     <ColorPicker
+                        label="Color"
                         value={newToken.value as ColorValue}
-                        onChange={handleColorChange}
+                        onChange={handleColorChange(newToken.type as keyof ThemeColors)}
                     />
                 );
             case 'typography':
@@ -354,147 +288,202 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     }, []);
 
     return (
-        <div className="sidebar-content theme">
-            <h2 className="text-xl font-bold mb-4">Theme Editor</h2>
+        <div className="theme-editor theme">
+            <h2 className="text-2xl font-semibold mb-4">Theme Editor</h2>
 
-            {error && (
-                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                    {error}
-                </div>
-            )}
+            <div className="flex gap-4 mb-8">
+                <button
+                    className={`px-4 py-2 rounded-md transition-colors ${mode === 'light'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                    onClick={() => setMode('light')}
+                >
+                    Light Mode
+                </button>
+                <button
+                    className={`px-4 py-2 rounded-md transition-colors ${mode === 'dark'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                    onClick={() => setMode('dark')}
+                >
+                    Dark Mode
+                </button>
+            </div>
 
-            {!projectId ? (
-                <div className="text-center p-8">
-                    <p className="text-gray-500">Project ID is required to manage design tokens.</p>
-                </div>
-            ) : (
-                <>
-                    <div className="mb-4 flex gap-4">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="Search tokens..."
-                                value={searchQuery}
-                                onChange={handleSearchChange}
-                                className="w-full p-2 border rounded"
-                            />
-                        </div>
-                        <select
-                            value={filterType}
-                            onChange={handleFilterChange}
-                            className="p-2 border rounded"
-                        >
-                            <option value="all">All Types</option>
-                            {TOKEN_TYPES.map(type => (
-                                <option key={type} value={type}>
-                                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                                </option>
-                            ))}
-                        </select>
+            <div className="grid gap-8 mb-8">
+                <div className="color-section">
+                    <h3 className="text-lg font-medium mb-4">Primary Colors</h3>
+                    <div className="grid gap-6">
+                        <ColorPicker
+                            label="Accent Color"
+                            value={colors.accent}
+                            onChange={handleColorChange('accent')}
+                        />
+                        <ColorPicker
+                            label="Gray Scale"
+                            value={colors.gray}
+                            onChange={handleColorChange('gray')}
+                        />
+                        <ColorPicker
+                            label="Background"
+                            value={colors.background}
+                            onChange={handleColorChange('background')}
+                        />
                     </div>
+                </div>
 
-                    <form onSubmit={handleSubmit} className="mb-8">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold">
-                                    {isEditing ? 'Edit Token' : 'Add New Token'}
-                                </h3>
-                                {isEditing && (
-                                    <button
-                                        type="button"
-                                        onClick={handleCancelEdit}
-                                        className="text-gray-500 hover:text-gray-700"
-                                    >
-                                        Cancel Edit
-                                    </button>
-                                )}
-                            </div>
+                <div className="preview-section">
+                    <h3 className="text-lg font-medium mb-4">Color Preview</h3>
+                    <div className="bg-gray-50 rounded-lg p-6">
+                        <ColorSpectrum colors={colors} mode={mode} />
+                    </div>
+                </div>
+            </div>
 
-                            <div>
-                                <label className="block mb-2">Token Name</label>
+            <div className="tokens-section">
+                <h3 className="text-xl font-bold mb-4">Design Tokens</h3>
+
+                {error && (
+                    <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                        {error}
+                    </div>
+                )}
+
+                {!projectId ? (
+                    <div className="text-center p-8">
+                        <p className="text-gray-500">Project ID is required to manage design tokens.</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="mb-4 flex gap-4">
+                            <div className="flex-1">
                                 <input
                                     type="text"
-                                    value={newToken.name}
-                                    onChange={(e) => setNewToken(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder="Search tokens..."
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
                                     className="w-full p-2 border rounded"
-                                    required
                                 />
                             </div>
-
-                            <div>
-                                <label className="block mb-2">Token Type</label>
-                                <select
-                                    value={newToken.type}
-                                    onChange={(e) => handleTypeChange(e.target.value as TokenType)}
-                                    className="w-full p-2 border rounded"
-                                    disabled={isEditing}
-                                >
-                                    {TOKEN_TYPES.map(type => (
-                                        <option key={type} value={type}>
-                                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {renderTokenEditor()}
-
-                            <button
-                                type="submit"
-                                className="add-token px-4 py-2 rounded disabled:opacity-50"
-                                disabled={isLoading}
+                            <select
+                                value={filterType}
+                                onChange={handleFilterChange}
+                                className="p-2 border rounded"
                             >
-                                {isLoading ? 'Processing...' : isEditing ? 'Update Token' : 'Add Token'}
-                            </button>
+                                <option value="all">All Types</option>
+                                {TOKEN_TYPES.map(type => (
+                                    <option key={type} value={type}>
+                                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    </form>
 
-                    {isLoading ? (
-                        <div className="text-center p-8">
-                            <p className="text-gray-500">Loading tokens...</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4">
-                            {filteredTokens.map(token => (
-                                <div key={token.id} className="border p-4 rounded">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h3 className="font-bold">{token.name}</h3>
-                                            <p className="text-sm text-gray-600">{token.type}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleEditToken(token)}
-                                                className="text-blue-500 hover:text-blue-700"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDuplicateToken(token)}
-                                                className="text-green-500 hover:text-green-700"
-                                            >
-                                                Duplicate
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteToken(token.id)}
-                                                className="text-red-500 hover:text-red-700"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="mb-2">
-                                        {renderTokenPreview(token)}
-                                    </div>
-                                    <pre className="mt-2 text-sm bg-gray-100 p-2 rounded">
-                                        {JSON.stringify(token.value, null, 2)}
-                                    </pre>
+                        <form onSubmit={handleSubmit} className="mb-8">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-lg font-semibold">
+                                        {isEditing ? 'Edit Token' : 'Add New Token'}
+                                    </h3>
+                                    {isEditing && (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelEdit}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            Cancel Edit
+                                        </button>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </>
-            )}
+
+                                <div>
+                                    <label className="block mb-2">Token Name</label>
+                                    <input
+                                        type="text"
+                                        value={newToken.name}
+                                        onChange={(e) => setNewToken(prev => ({ ...prev, name: e.target.value }))}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block mb-2">Token Type</label>
+                                    <select
+                                        value={newToken.type}
+                                        onChange={(e) => handleTypeChange(e.target.value as TokenType)}
+                                        className="w-full p-2 border rounded"
+                                        disabled={isEditing}
+                                    >
+                                        {TOKEN_TYPES.map(type => (
+                                            <option key={type} value={type}>
+                                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {renderTokenEditor()}
+
+                                <button
+                                    type="submit"
+                                    className="add-token px-4 py-2 rounded disabled:opacity-50"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Processing...' : isEditing ? 'Update Token' : 'Add Token'}
+                                </button>
+                            </div>
+                        </form>
+
+                        {isLoading ? (
+                            <div className="text-center p-8">
+                                <p className="text-gray-500">Loading tokens...</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {filteredTokens.map(token => (
+                                    <div key={token.id} className="border p-4 rounded">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h3 className="font-bold">{token.name}</h3>
+                                                <p className="text-sm text-gray-600">{token.type}</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleEditToken(token)}
+                                                    className="text-blue-500 hover:text-blue-700"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDuplicateToken(token)}
+                                                    className="text-green-500 hover:text-green-700"
+                                                >
+                                                    Duplicate
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteToken(token.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="mb-2">
+                                            {renderTokenPreview(token)}
+                                        </div>
+                                        <pre className="mt-2 text-sm bg-gray-100 p-2 rounded">
+                                            {JSON.stringify(token.value, null, 2)}
+                                        </pre>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 } 
