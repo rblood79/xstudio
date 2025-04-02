@@ -205,18 +205,28 @@ function Builder() {
                 const iframe = iframeRef.current;
                 if (!iframe?.contentDocument) return;
 
-                // Create or update style element
-                let styleElement = iframe.contentDocument.getElementById('theme-tokens');
-                if (!styleElement) {
-                    styleElement = iframe.contentDocument.createElement('style');
-                    styleElement.id = 'theme-tokens';
-                    iframe.contentDocument.head.appendChild(styleElement);
+                // Apply styles to parent document
+                let parentStyleElement = document.getElementById('theme-tokens');
+                if (!parentStyleElement) {
+                    parentStyleElement = document.createElement('style');
+                    parentStyleElement.id = 'theme-tokens';
+                    document.head.appendChild(parentStyleElement);
                 }
 
                 // Convert style object to CSS string
                 const cssString = `:root {\n${Object.entries(event.data.styles)
                     .map(([key, value]) => `  ${key}: ${value};`)
                     .join('\n')}\n}`;
+
+                parentStyleElement.textContent = cssString;
+
+                // Create or update style element in iframe
+                let styleElement = iframe.contentDocument.getElementById('theme-tokens');
+                if (!styleElement) {
+                    styleElement = iframe.contentDocument.createElement('style');
+                    styleElement.id = 'theme-tokens';
+                    iframe.contentDocument.head.appendChild(styleElement);
+                }
 
                 styleElement.textContent = cssString;
             }
@@ -326,18 +336,28 @@ function Builder() {
 
         const styleObject = themeStore.getStyleObject();
 
-        // Create or update style element
-        let styleElement = iframe.contentDocument.getElementById('theme-tokens');
-        if (!styleElement) {
-            styleElement = iframe.contentDocument.createElement('style');
-            styleElement.id = 'theme-tokens';
-            iframe.contentDocument.head.appendChild(styleElement);
+        // Apply styles to parent document
+        let parentStyleElement = document.getElementById('theme-tokens');
+        if (!parentStyleElement) {
+            parentStyleElement = document.createElement('style');
+            parentStyleElement.id = 'theme-tokens';
+            document.head.appendChild(parentStyleElement);
         }
 
         // Convert style object to CSS string
         const cssString = `:root {\n${Object.entries(styleObject)
             .map(([key, value]) => `  ${key}: ${value};`)
             .join('\n')}\n}`;
+
+        parentStyleElement.textContent = cssString;
+
+        // Create or update style element in iframe
+        let styleElement = iframe.contentDocument.getElementById('theme-tokens');
+        if (!styleElement) {
+            styleElement = iframe.contentDocument.createElement('style');
+            styleElement.id = 'theme-tokens';
+            iframe.contentDocument.head.appendChild(styleElement);
+        }
 
         styleElement.textContent = cssString;
     }, [themeStore]);

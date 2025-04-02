@@ -56,12 +56,18 @@ export function useDesignTokens(projectId: string): UseDesignTokensReturn {
       // Apply CSS only if tokens have changed
       const cssText = convertTokensToCSS(currentTokens);
       if (styleElementRef.current?.textContent !== cssText) {
-        if (styleElementRef.current) {
-          styleElementRef.current.remove();
+        // Check if theme-tokens style element already exists
+        const existingStyleElement = document.getElementById('theme-tokens') as HTMLStyleElement;
+        if (existingStyleElement) {
+          styleElementRef.current = existingStyleElement;
+        } else {
+          styleElementRef.current = document.createElement('style');
+          styleElementRef.current.id = 'theme-tokens';
+          document.head.appendChild(styleElementRef.current);
         }
-        styleElementRef.current = document.createElement('style');
-        styleElementRef.current.textContent = cssText;
-        document.head.appendChild(styleElementRef.current);
+        if (styleElementRef.current) {
+          styleElementRef.current.textContent = cssText;
+        }
       }
     } catch (error) {
       console.error('Error fetching design tokens:', error);

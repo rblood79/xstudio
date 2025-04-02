@@ -66,6 +66,22 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     const { getStyleObject } = get();
     const styleObject = getStyleObject();
 
+    // Apply styles to parent document
+    let parentStyleElement = document.getElementById('theme-tokens');
+    if (!parentStyleElement) {
+      parentStyleElement = document.createElement('style');
+      parentStyleElement.id = 'theme-tokens';
+      document.head.appendChild(parentStyleElement);
+    }
+
+    // Convert style object to CSS string
+    const cssString = `:root {\n${Object.entries(styleObject)
+      .map(([key, value]) => `  ${key}: ${value};`)
+      .join('\n')}\n}`;
+
+    parentStyleElement.textContent = cssString;
+
+    // Apply styles to iframes
     requestAnimationFrame(() => {
       const iframes = document.querySelectorAll('iframe');
       iframes.forEach(iframe => {

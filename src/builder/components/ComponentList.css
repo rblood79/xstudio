@@ -6,6 +6,13 @@
     gap: 16px;
 }
 
+.component-list-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
 .component-list button {
     width: var(--component-button-size);
     height: var(--component-button-size);

@@ -17,12 +17,14 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
     return (
         <div className="component-list">
             {components.map((component) => (
-                <button
-                    key={component.tag}
-                    onClick={() => handleAddElement(component.tag, component.text)}
-                >
-                    <component.icon strokeWidth={1} size={16} />
-                </button>
+                <div className="component-list-item" key={component.tag}>
+                    <button
+                        onClick={() => handleAddElement(component.tag, component.text)}
+                    >
+                        <component.icon strokeWidth={1} size={16} />
+                    </button>
+                    <span>{component.text}</span>
+                </div>
             ))}
         </div>
     );

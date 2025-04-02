@@ -27,6 +27,22 @@ function Preview() {
       if (event.data.type === "REQUEST_UPDATE") {
         window.parent.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
       }
+      if (event.data.type === "UPDATE_THEME_TOKENS") {
+        // Create or update style element
+        let styleElement = document.getElementById('theme-tokens');
+        if (!styleElement) {
+          styleElement = document.createElement('style');
+          styleElement.id = 'theme-tokens';
+          document.head.appendChild(styleElement);
+        }
+
+        // Convert style object to CSS string
+        const cssString = `:root {\n${Object.entries(event.data.styles)
+          .map(([key, value]) => `  ${key}: ${value};`)
+          .join('\n')}\n}`;
+
+        styleElement.textContent = cssString;
+      }
     },
     [elements, setElements]
   );
