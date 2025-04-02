@@ -4,7 +4,6 @@
     display: contents;
 
     .contents {
-        overflow: scroll !important;
         height: 100vh;
         overflow: hidden;
         display: grid;
