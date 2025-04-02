@@ -1,4 +1,3 @@
-
 import { ColorValue } from '../../types/designTokens';
 
 interface ThemeColors {
@@ -7,14 +6,32 @@ interface ThemeColors {
     background: ColorValue;
 }
 
+// 새로운 인터페이스 추가
+interface ScaleColor {
+    scale: number;
+    value: ColorValue;
+}
+
+interface ColorScale {
+    base: ColorValue;
+    steps: ScaleColor[];
+}
+
+interface ThemeColorScales {
+    accent: ColorScale;
+    gray: ColorScale;
+    background: ColorScale;
+}
+
 interface ColorSpectrumProps {
     colors: ThemeColors;
     mode: 'light' | 'dark';
+    colorScales?: ThemeColorScales; // 새로운 prop 추가
 }
 
 type ScaleStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
-interface ColorScale {
+interface ColorScaleMap {
     [key: number]: ColorValue;
 }
 
@@ -25,7 +42,7 @@ interface ColorUsage {
 interface Section {
     title: string;
     description: string;
-    scale: ColorScale;
+    scale: ColorScaleMap;
     usage: ColorUsage;
 }
 
@@ -105,8 +122,8 @@ const SATURATION_MAP = {
     }
 };
 
-function generateColorScale(baseColor: ColorValue, mode: 'light' | 'dark', colorType: keyof ThemeColors): ColorScale {
-    const scale: ColorScale = {};
+function generateColorScale(baseColor: ColorValue, mode: 'light' | 'dark', colorType: keyof ThemeColors): ColorScaleMap {
+    const scale: ColorScaleMap = {};
     const lightnessValues = LIGHTNESS_MAP[mode];
     const saturationValues = SATURATION_MAP[colorType];
 
@@ -122,16 +139,56 @@ function generateColorScale(baseColor: ColorValue, mode: 'light' | 'dark', color
     return scale;
 }
 
+// colorScales에서 ColorScaleMap으로 변환하는 유틸리티 함수
+function convertToColorScaleMap(colorScale: ColorScale | undefined, mode: 'light' | 'dark', colorType: keyof ThemeColors, baseColor: ColorValue): ColorScaleMap {
+    // colorScale이 없거나 steps가 비어있으면 기존 방식으로 생성
+    if (!colorScale || colorScale.steps.length === 0) {
+        return generateColorScale(baseColor, mode, colorType);
+    }
+
+    const scaleMap: ColorScaleMap = {};
+
+    // steps를 ColorScaleMap 형식으로 변환
+    colorScale.steps.forEach(step => {
+        if (step.scale >= 1 && step.scale <= 12) {
+            scaleMap[step.scale] = step.value;
+        }
+    });
+
+    // 빠진 스텝이 있으면 기본 생성 로직으로 채움
+    const defaultScale = generateColorScale(baseColor, mode, colorType);
+    for (let i = 1; i <= 12; i++) {
+        const step = i as ScaleStep;
+        if (!scaleMap[step]) {
+            scaleMap[step] = defaultScale[step];
+        }
+    }
+
+    return scaleMap;
+}
+
 function colorToHsl(color: ColorValue): string {
     return `hsl(${color.h}deg ${color.s}% ${color.l}% / ${color.a})`;
 }
 
-export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
+export function ColorSpectrum({ colors, mode, colorScales }: ColorSpectrumProps) {
+    // 색상 스케일 생성 또는 변환
+    const accentScale = convertToColorScaleMap(colorScales?.accent, mode, 'accent', colors.accent);
+    const grayScale = convertToColorScaleMap(colorScales?.gray, mode, 'gray', colors.gray);
+    const backgroundScale = convertToColorScaleMap(colorScales?.background, mode, 'background', colors.background);
+
+    // 배경색-액센트 관계를 강조하는 CSS 변수 추가
+    const relationshipStyle = {
+        '--background-color': colorToHsl(colors.background),
+        '--accent-color': colorToHsl(colors.accent),
+        '--text-color': colorToHsl(colors.gray)
+    };
+
     const sections: Section[] = [
         {
             title: 'Backgrounds',
             description: 'App background, subtle background, hover states',
-            scale: generateColorScale(colors.background, mode, 'background'),
+            scale: backgroundScale,
             usage: {
                 1: 'App background',
                 2: 'Subtle background',
@@ -150,7 +207,7 @@ export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
         {
             title: 'Interactive Elements',
             description: 'Buttons, links, inputs, focus states',
-            scale: generateColorScale(colors.accent, mode, 'accent'),
+            scale: accentScale,
             usage: {
                 1: 'Subtle background',
                 2: 'Button background hover',
@@ -169,7 +226,7 @@ export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
         {
             title: 'Text & Icons',
             description: 'Typography, icons, borders',
-            scale: generateColorScale(colors.gray, mode, 'gray'),
+            scale: grayScale,
             usage: {
                 1: 'Subtle text background',
                 2: 'Input background',
@@ -188,43 +245,76 @@ export function ColorSpectrum({ colors, mode }: ColorSpectrumProps) {
     ];
 
     return (
-        <div className="color-spectrum flex flex-row gap-16">
-            {sections.map(section => (
-                <div key={section.title} className="spectrum-section flex-1">
-                    <div className="mb-4">
-                        <h3 className="text-lg font-medium">{section.title}</h3>
-                        <p className="text-sm text-gray-600">{section.description}</p>
-                    </div>
-                    <div className="grid gap-2">
-                        {Object.entries(section.scale).map(([step, color]) => {
-                            const scaleStep = Number(step) as ScaleStep;
-                            return (
-                                <div
-                                    key={step}
-                                    className="flex items-center gap-4"
-                                >
-                                    <div
-                                        className="w-24 h-24 flex items-center justify-center text-xs"
-                                        style={{
-                                            backgroundColor: colorToHsl(color),
-                                            color: color.l < 50 ? 'white' : 'black'
-                                        }}
-                                    >
-                                        {step}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-sm font-medium">Step {step}</div>
-                                        <div className="text-xs text-gray-600">{section.usage[scaleStep]}</div>
-                                    </div>
-                                    <div className="text-xs font-mono text-gray-500">
-                                        {colorToHsl(color)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+        <div
+            className="color-spectrum flex flex-col gap-8"
+            style={relationshipStyle as React.CSSProperties}
+        >
+            {/* 배경색과 액센트 관계를 보여주는 미리보기 섹션 추가 */}
+            <div className="relationship-preview p-6 rounded-lg" style={{
+                backgroundColor: `var(--background-color)`,
+                color: `var(--text-color)`,
+                border: '1px solid #ddd'
+            }}>
+                <h4 className="mb-4 font-medium" style={{
+                    color: mode === 'light' ? '#000' : '#fff'
+                }}>
+                    Color Relationship Preview
+                </h4>
+                <div className="flex gap-4">
+                    <button className="px-4 py-2 rounded" style={{
+                        backgroundColor: `var(--accent-color)`,
+                        color: colors.accent.l < 50 ? 'white' : 'black'
+                    }}>
+                        Primary Button
+                    </button>
+                    <button className="px-4 py-2 rounded" style={{
+                        backgroundColor: 'transparent',
+                        border: `2px solid ${colorToHsl(colors.accent)}`,
+                        color: `var(--accent-color)`
+                    }}>
+                        Secondary Button
+                    </button>
                 </div>
-            ))}
+            </div>
+
+            <div className="flex flex-row gap-16">
+                {sections.map(section => (
+                    <div key={section.title} className="spectrum-section flex-1">
+                        <div className="mb-4">
+                            <h3 className="text-lg font-medium">{section.title}</h3>
+                            <p className="text-sm text-gray-600">{section.description}</p>
+                        </div>
+                        <div className="grid gap-2">
+                            {Object.entries(section.scale).map(([step, color]) => {
+                                const scaleStep = Number(step) as ScaleStep;
+                                return (
+                                    <div
+                                        key={step}
+                                        className="flex items-center gap-4"
+                                    >
+                                        <div
+                                            className="w-24 h-24 flex items-center justify-center text-xs"
+                                            style={{
+                                                backgroundColor: colorToHsl(color),
+                                                color: color.l < 50 ? 'white' : 'black'
+                                            }}
+                                        >
+                                            {step}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium">Step {step}</div>
+                                            <div className="text-xs text-gray-600">{section.usage[scaleStep]}</div>
+                                        </div>
+                                        <div className="text-xs font-mono text-gray-500">
+                                            {colorToHsl(color)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
-} 
+}
