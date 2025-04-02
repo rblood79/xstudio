@@ -251,7 +251,12 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
                     <ColorPicker
                         label="Color"
                         value={newToken.value as ColorValue}
-                        onChange={handleColorChange(newToken.type as keyof ThemeColors)}
+                        onChange={(color) => {
+                            setNewToken(prev => ({
+                                ...prev,
+                                value: color
+                            }));
+                        }}
                     />
                 );
             case 'typography':
@@ -269,7 +274,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
             default:
                 return null;
         }
-    }, [newToken.type, newToken.value, handleColorChange]);
+    }, [newToken.type, newToken.value]);
 
     const renderTokenPreview = (token: DesignToken) => {
         switch (token.type) {
@@ -308,7 +313,7 @@ export default function ThemeEditor({ projectId }: ThemeEditorProps) {
     }, []);
 
     return (
-        <div className="theme-editor theme">
+        <div className="theme-editor">
             <h2 className="text-2xl font-semibold mb-4">Theme Editor</h2>
 
             <div className="flex gap-4 mb-8">

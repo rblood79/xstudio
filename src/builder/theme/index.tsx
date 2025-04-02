@@ -7,13 +7,13 @@ import ThemeEditor from './ThemeEditor';
 export default function Theme() {
     const { projectId } = useParams<{ projectId: string }>();
 
-    if (!projectId) {
-        return (
-            <div className="sidebar-content theme">
+    return (
+        <div className="sidebar-content theme">
+            {!projectId ? (
                 <p className="text-red-500">Project ID is required</p>
-            </div>
-        );
-    }
-
-    return <ThemeEditor projectId={projectId} />;
+            ) : (
+                <ThemeEditor projectId={projectId} />
+            )}
+        </div>
+    );
 }
