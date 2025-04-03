@@ -1,35 +1,35 @@
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  safelist: [
-    // 모든 색상에 대한 기본 배경색
-    {
-      pattern: /^bg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
-    // hover 상태의 배경색
-    {
-      pattern: /^hover:bg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
-    // 테두리 색상
-    {
-      pattern: /^border-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
-    // 텍스트 색상
-    {
-      pattern: /^text-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
-    // ring 색상
-    {
-      pattern: /^ring-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
-    'ring-2',
-    'ring-offset-2',
-    // accent 색상
-    {
-      pattern: /^accent-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(50|100|200|300|400|500|600|700|800|900)/,
-    },
+  content: [
+      "./index.html",
+      "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+      extend: {
+          colors: {
+              custom: {
+                  50: 'var(--color-custom-50)',
+                  100: 'var(--color-custom-100)',
+                  200: 'var(--color-custom-200)',
+                  300: 'var(--color-custom-300)',
+                  400: 'var(--color-custom-400)',
+                  500: 'var(--color-custom-500)',
+                  600: 'var(--color-custom-600)',
+                  700: 'var(--color-custom-700)',
+                  800: 'var(--color-custom-800)',
+                  900: 'var(--color-custom-900)',
+                  950: 'var(--color-custom-950)',
+              }
+          }
+      },
   },
+  safelist: [
+      {
+          pattern: /(bg|text|border|ring|accent)-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|custom)-(50|100|200|300|400|500|600|700|800|900|950)/,
+          variants: ['hover', 'focus', 'active'],
+      },
+      'ring-2',
+      'ring-offset-2'
+  ],
   plugins: [],
-};
+} 
