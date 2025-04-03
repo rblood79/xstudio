@@ -596,7 +596,7 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                                     <div className="relative">
                                         <button
                                             onClick={() => onChange(color)}
-                                            className={`w-8 h-8 rounded-lg shadow-sm transition-all ${classes.bg} ${classes.hover} ${selectedColor === color ? 'ring-2 ring-offset-2 ' + classes.ring : ''}`}
+                                            className={`w-8 h-8 rounded-lg shadow-sm transition-all ${selectedColor === color ? 'ring-2 ring-offset-2 ring-primary-200' : ''}`}
                                             style={{
                                                 backgroundColor: customColor
                                             }}
@@ -634,10 +634,15 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                     <div>
                         <h4 className="text-sm font-medium mb-3">Buttons</h4>
                         <div className="flex gap-4">
-                            <button className={`px-4 py-2 rounded-md transition-colors ${colorClasses[selectedColor].bg} ${colorClasses[selectedColor].hover} text-white`}>
+                            <button
+                                className={`px-4 py-2 rounded-md text-[var(--color-white)] bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-700)]`}
+
+                            >
                                 Primary Button
                             </button>
-                            <button className={`px-4 py-2 rounded-md transition-colors border-2 ${colorClasses[selectedColor].border} ${colorClasses[selectedColor].text} ${colorClasses[selectedColor].bgLight}`}>
+                            <button
+                                className={`px-4 py-2 rounded-md border-2 text-[var(--color-primary-500)] bg-[var(--color-primary-50)] border-[var[--color-primary-600]]} `}
+                            >
                                 Secondary Button
                             </button>
                         </div>
@@ -646,19 +651,37 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                     <div>
                         <h4 className="text-sm font-medium mb-3">Cards</h4>
                         <div className="flex gap-4">
-                            <div className={`p-4 rounded-lg border transition-shadow hover:shadow-md ${colorClasses[selectedColor].borderLight}`}>
-                                <h5 className={colorClasses[selectedColor].text}>
+                            <div
+                                className={`p-4 rounded-lg border transition-shadow hover:shadow-md ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
+                                style={selectedColor === 'custom' ? { borderColor: 'hsl(var(--color-primary-200))' } : undefined}
+                            >
+                                <h5
+                                    className={selectedColor === 'custom' ? 'text-primary-600' : colorClasses[selectedColor].text}
+                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-600))' } : undefined}
+                                >
                                     Card Title
                                 </h5>
                                 <p className="mt-2 text-sm text-gray-600">
                                     This is a sample card with theme color applied.
                                 </p>
                             </div>
-                            <div className={`p-4 rounded-lg transition-shadow hover:shadow-md ${colorClasses[selectedColor].bgLight} border ${colorClasses[selectedColor].borderLight}`}>
-                                <h5 className={colorClasses[selectedColor].textDark}>
+                            <div
+                                className={`p-4 rounded-lg transition-shadow hover:shadow-md ${selectedColor === 'custom' ? 'bg-primary-50' : colorClasses[selectedColor].bgLight} border ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
+                                style={selectedColor === 'custom' ? {
+                                    backgroundColor: 'hsl(var(--color-primary-50))',
+                                    borderColor: 'hsl(var(--color-primary-200))'
+                                } : undefined}
+                            >
+                                <h5
+                                    className={selectedColor === 'custom' ? 'text-primary-700' : colorClasses[selectedColor].textDark}
+                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-700))' } : undefined}
+                                >
                                     Themed Card
                                 </h5>
-                                <p className={`mt-2 text-sm ${colorClasses[selectedColor].text}`}>
+                                <p
+                                    className={`mt-2 text-sm ${selectedColor === 'custom' ? 'text-primary-600' : colorClasses[selectedColor].text}`}
+                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-600))' } : undefined}
+                                >
                                     This card uses different shades of the theme color.
                                 </p>
                             </div>
