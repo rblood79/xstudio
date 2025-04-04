@@ -31,10 +31,11 @@
             height: 48px;
 
             .header_contents {
-                @apply flex items-center justify-center p-[8px] gap-[4px];
+                @apply flex items-center justify-center gap-1;
+                padding: 0 calc(var(--spacing) * 1.375);
 
                 &.screen {
-                    @apply flex rounded-lg bg-gray-500 p-[2px] gap-1;
+                    @apply flex rounded-lg bg-gray-500 gap-2;
                 }
 
                 flex: 0;
@@ -43,7 +44,9 @@
                     justify-content: flex-start;
                     flex: 1;
 
-                    button {}
+                    button {
+                        padding: calc(var(--spacing) * 2);
+                    }
                 }
 
                 &:last-child {
@@ -51,17 +54,15 @@
                     flex: 1;
 
                     button {
-                        @apply bg-gray-500;
+
+                        background-color: var(--color-gray-500);
+                        border-radius: var(--radius-lg);
+                        padding: calc(var(--spacing) * 1.375);
                     }
 
                     .publish {
                         width: 96px;
                     }
-                }
-
-                button {
-                    @apply min-w-[32px] min-h-[32px] size-auto flex justify-center items-center p-0 bg-transparent border-none;
-
                 }
 
             }

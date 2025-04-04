@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
 import { ElementProps } from '../../types/supabase';
-
+import { iconProps } from '../../builder/constants';
+import { FileCode2 } from 'lucide-react';
 // CSS 속성 옵션 상수
 const DISPLAY_OPTIONS = [
   'block',
@@ -256,8 +257,11 @@ export default function Layout() {
   }, [selectedElementId]);
 
   return (
-    <div className='flex flex-col gap-4 p-4'>
-
+    <div className='inspector_pages'>
+      <div className='panel-header'>
+        <FileCode2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+        <h3 className='panel-title'>Inspector</h3>
+      </div>
       <div className='panel className_panel'>
         <label htmlFor="className">Class Name</label>
         <input

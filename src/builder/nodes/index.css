@@ -24,6 +24,7 @@
     font-size: 0.875rem;
     transition: background-color 0.3s ease-in-out;
     overflow: hidden;
+    padding-right: 10px;
 }
 
 .elementItem:hover {
@@ -47,8 +48,12 @@
     display: flex;
     flex-direction: row;
     transition: transform 0.2s ease-in-out;
-    transform: translateX(110%);
+    transform: translateX(120%);
     gap: 4px;
+}
+
+.elementItemActions .iconButton {
+    padding: calc(var(--spacing) * 1.375);
 }
 
 .elementItem:hover .elementItemActions,
@@ -56,11 +61,13 @@
     transform: translateX(0%);
 }
 
+/*
 .elementItemActions .iconButton {
     width: var(--icon-button-size);
     height: var(--icon-button-size);
     padding: 0;
 }
+*/
 
 .no_element {
     padding: var(--element-padding) calc(var(--element-padding) * 2);
