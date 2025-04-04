@@ -1,6 +1,8 @@
 import React from 'react';
 import { TailwindColorName } from '../../types/theme';
 
+import { Button, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+
 interface ColorSpectrumProps {
     selectedColor: TailwindColorName | 'custom';
     onChange: (colorName: TailwindColorName | 'custom') => void;
@@ -594,13 +596,13 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                             <div key={color} className="flex flex-col items-center gap-2">
                                 {color === 'custom' ? (
                                     <div className="relative">
-                                        <button
-                                            onClick={() => onChange(color)}
+                                        <Button
+                                            onPress={() => onChange(color)}
                                             className={`w-8 h-8 rounded-lg shadow-sm transition-all ${selectedColor === color ? 'ring-2 ring-offset-2 ring-primary-200' : ''}`}
                                             style={{
                                                 backgroundColor: customColor
                                             }}
-                                            title={`Select Primary color`}
+                                            aria-label="Select Primary color"
                                         />
                                         <input
                                             type="color"
@@ -615,10 +617,10 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                                         />
                                     </div>
                                 ) : (
-                                    <button
-                                        onClick={() => onChange(color)}
+                                    <Button
+                                        onPress={() => onChange(color)}
                                         className={`w-8 h-8 rounded-lg shadow-sm transition-all ${classes.bg} ${classes.hover} ${selectedColor === color ? 'ring-2 ring-offset-2 ' + classes.ring : ''}`}
-                                        title={`Select ${color} color`}
+                                        aria-label={`Select ${color} color`}
                                     />
                                 )}
                                 <span className="text-xs text-gray-600 capitalize">{color === 'custom' ? 'Primary' : color}</span>
@@ -634,17 +636,33 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                     <div>
                         <h4 className="text-sm font-medium mb-3">Buttons</h4>
                         <div className="flex gap-4">
-                            <button
+                            <Button
                                 className={`px-4 py-2 rounded-md text-[var(--color-white)] bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-600)] active:bg-[var(--color-primary-700)]`}
 
                             >
                                 Primary Button
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 className={`px-4 py-2 rounded-md border-2 text-[var(--color-primary-500)] bg-[var(--color-primary-50)] border-[var[--color-primary-600]]} `}
                             >
                                 Secondary Button
-                            </button>
+                            </Button>
+
+                            <ToggleButton className="toggle-button">
+                                ToggleButton
+                            </ToggleButton>
+
+                            <ToggleButtonGroup aria-label="Text style" className="toggle-button-group">
+                                <ToggleButton id="bold" className="toggle-button">
+                                    Bold
+                                </ToggleButton>
+                                <ToggleButton id="italic" className="toggle-button">
+                                    Italic
+                                </ToggleButton>
+                                <ToggleButton id="underline" className="toggle-button">
+                                    Underline
+                                </ToggleButton>
+                            </ToggleButtonGroup>
                         </div>
                     </div>
 
