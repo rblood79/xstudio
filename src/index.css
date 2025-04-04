@@ -21,8 +21,4 @@
   .dark .pattern-bg {
     --pattern-fg: rgba(255, 255, 255, 0.1);
   }
-
-  .update-custom-color {
-    @apply transition-colors duration-200;
-  }
 }

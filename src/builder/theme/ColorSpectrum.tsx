@@ -635,7 +635,7 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                         <h4 className="text-sm font-medium mb-3">Buttons</h4>
                         <div className="flex gap-4">
                             <button
-                                className={`px-4 py-2 rounded-md text-[var(--color-white)] bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-700)]`}
+                                className={`px-4 py-2 rounded-md text-[var(--color-white)] bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-600)] active:bg-[var(--color-primary-700)]`}
 
                             >
                                 Primary Button
@@ -666,7 +666,7 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                                 </p>
                             </div>
                             <div
-                                className={`p-4 rounded-lg transition-shadow hover:shadow-md ${selectedColor === 'custom' ? 'bg-primary-50' : colorClasses[selectedColor].bgLight} border ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
+                                className={`p-4 rounded-lg ${selectedColor === 'custom' ? 'bg-primary-50' : colorClasses[selectedColor].bgLight} border ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
                                 style={selectedColor === 'custom' ? {
                                     backgroundColor: 'hsl(var(--color-primary-50))',
                                     borderColor: 'hsl(var(--color-primary-200))'

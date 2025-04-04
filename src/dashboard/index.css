@@ -1,9 +1,3 @@
-html,
-body,
-#root {
-    height: 100%;
-}
-
 .projects {
     width: calc(240px *3);
     display: flex;
