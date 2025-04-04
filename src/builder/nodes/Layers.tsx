@@ -29,7 +29,11 @@ export function Layers({
 }: LayersProps) {
     return (
         <div className="sidebar_elements">
-            <h3><Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Layers</h3>
+            <div className="panel-header">
+                <Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                <h3 className='panel-title'>Layers</h3>
+
+            </div>
             <div className="elements">
                 {elements.length === 0 ? (
                     <p className="no_element">No element available</p>

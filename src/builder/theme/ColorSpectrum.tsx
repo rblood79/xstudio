@@ -587,63 +587,67 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
 
     return (
         <div className="space-y-8">
-            <div>
-                <h3 className="text-lg font-medium mb-4">Theme Color</h3>
-                <div className="grid grid-cols-8 gap-4 mb-4">
-                    {COLORS.map((color) => {
-                        const classes = colorClasses[color];
-                        return (
-                            <div key={color} className="flex flex-col items-center gap-2">
-                                {color === 'custom' ? (
-                                    <div className="relative">
-                                        <Button
-                                            onPress={() => onChange(color)}
-                                            className={`w-8 h-8 rounded-lg shadow-sm transition-all ${selectedColor === color ? 'ring-2 ring-offset-2 ring-primary-200' : ''}`}
-                                            style={{
-                                                backgroundColor: customColor
-                                            }}
-                                            aria-label="Select Primary color"
-                                        />
-                                        <input
-                                            type="color"
-                                            value={customColor}
-                                            onChange={(e) => {
-                                                onCustomColorChange?.(e.target.value);
-                                                onChange('custom');
-                                            }}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            title="Primary color picker"
-                                            aria-label="Primary color picker"
-                                        />
+            <div className="preview-container">
+                <h3 className="preview-title">Theme Color</h3>
+                <div className="preview-content">
+                    <div className="category-container">
+                        <h4 className="category-title">Theme Color</h4>
+                        <div className="category-content color-content">
+                            {COLORS.map((color) => {
+                                const classes = colorClasses[color];
+                                return (
+                                    <div key={color} className="flex flex-col items-center gap-2 relative">
+                                        {color === 'custom' ? (
+                                            <>
+                                                <Button
+                                                    onPress={() => onChange(color)}
+                                                    className={`w-8 h-8 rounded-lg shadow-sm transition-all ${selectedColor === color ? 'ring-2 ring-offset-2 ring-primary-200' : ''}`}
+                                                    style={{
+                                                        backgroundColor: customColor
+                                                    }}
+                                                    aria-label="Select Primary color"
+                                                />
+                                                <input
+                                                    type="color"
+                                                    value={customColor}
+                                                    onChange={(e) => {
+                                                        onCustomColorChange?.(e.target.value);
+                                                        onChange('custom');
+                                                    }}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                    title="Primary color picker"
+                                                    aria-label="Primary color picker"
+                                                />
+                                            </>
+                                        ) : (
+                                            <Button
+                                                onPress={() => onChange(color)}
+                                                className={`w-8 h-8 rounded-lg shadow-sm transition-all ${classes.bg} ${classes.hover} ${selectedColor === color ? 'ring-2 ring-offset-2 ' + classes.ring : ''}`}
+                                                aria-label={`Select ${color} color`}
+                                            />
+                                        )}
+                                        <span className="text-xs text-gray-600 capitalize">{color === 'custom' ? 'Primary' : color}</span>
                                     </div>
-                                ) : (
-                                    <Button
-                                        onPress={() => onChange(color)}
-                                        className={`w-8 h-8 rounded-lg shadow-sm transition-all ${classes.bg} ${classes.hover} ${selectedColor === color ? 'ring-2 ring-offset-2 ' + classes.ring : ''}`}
-                                        aria-label={`Select ${color} color`}
-                                    />
-                                )}
-                                <span className="text-xs text-gray-600 capitalize">{color === 'custom' ? 'Primary' : color}</span>
-                            </div>
-                        );
-                    })}
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-medium mb-6">UI Preview</h3>
-                <div className="space-y-8">
-                    <div>
-                        <h4 className="text-sm font-medium mb-3">Buttons</h4>
-                        <div className="flex gap-4">
-                            <Button
-                                className={`px-4 py-2 rounded-md text-[var(--color-white)] bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-600)] active:bg-[var(--color-primary-700)]`}
+            <div className="preview-container">
+                <h3 className="preview-title">UI Preview</h3>
+                <div className="preview-content">
 
-                            >
-                                Primary Button
+                    <div className="category-container">
+                        <h4 className="category-title">Buttons</h4>
+                        <div className="category-content">
+                            <Button
+                                className={`px-4 py-2 rounded-md text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700`}
+                            >Primary Button
                             </Button>
                             <Button
-                                className={`px-4 py-2 rounded-md border-2 text-[var(--color-primary-500)] bg-[var(--color-primary-50)] border-[var[--color-primary-600]]} `}
+                                className={`px-4 py-2 rounded-md border-2 text-primary-500 bg-primary-50 border-primary-600`}
                             >
                                 Secondary Button
                             </Button>
@@ -666,16 +670,14 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                         </div>
                     </div>
 
-                    <div>
-                        <h4 className="text-sm font-medium mb-3">Cards</h4>
-                        <div className="flex gap-4">
+                    <div className="category-container">
+                        <h4 className="category-title">Cards</h4>
+                        <div className="category-content">
                             <div
                                 className={`p-4 rounded-lg border transition-shadow hover:shadow-md ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
-                                style={selectedColor === 'custom' ? { borderColor: 'hsl(var(--color-primary-200))' } : undefined}
                             >
                                 <h5
                                     className={selectedColor === 'custom' ? 'text-primary-600' : colorClasses[selectedColor].text}
-                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-600))' } : undefined}
                                 >
                                     Card Title
                                 </h5>
@@ -685,20 +687,14 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                             </div>
                             <div
                                 className={`p-4 rounded-lg ${selectedColor === 'custom' ? 'bg-primary-50' : colorClasses[selectedColor].bgLight} border ${selectedColor === 'custom' ? 'border-primary-200' : colorClasses[selectedColor].borderLight}`}
-                                style={selectedColor === 'custom' ? {
-                                    backgroundColor: 'hsl(var(--color-primary-50))',
-                                    borderColor: 'hsl(var(--color-primary-200))'
-                                } : undefined}
                             >
                                 <h5
                                     className={selectedColor === 'custom' ? 'text-primary-700' : colorClasses[selectedColor].textDark}
-                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-700))' } : undefined}
                                 >
                                     Themed Card
                                 </h5>
                                 <p
                                     className={`mt-2 text-sm ${selectedColor === 'custom' ? 'text-primary-600' : colorClasses[selectedColor].text}`}
-                                    style={selectedColor === 'custom' ? { color: 'hsl(var(--color-primary-600))' } : undefined}
                                 >
                                     This card uses different shades of the theme color.
                                 </p>

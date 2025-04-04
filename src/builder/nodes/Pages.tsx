@@ -21,14 +21,18 @@ interface PagesProps {
 export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElements }: PagesProps) {
     return (
         <div className="sidebar_pages">
-            <h3><PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> Pages</h3>
-            <button
-                className="iconButton absolute right-0 top-0"
-                aria-label="Add Page"
-                onClick={handleAddPage}
-            >
-                <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-            </button>
+            <div className="panel-header">
+                <PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                <h3 className='panel-title'>Pages</h3>
+                <button
+                    className='iconButton'
+                    aria-label="Add Page"
+                    onClick={handleAddPage}
+                >
+                    <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                </button>
+            </div>
+
             <div className="elements">
                 {pages.length === 0 ? (
                     <p className="no_element">No pages available</p>

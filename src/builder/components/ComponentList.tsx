@@ -20,6 +20,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                 <div className="component-list-item" key={component.tag}>
                     <button
                         onClick={() => handleAddElement(component.tag, component.text)}
+                        title={`Add ${component.text} element`}
                     >
                         <component.icon strokeWidth={1} size={16} />
                     </button>
