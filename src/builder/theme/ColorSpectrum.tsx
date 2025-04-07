@@ -642,8 +642,15 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                     <div className="category-container">
                         <h4 className="category-title">Buttons</h4>
                         <div className="category-content">
-                            <Button className={`button`}>Primary Button</Button>
-                            <Button className={`button-line`}>Secondary Button</Button>
+                            <Button className="button" data-accent-color="primary">Primary Button</Button>
+                            <Button className="button" data-accent-color="red">red Button</Button>
+                            <Button className="button" data-accent-color="orange">orange Button</Button>
+                            <Button className="button" data-accent-color="amber">amber Button</Button>
+                            <Button className="button" data-accent-color="yellow">yellow Button</Button>
+                            <Button className="button" data-accent-color="lime">lime Button</Button>
+
+                            <Button className="button surface">Surface Button</Button>
+                            <Button className="button surface" data-accent-color="amber">amber Surface Button</Button>
 
                             <ToggleButton className="toggle">
                                 ToggleButton
