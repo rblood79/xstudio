@@ -28,9 +28,15 @@
             grid-area: header;
             @apply bg-gray-950 text-neutral-100 flex flex-row justify-between items-center;
             position: relative;
-            height: 48px;
+            height: calc(var(--spacing) * 12);
 
             .header_contents {
+                button {
+                    background-color: var(--color-gray-500);
+                    border-radius: var(--radius-lg);
+                    padding: calc(var(--spacing) * 1.375);
+                }
+
                 @apply flex items-center justify-center gap-1;
                 padding: 0 calc(var(--spacing) * 1.375);
 
@@ -46,19 +52,13 @@
 
                     button {
                         padding: calc(var(--spacing) * 2);
+                        background-color: transparent;
                     }
                 }
 
                 &:last-child {
                     justify-content: flex-end;
                     flex: 1;
-
-                    button {
-
-                        background-color: var(--color-gray-500);
-                        border-radius: var(--radius-lg);
-                        padding: calc(var(--spacing) * 1.375);
-                    }
 
                     .publish {
                         width: 96px;
