@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .theme {
     border: 1px solid #f00;
     width: calc(100vw - var(--sizes-sideNavWidth));
@@ -55,38 +57,79 @@
     grid-template-columns: repeat(4, 48px);
 }
 
-.toggle-button {
-    border-width: 1px;
-    background-color: var(--color-gray-100);
-    border-color: var(--color-gray-300);
-    color: var(--color-gray-500);
-    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 4);
-    border-radius: var(--radius-md);
-    transition: all 0.2s ease-in-out;
-    position: relative;
-    z-index: 0;
-}
+@layer components {
 
-.toggle-button[data-selected] {
-    background-color: var(--color-primary-500);
-    border-color: var(--color-primary-700);
-    color: var(--color-white);
-    z-index: 10;
-}
+    /* 🔹 모든 버튼 공통 */
+    .button {
+        @apply px-4 py-2 rounded-md font-medium text-sm transition shadow-sm border border-primary-700;
+        @apply text-white bg-[var(--color-primary-500)];
+    }
 
-.toggle-button-group .toggle-button {
-    border-radius: 0;
-    margin-inline-start: -1px;
-}
+    .button:hover {
+        @apply bg-[var(--color-primary-600)];
+    }
 
-.toggle-button-group .toggle-button:first-child {
-    border-top-left-radius: var(--radius-md);
-    border-bottom-left-radius: var(--radius-md);
-    margin-inline-end: 0px;
-}
+    .button[data-pressed='true'] {
+        @apply bg-[var(--color-primary-700)];
+    }
 
-.toggle-button-group .toggle-button:last-child {
-    border-top-right-radius: var(--radius-md);
-    border-bottom-right-radius: var(--radius-md);
+    .button:focus-visible {
+        @apply ring-2 ring-[var(--color-primary-300)] ring-offset-2;
+    }
 
+    .button:disabled {
+        @apply bg-gray-200 text-gray-400 cursor-not-allowed;
+    }
+
+    /* 🔸 ToggleButton 전용 상태 (켜졌을 때) */
+    .toggle {
+        @apply px-4 py-2 rounded-md font-medium text-sm transition shadow-sm border border-gray-300;
+        @apply text-gray-800 bg-[var(--color-primary-50)];
+    }
+
+    .toggle[data-selected='true'] {
+        @apply text-white bg-[var(--color-primary-700)];
+    }
+
+    .toggle:focus-visible {
+        @apply ring-2 ring-[var(--color-primary-300)] ring-offset-2;
+    }
+
+    .toggle:disabled {
+        @apply bg-gray-200 text-gray-400 cursor-not-allowed;
+    }
+
+    .toggleGroup {
+        @apply flex;
+
+        >button {
+            z-index: 1;
+            border-radius: 0;
+
+            &[data-disabled] {
+                z-index: 0;
+            }
+
+            &[data-selected],
+            &[data-focus-visible] {
+                z-index: 2;
+            }
+        }
+    }
+
+    .toggleGroup .toggle {
+        @apply flex-1;
+        margin-inline-start: -1px;
+
+        &:first-child {
+            margin-inline-start: 0;
+            border-top-left-radius: var(--radius-md);
+            border-bottom-left-radius: var(--radius-md);
+        }
+
+        &:last-child {
+            border-top-right-radius: var(--radius-md);
+            border-bottom-right-radius: var(--radius-md);
+        }
+    }
 }
