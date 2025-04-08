@@ -3,6 +3,42 @@ import { TokenValue } from './designTokens';
 
 type AriaRole = 'button' | 'checkbox' | 'menuitem' | 'menubar' | 'navigation' | 'progressbar' | 'separator' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'presentation' | undefined;
 
+export interface ToggleButtonProps {
+    isSelected?: boolean;
+    defaultSelected?: boolean;
+    onChange?: (isSelected: boolean) => void;
+    isDisabled?: boolean;
+    children?: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    'data-element-id'?: string;
+    [key: string]: any;
+}
+
+export interface ButtonProps {
+    isDisabled?: boolean;
+    onPress?: () => void;
+    children?: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    'data-element-id'?: string;
+    [key: string]: any;
+}
+
+export interface ToggleButtonGroupProps {
+    value?: string[];
+    defaultValue?: string[];
+    onChange?: (value: string[]) => void;
+    isDisabled?: boolean;
+    children?: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    'data-element-id'?: string;
+    selectionMode?: 'single' | 'multiple';
+    orientation?: 'horizontal' | 'vertical';
+    [key: string]: any;
+}
+
 export interface ElementProps {
     style?: React.CSSProperties;
     className?: string;
@@ -32,6 +68,9 @@ export interface ElementProps {
     'aria-haspopup'?: boolean;
     'aria-controls'?: string;
     'aria-pressed'?: boolean | 'mixed';
+    // ToggleButton 속성
+    isSelected?: boolean;
+    defaultSelected?: boolean;
     // 이벤트 핸들러
     onClick?: (event: React.MouseEvent<HTMLElement>) => void;
     onChange?: (event: React.ChangeEvent<HTMLElement>) => void;

@@ -4,6 +4,7 @@ import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
 import { ElementProps } from '../../types/supabase';
 import { iconProps } from '../../builder/constants';
 import { FileCode2 } from 'lucide-react';
+import './layout.css';
 // CSS 속성 옵션 상수
 const DISPLAY_OPTIONS = [
   'block',
@@ -162,9 +163,18 @@ export default function Layout() {
       const newProps = { [key]: value } as unknown as ElementProps;
       updateElementProps(selectedElementId, newProps);
 
+      const currentElement = useStore.getState().elements.find(el => el.id === selectedElementId);
+      if (!currentElement) return;
+
+      // 현재 가지고 있는 모든 props와 새 값을 병합
+      const updatedProps = {
+        ...currentElement.props,
+        [key]: value
+      };
+
       const { error } = await supabase
         .from('elements')
-        .update({ props: { [key]: value } })
+        .update({ props: updatedProps })
         .eq('id', selectedElementId);
 
       if (error) {
@@ -182,7 +192,7 @@ export default function Layout() {
             {
               type: "UPDATE_ELEMENT_PROPS",
               elementId: selectedElementId,
-              payload: { props: { [key]: value }, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
+              payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
             },
             "*"
           );
@@ -257,7 +267,7 @@ export default function Layout() {
   }, [selectedElementId]);
 
   return (
-    <div className='inspector_pages'>
+    <div className='layout'>
       <div className='panel-header'>
         <FileCode2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
         <h3 className='panel-title'>Inspector</h3>

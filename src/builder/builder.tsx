@@ -4,7 +4,7 @@ import { supabase } from "../env/supabase.client";
 import { Menu, Eye, Smartphone, Monitor, Undo, Redo, Play } from 'lucide-react';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
-import Sidebar from "./sidebar";
+import Sidebar from "./sidebar/index";
 import "./builder.css";
 import { useStore } from './stores/elements';
 import { useThemeStore } from './stores/themeStore';
@@ -89,11 +89,48 @@ function Builder() {
         const maxOrderNum = elements.reduce((max, el) =>
             Math.max(max, el.order_num || 0), 0);
 
+        const getDefaultProps = (tag: string, text?: string) => {
+            const baseProps = {
+                ...(text ? { text } : {}),
+                style: {},
+            };
+
+            switch (tag) {
+                case 'ToggleButton':
+                    return {
+                        ...baseProps,
+                        isSelected: false,
+                        defaultSelected: false,
+                        className: '',
+                        'aria-pressed': false,
+                    };
+                case 'Button':
+                    return {
+                        ...baseProps,
+                        isDisabled: false,
+                        className: '',
+                        children: text || 'Button',
+                    };
+                case 'ToggleButtonGroup':
+                    return {
+                        ...baseProps,
+                        value: [],
+                        defaultValue: [],
+                        className: '',
+                        selectionMode: 'multiple',
+                        orientation: 'horizontal',
+                        isDisabled: false,
+                    };
+                default:
+                    return baseProps;
+            }
+        };
+
         const newElement = {
             id: crypto.randomUUID(),
             page_id: selectedPageId,
             tag: args[0],
-            props: { ...(args[1] ? { text: args[1] } : {}), style: {} },
+            props: getDefaultProps(args[0], args[1]),
             parent_id: selectedElementId || null,
             order_num: maxOrderNum + 1,
         };
@@ -236,6 +273,28 @@ function Builder() {
             }
             if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
                 updateElementProps(event.data.elementId, event.data.payload.props);
+            }
+            // 프리뷰에서 보내는 element-props-update 메시지 처리
+            if (event.data.type === "element-props-update" && event.data.elementId) {
+                //console.log("Received element-props-update:", event.data);
+                updateElementProps(event.data.elementId, event.data.props);
+
+                // 업데이트된 요소 정보를 프리뷰에 다시 전송
+                const iframe = iframeRef.current;
+                if (iframe?.contentWindow) {
+                    const updatedElements = useStore.getState().elements;
+                    iframe.contentWindow.postMessage(
+                        { type: "UPDATE_ELEMENTS", elements: updatedElements },
+                        window.location.origin
+                    );
+                }
+            }
+
+            // 프리뷰에서 보내는 element-click 메시지 처리
+            if (event.data.type === "element-click" && event.data.elementId) {
+                //console.log("Received element-click:", event.data);
+                // 필요한 경우 여기에 클릭 이벤트 관련 로직 추가
+                // 예: 상태 업데이트, UI 변경 등
             }
         };
         window.addEventListener("message", handleMessage);

@@ -33,7 +33,7 @@ ReactDOM.createRoot(root!).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<App />} />
-      <Route path="/signin" element={<Signin />} /> 
+      <Route path="/signin" element={<Signin />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/builder/:projectId" element={<ProtectedRoute><Builder /></ProtectedRoute>} />
       <Route path="/preview/:projectId" element={<ProtectedRoute><Preview /></ProtectedRoute>} />
