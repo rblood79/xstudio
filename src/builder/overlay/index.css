@@ -1,9 +1,7 @@
-@import "tailwindcss";
-
 .overlay-element {
     position: absolute;
     pointer-events: none;
-    @apply ring-1 ring-sky-500;
+    @apply ring-1 ring-[var(--color-sky-500)];
 }
 
 .overlay-tag {
@@ -27,7 +25,7 @@
     height: 100%;
     width: 100%;
     background-color: var(--color-sky-500);
-    @apply ring-1 ring-sky-500 opacity-5;
+    @apply ring-1 ring-[var(--color-sky-500)] opacity-5;
 }
 
 .overlay-pattern {

@@ -1,5 +1,7 @@
-import { Square, Code, Text, Link } from 'lucide-react';
+import { Square, Code, Text, Link, ToggleLeft, MousePointer } from 'lucide-react';
 import './ComponentList.css';
+//import ToggleButton from './ToggleButton';
+
 interface ComponentListProps {
     handleAddElement: (tag: string, text: string) => Promise<void>;
 }
@@ -9,9 +11,11 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'section', text: 'section', icon: Square },
         { tag: 'div', text: 'div', icon: Code },
         { tag: 'p', text: 'p', icon: Text },
-        { tag: 'button', text: 'button', icon: Square },
         { tag: 'input', text: 'input', icon: Text },
         { tag: 'a', text: 'a', icon: Link },
+        { tag: 'Button', text: 'Button', icon: MousePointer },
+        { tag: 'ToggleButton', text: 'ToggleButton', icon: ToggleLeft },
+        { tag: 'ToggleButtonGroup', text: 'ToggleButtonGroup', icon: ToggleLeft },
     ];
 
     return (

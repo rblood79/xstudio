@@ -161,10 +161,10 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     };
 
     return (
-        <div className="sidebar">
+        <aside className="sidebar">
             <SidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
             {renderContent()}
             {children}
-        </div>
+        </aside>
     );
 } 

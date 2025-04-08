@@ -20,8 +20,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--element-padding);
-    font-size: 0.875rem;
+    padding: var(--spacing);
     transition: background-color 0.3s ease-in-out;
     overflow: hidden;
     padding-right: 10px;
@@ -37,7 +36,7 @@
 }
 
 .elementItemLabel {
-    font-size: 0.875rem;
+    font-size: var(--text-xs);
     height: var(--icon-button-size);
     line-height: var(--icon-button-size);
     -webkit-user-select: none;

@@ -1,0 +1,17 @@
+.inspector {
+    @apply border-l border-[var(--color-slate-100)];
+}
+
+.layout {}
+
+.panel {
+    @apply flex flex-row;
+
+    label {
+        @apply flex flex-row items-center gap-[var(--spacing)];
+    }
+
+    input {
+        @apply border border-[var(--color-slate-500)];
+    }
+}
