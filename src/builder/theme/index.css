@@ -57,8 +57,7 @@
 
 @layer components {
 
-    /* 🔹 모든 버튼 공통 */
-    .button {
+    /*.button {
         @apply text-[var(--text-sm)] px-[var(--spacing)*4] py-[var(--spacing)] rounded-[var(--radius-md)] border border-[var(--color-primary-700)] transition duration-150 ease-in-out;
         @apply text-white bg-[var(--color-primary-500)];
 
@@ -126,7 +125,6 @@
 
     }
 
-    /* 🔸 ToggleButton 전용 상태 (켜졌을 때) */
     .toggle {
         @apply text-sm px-4 py-2 rounded-md border border-[var(--color-primary-200)] transition duration-150 ease-in-out;
         @apply text-gray-800 bg-[var(--color-primary-50)];
@@ -183,7 +181,7 @@
                 border-bottom-right-radius: var(--radius-md);
             }
         }
-    }
+    }*/
 
 
 }
