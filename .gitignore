@@ -15,3 +15,4 @@ node_modules
 /api/_assets
 /public/s/uploads
 /public/cgi/asset
+*storybook.log
