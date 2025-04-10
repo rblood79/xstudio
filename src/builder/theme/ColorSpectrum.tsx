@@ -1,7 +1,7 @@
 import React from 'react';
 import { TailwindColorName } from '../../types/theme';
 
-import { Button, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { Button, ToggleButton, ToggleButtonGroup } from '../components/list';
 
 interface ColorSpectrumProps {
     selectedColor: TailwindColorName | 'custom';
@@ -642,29 +642,31 @@ export const ColorSpectrum: React.FC<ColorSpectrumProps> = ({
                     <div className="category-container">
                         <h4 className="category-title">Buttons</h4>
                         <div className="category-content">
-                            <Button className="button" data-accent-color="primary">Primary Button</Button>
-                            <Button className="button" data-accent-color="red">red Button</Button>
-                            <Button className="button" data-accent-color="orange">orange Button</Button>
-                            <Button className="button" data-accent-color="amber">amber Button</Button>
-                            <Button className="button" data-accent-color="yellow">yellow Button</Button>
-                            <Button className="button" data-accent-color="lime">lime Button</Button>
+                            <Button variant="primary">Primary Button</Button>
+                            <Button variant="surface">Surface Button</Button>
 
-                            <Button className="button surface">Surface Button</Button>
-                            <Button className="button surface" data-accent-color="amber">amber Surface Button</Button>
-
-                            <ToggleButton className="toggle">
+                            <ToggleButton>
                                 ToggleButton
                             </ToggleButton>
 
-                            <ToggleButtonGroup aria-label="Text style" className="toggleGroup">
-                                <ToggleButton id="bold" className="toggle">
-                                    Bold
+                            <ToggleButtonGroup selectionMode="single">
+                                <ToggleButton
+                                    aria-label="Bold"
+                                    id="bold"
+                                >
+                                    <span>Bold</span>
                                 </ToggleButton>
-                                <ToggleButton id="italic" className="toggle">
-                                    Italic
+                                <ToggleButton
+                                    aria-label="Italic"
+                                    id="italic"
+                                >
+                                    <span>Italic</span>
                                 </ToggleButton>
-                                <ToggleButton id="underline" className="toggle">
-                                    Underline
+                                <ToggleButton
+                                    aria-label="Underline"
+                                    id="underline"
+                                >
+                                    <span>Underline</span>
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </div>

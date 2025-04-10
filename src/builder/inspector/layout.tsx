@@ -1,431 +1,224 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../env/supabase.client';
-import { useStore } from '../stores/elements'; // Zustand 스토어로 변경
+import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
-import { iconProps } from '../../builder/constants';
 import { FileCode2 } from 'lucide-react';
+import { debounce } from 'lodash';
+import { buttonStyles } from '../components/Button';
 import './layout.css';
-// CSS 속성 옵션 상수
-const DISPLAY_OPTIONS = [
-  'block',
-  'flex',
-  'grid',
-  'inline',
-  'inline-block',
-  'none',
-  'contents',
-  'flow-root',
-  'inline-flex',
-  'inline-grid'
-] as const;
 
-const FLEX_DIRECTION_OPTIONS = [
-  'row',
-  'column',
-  'row-reverse',
-  'column-reverse'
-] as const;
+// Tailwind 클래스 카테고리 정의
+const TAILWIND_OPTIONS = {
+  variant: ['primary', 'secondary', 'destructive', 'surface', 'icon'],
+  paddingTop: ['pt-0', 'pt-2', 'pt-4', 'pt-8'],
+  paddingRight: ['pr-0', 'pr-2', 'pr-4', 'pr-8'],
+  paddingBottom: ['pb-0', 'pb-2', 'pb-4', 'pb-8'],
+  paddingLeft: ['pl-0', 'pl-2', 'pl-4', 'pl-8'],
+  width: ['w-auto', 'w-full', 'w-1/2', 'w-64'],
+};
 
-type DisplayValue = typeof DISPLAY_OPTIONS[number];
-type FlexDirectionValue = typeof FLEX_DIRECTION_OPTIONS[number];
+// 클래스 정규화 함수
+const normalizeClasses = (classes: string[]): string => {
+  const classMap = new Map<string, string>();
+  classes.forEach((cls) => {
+    const prefix = cls.match(/^(p[trbl]?-|bg-|text-|w-|hover:bg-|pressed:bg-|dark:bg-|dark:text-)/)?.[0] || cls.split('-')[0];
+    classMap.set(prefix, cls); // 동일 prefix의 마지막 클래스만 유지
+  });
+  return Array.from(classMap.values()).join(' ');
+};
 
-interface ReusableSelectProps {
+const ReusableSelect: React.FC<{
   id: string;
+  label: string;
   value: string;
-  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: readonly string[];
-}
-
-const ReusableSelect: React.FC<ReusableSelectProps> = ({ id, value, onChange, options }) => {
-  return (
+  onChange: (value: string) => void;
+  options: string[];
+}> = ({ id, label, value, onChange, options }) => (
+  <div className="flex flex-col gap-1">
+    <label htmlFor={id}>{label}</label>
     <select
       id={id}
       value={value}
-      onChange={onChange}
+      onChange={(e) => onChange(e.target.value)}
       className="w-full p-2 border border-gray-300 rounded"
     >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option.charAt(0).toUpperCase() + option.slice(1).replace('-', ' ')}
-        </option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
-  );
-};
+  </div>
+);
 
-export default function Layout() {
-  const selectedElementId = useStore((state) => state.selectedElementId);
-  const selectedProps = useStore((state) => state.selectedElementProps) as ElementProps;
-  const { updateElementProps } = useStore();
-  const [tempInputValues, setTempInputValues] = useState<Record<string, string>>({});
-  const display = ((selectedProps.style as React.CSSProperties)?.display || 'block') as DisplayValue;
-  const currentFlexDirection = ((selectedProps.style as React.CSSProperties)?.flexDirection || 'column') as FlexDirectionValue;
+export default function Inspector() {
+  const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+  const [localProps, setLocalProps] = useState<ElementProps>(selectedElementProps);
+  const [activeTab, setActiveTab] = useState<'styles' | 'properties' | 'events'>('styles');
 
-  // 스타일 변경을 실제로 적용하는 함수
-  const applyStyleChange = async (prop: keyof React.CSSProperties, newValue: string) => {
-    if (selectedElementId) {
-      const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
-      const updatedStyle = { ...currentStyle };
+  useEffect(() => {
+    setLocalProps(selectedElementProps);
+  }, [selectedElementProps]);
 
-      if (newValue === '') {
-        delete updatedStyle[prop];
-      } else {
-        (updatedStyle[prop] as unknown) = newValue;
-      }
-
-      const updatedProps = {
-        ...selectedProps,
-        style: updatedStyle
-      };
-
-      // First update local state
-      updateElementProps(selectedElementId, updatedProps);
-
-      // Immediately update DOM
-      const previewIframe = document.getElementById('previewFrame') as HTMLIFrameElement;
-      if (previewIframe?.contentDocument) {
-        const element = previewIframe.contentDocument.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
-        if (element) {
-          // Apply the style directly to the element
-          Object.assign(element.style, updatedStyle);
-        }
-      }
-
-      // Then update Supabase
-      const { error } = await supabase
-        .from('elements')
-        .update({ props: updatedProps })
-        .eq('id', selectedElementId);
-
+  const updateSupabase = useCallback(
+    debounce(async (elementId: string, props: ElementProps) => {
+      const { error } = await supabase.from('elements').update({ props }).eq('id', elementId);
       if (error) {
         console.error('Supabase update error:', error);
         return;
       }
 
-      // Update parent window about the changes
-      const element = previewIframe?.contentDocument?.querySelector(`[data-element-id="${selectedElementId}"]`) as HTMLElement;
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        window.parent.postMessage(
-          {
-            type: "UPDATE_ELEMENT_PROPS",
-            elementId: selectedElementId,
-            payload: {
-              props: updatedProps,
-              rect: {
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height
-              },
-              tag: element.tagName.toLowerCase()
-            },
-          },
-          "*"
-        );
-      }
-    }
-  };
-
-  // 크기 입력 완료 시 스타일 적용
-  const handleSizeInputComplete = async (prop: 'width' | 'height', value: string) => {
-    if (!value.trim()) {
-      if (selectedElementId) {
-        const currentStyle = (selectedProps.style || {}) as React.CSSProperties;
-        const updatedStyle = { ...currentStyle };
-        delete updatedStyle[prop];
-        await applyStyleChange(prop, '');
-      }
-      return;
-    }
-
-    // 숫자만 입력된 경우 px 단위 추가
-    const processedValue = /^\d+$/.test(value) ? `${value}px` : value;
-    await applyStyleChange(prop, processedValue);
-  };
-
-  const parsePropValue = (value: string, key: string): string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] | undefined => {
-    if (key === 'style') {
-      try {
-        return JSON.parse(value) as React.CSSProperties;
-      } catch {
-        return value;
-      }
-    }
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    const numValue = Number(value);
-    return isNaN(numValue) ? value : numValue;
-  };
-
-  const handlePropChange = async (key: string, value: string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] | undefined) => {
-    if (selectedElementId) {
-      const newProps = { [key]: value } as unknown as ElementProps;
-      updateElementProps(selectedElementId, newProps);
-
-      const currentElement = useStore.getState().elements.find(el => el.id === selectedElementId);
-      if (!currentElement) return;
-
-      // 현재 가지고 있는 모든 props와 새 값을 병합
-      const updatedProps = {
-        ...currentElement.props,
-        [key]: value
-      };
-
-      const { error } = await supabase
-        .from('elements')
-        .update({ props: updatedProps })
-        .eq('id', selectedElementId);
-
-      if (error) {
-        console.error('Supabase update error:', error);
-      } else {
-        const previewIframe = window.parent.document.querySelector('iframe#previewFrame') as HTMLIFrameElement;
-        if (previewIframe && previewIframe.contentWindow) {
-          const element = previewIframe.contentWindow.document.querySelector(`[data-element-id="${selectedElementId}"]`);
-          let rect = null;
-          if (element) {
-            const boundingRect = element.getBoundingClientRect();
-            rect = { top: boundingRect.top, left: boundingRect.left, width: boundingRect.width, height: boundingRect.height };
-          }
+      const applyToIframe = () => {
+        const previewIframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+        if (!previewIframe?.contentDocument) {
+          setTimeout(applyToIframe, 100);
+          return;
+        }
+        const element = previewIframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+        if (element) {
+          const variantClasses = buttonStyles({ variant: props.variant || 'primary' });
+          const combinedClasses = normalizeClasses([...variantClasses.split(' '), ...(props.className || '').split(' ')]);
+          element.className = combinedClasses;
+          Object.entries(props.events || {}).forEach(([eventName, script]) => {
+            if (script) element[eventName as keyof HTMLElementEventMap] = () => new Function(script)();
+          });
+          const rect = element.getBoundingClientRect();
           window.parent.postMessage(
             {
-              type: "UPDATE_ELEMENT_PROPS",
-              elementId: selectedElementId,
-              payload: { props: updatedProps, rect, tag: (element as HTMLElement)?.tagName?.toLowerCase() || '' },
+              type: 'UPDATE_ELEMENT_PROPS',
+              elementId,
+              payload: {
+                props,
+                rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                tag: element.tagName.toLowerCase(),
+              },
             },
-            "*"
+            '*'
           );
         }
-      }
-    }
-  };
-
-  // 텍스트 입력용 임시 상태 관리
-  const handleTextInputChange = (key: string, value: string) => {
-    setTempInputValues((prev) => ({ ...prev, [key]: value }));
-  };
-
-  // 엔터키 입력 시 프로퍼티 변경 적용
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>, key: string) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      const value = tempInputValues[key];
-      if (value !== undefined) {
-        const parsedValue = parsePropValue(value, key);
-        handlePropChange(key, parsedValue);
-        setTempInputValues((prev) => {
-          const newValues = { ...prev };
-          delete newValues[key];
-          return newValues;
-        });
-      }
-    }
-  };
-
-  // 컴포넌트 마운트 시 초기 값 설정
-  useEffect(() => {
-    if (selectedElementId) {
-      const currentStyle = selectedProps.style as React.CSSProperties;
-      const initialValues: Record<string, string> = {
-        ...(typeof selectedProps.className === 'string' ? { className: selectedProps.className } : {}),
-        ...(typeof selectedProps.id === 'string' ? { id: selectedProps.id } : {}),
-        ...(typeof selectedProps.text === 'string' ? { text: selectedProps.text } : {}),
-        ...(currentStyle?.width ? { width: currentStyle.width.toString() } : {}),
-        ...(currentStyle?.height ? { height: currentStyle.height.toString() } : {})
       };
-      setTempInputValues(initialValues);
-    }
-  }, [selectedElementId, selectedProps]);
+      applyToIframe();
+    }, 300),
+    []
+  );
 
-  useEffect(() => {
-    const handleSelectedMessage = (event: MessageEvent) => {
-      if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.props) {
-        updateElementProps(event.data.elementId, event.data.payload.props);
-      }
-    };
-    window.addEventListener("message", handleSelectedMessage);
-    return () => window.removeEventListener("message", handleSelectedMessage);
-  }, [updateElementProps]);
+  const updateProps = (newProps: Partial<ElementProps>) => {
+    if (!selectedElementId) return;
+    const updatedProps = { ...localProps, ...newProps, style: undefined };
+    setLocalProps(updatedProps);
+    updateElementProps(selectedElementId, updatedProps);
+    updateSupabase(selectedElementId, updatedProps);
+  };
 
-  useEffect(() => {
-    if (selectedElementId) {
-      // Fetch current element data when selected element changes
-      const fetchElementData = async () => {
-        const { data: currentElement } = await supabase
-          .from('elements')
-          .select('props')
-          .eq('id', selectedElementId)
-          .single();
+  const applyVariantChange = (variant: string) => {
+    const variantClasses = buttonStyles({ variant });
+    const currentClasses = (localProps.className || '').split(' ').filter(Boolean);
+    const filteredClasses = currentClasses.filter(
+      (c) => !c.match(/^(bg-|text-|hover:bg-|pressed:bg-|dark:bg-|dark:text-)/)
+    );
+    const updatedClasses = normalizeClasses([...filteredClasses, ...variantClasses.split(' ')]);
+    updateProps({ variant, className: updatedClasses });
+  };
 
-        if (currentElement?.props) {
-          updateElementProps(selectedElementId, currentElement.props);
-        }
-      };
-      fetchElementData();
-    }
-  }, [selectedElementId]);
+  const applyClassChange = (category: keyof typeof TAILWIND_OPTIONS, newClass: string) => {
+    const currentClasses = (localProps.className || '').split(' ').filter(Boolean);
+    const options = TAILWIND_OPTIONS[category];
+    const prefix = category === 'variant' ? '' : category.replace('padding', 'p'); // 예: paddingTop -> pt
+    const filteredClasses = currentClasses.filter(
+      (c) => !options.some((opt) => opt === c) && !c.startsWith(prefix + '-')
+    );
+    const updatedClasses = normalizeClasses([...filteredClasses, newClass]);
+    updateProps({ className: updatedClasses });
+  };
+
+  const applyPropChange = (key: string, value: string) => {
+    const parsedValue = value === 'true' ? true : value === 'false' ? false : value;
+    updateProps({ [key]: parsedValue });
+  };
+
+  const currentClasses = (localProps.className || '').split(' ').filter(Boolean);
+  const getCurrentClass = (category: keyof typeof TAILWIND_OPTIONS) => {
+    const options = TAILWIND_OPTIONS[category];
+    const prefix = category === 'variant' ? '' : category.replace('padding', 'p');
+    return currentClasses.find((c) => options.includes(c) || c.startsWith(prefix + '-')) || options[0];
+  };
 
   return (
-    <div className='layout'>
-      <div className='panel-header'>
-        <FileCode2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-        <h3 className='panel-title'>Inspector</h3>
-      </div>
-      <div className='panel className_panel'>
-        <label htmlFor="className">Class Name</label>
-        <input
-          id="className"
-          aria-label="Class Name"
-          value={tempInputValues.className || ''}
-          onChange={(e) => handleTextInputChange('className', e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, 'className')}
-        />
+    <div className="layout p-4">
+      <div className="tabs flex border-b mb-4">
+        {['styles', 'properties', 'events'].map((tab) => (
+          <button
+            key={tab}
+            className={`px-4 py-2 ${activeTab === tab ? 'border-b-2 border-blue-500' : ''}`}
+            onClick={() => setActiveTab(tab as any)}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
-      <div className='panel id_panel'>
-        <label htmlFor="elementId">Id</label>
-        <input
-          id="elementId"
-          aria-label="Element ID"
-          value={tempInputValues.id || ''}
-          onChange={(e) => handleTextInputChange('id', e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, 'id')}
-        />
-      </div>
-
-      <div className='panel text_panel'>
-        <label htmlFor="elementText">Text</label>
-        <input
-          id="elementText"
-          aria-label="Element Text"
-          type="text"
-          value={tempInputValues.text || ''}
-          onChange={(e) => handleTextInputChange('text', e.target.value)}
-          onKeyDown={(e) => handleKeyDown(e, 'text')}
-        />
-      </div>
-
-      <div className='panel display_panel'>
-        <div className='flex flex-col gap-2'>
-          <label htmlFor="element-display">Display</label>
+      {activeTab === 'styles' && (
+        <div className="space-y-4">
           <ReusableSelect
-            id="element-display"
-            value={display}
-            onChange={(e) => applyStyleChange('display', e.target.value)}
-            options={DISPLAY_OPTIONS}
+            id="variant"
+            label="Variant"
+            value={localProps.variant || 'primary'}
+            onChange={(value) => applyVariantChange(value)}
+            options={TAILWIND_OPTIONS.variant}
           />
-        </div>
-      </div>
-
-      {display === 'flex' && (
-        <div className='panel flex_panel'>
-          <div className='flex flex-col gap-2'>
-            <label htmlFor="element-flex-direction">Flex Direction</label>
-            <ReusableSelect
-              id="element-flex-direction"
-              value={currentFlexDirection}
-              onChange={(e) => applyStyleChange('flexDirection', e.target.value)}
-              options={FLEX_DIRECTION_OPTIONS}
-            />
+          <ReusableSelect
+            id="paddingTop"
+            label="Padding Top"
+            value={getCurrentClass('paddingTop')}
+            onChange={(value) => applyClassChange('paddingTop', value)}
+            options={TAILWIND_OPTIONS.paddingTop}
+          />
+          <ReusableSelect
+            id="paddingRight"
+            label="Padding Right"
+            value={getCurrentClass('paddingRight')}
+            onChange={(value) => applyClassChange('paddingRight', value)}
+            options={TAILWIND_OPTIONS.paddingRight}
+          />
+          <ReusableSelect
+            id="paddingBottom"
+            label="Padding Bottom"
+            value={getCurrentClass('paddingBottom')}
+            onChange={(value) => applyClassChange('paddingBottom', value)}
+            options={TAILWIND_OPTIONS.paddingBottom}
+          />
+          <ReusableSelect
+            id="paddingLeft"
+            label="Padding Left"
+            value={getCurrentClass('paddingLeft')}
+            onChange={(value) => applyClassChange('paddingLeft', value)}
+            options={TAILWIND_OPTIONS.paddingLeft}
+          />
+          <ReusableSelect
+            id="width"
+            label="Width"
+            value={getCurrentClass('width')}
+            onChange={(value) => applyClassChange('width', value)}
+            options={TAILWIND_OPTIONS.width}
+          />
+          <div className="text-sm text-gray-500">
+            Current Classes: {currentClasses.join(' ') || 'None'}
           </div>
         </div>
       )}
 
-      <div className='panel align_items_panel'>
-        <label htmlFor="alignItemsSelect">Align Items</label>
-        <ReusableSelect
-          id="alignItemsSelect"
-          value={(selectedProps.style as React.CSSProperties)?.alignItems || 'stretch'}
-          onChange={(e) => applyStyleChange('alignItems', e.target.value)}
-          options={["stretch", "flex-start", "flex-end", "center", "baseline", "initial", "inherit"]}
-        />
-      </div>
-
-      <div className='panel justify_content_panel'>
-        <label htmlFor="justifyContentSelect">Justify Content</label>
-        <ReusableSelect
-          id="justifyContentSelect"
-          value={(selectedProps.style as React.CSSProperties)?.justifyContent || 'flex-start'}
-          onChange={(e) => applyStyleChange('justifyContent', e.target.value)}
-          options={["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly", "initial", "inherit"]}
-        />
-      </div>
-
-      <div className='panel gap_panel'>
-        <label htmlFor="gapSelect">Gap</label>
-        <ReusableSelect
-          id="gapSelect"
-          value={String((selectedProps.style as React.CSSProperties)?.gap || '0')}
-          onChange={(e) => applyStyleChange('gap', e.target.value)}
-          options={["0", "4px", "8px", "16px", "32px"]}
-        />
-      </div>
-
-      <div className='panel padding_panel'>
-        <label htmlFor="paddingSelect">Padding</label>
-        <ReusableSelect
-          id="paddingSelect"
-          value={String((selectedProps.style as React.CSSProperties)?.padding || '0')}
-          onChange={(e) => applyStyleChange('padding', e.target.value)}
-          options={["0", "4px", "8px", "16px", "32px"]}
-        />
-      </div>
-
-      <div className='panel size_panel'>
-        <div className='flex flex-col gap-2'>
-          <label htmlFor="element-width">Size(W * H)</label>
-          <div className="size_inputs">
-            <input
-              id="element-width"
-              type="text"
-              value={tempInputValues['width'] || ''}
-              onChange={(e) => handleTextInputChange('width', e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSizeInputComplete('width', e.currentTarget.value);
-                }
-              }}
-              onBlur={(e) => handleSizeInputComplete('width', e.target.value)}
-              placeholder="auto"
-              aria-label="Width"
-            />
-            <span>*</span>
-            <input
-              id="element-height"
-              type="text"
-              value={tempInputValues['height'] || ''}
-              onChange={(e) => handleTextInputChange('height', e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSizeInputComplete('height', e.currentTarget.value);
-                }
-              }}
-              onBlur={(e) => handleSizeInputComplete('height', e.target.value)}
-              placeholder="auto"
-              aria-label="Height"
-            />
-          </div>
+      {activeTab === 'properties' && (
+        <div className="space-y-4">
+          <input
+            value={localProps.text || ''}
+            onChange={(e) => applyPropChange('text', e.target.value)}
+            placeholder="Text"
+            className="w-full p-2 border border-gray-300 rounded"
+          />
         </div>
-      </div>
+      )}
 
-      {selectedElementId && (
-        <div>
-          <h3>Edit Props for {selectedElementId}</h3>
-          {Object.keys(selectedProps).map((key) => (
-            <div key={key}>
-              <label htmlFor={`prop-${key}`}>{key}</label>
-              <textarea
-                id={`prop-${key}`}
-                aria-label={`Edit ${key}`}
-                value={key in tempInputValues ? tempInputValues[key] : typeof selectedProps[key] === 'object' ? JSON.stringify(selectedProps[key]) : String(selectedProps[key])}
-                onChange={(e) => handleTextInputChange(key, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, key)}
-              />
-            </div>
-          ))}
+      {activeTab === 'events' && (
+        <div className="space-y-4">
+          {/* 이벤트 탭 생략 */}
         </div>
       )}
     </div>
