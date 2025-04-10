@@ -1,0 +1,11 @@
+.react-area-button {
+    /*
+    @apply px-4 py-2 text-sm text-center transition rounded-md border border-gray-200 dark:border-white/10 dark:shadow-none cursor-default
+    */
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #000;
+    border-radius: 0.25rem;
+}
