@@ -4,7 +4,7 @@ import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
 import { ToggleButton } from '../components/ToggleButton';
-import ToggleButtonGroup from '../components/ToggleButtonGroup';
+import { ToggleButtonGroup } from '../components/ToggleButtonGroup';
 import { Button } from '../components/Button';
 //import "./index.css";
 
