@@ -223,6 +223,7 @@ function Preview() {
           key={el.id}
           data-element-id={el.id}
           isDisabled={el.props.isDisabled as boolean}
+          variant={el.props.variant as 'primary' | 'secondary' | 'destructive' | 'surface' | 'icon'}
           style={el.props.style}
           className={el.props.className}
           onPress={() => {
@@ -237,7 +238,7 @@ function Preview() {
             );
           }}
         >
-          {typeof el.props.text === 'string' ? el.props.text : 'Button'}
+          {typeof el.props.children === 'string' ? el.props.children : 'Button'}
         </Button>
       );
     }
