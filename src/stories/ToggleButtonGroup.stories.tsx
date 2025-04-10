@@ -7,15 +7,9 @@ import { Bold, Italic, Underline } from 'lucide-react'
 const meta: Meta<typeof ToggleButtonGroup> = {
   component: ToggleButtonGroup,
   parameters: {
-    layout: 'centered',
+    layout: 'centered'
   },
-  tags: ['autodocs'],
-  argTypes: {
-    selectionMode: {
-      control: 'select',
-      options: ['single', 'multiple']
-    }
-  }
+  tags: ['autodocs']
 };
 
 export default meta;
