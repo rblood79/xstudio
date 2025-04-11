@@ -4,7 +4,7 @@ import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import { FileCode2 } from 'lucide-react';
 import { debounce } from 'lodash';
-import { buttonStyles } from '../components/Button';
+//import { buttonStyles } from '../components/Button';
 import './layout.css';
 
 // Tailwind 클래스 카테고리 정의
@@ -73,10 +73,11 @@ export default function Inspector() {
           return;
         }
         const element = previewIframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
+
         if (element) {
-          const variantClasses = buttonStyles({ variant: props.variant || 'primary' });
-          const combinedClasses = normalizeClasses([...variantClasses.split(' '), ...(props.className || '').split(' ')]);
-          element.className = combinedClasses;
+          //const variantClasses = buttonStyles({ variant: props.variant || 'primary' });
+          //const combinedClasses = normalizeClasses([...variantClasses.split(' '), ...(props.className || '').split(' ')]);
+          //element.className = combinedClasses;
           Object.entries(props.events || {}).forEach(([eventName, script]) => {
             if (script) element[eventName as keyof HTMLElementEventMap] = () => new Function(script)();
           });
@@ -94,6 +95,7 @@ export default function Inspector() {
             '*'
           );
         }
+
       };
       applyToIframe();
     }, 300),
@@ -109,13 +111,13 @@ export default function Inspector() {
   };
 
   const applyVariantChange = (variant: string) => {
-    const variantClasses = buttonStyles({ variant });
+    //const variantClasses = buttonStyles({ variant });
     const currentClasses = (localProps.className || '').split(' ').filter(Boolean);
     const filteredClasses = currentClasses.filter(
       (c) => !c.match(/^(bg-|text-|hover:bg-|pressed:bg-|dark:bg-|dark:text-)/)
     );
-    const updatedClasses = normalizeClasses([...filteredClasses, ...variantClasses.split(' ')]);
-    updateProps({ variant, className: updatedClasses });
+    //const updatedClasses = normalizeClasses([...filteredClasses, ...variantClasses.split(' ')]);
+    updateProps({ variant, className: filteredClasses.join(' ') });
   };
 
   const applyClassChange = (category: keyof typeof TAILWIND_OPTIONS, newClass: string) => {
@@ -157,13 +159,7 @@ export default function Inspector() {
 
       {activeTab === 'styles' && (
         <div className="space-y-4">
-          <ReusableSelect
-            id="variant"
-            label="Variant"
-            value={localProps.variant || 'primary'}
-            onChange={(value) => applyVariantChange(value)}
-            options={TAILWIND_OPTIONS.variant}
-          />
+
           <ReusableSelect
             id="paddingTop"
             label="Padding Top"
