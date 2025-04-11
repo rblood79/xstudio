@@ -10,7 +10,7 @@ export default {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'destructive']
+      options: ['primary', 'secondary', 'surface']
     },
     onBlur: { action: 'onBlur' },
     onFocus: { action: 'onFocus' },

@@ -3,12 +3,9 @@ import { composeRenderProps, ToggleButtonGroup as RACToggleButtonGroup, ToggleBu
 import { tv } from 'tailwind-variants';
 
 const styles = tv({
-  base: 'flex gap-0',
+  base: 'aria-toggle-button-group',
   variants: {
-    orientation: {
-      horizontal: 'flex-row',
-      vertical: 'flex-col'
-    }
+
   }
 });
 
@@ -16,6 +13,7 @@ export function ToggleButtonGroup(props: ToggleButtonGroupProps) {
   return (
     <RACToggleButtonGroup
       {...props}
-      className={composeRenderProps(props.className, (className) => styles({ orientation: props.orientation || 'horizontal', className }))} />
+      selectionMode={props.selectionMode || 'single'}
+      className={composeRenderProps(props.className, (className) => styles({ className }))} />
   );
 }

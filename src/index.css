@@ -253,6 +253,13 @@
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
+    --spacing-2xs: .125rem;
+    --spacing-sm: .5rem;
+    --spacing-md: .75rem;
+    --spacing-lg: 1rem;
+    --spacing-xl: 1.5rem;
+    --spacing-2xl: 2rem;
+    --spacing-3xl: 2.5rem;
     --breakpoint-sm: 40rem;
     --breakpoint-md: 48rem;
     --breakpoint-lg: 64rem;
@@ -373,7 +380,19 @@
     --default-mono-font-family: var(--font-plex-mono);
     --default-mono-font-feature-settings: "ss02", "zero";
     --font-ubuntu-mono: var(--font-ubuntu-mono);
-    --animate-flash-code: flash-code 2s forwards
+    --animate-flash-code: flash-code 2s forwards;
+
+    --color-primary-50: oklch(98.5% 0 0);
+    --color-primary-100: oklch(97% 0 0);
+    --color-primary-200: oklch(92.2% 0 0);
+    --color-primary-300: oklch(87% 0 0);
+    --color-primary-400: oklch(70.8% 0 0);
+    --color-primary-500: oklch(55.6% 0 0);
+    --color-primary-600: oklch(43.9% 0 0);
+    --color-primary-700: oklch(37.1% 0 0);
+    --color-primary-800: oklch(26.9% 0 0);
+    --color-primary-900: oklch(20.5% 0 0);
+    --color-primary-950: oklch(14.5% 0 0);
   }
 }
 
