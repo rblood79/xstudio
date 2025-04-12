@@ -40,6 +40,7 @@ export interface ToggleButtonGroupProps {
 }
 
 export interface ElementProps {
+    tag?: string;
     style?: React.CSSProperties;
     className?: string;
     children?: React.ReactNode;

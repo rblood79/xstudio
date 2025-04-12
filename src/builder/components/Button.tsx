@@ -9,7 +9,7 @@ export interface ButtonProps extends RACButtonProps {
 
 const button = tv({
   extend: focusRing,
-  base: 'aria-button',
+  base: 'aria-Button',
   variants: {
     variant: {
       primary: 'primary',

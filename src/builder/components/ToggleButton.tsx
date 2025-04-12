@@ -10,7 +10,7 @@ interface ToggleButtonProps extends RACToggleButtonProps {
 
 const styles = tv({
     extend: focusRing,
-    base: 'aria-toggle-button',
+    base: 'aria-ToggleButton',
     variants: {
         variant: {
             primary: 'primary',
