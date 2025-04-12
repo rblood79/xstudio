@@ -209,6 +209,108 @@ export default function Inspector() {
             placeholder="Text"
             className="w-full p-2 border border-gray-300 rounded"
           />
+
+          {/* ToggleButtonGroup의 selectionMode 선택 UI */}
+          {selectedElementProps.tag === 'ToggleButtonGroup' && (
+            <>
+              <ReusableSelect
+                id="selectionMode"
+                label="Selection Mode"
+                value={localProps.selectionMode || 'single'}
+                onChange={(value) => applyPropChange('selectionMode', value)}
+                options={['single', 'multiple']}
+              />
+              <ReusableSelect
+                id="orientation"
+                label="Orientation"
+                value={localProps.orientation || 'horizontal'}
+                onChange={(value) => applyPropChange('orientation', value)}
+                options={['horizontal', 'vertical']}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isDisabled"
+                  checked={localProps.isDisabled || false}
+                  onChange={(e) => applyPropChange('isDisabled', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isDisabled">Disabled</label>
+              </div>
+            </>
+          )}
+
+          {/* ToggleButton의 프로퍼티 UI */}
+          {selectedElementProps.tag === 'ToggleButton' && (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isSelected"
+                  checked={localProps.isSelected || false}
+                  onChange={(e) => applyPropChange('isSelected', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isSelected">Selected</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="defaultSelected"
+                  checked={localProps.defaultSelected || false}
+                  onChange={(e) => applyPropChange('defaultSelected', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="defaultSelected">Default Selected</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isDisabled"
+                  checked={localProps.isDisabled || false}
+                  onChange={(e) => applyPropChange('isDisabled', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isDisabled">Disabled</label>
+              </div>
+            </>
+          )}
+
+          {/* TextField의 프로퍼티 UI */}
+          {selectedElementProps.tag === 'TextField' && (
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isDisabled"
+                  checked={localProps.isDisabled || false}
+                  onChange={(e) => applyPropChange('isDisabled', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isDisabled">Disabled</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="readOnly"
+                  checked={localProps.readOnly || false}
+                  onChange={(e) => applyPropChange('readOnly', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="readOnly">Read Only</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="required"
+                  checked={localProps.required || false}
+                  onChange={(e) => applyPropChange('required', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="required">Required</label>
+              </div>
+            </>
+          )}
         </div>
       )}
 

@@ -10,7 +10,7 @@ import { composeTailwindRenderProps, focusRing } from './utils';
 
 const inputStyles = tv({
   extend: focusRing,
-  base: 'aria-text-field',
+  base: 'aria-Field',
   variants: {
     isFocused: fieldBorderStyles.variants.isFocusWithin,
     isInvalid: fieldBorderStyles.variants.isInvalid,
@@ -28,7 +28,7 @@ export function TextField(
   { label, description, errorMessage, ...props }: TextFieldProps
 ) {
   return (
-    <AriaTextField {...props} className={composeTailwindRenderProps(props.className, 'flex flex-col gap-1')}>
+    <AriaTextField {...props} className={composeTailwindRenderProps(props.className, 'aria-TextField')}>
       {label && <Label>{label}</Label>}
       <Input className={inputStyles} />
       {description && <Description>{description}</Description>}

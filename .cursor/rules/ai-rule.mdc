@@ -4,6 +4,11 @@ globs:
 alwaysApply: false
 ---
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: 프로젝트 코딩 규칙 및 Tailwind CSS v4 가이드라인
 globs: ["**/*.{tsx,ts,css}"]
 alwaysApply: true
@@ -326,4 +331,14 @@ Light/Dark 모드 버튼으로 쉽게 전환 가능
 더 많은 색상 변형 추가
 색상 조합 추천 기능
 접근성 검사 기능
+
+preview 화면에서 ToggleButtonGroup 이 선택되면 
+
+src/builer/inspecter/layout/ property탭에  selectionMode = "single", "multiple" 을 변경 가능하게 기능추가!! 변경하면 데이터베이스에 업데이트!!! 
+
+"src/builer/inspecter/layout/ property탭" 에 기능은 
+preview 화면에서 선택한 컴퍼넌트들의 선택 가능한 옵션들을 변경 하고 수정하는 부분이야
+
+"src/builer/inspecter/layout/ style 탭" 에 기능은
+preview 화면에서 선택한 컴퍼넌트들의 기본 정의된 스타일 외에 사용자가 추가로 스타일을 변경할수있는 부분이야
 

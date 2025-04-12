@@ -22,9 +22,16 @@ interface PreviewElement {
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
-  const { setElements, updateElementProps } = useStore();
+  const { setElements } = useStore();
 
   const handlePreviewClick = useCallback((e: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (e.target instanceof HTMLElement && (e.target.tagName.toLowerCase() === 'input' || e.target.closest('input'))) {
+      return;  // Explicitly skip for input elements
+    }
     // 클릭된 요소와 그 부모 요소들을 확인하여 data-element-id 속성을 가진 가장 가까운 요소를 찾습니다
     let target = e.target as HTMLElement;
     let elementId = null;
@@ -145,7 +152,7 @@ function Preview() {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
-      onClick: (e: React.MouseEvent) => {
+      /*onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
@@ -154,7 +161,7 @@ function Preview() {
           elementId: el.id,
           payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
         }, window.location.origin);
-      },
+      },*/
     };
 
     const content = [
@@ -175,18 +182,8 @@ function Preview() {
           className={el.props.className}
           orientation={orientation}
           selectionMode={el.props.selectionMode as 'single' | 'multiple'}
-          isDisabled={el.props.isDisabled as boolean}
         >
-          {childButtons.map((child) => (
-            <ToggleButton
-              key={child.id}
-              id={child.id}
-              data-element-id={child.id}
-              style={child.props.style}
-            >
-              {typeof child.props.text === 'string' ? child.props.text : ''}
-            </ToggleButton>
-          ))}
+          {childButtons.map((child) => renderElement(child))}
         </ToggleButtonGroup>
       );
     }
@@ -204,26 +201,34 @@ function Preview() {
           defaultSelected={el.props.defaultSelected as boolean}
           style={el.props.style}
           className={el.props.className}
-          onChange={(isSelected) => {
-            console.log(`ToggleButton onChange called for ${el.id}. New isSelected: ${isSelected}`);
-
-            const updatedProps = {
-              ...el.props,
-              isSelected: isSelected
-            };
-
-            // Store 업데이트
-            updateElementProps(el.id, updatedProps);
-
-            // 부모 창에 메시지 전송
-            window.parent.postMessage(
-              {
-                type: 'element-props-update',
+          // 모든 이벤트 핸들러를 빈 함수로 재정의
+          onPressStart={() => { }}
+          onPressEnd={() => { }}
+          onPressChange={() => { }}
+          onPressUp={() => { }}
+          onKeyDown={() => { }}
+          onKeyUp={() => { }}
+          onChange={() => { }}
+          // 선택 기능만 유지
+          onPress={() => {
+            const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
+            if (target) {
+              const rect = target.getBoundingClientRect();
+              window.parent.postMessage({
+                type: "ELEMENT_SELECTED",
                 elementId: el.id,
-                props: updatedProps
-              },
-              '*'
-            );
+                payload: {
+                  rect: {
+                    top: rect.top,
+                    left: rect.left,
+                    width: rect.width,
+                    height: rect.height
+                  },
+                  props: el.props,
+                  tag: el.tag
+                }
+              }, window.location.origin);
+            }
           }}
         >
           {typeof el.props.text === 'string' ? el.props.text : ''}
@@ -242,8 +247,20 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           onPress={() => {
-            console.log(`Button onPress called for ${el.id}`);
+            console.log(`Button ${el.id}`);
 
+            // 선택 기능 추가
+            const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
+            if (target) {
+              const rect = target.getBoundingClientRect();
+              window.parent.postMessage({
+                type: "ELEMENT_SELECTED",
+                elementId: el.id,
+                payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
+              }, window.location.origin);
+            }
+
+            // 기존 기능 유지
             window.parent.postMessage(
               {
                 type: 'element-click',
@@ -263,32 +280,44 @@ function Preview() {
       return (
         <TextField
           key={el.id}
+          label={String(el.props.label || 'Text Field') as string}
           data-element-id={el.id}
           isDisabled={el.props.isDisabled as boolean}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label as string}
           description={el.props.description as string}
           errorMessage={el.props.errorMessage as string}
           value={el.props.value as string}
-          onChange={(value) => {
-            console.log(`TextField onChange called for ${el.id}. New value:`, value);
+        /*onFocus={(e) => {
+          console.log(`Focus event on TextField ID: ${el.id}`);
+          const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
+          if (target) {
+            const rect = target.getBoundingClientRect();
+            window.parent.postMessage({
+              type: "ELEMENT_SELECTED",
+              elementId: el.id,
+              payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
+            }, window.location.origin);
+          }
 
-            window.parent.postMessage(
-              {
-                type: 'element-props-update',
-                elementId: el.id,
-                props: {
-                  ...el.props,
-                  value
-                }
-              },
-              '*'
-            );
-          }}
+          // 기존 기능 유지
+          window.parent.postMessage(
+            {
+              type: 'element-click',
+              elementId: el.id,
+            },
+            '*'
+          );
+
+        }}*/
+
+
         />
       );
     }
+
+    // Input 컴포넌트 특별 처리
+
 
     return React.createElement(el.tag, newProps, content.length > 0 ? content : undefined);
   };

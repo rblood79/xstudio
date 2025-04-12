@@ -3,7 +3,7 @@ import { composeRenderProps, ToggleButtonGroup as RACToggleButtonGroup, ToggleBu
 import { tv } from 'tailwind-variants';
 
 const styles = tv({
-  base: 'aria-toggle-button-group',
+  base: 'aria-ToggleButtonGroup',
   variants: {
 
   }

@@ -163,7 +163,7 @@ export const useStore = create<Store>((set, get) => ({
     set((state) => ({
       ...state,
       selectedElementId: elementId,
-      selectedElementProps: elementId && props ? { ...props } : {}
+      selectedElementProps: elementId && props ? { ...props, tag: state.elements.find(el => el.id === elementId)?.tag } : {}
     })),
   setPages: (pages) =>
     set(
