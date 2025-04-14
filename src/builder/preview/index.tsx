@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from "react";
 import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
+import { PressEvent } from '@react-aria/interactions';
 import styles from "./index.module.css";
 import { ToggleButton } from '../components/ToggleButton';
 import { ToggleButtonGroup } from '../components/ToggleButtonGroup';
@@ -24,8 +25,8 @@ function Preview() {
   const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements } = useStore();
 
-  const handlePreviewClick = useCallback((e: React.MouseEvent) => {
-    if (e) {
+  const handlePreviewClick = useCallback((e: React.MouseEvent | PressEvent) => {
+    if (e instanceof MouseEvent || 'stopPropagation' in e) {
       e.stopPropagation();
       e.preventDefault();
     }
@@ -63,7 +64,7 @@ function Preview() {
     }
 
     if (elementId && elementProps && elementTag) {
-      e.stopPropagation();
+      //e.stopPropagation();
       const rect = target.getBoundingClientRect();
       window.parent.postMessage({
         type: "ELEMENT_SELECTED",
@@ -152,7 +153,7 @@ function Preview() {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
-      /*onClick: (e: React.MouseEvent) => {
+      /*onPress: (e: React.MouseEvent) => {
         e.stopPropagation();
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
@@ -199,37 +200,10 @@ function Preview() {
           data-element-id={el.id}
           isSelected={currentIsSelected}
           defaultSelected={el.props.defaultSelected as boolean}
+          isDisabled={el.props.isDisabled as boolean}
           style={el.props.style}
           className={el.props.className}
-          // 모든 이벤트 핸들러를 빈 함수로 재정의
-          onPressStart={() => { }}
-          onPressEnd={() => { }}
-          onPressChange={() => { }}
-          onPressUp={() => { }}
-          onKeyDown={() => { }}
-          onKeyUp={() => { }}
-          onChange={() => { }}
-          // 선택 기능만 유지
-          onPress={() => {
-            const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
-            if (target) {
-              const rect = target.getBoundingClientRect();
-              window.parent.postMessage({
-                type: "ELEMENT_SELECTED",
-                elementId: el.id,
-                payload: {
-                  rect: {
-                    top: rect.top,
-                    left: rect.left,
-                    width: rect.width,
-                    height: rect.height
-                  },
-                  props: el.props,
-                  tag: el.tag
-                }
-              }, window.location.origin);
-            }
-          }}
+
         >
           {typeof el.props.text === 'string' ? el.props.text : ''}
         </ToggleButton>
@@ -247,27 +221,9 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           onPress={() => {
-            console.log(`Button ${el.id}`);
-
-            // 선택 기능 추가
-            const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
-            if (target) {
-              const rect = target.getBoundingClientRect();
-              window.parent.postMessage({
-                type: "ELEMENT_SELECTED",
-                elementId: el.id,
-                payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
-              }, window.location.origin);
-            }
-
+            //handlePreviewClick(e as unknown as React.MouseEvent);
             // 기존 기능 유지
-            window.parent.postMessage(
-              {
-                type: 'element-click',
-                elementId: el.id,
-              },
-              '*'
-            );
+
           }}
         >
           {typeof el.props.children === 'string' ? el.props.children : 'Button'}
@@ -288,29 +244,6 @@ function Preview() {
           description={el.props.description as string}
           errorMessage={el.props.errorMessage as string}
           value={el.props.value as string}
-        /*onFocus={(e) => {
-          console.log(`Focus event on TextField ID: ${el.id}`);
-          const target = document.querySelector(`[data-element-id="${el.id}"]`) as HTMLElement;
-          if (target) {
-            const rect = target.getBoundingClientRect();
-            window.parent.postMessage({
-              type: "ELEMENT_SELECTED",
-              elementId: el.id,
-              payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
-            }, window.location.origin);
-          }
-
-          // 기존 기능 유지
-          window.parent.postMessage(
-            {
-              type: 'element-click',
-              elementId: el.id,
-            },
-            '*'
-          );
-
-        }}*/
-
 
         />
       );
@@ -329,10 +262,73 @@ function Preview() {
     return sortedRootElements.map((el) => renderElement(el));
   };
 
-  return (
-    <div className={styles.main} id={projectId || undefined} onClick={handlePreviewClick}>
-      {elements.length === 0 ? "No elements available" : renderElementsTree()}
-    </div>
+  const handleGlobalClick = (e: React.MouseEvent) => {
+    // 이벤트 버블링이 중단되지 않도록 함
+    e.stopPropagation = () => { };
+    e.preventDefault = () => { };
+
+    handlePreviewClick(e);
+  };
+
+  const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} };
+  const RootTag = rootElement.tag;
+
+  // 모든 요소가 DOM에 마운트된 후에 이벤트 리스너를 추가
+  useEffect(() => {
+    const addClickListeners = () => {
+      // data-element-id 속성을 가진 모든 요소 찾기
+      const domElements = document.querySelectorAll('[data-element-id]');
+
+      // 각 요소에 클릭 이벤트 리스너 추가
+      domElements.forEach(element => {
+        element.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+
+          const target = e.currentTarget as HTMLElement;
+          const elementId = target.getAttribute('data-element-id');
+          if (!elementId) return;
+
+          const el = elements.find(el => el.id === elementId);
+          if (!el) return;
+
+          const rect = target.getBoundingClientRect();
+          window.parent.postMessage({
+            type: "ELEMENT_SELECTED",
+            elementId: elementId,
+            payload: {
+              rect: {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+              },
+              props: el.props,
+              tag: el.tag
+            },
+          }, window.location.origin);
+        });
+      });
+    };
+
+    // 짧은 시간 후에 이벤트 리스너 추가 (DOM이 완전히 렌더링된 후)
+    setTimeout(addClickListeners, 100);
+
+    return () => {
+      // 컴포넌트 언마운트 시 이벤트 리스너 제거 로직 추가 (필요시)
+    };
+  }, [elements]);
+
+  return React.createElement(
+    RootTag,
+    {
+      className: styles.main,
+      id: projectId || undefined,
+      onClick: handleGlobalClick,
+      ...rootElement.props,
+      //style: { pointerEvents: 'all', ...(rootElement.props.style || {}) }
+    },
+    elements.length === 0 ? "No elements available" : renderElementsTree()
   );
 }
 

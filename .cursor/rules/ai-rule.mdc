@@ -3,16 +3,6 @@ description:
 globs: 
 alwaysApply: false
 ---
----
-description: 
-globs: 
-alwaysApply: false
----
----
-description: 프로젝트 코딩 규칙 및 Tailwind CSS v4 가이드라인
-globs: ["**/*.{tsx,ts,css}"]
-alwaysApply: true
----
 
 # Your rule content
 
