@@ -241,6 +241,64 @@ function Builder() {
                     setSelectedElement(textFieldId, newElement.props);
                 });
             }
+        } else if (args[0] === 'ToggleButtonGroup') {
+            const textFieldId = newElement.id;
+            const childElements = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ToggleButton',
+                    props: {
+                        text: 'Left',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ToggleButton',
+                    props: {
+                        text: 'center',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ToggleButton',
+                    props: {
+                        text: 'Right',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 2,
+                }
+            ];
+            // 모든 요소를 한 번에 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...childElements])
+                .select();
+
+            if (error) console.error("요소 추가 에러:", error);
+            else if (data) {
+                // 모든 요소를 상태에 추가
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(textFieldId, newElement.props);
+                });
+            }
+
         } else {
             // TextField가 아닌 경우 기존 로직 사용
             const { data, error } = await supabase
