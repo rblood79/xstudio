@@ -19,20 +19,28 @@ const inputStyles = tv({
 });
 
 export interface TextFieldProps extends AriaTextFieldProps {
-  label?: string;
+  label?: React.ReactNode; // 문자열뿐만 아니라 JSX도 허용
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
+  'key'?: string; // 추가 속성 지원
+  //'data-element-id'?: string; // 추가 속성 지원
 }
 
 export function TextField(
-  { label, description, errorMessage, ...props }: TextFieldProps
+  { label, description, errorMessage, children, ...props }: TextFieldProps
 ) {
   return (
     <AriaTextField {...props} className={composeTailwindRenderProps(props.className, 'aria-TextField')}>
-      {label && <Label>{label}</Label>}
-      <Input className={inputStyles} />
-      {description && <Description>{description}</Description>}
-      <FieldError>{errorMessage}</FieldError>
+      {/*React.isValidElement(React.Children.toArray(children)[0]) &&
+        typeof (React.Children.toArray(children)[0] as React.ReactElement).type === 'function' &&
+        (React.Children.toArray(children)[0] as React.ReactElement).type.name === "Label" && (
+          children[0]
+        )*/}
+      {label && <Label data-element-id={children[0]?.props['data-element-id']}>{label}</Label>}
+      <Input data-element-id={children[1]?.props['data-element-id']} className={inputStyles} />
+      {description && <Description data-element-id={children[2]?.props['data-element-id']}>{description}</Description>}
+      {errorMessage && <FieldError data-element-id={children[3]?.props['data-element-id']}>{errorMessage}</FieldError>}
+
     </AriaTextField>
   );
 }

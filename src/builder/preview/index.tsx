@@ -155,18 +155,19 @@ function Preview() {
       const childElements = children.filter(child =>
         ['Label', 'Input', 'Description', 'FieldError'].includes(child.tag)
       );
-
       return (
-        <div
+        <TextField
           key={el.id}
           data-element-id={el.id}
-          isDisabled={!!el.props.isDisabled}
           style={el.props.style}
-          className={'aria-TextField'}
-
+          className={el.props.className}
+          label={`${el.props.text as string}`}
+          description={`${el.props.description as string}`}
+          errorMessage={`${el.props.errorMessage as string}`}
+          isDisabled={el.props.isDisabled as boolean}
+          children={childElements.map((child) => renderElement(child))}
         >
-          {childElements.map(child => renderElement(child))}
-        </div>
+        </TextField>
       );
     }
 
