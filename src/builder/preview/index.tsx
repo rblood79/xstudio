@@ -65,36 +65,36 @@ function Preview() {
     const tag = el.tag === 'body' ? 'div' : el.tag;
 
     // 요소 클릭 핸들러를 직접 추가
-    const handleElementClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
+    // const handleElementClick = (e: React.MouseEvent) => {
+    //   e.stopPropagation();
+    //   e.preventDefault();
 
-      const target = e.currentTarget as HTMLElement;
-      const elementId = target.getAttribute('data-element-id');
-      if (!elementId) return;
+    //   const target = e.currentTarget as HTMLElement;
+    //   const elementId = target.getAttribute('data-element-id');
+    //   if (!elementId) return;
 
-      const rect = target.getBoundingClientRect();
-      window.parent.postMessage({
-        type: "ELEMENT_SELECTED",
-        elementId: elementId,
-        payload: {
-          rect: {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height
-          },
-          props: el.props,
-          tag: el.tag
-        },
-      }, window.location.origin);
-    };
+    //   const rect = target.getBoundingClientRect();
+    //   window.parent.postMessage({
+    //     type: "ELEMENT_SELECTED",
+    //     elementId: elementId,
+    //     payload: {
+    //       rect: {
+    //         top: rect.top,
+    //         left: rect.left,
+    //         width: rect.width,
+    //         height: rect.height
+    //       },
+    //       props: el.props,
+    //       tag: el.tag
+    //     },
+    //   }, window.location.origin);
+    // };
 
     const newProps = {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
-      onClick: handleElementClick,
+      //onClick: handleElementClick,
     };
 
     // Label 컴포넌트 특별 처리
@@ -158,7 +158,7 @@ function Preview() {
 
       // Find specific child elements by tag
       const labelElement = childElements.find(child => child.tag === 'Label');
-      const inputElement = childElements.find(child => child.tag === 'Input');
+      // const inputElement = childElements.find(child => child.tag === 'Input');
       const descriptionElement = childElements.find(child => child.tag === 'Description');
       const errorElement = childElements.find(child => child.tag === 'FieldError');
 
@@ -250,10 +250,34 @@ function Preview() {
   };
 
   const handleGlobalClick = (e: React.MouseEvent) => {
-    // 이벤트 버블링이 중단되지 않도록 함
-    e.stopPropagation = () => { };
-    e.preventDefault = () => { };
+    // Find the closest element with data-element-id attribute
+    const target = e.target as HTMLElement;
+    const elementWithId = target.closest('[data-element-id]');
 
+    if (!elementWithId) return;
+
+    const elementId = elementWithId.getAttribute('data-element-id');
+    if (!elementId) return;
+
+    // Find the element in our elements array
+    const element = elements.find(el => el.id === elementId);
+    if (!element) return;
+
+    const rect = elementWithId.getBoundingClientRect();
+    window.parent.postMessage({
+      type: "ELEMENT_SELECTED",
+      elementId: elementId,
+      payload: {
+        rect: {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        },
+        props: element.props,
+        tag: element.tag
+      },
+    }, window.location.origin);
   };
 
   const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
@@ -264,7 +288,7 @@ function Preview() {
     {
       className: styles.main,
       id: projectId || undefined,
-      onClick: handleGlobalClick,
+      onMouseUp: handleGlobalClick,
       ...rootElement.props,
       // If the root element was a body tag, apply its props to the actual body element
       ...(rootElement.tag === 'body' ? {
