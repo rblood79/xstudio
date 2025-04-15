@@ -418,6 +418,7 @@
   html,
   : host {
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     tab-size: 4;
     line-height: 1.5;
     font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
@@ -3769,7 +3770,7 @@
   }
 
   .min-w-fit {
-    min-width: fit-content
+    min-width: -webkit-fill-available;
   }
 
   .min-w-full {

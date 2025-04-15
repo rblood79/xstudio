@@ -2,10 +2,8 @@ import React, { useEffect, useCallback } from "react";
 import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
-import { PressEvent } from '@react-aria/interactions';
 import styles from "./index.module.css";
-import { ToggleButton, ToggleButtonGroup, Button, TextField } from '../components/list';
-//import "./index.css";
+import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError } from '../components/list';
 
 interface PreviewElement {
   id: string;
@@ -17,59 +15,11 @@ interface PreviewElement {
   order_num?: number;
 }
 
+
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements } = useStore();
-
-  const handlePreviewClick = useCallback((e: React.MouseEvent | PressEvent) => {
-    if (e instanceof MouseEvent || 'stopPropagation' in e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    if (e.target instanceof HTMLElement && (e.target.tagName.toLowerCase() === 'input' || e.target.closest('input'))) {
-      return;  // Explicitly skip for input elements
-    }
-    // 클릭된 요소와 그 부모 요소들을 확인하여 data-element-id 속성을 가진 가장 가까운 요소를 찾습니다
-    let target = e.target as HTMLElement;
-    let elementId = null;
-    let elementTag = null;
-    let elementProps = null;
-
-    // 최대 10번의 부모 요소까지 확인 (무한 루프 방지)
-    for (let i = 0; i < 10 && target && !elementId; i++) {
-      const id = target.getAttribute('data-element-id');
-      if (id) {
-        elementId = id;
-        elementTag = target.tagName.toLowerCase();
-
-        // 해당 요소의 props 찾기
-        const element = elements.find(el => el.id === id);
-        if (element) {
-          elementProps = element.props;
-          elementTag = element.tag;
-        }
-
-        break;
-      }
-
-      if (target.parentElement) {
-        target = target.parentElement;
-      } else {
-        break;
-      }
-    }
-
-    if (elementId && elementProps && elementTag) {
-      //e.stopPropagation();
-      const rect = target.getBoundingClientRect();
-      window.parent.postMessage({
-        type: "ELEMENT_SELECTED",
-        elementId: elementId,
-        payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: elementProps, tag: elementTag },
-      }, window.location.origin);
-    }
-  }, [elements]);
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
@@ -107,65 +57,118 @@ function Preview() {
   document.documentElement.classList.add(styles.root);
 
   const renderElement = (el: PreviewElement): React.ReactNode => {
-    // body 태그인 경우 자식 요소들만 렌더링하고 실제 body에 속성들 추가
-    if (el.tag === "body") {
-      const children = elements
-        .filter((child) => child.parent_id === el.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-      // 실제 body 태그에 data-element-id, props, onClick 이벤트 추가
-      document.body.setAttribute("data-element-id", el.id);
-
-      // props 적용
-      if (el.props.style) {
-        Object.assign(document.body.style, el.props.style);
-      }
-
-      // 다른 props들도 적용 (style 제외)
-      Object.entries(el.props).forEach(([key, value]) => {
-        if (key !== 'style' && key !== 'text' && value !== undefined && value !== null) {
-          document.body.setAttribute(key, String(value));
-        }
-      });
-
-      document.body.onclick = (e: MouseEvent) => {
-        e.stopPropagation();
-        const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-        window.parent.postMessage({
-          type: "ELEMENT_SELECTED",
-          elementId: el.id,
-          payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
-        }, window.location.origin);
-      };
-
-      return children.map((child) => renderElement(child));
-    }
-
     const children = elements
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // body 태그를 div로 대체
+    const tag = el.tag === 'body' ? 'div' : el.tag;
+
+    // 요소 클릭 핸들러를 직접 추가
+    const handleElementClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const target = e.currentTarget as HTMLElement;
+      const elementId = target.getAttribute('data-element-id');
+      if (!elementId) return;
+
+      const rect = target.getBoundingClientRect();
+      window.parent.postMessage({
+        type: "ELEMENT_SELECTED",
+        elementId: elementId,
+        payload: {
+          rect: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          },
+          props: el.props,
+          tag: el.tag
+        },
+      }, window.location.origin);
+    };
 
     const newProps = {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
-      /*onPress: (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-        window.parent.postMessage({
-          type: "ELEMENT_SELECTED",
-          elementId: el.id,
-          payload: { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, props: el.props, tag: el.tag },
-        }, window.location.origin);
-      },*/
+      onClick: handleElementClick,
     };
 
-    const content = [
-      el.props.text && String(el.props.text),
-      ...children.map((child) => renderElement(child))
-    ].filter(Boolean);
+    // Label 컴포넌트 특별 처리
+    if (el.tag === 'Label') {
+      return (
+        <Label
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {typeof el.props.text === 'string' ? el.props.text : 'Label'}
+        </Label>
+      );
+    }
+
+    if (el.tag === 'Input') {
+      return (
+        <Input
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+        />
+      );
+    }
+
+    if (el.tag === 'Description') {
+      return (
+        <Description
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {typeof el.props.text === 'string' ? el.props.text : 'Description'}
+        </Description>
+      );
+    }
+
+    if (el.tag === 'FieldError') {
+      return (
+        <FieldError
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {typeof el.props.text === 'string' ? el.props.text : 'FieldError'}
+        </FieldError>
+      );
+    }
+
+
+
+    // TextField 컴포넌트 특별 처리
+    if (el.tag === 'TextField') {
+      const childElements = children.filter(child =>
+        ['Label', 'Input', 'Description', 'FieldError'].includes(child.tag)
+      );
+
+      return (
+        <div
+          key={el.id}
+          data-element-id={el.id}
+          isDisabled={!!el.props.isDisabled}
+          style={el.props.style}
+          className={'aria-TextField'}
+
+        >
+          {childElements.map(child => renderElement(child))}
+        </div>
+      );
+    }
 
     // ToggleButtonGroup 컴포넌트 특별 처리
     if (el.tag === 'ToggleButtonGroup') {
@@ -196,11 +199,10 @@ function Preview() {
           id={el.id}
           data-element-id={el.id}
           isSelected={currentIsSelected}
-          defaultSelected={el.props.defaultSelected as boolean}
+          defaultSelected={false}
           isDisabled={el.props.isDisabled as boolean}
           style={el.props.style}
           className={el.props.className}
-
         >
           {typeof el.props.text === 'string' ? el.props.text : ''}
         </ToggleButton>
@@ -217,39 +219,19 @@ function Preview() {
           variant={el.props.variant as 'primary' | 'secondary' | 'surface' | 'icon'}
           style={el.props.style}
           className={el.props.className}
-          onPress={() => {
-            //handlePreviewClick(e as unknown as React.MouseEvent);
-            // 기존 기능 유지
-
-          }}
         >
           {typeof el.props.children === 'string' ? el.props.children : 'Button'}
         </Button>
       );
     }
 
-    // TextField 컴포넌트 특별 처리
-    if (el.tag === 'TextField') {
-      return (
-        <TextField
-          key={el.id}
-          label={String(el.props.label || 'Text Field') as string}
-          data-element-id={el.id}
-          isDisabled={el.props.isDisabled as boolean}
-          style={el.props.style}
-          className={el.props.className}
-          description={el.props.description as string}
-          errorMessage={el.props.errorMessage as string}
-          value={el.props.value as string}
+    // 일반 요소 처리
+    const content = [
+      el.props.text && String(el.props.text),
+      ...children.map((child) => renderElement(child))
+    ].filter(Boolean);
 
-        />
-      );
-    }
-
-    // Input 컴포넌트 특별 처리
-
-
-    return React.createElement(el.tag, newProps, content.length > 0 ? content : undefined);
+    return React.createElement(tag, newProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {
@@ -264,57 +246,10 @@ function Preview() {
     e.stopPropagation = () => { };
     e.preventDefault = () => { };
 
-    handlePreviewClick(e);
   };
 
-  const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} };
-  const RootTag = rootElement.tag;
-
-  // 모든 요소가 DOM에 마운트된 후에 이벤트 리스너를 추가
-  useEffect(() => {
-    const addClickListeners = () => {
-      // data-element-id 속성을 가진 모든 요소 찾기
-      const domElements = document.querySelectorAll('[data-element-id]');
-
-      // 각 요소에 클릭 이벤트 리스너 추가
-      domElements.forEach(element => {
-        element.addEventListener('click', (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-
-          const target = e.currentTarget as HTMLElement;
-          const elementId = target.getAttribute('data-element-id');
-          if (!elementId) return;
-
-          const el = elements.find(el => el.id === elementId);
-          if (!el) return;
-
-          const rect = target.getBoundingClientRect();
-          window.parent.postMessage({
-            type: "ELEMENT_SELECTED",
-            elementId: elementId,
-            payload: {
-              rect: {
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height
-              },
-              props: el.props,
-              tag: el.tag
-            },
-          }, window.location.origin);
-        });
-      });
-    };
-
-    // 짧은 시간 후에 이벤트 리스너 추가 (DOM이 완전히 렌더링된 후)
-    setTimeout(addClickListeners, 100);
-
-    return () => {
-      // 컴포넌트 언마운트 시 이벤트 리스너 제거 로직 추가 (필요시)
-    };
-  }, [elements]);
+  const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
+  const RootTag = rootElement.tag === 'body' ? 'div' : rootElement.tag;
 
   return React.createElement(
     RootTag,
@@ -323,7 +258,11 @@ function Preview() {
       id: projectId || undefined,
       onClick: handleGlobalClick,
       ...rootElement.props,
-      //style: { pointerEvents: 'all', ...(rootElement.props.style || {}) }
+      // If the root element was a body tag, apply its props to the actual body element
+      ...(rootElement.tag === 'body' ? {
+        style: { ...document.body.style, ...(rootElement.props.style || {}) },
+        className: `${styles.main} ${rootElement.props.className || ''}`,
+      } : {}),
     },
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );

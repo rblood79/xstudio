@@ -104,13 +104,7 @@ function Builder() {
                         className: '',
                         'aria-pressed': false,
                     };
-                case 'Button':
-                    return {
-                        ...baseProps,
-                        isDisabled: false,
-                        className: '',
-                        children: text || 'Button',
-                    };
+
                 case 'ToggleButtonGroup':
                     return {
                         ...baseProps,
@@ -121,6 +115,48 @@ function Builder() {
                         orientation: 'horizontal',
                         isDisabled: false,
                     };
+
+                case 'Button':
+                    return {
+                        ...baseProps,
+                        isDisabled: false,
+                        className: '',
+                        children: text || 'Button',
+                    };
+
+                case 'TextField':
+                    return {
+                        ...baseProps,
+                        text: text || 'Text Field',
+                        isDisabled: false,
+                        className: '',
+                        style: {},
+                    };
+
+                case 'Label':
+                    return {
+                        ...baseProps,
+                        text: text || 'Label',
+                        className: '',
+                        style: {},
+                    };
+
+                case 'Description':
+                    return {
+                        ...baseProps,
+                        text: text || 'Description',
+                        className: '',
+                        style: {},
+                    };
+
+                case 'Input':
+                    return {
+                        ...baseProps,
+                        text: text || 'Input',
+                        className: '',
+                        style: {},
+                    };
+
                 default:
                     return baseProps;
             }
@@ -135,16 +171,90 @@ function Builder() {
             order_num: maxOrderNum + 1,
         };
 
-        const { data, error } = await supabase
-            .from("elements")
-            .insert([newElement])
-            .select();
-        if (error) console.error("요소 추가 에러:", error);
-        else if (data) {
-            addElement(data[0]);
-            requestAnimationFrame(() => {
-                setSelectedElement(data[0].id, data[0].props);
-            });
+        // TextField 컴포넌트인 경우 내부 구성 요소들도 함께 생성
+        if (args[0] === 'TextField') {
+            const textFieldId = newElement.id;
+            const childElements = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Label',
+                    props: {
+                        text: newElement.props.text || 'Text Field',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Input',
+                    props: {
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 2,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Description',
+                    props: {
+                        text: '',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 3,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'FieldError',
+                    props: {
+                        text: '',
+                        style: {},
+                        className: ''
+                    },
+                    parent_id: textFieldId,
+                    order_num: 4,
+                }
+            ];
+
+            // 모든 요소를 한 번에 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...childElements])
+                .select();
+
+            if (error) console.error("요소 추가 에러:", error);
+            else if (data) {
+                // 모든 요소를 상태에 추가
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(textFieldId, newElement.props);
+                });
+            }
+        } else {
+            // TextField가 아닌 경우 기존 로직 사용
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement])
+                .select();
+
+            if (error) console.error("요소 추가 에러:", error);
+            else if (data) {
+                addElement(data[0]);
+                requestAnimationFrame(() => {
+                    setSelectedElement(data[0].id, data[0].props);
+                });
+            }
         }
     };
 
