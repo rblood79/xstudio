@@ -112,7 +112,7 @@ export default function SelectionOverlay() {
                     height: overlayRect.height,
                 }}
             >
-                <div className="overlay-tag">
+                <div className="overlay-tag font-mono">
                     {selectedTag}
                 </div>
                 <div title="Drag to resize" className="resize-handle" />

@@ -6,6 +6,10 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['var(--font-inter)'],
+                mono: ['var(--font-mono)'],
+            },
             colors: {
                 custom: {
                     50: 'var(--color-custom-50)',

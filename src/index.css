@@ -1,13 +1,23 @@
+@import url('pretendard/dist/web/static/pretendard.css');
+@import '@fontsource/ibm-plex-mono';
+
 @import "tailwindcss";
 @plugin "tailwindcss-react-aria-components";
 
-@layer base {
+/* @import "tailwindcss/theme.css";
+@import "tailwindcss/preflight.css";
+@import "tailwindcss/utilities.css"; */
+
+@layer theme {
 
   :root,
   :host {
+    --font-inter: 'Pretendard';
+    --font-plex-mono: 'IBM Plex Mono';
     --font-sans: var(--font-inter), system-ui;
+    --font-mono: var(--font-plex-mono), monospace;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    --font-mono: var(--font-plex-mono);
+
     --color-red-50: oklch(97.1% .013 17.38);
     --color-red-100: oklch(93.6% .032 17.717);
     --color-red-200: oklch(88.5% .062 18.334);
@@ -424,6 +434,7 @@
     font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
     font-feature-settings: var(--default-font-feature-settings, normal);
     font-variation-settings: var(--default-font-variation-settings, normal);
+    font-size: var(--text-sm);
     -webkit-tap-highlight-color: transparent
   }
 
@@ -468,7 +479,9 @@
     font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
-    font-size: 1em
+    font-size: var(--text-xs);
+    padding-top: var(--spacing);
+    line-height: var(--text-xs);
   }
 
   small {

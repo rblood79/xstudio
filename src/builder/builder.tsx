@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Smartphone, Monitor, Undo, Redo, Play } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Square, RectangleHorizontal, RectangleVertical } from 'lucide-react';
+import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
 import Sidebar from "./sidebar/index";
@@ -32,6 +33,9 @@ function Builder() {
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
+
+    const [screenWidth, setScreenWidth] = React.useState(new Set<Key>(['100%']));
+
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
@@ -629,7 +633,7 @@ function Builder() {
             <div className="contents">
                 <main>
                     <div className="bg">
-                        <div className="workspace">
+                        <div className="workspace" style={{ width: Array.from(screenWidth)[0]?.toString() || '100%' }}>
                             <iframe
                                 ref={iframeRef}
                                 id="previewFrame"
@@ -665,21 +669,23 @@ function Builder() {
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
+                        <code className="code sizeInfo">{[...screenWidth]}</code>
+                        <ToggleButtonGroup selectionMode="single" selectedKeys={screenWidth} onSelectionChange={setScreenWidth}>
+                            <ToggleButton aria-label="Screen Width 767" id="100%"><Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
+                            <ToggleButton aria-label="Mobile View" id="1280px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
+                            <ToggleButton aria-label="Mobile View" id="767px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
+                            <ToggleButton aria-label="Desktop View" id="375px"><RectangleVertical color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
+                        </ToggleButtonGroup>
+
+
+                    </div>
+                    <div className="header_contents header_right">
                         <span>
                             {currentPageId && pageHistories[currentPageId]
                                 ? `${pageHistories[currentPageId].historyIndex + 1}/${pageHistories[currentPageId].history.length}`
                                 : '0/0'
                             }
                         </span>
-                        <button aria-label="Screen Width 767">767</button>
-                        <button aria-label="Mobile View">
-                            <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        </button>
-                        <button aria-label="Desktop View">
-                            <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        </button>
-                    </div>
-                    <div className="header_contents header_right">
                         <button
                             aria-label="Undo"
                             onClick={handleUndo}

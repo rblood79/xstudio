@@ -4,5 +4,5 @@ export * from './ToggleButton';
 export * from './ToggleButtonGroup';
 export * from './TextField';
 export * from './Field';
-
+export type { Key } from 'react-aria-components';
 // 추가 컴포넌트는 여기에 계속 export

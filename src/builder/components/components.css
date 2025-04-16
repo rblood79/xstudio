@@ -95,13 +95,17 @@
     }
 
     .aria-Label {
+        display: inline-block;
         font-size: var(--text-sm);
+        padding: var(--spacing) var(--spacing-md);
         font-weight: 500;
         color: var(--color-gray-500);
     }
 
     .aria-Text {
+        display: inline-block;
         font-size: var(--text-sm);
+        padding: var(--spacing) var(--spacing-md);
         color: var(--color-gray-600);
     }
 
