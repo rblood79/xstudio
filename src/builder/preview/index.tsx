@@ -292,7 +292,7 @@ function Preview() {
       ...rootElement.props,
       // If the root element was a body tag, apply its props to the actual body element
       ...(rootElement.tag === 'body' ? {
-        style: { ...document.body.style, ...(rootElement.props.style || {}) },
+        //style: { ...document.body.style, ...(rootElement.props.style || {}) },
         className: `${styles.main} ${rootElement.props.className || ''}`,
       } : {}),
     },

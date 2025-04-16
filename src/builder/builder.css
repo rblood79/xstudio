@@ -1,4 +1,6 @@
 .app {
+    font-size: var(--text-sm);
+
     display: contents;
 
     .contents {
@@ -29,18 +31,24 @@
             height: calc(var(--spacing) * 12);
 
             .header_contents {
-                button {
+
+                /*button {
                     font-size: var(--text-sm);
                     @apply bg-[var(--color-gray-500)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
 
-                }
+                }*/
 
                 @apply flex items-center justify-center gap-[var(--spacing)];
                 padding: 0 calc(var(--spacing) * 1.375);
 
                 &.screen {
-                    font-size: var(--text-sm);
-                    @apply flex rounded-[var(--radius-md)] bg-[var(--color-gray-500)] gap-[var(--spacing)];
+                    .sizeInfo {
+                        width: 48px;
+                        text-align: right;
+                    }
+
+                    /*font-size: var(--text-sm);
+                    @apply flex rounded-[var(--radius-md)] bg-[var(--color-gray-500)] gap-[var(--spacing)];*/
                 }
 
                 flex: 0;
@@ -58,6 +66,10 @@
                 &:last-child {
                     justify-content: flex-end;
                     flex: 1;
+
+                    button {
+                        @apply bg-[var(--color-white)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
+                    }
 
                     .publish {
                         width: 96px;
@@ -86,13 +98,15 @@
 
                 .workspace {
                     width: 679px;
-                    height: 100%;
+                    height: calc(100% - 96px);
 
                     padding: 0;
 
                     left: 50%;
-                    transform: scale(1) translateX(-50%);
+                    top: 50%;
+                    transform: scale(1) translateX(-50%) translateY(-50%);
                     background: #ffffff;
+                    border: 1px solid var(--color-gray-200);
                     position: absolute;
                     transform-origin: center;
                     will-change: transform;
@@ -102,6 +116,7 @@
                         transform-origin: center;
                         will-change: transform;
                     }
+
                 }
             }
         }

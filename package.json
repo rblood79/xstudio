@@ -12,6 +12,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.5",
     "@lucide/lab": "^0.1.2",
     "@storybook/addon-interactions": "^8.6.12",
     "@supabase/supabase-js": "^2.49.1",
