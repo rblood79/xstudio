@@ -89,6 +89,7 @@
             flex-wrap: nowrap;
             flex-direction: column;
             position: relative;
+            z-index: 1;
 
             .bg {
                 padding: 0;
@@ -97,8 +98,8 @@
                 background-color: var(--color-slate-50);
 
                 .workspace {
-                    width: 679px;
-                    height: calc(100% - 96px);
+                    /*width: 679px;
+                    height: calc(100% - 96px);*/
 
                     padding: 0;
 
@@ -106,7 +107,8 @@
                     top: 50%;
                     transform: scale(1) translateX(-50%) translateY(-50%);
                     background: #ffffff;
-                    border: 1px solid var(--color-gray-200);
+                    border-width: 0px solid;
+                    border-color: var(--color-gray-200);
                     position: absolute;
                     transform-origin: center;
                     will-change: transform;
@@ -118,6 +120,28 @@
                     }
 
                 }
+            }
+        }
+
+        aside {
+            z-index: 2;
+            background-color: var(--color-white);
+            border: 1px solid var(--color-gray-200);
+
+            &.sidebar {
+                grid-area: sidebar;
+                height: 100%;
+                display: flex;
+                position: relative;
+                overflow: auto;
+            }
+
+            &.inspector {
+                grid-area: inspector;
+                height: 100%;
+                display: flex;
+                position: relative;
+                overflow: auto;
             }
         }
 

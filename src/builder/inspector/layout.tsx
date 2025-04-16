@@ -144,12 +144,12 @@ export default function Inspector() {
   };
 
   return (
-    <div className="layout p-4">
+    <div className="layout px-4 py-2">
       <div className="tabs flex border-b mb-4">
         {['styles', 'properties', 'events'].map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-2 ${activeTab === tab ? 'border-b-2 border-blue-500' : ''}`}
+            className={`px-2 py-1 ${activeTab === tab ? 'border-b-2 border-blue-500' : ''}`}
             onClick={() => setActiveTab(tab as any)}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
