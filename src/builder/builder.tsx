@@ -6,10 +6,13 @@ import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
 import Sidebar from "./sidebar/index";
-import "./builder.css";
+
 import { useStore } from './stores/elements';
 import { useThemeStore } from './stores/themeStore';
 import { debounce } from 'lodash';
+
+import "./builder.css";
+
 
 interface Page {
     id: string;
@@ -35,6 +38,7 @@ function Builder() {
     const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
 
     const [screenWidth, setScreenWidth] = React.useState(new Set<Key>(['100%']));
+
 
 
     // 진행 중 여부를 추적하는 플래그
@@ -633,7 +637,11 @@ function Builder() {
             <div className="contents">
                 <main>
                     <div className="bg">
-                        <div className="workspace" style={{ width: Array.from(screenWidth)[0]?.toString() || '100%' }}>
+                        <div className="workspace" style={{
+                            width: Array.from(screenWidth)[0]?.toString() || '100%',
+                            height: Array.from(screenWidth)[0] === '100%' ? '100%' : 'calc(100% - 96px)',
+                            borderWidth: Array.from(screenWidth)[0] === '100%' ? '0px' : '1px'
+                        }}>
                             <iframe
                                 ref={iframeRef}
                                 id="previewFrame"
@@ -670,7 +678,7 @@ function Builder() {
                     </div>
                     <div className="header_contents screen">
                         <code className="code sizeInfo">{[...screenWidth]}</code>
-                        <ToggleButtonGroup selectionMode="single" selectedKeys={screenWidth} onSelectionChange={setScreenWidth}>
+                        <ToggleButtonGroup selectionMode="single" selectedKeys={screenWidth} onSelectionChange={setScreenWidth} >
                             <ToggleButton aria-label="Screen Width 767" id="100%"><Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
                             <ToggleButton aria-label="Mobile View" id="1280px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
                             <ToggleButton aria-label="Mobile View" id="767px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>

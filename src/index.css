@@ -1,5 +1,4 @@
 @import url('pretendard/dist/web/static/pretendard.css');
-@import '@fontsource/ibm-plex-mono';
 
 @import "tailwindcss";
 @plugin "tailwindcss-react-aria-components";
@@ -13,7 +12,7 @@
   :root,
   :host {
     --font-inter: 'Pretendard';
-    --font-plex-mono: 'IBM Plex Mono';
+    --font-plex-mono: 'Pretendard';
     --font-sans: var(--font-inter), system-ui;
     --font-mono: var(--font-plex-mono), monospace;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -435,7 +434,9 @@
     font-feature-settings: var(--default-font-feature-settings, normal);
     font-variation-settings: var(--default-font-variation-settings, normal);
     font-size: var(--text-sm);
-    -webkit-tap-highlight-color: transparent
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   hr {
@@ -5231,6 +5232,11 @@
     --sizes-sideNavWidth: 64px;
     --sizes-navigatorWidth: 0px;
     --sizes-inspectorWidth: 240px;
+  }
+
+  .antialiased {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /*.iconButton {
