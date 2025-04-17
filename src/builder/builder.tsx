@@ -41,11 +41,11 @@ function Builder() {
 
     // Breakpoints structure aligned with future Supabase table
     const [breakpoints] = React.useState([
-        { id: 'screen', label: 'Screen', min_width: '100%', min_height: '100%' },
+        { id: 'screen', label: 'Screen', max_width: '100%', max_height: '100%' },
         //{ id: 'desktop', label: 'Desktop', min_width: 1920, min_height: 1080 },
-        { id: 'desktop', label: 'Desktop', min_width: 1280, min_height: 1080 },
-        { id: 'tablet', label: 'Tablet', min_width: 1024, min_height: 800 },
-        { id: 'mobile', label: 'Mobile', min_width: 390, min_height: 844 }
+        { id: 'desktop', label: 'Desktop', max_width: 1280, max_height: 1080 },
+        { id: 'tablet', label: 'Tablet', max_width: 1024, max_height: 800 },
+        { id: 'mobile', label: 'Mobile', max_width: 390, max_height: 844 }
     ]);
 
     // Future integration with Supabase - commented out for now
@@ -55,7 +55,7 @@ function Builder() {
             if (!projectId) return;
             const { data, error } = await supabase
                 .from("breakpoints")
-                .select("id, label, min_width, max_width")
+                .select("id, label, max_width, max_height")
                 .eq("project_id", projectId);
             if (error) {
                 console.error("Breakpoints fetch error:", error);
@@ -663,11 +663,14 @@ function Builder() {
             <div className="contents">
                 <main>
                     <div className="bg">
-                        <div className="workspace" style={{
-                            width: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_width || '100%',
-                            height: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_height || '100%',
-                            borderWidth: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.id === 'screen' ? '0px' : '1px'
-                        }}>
+                        <div className="workspace"
+                            max-width={breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}
+                            style={{
+                                width: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width || '100%',
+                                height: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height || '100%',
+                                borderWidth: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.id === 'screen' ? '0px' : '1px'
+                            }}>
+
                             <iframe
                                 ref={iframeRef}
                                 id="previewFrame"
@@ -704,8 +707,8 @@ function Builder() {
                     </div>
                     <div className="header_contents screen">
                         <code className="code sizeInfo">
-                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_width}x
-                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_height}
+                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}x
+                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height}
                         </code>
                         <ToggleButtonGroup selectionMode="single" selectedKeys={breakpoint} onSelectionChange={setBreakpoint} >
                             {breakpoints.map(bp => (
