@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Undo, Redo, Play, Square, RectangleHorizontal, RectangleVertical, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Square, Monitor, Tablet, Smartphone } from 'lucide-react';
 import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
