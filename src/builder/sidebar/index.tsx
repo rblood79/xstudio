@@ -72,6 +72,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                             }`} style={{
                                 paddingLeft: `${(depth * 16) + 16}px`
                             }}>
+                            <span className="elementItemIcon"></span>
                             <span className="elementItemLabel">{getLabel(item)}</span>
                             <div className="elementItemActions">
                                 <button className="iconButton" aria-label="Settings">

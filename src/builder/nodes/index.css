@@ -24,6 +24,16 @@
     transition: background-color 0.3s ease-in-out;
     overflow: hidden;
     padding-right: 10px;
+
+    /*&:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        top: 17px;
+        width: 100%;
+        height: calc(100% - 17px);
+        border-left: 1px solid var(--color-gray-200);
+        margin-left: -4px;
+    }*/
 }
 
 .elementItem:hover {
@@ -35,7 +45,18 @@
     color: var(--active-color);
 }
 
+.elementItemIcon {
+    width: var(--spacing-lg);
+    height: var(--spacing-lg);
+    min-width: var(--spacing-lg);
+    min-height: var(--spacing-lg);
+    background-color: var(--color-gray-200);
+    border-radius: var(--radius-sm);
+    margin-right: var(--spacing);
+}
+
 .elementItemLabel {
+    flex: 1;
     font-size: var(--text-xs);
     height: var(--icon-button-size);
     line-height: var(--icon-button-size);

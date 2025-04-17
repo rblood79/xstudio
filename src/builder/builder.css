@@ -116,6 +116,34 @@
                         will-change: transform;
                     }
 
+                    &::before {
+                        content: " " attr(max-width) " ";
+                        display: block;
+                        position: absolute;
+                        rotate: -90deg;
+                        top: calc(50% + 52px);
+                        left: -2.8vh;
+                        font-size: var(--text-xs);
+                        font-weight: var(--font-weight-light);
+                        background-color: var(--color-sky-500);
+                        color: var(--color-white);
+                        padding: 0 var(--spacing);
+                        border-radius: var(--radius-xs);
+                    }
+
+                    &::after {
+                        content: " @media (max-width: " attr(max-width) "px)";
+                        display: block;
+                        position: absolute;
+                        rotate: -90deg;
+                        top: calc(50% - 52px);
+                        left: -8vh;
+                        font-size: var(--text-xs);
+                        font-weight: var(--font-weight-light);
+                        color: var(--color-gray-900);
+                        padding: 0 var(--spacing);
+                    }
+
                 }
             }
         }
