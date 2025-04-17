@@ -92,24 +92,18 @@
             z-index: 1;
 
             .bg {
-                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
                 flex-grow: 1;
                 position: relative;
                 background-color: var(--color-slate-50);
 
                 .workspace {
-                    /*width: 679px;
-                    height: calc(100% - 96px);*/
-
                     padding: 0;
-
-                    left: 50%;
-                    top: 50%;
-                    transform: scale(1) translateX(-50%) translateY(-50%);
                     background: #ffffff;
                     border-width: 0px solid;
                     border-color: var(--color-gray-200);
-                    position: absolute;
                     transform-origin: center;
                     will-change: transform;
 
