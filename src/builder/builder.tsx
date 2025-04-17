@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Undo, Redo, Play, Square, RectangleHorizontal, RectangleVertical } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Square, RectangleHorizontal, RectangleVertical, Monitor, Tablet, Smartphone } from 'lucide-react';
 import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
@@ -703,19 +703,20 @@ function Builder() {
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
-                        <code className="code sizeInfo">{[...breakpoint]}</code>
+                        <code className="code sizeInfo">
+                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_width}x
+                            {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_height}
+                        </code>
                         <ToggleButtonGroup selectionMode="single" selectedKeys={breakpoint} onSelectionChange={setBreakpoint} >
                             {breakpoints.map(bp => (
                                 <ToggleButton key={bp.id} aria-label={bp.label} id={bp.id}>
                                     {bp.id === 'screen' && <Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
-                                    {bp.id === 'desktop' && <RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
-                                    {bp.id === 'tablet' && <RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
-                                    {bp.id === 'mobile' && <RectangleVertical color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'desktop' && <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'tablet' && <Tablet color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'mobile' && <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                 </ToggleButton>
                             ))}
                         </ToggleButtonGroup>
-
-
                     </div>
                     <div className="header_contents header_right">
                         <span>
