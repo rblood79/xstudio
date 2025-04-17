@@ -37,9 +37,35 @@ function Builder() {
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
     const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
 
-    const [screenWidth, setScreenWidth] = React.useState(new Set<Key>(['100%']));
+    const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
 
+    // Breakpoints structure aligned with future Supabase table
+    const [breakpoints] = React.useState([
+        { id: 'screen', label: 'Screen', min_width: '100%', min_height: '100%' },
+        //{ id: 'desktop', label: 'Desktop', min_width: 1920, min_height: 1080 },
+        { id: 'desktop', label: 'Desktop', min_width: 1280, min_height: 1080 },
+        { id: 'tablet', label: 'Tablet', min_width: 1024, min_height: 800 },
+        { id: 'mobile', label: 'Mobile', min_width: 390, min_height: 844 }
+    ]);
 
+    // Future integration with Supabase - commented out for now
+    /*
+    useEffect(() => {
+        const fetchBreakpoints = async () => {
+            if (!projectId) return;
+            const { data, error } = await supabase
+                .from("breakpoints")
+                .select("id, label, min_width, max_width")
+                .eq("project_id", projectId);
+            if (error) {
+                console.error("Breakpoints fetch error:", error);
+            } else if (data) {
+                setBreakpoints(data);
+            }
+        };
+        if (projectId) fetchBreakpoints();
+    }, [projectId]);
+    */
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
@@ -638,9 +664,9 @@ function Builder() {
                 <main>
                     <div className="bg">
                         <div className="workspace" style={{
-                            width: Array.from(screenWidth)[0]?.toString() || '100%',
-                            height: Array.from(screenWidth)[0] === '100%' ? '100%' : 'calc(100% - 96px)',
-                            borderWidth: Array.from(screenWidth)[0] === '100%' ? '0px' : '1px'
+                            width: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_width || '100%',
+                            height: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.min_height || '100%',
+                            borderWidth: breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.id === 'screen' ? '0px' : '1px'
                         }}>
                             <iframe
                                 ref={iframeRef}
@@ -677,12 +703,16 @@ function Builder() {
                         {projectId ? `Project ID: ${projectId}` : "No project ID provided"}
                     </div>
                     <div className="header_contents screen">
-                        <code className="code sizeInfo">{[...screenWidth]}</code>
-                        <ToggleButtonGroup selectionMode="single" selectedKeys={screenWidth} onSelectionChange={setScreenWidth} >
-                            <ToggleButton aria-label="Screen Width 767" id="100%"><Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
-                            <ToggleButton aria-label="Mobile View" id="1280px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
-                            <ToggleButton aria-label="Mobile View" id="767px"><RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
-                            <ToggleButton aria-label="Desktop View" id="375px"><RectangleVertical color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></ToggleButton>
+                        <code className="code sizeInfo">{[...breakpoint]}</code>
+                        <ToggleButtonGroup selectionMode="single" selectedKeys={breakpoint} onSelectionChange={setBreakpoint} >
+                            {breakpoints.map(bp => (
+                                <ToggleButton key={bp.id} aria-label={bp.label} id={bp.id}>
+                                    {bp.id === 'screen' && <Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'desktop' && <RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'tablet' && <RectangleHorizontal color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'mobile' && <RectangleVertical color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                </ToggleButton>
+                            ))}
                         </ToggleButtonGroup>
 
 
