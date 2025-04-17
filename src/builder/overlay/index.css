@@ -1,3 +1,5 @@
+.overlay {}
+
 .overlay-element {
     position: absolute;
     pointer-events: none;

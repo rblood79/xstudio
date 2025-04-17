@@ -29,10 +29,10 @@ export default function SelectionOverlay() {
             const elementRect = element.getBoundingClientRect();
 
             const newRect = {
-                top: elementRect.top, // iframe 뷰포트 기준을 부모 문서 기준으로 변환
-                left: elementRect.left,
-                width: elementRect.width,
-                height: elementRect.height,
+                top: Math.floor(elementRect.top) + 1, // iframe 뷰포트 기준을 부모 문서 기준으로 변환
+                left: Math.floor(elementRect.left) + 1,
+                width: Math.floor(elementRect.width) - 1,
+                height: Math.floor(elementRect.height) - 1,
             };
 
             /*console.log("iframeRect:", iframeRect);
