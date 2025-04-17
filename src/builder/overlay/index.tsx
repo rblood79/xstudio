@@ -103,15 +103,13 @@ export default function SelectionOverlay() {
 
     return (
         <div className="overlay">
-            <div
-                className="overlay-element"
+            <div className="overlay-element"
                 style={{
                     top: overlayRect.top,
                     left: overlayRect.left,
                     width: overlayRect.width,
                     height: overlayRect.height,
-                }}
-            >
+                }}>
                 <div className="overlay-tag">
                     {selectedTag}
                 </div>
