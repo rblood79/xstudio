@@ -37,13 +37,16 @@
                     @apply bg-[var(--color-gray-500)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
 
                 }*/
+                .aria-ToggleButton {
+                    padding: var(--spacing) var(--spacing-sm);
+                }
 
                 @apply flex items-center justify-center gap-[var(--spacing)];
                 padding: 0 calc(var(--spacing) * 1.375);
 
                 &.screen {
                     .sizeInfo {
-                        width: 48px;
+                        width: 64px;
                         text-align: right;
                     }
 
