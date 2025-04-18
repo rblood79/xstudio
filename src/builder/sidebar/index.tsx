@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Settings2, Trash } from 'lucide-react';
+import { Settings2, Trash, ChevronRight } from 'lucide-react';
 import { useStore } from '../stores/elements';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
@@ -69,11 +69,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                             ('tag' in item && selectedElementId === item.id)
                             ? 'active'
                             : ''
-                            }`} style={{
-                                paddingLeft: `${(depth * 16) + 16}px`
-                            }}>
-                            <span className="elementItemIcon"></span>
-                            <span className="elementItemLabel">{getLabel(item)}</span>
+                            }`}>
+                            <div className="elementItemIndent" style={{
+                                width: depth > 0 ? `${(depth * 8) + 8}px` : '0px'
+                            }}></div>
+                            <div className="elementItemIcon"><ChevronRight color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} /></div>
+                            <div className="elementItemLabel">{getLabel(item)}</div>
                             <div className="elementItemActions">
                                 <button className="iconButton" aria-label="Settings">
                                     <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />

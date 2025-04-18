@@ -20,20 +20,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing);
+    /*padding: var(--spacing);*/
     transition: background-color 0.3s ease-in-out;
     overflow: hidden;
-    padding-right: 10px;
 
-    &:not(:last-child)::before {
-        content: '';
-        position: absolute;
-        top: 25px;
-        width: 100%;
-        height: calc(100% - 35px);
-        border-left: 1px solid var(--color-gray-400);
-        margin-left: 6px;
-    }
 }
 
 .elementItem:hover {
@@ -45,14 +35,31 @@
     color: var(--active-color);
 }
 
+.elementItemIndent {
+    width: var(--spacing-lg);
+    height: 27px;
+    /*var(--spacing-lg);*/
+    position: relative;
+    background-color: var(--color-red-50);
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0px;
+        width: 1px;
+        height: 100%;
+        background-color: var(--color-red-900);
+    }
+}
+
 .elementItemIcon {
     width: var(--spacing-lg);
     height: var(--spacing-lg);
     min-width: var(--spacing-lg);
     min-height: var(--spacing-lg);
-    background-color: var(--color-gray-200);
-    border-radius: var(--radius-sm);
-    margin-right: var(--spacing);
+    background-color: var(--color-gray-50);
+    transform: rotate(90deg);
 }
 
 .elementItemLabel {
