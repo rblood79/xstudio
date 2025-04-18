@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Settings2, Trash, ChevronRight } from 'lucide-react';
+import { Settings2, Trash, ChevronRight, Box } from 'lucide-react';
 import { useStore } from '../stores/elements';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
@@ -41,6 +41,13 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         }
     };
 
+    const hasChildren = <T extends { id: string; parent_id?: string | null }>(
+        items: T[],
+        itemId: string
+    ): boolean => {
+        return items.some((item) => item.parent_id === itemId);
+    };
+
     const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
         items: T[],
         getLabel: (item: T) => string,
@@ -55,45 +62,55 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (filteredItems.length === 0) return null;
         return (
             <>
-                {filteredItems.map((item) => (
-                    <div
-                        key={item.id}
-                        data-depth={depth}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClick(item);
-                        }}
-                        className="element"
-                    >
-                        <div className={`elementItem ${('title' in item && selectedPageId === item.id) ||
-                            ('tag' in item && selectedElementId === item.id)
-                            ? 'active'
-                            : ''
-                            }`}>
-                            <div className="elementItemIndent" style={{
-                                width: depth > 0 ? `${(depth * 8) + 8}px` : '0px'
-                            }}></div>
-                            <div className="elementItemIcon"><ChevronRight color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} /></div>
-                            <div className="elementItemLabel">{getLabel(item)}</div>
-                            <div className="elementItemActions">
-                                <button className="iconButton" aria-label="Settings">
-                                    <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                </button>
-                                <button
-                                    className="iconButton"
-                                    aria-label={`Delete ${getLabel(item)}`}
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-                                        await onDelete(item);
-                                    }}
-                                >
-                                    <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                </button>
+                {filteredItems.map((item) => {
+                    const hasChildNodes = hasChildren(items, item.id);
+                    return (
+                        <div
+                            key={item.id}
+                            data-depth={depth}
+                            data-has-children={hasChildNodes}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClick(item);
+                            }}
+                            className="element"
+                        >
+                            <div className={`elementItem ${('title' in item && selectedPageId === item.id) ||
+                                ('tag' in item && selectedElementId === item.id)
+                                ? 'active'
+                                : ''
+                                }`}>
+                                <div className="elementItemIndent" style={{
+                                    width: depth > 0 ? `${(depth * 8) + 8}px` : '0px'
+                                }}></div>
+                                <div className="elementItemIcon">
+                                    {hasChildNodes ?
+                                        <ChevronRight color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                        :
+                                        <Box color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                    }
+                                </div>
+                                <div className="elementItemLabel">{getLabel(item)}</div>
+                                <div className="elementItemActions">
+                                    <button className="iconButton" aria-label="Settings">
+                                        <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                    </button>
+                                    <button
+                                        className="iconButton"
+                                        aria-label={`Delete ${getLabel(item)}`}
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            await onDelete(item);
+                                        }}
+                                    >
+                                        <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                    </button>
+                                </div>
                             </div>
+                            {renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
                         </div>
-                        {renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
-                    </div>
-                ))}
+                    );
+                })}
             </>
         );
     };

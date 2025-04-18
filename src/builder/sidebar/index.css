@@ -78,3 +78,24 @@
     left: 0;
     width: var(--sidebar-width);
 }
+
+.elementItemIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+}
+
+.elementItemIcon.no-children svg {
+    opacity: 0.3;
+}
+
+.element[data-has-children="true"]>.elementItem>.elementItemIcon {
+    cursor: pointer;
+}
+
+.element[data-has-children="true"].expanded>.elementItem>.elementItemIcon {
+    transform: rotate(90deg);
+}
