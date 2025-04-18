@@ -137,7 +137,7 @@
                         position: absolute;
                         rotate: -90deg;
                         top: calc(50% - 52px);
-                        left: -8vh;
+                        left: -8.6vh;
                         font-size: var(--text-xs);
                         font-weight: var(--font-weight-light);
                         color: var(--color-gray-900);

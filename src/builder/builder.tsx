@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Undo, Redo, Play, Square, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Square, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
 import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
@@ -35,8 +35,8 @@ function Builder() {
     const { addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
-    const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
 
+    const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
     const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
 
     // Breakpoints structure aligned with future Supabase table
@@ -713,7 +713,7 @@ function Builder() {
                         <ToggleButtonGroup selectionMode="single" selectedKeys={breakpoint} onSelectionChange={setBreakpoint} >
                             {breakpoints.map(bp => (
                                 <ToggleButton key={bp.id} aria-label={bp.label} id={bp.id}>
-                                    {bp.id === 'screen' && <Square color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
+                                    {bp.id === 'screen' && <Asterisk color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'desktop' && <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'tablet' && <Tablet color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'mobile' && <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}

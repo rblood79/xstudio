@@ -31,18 +31,19 @@
 }
 
 .elementItem.active {
-    background-color: var(--active-bg);
-    color: var(--active-color);
+    background-color: var(--color-sky-100);
+    border: 1px solid var(--color-sky-600);
+    color: var(--color-gray-c500);
 }
 
 .elementItemIndent {
+    display: inline-block;
     width: var(--spacing-lg);
-    height: 27px;
+    height: calc(var(--spacing) * 6.75);
     /*var(--spacing-lg);*/
     position: relative;
-    background-color: var(--color-red-50);
 
-    &::before {
+    /*&::before {
         content: '';
         position: absolute;
         top: 0;
@@ -50,7 +51,15 @@
         width: 1px;
         height: 100%;
         background-color: var(--color-red-900);
-    }
+    }*/
+}
+
+.elementItemSpacer {
+    display: inline-block;
+    width: 8px;
+    height: calc(var(--spacing) * 6.75);
+    border-right: 1px solid var(--color-gray-300);
+    position: relative;
 }
 
 .elementItemIcon {
@@ -58,7 +67,6 @@
     height: var(--spacing-lg);
     min-width: var(--spacing-lg);
     min-height: var(--spacing-lg);
-    background-color: var(--color-gray-50);
     transform: rotate(90deg);
 }
 
@@ -69,6 +77,8 @@
     line-height: var(--icon-button-size);
     -webkit-user-select: none;
     user-select: none;
+
+    text-indent: var(--spacing);
 }
 
 .elementItemActions {

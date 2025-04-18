@@ -80,14 +80,16 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 ? 'active'
                                 : ''
                                 }`}>
-                                <div className="elementItemIndent" style={{
-                                    width: depth > 0 ? `${(depth * 8) + 8}px` : '0px'
-                                }}></div>
+                                <div className="elementItemIndent" style={{ width: depth > 0 ? `${(depth * 8) + 0}px` : '0px' }}>
+                                    {Array.from({ length: depth }).map((_, index) => (
+                                        <span key={index} className="elementItemSpacer" />
+                                    ))}
+                                </div>
                                 <div className="elementItemIcon">
                                     {hasChildNodes ?
                                         <ChevronRight color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
                                         :
-                                        <Box color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                        <Box color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} style={{ padding: '2px' }} />
                                     }
                                 </div>
                                 <div className="elementItemLabel">{getLabel(item)}</div>
