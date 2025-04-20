@@ -117,9 +117,9 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 : ''
                                 }`}>
                                 <div className="elementItemIndent" style={{ width: depth > 0 ? `${(depth * 8) + 0}px` : '0px' }}>
-                                    {Array.from({ length: depth }).map((_, index) => (
+                                    {/*Array.from({ length: depth }).map((_, index) => (
                                         <span key={index} className="elementItemSpacer" />
-                                    ))}
+                                    ))*/}
                                 </div>
                                 <div
                                     className="elementItemIcon"

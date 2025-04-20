@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useStore } from "../stores/elements";
+import { ChevronUp } from 'lucide-react';
 
 import "./index.css";
 interface Rect {
@@ -110,8 +111,9 @@ export default function SelectionOverlay() {
                     width: overlayRect.width,
                     height: overlayRect.height,
                 }}>
-                <div className="overlay-tag">
-                    {selectedTag}
+                <div className="overlay-info">
+                    <div className="overlay-tag-parent"><ChevronUp size={16} /></div>
+                    <div className="overlay-tag">{selectedTag}</div>
                 </div>
                 <div title="Drag to resize" className="resize-handle" />
 

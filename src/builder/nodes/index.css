@@ -20,9 +20,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border: 1px solid transparent;
     /*padding: var(--spacing);*/
-    transition: background-color 0.3s ease-in-out;
+    transition: background-color 0.2s ease-in-out;
     overflow: hidden;
 
 }
@@ -33,7 +32,7 @@
 
 .elementItem.active {
     background-color: var(--color-sky-100);
-    border: 1px solid var(--color-sky-600);
+    outline: 1px solid var(--color-sky-600);
     color: var(--color-gray-c500);
 }
 
@@ -43,13 +42,15 @@
     height: calc(var(--spacing) * 6.75);
     /*var(--spacing-lg);*/
     position: relative;
+
+    background: linear-gradient(to left, var(--color-gray-200) 1px, transparent 1px) 0 0 / 8px 1px;
 }
 
 .elementItemSpacer {
     display: inline-block;
     width: 8px;
     height: calc(var(--spacing) * 6.75);
-    border-right: 1px solid var(--color-gray-300);
+    border-right: 1px solid var(--color-gray-200);
     position: relative;
 }
 

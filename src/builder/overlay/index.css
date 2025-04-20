@@ -3,23 +3,34 @@
 .overlay-element {
     position: absolute;
     pointer-events: none;
+    z-index: 1;
     @apply ring-1 ring-[var(--color-sky-500)];
 }
 
-.overlay-tag {
+.overlay-info {
     pointer-events: auto;
-    text-transform: uppercase;
-    background-color: var(--color-sky-500);
-    color: var(--color-neutral-100);
     bottom: 100%;
     position: absolute;
+    display: flex;
+}
+
+.overlay-tag {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
+    text-transform: uppercase;
     padding: var(--spacing) var(--spacing-sm);
+    background-color: var(--color-sky-500);
+    color: var(--color-neutral-100);
     cursor: default;
     -webkit-user-select: none;
     user-select: none;
-    margin-left: -0.05rem;
+    /*margin-left: -0.05rem;*/
+}
+
+.overlay-tag-parent {
+    padding: var(--spacing);
+    background: var(--color-sky-200);
+    margin-left: -25px;
 }
 
 .overlay-background {
