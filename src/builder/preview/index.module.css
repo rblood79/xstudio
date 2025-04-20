@@ -26,3 +26,12 @@
     align-items: inherit;
     justify-content: inherit;
 }*/
+
+@layer utilities {
+
+    div,
+    section,
+    input {
+        cursor: default;
+    }
+}

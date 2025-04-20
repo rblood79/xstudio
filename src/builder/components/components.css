@@ -137,13 +137,15 @@
         border-radius: var(--radius-md);
         font-size: var(--text-sm);
         color: var(--color-gray-800);
-        pointer-events: none;
 
         &[data-focused] {
             outline: 2px solid var(--focus-ring-color);
             outline-offset: -1px;
         }
 
+        &::before {
+            content: '';
+        }
 
     }
 
