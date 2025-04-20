@@ -35,6 +35,27 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     // 펼쳐진 항목의 ID를 추적하는 상태 추가
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
 
+    // selectedElementId가 변경될 때 해당 요소의 부모 요소들을 펼치는 효과
+    React.useEffect(() => {
+        if (selectedElementId && elements.length > 0) {
+            // 선택된 요소의 모든 상위 요소 찾기
+            const parentIds = new Set<string>();
+            let currentElement = elements.find(el => el.id === selectedElementId);
+
+            while (currentElement?.parent_id) {
+                parentIds.add(currentElement.parent_id);
+                currentElement = elements.find(el => el.id === currentElement?.parent_id);
+            }
+
+            // 확장된 항목 집합에 상위 요소 추가
+            setExpandedItems(prev => {
+                const newSet = new Set(prev);
+                parentIds.forEach(id => newSet.add(id));
+                return newSet;
+            });
+        }
+    }, [selectedElementId, elements]);
+
     const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
         if (typeof elementsOrFn === 'function') {
             storeSetElements(elementsOrFn(elements));
