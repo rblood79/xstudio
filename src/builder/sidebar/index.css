@@ -96,6 +96,6 @@
     cursor: pointer;
 }
 
-.element[data-has-children="true"].expanded>.elementItem>.elementItemIcon {
+/*.element[data-has-children="true"].expanded>.elementItem>.elementItemIcon {
     transform: rotate(90deg);
-}
+}*/
