@@ -43,16 +43,6 @@
     height: calc(var(--spacing) * 6.75);
     /*var(--spacing-lg);*/
     position: relative;
-
-    /*&::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0px;
-        width: 1px;
-        height: 100%;
-        background-color: var(--color-red-900);
-    }*/
 }
 
 .elementItemSpacer {
@@ -68,7 +58,6 @@
     height: var(--spacing-lg);
     min-width: var(--spacing-lg);
     min-height: var(--spacing-lg);
-    transform: rotate(90deg);
 }
 
 .elementItemLabel {

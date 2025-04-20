@@ -32,6 +32,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     const { setElements: storeSetElements, setSelectedElement } = useStore();
     const [activeTab, setActiveTab] = React.useState<Tab>('nodes');
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
+    // 펼쳐진 항목의 ID를 추적하는 상태 추가
+    const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
 
     const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
         if (typeof elementsOrFn === 'function') {
@@ -46,6 +48,18 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         itemId: string
     ): boolean => {
         return items.some((item) => item.parent_id === itemId);
+    };
+
+    const toggleExpand = (itemId: string) => {
+        setExpandedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(itemId)) {
+                newSet.delete(itemId);
+            } else {
+                newSet.add(itemId);
+            }
+            return newSet;
+        });
     };
 
     const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
@@ -64,6 +78,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             <>
                 {filteredItems.map((item) => {
                     const hasChildNodes = hasChildren(items, item.id);
+                    const isExpanded = expandedItems.has(item.id);
                     return (
                         <div
                             key={item.id}
@@ -85,12 +100,32 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                         <span key={index} className="elementItemSpacer" />
                                     ))}
                                 </div>
-                                <div className="elementItemIcon">
-                                    {hasChildNodes ?
-                                        <ChevronRight color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                        :
-                                        <Box color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} style={{ padding: '2px' }} />
-                                    }
+                                <div
+                                    className="elementItemIcon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (hasChildNodes) {
+                                            toggleExpand(item.id);
+                                        }
+                                    }}
+                                >
+                                    {hasChildNodes ? (
+                                        <ChevronRight
+                                            color={iconEditProps.color}
+                                            strokeWidth={iconEditProps.stroke}
+                                            size={iconEditProps.size}
+                                            style={{
+                                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            color={iconEditProps.color}
+                                            strokeWidth={iconEditProps.stroke}
+                                            size={iconEditProps.size}
+                                            style={{ padding: '2px' }}
+                                        />
+                                    )}
                                 </div>
                                 <div className="elementItemLabel">{getLabel(item)}</div>
                                 <div className="elementItemActions">
@@ -109,7 +144,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     </button>
                                 </div>
                             </div>
-                            {renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
+                            {hasChildNodes && isExpanded && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
                         </div>
                     );
                 })}
@@ -188,4 +223,4 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             {children}
         </aside>
     );
-} 
+}
