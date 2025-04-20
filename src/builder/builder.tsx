@@ -662,7 +662,7 @@ function Builder() {
         <div className="app">
             <div className="contents">
                 <main>
-                    <div className="bg">
+                    <div className="bg pattern-bg">
                         <div className="workspace"
                             max-width={breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}
                             style={{
