@@ -15,8 +15,8 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Input', text: 'input', icon: RectangleEllipsis },
         { tag: 'TextField', text: 'TextField', icon: Text, label: 'TextField' },
         { tag: 'Button', text: 'Button', icon: MousePointer },
-        { tag: 'ToggleButton', text: 'ToggleButton', icon: ToggleLeft },
-        { tag: 'ToggleButtonGroup', text: 'ToggleButtonGroup', icon: ToggleLeft },
+        { tag: 'ToggleButton', text: 'Toggle', icon: ToggleLeft },
+        { tag: 'ToggleButtonGroup', text: 'ToggleGroup', icon: ToggleLeft },
     ];
 
     return (
@@ -29,7 +29,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                     >
                         <component.icon strokeWidth={1} size={16} />
                     </button>
-                    <span>{component.text}</span>
+                    <label>{component.text}</label>
                 </div>
             ))}
         </div>

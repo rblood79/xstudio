@@ -25,6 +25,7 @@ interface NodesProps {
     selectedElementId: string | null;
     setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
     sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
+    collapseAllTreeItems?: () => void; // 새 prop 추가
 }
 
 export function Nodes({
@@ -37,7 +38,8 @@ export function Nodes({
     setElements,
     selectedElementId,
     setSelectedElement,
-    sendElementSelectedMessage
+    sendElementSelectedMessage,
+    collapseAllTreeItems
 }: NodesProps) {
     return (
         <div className="sidebar-content nodes">
@@ -55,7 +57,8 @@ export function Nodes({
                 setSelectedElement={setSelectedElement}
                 renderTree={renderTree}
                 sendElementSelectedMessage={sendElementSelectedMessage}
+                collapseAllTreeItems={collapseAllTreeItems} // Layers 컴포넌트로 prop 전달
             />
         </div>
     );
-} 
+}

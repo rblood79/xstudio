@@ -10,7 +10,27 @@ interface ComponentsProps {
 
 function Components({ handleAddElement }: ComponentsProps) {
     return (
-        <ComponentList handleAddElement={handleAddElement} />
+        <div>
+            <div className="panel-header">
+                <h3 className='panel-title'>Basic</h3>
+                <div className="header-actions">
+                    <button
+                        className='iconButton'
+                        aria-label="Add Element"
+                    ></button>
+                </div>
+            </div>
+            <ComponentList handleAddElement={handleAddElement} />
+            <div className="panel-header">
+                <h3 className='panel-title'>Widget</h3>
+                <div className="header-actions">
+                    <button
+                        className='iconButton'
+                        aria-label="Add Element"
+                    ></button>
+                </div>
+            </div>
+        </div>
     );
 }
 

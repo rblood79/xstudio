@@ -22,7 +22,6 @@ export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElement
     return (
         <div className="sidebar_pages">
             <div className="panel-header">
-
                 <h3 className='panel-title'>Pages</h3>
                 <div className="header-actions">
                     <button

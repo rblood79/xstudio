@@ -17,6 +17,7 @@ interface LayersProps {
         onDelete: (item: Element) => Promise<void>
     ) => React.ReactNode;
     sendElementSelectedMessage: (id: string, props: ElementProps) => void;
+    collapseAllTreeItems?: () => void; // 새로운 props 추가
 }
 
 export function Layers({
@@ -25,7 +26,8 @@ export function Layers({
     selectedElementId,
     setSelectedElement,
     renderTree,
-    sendElementSelectedMessage
+    sendElementSelectedMessage,
+    collapseAllTreeItems
 }: LayersProps) {
     return (
         <div className="sidebar_elements">
@@ -36,8 +38,10 @@ export function Layers({
                         className='iconButton'
                         aria-label="collapseAll"
                         onClick={() => {
-                            // Dispatch an event or call a function to collapse all items
-                            window.postMessage({ type: "COLLAPSE_ALL_TREE_ITEMS" }, window.location.origin);
+                            // collapseAllTreeItems 함수가 있으면 호출
+                            if (collapseAllTreeItems) {
+                                collapseAllTreeItems();
+                            }
                         }}
                     >
                         <CopyMinus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
@@ -71,4 +75,4 @@ export function Layers({
             </div>
         </div>
     );
-} 
+}
