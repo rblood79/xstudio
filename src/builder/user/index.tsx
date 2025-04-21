@@ -2,7 +2,7 @@
 import './index.css';
 function User() {
     return (
-        <div className="sidebar-content user">
+        <div className="sidebar-content">
             <h3>User</h3>
             user
         </div>

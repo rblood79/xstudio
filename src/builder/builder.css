@@ -203,7 +203,6 @@
         aside {
             z-index: 2;
             background-color: var(--color-white);
-            border: 1px solid var(--color-gray-300);
 
             &.sidebar {
                 grid-area: sidebar;

@@ -8,11 +8,11 @@ export default function Theme() {
     const { projectId } = useParams<{ projectId: string }>();
 
     return (
-        <div className="sidebar-content theme">
+        <div className="sidebar-content">
             {!projectId ? (
                 <p className="text-red-500">Project ID is required</p>
             ) : (
-                <ThemeEditor projectId={projectId} />
+                <ThemeEditor />
             )}
         </div>
     );

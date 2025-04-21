@@ -1,103 +1,42 @@
-import { useEffect, useRef } from 'react';
+import React from "react";
+//import "./SidebarNav.css";
 import { File, SquarePlus, DatabaseZap, LibraryBig, Palette, WandSparkles, Users, Settings } from 'lucide-react';
 import { iconProps } from '../constants';
 
 export type Tab = 'nodes' | 'components' | 'library' | 'dataset' | 'theme' | 'ai' | 'user' | 'settings';
 
 interface SidebarNavProps {
-    activeTab: Tab;
-    onTabChange: (tab: Tab) => void;
+    activeTabs: Set<Tab>;
+    onTabChange: (tab: Tab) => void; // onTabToggle에서 onTabChange로 이름 변경
 }
 
-export function SidebarNav({ activeTab, onTabChange }: SidebarNavProps) {
-    const navRef = useRef<HTMLDivElement>(null);
-    const beforeRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const nav = navRef.current;
-        const before = beforeRef.current;
-        if (!nav || !before) return;
-
-        const activeButton = nav.querySelector(`button[data-tab="${activeTab}"]`) as HTMLButtonElement;
-        if (activeButton) {
-            const { top: navTop } = nav.getBoundingClientRect();
-            const { top: buttonTop } = activeButton.getBoundingClientRect();
-            const translateY = buttonTop - navTop - 8;
-            before.style.transform = `translateY(${translateY}px)`;
-        }
-    }, [activeTab]);
+export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTabs, onTabChange }) => { // 여기도 함수명 변경
+    const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+        { id: 'nodes', label: '노드', icon: <File color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'components', label: '컴포넌트', icon: <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'library', label: '라이브러리', icon: <LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'dataset', label: '데이터셋', icon: <DatabaseZap color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'theme', label: '테마', icon: <Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'ai', label: 'AI', icon: <WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'user', label: '사용자', icon: <Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+        { id: 'settings', label: '설정', icon: <Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /> },
+    ];
 
     return (
-        <div className="sidebar_nav" ref={navRef}>
-            <div className="sidebar_nav_before" ref={beforeRef} />
-            <div className="sidebar_group">
-                <button
-                    data-tab="nodes"
-                    aria-label="Nodes"
-                    className={activeTab === 'nodes' ? 'active' : ''}
-                    onClick={() => onTabChange('nodes')}
-                >
-                    <File color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="components"
-                    aria-label="Components"
-                    className={activeTab === 'components' ? 'active' : ''}
-                    onClick={() => onTabChange('components')}
-                >
-                    <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="library"
-                    aria-label="Library"
-                    className={activeTab === 'library' ? 'active' : ''}
-                    onClick={() => onTabChange('library')}
-                >
-                    <LibraryBig color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="dataset"
-                    aria-label="Database"
-                    className={activeTab === 'dataset' ? 'active' : ''}
-                    onClick={() => onTabChange('dataset')}
-                >
-                    <DatabaseZap color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="theme"
-                    aria-label="Themes"
-                    className={activeTab === 'theme' ? 'active' : ''}
-                    onClick={() => onTabChange('theme')}
-                >
-                    <Palette color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="ai"
-                    aria-label="AI"
-                    className={activeTab === 'ai' ? 'active' : ''}
-                    onClick={() => onTabChange('ai')}
-                >
-                    <WandSparkles color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-            </div>
-            <div className="sidebar_group">
-                <button
-                    data-tab="user"
-                    aria-label="Users"
-                    className={activeTab === 'user' ? 'active' : ''}
-                    onClick={() => onTabChange('user')}
-                >
-                    <Users color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-                <button
-                    data-tab="settings"
-                    aria-label="Settings"
-                    className={activeTab === 'settings' ? 'active' : ''}
-                    onClick={() => onTabChange('settings')}
-                >
-                    <Settings color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
-            </div>
-        </div>
+        <nav className="sidebar-nav">
+            <ul className="nav-list">
+                {tabs.map((tab) => (
+                    <li key={tab.id}>
+                        <button
+                            className={`nav-button ${activeTabs.has(tab.id) ? 'active' : ''}`}
+                            onClick={() => onTabChange(tab.id)} // 여기도 함수명 변경
+                            aria-pressed={activeTabs.has(tab.id)}
+                        >
+                            {tab.icon}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </nav>
     );
-} 
+};

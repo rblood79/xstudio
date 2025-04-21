@@ -1,6 +1,6 @@
 .theme {
     border: 1px solid #f00;
-    width: calc(100vw - var(--sizes-sideNavWidth));
+    width: 600px;
     background: #fff;
     height: 100%;
     overflow: auto;
