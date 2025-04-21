@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
 import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
-import { ToggleButton, ToggleButtonGroup, Key } from "./components/list";
+
+import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector/layout";
 import Sidebar from "./sidebar/index";
@@ -710,16 +711,27 @@ function Builder() {
                             {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}x
                             {breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height}
                         </code>
-                        <ToggleButtonGroup selectionMode="single" selectedKeys={breakpoint} onSelectionChange={setBreakpoint} >
+
+                        <RadioGroup
+                            orientation="horizontal"
+                            value={Array.from(breakpoint)[0]?.toString()}
+                            onChange={(value) => setBreakpoint(new Set<Key>([value]))}
+                        >
                             {breakpoints.map(bp => (
-                                <ToggleButton key={bp.id} aria-label={bp.label} id={bp.id}>
+                                <Radio
+                                    value={bp.id}
+                                    key={bp.id}
+                                    className="aria-Radio"
+                                >
                                     {bp.id === 'screen' && <Asterisk color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'desktop' && <Monitor color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'tablet' && <Tablet color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
                                     {bp.id === 'mobile' && <Smartphone color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />}
-                                </ToggleButton>
+                                    <Label>{bp.label}</Label>
+                                </Radio>
                             ))}
-                        </ToggleButtonGroup>
+
+                        </RadioGroup>
                     </div>
                     <div className="header_contents header_right">
                         <span>

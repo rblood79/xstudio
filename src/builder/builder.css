@@ -50,6 +50,42 @@
                         text-align: right;
                     }
 
+                    .react-aria-RadioGroup {
+                        @apply flex items-center text-[var(--text-sm)];
+
+
+                    }
+
+                    .aria-Radio {
+                        padding: calc(var(--spacing) * 1.378) var(--spacing-sm);
+                        background-color: var(--color-white);
+
+                        .react-aria-Label {
+                            position: absolute;
+                            width: 1px;
+                            height: 1px;
+                            overflow: hidden;
+                        }
+
+                        &[data-selected] {
+                            background-color: var(--color-gray-700);
+                            color: var(--color-white);
+
+                            svg {
+                                stroke: var(--color-white);
+                                stroke-width: 2;
+                            }
+                        }
+
+                        &:first-child {
+                            border-radius: var(--radius-md) 0 0 var(--radius-md);
+                        }
+
+                        &:last-child {
+                            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+                        }
+                    }
+
                     /*font-size: var(--text-sm);
                     @apply flex rounded-[var(--radius-md)] bg-[var(--color-gray-500)] gap-[var(--spacing)];*/
                 }
