@@ -1,7 +1,7 @@
 export const iconProps = {
     color: 'var(--color-gray-700)',
     stroke: 1,
-    size: 21
+    size: 16
 };
 
 export const iconEditProps = {

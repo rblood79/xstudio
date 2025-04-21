@@ -13,6 +13,19 @@
 
 
 /* Navigation */
+/*.panel-header {
+    @apply flex flex-row items-center justify-between px-2 border-b border-gray-200;
+  }
+
+  .panel-header button {
+    padding: calc(var(--spacing) * 1.375);
+  }
+
+  .panel-title {
+    @apply text-gray-700 flex-1 p-2 text-sm;
+  }
+    */
+
 .sidebar-nav {
     position: relative;
     display: flex;
@@ -84,7 +97,7 @@
     top: 0;
     left: 0;
     width: auto;
-    /*var(--sidebar-width);*/
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow-y: auto;

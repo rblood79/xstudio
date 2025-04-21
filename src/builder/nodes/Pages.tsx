@@ -1,4 +1,4 @@
-import { PanelTop, CirclePlus } from 'lucide-react';
+import { CirclePlus } from 'lucide-react';
 import { iconProps } from '../../builder/constants';
 import { Database } from '../../types/supabase';
 import { supabase } from '../../lib/supabase';
@@ -22,15 +22,17 @@ export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElement
     return (
         <div className="sidebar_pages">
             <div className="panel-header">
-                <PanelTop color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+
                 <h3 className='panel-title'>Pages</h3>
-                <button
-                    className='iconButton'
-                    aria-label="Add Page"
-                    onClick={handleAddPage}
-                >
-                    <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                </button>
+                <div className="header-actions">
+                    <button
+                        className='iconButton'
+                        aria-label="Add Page"
+                        onClick={handleAddPage}
+                    >
+                        <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                    </button>
+                </div>
             </div>
 
             <div className="elements">
