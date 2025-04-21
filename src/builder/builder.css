@@ -225,6 +225,7 @@
                 font-weight: var(--font-weight-bold);
                 padding-left: calc(var(--spacing) * 4.8);
                 background-color: var(--color-gray-50);
+                min-height: var(--spacing-xl);
                 display: flex;
                 flex-direction: row;
                 align-items: center;

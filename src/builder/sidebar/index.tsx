@@ -212,6 +212,11 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         }
     };
 
+    // 모든 트리 아이템 접기 함수 추가
+    const collapseAllTreeItems = () => {
+        setExpandedItems(new Set());
+    };
+
     // 변경된 renderContent 함수
     const renderContent = () => {
         // 활성화된 모든 탭에 대한 콘텐츠를 배열로 반환
@@ -220,7 +225,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('nodes')) {
             contents.push(
                 <div key="nodes" className="sidebar-section nodes">
-                    <h3 className="sidebar-section-title">노드</h3>
                     <Nodes
                         pages={pages}
                         setPages={setPages}
@@ -232,6 +236,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                         selectedElementId={selectedElementId}
                         setSelectedElement={setSelectedElement}
                         sendElementSelectedMessage={sendElementSelectedMessage}
+                        collapseAllTreeItems={collapseAllTreeItems} // 새 prop 전달
                     />
                 </div>
             );
@@ -240,7 +245,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('components')) {
             contents.push(
                 <div key="components" className="sidebar-section components">
-                    <h3 className="sidebar-section-title">컴포넌트</h3>
                     <Components handleAddElement={handleAddElement} />
                 </div>
             );
@@ -249,7 +253,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('library')) {
             contents.push(
                 <div key="library" className="sidebar-section library">
-                    <h3 className="sidebar-section-title">라이브러리</h3>
                     <Library />
                 </div>
             );
@@ -258,7 +261,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('dataset')) {
             contents.push(
                 <div key="dataset" className="sidebar-section dataset">
-                    <h3 className="sidebar-section-title">데이터셋</h3>
                     <Dataset />
                 </div>
             );
@@ -267,7 +269,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('theme')) {
             contents.push(
                 <div key="theme" className="sidebar-section theme">
-                    <h3 className="sidebar-section-title">테마</h3>
                     <Theme />
                 </div>
             );
@@ -276,7 +277,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('ai')) {
             contents.push(
                 <div key="ai" className="sidebar-section ai">
-                    <h3 className="sidebar-section-title">AI</h3>
                     <AI />
                 </div>
             );
@@ -285,7 +285,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('user')) {
             contents.push(
                 <div key="user" className="sidebar-section user">
-                    <h3 className="sidebar-section-title">사용자</h3>
                     <User />
                 </div>
             );
@@ -294,13 +293,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('settings')) {
             contents.push(
                 <div key="settings" className="sidebar-section settings settings">
-                    <h3 className="sidebar-section-title">설정</h3>
                     <Setting />
                 </div>
             );
         }
 
-        return contents.length > 0 ? contents : <div className="sidebar-empty-state">탭을 선택하세요</div>;
+        return contents.length > 0 ? contents : <div className="sidebar-empty-state">no select</div>;
     };
 
     return (
