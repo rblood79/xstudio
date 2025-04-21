@@ -35,7 +35,7 @@ function AI() {
     };
 
     return (
-        <div className="sidebar-content ai">
+        <div className="sidebar-content">
             <h3>AI Assistant</h3>
             <input
                 type="text"

@@ -30,7 +30,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     const elements = useStore((state) => state.elements) as Element[];
     const selectedElementId = useStore((state) => state.selectedElementId);
     const { setElements: storeSetElements, setSelectedElement } = useStore();
-    const [activeTab, setActiveTab] = React.useState<Tab>('nodes');
+    // 활성 탭을 단일 값에서 Set으로 변경
+    const [activeTabs, setActiveTabs] = React.useState<Set<Tab>>(new Set(['nodes']));
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
     // 펼쳐진 항목의 ID를 추적하는 상태 추가
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
@@ -62,6 +63,19 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         } else {
             storeSetElements(elementsOrFn);
         }
+    };
+
+    // 탭 토글 함수 추가
+    const toggleTab = (tab: Tab) => {
+        setActiveTabs(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(tab)) {
+                newSet.delete(tab);
+            } else {
+                newSet.add(tab);
+            }
+            return newSet;
+        });
     };
 
     const hasChildren = <T extends { id: string; parent_id?: string | null }>(
@@ -117,9 +131,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 : ''
                                 }`}>
                                 <div className="elementItemIndent" style={{ width: depth > 0 ? `${(depth * 8) + 0}px` : '0px' }}>
-                                    {/*Array.from({ length: depth }).map((_, index) => (
-                                        <span key={index} className="elementItemSpacer" />
-                                    ))*/}
                                 </div>
                                 <div
                                     className="elementItemIcon"
@@ -201,10 +212,15 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         }
     };
 
+    // 변경된 renderContent 함수
     const renderContent = () => {
-        switch (activeTab) {
-            case 'nodes':
-                return (
+        // 활성화된 모든 탭에 대한 콘텐츠를 배열로 반환
+        const contents = [];
+
+        if (activeTabs.has('nodes')) {
+            contents.push(
+                <div key="nodes" className="sidebar-section nodes">
+                    <h3 className="sidebar-section-title">노드</h3>
                     <Nodes
                         pages={pages}
                         setPages={setPages}
@@ -217,30 +233,82 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                         setSelectedElement={setSelectedElement}
                         sendElementSelectedMessage={sendElementSelectedMessage}
                     />
-                );
-            case 'components':
-                return <Components handleAddElement={handleAddElement} />;
-            case 'library':
-                return <Library />;
-            case 'dataset':
-                return <Dataset />;
-            case 'theme':
-                return <Theme />;
-            case 'ai':
-                return <AI />;
-            case 'user':
-                return <User />;
-            case 'settings':
-                return <Setting />;
-            default:
-                return null;
+                </div>
+            );
         }
+
+        if (activeTabs.has('components')) {
+            contents.push(
+                <div key="components" className="sidebar-section components">
+                    <h3 className="sidebar-section-title">컴포넌트</h3>
+                    <Components handleAddElement={handleAddElement} />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('library')) {
+            contents.push(
+                <div key="library" className="sidebar-section library">
+                    <h3 className="sidebar-section-title">라이브러리</h3>
+                    <Library />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('dataset')) {
+            contents.push(
+                <div key="dataset" className="sidebar-section dataset">
+                    <h3 className="sidebar-section-title">데이터셋</h3>
+                    <Dataset />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('theme')) {
+            contents.push(
+                <div key="theme" className="sidebar-section theme">
+                    <h3 className="sidebar-section-title">테마</h3>
+                    <Theme />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('ai')) {
+            contents.push(
+                <div key="ai" className="sidebar-section ai">
+                    <h3 className="sidebar-section-title">AI</h3>
+                    <AI />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('user')) {
+            contents.push(
+                <div key="user" className="sidebar-section user">
+                    <h3 className="sidebar-section-title">사용자</h3>
+                    <User />
+                </div>
+            );
+        }
+
+        if (activeTabs.has('settings')) {
+            contents.push(
+                <div key="settings" className="sidebar-section settings settings">
+                    <h3 className="sidebar-section-title">설정</h3>
+                    <Setting />
+                </div>
+            );
+        }
+
+        return contents.length > 0 ? contents : <div className="sidebar-empty-state">탭을 선택하세요</div>;
     };
 
     return (
         <aside className="sidebar">
-            <SidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
-            {renderContent()}
+            <SidebarNav activeTabs={activeTabs} onTabChange={toggleTab} />
+            <div className="sidebar-container">
+                {renderContent()}
+            </div>
             {children}
         </aside>
     );

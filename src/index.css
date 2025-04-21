@@ -5246,7 +5246,7 @@
   }*/
 
   .panel-header {
-    @apply h-12 flex flex-row items-center justify-between px-2 border-b border-gray-200;
+    @apply flex flex-row items-center justify-between px-2 border-b border-gray-200;
   }
 
   .panel-header button {
