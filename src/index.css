@@ -5245,17 +5245,7 @@
     @apply p-2 w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700;
   }*/
 
-  .panel-header {
-    @apply flex flex-row items-center justify-between px-2 border-b border-gray-200;
-  }
 
-  .panel-header button {
-    padding: calc(var(--spacing) * 1.375);
-  }
-
-  .panel-title {
-    @apply text-gray-700 flex-1 p-2 text-sm;
-  }
 
   .pattern-bg {
     background: radial-gradient(circle at center, var(--foreground) 2px, transparent 2px) 0 0 / 16px 16px;

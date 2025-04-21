@@ -1,4 +1,4 @@
-import { Layers2 } from 'lucide-react';
+import { CopyMinus } from 'lucide-react';
 import { iconProps } from '../constants';
 import { Database, ElementProps } from '../../types/supabase';
 import { supabase } from '../../lib/supabase';
@@ -30,9 +30,19 @@ export function Layers({
     return (
         <div className="sidebar_elements">
             <div className="panel-header">
-                <Layers2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                <h3 className='panel-title'>Layers</h3>
-
+                <h3 className='panel-title'>Layer</h3>
+                <div className="header-actions">
+                    <button
+                        className='iconButton'
+                        aria-label="collapseAll"
+                        onClick={() => {
+                            // Dispatch an event or call a function to collapse all items
+                            window.postMessage({ type: "COLLAPSE_ALL_TREE_ITEMS" }, window.location.origin);
+                        }}
+                    >
+                        <CopyMinus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                    </button>
+                </div>
             </div>
             <div className="elements">
                 {elements.length === 0 ? (
