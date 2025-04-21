@@ -108,7 +108,7 @@
                     background: #ffffff;
                     border-width: 0px solid;
                     border-color: var(--color-gray-200);
-                    transform-origin: center;
+
                     will-change: transform;
 
                     .workspace_overlay {
@@ -118,31 +118,46 @@
                     }
 
                     &::before {
+                        transform-origin: left top;
                         content: " " attr(max-width) " ";
                         display: block;
+                        width: 36px;
+                        top: calc(50% + 114px);
+                        left: -24px;
+                        transform: translateY(-50%) rotate(-90deg);
                         position: absolute;
-                        rotate: -90deg;
-                        top: calc(50% + 52px);
-                        left: -2.8vh;
+
                         font-size: var(--text-xs);
                         font-weight: var(--font-weight-light);
                         background-color: var(--color-sky-500);
                         color: var(--color-white);
                         padding: 0 var(--spacing);
                         border-radius: var(--radius-xs);
+                        text-align: center;
                     }
 
                     &::after {
+                        transform-origin: left top;
                         content: " @media (max-width: " attr(max-width) "px)";
                         display: block;
+                        width: 174px;
                         position: absolute;
-                        rotate: -90deg;
-                        top: calc(50% - 52px);
-                        left: -8.6vh;
+                        top: calc(50% + 78px);
+                        left: -24px;
+                        /* 필요에 따라 조정 */
+
+                        transform: translateY(-50%) rotate(-90deg);
+
+                        /*fit-content;*/
+
                         font-size: var(--text-xs);
                         font-weight: var(--font-weight-light);
                         color: var(--color-gray-900);
                         padding: 0 var(--spacing);
+
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
                     }
 
                 }
