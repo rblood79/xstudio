@@ -12,10 +12,26 @@ interface Rect {
 
 export default function SelectionOverlay() {
     const selectedElementId = useStore((state) => state.selectedElementId);
+    // elements 배열을 stores에서 가져옵니다
+    const elements = useStore((state) => state.elements);
     const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>("");
+    const [dbTag, setDbTag] = useState<string>("");  // 데이터베이스의 tag를 저장할 상태
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
+    // selectedElementId가 변경될 때마다 데이터베이스에서 tag 값을 가져옵니다
+    useEffect(() => {
+        if (selectedElementId && elements && elements.length > 0) {
+            const selectedElement = elements.find(el => el.id === selectedElementId);
+            if (selectedElement && selectedElement.tag) {
+                setDbTag(selectedElement.tag);
+            } else {
+                setDbTag("");
+            }
+        } else {
+            setDbTag("");
+        }
+    }, [selectedElementId, elements]);
 
     const updatePosition = useCallback(() => {
         const iframe = iframeRef.current;
@@ -26,6 +42,7 @@ export default function SelectionOverlay() {
         ) as HTMLElement;
 
         if (element) {
+            //console.log(selectedTag, '//', selectedElementId)
             //const iframeRect = iframe.getBoundingClientRect();
             const elementRect = element.getBoundingClientRect();
 
@@ -113,7 +130,7 @@ export default function SelectionOverlay() {
                 }}>
                 <div className="overlay-info">
                     <div className="overlay-tag-parent"><ChevronUp size={16} /></div>
-                    <div className="overlay-tag">{selectedTag}</div>
+                    <div className="overlay-tag">{dbTag || selectedTag}</div>
                 </div>
                 <div title="Drag to resize" className="resize-handle" />
 

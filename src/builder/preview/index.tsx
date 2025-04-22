@@ -180,7 +180,7 @@ function Preview() {
 
     // ToggleButtonGroup 컴포넌트 특별 처리
     if (el.tag === 'ToggleButtonGroup') {
-      const childButtons = children.filter(child => child.tag === 'ToggleButton');
+      //const childButtons = children.filter(child => child.tag === 'ToggleButton');
       const orientation = el.props.orientation as 'horizontal' | 'vertical';
 
       return (
@@ -192,7 +192,11 @@ function Preview() {
           orientation={orientation}
           selectionMode={el.props.selectionMode as 'single' | 'multiple'}
         >
-          {childButtons.map((child) => renderElement(child))}
+          {children.map(opt => (
+            <ToggleButton key={opt.id} id={opt.id} data-element-id={opt.id}>
+              {typeof opt.props.text === 'string' ? opt.props.text : ''}
+            </ToggleButton>
+          ))}
         </ToggleButtonGroup>
       );
     }
