@@ -7,7 +7,8 @@ import Dashboard from './dashboard';
 import Builder from './builder/builder.tsx';
 import Preview from './builder/preview/index.tsx';
 import Signin from './auth/Signin';
-import { supabase, Session } from './env/supabase.client';
+import { supabase } from './env/supabase.client';
+import { Session } from '@supabase/supabase-js';
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [session, setSession] = useState<Session | null>(null);

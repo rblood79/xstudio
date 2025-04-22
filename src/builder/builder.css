@@ -113,6 +113,9 @@
                     .publish {
                         width: 96px;
                         background-color: var(--color-sky-500);
+                        background: linear-gradient(#fff, #fafafa) padding-box, linear-gradient(82.77deg, #217bfe 11.87%, #078efb 38.42%, #ac87eb 64.19%, #ee4d5d 89.96%) border-box;
+                        border: 2px solid transparent;
+                        color: var(--color-gray-900);
                     }
                 }
 

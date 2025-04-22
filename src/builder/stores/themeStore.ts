@@ -18,13 +18,13 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
   projectId: null,
   tokens: [],
   lastFetch: 0,
-  
+
   setProjectId: (id) => set({ projectId: id }),
-  
+
   fetchTokens: async (projectId) => {
     const now = Date.now();
     const { lastFetch } = get();
-    
+
     // Prevent fetching if the last fetch was too recent
     if (now - lastFetch < CACHE_DURATION) {
       return;
@@ -37,8 +37,8 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
         .eq('project_id', projectId);
 
       if (error) throw error;
-      
-      set({ 
+
+      set({
         tokens: data || [],
         lastFetch: now
       });

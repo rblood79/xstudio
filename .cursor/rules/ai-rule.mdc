@@ -99,29 +99,39 @@ alwaysApply: false
 - [package.json](mdc:package.json)
 
 ### React 프로젝트 구조
-src/
-├── assets/ # 이미지, 폰트 등 정적 리소스
-├── auth/ # 로그인, 회원가입
-├── builder/ # 사이트 빌더 컴포넌트
-│ ├── inspector/ # 프로퍼티, 레이아웃 관련 컴포넌트
-│ ├── overlay/ # 선택요소 레이아웃 관련 컴포넌트
-│ ├── preview/ # 미리보기 컴포넌트
-│ ├── store/ # 상태 관리 (zustand + immer)
-│ ├── components/ # ui 컴포넌트
-│ └── theme/ # 테마관리 관리 컴포넌트
-├── dashboard/ # 대시보드 컴포넌트
-└── env/ # supabase 관련 컴포넌트
-public/
-└── vite.svg # 정적 파일
+xstudio\src\
+├── App.tsx                # 메인 애플리케이션 컴포넌트
+├── main.tsx               # 애플리케이션 진입점
+├── auth/                  # 인증 관련 컴포넌트
+├── assets/                # 이미지 및 정적 자산
+├── builder/               # 빌더 핵심 기능 (프로젝트의 주요 부분)
+├── dashboard/             # 프로젝트 대시보드 UI
+├── hooks/                 # 커스텀 React 훅
+├── lib/                   # 유틸리티 및 라이브러리
+├── stories/               # Storybook 컴포넌트 문서화
+├── types/                 # TypeScript 타입 정의
+└── utils/                 # 유틸리티 함수
 
 
-### 컴포넌트 구조
-components/
-└── ComponentName/
-    ├── index.tsx # 메인 컴포넌트
-    ├── ComponentName.module.css # 스타일
-    ├── ComponentName.test.tsx # 테스트
-    └── types.ts # 타입 정의
+### builder 폴더 (핵심 기능)
+builder/
+├── builder.tsx            # 빌더 메인 컴포넌트
+├── index.tsx              # 빌더 진입점
+├── ai/                    # AI 관련 기능
+├── components/            # 재사용 가능한 UI 컴포넌트
+├── dataset/               # 데이터셋 관리
+├── hooks/                 # 빌더 전용 커스텀 훅
+├── inspector/             # 요소 속성 검사/편집 UI
+├── library/               # 컴포넌트 라이브러리
+├── nodes/                 # 페이지와 요소 트리 구조 관리
+├── overlay/               # 선택된 요소 오버레이
+├── preview/               # 프리뷰 렌더링
+├── setting/               # 설정 UI
+├── sidebar/               # 사이드바 UI (페이지 및 요소 트리)
+├── stores/                # 상태 관리 (Zustand)
+├── theme/                 # 테마 관리
+├── ui/                    # UI 컴포넌트
+└── user/                  # 사용자 관련 기능
 
 
 ### supabase table 구조

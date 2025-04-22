@@ -1,7 +1,7 @@
 import { CirclePlus } from 'lucide-react';
 import { iconProps } from '../../builder/constants';
 import { Database } from '../../types/supabase';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../env/supabase.client';
 
 type Page = Database['public']['Tables']['pages']['Row'];
 
