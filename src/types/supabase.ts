@@ -12,7 +12,8 @@ export interface ToggleButtonProps {
     className?: string;
     style?: React.CSSProperties;
     'data-element-id'?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | React.ReactNode |
+    React.CSSProperties | ((isSelected: boolean) => void) | undefined;
 }
 
 export interface ButtonProps {
@@ -22,7 +23,8 @@ export interface ButtonProps {
     className?: string;
     style?: React.CSSProperties;
     'data-element-id'?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | React.ReactNode |
+    React.CSSProperties | (() => void) | undefined;
 }
 
 export interface ToggleButtonGroupProps {
@@ -36,7 +38,9 @@ export interface ToggleButtonGroupProps {
     'data-element-id'?: string;
     selectionMode?: 'single' | 'multiple';
     orientation?: 'horizontal' | 'vertical';
-    [key: string]: any;
+    [key: string]: string | string[] | boolean | React.ReactNode |
+    React.CSSProperties | ((value: string[]) => void) |
+    'single' | 'multiple' | 'horizontal' | 'vertical' | undefined;
 }
 
 export interface ElementProps {
