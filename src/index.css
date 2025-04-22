@@ -5248,7 +5248,14 @@
 
 
   .pattern-bg {
-    background: radial-gradient(circle at center, var(--foreground) 2px, transparent 2px) 0 0 / 16px 16px;
+    /*background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+    background-position: 20px 20px, 20px 20px, 20px 20px, 20px 20px;*/
+    background-position: center;
+    background-blend-mode: difference;
+    background-image: linear-gradient(rgba(130, 130, 130, 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(130, 130, 130, 0.4) 1px, transparent 1px),
+      linear-gradient(rgba(130, 130, 130, 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(130, 130, 130, 0.2) 1px, transparent 1px);
   }
 
   .dark .pattern-bg {

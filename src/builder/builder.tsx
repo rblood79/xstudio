@@ -663,7 +663,7 @@ function Builder() {
         <div className="app">
             <div className="contents">
                 <main>
-                    <div className="bg pattern-bg">
+                    <div className="bg pattern-bg" style={{ backgroundSize: Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width) || 0) + 0.6 + 'px ' + Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height) || 0) + 'px' }}>
                         <div className="workspace"
                             max-width={breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}
                             style={{

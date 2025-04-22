@@ -298,7 +298,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             );
         }
 
-        return contents.length > 0 ? contents : <div className="sidebar-empty-state">no select</div>;
+        return contents.length > 0 ? contents : <div className="sidebar-empty-state"></div>;
     };
 
     return (

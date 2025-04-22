@@ -140,7 +140,7 @@
                 align-items: center;
                 flex-grow: 1;
                 position: relative;
-                background-color: var(--color-slate-50);
+                background-color: var(--color-zinc-100);
 
                 .workspace {
                     padding: 0;

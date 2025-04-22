@@ -1,6 +1,7 @@
 //import Layout from './layout';
 
 import './index.css';
+import { Display } from './styles';
 import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 
 function Inspector() {
@@ -8,14 +9,12 @@ function Inspector() {
         <div className="inspector-container">
             <Tabs>
                 <TabList>
-                    <Tab id="style">Style</Tab>
+                    <Tab id="styles">Styles</Tab>
                     <Tab id="props">Props</Tab>
                     <Tab id="events">Events</Tab>
-
                 </TabList>
-                <TabPanel id="style">
-                    <h3 className='panel-title'>Style</h3>
-                    Content for Style
+                <TabPanel id="styles">
+                    <Display />
                 </TabPanel>
                 <TabPanel id="props">
                     <h3 className='panel-title'>Properties</h3>
