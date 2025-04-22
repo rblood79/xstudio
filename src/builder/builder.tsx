@@ -5,8 +5,8 @@ import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } fr
 
 import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
 import SelectionOverlay from "./overlay";
-import Inspector from "./inspector/layout";
-import Sidebar from "./sidebar/index";
+import Inspector from "./inspector";
+import Sidebar from "./sidebar";
 
 import { useStore } from './stores/elements';
 import { useThemeStore } from './stores/themeStore';

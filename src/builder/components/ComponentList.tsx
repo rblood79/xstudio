@@ -1,4 +1,5 @@
-import { Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, Clock, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties } from 'lucide-react';
+import { ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, Clock, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties } from 'lucide-react';
+import { iconProps } from '../../builder/constants';
 import './ComponentList.css';
 //import ToggleButton from './ToggleButton';
 
@@ -14,7 +15,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Input', label: 'input', icon: RectangleEllipsis },
         { tag: 'Button', label: 'button', icon: MousePointer },
         { tag: 'Toggle', label: 'toggle', icon: ToggleLeft },
-        { tag: 'ToggleGroup', label: 'toggleGroup', icon: GroupIcon },
+        { tag: 'ToggleGroup', label: 'toggleGP', icon: GroupIcon },
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
     ];
 
@@ -32,7 +33,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Section', label: 'section', icon: Square },
         { tag: 'Card', label: 'card', icon: InspectionPanel },
         { tag: 'Div', label: 'division', icon: Code },
-        { tag: 'Nav', label: 'navigation', icon: Menu },
+        { tag: 'Nav', label: 'nav', icon: Menu },
         { tag: 'Sprit', label: 'sprit', icon: Info },
     ];
 
@@ -47,7 +48,8 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                         <button
                             className='iconButton'
                             aria-label="Add Element"
-                        ></button>
+                        >
+                            <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                 </div>
 
@@ -73,7 +75,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                         <button
                             className='iconButton'
                             aria-label="Add Element"
-                        ></button>
+                        ><ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                 </div>
 
@@ -99,7 +101,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                         <button
                             className='iconButton'
                             aria-label="Add Element"
-                        ></button>
+                        ><ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                 </div>
 

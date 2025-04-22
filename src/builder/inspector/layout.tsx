@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../env/supabase.client';
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
-import { FileCode2 } from 'lucide-react';
 import { debounce } from 'lodash';
 //import { buttonStyles } from '../components/Button';
 import './layout.css';
