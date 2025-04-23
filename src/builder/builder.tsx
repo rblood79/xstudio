@@ -4,6 +4,7 @@ import { supabase } from "../env/supabase.client";
 import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
 
 import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
+import { iconProps } from '../builder/constants';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import Sidebar from "./sidebar";
@@ -37,7 +38,6 @@ function Builder() {
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
 
-    const [iconProps] = React.useState({ color: "#171717", stroke: 1, size: 21 });
     const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
 
     // Breakpoints structure aligned with future Supabase table
@@ -663,7 +663,11 @@ function Builder() {
         <div className="app">
             <div className="contents">
                 <main>
-                    <div className="bg pattern-bg" style={{ backgroundSize: Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width) || 0) + 0.6 + 'px ' + Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height) || 0) + 'px' }}>
+                    <div className="bg"
+                        style={{
+                            //backgroundPosition: Math.round(50) + '%',
+                            backgroundSize: Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width) || 0) + 'px ' + Math.round(Number(breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_height) || 0) + 'px'
+                        }}>
                         <div className="workspace"
                             max-width={breakpoints.find(bp => bp.id === Array.from(breakpoint)[0])?.max_width}
                             style={{

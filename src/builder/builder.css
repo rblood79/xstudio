@@ -42,7 +42,6 @@
                 }
 
                 @apply flex items-center justify-center gap-[var(--spacing)];
-                padding: 0 calc(var(--spacing) * 1.375);
 
                 &.screen {
                     .sizeInfo {
@@ -52,12 +51,10 @@
 
                     .react-aria-RadioGroup {
                         @apply flex items-center text-[var(--text-sm)];
-
-
                     }
 
                     .aria-Radio {
-                        padding: calc(var(--spacing) * 1.378) var(--spacing-sm);
+                        padding: var(--spacing-sm);
                         background-color: var(--color-white);
 
                         .react-aria-Label {
@@ -107,15 +104,18 @@
                     flex: 1;
 
                     button {
-                        @apply bg-[var(--color-white)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
+                        border-radius: var(--radius-md);
+                        background-color: var(--color-white);
+                        padding: var(--spacing-sm);
                     }
 
                     .publish {
-                        width: 96px;
-                        background-color: var(--color-sky-500);
                         background: linear-gradient(#fff, #fafafa) padding-box, linear-gradient(82.77deg, #217bfe 11.87%, #078efb 38.42%, #ac87eb 64.19%, #ee4d5d 89.96%) border-box;
                         border: 2px solid transparent;
                         color: var(--color-gray-900);
+                        line-height: var(--text-lg--line-height);
+                        font-size: 12px;
+                        padding: calc(var(--spacing) * 1.17) var(--spacing-lg);
                     }
                 }
 
@@ -140,7 +140,7 @@
                 align-items: center;
                 flex-grow: 1;
                 position: relative;
-                background-color: var(--color-zinc-100);
+                background-color: var(--color-neutral-100);
 
                 .workspace {
                     padding: 0;

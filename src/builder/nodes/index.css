@@ -76,8 +76,8 @@
 .elementItemActions {
     display: flex;
     flex-direction: row;
-    transition: transform 0.2s ease-in-out;
-    transform: translateX(120%);
+    transition: transform 0.24s ease-in-out;
+    transform: translateX(100%);
 }
 
 .elementItemActions .iconButton {
