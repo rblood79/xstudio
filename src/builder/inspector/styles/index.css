@@ -1,0 +1,30 @@
+fieldset {
+    display: grid;
+    grid-template-areas:
+        "label label label"
+        "input1 input2 icon";
+    gap: 2px;
+
+    button {
+        padding: 2px;
+        width: 27px;
+        height: 27px;
+    }
+}
+
+.position-legend {
+    grid-area: label;
+    font-size: var(--text-xs);
+}
+
+.position-horizontal {
+    grid-area: input1;
+}
+
+.position-vertical {
+    grid-area: input2;
+}
+
+.position-distribution {
+    grid-area: icon;
+}
