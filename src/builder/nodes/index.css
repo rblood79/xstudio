@@ -23,7 +23,6 @@
     justify-content: space-between;
     transition: background-color 0s ease-in-out;
     overflow: hidden;
-
 }
 
 .elementItem:hover {
@@ -40,20 +39,13 @@
 .elementItemIndent {
     display: inline-block;
     width: var(--spacing-lg);
-    height: calc(var(--spacing) * 6.75);
+    height: var(--spacing-2xl);
     /*var(--spacing-lg);*/
     position: relative;
 
     background: linear-gradient(to left, var(--color-gray-200) 1px, transparent 1px) 0 0 / 8px 1px;
 }
 
-.elementItemSpacer {
-    display: inline-block;
-    width: 8px;
-    height: calc(var(--spacing) * 6.75);
-    border-right: 1px solid var(--color-gray-200);
-    position: relative;
-}
 
 .elementItemIcon {
     width: var(--spacing-lg);

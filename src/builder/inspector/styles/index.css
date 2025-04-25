@@ -3,7 +3,7 @@ fieldset {
     grid-template-areas:
         "label label label"
         "input1 input2 icon";
-    gap: 2px;
+    gap: 4px 8px;
 
     button {
         padding: 2px;
@@ -12,19 +12,23 @@ fieldset {
     }
 }
 
+.alignment-legend,
 .position-legend {
     grid-area: label;
     font-size: var(--text-xs);
 }
 
-.position-horizontal {
+.alignment-horizontal,
+.position-x {
     grid-area: input1;
 }
 
-.position-vertical {
+.alignment-vertical,
+.position-y {
     grid-area: input2;
 }
 
+.alignment-distribution,
 .position-distribution {
     grid-area: icon;
 }
