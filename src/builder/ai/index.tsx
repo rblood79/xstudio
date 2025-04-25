@@ -18,7 +18,7 @@ function AI() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: 'mistral',
+                    model: 'phi3:mini',
                     prompt: prompt,
                     stream: false
                 })
@@ -50,7 +50,7 @@ function AI() {
                 {isLoading ? '생성 중...' : '생성하기'}
             </button>
             <div className="ai-output">
-                <p>{output}</p>
+                <pre>{output}</pre>
             </div>
         </div>
     );
