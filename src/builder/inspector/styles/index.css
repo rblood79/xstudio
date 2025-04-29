@@ -1,5 +1,7 @@
 fieldset {
     display: grid;
+    grid-template-rows: auto 32px;
+    grid-template-columns: 1fr 1fr 27px;
     grid-template-areas:
         "label label label"
         "input1 input2 icon";

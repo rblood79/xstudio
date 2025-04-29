@@ -1,6 +1,6 @@
 import { ChevronUp } from 'lucide-react';
 import { iconProps } from '../../constants';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list.ts';
+import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
 
 import './index.css';
 
