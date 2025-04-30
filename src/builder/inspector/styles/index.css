@@ -1,6 +1,6 @@
 fieldset {
     display: grid;
-    grid-template-rows: auto 32px;
+    grid-template-rows: auto 27px;
     grid-template-columns: 1fr 1fr 27px;
     grid-template-areas:
         "label label label"
@@ -23,14 +23,43 @@ fieldset {
 .alignment-horizontal,
 .position-x {
     grid-area: input1;
+    display: flex;
 }
 
 .alignment-vertical,
 .position-y {
     grid-area: input2;
+    display: flex;
 }
 
 .alignment-distribution,
 .position-distribution {
     grid-area: icon;
+}
+
+.position-label {
+    display: block;
+    width: 27px;
+    min-width: 27px;
+    height: 27px;
+    padding: var(--spacing) var(--spacing);
+    text-align: center;
+    background-color: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-right-width: 0px;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    font-size: var(--text-xs);
+}
+
+.position-input {
+    width: 100%;
+    background-color: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-left-width: 0px;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--text-xs);
+
+    &:focus {
+        outline: none;
+    }
 }
