@@ -41,12 +41,12 @@ function Display() {
                     <fieldset>
                         <legend className='position-legend'>Position</legend>
                         <div className='position-x'>
-                            <label>x</label>
-                            <input></input>
+                            <label className='position-label'>X</label>
+                            <input className='position-input'></input>
                         </div>
                         <div className='position-y'>
-                            <label>y</label>
-                            <input></input>
+                            <label className='position-label'>Y</label>
+                            <input className='position-input'></input>
                         </div>
                         <div className='position-distribution'>
                             <Button>:</Button>
