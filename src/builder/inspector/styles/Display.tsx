@@ -66,7 +66,31 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
+                    <fieldset className='direction'>
+                        <legend className='alignment-legend'>Direction</legend>
+                        <div className='alignment-horizontal'>
+                            <ToggleButtonGroup>
+                                <ToggleButton>D</ToggleButton>
+                                <ToggleButton>L</ToggleButton>
+                                <ToggleButton>R</ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='alignment-vertical'>
+                            <ToggleButtonGroup>
+                                <ToggleButton>T</ToggleButton>
+                                <ToggleButton>C</ToggleButton>
+                                <ToggleButton>B</ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='alignment-distribution'>
+                            <Button>:</Button>
+                        </div>
+                        <div className='position-y'>
+                            <label className='position-label'>Y</label>
+                            <input className='position-input'></input>
+                        </div>
 
+                    </fieldset>
                 </div>
             </div>
 
