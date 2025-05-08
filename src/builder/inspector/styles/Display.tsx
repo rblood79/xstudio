@@ -1,4 +1,4 @@
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
 
@@ -22,16 +22,16 @@ function Display() {
                         <legend className='alignment-legend'>Alignment</legend>
                         <div className='alignment-horizontal'>
                             <ToggleButtonGroup>
-                                <ToggleButton>L</ToggleButton>
-                                <ToggleButton>M</ToggleButton>
-                                <ToggleButton>R</ToggleButton>
+                                <ToggleButton><AlignStartVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignCenterVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignEndVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-vertical'>
                             <ToggleButtonGroup>
-                                <ToggleButton>T</ToggleButton>
-                                <ToggleButton>C</ToggleButton>
-                                <ToggleButton>B</ToggleButton>
+                                <ToggleButton><AlignStartHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignCenterHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignEndHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-distribution'>
@@ -75,18 +75,28 @@ function Display() {
                                 <ToggleButton>R</ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='alignment-vertical'>
+                        <div className='direction-alignment'>
                             <ToggleButtonGroup>
-                                <ToggleButton>T</ToggleButton>
-                                <ToggleButton>C</ToggleButton>
-                                <ToggleButton>B</ToggleButton>
+                                <ToggleButton>1</ToggleButton>
+                                <ToggleButton>2</ToggleButton>
+                                <ToggleButton>3</ToggleButton>
+                                <ToggleButton>4</ToggleButton>
+                                <ToggleButton>5</ToggleButton>
+                                <ToggleButton>6</ToggleButton>
+                                <ToggleButton>7</ToggleButton>
+                                <ToggleButton>8</ToggleButton>
+                                <ToggleButton>9</ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-distribution'>
                             <Button>:</Button>
                         </div>
-                        <div className='position-y'>
-                            <label className='position-label'>Y</label>
+                        <div className='direction-gap-horizontal'>
+                            <label className='position-label'>G</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='direction-gap-vertical'>
+                            <label className='position-label'>G</label>
                             <input className='position-input'></input>
                         </div>
 
