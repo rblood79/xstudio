@@ -1,4 +1,4 @@
-import { ChevronUp, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { ChevronUp, AlignHorizontalSpaceAround, AlignVerticalSpaceAround, Scan, ArrowRightFromLine, ArrowDownFromLine, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
 
@@ -22,16 +22,16 @@ function Display() {
                         <legend className='alignment-legend'>Alignment</legend>
                         <div className='alignment-horizontal'>
                             <ToggleButtonGroup>
-                                <ToggleButton><AlignStartVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignCenterVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignEndVertical size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignStartVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignCenterVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignEndVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-vertical'>
                             <ToggleButtonGroup>
-                                <ToggleButton><AlignStartHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignCenterHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignEndHorizontal size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignStartHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignCenterHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignEndHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-distribution'>
@@ -70,33 +70,33 @@ function Display() {
                         <legend className='alignment-legend'>Direction</legend>
                         <div className='alignment-horizontal'>
                             <ToggleButtonGroup>
-                                <ToggleButton>D</ToggleButton>
-                                <ToggleButton>L</ToggleButton>
-                                <ToggleButton>R</ToggleButton>
+                                <ToggleButton><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><ArrowRightFromLine color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><ArrowDownFromLine color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='direction-alignment'>
                             <ToggleButtonGroup>
-                                <ToggleButton>1</ToggleButton>
-                                <ToggleButton>2</ToggleButton>
-                                <ToggleButton>3</ToggleButton>
-                                <ToggleButton>4</ToggleButton>
-                                <ToggleButton>5</ToggleButton>
-                                <ToggleButton>6</ToggleButton>
-                                <ToggleButton>7</ToggleButton>
-                                <ToggleButton>8</ToggleButton>
-                                <ToggleButton>9</ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
+                                <ToggleButton><span className='brit' /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-distribution'>
                             <Button>:</Button>
                         </div>
                         <div className='direction-gap-horizontal'>
-                            <label className='position-label'>G</label>
+                            <label className='position-label'><AlignHorizontalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='direction-gap-vertical'>
-                            <label className='position-label'>G</label>
+                            <label className='position-label'><AlignVerticalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
 
