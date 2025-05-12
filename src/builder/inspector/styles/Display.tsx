@@ -9,7 +9,7 @@ function Display() {
         <div>
             <div className="inspect_page">
                 <div className="panel-header">
-                    <h3 className='panel-title'>Position</h3>
+                    <h3 className='panel-title'>Transform</h3>
                     <div className="header-actions">
                         <button
                             className='iconButton'
@@ -39,6 +39,20 @@ function Display() {
                         </div>
                     </fieldset>
                     <fieldset>
+                        <legend className='position-legend'>Size</legend>
+                        <div className='position-x'>
+                            <label className='position-label'>W</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-y'>
+                            <label className='position-label'>H</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-distribution'>
+                            <Button>:</Button>
+                        </div>
+                    </fieldset>
+                    <fieldset>
                         <legend className='position-legend'>Position</legend>
                         <div className='position-x'>
                             <label className='position-label'>X</label>
@@ -57,7 +71,7 @@ function Display() {
 
             <div className="inspect_display">
                 <div className="panel-header">
-                    <h3 className='panel-title'>Display</h3>
+                    <h3 className='panel-title'>Layout</h3>
                     <div className="header-actions">
                         <button
                             className='iconButton'
@@ -99,7 +113,28 @@ function Display() {
                             <label className='position-label'><AlignVerticalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
-
+                    </fieldset>
+                    <fieldset className='padding'>
+                        <legend className='space-legend'>Padding</legend>
+                        <div className='position-top'>
+                            <label className='position-label'>T</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-right'>
+                            <label className='position-label'>R</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-bottom'>
+                            <label className='position-label'>B</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-left'>
+                            <label className='position-label'>L</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-distribution'>
+                            <Button>:</Button>
+                        </div>
                     </fieldset>
                 </div>
             </div>
@@ -114,11 +149,35 @@ function Display() {
                         ><ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
                 </div>
+                <div className='panel-content'>
+                    <fieldset className='padding'>
+                        <legend className='space-legend'>Margin</legend>
+                        <div className='position-top'>
+                            <label className='position-label'>T</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-right'>
+                            <label className='position-label'>R</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-bottom'>
+                            <label className='position-label'>B</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-left'>
+                            <label className='position-label'>L</label>
+                            <input className='position-input'></input>
+                        </div>
+                        <div className='position-distribution'>
+                            <Button>:</Button>
+                        </div>
+                    </fieldset>
+                </div>
             </div>
 
             <div className="inspect_page">
                 <div className="panel-header">
-                    <h3 className='panel-title'>Size</h3>
+                    <h3 className='panel-title'>Text</h3>
                     <div className="header-actions">
                         <button
                             className='iconButton'
