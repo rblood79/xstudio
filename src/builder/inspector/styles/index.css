@@ -29,30 +29,44 @@ fieldset.direction {
     gap: 4px 8px;
 }
 
-.alignment-legend,
-.position-legend {
+fieldset.padding {
+    display: grid;
+    grid-template-rows: auto 27px;
+    grid-template-columns: 1fr 1fr 27px;
+    grid-template-areas:
+        "label label label"
+        "input1 input2 icon"
+        "input3 input4 icon";
+    gap: 4px 8px;
+}
+
+legend {
     grid-area: label;
     font-size: var(--text-xs);
 }
 
 .alignment-horizontal,
+.position-top,
 .position-x {
     grid-area: input1;
     display: flex;
 }
 
 .alignment-vertical,
+.position-right,
 .position-y {
     grid-area: input2;
     display: flex;
 }
 
-.direction-gap-horizontal {
+.direction-gap-horizontal,
+.position-bottom {
     grid-area: input3;
     display: flex;
 }
 
-.direction-gap-vertical {
+.direction-gap-vertical,
+.position-left {
     grid-area: input4;
     display: flex;
 }
