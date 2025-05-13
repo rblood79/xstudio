@@ -1,0 +1,159 @@
+# 프로젝트명: XStudio 웹사이트 빌더
+
+## 1. 프로젝트 목적
+웹브라우저 환경에서 CMS 및 대시보드 형태의 웹사이트를 누구나 쉽게 제작할 수 있는 빌더를 개발한다. 사용자는 TailwindCSS 기반의 테마 설정과 디자인된 React 컴포넌트를 활용해 사이트를 손쉽게 구성할 수 있다. 빌더로 제작된 사이트는 대용량 데이터를 API로 조회/추가/삭제할 수 있는 테이블 UI를 제공한다.
+
+## 2. 주요 기능
+- 사용자 인증 (Supabase Auth)
+- 대시보드(메인): 프로젝트/사이트 관리, 통계, 최근 작업 등
+- 빌더: 페이지/컴포넌트 트리 구조 편집, 속성(프로퍼티) 편집, 실시간 미리보기
+- 테마/디자인 토큰 관리: 색상, 폰트, 간격 등
+- 반응형 레이아웃(브레이크포인트) 지원
+- 데이터 테이블: 대용량 데이터 API 연동, CRUD UI
+- 자산(이미지/동영상 등) 업로드 및 관리
+- 프로젝트/페이지/요소별 권한 및 협업(프로젝트 사용자 역할)
+
+## 3. 타겟 사용자
+- 빌더: 프론트엔드 개발자, 디자이너, 퍼블리셔
+- 빌더로 제작된 사이트: 일반 사용자(최종 고객)
+
+## 4. 기술 스택
+- React + Vite
+- React Router
+- TailwindCSS (테마/디자인 토큰)
+- Lucide React (아이콘)
+- React Aria Components (UI 컴포넌트)
+- Supabase (DB, Auth, Storage)
+- Zustand + Immer (상태관리)
+
+## 5. 데이터베이스 테이블 설계 (Supabase)
+- users: 사용자 프로필
+- projects: 웹사이트 프로젝트
+- pages: 각 프로젝트 내 페이지
+- elements: 페이지 내 UI 요소(트리 구조)
+- assets: 업로드 자산 파일
+- project_users: 프로젝트-사용자 역할
+- design_tokens: 디자인 토큰(색상, 폰트 등)
+- breakpoints: 반응형 브레이크포인트
+- element_design_tokens: 요소-디자인토큰 매핑(옵션)
+
+### 테이블 DDL 예시
+
+#### users
+CREATE TABLE public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  display_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+#### projects
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_by UUID NOT NULL,
+  domain TEXT UNIQUE,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_projects_user FOREIGN KEY (created_by)
+    REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+#### pages
+CREATE TABLE public.pages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  order_num INT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_pages_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE
+);
+
+#### elements
+CREATE TABLE public.elements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  page_id UUID NOT NULL,
+  parent_id UUID,
+  tag TEXT NOT NULL,
+  props JSONB DEFAULT '{}',
+  order_num INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_elements_page FOREIGN KEY (page_id)
+    REFERENCES public.pages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_elements_parent FOREIGN KEY (parent_id)
+    REFERENCES public.elements(id) ON DELETE CASCADE
+);
+
+#### assets
+CREATE TABLE public.assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  url TEXT NOT NULL,
+  size INT,
+  uploaded_by UUID,
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_assets_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_assets_user FOREIGN KEY (uploaded_by)
+    REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+#### project_users
+CREATE TABLE public.project_users (
+  project_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  role TEXT NOT NULL DEFAULT 'editor',
+  joined_at TIMESTAMP DEFAULT now(),
+  PRIMARY KEY (project_id, user_id),
+  CONSTRAINT fk_pu_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_pu_user FOREIGN KEY (user_id)
+    REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+#### design_tokens
+CREATE TABLE public.design_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  value JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_tokens_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  UNIQUE (project_id, name)
+);
+
+#### breakpoints
+CREATE TABLE public.breakpoints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  label TEXT NOT NULL,
+  min_width INT,
+  max_width INT,
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_breakpoints_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  UNIQUE (project_id, label)
+);
+
+#### element_design_tokens
+CREATE TABLE public.element_design_tokens (
+  element_id UUID NOT NULL,
+  token_id UUID NOT NULL,
+  order_num INT DEFAULT 0,
+  PRIMARY KEY (element_id, token_id),
+  CONSTRAINT fk_edt_element FOREIGN KEY (element_id)
+    REFERENCES public.elements(id) ON DELETE CASCADE,
+  CONSTRAINT fk_edt_token FOREIGN KEY (token_id)
+    REFERENCES public.design_tokens(id) ON DELETE CASCADE
+); 

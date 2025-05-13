@@ -35,9 +35,33 @@ fieldset.padding {
     grid-template-columns: 1fr 1fr 27px;
     grid-template-areas:
         "label label label"
-        "input1 input2 icon"
-        "input3 input4 icon";
+        "input1 input4 icon"
+        "input3 input2 icon";
     gap: 4px 8px;
+
+    .position-top {
+        svg {
+            transform: rotate(180deg);
+        }
+    }
+
+    .position-right {
+        svg {
+            transform: rotate(270deg);
+        }
+    }
+
+    .position-bottom {
+        svg {
+            transform: rotate(0deg);
+        }
+    }
+
+    .position-left {
+        svg {
+            transform: rotate(90deg);
+        }
+    }
 }
 
 legend {

@@ -1,0 +1,344 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- Always respond in Korean
+- Follow the user's requirements carefully & to the letter.
+- First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
+- Confirm, then write code!
+- Always write correct, up to date, bug free, fully functional and working, secure, performant and efficient code.
+- Focus on readability over being performant.
+- Fully implement all requested functionality.
+- Leave NO todo's, placeholders or missing pieces.
+- Ensure code is complete! Verify thoroughly finalized.
+- Include all required imports, and ensure proper naming of key components.
+- Be concise. Minimize any other prose.
+
+
+# 프로젝트 개발 지침
+
+## 코드 품질
+- 모든 코드는 가독성을 최우선으로 작성할 것
+- 중복 코드는 최소화하고 재사용 가능한 함수나 클래스로 분리할 것
+- 모든 함수와 메서드는 단일 책임 원칙을 따를 것
+- 변수와 함수 이름은 명확하고 의미있게 작성할 것
+- 하드코딩된 값은 상수로 분리할 것
+
+## 코드 스타일
+- 프로젝트의 코딩 컨벤션을 일관되게 유지할 것
+- 들여쓰기는 공백 4칸으로 통일할 것
+- 한 줄의 길이는 80자를 넘지 않도록 할 것
+- 클래스, 함수, 변수 명명 규칙을 준수할 것
+- 주석은 코드가 '왜' 그렇게 작성되었는지 설명할 것
+
+## 문서화
+- 모든 공개 API에는 문서 주석을 작성할 것
+- README 파일에 프로젝트 설정 및 실행 방법을 상세히 기술할 것
+- 복잡한 알고리즘이나 비즈니스 로직은 별도 문서로 작성할 것
+- 변경 사항은 CHANGELOG에 기록할 것
+
+## 테스트
+- 모든 새로운 기능에는 단위 테스트를 작성할 것
+- 테스트 커버리지는 최소 80% 이상 유지할 것
+- 테스트는 독립적이고 반복 가능하게 작성할 것
+- 중요한 사용자 흐름에 대한 통합 테스트를 구현할 것
+
+## 보안
+- 사용자 입력은 항상 검증하고 이스케이프 처리할 것
+- 민감한 정보는 환경 변수나 보안 저장소에 보관할 것
+- 외부 라이브러리는 보안 취약점을 정기적으로 점검할 것
+- SQL 인젝션, XSS 등 일반적인 보안 취약점을 방지할 것
+
+## 성능
+- 데이터베이스 쿼리는 최적화할 것
+- 불필요한 API 호출은 최소화할 것
+- 대용량 데이터 처리 시 페이지네이션 적용할 것
+- 리소스 집약적인 작업은 비동기 처리할 것
+
+## 버전 관리
+- 커밋 메시지는 명확하고 설명적으로 작성할 것
+- 기능 개발은 별도 브랜치에서 진행할 것
+- PR 전 코드 리뷰를 필수로 진행할 것
+- 메인 브랜치는 항상 배포 가능한 상태로 유지할 것
+
+
+
+## 프로젝트 구조
+- 계층형 아키텍처를 기반으로 패키지 구조화할 것
+- 각 패키지는 단일 책임을 가질 것
+- 순환 의존성은 엄격히 금지할 것
+- 도메인 중심 설계 원칙을 따를 것
+
+# css Tailwindcss 버전규칙
+ # Tailwind CSS v4 규칙
+ ---
+ description: 프로젝트 코딩 규칙 및 Tailwind CSS v4 가이드라인
+ globs: ["**/*.{tsx,ts,css}"]
+ alwaysApply: true
+ ignore: ["**/node_modules/**"]
+ ---
+ 
+ # Tailwind CSS v4 규칙
+ 
+ ## 스타일링 기본 원칙
+ - CSS 파일에서는 반드시 `@import "tailwindcss";` 사용
+ - `@tailwind` 디렉티브 사용 금지
+ - PostCSS 설정에서 `@tailwindcss/postcss` 플러그인 사용
+ 
+ ## 패키지 버전
+ - "@tailwindcss/postcss": "^4.0.17"
+ - "tailwindcss": "^4.0.14"
+ - "postcss": "^8.5.3"
+ 
+ 이 규칙을 따라 모든 Tailwind CSS 관련 작업을 수행하세요.
+ 
+- [package.json](mdc:package.json)
+
+### React 프로젝트 구조
+xstudio\src\
+├── App.tsx                # 메인 애플리케이션 컴포넌트
+├── main.tsx               # 애플리케이션 진입점
+├── auth/                  # 인증 관련 컴포넌트
+├── assets/                # 이미지 및 정적 자산
+├── builder/               # 빌더 핵심 기능 (프로젝트의 주요 부분)
+├── dashboard/             # 프로젝트 대시보드 UI
+├── hooks/                 # 커스텀 React 훅
+├── lib/                   # 유틸리티 및 라이브러리
+├── stories/               # Storybook 컴포넌트 문서화
+├── types/                 # TypeScript 타입 정의
+└── utils/                 # 유틸리티 함수
+
+
+### builder 폴더 (핵심 기능)
+builder/
+├── builder.tsx            # 빌더 메인 컴포넌트
+├── index.tsx              # 빌더 진입점
+├── ai/                    # AI 관련 기능
+├── components/            # 재사용 가능한 UI 컴포넌트
+├── dataset/               # 데이터셋 관리
+├── hooks/                 # 빌더 전용 커스텀 훅
+├── inspector/             # 요소 속성 검사/편집 UI
+├── library/               # 컴포넌트 라이브러리
+├── nodes/                 # 페이지와 요소 트리 구조 관리
+├── overlay/               # 선택된 요소 오버레이
+├── preview/               # 프리뷰 렌더링
+├── setting/               # 설정 UI
+├── sidebar/               # 사이드바 UI (페이지 및 요소 트리)
+├── stores/                # 상태 관리 (Zustand)
+├── theme/                 # 테마 관리
+├── ui/                    # UI 컴포넌트
+└── user/                  # 사용자 관련 기능
+
+
+### supabase table 구조
+
+1. users 테이블
+사용자 프로필 정보를 저장합니다. (Supabase Auth의 기본 테이블과 별도로 사용자 프로필 관리용으로 사용)
+
+CREATE TABLE public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  display_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+
+2. projects 테이블
+사용자가 생성한 웹사이트 프로젝트의 기본 정보를 저장합니다.
+
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_by UUID NOT NULL,
+  domain TEXT UNIQUE,  -- 서브도메인 정보를 저장 (예: "myproject")
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_projects_user FOREIGN KEY (created_by)
+    REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+
+3. pages 테이블
+각 프로젝트 내에 생성된 페이지 정보를 저장합니다.
+
+CREATE TABLE public.pages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,  -- 동일 프로젝트 내에서 유일해야 함
+  order_num INT,       -- 페이지 순서를 저장 (예: 1, 2, 3, …)
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_pages_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE
+);
+
+
+4. elements 테이블
+페이지 내에 포함되는 개별 UI 요소들을 저장합니다.
+각 요소는 부모-자식 관계(parent_id)를 통해 트리(Node Tree) 형태로 구성됩니다.
+
+CREATE TABLE public.elements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  page_id UUID NOT NULL,
+  parent_id UUID,  -- 최상위 요소는 NULL
+  tag TEXT NOT NULL,  -- 예: "div", "text", "button", "image" 등
+  props JSONB DEFAULT '{}' ,  -- 요소의 스타일, 내용 등 속성을 JSON 형태로 저장
+  order_num INT DEFAULT 0,      -- 같은 부모 내에서의 순서
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_elements_page FOREIGN KEY (page_id)
+    REFERENCES public.pages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_elements_parent FOREIGN KEY (parent_id)
+    REFERENCES public.elements(id) ON DELETE CASCADE
+);
+
+
+5. assets 테이블
+사용자가 업로드한 이미지, 동영상 등 자산 파일 정보를 저장합니다.
+
+CREATE TABLE public.assets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  url TEXT NOT NULL,
+  size INT,
+  uploaded_by UUID,  -- 업로드한 사용자의 id
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_assets_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_assets_user FOREIGN KEY (uploaded_by)
+    REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+
+6. project_users 테이블
+프로젝트와 사용자 간의 다대다(M:N) 관계를 관리합니다.
+프로젝트 소유자, 편집자, 뷰어 등의 역할 정보를 함께 저장합니다.
+
+CREATE TABLE public.project_users (
+  project_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  role TEXT NOT NULL DEFAULT 'editor',
+  joined_at TIMESTAMP DEFAULT now(),
+  PRIMARY KEY (project_id, user_id),
+  CONSTRAINT fk_pu_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_pu_user FOREIGN KEY (user_id)
+    REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+
+7. design_tokens 테이블
+디자인 토큰(색상, 폰트 크기, 간격 등)을 관리하여, 프로젝트의 스타일 일관성을 유지합니다.
+
+CREATE TABLE public.design_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,     -- 예: "color", "font", "spacing" 등
+  value JSONB NOT NULL,   -- 토큰의 실제 값 (예: {"r":255, "g":0, "b":0, "a":1} 또는 "#FF0000")
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_tokens_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  UNIQUE (project_id, name)
+);
+
+
+8. breakpoints 테이블
+반응형 디자인을 위한 브레이크포인트 정보를 저장합니다.
+
+CREATE TABLE public.breakpoints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  label TEXT NOT NULL,  -- 예: "Mobile", "Tablet", "Desktop"
+  min_width INT,        -- 최소 폭 (px)
+  max_width INT,        -- 최대 폭 (px), 필요한 경우
+  created_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_breakpoints_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  UNIQUE (project_id, label)
+);
+
+
+9. element_design_tokens 테이블 (옵션)
+요소와 디자인 토큰 간의 다대다 관계를 관리합니다.
+요소가 여러 토큰을 참조하고, 하나의 토큰이 여러 요소에 적용될 수 있도록 합니다.
+
+CREATE TABLE public.element_design_tokens (
+  element_id UUID NOT NULL,
+  token_id UUID NOT NULL,
+  order_num INT DEFAULT 0,
+  PRIMARY KEY (element_id, token_id),
+  CONSTRAINT fk_edt_element FOREIGN KEY (element_id)
+    REFERENCES public.elements(id) ON DELETE CASCADE,
+  CONSTRAINT fk_edt_token FOREIGN KEY (token_id)
+    REFERENCES public.design_tokens(id) ON DELETE CASCADE
+);
+
+
+# mcp
+
+{
+    "mcpServers": {
+        "server-sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@smithery/cli@latest",
+                "run",
+                "@smithery-ai/server-sequential-thinking",
+                "--config",
+                "{}"
+            ]
+        },
+        "browser-tools": {
+            "command": "npx",
+            "args": [
+                "@agentdeskai/browser-tools-mcp@1.2.0"
+            ],
+            "enabled": true
+        }
+    }
+}
+
+
+네, 색상 선택 UI가 이제 제대로 보이고 동작하는 것 같네요. 주요 기능들을 다시 한번 확인해드리겠습니다:
+색상 선택기 (Color Picker)
+Accent Color (브랜드 색상)
+Gray Scale (중성 색상)
+Background (배경색)
+각각의 색상 선택기는 HSL 값을 조절할 수 있는 슬라이더를 제공합니다.
+모드 전환
+Light/Dark 모드 버튼으로 쉽게 전환 가능
+모드에 따라 색상이 자동으로 조정됨
+색상 미리보기
+선택한 색상들의 전체 스펙트럼을 보여주는 ColorSpectrum 컴포넌트
+각 색상 단계별 용도와 HSL 값 표시
+디자인 토큰 관리
+선택한 색상들이 자동으로 디자인 토큰으로 변환
+토큰 추가, 수정, 삭제 기능
+추가로 개선하고 싶으신 부분이 있으신가요? 예를 들어:
+색상 팔레트 저장/불러오기 기능
+더 많은 색상 변형 추가
+색상 조합 추천 기능
+접근성 검사 기능
+
+preview 화면에서 ToggleButtonGroup 이 선택되면 
+
+src/builer/inspecter/layout/ property탭에  selectionMode = "single", "multiple" 을 변경 가능하게 기능추가!! 변경하면 데이터베이스에 업데이트!!! 
+
+"src/builer/inspecter/layout/ property탭" 에 기능은 
+preview 화면에서 선택한 컴퍼넌트들의 선택 가능한 옵션들을 변경 하고 수정하는 부분이야
+
+"src/builer/inspecter/layout/ style 탭" 에 기능은
+preview 화면에서 선택한 컴퍼넌트들의 기본 정의된 스타일 외에 사용자가 추가로 스타일을 변경할수있는 부분이야
+
