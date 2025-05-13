@@ -1,4 +1,4 @@
-import { ChevronUp, AlignHorizontalSpaceAround, AlignVerticalSpaceAround, Scan, ArrowRightFromLine, ArrowDownFromLine, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
 
@@ -23,14 +23,14 @@ function Display() {
                         <div className='alignment-horizontal'>
                             <ToggleButtonGroup>
                                 <ToggleButton><AlignStartVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignCenterVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignHorizontalJustifyCenter color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignEndVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-vertical'>
                             <ToggleButtonGroup>
                                 <ToggleButton><AlignStartHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><AlignCenterHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><AlignVerticalJustifyCenter color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignEndHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
@@ -85,8 +85,8 @@ function Display() {
                         <div className='alignment-horizontal'>
                             <ToggleButtonGroup>
                                 <ToggleButton><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><ArrowRightFromLine color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><ArrowDownFromLine color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><StretchVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                                <ToggleButton><StretchHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='direction-alignment'>
@@ -106,34 +106,34 @@ function Display() {
                             <Button>:</Button>
                         </div>
                         <div className='direction-gap-horizontal'>
-                            <label className='position-label'><AlignHorizontalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                            <label className='position-label'><FoldHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='direction-gap-vertical'>
-                            <label className='position-label'><AlignVerticalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                            <label className='position-label'><FoldVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                     </fieldset>
                     <fieldset className='padding'>
                         <legend className='space-legend'>Padding</legend>
                         <div className='position-top'>
-                            <label className='position-label'>T</label>
+                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='position-right'>
-                            <label className='position-label'>R</label>
+                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='position-bottom'>
-                            <label className='position-label'>B</label>
+                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='position-left'>
-                            <label className='position-label'>L</label>
+                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='position-input'></input>
                         </div>
                         <div className='position-distribution'>
-                            <Button>:</Button>
+                            <Button><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
                 </div>
