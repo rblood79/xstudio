@@ -141,7 +141,7 @@ function Display() {
 
             <div className="inspect_page">
                 <div className="panel-header">
-                    <h3 className='panel-title'>Space</h3>
+                    <h3 className='panel-title'>Shape</h3>
                     <div className="header-actions">
                         <button
                             className='iconButton'
@@ -151,7 +151,7 @@ function Display() {
                 </div>
                 <div className='panel-content'>
                     <fieldset className='padding'>
-                        <legend className='space-legend'>Margin</legend>
+                        <legend className='space-legend'>Background</legend>
                         <div className='position-top'>
                             <label className='position-label'>T</label>
                             <input className='position-input'></input>
