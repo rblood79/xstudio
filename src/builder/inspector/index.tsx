@@ -9,11 +9,11 @@ function Inspector() {
         <div className="inspector-container">
             <Tabs>
                 <TabList>
-                    <Tab id="styles">Styles</Tab>
+                    <Tab id="design">Design</Tab>
                     <Tab id="props">Props</Tab>
                     <Tab id="events">Events</Tab>
                 </TabList>
-                <TabPanel id="styles">
+                <TabPanel id="design">
                     <Display />
                 </TabPanel>
                 <TabPanel id="props">

@@ -1,4 +1,4 @@
-import { ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
 
@@ -141,7 +141,7 @@ function Display() {
 
             <div className="inspect_page">
                 <div className="panel-header">
-                    <h3 className='panel-title'>Shape</h3>
+                    <h3 className='panel-title'>Style</h3>
                     <div className="header-actions">
                         <button
                             className='iconButton'
@@ -150,28 +150,32 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
-                    <fieldset className='padding'>
+                    <fieldset className='background'>
                         <legend className='space-legend'>Background</legend>
-                        <div className='position-top'>
-                            <label className='position-label'>T</label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-right'>
-                            <label className='position-label'>R</label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-bottom'>
-                            <label className='position-label'>B</label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-left'>
-                            <label className='position-label'>L</label>
-                            <input className='position-input'></input>
+                        <div className='input-color'>
+                            <label className='position-label'><Square fill="#ff0000" size={18} strokeWidth={0} /></label>
+                            <input className='position-input' value={'#ffffff'}></input>
                         </div>
                         <div className='position-distribution'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
+
+                    <fieldset className='borders'>
+                        <legend className='space-legend'>Border</legend>
+                        <div className='input-color'>
+                            <label className='position-label'><Square fill="#cccccc" size={18} strokeWidth={0} /></label>
+                            <input className='position-input' value={'#cccccc'}></input>
+                        </div>
+                        <div className='input-width'>
+                            <label className='position-label'><SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></label>
+                            <input className='position-input' value={'1px'}></input>
+                        </div>
+                        <div className='position-distribution'>
+                            <Button>:</Button>
+                        </div>
+                    </fieldset>
+
                 </div>
             </div>
 
