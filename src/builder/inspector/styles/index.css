@@ -66,6 +66,30 @@
         }
     }
 
+    fieldset.background {
+        display: grid;
+        grid-template-rows: auto 27px;
+        grid-template-columns: 1fr 27px;
+        grid-template-areas:
+            "label label label"
+            "input1 input1 icon";
+        gap: 4px 8px;
+
+
+    }
+
+    fieldset.borders {
+        display: grid;
+        grid-template-rows: auto 27px;
+        grid-template-columns: 1fr 1fr 27px;
+        grid-template-areas:
+            "label label label"
+            "input1 input2 icon";
+        gap: 4px 8px;
+
+
+    }
+
     legend {
         grid-area: label;
         font-size: var(--text-2xs);
@@ -73,6 +97,7 @@
     }
 
     .alignment-horizontal,
+    .input-color,
     .position-top,
     .position-x {
         grid-area: input1;
@@ -80,6 +105,7 @@
     }
 
     .alignment-vertical,
+    .input-width,
     .position-right,
     .position-y {
         grid-area: input2;
