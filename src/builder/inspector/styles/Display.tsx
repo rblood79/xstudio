@@ -1,6 +1,6 @@
 import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../components/list';
+import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 
 import './index.css';
 
@@ -188,6 +188,24 @@ function Display() {
                             aria-label="Add Element"
                         ><ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
                     </div>
+                </div>
+                <div className='panel-content'>
+                    <fieldset>
+                        <legend className='space-legend'>Font</legend>
+                        <div className='input-select'>
+                            <Select
+                                items={[
+                                    { id: 'Arial', name: 'Arial' },
+                                    { id: 'Helvetica', name: 'Helvetica' },
+                                    { id: 'Times New Roman', name: 'Times New Roman' },
+                                    { id: 'Georgia', name: 'Georgia' },
+                                    { id: 'Courier New', name: 'Courier New' },
+                                    { id: 'Verdana', name: 'Verdana' }
+                                ]}>
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
+                        </div>
+                    </fieldset>
                 </div>
             </div>
 
