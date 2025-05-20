@@ -1,13 +1,39 @@
 import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
+import { useStore } from '../../stores/elements';
+import { ElementProps } from '../../../types/supabase';
 
 import './index.css';
 
 function Display() {
+    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+
+    // 스타일 업데이트 핸들러
+    const handleStyleUpdate = (styleKey: keyof ElementProps['style'], value: string | number) => {
+        if (!selectedElementId) return;
+
+        const updatedProps = {
+            ...selectedElementProps,
+            style: {
+                ...selectedElementProps.style,
+                [styleKey]: value
+            }
+        };
+
+        updateElementProps(selectedElementId, updatedProps);
+    };
+
+    // 선택된 요소가 없을 때의 처리
+    if (!selectedElementId) {
+        return <div>요소를 선택해주세요</div>;
+    }
+
     return (
         <div>
             <div className="inspect_page">
+                <div className='tag'>{selectedElementProps.tag || 'No tag'}</div>
+                <div className='testID'>testID: {selectedElementId}</div>
                 <div className="panel-header">
                     <h3 className='panel-title'>Transform</h3>
                     <div className="header-actions">
@@ -153,8 +179,14 @@ function Display() {
                     <fieldset className='background'>
                         <legend className='space-legend'>Background</legend>
                         <div className='input-color'>
-                            <label className='position-label'><Square fill="#ff0000" size={18} strokeWidth={0} /></label>
-                            <input className='position-input' value={'#ffffff'}></input>
+                            <label className='position-label'>
+                                <Square fill={selectedElementProps.style?.backgroundColor || '#ffffff'} size={18} strokeWidth={0} />
+                            </label>
+                            <input
+                                className='position-input'
+                                value={selectedElementProps.style?.backgroundColor || '#ffffff'}
+                                onChange={(e) => handleStyleUpdate('backgroundColor', e.target.value)}
+                            />
                         </div>
                         <div className='position-distribution'>
                             <Button>:</Button>
@@ -164,12 +196,24 @@ function Display() {
                     <fieldset className='borders'>
                         <legend className='space-legend'>Border</legend>
                         <div className='input-color'>
-                            <label className='position-label'><Square fill="#cccccc" size={18} strokeWidth={0} /></label>
-                            <input className='position-input' value={'#cccccc'}></input>
+                            <label className='position-label'>
+                                <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
+                            </label>
+                            <input
+                                className='position-input'
+                                value={selectedElementProps.style?.borderColor || '#cccccc'}
+                                onChange={(e) => handleStyleUpdate('borderColor', e.target.value)}
+                            />
                         </div>
                         <div className='input-width'>
-                            <label className='position-label'><SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></label>
-                            <input className='position-input' value={'1px'}></input>
+                            <label className='position-label'>
+                                <SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            </label>
+                            <input
+                                className='position-input'
+                                value={selectedElementProps.style?.borderWidth || '1px'}
+                                onChange={(e) => handleStyleUpdate('borderWidth', e.target.value)}
+                            />
                         </div>
                         <div className='position-distribution'>
                             <Button>:</Button>
