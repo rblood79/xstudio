@@ -3,6 +3,7 @@ import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
 import { ElementProps } from '../../../types/supabase';
+import { supabase } from '../../../env/supabase.client';
 
 import './index.css';
 
@@ -22,6 +23,17 @@ function Display() {
         };
 
         updateElementProps(selectedElementId, updatedProps);
+
+        // Supabase 업데이트 추가
+        supabase
+            .from("elements")
+            .update({ props: updatedProps })
+            .eq("id", selectedElementId)
+            .then(({ error }) => {
+                if (error) {
+                    console.error("Supabase update error:", error);
+                }
+            });
     };
 
     // 선택된 요소가 없을 때의 처리
