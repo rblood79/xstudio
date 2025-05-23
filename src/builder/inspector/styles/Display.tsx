@@ -121,10 +121,47 @@ function Display() {
                     <fieldset className='direction'>
                         <legend className='alignment-legend'>Direction</legend>
                         <div className='alignment-horizontal'>
-                            <ToggleButtonGroup>
-                                <ToggleButton><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><StretchVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
-                                <ToggleButton><StretchHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
+                            <ToggleButtonGroup
+                                aria-label="Flex direction"
+                                onSelectionChange={(selectedKey) => {
+                                    if (!selectedElementId) return;
+                                    const key = Array.from(selectedKey)[0] as string;
+
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            ...(key === 'reset'
+                                                ? { display: undefined, flexDirection: undefined }
+                                                : {
+                                                    display: 'flex',
+                                                    flexDirection: key as 'row' | 'column'
+                                                }
+                                            )
+                                        }
+                                    };
+
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from("elements")
+                                        .update({ props: updatedProps })
+                                        .eq("id", selectedElementId);
+                                }}
+                                selectedKeys={new Set([
+                                    selectedElementProps.style?.display === 'flex'
+                                        ? selectedElementProps.style?.flexDirection || 'row'
+                                        : 'reset'
+                                ])}
+                            >
+                                <ToggleButton id="reset">
+                                    <Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
+                                <ToggleButton id="row">
+                                    <StretchVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
+                                <ToggleButton id="column">
+                                    <StretchHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='direction-alignment'>
