@@ -141,11 +141,19 @@ function Display() {
                                         }
                                     };
 
+                                    // Store 업데이트
                                     updateElementProps(selectedElementId, updatedProps);
+
+                                    // Supabase 업데이트
                                     supabase
                                         .from("elements")
                                         .update({ props: updatedProps })
-                                        .eq("id", selectedElementId);
+                                        .eq("id", selectedElementId)
+                                        .then(({ error }) => {
+                                            if (error) {
+                                                console.error("Supabase update error:", error);
+                                            }
+                                        });
                                 }}
                                 selectedKeys={new Set([
                                     selectedElementProps.style?.display === 'flex'
@@ -165,16 +173,112 @@ function Display() {
                             </ToggleButtonGroup>
                         </div>
                         <div className='direction-alignment'>
-                            <ToggleButtonGroup>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
-                                <ToggleButton><span className='brit' /></ToggleButton>
+                            <ToggleButtonGroup
+                                aria-label="Flex alignment"
+                                onSelectionChange={(selectedKey) => {
+                                    if (!selectedElementId) return;
+                                    const key = Array.from(selectedKey)[0] as string;
+
+                                    const isColumn = selectedElementProps.style?.flexDirection === 'column';
+                                    const alignmentMap: Record<string, { alignItems: string, justifyContent: string }> = {
+                                        'leftTop': {
+                                            alignItems: isColumn ? 'flex-start' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'flex-start'
+                                        },
+                                        'centerTop': {
+                                            alignItems: isColumn ? 'center' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'center'
+                                        },
+                                        'rightTop': {
+                                            alignItems: isColumn ? 'flex-end' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'flex-end'
+                                        },
+                                        'leftCenter': {
+                                            alignItems: isColumn ? 'flex-start' : 'center',
+                                            justifyContent: isColumn ? 'center' : 'flex-start'
+                                        },
+                                        'centerCenter': {
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        },
+                                        'rightCenter': {
+                                            alignItems: isColumn ? 'flex-end' : 'center',
+                                            justifyContent: isColumn ? 'center' : 'flex-end'
+                                        },
+                                        'leftBottom': {
+                                            alignItems: isColumn ? 'flex-start' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'flex-start'
+                                        },
+                                        'centerBottom': {
+                                            alignItems: isColumn ? 'center' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'center'
+                                        },
+                                        'rightBottom': {
+                                            alignItems: isColumn ? 'flex-end' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'flex-end'
+                                        }
+                                    };
+
+                                    const alignment = alignmentMap[key];
+                                    if (!alignment) return;
+
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            display: 'flex',
+                                            alignItems: alignment.alignItems,
+                                            justifyContent: alignment.justifyContent
+                                        }
+                                    };
+
+                                    // Store 업데이트
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    // Supabase 업데이트
+                                    supabase
+                                        .from("elements")
+                                        .update({ props: updatedProps })
+                                        .eq("id", selectedElementId)
+                                        .then(({ error }) => {
+                                            if (error) {
+                                                console.error("Supabase update error:", error);
+                                            }
+                                        });
+                                }}
+                                selectedKeys={(() => {
+                                    if (selectedElementProps.style?.display !== 'flex') return new Set(['centerCenter']);
+
+                                    const isColumn = selectedElementProps.style?.flexDirection === 'column';
+                                    const alignItems = selectedElementProps.style?.alignItems || 'center';
+                                    const justifyContent = selectedElementProps.style?.justifyContent || 'center';
+
+                                    const getPositionKey = (align: string, justify: string) => {
+                                        if (isColumn) {
+                                            // column일 때는 alignItems가 수평, justifyContent가 수직
+                                            const horizontal = align === 'flex-start' ? 'left' : align === 'flex-end' ? 'right' : 'center';
+                                            const vertical = justify === 'flex-start' ? 'top' : justify === 'flex-end' ? 'bottom' : 'center';
+                                            return `${horizontal}${vertical.charAt(0).toUpperCase() + vertical.slice(1)}`;
+                                        } else {
+                                            // row일 때는 justifyContent가 수평, alignItems가 수직
+                                            const horizontal = justify === 'flex-start' ? 'left' : justify === 'flex-end' ? 'right' : 'center';
+                                            const vertical = align === 'flex-start' ? 'top' : align === 'flex-end' ? 'bottom' : 'center';
+                                            return `${horizontal}${vertical.charAt(0).toUpperCase() + vertical.slice(1)}`;
+                                        }
+                                    };
+
+                                    return new Set([getPositionKey(alignItems, justifyContent)]);
+                                })()}
+                            >
+                                <ToggleButton id="leftTop"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="centerTop"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="rightTop"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="leftCenter"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="centerCenter"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="rightCenter"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="leftBottom"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="centerBottom"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="rightBottom"><span className='brit' /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
                         <div className='alignment-distribution'>
