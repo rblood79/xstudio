@@ -99,6 +99,7 @@
     .alignment-horizontal,
     .input-color,
     .position-top,
+    .position-width,
     .position-x {
         grid-area: input1;
         display: flex;
@@ -107,6 +108,7 @@
     .alignment-vertical,
     .input-width,
     .position-right,
+    .position-height,
     .position-y {
         grid-area: input2;
         display: flex;
@@ -153,6 +155,31 @@
 
         &:focus {
             outline: none;
+        }
+    }
+
+    .position-width,
+    .position-height {
+        .position-label {
+            padding: var(--spacing) 0 var(--spacing) var(--spacing);
+            min-width: 25px;
+            width: 25px;
+        }
+
+        .position-input {
+            border-radius: 0;
+        }
+
+        .aria-SelectValue {
+            display: none;
+        }
+
+        .aria-Button {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            border-left-width: 0;
+            padding: 2px 2px 2px 0;
+            width: 25px;
+            box-shadow: none;
         }
     }
 
