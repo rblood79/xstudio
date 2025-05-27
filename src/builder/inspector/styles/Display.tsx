@@ -78,7 +78,7 @@ function Display() {
                     </fieldset>
                     <fieldset>
                         <legend className='position-legend'>Size</legend>
-                        <div className='position-x'>
+                        <div className='position-width'>
                             <label className='position-label'>W</label>
                             <input
                                 className='position-input'
@@ -195,7 +195,7 @@ function Display() {
                                 {(item) => <SelectItem>{item.name}</SelectItem>}
                             </Select>
                         </div>
-                        <div className='position-y'>
+                        <div className='position-height'>
                             <label className='position-label'>H</label>
                             <input
                                 className='position-input'
