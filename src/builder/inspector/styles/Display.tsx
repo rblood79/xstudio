@@ -80,11 +80,237 @@ function Display() {
                         <legend className='position-legend'>Size</legend>
                         <div className='position-x'>
                             <label className='position-label'>W</label>
-                            <input className='position-input'></input>
+                            <input
+                                className='position-input'
+                                type="text"
+                                value={(() => {
+                                    const width = selectedElementProps.style?.width || '';
+                                    if (width === 'auto' || !width) return '';
+                                    const match = String(width).match(/^(\d*\.?\d*)/);
+                                    return match ? match[1] : '';
+                                })()}
+                                onChange={(e) => {
+                                    const numericValue = e.target.value;
+
+                                    if (!numericValue) {
+                                        // 빈 값이면 auto로 설정
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                width: 'auto'
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                        return;
+                                    }
+
+                                    // 현재 단위 추출 (기본값: px)
+                                    const currentWidth = selectedElementProps.style?.width || '';
+                                    let unit = 'px';
+                                    if (currentWidth && currentWidth !== 'auto') {
+                                        const unitMatch = String(currentWidth).match(/[a-z%]+$/i);
+                                        if (unitMatch) unit = unitMatch[0];
+                                    }
+
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            width: `${numericValue}${unit}`
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
+                                placeholder="auto"
+                            />
+                            <Select
+                                items={[
+                                    { id: 'auto', name: 'auto' },
+                                    { id: 'px', name: 'px' },
+                                    { id: '%', name: '%' },
+                                    { id: 'vw', name: 'vw' }
+                                ]}
+                                selectedKey={(() => {
+                                    const width = selectedElementProps.style?.width || '';
+                                    if (!width || width === 'auto') return 'auto';
+                                    const unitMatch = String(width).match(/[a-z%]+$/i);
+                                    return unitMatch ? unitMatch[0] : 'px';
+                                })()}
+                                onSelectionChange={(key) => {
+                                    const selectedUnit = key as string;
+
+                                    if (selectedUnit === 'auto') {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                width: 'auto'
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } else {
+                                        // 현재 숫자 값 추출
+                                        const currentWidth = selectedElementProps.style?.width || '';
+                                        let numericValue = '100'; // 기본값
+
+                                        if (currentWidth && currentWidth !== 'auto') {
+                                            const match = String(currentWidth).match(/^(\d*\.?\d*)/);
+                                            if (match && match[1]) {
+                                                numericValue = match[1];
+                                            }
+                                        }
+
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                width: `${numericValue}${selectedUnit}`
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
                         </div>
                         <div className='position-y'>
                             <label className='position-label'>H</label>
-                            <input className='position-input'></input>
+                            <input
+                                className='position-input'
+                                type="text"
+                                value={(() => {
+                                    const height = selectedElementProps.style?.height || '';
+                                    if (height === 'auto' || !height) return '';
+                                    const match = String(height).match(/^(\d*\.?\d*)/);
+                                    return match ? match[1] : '';
+                                })()}
+                                onChange={(e) => {
+                                    const numericValue = e.target.value;
+
+                                    if (!numericValue) {
+                                        // 빈 값이면 auto로 설정
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                height: 'auto'
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                        return;
+                                    }
+
+                                    // 현재 단위 추출 (기본값: px)
+                                    const currentHeight = selectedElementProps.style?.height || '';
+                                    let unit = 'px';
+                                    if (currentHeight && currentHeight !== 'auto') {
+                                        const unitMatch = String(currentHeight).match(/[a-z%]+$/i);
+                                        if (unitMatch) unit = unitMatch[0];
+                                    }
+
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            height: `${numericValue}${unit}`
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
+                                placeholder="auto"
+                            />
+                            <Select
+                                items={[
+                                    { id: 'auto', name: 'auto' },
+                                    { id: 'px', name: 'px' },
+                                    { id: '%', name: '%' },
+                                    { id: 'vh', name: 'vh' }
+                                ]}
+                                selectedKey={(() => {
+                                    const height = selectedElementProps.style?.height || '';
+                                    if (!height || height === 'auto') return 'auto';
+                                    const unitMatch = String(height).match(/[a-z%]+$/i);
+                                    return unitMatch ? unitMatch[0] : 'px';
+                                })()}
+                                onSelectionChange={(key) => {
+                                    const selectedUnit = key as string;
+
+                                    if (selectedUnit === 'auto') {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                height: 'auto'
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } else {
+                                        // 현재 숫자 값 추출
+                                        const currentHeight = selectedElementProps.style?.height || '';
+                                        let numericValue = '100'; // 기본값
+
+                                        if (currentHeight && currentHeight !== 'auto') {
+                                            const match = String(currentHeight).match(/^(\d*\.?\d*)/);
+                                            if (match && match[1]) {
+                                                numericValue = match[1];
+                                            }
+                                        }
+
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                height: `${numericValue}${selectedUnit}`
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
                         </div>
                         <div className='position-distribution'>
                             <Button>:</Button>
