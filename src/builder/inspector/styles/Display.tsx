@@ -519,28 +519,29 @@ function Display() {
                             <input className='position-input'></input>
                         </div>
                     </fieldset>
-                    <fieldset className='padding'>
-                        <legend className='space-legend'>Padding</legend>
-                        <div className='position-top'>
-                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-right'>
-                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-bottom'>
-                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
-                        </div>
-                        <div className='position-left'>
-                            <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
-                        </div>
+                    <div>
+                        <fieldset className='padding'>
+                            <legend className='legend'>Padding</legend>
+                            <div className='position-padding'>
+                                <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <input className='position-input'></input>
+                            </div>
+                        </fieldset>
+                        <fieldset className='padding'>
+                            <legend className='legend'>Margin</legend>
+
+                            <div className='position-margin'>
+                                <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <input className='position-input'></input>
+                            </div>
+
+
+                        </fieldset>
                         <div className='position-distribution'>
                             <Button><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
-                    </fieldset>
+                    </div>
+
                 </div>
             </div>
 
