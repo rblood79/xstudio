@@ -31,13 +31,14 @@
         gap: 4px 8px;
     }
 
-    fieldset.padding {
+    fieldset.padding,
+    fieldset.margin {
         display: grid;
-        grid-template-rows: auto 27px;
-        grid-template-columns: 1fr 1fr 27px;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr;
         grid-template-areas:
-            "label label label2"
-            "input1 input2 icon";
+            "label"
+            "input1";
         gap: 4px 8px;
 
         .position-top {
@@ -120,121 +121,140 @@
     .alignment-vertical,
     .input-width,
     .position-height,
-    .position-y,
-    {
-    grid-area: input2;
-    display: flex;
-}
-
-.direction-gap-horizontal,
-.position-bottom {
-    grid-area: input3;
-    display: flex;
-}
-
-.direction-gap-vertical,
-.position-left {
-    grid-area: input4;
-    display: flex;
-}
-
-.alignment-distribution,
-.position-distribution {
-    grid-area: icon;
-}
-
-.position-label {
-    display: block;
-    width: 27px;
-    min-width: 27px;
-    height: 27px;
-    padding: var(--spacing) var(--spacing);
-    text-align: center;
-    background-color: var(--color-gray-50);
-    border: 1px solid var(--color-gray-200);
-    border-right-width: 0px;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-    font-size: var(--text-xs);
-}
-
-.position-input {
-    width: 100%;
-    background-color: var(--color-gray-50);
-    border: 1px solid var(--color-gray-200);
-    border-left-width: 0px;
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
-    font-size: var(--text-xs);
-
-    &:focus {
-        outline: none;
+    .position-y {
+        grid-area: input2;
+        display: flex;
     }
-}
 
-.position-width,
-.position-height {
+    .direction-gap-horizontal,
+    .position-bottom {
+        grid-area: input3;
+        display: flex;
+    }
+
+    .direction-gap-vertical,
+    .position-left {
+        grid-area: input4;
+        display: flex;
+    }
+
+    .alignment-distribution,
+    .position-distribution {
+        grid-area: icon;
+    }
+
     .position-label {
-        padding: var(--spacing) 0 var(--spacing) var(--spacing);
-        min-width: 25px;
-        width: 25px;
+        display: block;
+        width: 27px;
+        min-width: 27px;
+        height: 27px;
+        padding: var(--spacing) var(--spacing);
+        text-align: center;
+        background-color: var(--color-gray-50);
+        border: 1px solid var(--color-gray-200);
+        border-right-width: 0px;
+        border-radius: var(--radius-md) 0 0 var(--radius-md);
+        font-size: var(--text-xs);
     }
 
     .position-input {
-        border-radius: 0;
-    }
-
-    .aria-SelectValue {
-        display: none;
-    }
-
-    .aria-Button {
-        border-radius: 0 var(--radius-md) var(--radius-md) 0;
-        border-left-width: 0;
-        padding: 2px 2px 2px 0;
-        width: 25px;
-        box-shadow: none;
-    }
-}
-
-.direction-alignment {
-    grid-area: input2;
-
-    [role="radiogroup"] {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        gap: 0px;
+        width: 100%;
         background-color: var(--color-gray-50);
         border: 1px solid var(--color-gray-200);
-        border-radius: var(--radius-md);
+        border-left-width: 0px;
+        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        font-size: var(--text-xs);
 
-        button {
-            margin-inline-start: 0;
-            border: 0;
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .position-width,
+    .position-height {
+        .position-label {
+            padding: var(--spacing) 0 var(--spacing) var(--spacing);
+            min-width: 25px;
+            width: 25px;
+        }
+
+        .position-input {
             border-radius: 0;
-            height: 29px;
+        }
 
-            .brit {
-                width: 8px;
-                height: 8px;
-                background-color: var(--color-gray-200);
-            }
+        .aria-SelectValue {
+            display: none;
+        }
 
-            &:nth-child(1) {
-                border-top-left-radius: var(--radius-md);
-            }
+        .aria-Button {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            border-left-width: 0;
+            padding: 2px 2px 2px 0;
+            width: 25px;
+            box-shadow: none;
+        }
+    }
 
-            &:nth-child(3) {
-                border-top-right-radius: var(--radius-md);
-            }
+    .space-distribution {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: flex-end;
 
-            &:nth-child(7) {
-                border-bottom-left-radius: var(--radius-md);
-            }
+        .position-distribution {
+            min-width: 27px;
 
-            &:nth-child(9) {
-                border-bottom-right-radius: var(--radius-md);
+            button {
+                width: 27px;
+                height: 27px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 2px;
             }
         }
     }
-}
+
+    .direction-alignment {
+        grid-area: input2;
+
+        [role="radiogroup"] {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 0px;
+            background-color: var(--color-gray-50);
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--radius-md);
+
+            button {
+                margin-inline-start: 0;
+                border: 0;
+                border-radius: 0;
+                height: 29px;
+
+                .brit {
+                    width: 8px;
+                    height: 8px;
+                    background-color: var(--color-gray-200);
+                }
+
+                &:nth-child(1) {
+                    border-top-left-radius: var(--radius-md);
+                }
+
+                &:nth-child(3) {
+                    border-top-right-radius: var(--radius-md);
+                }
+
+                &:nth-child(7) {
+                    border-bottom-left-radius: var(--radius-md);
+                }
+
+                &:nth-child(9) {
+                    border-bottom-right-radius: var(--radius-md);
+                }
+            }
+        }
+    }
 }
