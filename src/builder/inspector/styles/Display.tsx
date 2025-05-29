@@ -10,32 +10,6 @@ import './index.css';
 function Display() {
     const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
 
-    // 스타일 업데이트 핸들러
-    const handleStyleUpdate = (styleKey: keyof ElementProps['style'], value: string | number) => {
-        if (!selectedElementId) return;
-
-        const updatedProps = {
-            ...selectedElementProps,
-            style: {
-                ...selectedElementProps.style,
-                [styleKey]: value
-            }
-        };
-
-        updateElementProps(selectedElementId, updatedProps);
-
-        // Supabase 업데이트 추가
-        supabase
-            .from("elements")
-            .update({ props: updatedProps })
-            .eq("id", selectedElementId)
-            .then(({ error }) => {
-                if (error) {
-                    console.error("Supabase update error:", error);
-                }
-            });
-    };
-
     // 선택된 요소가 없을 때의 처리
     if (!selectedElementId) {
         return <div>요소를 선택해주세요</div>;
@@ -89,48 +63,65 @@ function Display() {
                                     const match = String(width).match(/^(\d*\.?\d*)/);
                                     return match ? match[1] : '';
                                 })()}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const numericValue = e.target.value;
 
+                                    if (!selectedElementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
                                     if (!numericValue) {
-                                        // 빈 값이면 auto로 설정
-                                        const updatedProps = {
+                                        updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
                                                 width: 'auto'
                                             }
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
+                                    } else {
+                                        // 현재 단위 추출 (기본값: px)
+                                        const currentWidth = selectedElementProps.style?.width || '';
+                                        let unit = 'px';
+                                        if (currentWidth && currentWidth !== 'auto') {
+                                            const unitMatch = String(currentWidth).match(/[a-z%]+$/i);
+                                            if (unitMatch) unit = unitMatch[0];
+                                        }
 
-                                        supabase
+                                        updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                width: `${numericValue}${unit}` as string
+                                            }
+                                        };
+                                    }
+
+                                    console.log('Updating element:', selectedElementId);
+                                    console.log('Current props:', selectedElementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
                                             .from('elements')
                                             .update({ props: updatedProps })
                                             .eq('id', selectedElementId);
-                                        return;
-                                    }
 
-                                    // 현재 단위 추출 (기본값: px)
-                                    const currentWidth = selectedElementProps.style?.width || '';
-                                    let unit = 'px';
-                                    if (currentWidth && currentWidth !== 'auto') {
-                                        const unitMatch = String(currentWidth).match(/[a-z%]+$/i);
-                                        if (unitMatch) unit = unitMatch[0];
-                                    }
-
-                                    const updatedProps = {
-                                        ...selectedElementProps,
-                                        style: {
-                                            ...selectedElementProps.style,
-                                            width: `${numericValue}${unit}`
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
                                         }
-                                    };
-                                    updateElementProps(selectedElementId, updatedProps);
-
-                                    supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
+                                    }
                                 }}
                                 placeholder="auto"
                             />
@@ -147,23 +138,23 @@ function Display() {
                                     const unitMatch = String(width).match(/[a-z%]+$/i);
                                     return unitMatch ? unitMatch[0] : 'px';
                                 })()}
-                                onSelectionChange={(key) => {
+                                onSelectionChange={async (key) => {
                                     const selectedUnit = key as string;
 
+                                    if (!selectedElementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
                                     if (selectedUnit === 'auto') {
-                                        const updatedProps = {
+                                        updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
                                                 width: 'auto'
                                             }
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
-
-                                        supabase
-                                            .from('elements')
-                                            .update({ props: updatedProps })
-                                            .eq('id', selectedElementId);
                                     } else {
                                         // 현재 숫자 값 추출
                                         const currentWidth = selectedElementProps.style?.width || '';
@@ -176,19 +167,38 @@ function Display() {
                                             }
                                         }
 
-                                        const updatedProps = {
+                                        updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                width: `${numericValue}${selectedUnit}`
+                                                width: `${numericValue}${selectedUnit}` as string
                                             }
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
+                                    }
 
-                                        supabase
+                                    console.log('Updating element:', selectedElementId);
+                                    console.log('Current props:', selectedElementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
                                             .from('elements')
                                             .update({ props: updatedProps })
                                             .eq('id', selectedElementId);
+
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
                                     }
                                 }}
                             >
@@ -206,11 +216,10 @@ function Display() {
                                     const match = String(height).match(/^(\d*\.?\d*)/);
                                     return match ? match[1] : '';
                                 })()}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const numericValue = e.target.value;
 
                                     if (!numericValue) {
-                                        // 빈 값이면 auto로 설정
                                         const updatedProps = {
                                             ...selectedElementProps,
                                             style: {
@@ -219,7 +228,6 @@ function Display() {
                                             }
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
-
                                         supabase
                                             .from('elements')
                                             .update({ props: updatedProps })
@@ -243,7 +251,6 @@ function Display() {
                                         }
                                     };
                                     updateElementProps(selectedElementId, updatedProps);
-
                                     supabase
                                         .from('elements')
                                         .update({ props: updatedProps })
@@ -264,23 +271,23 @@ function Display() {
                                     const unitMatch = String(height).match(/[a-z%]+$/i);
                                     return unitMatch ? unitMatch[0] : 'px';
                                 })()}
-                                onSelectionChange={(key) => {
+                                onSelectionChange={async (key) => {
                                     const selectedUnit = key as string;
 
+                                    if (!selectedElementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
                                     if (selectedUnit === 'auto') {
-                                        const updatedProps = {
+                                        updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
                                                 height: 'auto'
                                             }
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
-
-                                        supabase
-                                            .from('elements')
-                                            .update({ props: updatedProps })
-                                            .eq('id', selectedElementId);
                                     } else {
                                         // 현재 숫자 값 추출
                                         const currentHeight = selectedElementProps.style?.height || '';
@@ -293,19 +300,38 @@ function Display() {
                                             }
                                         }
 
-                                        const updatedProps = {
+                                        updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                height: `${numericValue}${selectedUnit}`
+                                                height: `${numericValue}${selectedUnit}` as string
                                             }
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
+                                    }
 
-                                        supabase
+                                    console.log('Updating element:', selectedElementId);
+                                    console.log('Current props:', selectedElementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElementProps(selectedElementId, updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
                                             .from('elements')
                                             .update({ props: updatedProps })
                                             .eq('id', selectedElementId);
+
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
                                     }
                                 }}
                             >
@@ -519,7 +545,7 @@ function Display() {
                             <input className='position-input'></input>
                         </div>
                     </fieldset>
-                    <div>
+                    <div className='space-distribution'>
                         <fieldset className='padding'>
                             <legend className='legend'>Padding</legend>
                             <div className='position-padding'>
@@ -527,15 +553,13 @@ function Display() {
                                 <input className='position-input'></input>
                             </div>
                         </fieldset>
-                        <fieldset className='padding'>
+                        <fieldset className='margin'>
                             <legend className='legend'>Margin</legend>
 
                             <div className='position-margin'>
                                 <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <input className='position-input'></input>
                             </div>
-
-
                         </fieldset>
                         <div className='position-distribution'>
                             <Button><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
@@ -565,7 +589,20 @@ function Display() {
                             <input
                                 className='position-input'
                                 value={selectedElementProps.style?.backgroundColor || '#ffffff'}
-                                onChange={(e) => handleStyleUpdate('backgroundColor', e.target.value)}
+                                onChange={(e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            backgroundColor: e.target.value
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
                             />
                         </div>
                         <div className='position-distribution'>
@@ -582,7 +619,20 @@ function Display() {
                             <input
                                 className='position-input'
                                 value={selectedElementProps.style?.borderColor || '#cccccc'}
-                                onChange={(e) => handleStyleUpdate('borderColor', e.target.value)}
+                                onChange={(e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            borderColor: e.target.value
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
                             />
                         </div>
                         <div className='input-width'>
@@ -592,7 +642,20 @@ function Display() {
                             <input
                                 className='position-input'
                                 value={selectedElementProps.style?.borderWidth || '1px'}
-                                onChange={(e) => handleStyleUpdate('borderWidth', e.target.value)}
+                                onChange={(e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            borderWidth: e.target.value
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
                             />
                         </div>
                         <div className='position-distribution'>
