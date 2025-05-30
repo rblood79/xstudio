@@ -19,7 +19,7 @@
         }
     }
 
-    fieldset.direction {
+    fieldset.layout-direction {
         display: grid;
         grid-template-rows: auto 27px;
         grid-template-columns: 1fr 1fr 27px;
@@ -31,8 +31,8 @@
         gap: 4px 8px;
     }
 
-    fieldset.padding,
-    fieldset.margin {
+    fieldset.spacing-padding,
+    fieldset.spacing-margin {
         display: grid;
         grid-template-rows: auto;
         grid-template-columns: 1fr;
@@ -66,7 +66,7 @@
         }
     }
 
-    fieldset.background {
+    fieldset.style-background {
         display: grid;
         grid-template-rows: auto 27px;
         grid-template-columns: 1fr 27px;
@@ -74,11 +74,9 @@
             "label label label"
             "input1 input1 icon";
         gap: 4px 8px;
-
-
     }
 
-    fieldset.borders {
+    fieldset.style-border {
         display: grid;
         grid-template-rows: auto 27px;
         grid-template-columns: 1fr 1fr 27px;
@@ -86,11 +84,10 @@
             "label label label"
             "input1 input2 icon";
         gap: 4px 8px;
-
-
     }
 
-    legend {
+    legend,
+    .fieldset-legend {
         grid-area: label;
         font-size: var(--text-2xs);
         color: var(--color-gray-400);
@@ -108,42 +105,40 @@
         color: var(--color-gray-400);
     }
 
-    .alignment-horizontal,
-    .input-color,
-    .position-padding,
-    .position-margin,
-    .position-width,
-    .position-x {
+    .alignment-controls-horizontal,
+    .color-control,
+    .spacing-control,
+    .size-control-width,
+    .position-control-x {
         grid-area: input1;
         display: flex;
     }
 
-    .alignment-vertical,
-    .input-width,
-    .position-height,
-    .position-y {
+    .alignment-controls-vertical,
+    .border-width-control,
+    .size-control-height,
+    .position-control-y {
         grid-area: input2;
         display: flex;
     }
 
-    .direction-gap-horizontal,
+    .gap-control-horizontal,
     .position-bottom {
         grid-area: input3;
         display: flex;
     }
 
-    .direction-gap-vertical,
+    .gap-control-vertical,
     .position-left {
         grid-area: input4;
         display: flex;
     }
 
-    .alignment-distribution,
-    .position-distribution {
+    .fieldset-actions {
         grid-area: icon;
     }
 
-    .position-label {
+    .control-label {
         display: block;
         width: 27px;
         min-width: 27px;
@@ -157,7 +152,7 @@
         font-size: var(--text-xs);
     }
 
-    .position-input {
+    .control-input {
         width: 100%;
         background-color: var(--color-gray-50);
         border: 1px solid var(--color-gray-200);
@@ -170,15 +165,15 @@
         }
     }
 
-    .position-width,
-    .position-height {
-        .position-label {
+    .size-control-width,
+    .size-control-height {
+        .control-label {
             padding: var(--spacing) 0 var(--spacing) var(--spacing);
             min-width: 25px;
             width: 25px;
         }
 
-        .position-input {
+        .control-input {
             border-radius: 0;
         }
 
@@ -195,13 +190,13 @@
         }
     }
 
-    .space-distribution {
+    .spacing-controls-container {
         display: flex;
         flex-direction: row;
         gap: 8px;
         align-items: flex-end;
 
-        .position-distribution {
+        .fieldset-actions {
             min-width: 27px;
 
             button {
@@ -215,7 +210,7 @@
         }
     }
 
-    .direction-alignment {
+    .direction-alignment-grid {
         grid-area: input2;
 
         [role="radiogroup"] {
@@ -233,7 +228,7 @@
                 border-radius: 0;
                 height: 29px;
 
-                .brit {
+                .alignment-dot {
                     width: 8px;
                     height: 8px;
                     background-color: var(--color-gray-200);
@@ -256,5 +251,26 @@
                 }
             }
         }
+    }
+
+    /* 새로 추가된 클래스들은 기존 스타일과 호환되도록 조정 */
+    .transform-alignment,
+    .transform-size,
+    .transform-position,
+    .layout-direction,
+    .style-background,
+    .style-border,
+    .typography-font {
+        /* 기존 fieldset 스타일을 상속 */
+    }
+
+    .direction-controls {
+        grid-area: input1;
+        display: flex;
+    }
+
+    .font-select-control {
+        grid-area: input1;
+        display: flex;
     }
 }
