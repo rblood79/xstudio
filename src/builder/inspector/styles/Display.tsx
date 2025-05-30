@@ -7,6 +7,7 @@ import { supabase } from '../../../env/supabase.client';
 
 import './index.css';
 
+
 function Display() {
     const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
 
