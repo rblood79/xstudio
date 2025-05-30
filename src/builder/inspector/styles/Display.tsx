@@ -31,32 +31,33 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
-                    <fieldset>
-                        <legend className='alignment-legend'>Alignment</legend>
-                        <div className='alignment-horizontal'>
+                    <fieldset className="transform-alignment">
+                        <legend className='fieldset-legend'>Alignment</legend>
+                        <div className='alignment-controls-horizontal'>
                             <ToggleButtonGroup>
                                 <ToggleButton><AlignStartVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignHorizontalJustifyCenter color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignEndVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='alignment-vertical'>
+                        <div className='alignment-controls-vertical'>
                             <ToggleButtonGroup>
                                 <ToggleButton><AlignStartHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignVerticalJustifyCenter color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                                 <ToggleButton><AlignEndHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='alignment-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
-                    <fieldset>
-                        <legend className='position-legend'>Size</legend>
-                        <div className='position-width'>
-                            <label className='position-label'>W</label>
+
+                    <fieldset className="transform-size">
+                        <legend className='fieldset-legend'>Size</legend>
+                        <div className='size-control-width'>
+                            <label className='control-label'>W</label>
                             <input
-                                className='position-input'
+                                className='control-input'
                                 type="text"
                                 value={(() => {
                                     const width = selectedElementProps.style?.width || '';
@@ -206,10 +207,10 @@ function Display() {
                                 {(item) => <SelectItem>{item.name}</SelectItem>}
                             </Select>
                         </div>
-                        <div className='position-height'>
-                            <label className='position-label'>H</label>
+                        <div className='size-control-height'>
+                            <label className='control-label'>H</label>
                             <input
-                                className='position-input'
+                                className='control-input'
                                 type="text"
                                 value={(() => {
                                     const height = selectedElementProps.style?.height || '';
@@ -339,21 +340,22 @@ function Display() {
                                 {(item) => <SelectItem>{item.name}</SelectItem>}
                             </Select>
                         </div>
-                        <div className='position-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
-                    <fieldset>
-                        <legend className='position-legend'>Position</legend>
-                        <div className='position-x'>
-                            <label className='position-label'>X</label>
-                            <input className='position-input'></input>
+
+                    <fieldset className="transform-position">
+                        <legend className='fieldset-legend'>Position</legend>
+                        <div className='position-control-x'>
+                            <label className='control-label'>X</label>
+                            <input className='control-input'></input>
                         </div>
-                        <div className='position-y'>
-                            <label className='position-label'>Y</label>
-                            <input className='position-input'></input>
+                        <div className='position-control-y'>
+                            <label className='control-label'>Y</label>
+                            <input className='control-input'></input>
                         </div>
-                        <div className='position-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
@@ -371,9 +373,9 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
-                    <fieldset className='direction'>
-                        <legend className='alignment-legend'>Direction</legend>
-                        <div className='alignment-horizontal'>
+                    <fieldset className="layout-direction">
+                        <legend className='fieldset-legend'>Direction</legend>
+                        <div className='direction-controls'>
                             <ToggleButtonGroup
                                 aria-label="Flex direction"
                                 onSelectionChange={(selectedKey) => {
@@ -415,7 +417,7 @@ function Display() {
                                 ])}
                             >
                                 <ToggleButton id="reset">
-                                    <Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                    <Square color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </ToggleButton>
                                 <ToggleButton id="row">
                                     <StretchVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
@@ -425,7 +427,7 @@ function Display() {
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='direction-alignment'>
+                        <div className='direction-alignment-grid'>
                             <ToggleButtonGroup
                                 aria-label="Flex alignment"
                                 onSelectionChange={(selectedKey) => {
@@ -523,50 +525,49 @@ function Display() {
                                     return new Set([getPositionKey(alignItems, justifyContent)]);
                                 })()}
                             >
-                                <ToggleButton id="leftTop"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="centerTop"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="rightTop"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="leftCenter"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="centerCenter"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="rightCenter"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="leftBottom"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="centerBottom"><span className='brit' /></ToggleButton>
-                                <ToggleButton id="rightBottom"><span className='brit' /></ToggleButton>
+                                <ToggleButton id="leftTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="leftCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="leftBottom"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerBottom"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightBottom"><span className='alignment-dot' /></ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='alignment-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
-                        <div className='direction-gap-horizontal'>
-                            <label className='position-label'><FoldHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
+                        <div className='gap-control-horizontal'>
+                            <label className='control-label'><FoldHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                            <input className='control-input'></input>
                         </div>
-                        <div className='direction-gap-vertical'>
-                            <label className='position-label'><FoldVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='position-input'></input>
+                        <div className='gap-control-vertical'>
+                            <label className='control-label'><FoldVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                            <input className='control-input'></input>
                         </div>
                     </fieldset>
-                    <div className='space-distribution'>
-                        <fieldset className='padding'>
-                            <legend className='legend'>Padding</legend>
-                            <div className='position-padding'>
-                                <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <input className='position-input'></input>
-                            </div>
-                        </fieldset>
-                        <fieldset className='margin'>
-                            <legend className='legend'>Margin</legend>
 
-                            <div className='position-margin'>
-                                <label className='position-label'><LaptopMinimal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <input className='position-input'></input>
+                    <div className='spacing-controls-container'>
+                        <fieldset className='spacing-padding'>
+                            <legend className='fieldset-legend'>Padding</legend>
+                            <div className='spacing-control'>
+                                <label className='control-label'><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <input className='control-input'></input>
                             </div>
                         </fieldset>
-                        <div className='position-distribution'>
+                        <fieldset className='spacing-margin'>
+                            <legend className='fieldset-legend'>Margin</legend>
+                            <div className='spacing-control'>
+                                <label className='control-label'><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <input className='control-input'></input>
+                            </div>
+                        </fieldset>
+                        <div className='fieldset-actions'>
                             <Button><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -581,14 +582,14 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
-                    <fieldset className='background'>
-                        <legend className='space-legend'>Background</legend>
-                        <div className='input-color'>
-                            <label className='position-label'>
+                    <fieldset className='style-background'>
+                        <legend className='fieldset-legend'>Background</legend>
+                        <div className='color-control'>
+                            <label className='control-label'>
                                 <Square fill={selectedElementProps.style?.backgroundColor || '#ffffff'} size={18} strokeWidth={0} />
                             </label>
                             <input
-                                className='position-input'
+                                className='control-input'
                                 value={selectedElementProps.style?.backgroundColor || '#ffffff'}
                                 onChange={(e) => {
                                     const updatedProps = {
@@ -606,19 +607,19 @@ function Display() {
                                 }}
                             />
                         </div>
-                        <div className='position-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
 
-                    <fieldset className='borders'>
-                        <legend className='space-legend'>Border</legend>
-                        <div className='input-color'>
-                            <label className='position-label'>
+                    <fieldset className='style-border'>
+                        <legend className='fieldset-legend'>Border</legend>
+                        <div className='color-control'>
+                            <label className='control-label'>
                                 <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
                             </label>
                             <input
-                                className='position-input'
+                                className='control-input'
                                 value={selectedElementProps.style?.borderColor || '#cccccc'}
                                 onChange={(e) => {
                                     const updatedProps = {
@@ -636,12 +637,12 @@ function Display() {
                                 }}
                             />
                         </div>
-                        <div className='input-width'>
-                            <label className='position-label'>
+                        <div className='border-width-control'>
+                            <label className='control-label'>
                                 <SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                             </label>
                             <input
-                                className='position-input'
+                                className='control-input'
                                 value={selectedElementProps.style?.borderWidth || '1px'}
                                 onChange={(e) => {
                                     const updatedProps = {
@@ -659,7 +660,7 @@ function Display() {
                                 }}
                             />
                         </div>
-                        <div className='position-distribution'>
+                        <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
                     </fieldset>
@@ -678,9 +679,9 @@ function Display() {
                     </div>
                 </div>
                 <div className='panel-content'>
-                    <fieldset>
-                        <legend className='space-legend'>Font</legend>
-                        <div className='input-select'>
+                    <fieldset className="typography-font">
+                        <legend className='fieldset-legend'>Font</legend>
+                        <div className='font-select-control'>
                             <Select
                                 items={[
                                     { id: 'Arial', name: 'Arial' },
