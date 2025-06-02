@@ -554,14 +554,124 @@ function Display() {
                             <legend className='fieldset-legend'>Padding</legend>
                             <div className='spacing-control'>
                                 <label className='control-label'><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <input className='control-input'></input>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const padding = selectedElementProps.style?.padding || '0px';
+                                        return padding.replace('px', '');
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(value === 'auto' ? { padding: undefined } : { padding: `${value}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'auto', name: 'auto' },
+                                        { id: '0', name: '0' },
+                                        { id: '2', name: '2' },
+                                        { id: '4', name: '4' },
+                                        { id: '8', name: '8' },
+                                        { id: '16', name: '16' },
+                                        { id: '32', name: '32' },
+                                        { id: '64', name: '64' },
+                                    ]}
+                                    selectedKey={(() => {
+                                        const padding = selectedElementProps.style?.padding || '0px';
+                                        return padding.replace('px', '');
+                                    })()}
+                                    onSelectionChange={(selected) => {
+                                        if (selected) {
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                style: {
+                                                    ...selectedElementProps.style,
+                                                    ...(selected === 'auto' ? { padding: undefined } : { padding: `${selected}px` })
+                                                }
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
                             </div>
                         </fieldset>
                         <fieldset className='spacing-margin'>
                             <legend className='fieldset-legend'>Margin</legend>
                             <div className='spacing-control'>
                                 <label className='control-label'><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <input className='control-input'></input>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const margin = selectedElementProps.style?.margin || '0px';
+                                        return margin.replace('px', '');
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(value === 'auto' ? { margin: undefined } : { margin: `${value}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'auto', name: 'auto' },
+                                        { id: '0', name: '0' },
+                                        { id: '2', name: '2' },
+                                        { id: '4', name: '4' },
+                                        { id: '8', name: '8' },
+                                        { id: '16', name: '16' },
+                                        { id: '32', name: '32' },
+                                        { id: '64', name: '64' },
+                                    ]}
+                                    selectedKey={(() => {
+                                        const margin = selectedElementProps.style?.margin || '0px';
+                                        return margin.replace('px', '');
+                                    })()}
+                                    onSelectionChange={(selected) => {
+                                        if (selected) {
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                style: {
+                                                    ...selectedElementProps.style,
+                                                    ...(selected === 'auto' ? { margin: undefined } : { margin: `${selected}px` })
+                                                }
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
                             </div>
                         </fieldset>
                         <div className='fieldset-actions'>

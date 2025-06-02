@@ -210,6 +210,24 @@
         }
     }
 
+    .spacing-control {
+        .control-input {
+            border-radius: 0;
+        }
+
+        .aria-SelectValue {
+            display: none;
+        }
+
+        .aria-Button {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            border-left-width: 0;
+            padding: 2px 2px 2px 0;
+            width: 25px;
+            box-shadow: none;
+        }
+    }
+
     .direction-alignment-grid {
         grid-area: input2;
 
