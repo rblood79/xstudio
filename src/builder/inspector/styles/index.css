@@ -86,6 +86,16 @@
         gap: 4px 8px;
     }
 
+    fieldset.typography-font {
+        display: grid;
+        grid-template-rows: auto 27px;
+        grid-template-columns: 1fr 1fr 27px;
+        grid-template-areas:
+            "label label label"
+            "input1 input1 icon";
+        gap: 4px 8px;
+    }
+
     legend,
     .fieldset-legend {
         grid-area: label;
@@ -225,6 +235,20 @@
             padding: 2px 2px 2px 0;
             width: 25px;
             box-shadow: none;
+        }
+    }
+
+    .font-select-control {
+        .aria-Select {
+            width: 100%;
+        }
+
+        .aria-Button {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-sm);
         }
     }
 
