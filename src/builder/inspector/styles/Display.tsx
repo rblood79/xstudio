@@ -591,6 +591,7 @@ function Display() {
                                         const padding = selectedElementProps.style?.padding || '0px';
                                         return padding.replace('px', '');
                                     })()}
+                                    aria-label="Padding value selector"
                                     onSelectionChange={(selected) => {
                                         if (selected) {
                                             const updatedProps = {
@@ -653,6 +654,7 @@ function Display() {
                                         const margin = selectedElementProps.style?.margin || '0px';
                                         return margin.replace('px', '');
                                     })()}
+                                    aria-label="Margin value selector"
                                     onSelectionChange={(selected) => {
                                         if (selected) {
                                             const updatedProps = {
@@ -803,6 +805,9 @@ function Display() {
                                 ]}>
                                 {(item) => <SelectItem>{item.name}</SelectItem>}
                             </Select>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button>:</Button>
                         </div>
                     </fieldset>
                 </div>
