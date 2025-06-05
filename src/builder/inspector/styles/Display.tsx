@@ -566,7 +566,7 @@ function Display() {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                ...(value === 'auto' ? { padding: undefined } : { padding: `${value}px` })
+                                                ...(value === 'class' ? { padding: undefined } : { padding: `${value}px` })
                                             }
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
@@ -578,7 +578,7 @@ function Display() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'auto', name: 'auto' },
+                                        { id: 'class', name: 'class' },
                                         { id: '0', name: '0' },
                                         { id: '2', name: '2' },
                                         { id: '4', name: '4' },
@@ -589,24 +589,25 @@ function Display() {
                                     ]}
                                     selectedKey={(() => {
                                         const padding = selectedElementProps.style?.padding || '0px';
-                                        return padding.replace('px', '');
+                                        const paddingValue = padding.replace('px', '');
+                                        if (isNaN(Number(paddingValue))) return 'class';
+                                        return paddingValue;
                                     })()}
                                     aria-label="Padding value selector"
                                     onSelectionChange={(selected) => {
-                                        if (selected) {
-                                            const updatedProps = {
-                                                ...selectedElementProps,
-                                                style: {
-                                                    ...selectedElementProps.style,
-                                                    ...(selected === 'auto' ? { padding: undefined } : { padding: `${selected}px` })
-                                                }
-                                            };
-                                            updateElementProps(selectedElementId, updatedProps);
-                                            supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        }
+                                        if (!selectedElementId) return;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(selected === 'class' ? { padding: undefined } : { padding: `${selected}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
                                     }}
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
@@ -629,7 +630,7 @@ function Display() {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                ...(value === 'auto' ? { margin: undefined } : { margin: `${value}px` })
+                                                ...(value === 'class' ? { margin: undefined } : { margin: `${value}px` })
                                             }
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
@@ -641,7 +642,7 @@ function Display() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'auto', name: 'auto' },
+                                        { id: 'class', name: 'class' },
                                         { id: '0', name: '0' },
                                         { id: '2', name: '2' },
                                         { id: '4', name: '4' },
@@ -652,24 +653,25 @@ function Display() {
                                     ]}
                                     selectedKey={(() => {
                                         const margin = selectedElementProps.style?.margin || '0px';
-                                        return margin.replace('px', '');
+                                        const marginValue = margin.replace('px', '');
+                                        if (isNaN(Number(marginValue))) return 'class';
+                                        return marginValue;
                                     })()}
                                     aria-label="Margin value selector"
                                     onSelectionChange={(selected) => {
-                                        if (selected) {
-                                            const updatedProps = {
-                                                ...selectedElementProps,
-                                                style: {
-                                                    ...selectedElementProps.style,
-                                                    ...(selected === 'auto' ? { margin: undefined } : { margin: `${selected}px` })
-                                                }
-                                            };
-                                            updateElementProps(selectedElementId, updatedProps);
-                                            supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        }
+                                        if (!selectedElementId) return;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(selected === 'class' ? { margin: undefined } : { margin: `${selected}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
                                     }}
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
@@ -755,13 +757,17 @@ function Display() {
                             </label>
                             <input
                                 className='control-input'
-                                value={selectedElementProps.style?.borderWidth || '1px'}
+                                value={(() => {
+                                    const borderWidth = selectedElementProps.style?.borderWidth || '0px';
+                                    return borderWidth.replace('px', '');
+                                })()}
                                 onChange={(e) => {
+                                    const value = e.target.value;
                                     const updatedProps = {
                                         ...selectedElementProps,
                                         style: {
                                             ...selectedElementProps.style,
-                                            borderWidth: e.target.value
+                                            ...(value === 'class' ? { borderWidth: undefined } : { borderWidth: `${value}px` })
                                         }
                                     };
                                     updateElementProps(selectedElementId, updatedProps);
@@ -771,6 +777,42 @@ function Display() {
                                         .eq('id', selectedElementId);
                                 }}
                             />
+                            <Select
+                                items={[
+                                    { id: 'class', name: 'class' },
+                                    { id: '0', name: '0' },
+                                    { id: '1', name: '1' },
+                                    { id: '2', name: '2' },
+                                    { id: '4', name: '4' },
+                                    { id: '8', name: '8' },
+                                    { id: '16', name: '16' }
+                                ]}
+                                selectedKey={(() => {
+                                    const borderWidth = selectedElementProps.style?.borderWidth || '0px';
+                                    const borderValue = borderWidth.replace('px', '');
+                                    if (isNaN(Number(borderValue))) return 'class';
+                                    return borderValue;
+                                })()}
+                                aria-label="Border width selector"
+                                onSelectionChange={(selected) => {
+                                    if (selected) {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(selected === 'class' ? { borderWidth: undefined } : { borderWidth: `${selected}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
                         </div>
                         <div className='fieldset-actions'>
                             <Button>:</Button>
