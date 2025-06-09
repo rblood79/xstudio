@@ -76,13 +76,15 @@
         gap: 4px 8px;
     }
 
-    fieldset.style-border {
+    fieldset.style-border,
+    fieldset.style-border-width {
+        flex: 1;
         display: grid;
-        grid-template-rows: auto 27px;
-        grid-template-columns: 1fr 1fr 27px;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr;
         grid-template-areas:
-            "label label label"
-            "input1 input2 icon";
+            "label"
+            "input1";
         gap: 4px 8px;
     }
 
@@ -117,6 +119,7 @@
 
     .alignment-controls-horizontal,
     .color-control,
+    .border-width-control,
     .spacing-control,
     .size-control-width,
     .position-control-x {
@@ -125,20 +128,20 @@
     }
 
     .alignment-controls-vertical,
-    .border-width-control,
+
     .size-control-height,
     .position-control-y {
         grid-area: input2;
         display: flex;
     }
 
-    .gap-control-horizontal,
+    .justify-control,
     .position-bottom {
         grid-area: input3;
         display: flex;
     }
 
-    .gap-control-vertical,
+    .gap-control,
     .position-left {
         grid-area: input4;
         display: flex;
@@ -220,6 +223,7 @@
         }
     }
 
+    .gap-control,
     .spacing-control {
         .control-input {
             border-radius: 0;
