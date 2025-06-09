@@ -1,4 +1,4 @@
-import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, FoldHorizontal, FoldVertical, LaptopMinimal, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
@@ -539,13 +539,76 @@ function Display() {
                         <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
-                        <div className='gap-control-horizontal'>
-                            <label className='control-label'><FoldHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                            <input className='control-input'></input>
+                        <div className='justify-control'>
+                            <ToggleButtonGroup
+                                aria-label="Justify content alignment"
+                                onSelectionChange={(selected) => {
+                                    if (!selectedElementId) return;
+                                    const key = Array.from(selected)[0] as string;
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            display: 'flex',
+                                            ...(key === 'class' ? { justifyContent: undefined } : { justifyContent: key })
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
+                                selectedKeys={new Set([
+                                    selectedElementProps.style?.display === 'flex'
+                                        ? selectedElementProps.style?.justifyContent || 'class'
+                                        : 'class'
+                                ])}
+                            >
+                                <ToggleButton id="space-around">
+                                    <AlignHorizontalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
+                                <ToggleButton id="space-between">
+                                    <GalleryHorizontal color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
+                                <ToggleButton id="space-evenly">
+                                    <AlignHorizontalSpaceAround color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
                         </div>
-                        <div className='gap-control-vertical'>
-                            <label className='control-label'><FoldVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                        <div className='gap-control'>
+                            <label className='control-label'><SquareRoundCorner color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='control-input'></input>
+                            <Select
+                                items={[
+                                    { id: 'class', name: 'class' },
+                                    { id: '0', name: '0' },
+                                    { id: '2', name: '2' },
+                                    { id: '4', name: '4' },
+                                ]}
+                                selectedKey={(() => {
+                                    const gap = selectedElementProps.style?.gap || '0px';
+                                    return gap.replace('px', '');
+                                })()}
+                                aria-label="Gap value selector"
+                                onSelectionChange={(selected) => {
+                                    if (!selectedElementId) return;
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            ...(selected === 'class' ? { gap: undefined } : { gap: `${selected}px` })
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
                         </div>
                     </fieldset>
 
@@ -725,82 +788,22 @@ function Display() {
                             <Button>:</Button>
                         </div>
                     </fieldset>
-
-                    <fieldset className='style-border'>
-                        <legend className='fieldset-legend'>Border</legend>
-                        <div className='color-control'>
-                            <label className='control-label'>
-                                <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
-                            </label>
-                            <input
-                                className='control-input'
-                                value={selectedElementProps.style?.borderColor || '#cccccc'}
-                                onChange={(e) => {
-                                    const updatedProps = {
-                                        ...selectedElementProps,
-                                        style: {
-                                            ...selectedElementProps.style,
-                                            borderColor: e.target.value
-                                        }
-                                    };
-                                    updateElementProps(selectedElementId, updatedProps);
-                                    supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
-                                }}
-                            />
-                        </div>
-                        <div className='border-width-control'>
-                            <label className='control-label'>
-                                <SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            </label>
-                            <input
-                                className='control-input'
-                                value={(() => {
-                                    const borderWidth = selectedElementProps.style?.borderWidth || '0px';
-                                    return borderWidth.replace('px', '');
-                                })()}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    const updatedProps = {
-                                        ...selectedElementProps,
-                                        style: {
-                                            ...selectedElementProps.style,
-                                            ...(value === 'class' ? { borderWidth: undefined } : { borderWidth: `${value}px` })
-                                        }
-                                    };
-                                    updateElementProps(selectedElementId, updatedProps);
-                                    supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
-                                }}
-                            />
-                            <Select
-                                items={[
-                                    { id: 'class', name: 'class' },
-                                    { id: '0', name: '0' },
-                                    { id: '1', name: '1' },
-                                    { id: '2', name: '2' },
-                                    { id: '4', name: '4' },
-                                    { id: '8', name: '8' },
-                                    { id: '16', name: '16' }
-                                ]}
-                                selectedKey={(() => {
-                                    const borderWidth = selectedElementProps.style?.borderWidth || '0px';
-                                    const borderValue = borderWidth.replace('px', '');
-                                    if (isNaN(Number(borderValue))) return 'class';
-                                    return borderValue;
-                                })()}
-                                aria-label="Border width selector"
-                                onSelectionChange={(selected) => {
-                                    if (selected) {
+                    <div className='spacing-controls-container'>
+                        <fieldset className='style-border'>
+                            <legend className='fieldset-legend'>Border</legend>
+                            <div className='color-control'>
+                                <label className='control-label'>
+                                    <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.style?.borderColor || '#cccccc'}
+                                    onChange={(e) => {
                                         const updatedProps = {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                ...(selected === 'class' ? { borderWidth: undefined } : { borderWidth: `${selected}px` })
+                                                borderColor: e.target.value
                                             }
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
@@ -808,16 +811,83 @@ function Display() {
                                             .from('elements')
                                             .update({ props: updatedProps })
                                             .eq('id', selectedElementId);
-                                    }
-                                }}
-                            >
-                                {(item) => <SelectItem>{item.name}</SelectItem>}
-                            </Select>
-                        </div>
+                                    }}
+                                />
+                            </div>
+
+                        </fieldset>
+                        <fieldset className='style-border-width'>
+                            <legend className='fieldset-legend'>Border Width</legend>
+
+                            <div className='border-width-control'>
+                                <label className='control-label'>
+                                    <SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const borderWidth = selectedElementProps.style?.borderWidth || '0px';
+                                        return borderWidth.replace('px', '');
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(value === 'class' ? { borderWidth: undefined } : { borderWidth: `${value}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', name: 'class' },
+                                        { id: '0', name: '0' },
+                                        { id: '1', name: '1' },
+                                        { id: '2', name: '2' },
+                                        { id: '4', name: '4' },
+                                        { id: '8', name: '8' },
+                                        { id: '16', name: '16' }
+                                    ]}
+                                    selectedKey={(() => {
+                                        const borderWidth = selectedElementProps.style?.borderWidth || '0px';
+                                        const borderValue = borderWidth.replace('px', '');
+                                        if (isNaN(Number(borderValue))) return 'class';
+                                        return borderValue;
+                                    })()}
+                                    aria-label="Border width selector"
+                                    onSelectionChange={(selected) => {
+                                        if (selected) {
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                style: {
+                                                    ...selectedElementProps.style,
+                                                    ...(selected === 'class' ? { borderWidth: undefined } : { borderWidth: `${selected}px` })
+                                                }
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
                         <div className='fieldset-actions'>
                             <Button>:</Button>
                         </div>
-                    </fieldset>
+                    </div>
+
 
                 </div>
             </div>
