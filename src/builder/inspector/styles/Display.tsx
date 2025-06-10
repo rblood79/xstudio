@@ -1,4 +1,4 @@
-import { Square, SquareDashed, ChevronUp, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { Square, SquareDashed, ChevronUp, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
@@ -577,7 +577,7 @@ function Display() {
                             </ToggleButtonGroup>
                         </div>
                         <div className='gap-control'>
-                            <label className='control-label'><SquareRoundCorner color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                            <label className='control-label'><LayoutGrid color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='control-input'></input>
                             <Select
                                 items={[
@@ -680,7 +680,7 @@ function Display() {
                         <fieldset className='spacing-margin'>
                             <legend className='fieldset-legend'>Margin</legend>
                             <div className='spacing-control'>
-                                <label className='control-label'><Scan color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <label className='control-label'><Frame color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <input
                                     className='control-input'
                                     value={(() => {
@@ -788,9 +788,9 @@ function Display() {
                             <Button>:</Button>
                         </div>
                     </fieldset>
-                    <div className='spacing-controls-container'>
+                    <div className='border-controls-container'>
                         <fieldset className='style-border'>
-                            <legend className='fieldset-legend'>Border</legend>
+                            <legend className='fieldset-legend'>Border Color</legend>
                             <div className='color-control'>
                                 <label className='control-label'>
                                     <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
@@ -878,6 +878,81 @@ function Display() {
                                                 .eq('id', selectedElementId);
                                         }
                                     }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <fieldset className='style-border-radius'>
+                            <legend className='fieldset-legend'>Border Radius</legend>
+                            <div className='border-radius-control'>
+                                <label className='control-label'>
+                                    <SquareRoundCorner color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.style?.borderRadius || '0px'}
+                                    onChange={(e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                borderRadius: e.target.value
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', name: 'class' },
+                                        { id: '0', name: '0' },
+                                        { id: '2', name: '2' },
+                                        { id: '4', name: '4' },
+                                        { id: '8', name: '8' },
+                                        { id: '16', name: '16' }
+                                    ]}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <fieldset className='style-border-style'>
+                            <legend className='fieldset-legend'>Border Style</legend>
+                            <div className='border-style-control'>
+                                <label className='control-label'>
+                                    <SquareDashedBottom color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.style?.borderStyle || 'solid'}
+                                    onChange={(e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                borderStyle: e.target.value
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', name: 'class' },
+                                        { id: 'solid', name: 'solid' },
+                                        { id: 'dashed', name: 'dashed' },
+                                        { id: 'dotted', name: 'dotted' },
+                                        { id: 'double', name: 'double' }
+                                    ]}
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
                                 </Select>

@@ -77,7 +77,9 @@
     }
 
     fieldset.style-border,
-    fieldset.style-border-width {
+    fieldset.style-border-width,
+    fieldset.style-border-radius,
+    fieldset.style-border-style {
         flex: 1;
         display: grid;
         grid-template-rows: auto;
@@ -86,6 +88,22 @@
             "label"
             "input1";
         gap: 4px 8px;
+    }
+
+    fieldset.style-border {
+        grid-area: input1;
+    }
+
+    fieldset.style-border-width {
+        grid-area: input2;
+    }
+
+    fieldset.style-border-radius {
+        grid-area: input3;
+    }
+
+    fieldset.style-border-style {
+        grid-area: input4;
     }
 
     fieldset.typography-font {
@@ -120,6 +138,8 @@
     .alignment-controls-horizontal,
     .color-control,
     .border-width-control,
+    .border-radius-control,
+    .border-style-control,
     .spacing-control,
     .size-control-width,
     .position-control-x {
@@ -149,6 +169,14 @@
 
     .fieldset-actions {
         grid-area: icon;
+
+        button {
+            width: 27px;
+            height: 27px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     }
 
     .control-label {
@@ -223,6 +251,22 @@
         }
     }
 
+    .border-controls-container {
+        display: grid;
+        grid-template-rows: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr 27px;
+        grid-template-areas:
+            "input1 input2 icon"
+            "input3 input4 empty";
+        gap: 8px;
+
+        .fieldset-actions {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+    }
+
     .gap-control,
     .spacing-control {
         .control-input {
@@ -242,7 +286,26 @@
         }
     }
 
-    .border-width-control {
+    .border-width-control,
+    .border-radius-control {
+        .control-input {
+            border-radius: 0;
+        }
+
+        .aria-SelectValue {
+            display: none;
+        }
+
+        .aria-Button {
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            border-left-width: 0;
+            padding: 2px 2px 2px 0;
+            width: 25px;
+            box-shadow: none;
+        }
+    }
+
+    .border-style-control {
         .control-input {
             border-radius: 0;
         }
