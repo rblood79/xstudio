@@ -1,5 +1,5 @@
 export const iconProps = {
-    color: 'var(--color-neutral-500)',
+    color: 'var(--color-gray-400)',
     stroke: 1,
     size: 16
 };
