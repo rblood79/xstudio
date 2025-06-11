@@ -30,8 +30,8 @@
 }
 
 .elementItem.active {
-    background-color: var(--color-sky-100);
-    outline: 1px solid var(--color-sky-600);
+    background-color: var(--color-gray-100);
+    outline: 1px solid var(--color-gray-300);
     color: var(--color-gray-c500);
     z-index: 1;
 }
