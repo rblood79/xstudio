@@ -1,21 +1,39 @@
 @layer utilities {
     aside.inspector {
 
+        .aria-ToggleButtonGroup,
+        .aria-Group {
+            background-color: var(--color-gray-100);
+            border-radius: var(--radius-md);
+        }
+
         .aria-Button,
         .aria-ToggleButton {
-            background-color: var(--color-gray-100);
+            background-color: transparent;
+            /*var(--color-gray-100);*/
+            border-width: 0;
+            border-radius: var(--radius-md);
 
             &[data-pressed] {
                 box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.1);
                 background-color: var(--color-gray-100);
                 border-color: var(--color-gray-200);
+
                 color: var(--color-gray-400);
             }
 
             &[data-selected] {
                 background: var(--color-white);
                 border-color: var(--color-gray-300);
+                border-width: 1px;
 
+            }
+        }
+
+        .fieldset-actions {
+            .aria-Button {
+                background-color: var(--color-gray-100);
+                border-radius: var(--radius-md);
             }
         }
     }
@@ -208,8 +226,9 @@
         height: 27px;
         padding: var(--spacing) var(--spacing);
         text-align: center;
-        background-color: var(--color-gray-50);
-        border: 1px solid var(--color-gray-200);
+        background-color: transparent;
+        /*var(--color-gray-50);*/
+        border: 1px solid transparent;
         border-right-width: 0px;
         border-radius: var(--radius-md) 0 0 var(--radius-md);
         font-size: var(--text-xs);
@@ -217,8 +236,9 @@
 
     .control-input {
         width: 100%;
-        background-color: var(--color-gray-50);
-        border: 1px solid var(--color-gray-200);
+        background-color: transparent;
+        /*var(--color-gray-50);*/
+        border: 1px solid transparent;
         border-left-width: 0px;
         border-radius: 0 var(--radius-md) var(--radius-md) 0;
         font-size: var(--text-xs);
@@ -368,7 +388,6 @@
             grid-template-rows: repeat(3, 1fr);
             gap: 0px;
             background-color: var(--color-gray-50);
-            border: 1px solid var(--color-gray-200);
             border-radius: var(--radius-md);
 
             button {
@@ -379,29 +398,15 @@
                 height: 29px;
 
                 .alignment-dot {
-                    width: 8px;
-                    height: 8px;
+                    width: 4px;
+                    height: 4px;
                     background-color: var(--color-gray-400);
                 }
 
-                &:nth-child(1) {
-                    border-top-left-radius: var(--radius-md);
-                }
 
-                &:nth-child(3) {
-                    border-top-right-radius: var(--radius-md);
-                }
-
-                &:nth-child(7) {
-                    border-bottom-left-radius: var(--radius-md);
-                }
-
-                &:nth-child(9) {
-                    border-bottom-right-radius: var(--radius-md);
-                }
 
                 &[data-selected] {
-                    outline-width: 1px;
+                    border-radius: var(--radius-md);
                 }
             }
         }
