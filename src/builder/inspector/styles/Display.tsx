@@ -1,4 +1,4 @@
-import { Square, SquareDashed, ChevronUp, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
@@ -48,7 +48,7 @@ function Display() {
                             </ToggleButtonGroup>
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
 
@@ -341,7 +341,7 @@ function Display() {
                             </Select>
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
 
@@ -356,7 +356,7 @@ function Display() {
                             <input className='control-input'></input>
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
                 </div>
@@ -537,7 +537,7 @@ function Display() {
                             </ToggleButtonGroup>
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                         <div className='justify-control'>
                             <ToggleButtonGroup
@@ -742,7 +742,7 @@ function Display() {
                             </div>
                         </fieldset>
                         <div className='fieldset-actions'>
-                            <Button><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </div>
                 </div>
@@ -785,7 +785,7 @@ function Display() {
                             />
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
                     <div className='border-controls-container'>
@@ -959,7 +959,7 @@ function Display() {
                             </div>
                         </fieldset>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </div>
 
@@ -994,7 +994,7 @@ function Display() {
                             </Select>
                         </div>
                         <div className='fieldset-actions'>
-                            <Button>:</Button>
+                            <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
                         </div>
                     </fieldset>
                 </div>
