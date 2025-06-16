@@ -1,7 +1,7 @@
 //import Layout from './layout';
 
 import './index.css';
-import { Display } from './styles';
+import Design from './design';
 import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 
 function Inspector() {
@@ -14,7 +14,7 @@ function Inspector() {
                     <Tab id="events">Events</Tab>
                 </TabList>
                 <TabPanel id="design">
-                    <Display />
+                    <Design />
                 </TabPanel>
                 <TabPanel id="props">
                     <h3 className='panel-title'>Properties</h3>

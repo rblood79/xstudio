@@ -8,7 +8,7 @@ import { supabase } from '../../../env/supabase.client';
 import './index.css';
 
 
-function Display() {
+function Design() {
     const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
 
     // 선택된 요소가 없을 때의 처리
@@ -916,6 +916,35 @@ function Display() {
                                         { id: '8', name: '8' },
                                         { id: '16', name: '16' }
                                     ]}
+                                    selectedKey={(() => {
+                                        const borderRadius = selectedElementProps.style?.borderRadius || '0px';
+                                        const radiusValue = borderRadius.replace('px', '');
+                                        if (isNaN(Number(radiusValue))) return 'class';
+                                        return radiusValue;
+                                    })()}
+                                    aria-label="Border radius selector"
+                                    onSelectionChange={async (selected) => {
+                                        if (!selectedElementId) return;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(selected === 'class' ? { borderRadius: undefined } : { borderRadius: `${selected}px` })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            const { error } = await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                            if (error) {
+                                                console.error('Supabase update error:', error);
+                                            }
+                                        } catch (err) {
+                                            console.error('Unexpected error during Supabase update:', err);
+                                        }
+                                    }}
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
                                 </Select>
@@ -953,6 +982,30 @@ function Display() {
                                         { id: 'dotted', name: 'dotted' },
                                         { id: 'double', name: 'double' }
                                     ]}
+                                    selectedKey={selectedElementProps.style?.borderStyle || 'class'}
+                                    aria-label="Border style selector"
+                                    onSelectionChange={async (selected) => {
+                                        if (!selectedElementId) return;
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            style: {
+                                                ...selectedElementProps.style,
+                                                ...(selected === 'class' ? { borderStyle: undefined } : { borderStyle: selected })
+                                            }
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            const { error } = await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                            if (error) {
+                                                console.error('Supabase update error:', error);
+                                            }
+                                        } catch (err) {
+                                            console.error('Unexpected error during Supabase update:', err);
+                                        }
+                                    }}
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
                                 </Select>
@@ -1005,4 +1058,4 @@ function Display() {
     );
 }
 
-export default Display;
+export default Design;
