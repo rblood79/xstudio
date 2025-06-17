@@ -14,8 +14,8 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Description', label: 'description', icon: Info },
         { tag: 'Input', label: 'input', icon: RectangleEllipsis },
         { tag: 'Button', label: 'button', icon: MousePointer },
-        { tag: 'Toggle', label: 'toggle', icon: ToggleLeft },
-        { tag: 'ToggleGroup', label: 'toggleGP', icon: GroupIcon },
+        { tag: 'ToggleButton', label: 'toggle', icon: ToggleLeft },
+        { tag: 'ToggleButtonGroup', label: 'toggleGP', icon: GroupIcon },
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
     ];
 
@@ -30,7 +30,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
     ];
 
     const pageComp = [
-        { tag: 'Section', label: 'section', icon: Square },
+        { tag: 'section', label: 'section', icon: Square },
         { tag: 'Card', label: 'card', icon: InspectionPanel },
         { tag: 'Div', label: 'division', icon: Code },
         { tag: 'Nav', label: 'nav', icon: Menu },
