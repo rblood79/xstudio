@@ -126,18 +126,25 @@ function Builder() {
 
         const getDefaultProps = (tag: string, text?: string) => {
             const baseProps = {
-                ...(text ? { text } : {}),
                 style: {},
+                className: '',
             };
 
             switch (tag) {
+                case 'Button':
+                    return {
+                        ...baseProps,
+                        isDisabled: false,
+                        children: text || 'Button',
+                    };
+
                 case 'ToggleButton':
                     return {
                         ...baseProps,
                         isSelected: false,
                         defaultSelected: false,
-                        className: '',
                         'aria-pressed': false,
+                        children: text || 'Toggle',
                     };
 
                 case 'ToggleButtonGroup':
@@ -145,51 +152,37 @@ function Builder() {
                         ...baseProps,
                         value: [],
                         defaultValue: [],
-                        className: '',
-                        selectionMode: 'multiple',
+                        selectionMode: 'single',
                         orientation: 'horizontal',
                         isDisabled: false,
-                    };
-
-                case 'Button':
-                    return {
-                        ...baseProps,
-                        isDisabled: false,
-                        className: '',
-                        children: text || 'Button',
                     };
 
                 case 'TextField':
                     return {
                         ...baseProps,
-                        text: text || 'Text Field',
+                        label: text || 'Text Field',
                         isDisabled: false,
-                        className: '',
-                        style: {},
                     };
 
                 case 'Label':
                     return {
                         ...baseProps,
-                        text: text || 'Label',
-                        className: '',
-                        style: {},
+                        children: text || 'Label',
                     };
 
                 case 'Description':
                     return {
                         ...baseProps,
-                        text: text || 'Description',
-                        className: '',
-                        style: {},
+                        children: text || 'Description',
                     };
 
                 case 'Input':
                     return {
                         ...baseProps,
-                        text: text || 'Input',
-                        className: '',
-                        style: {},
+                        type: 'text',
+                        value: '',
+                        placeholder: text || 'Input',
+                        'aria-label': text || 'Input',
                     };
 
                 default:
@@ -284,7 +277,7 @@ function Builder() {
                     page_id: selectedPageId,
                     tag: 'ToggleButton',
                     props: {
-                        text: 'Left',
+                        children: 'Left',
                         style: {},
                         className: ''
                     },
@@ -296,7 +289,7 @@ function Builder() {
                     page_id: selectedPageId,
                     tag: 'ToggleButton',
                     props: {
-                        text: 'center',
+                        children: 'center',
                         style: {},
                         className: ''
                     },
@@ -308,7 +301,7 @@ function Builder() {
                     page_id: selectedPageId,
                     tag: 'ToggleButton',
                     props: {
-                        text: 'Right',
+                        children: 'Right',
                         style: {},
                         className: ''
                     },

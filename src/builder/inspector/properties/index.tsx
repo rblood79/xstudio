@@ -11,109 +11,334 @@ function Properties() {
         return <div>요소를 선택해주세요</div>;
     }
 
+    const renderComponentProps = () => {
+        switch (selectedElementProps.tag) {
+            case 'Button':
+                return (
+                    <div className="component-props">
+                        <div className="prop-group">
+                            <label className="prop-label">Text</label>
+                            <input
+                                className="prop-input"
+                                value={selectedElementProps.children || ''}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        children: e.target.value
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="prop-group">
+                            <label className="prop-label">Disabled</label>
+                            <input
+                                type="checkbox"
+                                checked={selectedElementProps.isDisabled || false}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        isDisabled: e.target.checked
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'ToggleButton':
+                return (
+                    <div className="component-props">
+                        <div className="prop-group">
+                            <label className="prop-label">Text</label>
+                            <input
+                                className="prop-input"
+                                value={selectedElementProps.children || ''}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        children: e.target.value
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="prop-group">
+                            <label className="prop-label">Selected</label>
+                            <input
+                                type="checkbox"
+                                checked={selectedElementProps.isSelected || false}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        isSelected: e.target.checked
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'ToggleButtonGroup':
+                return (
+                    <div className="component-props">
+                        <div className="prop-group">
+                            <label className="prop-label">Selection Mode</label>
+                            <Select
+                                items={[
+                                    { id: 'single', name: 'Single' },
+                                    { id: 'multiple', name: 'Multiple' }
+                                ]}
+                                selectedKey={selectedElementProps.selectionMode || 'single'}
+                                onSelectionChange={async (selected) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        selectionMode: selected
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
+                        </div>
+
+                        <div className="prop-group">
+                            <label className="prop-label">Orientation</label>
+                            <Select
+                                items={[
+                                    { id: 'horizontal', name: 'Horizontal' },
+                                    { id: 'vertical', name: 'Vertical' }
+                                ]}
+                                selectedKey={selectedElementProps.orientation || 'horizontal'}
+                                onSelectionChange={async (selected) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        orientation: selected
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
+                        </div>
+
+                        <div className="prop-group">
+                            <label className="prop-label">Disabled</label>
+                            <input
+                                type="checkbox"
+                                checked={selectedElementProps.isDisabled || false}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        isDisabled: e.target.checked
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'TextField':
+                return (
+                    <div className="component-props">
+                        <div className="prop-group">
+                            <label className="prop-label">Label</label>
+                            <input
+                                className="prop-input"
+                                value={selectedElementProps.label || ''}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        label: e.target.value
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="prop-group">
+                            <label className="prop-label">Disabled</label>
+                            <input
+                                type="checkbox"
+                                checked={selectedElementProps.isDisabled || false}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        isDisabled: e.target.checked
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                );
+
+            case 'Input':
+                return (
+                    <div className="component-props">
+                        <div className="prop-group">
+                            <label className="prop-label">Value</label>
+                            <input
+                                className="prop-input"
+                                value={selectedElementProps.value || ''}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        value: e.target.value
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="prop-group">
+                            <label className="prop-label">Placeholder</label>
+                            <input
+                                className="prop-input"
+                                value={selectedElementProps.placeholder || ''}
+                                onChange={async (e) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        placeholder: e.target.value
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="prop-group">
+                            <label className="prop-label">Type</label>
+                            <Select
+                                items={[
+                                    { id: 'text', name: 'text' },
+                                    { id: 'password', name: 'password' },
+                                    { id: 'email', name: 'email' },
+                                    { id: 'number', name: 'number' }
+                                ]}
+                                selectedKey={selectedElementProps.type || 'text'}
+                                onSelectionChange={async (selected) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        type: selected
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    try {
+                                        await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', selectedElementId);
+                                    } catch (err) {
+                                        console.error('Update error:', err);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                            </Select>
+                        </div>
+                    </div>
+                );
+
+            default:
+                return <div>지원하지 않는 컴포넌트입니다.</div>;
+        }
+    };
+
     return (
         <div className="panel-content">
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>ARIA Properties</legend>
-                <div className='aria-controls'>
-                    <div className='aria-control aria-Group'>
-                        <label className='control-label'>Role</label>
-                        <Select
-                            items={[
-                                { id: 'button', name: 'button' },
-                                { id: 'checkbox', name: 'checkbox' },
-                                { id: 'dialog', name: 'dialog' },
-                                { id: 'grid', name: 'grid' },
-                                { id: 'link', name: 'link' },
-                                { id: 'menuitem', name: 'menuitem' },
-                                { id: 'option', name: 'option' },
-                                { id: 'radio', name: 'radio' },
-                                { id: 'slider', name: 'slider' },
-                                { id: 'spinbutton', name: 'spinbutton' },
-                                { id: 'switch', name: 'switch' },
-                                { id: 'tab', name: 'tab' },
-                                { id: 'textbox', name: 'textbox' }
-                            ]}
-                            selectedKey={selectedElementProps.role || 'button'}
-                            aria-label="Role selector"
-                            onSelectionChange={async (selected) => {
-                                if (!selectedElementId) return;
-                                const updatedProps = {
-                                    ...selectedElementProps,
-                                    role: selected
-                                };
-                                updateElementProps(selectedElementId, updatedProps);
-                                try {
-                                    const { error } = await supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
-                                    if (error) console.error('Supabase update error:', error);
-                                } catch (err) {
-                                    console.error('Unexpected error during Supabase update:', err);
-                                }
-                            }}
-                        >
-                            {(item) => <SelectItem>{item.name}</SelectItem>}
-                        </Select>
-                    </div>
-
-                    <div className='aria-control aria-Group'>
-                        <label className='control-label'>Label</label>
-                        <input
-                            className='control-input'
-                            value={selectedElementProps['aria-label'] || ''}
-                            onChange={async (e) => {
-                                if (!selectedElementId) return;
-                                const updatedProps = {
-                                    ...selectedElementProps,
-                                    'aria-label': e.target.value
-                                };
-                                updateElementProps(selectedElementId, updatedProps);
-                                try {
-                                    const { error } = await supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
-                                    if (error) console.error('Supabase update error:', error);
-                                } catch (err) {
-                                    console.error('Unexpected error during Supabase update:', err);
-                                }
-                            }}
-                        />
-                    </div>
-
-                    <div className='aria-control aria-Group'>
-                        <label className='control-label'>Description</label>
-                        <input
-                            className='control-input'
-                            value={selectedElementProps['aria-description'] || ''}
-                            onChange={async (e) => {
-                                if (!selectedElementId) return;
-                                const updatedProps = {
-                                    ...selectedElementProps,
-                                    'aria-description': e.target.value
-                                };
-                                updateElementProps(selectedElementId, updatedProps);
-                                try {
-                                    const { error } = await supabase
-                                        .from('elements')
-                                        .update({ props: updatedProps })
-                                        .eq('id', selectedElementId);
-                                    if (error) console.error('Supabase update error:', error);
-                                } catch (err) {
-                                    console.error('Unexpected error during Supabase update:', err);
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-                <div className='fieldset-actions'>
-                    <Button><EllipsisVertical color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></Button>
-                </div>
+            <fieldset className="properties-component">
+                <legend className="fieldset-legend">Component Properties</legend>
+                {renderComponentProps()}
             </fieldset>
         </div>
     );
 }
 
-export default Properties;
+export default Properties; 
