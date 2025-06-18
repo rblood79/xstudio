@@ -362,7 +362,7 @@ function Design() {
                 </div>
             </div>
 
-            <div className="inspect_display">
+            <div className="inspect_page">
                 <div className="panel-header">
                     <h3 className='panel-title'>Layout</h3>
                     <div className="header-actions">
