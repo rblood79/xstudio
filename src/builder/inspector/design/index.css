@@ -39,7 +39,7 @@
     }
 
 
-    fieldset {
+    .design-container fieldset {
         display: grid;
         grid-template-rows: auto 27px;
         grid-template-columns: 1fr 1fr 27px;

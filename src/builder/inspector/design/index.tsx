@@ -17,7 +17,7 @@ function Design() {
     }
 
     return (
-        <div>
+        <div className='design-container'>
             <div className="inspect_page">
                 <div className='tag'>{selectedElementProps.tag || 'No tag'}</div>
                 <div className='testID'>testID: {selectedElementId}</div>

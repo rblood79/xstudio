@@ -360,8 +360,8 @@ function Properties() {
     };
 
     return (
-        <div>
-            <div className="inspect_page">
+        <div className='properties-container'>
+            <div className="properties-page">
                 <div className="panel-header">
                     <h3 className='panel-title'>Properties</h3>
                     <div className="header-actions">
@@ -372,10 +372,7 @@ function Properties() {
                     </div>
                 </div>
                 <div className="panel-content">
-                    <fieldset className="properties-component">
-                        <legend className="fieldset-legend">Component Properties</legend>
-                        {renderComponentProps()}
-                    </fieldset>
+                    {renderComponentProps()}
                 </div>
             </div>
         </div>
