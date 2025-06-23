@@ -1,0 +1,42 @@
+@layer utilities {
+
+    .component-props fieldset {
+
+
+        button {
+            padding: 2px;
+            width: 27px;
+            height: 27px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* background-color: var(--color-gray-50); */
+        }
+    }
+
+
+    .component-props {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .aria-control {
+        grid-area: input1;
+        display: flex;
+
+        .aria-Select {
+            .aria-SelectValue {
+                display: none;
+            }
+
+            .aria-Button {
+                border-radius: 0 var(--radius-md) var(--radius-md) 0;
+                border-left-width: 0;
+                padding: 2px 2px 2px 0;
+                width: 25px;
+                box-shadow: none;
+            }
+        }
+    }
+}
