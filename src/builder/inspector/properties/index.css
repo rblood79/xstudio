@@ -24,6 +24,7 @@
     .aria-control {
         grid-area: input1;
         display: flex;
+        justify-content: space-between;
 
         .aria-Select {
             .aria-SelectValue {

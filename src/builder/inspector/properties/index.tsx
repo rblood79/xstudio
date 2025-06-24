@@ -128,7 +128,8 @@ function Properties() {
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Selection</legend>
                             <div className='aria-control aria-Group'>
-                                <label className='control-label'>Selection Mode</label>
+                                <label className='control-label'>Mode</label>
+                                <input className='control-input' />
                                 <Select
                                     items={[
                                         { id: 'single', name: 'Single' },
