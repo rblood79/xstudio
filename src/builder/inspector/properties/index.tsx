@@ -1,4 +1,4 @@
-import { Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { Type, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
@@ -22,6 +22,9 @@ function Properties() {
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Text</legend>
                             <div className='aria-control aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
                                 <input
                                     className='control-input'
                                     value={selectedElementProps.children || ''}
@@ -45,9 +48,11 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>State</legend>
+                            <legend className='fieldset-legend'>Disabled</legend>
                             <div className='aria-control aria-Group'>
-                                <label className='control-label'>Disabled</label>
+                                <label className='control-label'>
+                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
                                 <input
                                     type="checkbox"
                                     checked={selectedElementProps.isDisabled || false}
@@ -128,8 +133,10 @@ function Properties() {
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Selection</legend>
                             <div className='aria-control aria-Group'>
-                                <label className='control-label'>Mode</label>
-                                <input className='control-input' />
+                                <label className='control-label'>
+                                    <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+
+                                </label>
                                 <Select
                                     items={[
                                         { id: 'single', name: 'Single' },
@@ -160,7 +167,10 @@ function Properties() {
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Layout</legend>
                             <div className='aria-control aria-Group'>
-                                <label className='control-label'>Orientation</label>
+                                <label className='control-label'>
+                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+
+                                </label>
                                 <Select
                                     items={[
                                         { id: 'horizontal', name: 'Horizontal' },
@@ -189,9 +199,11 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>State</legend>
+                            <legend className='fieldset-legend'>Disabled</legend>
                             <div className='aria-control aria-Group'>
-                                <label className='control-label'>Disabled</label>
+                                <label className='control-label'>
+                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
                                 <input
                                     type="checkbox"
                                     checked={selectedElementProps.isDisabled || false}
