@@ -27,15 +27,15 @@
         justify-content: space-between;
 
         .aria-Select {
+            flex: 1;
+
             .aria-SelectValue {
-                display: none;
+                width: 100%;
             }
 
             .aria-Button {
-                border-radius: 0 var(--radius-md) var(--radius-md) 0;
-                border-left-width: 0;
-                padding: 2px 2px 2px 0;
-                width: 25px;
+                padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-sm);
+                width: 100%;
                 box-shadow: none;
             }
         }
