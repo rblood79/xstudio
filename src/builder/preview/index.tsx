@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
-import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError } from '../components/list';
+import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox } from '../components/list';
 
 interface PreviewElement {
   id: string;
@@ -19,7 +19,7 @@ interface PreviewElement {
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
-  const { setElements } = useStore();
+  const { setElements, updateElementProps } = useStore();
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
@@ -130,6 +130,30 @@ function Preview() {
     // 단독 ToggleButton 컴포넌트 특별 처리
     if (el.tag === 'ToggleButton') {
       return renderToggleButton(el);
+    }
+
+    // Checkbox 컴포넌트 특별 처리
+    if (el.tag === 'Checkbox') {
+      return (
+        <Checkbox
+          key={el.id}
+          data-element-id={el.id}
+          isSelected={el.props.isSelected}
+          isIndeterminate={el.props.isIndeterminate}
+          isDisabled={el.props.isDisabled}
+          style={el.props.style}
+          className={el.props.className}
+          onChange={(isSelected) => {
+            const updatedProps = {
+              ...el.props,
+              isSelected
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {typeof el.props.children === 'string' ? el.props.children : 'Checkbox'}
+        </Checkbox>
+      );
     }
 
     // Label 컴포넌트 특별 처리
