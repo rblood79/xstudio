@@ -357,6 +357,95 @@ function Properties() {
                     </div>
                 );
 
+            case 'Checkbox':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Text</legend>
+                            <div className='aria-control aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.children || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            children: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>State</legend>
+                            <div className='aria-control aria-Group'>
+                                <label className='control-label'>
+                                    <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedElementProps.isSelected || false}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            isSelected: e.target.checked
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Disabled</legend>
+                            <div className='aria-control aria-Group'>
+                                <label className='control-label'>
+                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedElementProps.isDisabled || false}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            isDisabled: e.target.checked
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
             default:
                 return <div>지원하지 않는 컴포넌트입니다.</div>;
         }
