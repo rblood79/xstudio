@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
-import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox } from '../components/list';
+import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface PreviewElement {
   id: string;
@@ -207,7 +207,30 @@ function Preview() {
       );
     }
 
+    // CheckboxGroup 컴포넌트 특별 처리
+    if (el.tag === 'CheckboxGroup') {
+      const childCheckboxes = children.filter(child => child.tag === 'Checkbox');
 
+      return (
+        <CheckboxGroup
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label}
+          value={el.props.value || []}
+          onChange={(selected) => {
+            const updatedProps = {
+              ...el.props,
+              value: selected
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {childCheckboxes.map(checkbox => renderElement(checkbox))}
+        </CheckboxGroup>
+      );
+    }
 
     // TextField 컴포넌트 특별 처리
     if (el.tag === 'TextField') {
