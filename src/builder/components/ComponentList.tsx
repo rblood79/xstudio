@@ -1,6 +1,7 @@
 import { ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, Clock, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck } from 'lucide-react';
 import { iconProps } from '../../builder/constants';
 import './ComponentList.css';
+import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 //import ToggleButton from './ToggleButton';
 
 interface ComponentListProps {
@@ -15,6 +16,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Input', label: 'input', icon: RectangleEllipsis },
         { tag: 'Button', label: 'button', icon: MousePointer },
         { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
+        { tag: 'CheckboxGroup', label: 'checkbox group', icon: GroupIcon },
         { tag: 'ToggleButton', label: 'toggle', icon: ToggleLeft },
         { tag: 'ToggleButtonGroup', label: 'toggleGP', icon: GroupIcon },
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
