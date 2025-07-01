@@ -1,8 +1,7 @@
 import { ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, Clock, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck } from 'lucide-react';
 import { iconProps } from '../../builder/constants';
 import './ComponentList.css';
-import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
-//import ToggleButton from './ToggleButton';
+// import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {
     handleAddElement: (tag: string, text: string, label?: string) => Promise<void>;
@@ -27,7 +26,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Tree', label: 'tree', icon: ListTree },
         { tag: 'Table', label: 'table', icon: TableProperties },
         { tag: 'Calendar', label: 'calendar', icon: Calendar },
-        { tag: 'ListBox', label: 'list Box', icon: ListIcon },
+        { tag: 'ListBox', label: 'list box', icon: ListIcon },
         { tag: 'GridList', label: 'grid List', icon: Grid },
         { tag: 'Date', label: 'date', icon: Clock },
     ];

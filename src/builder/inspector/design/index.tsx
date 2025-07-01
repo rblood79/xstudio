@@ -54,7 +54,7 @@ function Design() {
 
                     <fieldset className="transform-size">
                         <legend className='fieldset-legend'>Size</legend>
-                        <div className='size-control-width aria-Group'>
+                        <div className='size-control-width react-aria-Group'>
                             <label className='control-label'>W</label>
                             <input
                                 className='control-input'
@@ -207,7 +207,7 @@ function Design() {
                                 {(item) => <SelectItem>{item.name}</SelectItem>}
                             </Select>
                         </div>
-                        <div className='size-control-height aria-Group'>
+                        <div className='size-control-height react-aria-Group'>
                             <label className='control-label'>H</label>
                             <input
                                 className='control-input'
@@ -347,11 +347,11 @@ function Design() {
 
                     <fieldset className="transform-position">
                         <legend className='fieldset-legend'>Position</legend>
-                        <div className='position-control-x aria-Group'>
+                        <div className='position-control-x react-aria-Group'>
                             <label className='control-label'>X</label>
                             <input className='control-input'></input>
                         </div>
-                        <div className='position-control-y aria-Group'>
+                        <div className='position-control-y react-aria-Group'>
                             <label className='control-label'>Y</label>
                             <input className='control-input'></input>
                         </div>
@@ -576,7 +576,7 @@ function Design() {
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </div>
-                        <div className='gap-control aria-Group'>
+                        <div className='gap-control react-aria-Group'>
                             <label className='control-label'><LayoutGrid color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                             <input className='control-input'></input>
                             <Select
@@ -615,7 +615,7 @@ function Design() {
                     <div className='spacing-controls-container'>
                         <fieldset className='spacing-padding'>
                             <legend className='fieldset-legend'>Padding</legend>
-                            <div className='spacing-control aria-Group'>
+                            <div className='spacing-control react-aria-Group'>
                                 <label className='control-label'><SquareSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <input
                                     className='control-input'
@@ -679,7 +679,7 @@ function Design() {
                         </fieldset>
                         <fieldset className='spacing-margin'>
                             <legend className='fieldset-legend'>Margin</legend>
-                            <div className='spacing-control aria-Group'>
+                            <div className='spacing-control react-aria-Group'>
                                 <label className='control-label'><Frame color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <input
                                     className='control-input'
@@ -761,7 +761,7 @@ function Design() {
                 <div className='panel-content'>
                     <fieldset className='style-background'>
                         <legend className='fieldset-legend'>Background</legend>
-                        <div className='color-control aria-Group'>
+                        <div className='color-control react-aria-Group'>
                             <label className='control-label'>
                                 <Square fill={selectedElementProps.style?.backgroundColor || '#ffffff'} size={18} strokeWidth={0} />
                             </label>
@@ -791,7 +791,7 @@ function Design() {
                     <div className='border-controls-container'>
                         <fieldset className='style-border'>
                             <legend className='fieldset-legend'>Border Color</legend>
-                            <div className='color-control aria-Group'>
+                            <div className='color-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Square fill={selectedElementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
                                 </label>
@@ -819,7 +819,7 @@ function Design() {
                         <fieldset className='style-border-width'>
                             <legend className='fieldset-legend'>Border Width</legend>
 
-                            <div className='border-width-control aria-Group'>
+                            <div className='border-width-control react-aria-Group'>
                                 <label className='control-label'>
                                     <SquareDashed color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </label>
@@ -885,7 +885,7 @@ function Design() {
                         </fieldset>
                         <fieldset className='style-border-radius'>
                             <legend className='fieldset-legend'>Border Radius</legend>
-                            <div className='border-radius-control aria-Group'>
+                            <div className='border-radius-control react-aria-Group'>
                                 <label className='control-label'>
                                     <SquareRoundCorner color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </label>
@@ -952,7 +952,7 @@ function Design() {
                         </fieldset>
                         <fieldset className='style-border-style'>
                             <legend className='fieldset-legend'>Border Style</legend>
-                            <div className='border-style-control aria-Group'>
+                            <div className='border-style-control react-aria-Group'>
                                 <label className='control-label'>
                                     <SquareDashedBottom color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </label>
@@ -1033,7 +1033,7 @@ function Design() {
                 <div className='panel-content'>
                     <fieldset className="typography-font">
                         <legend className='fieldset-legend'>Font</legend>
-                        <div className='font-select-control aria-Group'>
+                        <div className='font-select-control react-aria-Group'>
                             <Select
                                 items={[
                                     { id: 'Arial', name: 'Arial' },

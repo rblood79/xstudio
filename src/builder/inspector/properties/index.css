@@ -21,19 +21,19 @@
         gap: 8px;
     }
 
-    .aria-control {
+    .react-aria-control {
         grid-area: input1;
         display: flex;
         justify-content: space-between;
 
-        .aria-Select {
+        .react-aria-Select {
             flex: 1;
 
-            .aria-SelectValue {
+            .react-aria-SelectValue {
                 width: 100%;
             }
 
-            .aria-Button {
+            .react-aria-Button {
                 padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-sm);
                 width: 100%;
                 box-shadow: none;

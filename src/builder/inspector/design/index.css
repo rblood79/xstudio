@@ -1,14 +1,14 @@
 @layer utilities {
     aside.inspector {
 
-        .aria-ToggleButtonGroup,
-        .aria-Group {
+        .react-aria-ToggleButtonGroup,
+        .react-aria-Group {
             background-color: var(--color-gray-100);
             border-radius: var(--radius-md);
         }
 
-        .aria-Button,
-        .aria-ToggleButton {
+        .react-aria-Button,
+        .react-aria-ToggleButton {
             background-color: transparent;
             /*var(--color-gray-100);*/
             border-width: 0;
@@ -31,7 +31,7 @@
         }
 
         .fieldset-actions {
-            .aria-Button {
+            .react-aria-Button {
                 background-color: var(--color-gray-100);
                 border-radius: var(--radius-md);
             }
@@ -260,11 +260,11 @@
             border-radius: 0;
         }
 
-        .aria-SelectValue {
+        .react-aria-SelectValue {
             display: none;
         }
 
-        .aria-Button {
+        .react-aria-Button {
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             border-left-width: 0;
             padding: 2px 2px 2px 0;
@@ -315,11 +315,11 @@
             border-radius: 0;
         }
 
-        .aria-SelectValue {
+        .react-aria-SelectValue {
             display: none;
         }
 
-        .aria-Button {
+        .react-aria-Button {
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             border-left-width: 0;
             padding: 2px 2px 2px 0;
@@ -334,11 +334,11 @@
             border-radius: 0;
         }
 
-        .aria-SelectValue {
+        .react-aria-SelectValue {
             display: none;
         }
 
-        .aria-Button {
+        .react-aria-Button {
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             border-left-width: 0;
             padding: 2px 2px 2px 0;
@@ -352,11 +352,11 @@
             border-radius: 0;
         }
 
-        .aria-SelectValue {
+        .react-aria-SelectValue {
             display: none;
         }
 
-        .aria-Button {
+        .react-aria-Button {
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             border-left-width: 0;
             padding: 2px 2px 2px 0;

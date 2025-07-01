@@ -21,7 +21,7 @@ function Properties() {
                     <div className="component-props">
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Text</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -49,7 +49,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Disabled</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -132,7 +132,7 @@ function Properties() {
                     <div className="component-props">
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Selection</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
 
@@ -166,7 +166,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Layout</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
 
@@ -200,7 +200,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Disabled</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -362,7 +362,7 @@ function Properties() {
                     <div className="component-props">
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Text</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -390,7 +390,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>State</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -418,7 +418,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Disabled</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -451,7 +451,7 @@ function Properties() {
                     <div className="component-props">
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Label</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -479,7 +479,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Orientation</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -512,7 +512,7 @@ function Properties() {
 
                         <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Disabled</legend>
-                            <div className='aria-control aria-Group'>
+                            <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
@@ -535,6 +535,72 @@ function Properties() {
                                         }
                                     }}
                                 />
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
+            case 'ListBox':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Label</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.label || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            label: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Orientation</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <Select
+                                    items={[
+                                        { id: 'horizontal', name: 'Horizontal' },
+                                        { id: 'vertical', name: 'Vertical' }
+                                    ]}
+                                    selectedKey={selectedElementProps.orientation || 'vertical'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            orientation: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
                             </div>
                         </fieldset>
                     </div>

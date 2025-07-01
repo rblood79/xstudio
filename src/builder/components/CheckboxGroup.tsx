@@ -1,7 +1,6 @@
 import {
   CheckboxGroup as AriaCheckboxGroup,
   CheckboxGroupProps as AriaCheckboxGroupProps,
-  CheckboxProps as AriaCheckboxProps,
   FieldError,
   Label,
   Text,
@@ -24,12 +23,17 @@ export function CheckboxGroup(
     description,
     errorMessage,
     children,
+    orientation = 'vertical',
     ...props
-  }: CheckboxGroupProps
+  }: CheckboxGroupProps & { orientation?: 'horizontal' | 'vertical' }
 ) {
   return (
     (
-      <AriaCheckboxGroup {...props} className='react-aria-CheckboxGroup'>
+      <AriaCheckboxGroup
+        {...props}
+        className='react-aria-CheckboxGroup'
+        data-orientation={orientation}
+      >
         {label && <Label>{label}</Label>}
         {children}
         {description && <Text slot="description">{description}</Text>}
