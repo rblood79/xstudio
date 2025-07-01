@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk, CheckSquare } from 'lucide-react';
 
-import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
+import { RadioGroup, Radio, Key, Label, Select, SelectItem } from 'react-aria-components';
 import { iconProps } from '../builder/constants';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
@@ -156,7 +156,13 @@ function Builder() {
                         orientation: 'horizontal',
                         isDisabled: false,
                     };
-
+                case 'CheckboxGroup':
+                    return {
+                        ...baseProps,
+                        label: text || 'Checkbox Group',
+                        orientation: 'vertical',
+                        isDisabled: false,
+                    };
                 case 'TextField':
                     return {
                         ...baseProps,

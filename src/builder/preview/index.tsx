@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
-import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
+import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup, ListBox, ListBoxItem } from '../components/list';
 
 interface PreviewElement {
   id: string;
@@ -219,6 +219,7 @@ function Preview() {
           className={el.props.className}
           label={el.props.label}
           value={el.props.value || []}
+          orientation={el.props.orientation || 'vertical'}
           onChange={(selected) => {
             const updatedProps = {
               ...el.props,
@@ -273,6 +274,23 @@ function Preview() {
         >
           {typeof el.props.children === 'string' ? el.props.children : 'Button'}
         </Button>
+      );
+    }
+
+    // ListBox 컴포넌트 특별 처리
+    if (el.tag === 'ListBox') {
+      const childItems = children.filter(child => child.tag === 'ListBoxItem');
+      return (
+        <ListBox
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          orientation={el.props.orientation || 'vertical'}
+          label={el.props.label}
+        >
+          {childItems.map(item => renderElement(item))}
+        </ListBox>
       );
     }
 
