@@ -31,6 +31,9 @@
 
             .react-aria-SelectValue {
                 width: 100%;
+                display: flex;
+                align-items: flex-start;
+                justify-content: flex-start;
             }
 
             .react-aria-Button {
@@ -40,4 +43,44 @@
             }
         }
     }
+}
+
+/* JSON 입력 관련 스타일 */
+.json-input-container {
+    position: relative;
+}
+
+.json-input-container .control-input.json-error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.json-error-message {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+    color: #dc2626;
+    font-size: 12px;
+}
+
+.error-icon {
+    font-size: 14px;
+}
+
+.json-help {
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+}
+
+.json-help small {
+    color: #64748b;
+    line-height: 1.4;
 }

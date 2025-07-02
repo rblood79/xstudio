@@ -1,14 +1,45 @@
-import { Type, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff } from 'lucide-react';
+import { ListTodo, Type, RotateCwSquare, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
 import { EllipsisVertical } from 'lucide-react';
 import { iconProps } from '../../constants';
+import { useState, useRef, useEffect } from 'react';
 
 import './index.css';
 
 function Properties() {
     const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+
+    // JSON 입력 관련 상태
+    const [jsonInputValue, setJsonInputValue] = useState('');
+    const [jsonError, setJsonError] = useState<string | null>(null);
+    const jsonUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // selectedElementProps가 변경될 때 JSON 입력값 동기화
+    useEffect(() => {
+        if (selectedElementProps?.items) {
+            try {
+                setJsonInputValue(JSON.stringify(selectedElementProps.items, null, 2));
+                setJsonError(null);
+            } catch (err) {
+                setJsonInputValue('');
+                setJsonError('Failed to stringify items');
+            }
+        } else {
+            setJsonInputValue('');
+            setJsonError(null);
+        }
+    }, [selectedElementProps?.items]);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    useEffect(() => {
+        return () => {
+            if (jsonUpdateTimeout.current) {
+                clearTimeout(jsonUpdateTimeout.current);
+            }
+        };
+    }, []);
 
     if (!selectedElementId) {
         return <div>요소를 선택해주세요</div>;
@@ -572,10 +603,44 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Selection</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <Select
+                                    items={[
+                                        { id: 'none', name: 'None' },
+                                        { id: 'single', name: 'Single' },
+                                        { id: 'multiple', name: 'Multiple' }
+                                    ]}
+                                    selectedKey={selectedElementProps.selectionMode || 'none'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            selectionMode: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
                             <legend className='fieldset-legend'>Orientation</legend>
                             <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
-                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                    <RotateCwSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                 </label>
                                 <Select
                                     items={[
@@ -601,6 +666,134 @@ function Properties() {
                                 >
                                     {(item) => <SelectItem>{item.name}</SelectItem>}
                                 </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Layout</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'><Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <Select
+                                    items={[
+                                        { id: 'default', name: 'Default' },
+                                        { id: 'compact', name: 'Compact' },
+                                        { id: 'detailed', name: 'Detailed' },
+                                        { id: 'grid', name: 'Grid' }
+                                    ]}
+                                    selectedKey={selectedElementProps.itemLayout || 'default'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            itemLayout: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Items</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'><ListTodo color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
+                                <div className="json-input-container">
+                                    <textarea
+                                        className={`control-input ${jsonError ? 'json-error' : ''}`}
+                                        rows={10}
+                                        value={jsonInputValue}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setJsonInputValue(value);
+
+                                            // 빈 값이면 에러 초기화
+                                            if (!value.trim()) {
+                                                setJsonError(null);
+                                                return;
+                                            }
+
+                                            try {
+                                                const parsed = JSON.parse(value);
+                                                setJsonError(null);
+
+                                                // 유효한 JSON이면 즉시 업데이트
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    items: parsed
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+
+                                                // DB 업데이트는 디바운스 처리
+                                                clearTimeout(jsonUpdateTimeout.current);
+                                                jsonUpdateTimeout.current = setTimeout(async () => {
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+                                                    } catch (err) {
+                                                        console.error('DB Update error:', err);
+                                                    }
+                                                }, 1000);
+
+                                            } catch (err) {
+                                                setJsonError(err instanceof Error ? err.message : 'Invalid JSON');
+                                            }
+                                        }}
+                                        onBlur={async () => {
+                                            // 포커스를 잃을 때 유효한 JSON이면 DB에 저장
+                                            if (!jsonError && jsonInputValue.trim()) {
+                                                try {
+                                                    const parsed = JSON.parse(jsonInputValue);
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        items: parsed
+                                                    };
+
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Final save error:', err);
+                                                }
+                                            }
+                                        }}
+                                        placeholder={`[
+  {
+    "id": "1",
+    "type": "simple",
+    "text": "Item 1"
+  },
+  {
+    "id": "2", 
+    "type": "complex",
+    "label": "Item 2",
+    "description": "Description here"
+  }
+]`}
+                                    />
+                                    {jsonError && (
+                                        <div className="json-error-message">
+                                            <span className="error-icon">⚠️</span>
+                                            {jsonError}
+                                        </div>
+                                    )}
+                                    <div className="json-help">
+                                        <small>
+                                            유효한 JSON 배열을 입력하세요. 각 item은 id가 필요합니다.
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </fieldset>
                     </div>

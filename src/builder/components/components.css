@@ -762,8 +762,115 @@
         color: var(--color-red-500);
     }
 
+    /* ListBoxItem 확장 스타일 */
+    .react-aria-ListBoxItem {
 
+        /* 확장된 콘텐츠 레이아웃 */
+        .listbox-item-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing);
+            width: 100%;
+        }
 
+        .listbox-item-image {
+            border-radius: var(--radius-sm);
+            object-fit: cover;
 
+            &--small {
+                width: 24px;
+                height: 24px;
+            }
 
+            &--medium {
+                width: 32px;
+                height: 32px;
+            }
+
+            &--large {
+                width: 48px;
+                height: 48px;
+            }
+        }
+
+        .listbox-item-icon {
+            flex-shrink: 0;
+        }
+
+        .listbox-item-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .listbox-item-label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .listbox-item-description {
+            font-size: var(--text-sm);
+            color: var(--text-color-secondary);
+            margin-top: 2px;
+        }
+
+        .listbox-item-subtitle {
+            font-size: var(--text-xs);
+            color: var(--text-color-tertiary);
+            margin-top: 1px;
+        }
+
+        .listbox-item-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        &:hover .listbox-item-actions {
+            opacity: 1;
+        }
+
+        .listbox-item-action {
+            padding: 2px 6px;
+            font-size: var(--text-xs);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--color-white);
+            cursor: pointer;
+
+            &:hover {
+                background: var(--color-gray-50);
+            }
+        }
+    }
+
+    /* 레이아웃별 스타일 */
+    .react-aria-ListBox--compact .react-aria-ListBoxItem {
+        min-height: 32px;
+        padding: 4px var(--spacing);
+    }
+
+    .react-aria-ListBox--detailed .react-aria-ListBoxItem {
+        min-height: 64px;
+        padding: var(--spacing);
+
+        .listbox-item-content {
+            align-items: flex-start;
+        }
+    }
+
+    .react-aria-ListBox--grid .react-aria-ListBoxItem {
+        padding: var(--spacing);
+        text-align: center;
+
+        .listbox-item-content {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .listbox-item-image {
+            width: 64px;
+            height: 64px;
+        }
+    }
 }
