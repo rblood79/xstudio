@@ -13,7 +13,10 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
+import { ChevronUp, ChevronDown } from 'lucide-react';
+
 import './components.css';
+import { iconProps } from '../constants';
 
 export interface SelectProps<T extends object>
   extends Omit<AriaSelectProps<T>, 'children'> {
@@ -35,7 +38,7 @@ export function Select<T extends object>(
         <Label>{label}</Label>
         <Button>
           <SelectValue />
-          <span aria-hidden="true">▼</span>
+          <ChevronDown aria-hidden="true" size={iconProps.size} />
         </Button>
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
