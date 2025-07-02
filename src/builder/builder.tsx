@@ -190,6 +190,16 @@ function Builder() {
                         placeholder: text || 'Input',
                         'aria-label': text || 'Input',
                     };
+                case 'ListBox':
+                    return {
+                        ...baseProps,
+                        label: text || 'List Box',
+                        orientation: 'vertical',
+                        selectionMode: 'none',
+                        itemLayout: 'default',
+                        items: [],
+                        selectedKeys: []
+                    };
 
                 default:
                     return baseProps;

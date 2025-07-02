@@ -3,7 +3,22 @@ import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
 import styles from "./index.module.css";
-import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup, ListBox, ListBoxItem } from '../components/list';
+import {
+  ToggleButton,
+  ToggleButtonGroup,
+  Button,
+  TextField,
+  Label,
+  Input,
+  Description,
+  FieldError,
+  Checkbox,
+  CheckboxGroup,
+  ListBox,
+  ListBoxItem,
+  ListBoxItemRenderer,
+  ListBoxItemData
+} from '../components/list';
 
 interface PreviewElement {
   id: string;
@@ -280,6 +295,8 @@ function Preview() {
     // ListBox 컴포넌트 특별 처리
     if (el.tag === 'ListBox') {
       const childItems = children.filter(child => child.tag === 'ListBoxItem');
+      const items = el.props.items || [];
+
       return (
         <ListBox
           key={el.id}
@@ -288,8 +305,24 @@ function Preview() {
           className={el.props.className}
           orientation={el.props.orientation || 'vertical'}
           label={el.props.label}
+          itemLayout={el.props.itemLayout || 'default'}
+          selectionMode={el.props.selectionMode || 'none'}
+          selectedKeys={el.props.selectedKeys || []}
+          onSelectionChange={(selectedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: Array.from(selectedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          items={items.length > 0 ? items : undefined}
         >
-          {childItems.map(item => renderElement(item))}
+          {items.length > 0
+            ? items.map((item: ListBoxItemData) => (
+              <ListBoxItemRenderer key={item.id} item={item} />
+            ))
+            : childItems.map(item => renderElement(item))
+          }
         </ListBox>
       );
     }

@@ -133,4 +133,42 @@ export interface Database {
             };
         };
     };
+}
+
+export interface ListBoxItemData {
+    id: string;
+    type?: 'simple' | 'complex' | 'custom';
+    text?: string;
+    label?: string;
+    description?: string;
+    subtitle?: string;
+    image?: {
+        src: string;
+        alt?: string;
+        size?: 'small' | 'medium' | 'large';
+    };
+    icon?: {
+        name: string;
+        size?: number;
+        color?: string;
+    };
+    disabled?: boolean;
+    selected?: boolean;
+    style?: React.CSSProperties;
+    className?: string;
+    metadata?: Record<string, any>;
+    actions?: Array<{
+        id: string;
+        label: string;
+        icon?: string;
+        onClick?: () => void;
+    }>;
+}
+
+export interface ListBoxProps extends ElementProps {
+    label?: string;
+    orientation?: 'horizontal' | 'vertical';
+    itemLayout?: 'default' | 'compact' | 'detailed' | 'grid';
+    items?: ListBoxItemData[];
+    [key: string]: any;
 } 
