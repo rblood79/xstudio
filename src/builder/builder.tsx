@@ -201,6 +201,31 @@ function Builder() {
                         selectedKeys: []
                     };
 
+                case 'GridList':
+                    return {
+                        ...baseProps,
+                        label: text || 'Grid List',
+                        orientation: 'vertical',
+                        selectionMode: 'none',
+                        itemLayout: 'default',
+                        items: [],
+                        selectedKeys: []
+                    };
+                case 'Select':
+                    return {
+                        ...baseProps,
+                        label: text || 'Select',
+                        items: [],
+                        selectedKey: null
+                    };
+
+                case 'ComboBox':
+                    return {
+                        ...baseProps,
+                        label: text || 'ComboBox',
+                        items: [],
+                        selectedKey: null
+                    };
                 default:
                     return baseProps;
             }

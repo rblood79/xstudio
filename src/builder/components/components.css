@@ -693,7 +693,311 @@
         }
     }
 
+    .react-aria-GridList {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: inherit;
+        overflow: auto;
+        padding: 4px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--overlay-background);
+        forced-color-adjust: none;
+        outline: none;
+        width: 250px;
+        max-height: 300px;
+        min-height: 100px;
+        box-sizing: border-box;
 
+        &[data-focus-visible] {
+            outline: 2px solid var(--focus-ring-color);
+            outline-offset: -1px;
+        }
+
+        .react-aria-GridListItem {
+            display: flex;
+            align-items: center;
+            gap: 0.571rem;
+            min-height: 28px;
+            padding: 0.286rem 0.286rem 0.286rem 0.571rem;
+            border-radius: 6px;
+            outline: none;
+            cursor: default;
+            color: var(--text-color);
+            font-size: 1.072rem;
+            position: relative;
+            transform: translateZ(0);
+
+            &[data-focus-visible] {
+                outline: 2px solid var(--focus-ring-color);
+                outline-offset: -2px;
+            }
+
+            &[data-pressed] {
+                background: var(--gray-100);
+            }
+
+            &[data-selected] {
+                background: var(--highlight-background);
+                color: var(--highlight-foreground);
+                --focus-ring-color: var(--highlight-foreground);
+
+                &[data-focus-visible] {
+                    outline-color: var(--highlight-foreground);
+                    outline-offset: -4px;
+                }
+
+                .react-aria-Button {
+                    color: var(--highlight-foreground);
+                    --highlight-hover: rgb(255 255 255 / 0.1);
+                    --highlight-pressed: rgb(255 255 255 / 0.2);
+                }
+            }
+
+            &[data-disabled] {
+                color: var(--text-color-disabled);
+            }
+
+            .react-aria-Button:not([slot]) {
+                margin-left: auto;
+            }
+
+            .react-aria-Button {
+                background: transparent;
+                border: none;
+                font-size: 1.2rem;
+                line-height: 1.2em;
+                padding: 0.286rem 0.429rem;
+                transition: background 200ms;
+
+                &[data-hovered] {
+                    background: var(--highlight-hover);
+                }
+
+                &[data-pressed] {
+                    background: var(--highlight-pressed);
+                    box-shadow: none;
+                }
+            }
+        }
+
+        /* join selected items if :has selector is supported */
+        @supports selector(:has(.foo)) {
+            gap: 0;
+
+            .react-aria-GridListItem[data-selected]:has(+ [data-selected]),
+            .react-aria-GridListItem[data-selected]:has(+ .react-aria-DropIndicator + [data-selected]) {
+                border-end-start-radius: 0;
+                border-end-end-radius: 0;
+            }
+
+            .react-aria-GridListItem[data-selected]+[data-selected],
+            .react-aria-GridListItem[data-selected]+.react-aria-DropIndicator+[data-selected] {
+                border-start-start-radius: 0;
+                border-start-end-radius: 0;
+            }
+        }
+
+        :where(.react-aria-GridListItem) .react-aria-Checkbox {
+            --selected-color: var(--highlight-foreground);
+            --selected-color-pressed: var(--highlight-foreground-pressed);
+            --checkmark-color: var(--highlight-background);
+            --background-color: var(--highlight-background);
+        }
+    }
+
+    .react-aria-GridListItem[data-href] {
+        cursor: pointer;
+    }
+
+    .react-aria-GridList {
+        &[data-empty] {
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+        }
+    }
+
+    .react-aria-GridListItem {
+        &[data-allows-dragging] {
+            padding-left: 4px;
+        }
+
+        &[data-dragging] {
+            opacity: 0.6;
+        }
+
+        [slot=drag] {
+            all: unset;
+            width: 15px;
+            text-align: center;
+
+            &[data-focus-visible] {
+                border-radius: 4px;
+                outline: 2px solid var(--focus-ring-color);
+            }
+        }
+    }
+
+    .react-aria-DropIndicator {
+        &[data-drop-target] {
+            outline: 1px solid var(--highlight-background);
+        }
+
+        @supports not selector(:has(.foo)) {
+            /* Undo gap in browsers that don't support :has */
+            margin-bottom: -2px;
+        }
+    }
+
+    .react-aria-GridList[data-drop-target] {
+        outline: 2px solid var(--highlight-background);
+        outline-offset: -1px;
+        background: var(--highlight-overlay);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+        outline: 2px solid var(--highlight-background);
+        background: var(--highlight-overlay);
+    }
+
+    .react-aria-DropIndicator {
+        &[data-drop-target] {
+            outline: 1px solid var(--highlight-background);
+        }
+
+        @supports not selector(:has(.foo)) {
+            /* Undo gap in browsers that don't support :has */
+            margin-bottom: -2px;
+        }
+    }
+
+    .react-aria-ComboBox {
+        color: var(--text-color);
+
+        >div:has(.react-aria-Input) {
+            display: flex;
+            align-items: center;
+        }
+
+        .react-aria-Input {
+            margin: 0;
+            font-size: 1.072rem;
+            background: var(--field-background);
+            color: var(--field-text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.286rem 2rem 0.286rem 0.571rem;
+            vertical-align: middle;
+            outline: none;
+            min-width: 0;
+
+            &[data-focused] {
+                outline: 2px solid var(--focus-ring-color);
+                outline-offset: -1px;
+            }
+        }
+
+        .react-aria-Button {
+            background: var(--highlight-background);
+            color: var(--highlight-foreground);
+            forced-color-adjust: none;
+            border-radius: 4px;
+            border: none;
+            margin-left: -1.714rem;
+            width: 1.429rem;
+            height: 1.429rem;
+            padding: 0;
+            font-size: 0.857rem;
+            cursor: default;
+            flex-shrink: 0;
+
+            &[data-pressed] {
+                box-shadow: none;
+                background: var(--highlight-background);
+            }
+        }
+    }
+
+    .react-aria-Popover[data-trigger=ComboBox] {
+        width: var(--trigger-width);
+
+        .react-aria-ListBox {
+            display: block;
+            width: unset;
+            max-height: inherit;
+            min-height: unset;
+            border: none;
+
+            .react-aria-Header {
+                padding-left: 1.571rem;
+            }
+        }
+
+        .react-aria-ListBoxItem {
+            padding: 0 0.571rem 0 1.571rem;
+
+            &[data-focus-visible] {
+                outline: none;
+            }
+
+            &[data-selected] {
+                font-weight: 600;
+                background: unset;
+                color: var(--text-color);
+
+                &::before {
+                    content: '✓';
+                    content: '✓' / '';
+                    alt: ' ';
+                    position: absolute;
+                    top: 4px;
+                    left: 4px;
+                }
+            }
+
+            &[data-focused],
+            &[data-pressed] {
+                background: var(--highlight-background);
+                color: var(--highlight-foreground);
+            }
+        }
+    }
+
+    .react-aria-ListBoxItem[href] {
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .react-aria-ComboBox {
+        .react-aria-Input {
+            &[data-disabled] {
+                border-color: var(--border-color-disabled);
+            }
+        }
+
+        .react-aria-Button {
+            &[data-disabled] {
+                background: var(--border-color-disabled);
+            }
+        }
+
+        .react-aria-Input {
+            &[data-invalid]:not([data-focused]) {
+                border-color: var(--invalid-color);
+            }
+        }
+
+        .react-aria-FieldError {
+            font-size: 12px;
+            color: var(--invalid-color);
+        }
+
+        [slot=description] {
+            font-size: 12px;
+        }
+    }
 
     .aria-Label {
         display: inline-block;
@@ -872,5 +1176,141 @@
             width: 64px;
             height: 64px;
         }
+    }
+
+    /* 공통 Collection 아이템 스타일 */
+    .collection-item-content {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing);
+        width: 100%;
+    }
+
+    .collection-item-image {
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+
+        &--small {
+            width: 24px;
+            height: 24px;
+        }
+
+        &--medium {
+            width: 32px;
+            height: 32px;
+        }
+
+        &--large {
+            width: 48px;
+            height: 48px;
+        }
+    }
+
+    .collection-item-icon {
+        flex-shrink: 0;
+    }
+
+    .collection-item-text {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .collection-item-label {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .collection-item-description {
+        font-size: var(--text-sm);
+        color: var(--text-color-secondary);
+        margin-top: 2px;
+    }
+
+    .collection-item-subtitle {
+        font-size: var(--text-xs);
+        color: var(--text-color-tertiary);
+        margin-top: 1px;
+    }
+
+    .collection-item-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .collection-item-content:hover .collection-item-actions {
+        opacity: 1;
+    }
+
+    .collection-item-action {
+        padding: 2px 6px;
+        font-size: var(--text-xs);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--color-white);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--color-gray-50);
+        }
+    }
+
+    /* GridList 전용 스타일 */
+    .react-aria-GridList {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: var(--spacing);
+        padding: var(--spacing);
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--radius-md);
+        background: var(--color-white);
+        max-height: 400px;
+        overflow: auto;
+    }
+
+    .react-aria-GridListItem {
+        padding: var(--spacing);
+        border: 1px solid var(--color-gray-200);
+        border-radius: var(--radius-md);
+        background: var(--color-white);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: var(--color-gray-300);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        &[data-selected] {
+            border-color: var(--color-primary-600);
+            background: var(--color-primary-50);
+        }
+
+        &[data-focus-visible] {
+            outline: 2px solid var(--focus-ring-color);
+            outline-offset: 2px;
+        }
+
+        &[data-disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    /* GridList 레이아웃별 스타일 */
+    .react-aria-GridList--compact {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--spacing-sm);
+    }
+
+    .react-aria-GridList--detailed {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--spacing-md);
+    }
+
+    .react-aria-GridList--grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: var(--spacing);
     }
 }

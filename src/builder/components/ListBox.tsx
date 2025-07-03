@@ -6,38 +6,9 @@ import {
   Text
 } from 'react-aria-components';
 import { LucideIcon, icons } from 'lucide-react';
+import { CollectionItemData } from './types';
 
 import './components.css';
-
-export interface ListBoxItemData {
-  id: string;
-  type?: 'simple' | 'complex' | 'custom';
-  text?: string;
-  label?: string;
-  description?: string;
-  subtitle?: string;
-  image?: {
-    src: string;
-    alt?: string;
-    size?: 'small' | 'medium' | 'large';
-  };
-  icon?: {
-    name: string;
-    size?: number;
-    color?: string;
-  };
-  disabled?: boolean;
-  selected?: boolean;
-  style?: React.CSSProperties;
-  className?: string;
-  metadata?: Record<string, any>;
-  actions?: Array<{
-    id: string;
-    label: string;
-    icon?: string;
-    onClick?: () => void;
-  }>;
-}
 
 export function ListBox<T extends object>(
   { children, items, itemLayout = 'default', ...props }: ListBoxProps<T> & {
@@ -59,8 +30,8 @@ export function ListBoxItem(props: ListBoxItemProps) {
   return <AriaListBoxItem {...props} className='react-aria-ListBoxItem' />;
 }
 
-// 확장된 ListBoxItem 렌더러
-export function ListBoxItemRenderer({ item }: { item: ListBoxItemData }) {
+// ListBox 전용 아이템 렌더러
+export function ListBoxItemRenderer({ item }: { item: CollectionItemData }) {
   const IconComponent = item.icon ? icons[item.icon.name as keyof typeof icons] : null;
 
   switch (item.type) {
@@ -79,12 +50,12 @@ export function ListBoxItemRenderer({ item }: { item: ListBoxItemData }) {
           className={item.className}
           style={item.style}
         >
-          <div className="listbox-item-content">
+          <div className="collection-item-content">
             {item.image && (
               <img
                 src={item.image.src}
                 alt={item.image.alt}
-                className={`listbox-item-image listbox-item-image--${item.image.size || 'medium'}`}
+                className={`collection-item-image collection-item-image--${item.image.size || 'medium'}`}
               />
             )}
 
@@ -92,32 +63,32 @@ export function ListBoxItemRenderer({ item }: { item: ListBoxItemData }) {
               <IconComponent
                 size={item.icon?.size || 16}
                 color={item.icon?.color}
-                className="listbox-item-icon"
+                className="collection-item-icon"
               />
             )}
 
-            <div className="listbox-item-text">
+            <div className="collection-item-text">
               {item.label && (
-                <Text slot="label" className="listbox-item-label">
+                <Text slot="label" className="collection-item-label">
                   {item.label}
                 </Text>
               )}
 
               {item.description && (
-                <Text slot="description" className="listbox-item-description">
+                <Text slot="description" className="collection-item-description">
                   {item.description}
                 </Text>
               )}
 
               {item.subtitle && (
-                <Text className="listbox-item-subtitle">
+                <Text className="collection-item-subtitle">
                   {item.subtitle}
                 </Text>
               )}
             </div>
 
             {item.actions && item.actions.length > 0 && (
-              <div className="listbox-item-actions">
+              <div className="collection-item-actions">
                 {item.actions.map(action => (
                   <button
                     key={action.id}
@@ -125,7 +96,7 @@ export function ListBoxItemRenderer({ item }: { item: ListBoxItemData }) {
                       e.stopPropagation();
                       action.onClick?.();
                     }}
-                    className="listbox-item-action"
+                    className="collection-item-action"
                   >
                     {action.label}
                   </button>
@@ -155,3 +126,9 @@ export function ListBoxItemRenderer({ item }: { item: ListBoxItemData }) {
       );
   }
 }
+
+// 기존 ListBoxItemData 타입을 CollectionItemData로 별칭 (하위 호환성)
+export type ListBoxItemData = CollectionItemData;
+
+export { ListBox as MyListBox };
+export { ListBoxItem as MyItem };
