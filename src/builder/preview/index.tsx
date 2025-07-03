@@ -17,7 +17,13 @@ import {
   ListBox,
   ListBoxItem,
   ListBoxItemRenderer,
-  ListBoxItemData
+  ListBoxItemData,
+  GridList,
+  GridListItem,
+  GridListItemRenderer,
+  CollectionItemData,
+  Select,
+  ComboBox
 } from '../components/list';
 
 interface PreviewElement {
@@ -292,6 +298,41 @@ function Preview() {
       );
     }
 
+    // GridList 컴포넌트 특별 처리
+    if (el.tag === 'GridList') {
+      const childItems = children.filter(child => child.tag === 'GridListItem');
+      const items = el.props.items || [];
+
+      return (
+        <GridList
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          orientation={el.props.orientation || 'vertical'}
+          label={el.props.label}
+          itemLayout={el.props.itemLayout || 'default'}
+          selectionMode={el.props.selectionMode || 'none'}
+          selectedKeys={el.props.selectedKeys || []}
+          onSelectionChange={(selectedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: Array.from(selectedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          items={items.length > 0 ? items : undefined}
+        >
+          {items.length > 0
+            ? items.map((item: CollectionItemData) => (
+              <GridListItemRenderer key={item.id} item={item} />
+            ))
+            : childItems.map(item => renderElement(item))
+          }
+        </GridList>
+      );
+    }
+
     // ListBox 컴포넌트 특별 처리
     if (el.tag === 'ListBox') {
       const childItems = children.filter(child => child.tag === 'ListBoxItem');
@@ -318,12 +359,74 @@ function Preview() {
           items={items.length > 0 ? items : undefined}
         >
           {items.length > 0
-            ? items.map((item: ListBoxItemData) => (
+            ? items.map((item: CollectionItemData) => (
               <ListBoxItemRenderer key={item.id} item={item} />
             ))
             : childItems.map(item => renderElement(item))
           }
         </ListBox>
+      );
+    }
+
+    // Select 컴포넌트 특별 처리
+    if (el.tag === 'Select') {
+      const items = el.props.items || [];
+
+      return (
+        <Select
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label}
+          selectedKey={el.props.selectedKey}
+          onSelectionChange={(selectedKey) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKey
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          items={items.length > 0 ? items : undefined}
+        >
+          {items.length > 0
+            ? items.map((item: CollectionItemData) => (
+              <ListBoxItemRenderer key={item.id} item={item} />
+            ))
+            : children.map(item => renderElement(item))
+          }
+        </Select>
+      );
+    }
+
+    // ComboBox 컴포넌트 특별 처리
+    if (el.tag === 'ComboBox') {
+      const items = el.props.items || [];
+
+      return (
+        <ComboBox
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label}
+          selectedKey={el.props.selectedKey}
+          onSelectionChange={(selectedKey) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKey
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          items={items.length > 0 ? items : undefined}
+        >
+          {items.length > 0
+            ? items.map((item: CollectionItemData) => (
+              <ListBoxItemRenderer key={item.id} item={item} />
+            ))
+            : children.map(item => renderElement(item))
+          }
+        </ComboBox>
       );
     }
 

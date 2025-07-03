@@ -1,44 +1,42 @@
 import {
   Button,
+  ComboBox as AriaComboBox,
+  ComboBoxProps as AriaComboBoxProps,
   FieldError,
+  Input,
   Label,
   ListBox,
   ListBoxItem,
   ListBoxItemProps,
   Popover,
-  Select as AriaSelect,
-  SelectProps as AriaSelectProps,
-  SelectValue,
   Text,
   ValidationResult
 } from 'react-aria-components';
 
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import { CollectionItemData } from './types';
 import { ListBoxItemRenderer } from './ListBox';
 
 import './components.css';
-import { iconProps } from '../constants';
 
-export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, 'children'> {
+export interface ComboBoxProps<T extends object>
+  extends Omit<AriaComboBoxProps<T>, 'children'> {
   label?: string;
-  description?: string;
+  description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);
   items?: CollectionItemData[];
   children?: React.ReactNode | ((item: T) => React.ReactNode);
 }
 
-export function Select<T extends object>(
-  { label, description, errorMessage, children, items, ...props }: SelectProps<T>
+export function ComboBox<T extends object>(
+  { label, description, errorMessage, children, items, ...props }: ComboBoxProps<T>
 ) {
   return (
-    <AriaSelect {...props}>
+    <AriaComboBox {...props}>
       <Label>{label}</Label>
-      <Button>
-        <SelectValue />
-        <ChevronDown aria-hidden="true" size={iconProps.size} />
-      </Button>
+      <div className="my-combobox-container">
+        <Input />
+        <Button>▼</Button>
+      </div>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
       <Popover>
@@ -51,14 +49,13 @@ export function Select<T extends object>(
           }
         </ListBox>
       </Popover>
-    </AriaSelect>
+    </AriaComboBox>
   );
 }
 
-export { Select as MySelect };
-
-export function SelectItem(props: ListBoxItemProps) {
+export function ComboBoxItem(props: ListBoxItemProps) {
   return <ListBoxItem {...props} />;
 }
 
-export { SelectItem as MyItem };
+export { ComboBox as MyComboBox };
+export { ComboBoxItem as MyItem };
