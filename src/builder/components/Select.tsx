@@ -33,7 +33,7 @@ export function Select<T extends object>(
   { label, description, errorMessage, children, items, ...props }: SelectProps<T>
 ) {
   return (
-    <AriaSelect {...props}>
+    <AriaSelect {...props} className='react-aria-Select'>
       <Label>{label}</Label>
       <Button>
         <SelectValue />
