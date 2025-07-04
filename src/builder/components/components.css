@@ -9,6 +9,13 @@
         }
     }
 
+    .react-aria-Label {
+        font-size: var(--text-sm);
+        color: var(--color-gray-800);
+        padding: var(--spacing) var(--spacing-sm);
+        line-height: normal;
+    }
+
     .react-aria-Button {
         color: var(--color-gray-800);
         background: var(--color-gray-50);
