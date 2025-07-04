@@ -13,6 +13,9 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
+import { ChevronUp, ChevronDown } from 'lucide-react';
+import { iconProps } from '../constants';
+
 import { CollectionItemData } from './types';
 import { ListBoxItemRenderer } from './ListBox';
 
@@ -31,11 +34,13 @@ export function ComboBox<T extends object>(
   { label, description, errorMessage, children, items, ...props }: ComboBoxProps<T>
 ) {
   return (
-    <AriaComboBox {...props}>
+    <AriaComboBox {...props} className='react-aria-ComboBox'>
       <Label>{label}</Label>
       <div className="my-combobox-container">
         <Input />
-        <Button>▼</Button>
+        <Button>
+          <ChevronDown aria-hidden="true" size={iconProps.size} />
+        </Button>
       </div>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

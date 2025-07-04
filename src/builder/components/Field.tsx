@@ -5,7 +5,7 @@ import { tv } from 'tailwind-variants';
 import { composeTailwindRenderProps, focusRing } from "./utils";
 
 export function Label(props: LabelProps) {
-  return <RACLabel {...props} className={twMerge('aria-Label', props.className)} />;
+  return <RACLabel {...props} className={twMerge('react-aria-Label', props.className)} />;
 }
 
 export function Description(props: TextProps) {

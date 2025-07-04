@@ -283,7 +283,7 @@
         outline: none;
         width: 100%;
         max-height: 300px;
-        min-height: 100px;
+        /* min-height: 100px; */
         box-sizing: border-box;
 
         &[data-focus-visible] {
@@ -293,7 +293,7 @@
     }
 
     .react-aria-ListBoxItem {
-        padding: 0 0.571rem;
+        padding: var(--spacing-2xs) var(--spacing-sm);
         border-radius: var(--radius-md);
         outline: none;
         cursor: default;
@@ -490,10 +490,10 @@
         color: var(--text-color);
 
         .react-aria-Button {
-            box-shadow: 0 1px 2px rgba(0 0 0 / 0.1);
+
             border-radius: var(--radius-md);
-            font-size: var(--text-sm);
-            padding: 0.286rem 0.286rem 0.286rem 0.571rem;
+
+            padding: var(--spacing-2xs) var(--spacing-2xs) var(--spacing-2xs) var(--spacing-sm);
             display: flex;
             align-items: center;
             max-width: 100%;
@@ -509,7 +509,7 @@
 
             &[data-placeholder] {
                 font-style: italic;
-                color: var(--text-color-placeholder);
+                color: var(--color-gray-400);
             }
         }
 
@@ -542,7 +542,7 @@
         }
 
         .react-aria-ListBoxItem {
-            padding: 0 var(--spacing) 0 var(--spacing-xl);
+            padding: 0 var(--spacing-md) 0 var(--spacing-xl);
 
             &[data-focus-visible] {
                 outline: none;
@@ -883,12 +883,12 @@
 
         .react-aria-Input {
             margin: 0;
-            font-size: 1.072rem;
-            background: var(--field-background);
-            color: var(--field-text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 0.286rem 2rem 0.286rem 0.571rem;
+            font-size: var(--text-sm);
+            background: var(--color-gray-50);
+            color: var(--color-gray-800);
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-2xs) var(--spacing-sm);
             vertical-align: middle;
             outline: none;
             min-width: 0;
@@ -900,18 +900,21 @@
         }
 
         .react-aria-Button {
-            background: var(--highlight-background);
-            color: var(--highlight-foreground);
+            background: var(--color-gray-50);
+            color: var(--color-gray-800);
             forced-color-adjust: none;
             border-radius: 4px;
             border: none;
-            margin-left: -1.714rem;
-            width: 1.429rem;
-            height: 1.429rem;
+            margin-left: -27px;
+            width: 25px;
+            height: 25px;
             padding: 0;
-            font-size: 0.857rem;
+            font-size: var(--text-sm);
             cursor: default;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             &[data-pressed] {
                 box-shadow: none;
@@ -971,6 +974,12 @@
     }
 
     .react-aria-ComboBox {
+
+        >div:has(.react-aria-Input) {
+            display: flex;
+            align-items: center;
+        }
+
         .react-aria-Input {
             &[data-disabled] {
                 border-color: var(--border-color-disabled);

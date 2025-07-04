@@ -5,7 +5,7 @@ import {
   ListBoxProps,
   Text
 } from 'react-aria-components';
-import { LucideIcon, icons } from 'lucide-react';
+import { icons } from 'lucide-react';
 import { CollectionItemData } from './types';
 
 import './components.css';
