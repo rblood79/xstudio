@@ -1334,9 +1334,4 @@
         display: flex;
         flex-direction: column;
     }
-
-    .listbox-container .react-aria-Label {
-        font-weight: 500;
-        color: var(--color-foreground);
-    }
 }
