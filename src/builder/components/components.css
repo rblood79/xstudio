@@ -1329,4 +1329,14 @@
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: var(--spacing);
     }
+
+    .listbox-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .listbox-container .react-aria-Label {
+        font-weight: 500;
+        color: var(--color-foreground);
+    }
 }
