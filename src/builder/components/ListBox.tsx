@@ -3,26 +3,37 @@ import {
   ListBoxItem as AriaListBoxItem,
   ListBoxItemProps,
   ListBoxProps,
-  Text
+  Text,
+  Label
 } from 'react-aria-components';
 import { icons } from 'lucide-react';
 import { CollectionItemData } from './types';
 
 import './components.css';
 
+export interface ListBoxProps<T extends object>
+  extends Omit<ListBoxProps<T>, 'children'> {
+  label?: string;
+  itemLayout?: 'default' | 'compact' | 'detailed' | 'grid';
+}
+
 export function ListBox<T extends object>(
-  { children, items, itemLayout = 'default', ...props }: ListBoxProps<T> & {
+  { children, items, itemLayout = 'default', label, ...props }: ListBoxProps<T> & {
+    label?: string;
     itemLayout?: 'default' | 'compact' | 'detailed' | 'grid';
   }
 ) {
   return (
-    <AriaListBox
-      {...props}
-      className={`react-aria-ListBox react-aria-ListBox--${itemLayout}`}
-      data-layout={itemLayout}
-    >
-      {children}
-    </AriaListBox>
+    <div className="listbox-container">
+      {label && <Label>{label}</Label>}
+      <AriaListBox
+        {...props}
+        className={`react-aria-ListBox react-aria-ListBox--${itemLayout}`}
+        data-layout={itemLayout}
+      >
+        {children}
+      </AriaListBox>
+    </div>
   );
 }
 
