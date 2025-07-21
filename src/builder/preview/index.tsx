@@ -430,6 +430,21 @@ function Preview() {
       );
     }
 
+    // Text 컴포넌트 특별 처리
+    if (el.tag === 'Text') {
+      const Tag = el.props.as || 'p';
+      return (
+        <Tag
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {el.props.children}
+        </Tag>
+      );
+    }
+
     // 일반 요소 처리
     const content = [
       el.props.text && String(el.props.text),

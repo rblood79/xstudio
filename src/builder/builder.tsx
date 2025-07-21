@@ -226,6 +226,12 @@ function Builder() {
                         items: [],
                         selectedKey: null
                     };
+                case 'Text':
+                    return {
+                        ...baseProps,
+                        children: text || 'Text',
+                        as: 'p', // 기본값 추가
+                    };
                 default:
                     return baseProps;
             }
