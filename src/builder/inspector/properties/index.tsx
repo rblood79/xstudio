@@ -1234,6 +1234,74 @@ function Properties() {
                     </div>
                 );
 
+            case 'Text':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Text</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.children || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            children: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Tag</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Tag</label>
+                                <Select
+                                    items={[
+                                        { id: 'p', label: '본문(p)' },
+                                        { id: 'h1', label: '제목1(h1)' },
+                                        { id: 'h2', label: '제목2(h2)' },
+                                        { id: 'h3', label: '제목3(h3)' },
+                                        { id: 'h4', label: '제목4(h4)' },
+                                        { id: 'h5', label: '제목5(h5)' },
+                                        { id: 'h6', label: '제목6(h6)' },
+                                    ]}
+                                    selectedKey={selectedElementProps.as || 'p'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            as: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
             default:
                 return <div>지원하지 않는 컴포넌트입니다.</div>;
         }

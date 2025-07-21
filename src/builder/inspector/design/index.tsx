@@ -1042,7 +1042,23 @@ function Design() {
                                     { id: 'Georgia', label: 'Georgia' },
                                     { id: 'Courier New', label: 'Courier New' },
                                     { id: 'Verdana', label: 'Verdana' }
-                                ]}>
+                                ]}
+                                selectedKey={selectedElementProps.style?.fontFamily || 'Arial'}
+                                onSelectionChange={(key) => {
+                                    const updatedProps = {
+                                        ...selectedElementProps,
+                                        style: {
+                                            ...selectedElementProps.style,
+                                            fontFamily: key as string
+                                        }
+                                    };
+                                    updateElementProps(selectedElementId, updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', selectedElementId);
+                                }}
+                            >
                                 {(item) => <SelectItem>{item.label}</SelectItem>}
                             </Select>
                         </div>
