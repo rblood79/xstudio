@@ -129,10 +129,10 @@ function Design() {
                             />
                             <Select
                                 items={[
-                                    { id: 'auto', name: 'auto' },
-                                    { id: 'px', name: 'px' },
-                                    { id: '%', name: '%' },
-                                    { id: 'vw', name: 'vw' }
+                                    { id: 'auto', label: 'auto' },
+                                    { id: 'px', label: 'px' },
+                                    { id: '%', label: '%' },
+                                    { id: 'vw', label: 'vw' }
                                 ]}
                                 selectedKey={(() => {
                                     const width = selectedElementProps.style?.width || '';
@@ -204,7 +204,7 @@ function Design() {
                                     }
                                 }}
                             >
-                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
                             </Select>
                         </div>
                         <div className='size-control-height react-aria-Group'>
@@ -262,10 +262,10 @@ function Design() {
                             />
                             <Select
                                 items={[
-                                    { id: 'auto', name: 'auto' },
-                                    { id: 'px', name: 'px' },
-                                    { id: '%', name: '%' },
-                                    { id: 'vh', name: 'vh' }
+                                    { id: 'auto', label: 'auto' },
+                                    { id: 'px', label: 'px' },
+                                    { id: '%', label: '%' },
+                                    { id: 'vh', label: 'vh' }
                                 ]}
                                 selectedKey={(() => {
                                     const height = selectedElementProps.style?.height || '';
@@ -337,7 +337,7 @@ function Design() {
                                     }
                                 }}
                             >
-                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
                             </Select>
                         </div>
                         <div className='fieldset-actions'>
@@ -581,10 +581,10 @@ function Design() {
                             <input className='control-input'></input>
                             <Select
                                 items={[
-                                    { id: 'class', name: 'class' },
-                                    { id: '0', name: '0' },
-                                    { id: '2', name: '2' },
-                                    { id: '4', name: '4' },
+                                    { id: 'class', label: 'class' },
+                                    { id: '0', label: '0' },
+                                    { id: '2', label: '2' },
+                                    { id: '4', label: '4' },
                                 ]}
                                 selectedKey={(() => {
                                     const gap = selectedElementProps.style?.gap || '0px';
@@ -607,7 +607,7 @@ function Design() {
                                         .eq('id', selectedElementId);
                                 }}
                             >
-                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
                             </Select>
                         </div>
                     </fieldset>
@@ -641,14 +641,14 @@ function Design() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'class', name: 'class' },
-                                        { id: '0', name: '0' },
-                                        { id: '2', name: '2' },
-                                        { id: '4', name: '4' },
-                                        { id: '8', name: '8' },
-                                        { id: '16', name: '16' },
-                                        { id: '32', name: '32' },
-                                        { id: '64', name: '64' },
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' },
+                                        { id: '32', label: '32' },
+                                        { id: '64', label: '64' },
                                     ]}
                                     selectedKey={(() => {
                                         const padding = selectedElementProps.style?.padding || '0px';
@@ -673,7 +673,7 @@ function Design() {
                                             .eq('id', selectedElementId);
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -705,14 +705,14 @@ function Design() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'class', name: 'class' },
-                                        { id: '0', name: '0' },
-                                        { id: '2', name: '2' },
-                                        { id: '4', name: '4' },
-                                        { id: '8', name: '8' },
-                                        { id: '16', name: '16' },
-                                        { id: '32', name: '32' },
-                                        { id: '64', name: '64' },
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' },
+                                        { id: '32', label: '32' },
+                                        { id: '64', label: '64' },
                                     ]}
                                     selectedKey={(() => {
                                         const margin = selectedElementProps.style?.margin || '0px';
@@ -737,7 +737,7 @@ function Design() {
                                             .eq('id', selectedElementId);
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -847,13 +847,13 @@ function Design() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'class', name: 'class' },
-                                        { id: '0', name: '0' },
-                                        { id: '1', name: '1' },
-                                        { id: '2', name: '2' },
-                                        { id: '4', name: '4' },
-                                        { id: '8', name: '8' },
-                                        { id: '16', name: '16' }
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '1', label: '1' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' }
                                     ]}
                                     selectedKey={(() => {
                                         const borderWidth = selectedElementProps.style?.borderWidth || '0px';
@@ -879,7 +879,7 @@ function Design() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -909,12 +909,12 @@ function Design() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'class', name: 'class' },
-                                        { id: '0', name: '0' },
-                                        { id: '2', name: '2' },
-                                        { id: '4', name: '4' },
-                                        { id: '8', name: '8' },
-                                        { id: '16', name: '16' }
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' }
                                     ]}
                                     selectedKey={(() => {
                                         const borderRadius = selectedElementProps.style?.borderRadius || '0px';
@@ -946,7 +946,7 @@ function Design() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -976,11 +976,11 @@ function Design() {
                                 />
                                 <Select
                                     items={[
-                                        { id: 'class', name: 'class' },
-                                        { id: 'solid', name: 'solid' },
-                                        { id: 'dashed', name: 'dashed' },
-                                        { id: 'dotted', name: 'dotted' },
-                                        { id: 'double', name: 'double' }
+                                        { id: 'class', label: 'class' },
+                                        { id: 'solid', label: 'solid' },
+                                        { id: 'dashed', label: 'dashed' },
+                                        { id: 'dotted', label: 'dotted' },
+                                        { id: 'double', label: 'double' }
                                     ]}
                                     selectedKey={selectedElementProps.style?.borderStyle || 'class'}
                                     aria-label="Border style selector"
@@ -1007,7 +1007,7 @@ function Design() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -1036,14 +1036,14 @@ function Design() {
                         <div className='font-select-control react-aria-Group'>
                             <Select
                                 items={[
-                                    { id: 'Arial', name: 'Arial' },
-                                    { id: 'Helvetica', name: 'Helvetica' },
-                                    { id: 'Times New Roman', name: 'Times New Roman' },
-                                    { id: 'Georgia', name: 'Georgia' },
-                                    { id: 'Courier New', name: 'Courier New' },
-                                    { id: 'Verdana', name: 'Verdana' }
+                                    { id: 'Arial', label: 'Arial' },
+                                    { id: 'Helvetica', label: 'Helvetica' },
+                                    { id: 'Times New Roman', label: 'Times New Roman' },
+                                    { id: 'Georgia', label: 'Georgia' },
+                                    { id: 'Courier New', label: 'Courier New' },
+                                    { id: 'Verdana', label: 'Verdana' }
                                 ]}>
-                                {(item) => <SelectItem>{item.name}</SelectItem>}
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
                             </Select>
                         </div>
                         <div className='fieldset-actions'>
