@@ -170,8 +170,8 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'single', name: 'Single' },
-                                        { id: 'multiple', name: 'Multiple' }
+                                        { id: 'single', label: 'Single' },
+                                        { id: 'multiple', label: 'Multiple' }
                                     ]}
                                     selectedKey={selectedElementProps.selectionMode || 'single'}
                                     onSelectionChange={async (selected) => {
@@ -190,7 +190,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -204,8 +204,8 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'horizontal', name: 'Horizontal' },
-                                        { id: 'vertical', name: 'Vertical' }
+                                        { id: 'horizontal', label: 'Horizontal' },
+                                        { id: 'vertical', label: 'Vertical' }
                                     ]}
                                     selectedKey={selectedElementProps.orientation || 'horizontal'}
                                     onSelectionChange={async (selected) => {
@@ -224,7 +224,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -516,8 +516,8 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'horizontal', name: 'Horizontal' },
-                                        { id: 'vertical', name: 'Vertical' }
+                                        { id: 'horizontal', label: 'Horizontal' },
+                                        { id: 'vertical', label: 'Vertical' }
                                     ]}
                                     selectedKey={selectedElementProps.orientation || 'vertical'}
                                     onSelectionChange={async (selected) => {
@@ -536,7 +536,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -610,9 +610,9 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'none', name: 'None' },
-                                        { id: 'single', name: 'Single' },
-                                        { id: 'multiple', name: 'Multiple' }
+                                        { id: 'none', label: 'None' },
+                                        { id: 'single', label: 'Single' },
+                                        { id: 'multiple', label: 'Multiple' }
                                     ]}
                                     selectedKey={selectedElementProps.selectionMode || 'none'}
                                     onSelectionChange={async (selected) => {
@@ -631,7 +631,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -644,8 +644,8 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'horizontal', name: 'Horizontal' },
-                                        { id: 'vertical', name: 'Vertical' }
+                                        { id: 'horizontal', label: 'Horizontal' },
+                                        { id: 'vertical', label: 'Vertical' }
                                     ]}
                                     selectedKey={selectedElementProps.orientation || 'vertical'}
                                     onSelectionChange={async (selected) => {
@@ -664,7 +664,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -675,10 +675,10 @@ function Properties() {
                                 <label className='control-label'><Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <Select
                                     items={[
-                                        { id: 'default', name: 'Default' },
-                                        { id: 'compact', name: 'Compact' },
-                                        { id: 'detailed', name: 'Detailed' },
-                                        { id: 'grid', name: 'Grid' }
+                                        { id: 'default', label: 'Default' },
+                                        { id: 'compact', label: 'Compact' },
+                                        { id: 'detailed', label: 'Detailed' },
+                                        { id: 'grid', label: 'Grid' }
                                     ]}
                                     selectedKey={selectedElementProps.itemLayout || 'default'}
                                     onSelectionChange={async (selected) => {
@@ -697,7 +697,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -834,9 +834,9 @@ function Properties() {
                                 </label>
                                 <Select
                                     items={[
-                                        { id: 'none', name: 'None' },
-                                        { id: 'single', name: 'Single' },
-                                        { id: 'multiple', name: 'Multiple' }
+                                        { id: 'none', label: 'None' },
+                                        { id: 'single', label: 'Single' },
+                                        { id: 'multiple', label: 'Multiple' }
                                     ]}
                                     selectedKey={selectedElementProps.selectionMode || 'none'}
                                     onSelectionChange={async (selected) => {
@@ -855,7 +855,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -866,10 +866,10 @@ function Properties() {
                                 <label className='control-label'><Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
                                 <Select
                                     items={[
-                                        { id: 'default', name: 'Default' },
-                                        { id: 'compact', name: 'Compact' },
-                                        { id: 'detailed', name: 'Detailed' },
-                                        { id: 'grid', name: 'Grid' }
+                                        { id: 'default', label: 'Default' },
+                                        { id: 'compact', label: 'Compact' },
+                                        { id: 'detailed', label: 'Detailed' },
+                                        { id: 'grid', label: 'Grid' }
                                     ]}
                                     selectedKey={selectedElementProps.itemLayout || 'default'}
                                     onSelectionChange={async (selected) => {
@@ -888,7 +888,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    {(item) => <SelectItem>{item.name}</SelectItem>}
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
                             </div>
                         </fieldset>
@@ -1297,6 +1297,230 @@ function Properties() {
                                 >
                                     {(item) => <SelectItem>{item.label}</SelectItem>}
                                 </Select>
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
+            case 'Slider':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Label</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.label || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            label: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Value</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Value</label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.value || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            value: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Min Value</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Min Value</label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.minValue || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            minValue: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Max Value</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Max Value</label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.maxValue || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            maxValue: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Step</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Step</label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.step || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            step: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Orientation</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <Select
+                                    items={[
+                                        { id: 'horizontal', label: 'Horizontal' },
+                                        { id: 'vertical', label: 'Vertical' }
+                                    ]}
+                                    selectedKey={selectedElementProps.orientation || 'horizontal'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            orientation: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Disabled</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedElementProps.isDisabled || false}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            isDisabled: e.target.checked
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Form</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Name</label>
+                                <input
+                                    className='control-input'
+                                    value={selectedElementProps.name || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            name: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
                             </div>
                         </fieldset>
                     </div>

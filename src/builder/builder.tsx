@@ -232,6 +232,16 @@ function Builder() {
                         children: text || 'Text',
                         as: 'p', // 기본값 추가
                     };
+                case 'Slider':
+                    return {
+                        ...baseProps,
+                        label: text || 'Slider',
+                        value: [50],
+                        minValue: 0,
+                        maxValue: 100,
+                        step: 1,
+                        orientation: 'horizontal',
+                    };
                 default:
                     return baseProps;
             }
