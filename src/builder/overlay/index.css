@@ -45,6 +45,7 @@
 .overlay-pattern {
     position: absolute;
     inset: 0;
+    display: none;
 }
 
 .overlay-pattern-inner {

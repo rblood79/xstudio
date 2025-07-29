@@ -23,7 +23,8 @@ import {
   GridListItemRenderer,
   CollectionItemData,
   Select,
-  ComboBox
+  ComboBox,
+  Slider
 } from '../components/list';
 
 interface PreviewElement {
@@ -135,12 +136,21 @@ function Preview() {
           orientation={orientation}
           selectionMode={el.props.selectionMode as 'single' | 'multiple'}
           value={el.props.value || []}
-          onChange={(selected) => {
+          onChange={async (selected) => {
             const updatedProps = {
               ...el.props,
               value: selected
             };
             updateElementProps(el.id, updatedProps);
+            try {
+              // Assuming supabase is available globally or imported elsewhere
+              // This part of the logic needs to be adapted to your actual data fetching/updating mechanism
+              // For now, we'll just log the update for demonstration
+              console.log('Updating ToggleButtonGroup value:', selected);
+              // Example: await supabase.from('elements').update({ props: updatedProps }).eq('id', el.id);
+            } catch (err) {
+              console.error('Update error:', err);
+            }
           }}
         >
           {childButtons.map(button => renderToggleButton(button, el))}
@@ -427,6 +437,31 @@ function Preview() {
             : children.map(item => renderElement(item))
           }
         </ComboBox>
+      );
+    }
+
+    // Slider 컴포넌트 특별 처리
+    if (el.tag === 'Slider') {
+      return (
+        <Slider
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label}
+          value={el.props.value || [50]}
+          minValue={el.props.minValue || 0}
+          maxValue={el.props.maxValue || 100}
+          step={el.props.step || 1}
+          orientation={el.props.orientation as 'horizontal' | 'vertical'}
+          onChange={(value) => {
+            const updatedProps = {
+              ...el.props,
+              value
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        />
       );
     }
 
