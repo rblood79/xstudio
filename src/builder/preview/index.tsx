@@ -478,6 +478,8 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           defaultSelectedKey={el.props.defaultSelectedKey}
+          orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}
+          isDisabled={el.props.isDisabled}
           onSelectionChange={(key) => {
             const updatedProps = {
               ...el.props,
@@ -486,7 +488,7 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          <TabList>
+          <TabList orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}>
             {el.props.children?.map((tab: any) => (
               <Tab key={tab.id} id={tab.id}>
                 {tab.title}

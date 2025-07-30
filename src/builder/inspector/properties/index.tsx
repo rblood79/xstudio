@@ -1,4 +1,4 @@
-import { ListTodo, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow } from 'lucide-react';
+import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
@@ -1604,7 +1604,7 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Tab Management</legend>
+                            <legend className='fieldset-legend'>Tab List</legend>
 
                             {/* 탭 목록 표시 */}
                             <div className='tab-list-manager'>
@@ -1654,7 +1654,7 @@ function Properties() {
                                                 }
                                             }}
                                         >
-                                            Delete
+                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                         </button>
                                     </div>
                                 ))}
@@ -1686,7 +1686,7 @@ function Properties() {
                                         }
                                     }}
                                 >
-                                    Add New Tab
+                                    <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </button>
                             </div>
                         </fieldset>
