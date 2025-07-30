@@ -246,6 +246,8 @@ function Builder() {
                     return {
                         ...baseProps,
                         defaultSelectedKey: 'tab1',
+                        orientation: 'horizontal',
+                        isDisabled: false,
                         children: [
                             {
                                 id: 'tab1',

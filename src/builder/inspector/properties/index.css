@@ -45,6 +45,18 @@
             }
         }
     }
+
+    .tab-list-manager {
+        background-color: var(--color-gray-100);
+        border-radius: var(--radius-md);
+        gap: 4px;
+        display: flex;
+        flex-direction: column;
+
+        .tab-item {
+            display: flex;
+        }
+    }
 }
 
 /* JSON 입력 관련 스타일 */
