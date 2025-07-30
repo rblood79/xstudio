@@ -22,7 +22,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
     ];
 
     const widgetComp = [
-        { tag: 'Tab', label: 'tab', icon: AppWindow },
+        { tag: 'Tabs', label: 'tabs', icon: AppWindow },
         { tag: 'Tree', label: 'tree', icon: ListTree },
         { tag: 'Table', label: 'table', icon: TableProperties },
         { tag: 'Calendar', label: 'calendar', icon: Calendar },

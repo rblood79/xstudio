@@ -242,6 +242,23 @@ function Builder() {
                         step: 1,
                         orientation: 'horizontal',
                     };
+                case 'Tabs':
+                    return {
+                        ...baseProps,
+                        defaultSelectedKey: 'tab1',
+                        children: [
+                            {
+                                id: 'tab1',
+                                title: 'Tab 1',
+                                content: 'Tab 1 content'
+                            },
+                            {
+                                id: 'tab2',
+                                title: 'Tab 2',
+                                content: 'Tab 2 content'
+                            }
+                        ]
+                    };
                 default:
                     return baseProps;
             }
