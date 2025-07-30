@@ -24,7 +24,11 @@ import {
   CollectionItemData,
   Select,
   ComboBox,
-  Slider
+  Slider,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanel
 } from '../components/list';
 
 interface PreviewElement {
@@ -462,6 +466,39 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         />
+      );
+    }
+
+    // Tab 컴포넌트 특별 처리
+    if (el.tag === 'Tabs') {
+      return (
+        <Tabs
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          defaultSelectedKey={el.props.defaultSelectedKey}
+          onSelectionChange={(key) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKey: key
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          <TabList>
+            {el.props.children?.map((tab: any) => (
+              <Tab key={tab.id} id={tab.id}>
+                {tab.title}
+              </Tab>
+            ))}
+          </TabList>
+          {el.props.children?.map((tab: any) => (
+            <TabPanel key={tab.id} id={tab.id}>
+              {tab.content}
+            </TabPanel>
+          ))}
+        </Tabs>
       );
     }
 
