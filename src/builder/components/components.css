@@ -1637,3 +1637,17 @@
         flex-direction: column;
     }
 }
+
+/* Card 컴포넌트 스타일 */
+.react-aria-Card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    background-color: var(--color-background);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+}
+
+.react-aria-Card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}

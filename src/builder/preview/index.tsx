@@ -519,6 +519,24 @@ function Preview() {
       );
     }
 
+    // Page 컴포넌트 렌더링 로직 수정
+    if (['section', 'Card', 'Div', 'Nav'].includes(el.tag)) {
+      const tagMapping = { 'section': 'section', 'Card': 'div', 'Div': 'div', 'Nav': 'nav' };
+      const Tag = tagMapping[el.tag as keyof typeof tagMapping];
+      
+      return (
+        <Tag
+          key={el.id} 
+          data-element-id={el.id} 
+          style={el.props.style}
+          className={`${el.props.className || ''} ${el.tag === 'Card' ? 'react-aria-Card' : ''}`.trim()}
+        >
+          {el.props.children}
+          {children.map((child) => renderElement(child))}
+        </Tag>
+      );
+    }
+
     // 일반 요소 처리
     const content = [
       el.props.text && String(el.props.text),
