@@ -1721,6 +1721,50 @@ function Properties() {
                     </div>
                 );
 
+            case 'Div':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Content</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Content</label>
+                                <textarea
+                                    className='control-input'
+                                    value={selectedElementProps.children || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = { ...selectedElementProps, children: e.target.value };
+                                        await updateElementProps(selectedElementId, updatedProps);
+                                    }}
+                                    placeholder="Enter div content"
+                                    rows={3}
+                                />
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
+            case 'Card':
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Content</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>Content</label>
+                                <textarea
+                                    className='control-input'
+                                    value={selectedElementProps.children || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = { ...selectedElementProps, children: e.target.value };
+                                        await updateElementProps(selectedElementId, updatedProps);
+                                    }}
+                                    placeholder="Enter card content"
+                                    rows={3}
+                                />
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
             default:
                 return <div>지원하지 않는 컴포넌트입니다.</div>;
         }

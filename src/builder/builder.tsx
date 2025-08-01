@@ -261,6 +261,11 @@ function Builder() {
                             }
                         ]
                     };
+                case 'Card':
+                    return {
+                        ...baseProps,
+                        children: text || 'Card Content',
+                    };
                 default:
                     return baseProps;
             }

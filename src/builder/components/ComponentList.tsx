@@ -15,9 +15,9 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Input', label: 'input', icon: RectangleEllipsis },
         { tag: 'Button', label: 'button', icon: MousePointer },
         { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
-        { tag: 'CheckboxGroup', label: 'checkbox group', icon: GroupIcon },
+        { tag: 'CheckboxGroup', label: 'check GP', icon: GroupIcon },
         { tag: 'ToggleButton', label: 'toggle', icon: ToggleLeft },
-        { tag: 'ToggleButtonGroup', label: 'toggleGP', icon: GroupIcon },
+        { tag: 'ToggleButtonGroup', label: 'toggle GP', icon: GroupIcon },
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
     ];
 
