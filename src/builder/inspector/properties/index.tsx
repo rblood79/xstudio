@@ -1,4 +1,4 @@
-import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, ChevronDown, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow, Box, CheckCircle } from 'lucide-react';
+import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, ChevronDown, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow, Box, CheckCircle, Hash } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
@@ -2097,6 +2097,251 @@ function Properties() {
                                 />
                             </div>
                         </fieldset>
+                    </div>
+                );
+
+            case 'RadioGroup':
+                return (
+                    <div className="component-props">
+                        {/* 개별 라디오버튼이 선택된 경우 */}
+                        {selectedTab?.parentId === selectedElementId ? (
+                            <>
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Radio Properties</legend>
+
+                                    {/* 라디오버튼 제목 편집 */}
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <label className='control-label'>
+                                            <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        </label>
+                                        <input
+                                            className='control-input'
+                                            placeholder="Radio Label"
+                                            value={selectedElementProps.children?.[selectedTab.tabIndex]?.label || ''}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                if (updatedChildren[selectedTab.tabIndex]) {
+                                                    updatedChildren[selectedTab.tabIndex] = {
+                                                        ...updatedChildren[selectedTab.tabIndex],
+                                                        label: e.target.value
+                                                    };
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        children: updatedChildren
+                                                    };
+                                                    updateElementProps(selectedElementId, updatedProps);
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+                                                    } catch (err) {
+                                                        console.error('Update error:', err);
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* 라디오버튼 값 편집 */}
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <label className='control-label'>
+                                            <Hash color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        </label>
+                                        <input
+                                            className='control-input'
+                                            placeholder="Radio Value"
+                                            value={selectedElementProps.children?.[selectedTab.tabIndex]?.value || ''}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                if (updatedChildren[selectedTab.tabIndex]) {
+                                                    updatedChildren[selectedTab.tabIndex] = {
+                                                        ...updatedChildren[selectedTab.tabIndex],
+                                                        value: e.target.value
+                                                    };
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        children: updatedChildren
+                                                    };
+                                                    updateElementProps(selectedElementId, updatedProps);
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+                                                    } catch (err) {
+                                                        console.error('Update error:', err);
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* 라디오버튼 삭제 */}
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <button
+                                            className='control-button'
+                                            onClick={async () => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                updatedChildren.splice(selectedTab.tabIndex, 1);
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        >
+                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                            Delete Radio
+                                        </button>
+                                    </div>
+                                </fieldset>
+                            </>
+                        ) : (
+                            /* 전체 RadioGroup이 선택된 경우 */
+                            <>
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Label</legend>
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <label className='control-label'>
+                                            <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        </label>
+                                        <input
+                                            className='control-input'
+                                            value={selectedElementProps.label || ''}
+                                            onChange={async (e) => {
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    label: e.target.value
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </fieldset>
+
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Selected Value</legend>
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <label className='control-label'>
+                                            <CheckCircle color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        </label>
+                                        <input
+                                            className='control-input'
+                                            value={selectedElementProps.value || ''}
+                                            onChange={async (e) => {
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    value: e.target.value
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </fieldset>
+
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Orientation</legend>
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <label className='control-label'>
+                                            <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        </label>
+                                        <Select
+                                            items={[
+                                                { id: 'horizontal', label: 'Horizontal' },
+                                                { id: 'vertical', label: 'Vertical' }
+                                            ]}
+                                            selectedKey={selectedElementProps.orientation || 'vertical'}
+                                            onSelectionChange={async (selected) => {
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    orientation: selected
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        >
+                                            {(item) => <SelectItem>{item.label}</SelectItem>}
+                                        </Select>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Radio Management</legend>
+
+                                    <div className='tab-overview'>
+                                        <p className='tab-overview-text'>
+                                            Total radios: {selectedElementProps.children?.length || 0}
+                                        </p>
+                                        <p className='tab-overview-help'>
+                                            💡 Select individual radios from tree to edit
+                                        </p>
+                                    </div>
+
+                                    {/* 새 라디오버튼 추가 버튼 */}
+                                    <div className='react-aria-control react-aria-Group'>
+                                        <button
+                                            className='control-button add'
+                                            onClick={async () => {
+                                                const newRadioId = `radio${Date.now()}`;
+                                                const newRadio = {
+                                                    id: newRadioId,
+                                                    label: `Option ${(selectedElementProps.children?.length || 0) + 1}`,
+                                                    value: `option${(selectedElementProps.children?.length || 0) + 1}`
+                                                };
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: [...(selectedElementProps.children || []), newRadio]
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        >
+                                            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                            Add Radio
+                                        </button>
+                                    </div>
+                                </fieldset>
+                            </>
+                        )}
                     </div>
                 );
 

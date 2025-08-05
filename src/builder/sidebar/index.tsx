@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Settings2, Trash, ChevronRight, Box } from 'lucide-react';
+import { Settings2, Trash, ChevronRight, Box, Type, Hash, CheckCircle, Layout, Select, SelectItem, SquarePlus } from 'lucide-react';
 import { useStore } from '../stores/elements';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
@@ -12,6 +12,7 @@ import AI from '../ai';
 import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
+import { Radio, RadioGroup } from 'react-aria-components';
 
 type Page = Database['public']['Tables']['pages']['Row'];
 type Element = Database['public']['Tables']['elements']['Row'];
@@ -128,7 +129,11 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                     const hasCheckboxChildren = 'tag' in item && (item as any).tag === 'CheckboxGroup' &&
                         'props' in item && (item as any).props?.children?.length > 0;
 
-                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren || hasCheckboxChildren;
+                    // RadioGroup 컴포넌트의 경우 가상 자식 노드 추가 (개별 Radio들)
+                    const hasRadioChildren = 'tag' in item && (item as any).tag === 'RadioGroup' &&
+                        'props' in item && (item as any).props?.children?.length > 0;
+
+                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren || hasCheckboxChildren || hasRadioChildren;
 
                     return (
                         <div
@@ -393,6 +398,43 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                                         </div>
                                                         <div className="elementItemLabel">
                                                             {checkbox.label || `Option ${index + 1}`}
+                                                        </div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* RadioGroup 컴포넌트의 가상 자식 노드들 렌더링 */}
+                                    {hasRadioChildren && 'props' in item && (
+                                        <>
+                                            {(item as any).props?.children?.map((radio: any, index: number) => (
+                                                <div
+                                                    key={`${item.id}-radio-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Radio를 클릭했을 때는 해당 Radio를 선택
+                                                        selectTabElement(item.id, (item as any).props, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">
+                                                            {radio.label || `Option ${index + 1}`}
                                                         </div>
                                                         <div className="elementItemActions">
                                                         </div>

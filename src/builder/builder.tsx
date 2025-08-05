@@ -290,6 +290,25 @@ function Builder() {
                         ...baseProps,
                         children: text || 'Card Content',
                     };
+                case 'RadioGroup':
+                    return {
+                        ...baseProps,
+                        label: text || 'Radio Group',
+                        orientation: 'vertical',
+                        isDisabled: false,
+                        children: [
+                            {
+                                id: 'radio1',
+                                label: 'Option 1',
+                                value: 'option1'
+                            },
+                            {
+                                id: 'radio2',
+                                label: 'Option 2',
+                                value: 'option2'
+                            }
+                        ]
+                    };
                 default:
                     return baseProps;
             }
