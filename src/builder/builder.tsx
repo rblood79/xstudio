@@ -174,6 +174,18 @@ function Builder() {
                         label: text || 'Checkbox Group',
                         orientation: 'vertical',
                         isDisabled: false,
+                        children: [
+                            {
+                                id: 'checkbox1',
+                                label: 'Option 1',
+                                isSelected: false
+                            },
+                            {
+                                id: 'checkbox2',
+                                label: 'Option 2',
+                                isSelected: false
+                            }
+                        ]
                     };
                 case 'TextField':
                     return {

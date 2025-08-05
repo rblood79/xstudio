@@ -124,7 +124,11 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                     const hasToggleChildren = 'tag' in item && (item as any).tag === 'ToggleButtonGroup' &&
                         'props' in item && (item as any).props?.children?.length > 0;
 
-                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren;
+                    // CheckboxGroup 컴포넌트의 경우 가상 자식 노드 추가 (개별 Checkbox들)
+                    const hasCheckboxChildren = 'tag' in item && (item as any).tag === 'CheckboxGroup' &&
+                        'props' in item && (item as any).props?.children?.length > 0;
+
+                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren || hasCheckboxChildren;
 
                     return (
                         <div
@@ -352,6 +356,43 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                                         </div>
                                                         <div className="elementItemLabel">
                                                             {button.title || `Button ${index + 1}`}
+                                                        </div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* CheckboxGroup 컴포넌트의 가상 자식 노드들 렌더링 */}
+                                    {hasCheckboxChildren && 'props' in item && (
+                                        <>
+                                            {(item as any).props?.children?.map((checkbox: any, index: number) => (
+                                                <div
+                                                    key={`${item.id}-checkbox-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Checkbox를 클릭했을 때는 해당 Checkbox를 선택
+                                                        selectTabElement(item.id, (item as any).props, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">
+                                                            {checkbox.label || `Option ${index + 1}`}
                                                         </div>
                                                         <div className="elementItemActions">
                                                         </div>
