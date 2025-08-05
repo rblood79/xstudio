@@ -32,6 +32,7 @@ interface Store {
   elements: Element[];
   selectedElementId: string | null;
   selectedElementProps: ElementProps;
+  selectedTab: { parentId: string, tabIndex: number } | null;
   pages: Page[];
   history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[]; // 패치 히스토리
   historyIndex: number;
@@ -42,6 +43,7 @@ interface Store {
   addElement: (element: Element) => void;
   updateElementProps: (elementId: string, props: ElementProps) => void;
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
+  selectTabElement: (elementId: string, props: ElementProps, tabIndex: number) => void;
   setPages: (pages: Page[]) => void;
   setCurrentPageId: (pageId: string) => void;
   undo: () => void;
@@ -57,10 +59,22 @@ const sanitizeElement = (el: Element) => ({
   order_num: el.order_num
 });
 
+// Helper function for element selection logic
+const createCompleteProps = (element: Element, props?: ElementProps) => ({
+  ...element.props,
+  ...props,
+  tag: element.tag
+});
+
+const findElementById = (elements: Element[], elementId: string) => {
+  return elements.find(el => el.id === elementId);
+};
+
 export const useStore = create<Store>((set, get) => ({
   elements: [],
   selectedElementId: null,
   selectedElementProps: {},
+  selectedTab: null,
   pages: [],
   history: [], // 초기 상태
   historyIndex: -1,
@@ -160,11 +174,44 @@ export const useStore = create<Store>((set, get) => ({
       })
     ),
   setSelectedElement: (elementId, props) =>
-    set((state) => ({
-      ...state,
-      selectedElementId: elementId,
-      selectedElementProps: elementId && props ? { ...props, tag: state.elements.find(el => el.id === elementId)?.tag } : {}
-    })),
+    set((state) => {
+      if (!elementId) {
+        return {
+          ...state,
+          selectedElementId: null,
+          selectedElementProps: {},
+          selectedTab: null
+        };
+      }
+
+      const element = findElementById(state.elements, elementId);
+      if (!element) {
+        console.warn('Element not found in store:', elementId);
+        return state;
+      }
+
+      return {
+        ...state,
+        selectedElementId: elementId,
+        selectedElementProps: createCompleteProps(element, props),
+        selectedTab: null
+      };
+    }),
+  selectTabElement: (elementId, props, tabIndex) =>
+    set((state) => {
+      const element = findElementById(state.elements, elementId);
+      if (!element) {
+        console.warn('Element not found in store:', elementId);
+        return state;
+      }
+
+      return {
+        ...state,
+        selectedElementId: elementId,
+        selectedElementProps: createCompleteProps(element, props),
+        selectedTab: { parentId: elementId, tabIndex }
+      };
+    }),
   setPages: (pages) =>
     set(
       produce((state) => {

@@ -155,6 +155,18 @@ function Builder() {
                         selectionMode: 'single',
                         orientation: 'horizontal',
                         isDisabled: false,
+                        children: [
+                            {
+                                id: 'toggle1',
+                                title: 'Option 1',
+                                isSelected: false
+                            },
+                            {
+                                id: 'toggle2',
+                                title: 'Option 2',
+                                isSelected: false
+                            }
+                        ]
                     };
                 case 'CheckboxGroup':
                     return {
@@ -351,60 +363,20 @@ function Builder() {
                 });
             }
         } else if (args[0] === 'ToggleButtonGroup') {
-            const textFieldId = newElement.id;
-            const childElements = [
-                {
-                    id: crypto.randomUUID(),
-                    page_id: selectedPageId,
-                    tag: 'ToggleButton',
-                    props: {
-                        children: 'Left',
-                        style: {},
-                        className: ''
-                    },
-                    parent_id: textFieldId,
-                    order_num: 1,
-                },
-                {
-                    id: crypto.randomUUID(),
-                    page_id: selectedPageId,
-                    tag: 'ToggleButton',
-                    props: {
-                        children: 'center',
-                        style: {},
-                        className: ''
-                    },
-                    parent_id: textFieldId,
-                    order_num: 1,
-                },
-                {
-                    id: crypto.randomUUID(),
-                    page_id: selectedPageId,
-                    tag: 'ToggleButton',
-                    props: {
-                        children: 'Right',
-                        style: {},
-                        className: ''
-                    },
-                    parent_id: textFieldId,
-                    order_num: 2,
-                }
-            ];
-            // 모든 요소를 한 번에 삽입
+            // ToggleButtonGroup은 자식 요소 없이 단독으로 추가 (가상 노드 방식 사용)
             const { data, error } = await supabase
                 .from("elements")
-                .insert([newElement, ...childElements])
+                .insert([newElement])
                 .select();
 
             if (error) console.error("요소 추가 에러:", error);
             else if (data) {
-                // 모든 요소를 상태에 추가
                 data.forEach(element => {
                     addElement(element);
                 });
 
                 requestAnimationFrame(() => {
-                    setSelectedElement(textFieldId, newElement.props);
+                    setSelectedElement(newElement.id, newElement.props);
                 });
             }
 

@@ -129,7 +129,7 @@ function Preview() {
     // ToggleButtonGroup 컴포넌트 특별 처리
     if (el.tag === 'ToggleButtonGroup') {
       const orientation = el.props.orientation as 'horizontal' | 'vertical';
-      const childButtons = children.filter(child => child.tag === 'ToggleButton');
+      const buttonsData = el.props.children || []; // children 배열 사용
 
       return (
         <ToggleButtonGroup
@@ -146,18 +146,40 @@ function Preview() {
               value: selected
             };
             updateElementProps(el.id, updatedProps);
-            try {
-              // Assuming supabase is available globally or imported elsewhere
-              // This part of the logic needs to be adapted to your actual data fetching/updating mechanism
-              // For now, we'll just log the update for demonstration
-              console.log('Updating ToggleButtonGroup value:', selected);
-              // Example: await supabase.from('elements').update({ props: updatedProps }).eq('id', el.id);
-            } catch (err) {
-              console.error('Update error:', err);
-            }
           }}
         >
-          {childButtons.map(button => renderToggleButton(button, el))}
+          {buttonsData.map((buttonData: any, index: number) => (
+            <ToggleButton
+              key={buttonData.id || `toggle-${index}`}
+              data-element-id={`${el.id}-toggle-${index}`}
+              isSelected={buttonData.isSelected || false}
+              onPress={() => {
+                const updatedChildren = [...buttonsData];
+
+                if (el.props.selectionMode === 'multiple') {
+                  updatedChildren[index] = {
+                    ...updatedChildren[index],
+                    isSelected: !updatedChildren[index].isSelected
+                  };
+                } else {
+                  updatedChildren.forEach((btn, i) => {
+                    updatedChildren[i] = {
+                      ...btn,
+                      isSelected: i === index ? !btn.isSelected : false
+                    };
+                  });
+                }
+
+                const updatedProps = {
+                  ...el.props,
+                  children: updatedChildren
+                };
+                updateElementProps(el.id, updatedProps);
+              }}
+            >
+              {buttonData.title || `Option ${index + 1}`}
+            </ToggleButton>
+          ))}
         </ToggleButtonGroup>
       );
     }
@@ -523,11 +545,11 @@ function Preview() {
     if (['section', 'Card', 'Div', 'Nav'].includes(el.tag)) {
       const tagMapping = { 'section': 'section', 'Card': 'div', 'Div': 'div', 'Nav': 'nav' };
       const Tag = tagMapping[el.tag as keyof typeof tagMapping];
-      
+
       return (
         <Tag
-          key={el.id} 
-          data-element-id={el.id} 
+          key={el.id}
+          data-element-id={el.id}
           style={el.props.style}
           className={`${el.props.className || ''} ${el.tag === 'Card' ? 'react-aria-Card' : ''}`.trim()}
         >
