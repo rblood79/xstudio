@@ -29,7 +29,8 @@ interface SidebarProps {
 export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
     const elements = useStore((state) => state.elements) as Element[];
     const selectedElementId = useStore((state) => state.selectedElementId);
-    const { setElements: storeSetElements, setSelectedElement } = useStore();
+    const selectedTab = useStore((state) => state.selectedTab);
+    const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
     // 활성 탭을 단일 값에서 Set으로 변경
     const [activeTabs, setActiveTabs] = React.useState<Set<Tab>>(new Set(['nodes']));
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
@@ -114,11 +115,22 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 {filteredItems.map((item) => {
                     const hasChildNodes = hasChildren(items, item.id);
                     const isExpanded = expandedItems.has(item.id);
+
+                    // Tabs 컴포넌트의 경우 가상 자식 노드 추가 (TabList, TabPanels)
+                    const hasTabsChildren = 'tag' in item && (item as any).tag === 'Tabs' &&
+                        'props' in item && (item as any).props?.children?.length > 0;
+
+                    // ToggleButtonGroup 컴포넌트의 경우 가상 자식 노드 추가 (개별 ToggleButton들)
+                    const hasToggleChildren = 'tag' in item && (item as any).tag === 'ToggleButtonGroup' &&
+                        'props' in item && (item as any).props?.children?.length > 0;
+
+                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren;
+
                     return (
                         <div
                             key={item.id}
                             data-depth={depth}
-                            data-has-children={hasChildNodes}
+                            data-has-children={hasAnyChildren}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onClick(item);
@@ -136,12 +148,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     className="elementItemIcon"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (hasChildNodes) {
+                                        if (hasAnyChildren) {
                                             toggleExpand(item.id);
                                         }
                                     }}
                                 >
-                                    {hasChildNodes ? (
+                                    {hasAnyChildren ? (
                                         <ChevronRight
                                             color={iconEditProps.color}
                                             strokeWidth={iconEditProps.stroke}
@@ -176,7 +188,180 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     </button>
                                 </div>
                             </div>
-                            {hasChildNodes && isExpanded && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
+                            {isExpanded && (
+                                <>
+                                    {/* 일반 자식 노드들 렌더링 */}
+                                    {hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
+
+                                    {/* Tabs 컴포넌트의 가상 자식 노드들 렌더링 */}
+                                    {hasTabsChildren && 'props' in item && (
+                                        <>
+                                            {/* TabList 가상 노드 */}
+                                            <div
+                                                key={`${item.id}-tablist`}
+                                                data-depth={depth + 1}
+                                                data-has-children={true}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleExpand(`${item.id}-tablist`);
+                                                }}
+                                                className="element"
+                                            >
+                                                <div className="elementItem">
+                                                    <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                    </div>
+                                                    <div className="elementItemIcon">
+                                                        <ChevronRight
+                                                            color={iconEditProps.color}
+                                                            strokeWidth={iconEditProps.stroke}
+                                                            size={iconEditProps.size}
+                                                            style={{
+                                                                transform: expandedItems.has(`${item.id}-tablist`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="elementItemLabel">TabList</div>
+                                                    <div className="elementItemActions">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* TabList가 확장되었을 때 개별 Tab들 */}
+                                            {expandedItems.has(`${item.id}-tablist`) && (item as any).props?.children?.map((tab: any, index: number) => (
+                                                <div
+                                                    key={`${item.id}-tab-${index}`}
+                                                    data-depth={depth + 2}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Tab을 클릭했을 때는 해당 Tab을 선택
+                                                        selectTabElement(item.id, (item as any).props, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 2) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">
+                                                            {tab.title || `Tab ${index + 1}`}
+                                                        </div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* TabPanels 가상 노드 */}
+                                            <div
+                                                key={`${item.id}-tabpanels`}
+                                                data-depth={depth + 1}
+                                                data-has-children={true}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleExpand(`${item.id}-tabpanels`);
+                                                }}
+                                                className="element"
+                                            >
+                                                <div className="elementItem">
+                                                    <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                    </div>
+                                                    <div className="elementItemIcon">
+                                                        <ChevronRight
+                                                            color={iconEditProps.color}
+                                                            strokeWidth={iconEditProps.stroke}
+                                                            size={iconEditProps.size}
+                                                            style={{
+                                                                transform: expandedItems.has(`${item.id}-tabpanels`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="elementItemLabel">TabPanels</div>
+                                                    <div className="elementItemActions">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* TabPanels가 확장되었을 때 개별 TabPanel들 */}
+                                            {expandedItems.has(`${item.id}-tabpanels`) && (item as any).props?.children?.map((tab: any, index: number) => (
+                                                <div
+                                                    key={`${item.id}-tabpanel-${index}`}
+                                                    data-depth={depth + 2}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // TabPanel을 클릭했을 때도 해당 Tab을 선택
+                                                        selectTabElement(item.id, (item as any).props, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 2) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">
+                                                            {tab.title || `Tab ${index + 1}`} Panel
+                                                        </div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* ToggleButtonGroup 컴포넌트의 가상 자식 노드들 렌더링 */}
+                                    {hasToggleChildren && 'props' in item && (
+                                        <>
+                                            {(item as any).props?.children?.map((button: any, index: number) => (
+                                                <div
+                                                    key={`${item.id}-toggle-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // ToggleButton을 클릭했을 때는 해당 Button을 선택
+                                                        selectTabElement(item.id, (item as any).props, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">
+                                                            {button.title || `Button ${index + 1}`}
+                                                        </div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </>
+                            )}
                         </div>
                     );
                 })}

@@ -1,4 +1,4 @@
-import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow } from 'lucide-react';
+import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, ChevronDown, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow, Box } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from 'react';
 import './index.css';
 
 function Properties() {
-    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+    const { selectedElementId, selectedElementProps, selectedTab, updateElementProps } = useStore();
 
     // JSON 입력 관련 상태
     const [jsonInputValue, setJsonInputValue] = useState('');
@@ -159,14 +159,114 @@ function Properties() {
                 );
 
             case 'ToggleButtonGroup':
+                // 선택된 ToggleButton이 있고, 현재 ToggleButtonGroup의 버튼인 경우 개별 편집 UI 표시
+                if (selectedTab && selectedTab.parentId === selectedElementId) {
+                    const currentButton = selectedElementProps.children?.[selectedTab.tabIndex];
+                    if (!currentButton) return null;
+
+                    return (
+                        <div className="component-props">
+                            <fieldset className="properties-aria">
+                                <legend className='fieldset-legend'>Selected Button: {currentButton.title || `Button ${selectedTab.tabIndex + 1}`}</legend>
+
+                                <div className='tab-content-editor'>
+                                    <div className='control-group'>
+                                        <label className='control-label'>Title</label>
+                                        <input
+                                            className='control-input'
+                                            placeholder='Button Title'
+                                            value={currentButton.title || ''}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...updatedChildren[selectedTab.tabIndex],
+                                                    title: e.target.value
+                                                };
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className='control-group'>
+                                        <label className='control-label'>
+                                            <input
+                                                type="checkbox"
+                                                checked={currentButton.isSelected || false}
+                                                onChange={async (e) => {
+                                                    const updatedChildren = [...(selectedElementProps.children || [])];
+                                                    updatedChildren[selectedTab.tabIndex] = {
+                                                        ...updatedChildren[selectedTab.tabIndex],
+                                                        isSelected: e.target.checked
+                                                    };
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        children: updatedChildren
+                                                    };
+                                                    updateElementProps(selectedElementId, updatedProps);
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+                                                    } catch (err) {
+                                                        console.error('Update error:', err);
+                                                    }
+                                                }}
+                                            />
+                                            Selected
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className='tab-actions-section'>
+                                    <button
+                                        className='control-button delete'
+                                        onClick={async () => {
+                                            const updatedChildren = selectedElementProps.children?.filter((_: any, i: number) => i !== selectedTab.tabIndex) || [];
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            try {
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
+                                            } catch (err) {
+                                                console.error('Update error:', err);
+                                            }
+                                        }}
+                                    >
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        Delete This Button
+                                    </button>
+                                </div>
+                            </fieldset>
+                        </div>
+                    );
+                }
+
+                // ToggleButtonGroup 전체 설정 UI
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Selection</legend>
+                            <legend className='fieldset-legend'>Selection Mode</legend>
                             <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <CheckSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-
                                 </label>
                                 <Select
                                     items={[
@@ -196,11 +296,10 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Layout</legend>
+                            <legend className='fieldset-legend'>Orientation</legend>
                             <div className='react-aria-control react-aria-Group'>
                                 <label className='control-label'>
                                     <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-
                                 </label>
                                 <Select
                                     items={[
@@ -230,18 +329,33 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Disabled</legend>
+                            <legend className='fieldset-legend'>Button Management</legend>
+
+                            <div className='tab-overview'>
+                                <p className='tab-overview-text'>
+                                    Total buttons: {selectedElementProps.children?.length || 0}
+                                </p>
+                                <p className='tab-overview-help'>
+                                    💡 Select individual
+                                </p>
+                            </div>
+
+                            {/* 새 탭 추가 버튼 */}
                             <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'>
-                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-                                </label>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedElementProps.isDisabled || false}
-                                    onChange={async (e) => {
+                                <button
+                                    className='control-button add'
+                                    onClick={async () => {
+                                        const newButtonId = `button${Date.now()}`;
+                                        const newButton = {
+                                            id: newButtonId,
+                                            title: `Button ${(selectedElementProps.children?.length || 0) + 1}`,
+                                            isSelected: false
+                                        };
                                         const updatedProps = {
                                             ...selectedElementProps,
-                                            isDisabled: e.target.checked
+                                            children: [...(selectedElementProps.children || []), newButton],
+                                            // 첫 번째 탭이면 기본 선택으로 설정
+                                            defaultSelectedKey: selectedElementProps.children?.length === 0 ? newButtonId : selectedElementProps.defaultSelectedKey
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
                                         try {
@@ -253,7 +367,38 @@ function Properties() {
                                             console.error('Update error:', err);
                                         }
                                     }}
-                                />
+                                >
+                                    <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    Add Button
+                                </button>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>State</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedElementProps.isDisabled || false}
+                                        onChange={async (e) => {
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                isDisabled: e.target.checked
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            try {
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
+                                            } catch (err) {
+                                                console.error('Update error:', err);
+                                            }
+                                        }}
+                                    />
+                                    Disabled
+                                </label>
                             </div>
                         </fieldset>
                     </div>
@@ -1535,6 +1680,115 @@ function Properties() {
                 );
 
             case 'Tabs':
+                // 선택된 Tab이 있고, 현재 Tabs 컴포넌트의 Tab인 경우 개별 Tab 편집 UI 표시
+                if (selectedTab && selectedTab.parentId === selectedElementId) {
+                    const currentTab = selectedElementProps.children?.[selectedTab.tabIndex];
+                    if (!currentTab) return null;
+
+                    return (
+                        <div className="component-props">
+                            <fieldset className="properties-aria">
+                                <legend className='fieldset-legend'>Selected Tab: {currentTab.title || `Tab ${selectedTab.tabIndex + 1}`}</legend>
+
+                                <div className='tab-content-editor'>
+                                    <div className='control-group'>
+                                        <label className='control-label'>Title</label>
+                                        <input
+                                            className='control-input'
+                                            placeholder='Tab Title'
+                                            value={currentTab.title || ''}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...updatedChildren[selectedTab.tabIndex],
+                                                    title: e.target.value
+                                                };
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className='control-group'>
+                                        <label className='control-label'>Content</label>
+                                        <textarea
+                                            className='control-input'
+                                            placeholder='Tab Content'
+                                            value={currentTab.content || ''}
+                                            rows={5}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...(selectedElementProps.children || [])];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...updatedChildren[selectedTab.tabIndex],
+                                                    content: e.target.value
+                                                };
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className='tab-actions-section'>
+                                    <button
+                                        className='control-button delete'
+                                        onClick={async () => {
+                                            const updatedChildren = selectedElementProps.children?.filter((_: any, i: number) => i !== selectedTab.tabIndex) || [];
+                                            let updatedDefaultKey = selectedElementProps.defaultSelectedKey;
+
+                                            // 삭제되는 탭이 기본 선택 탭이면 첫 번째 탭으로 변경
+                                            if (updatedDefaultKey === currentTab.id && updatedChildren.length > 0) {
+                                                updatedDefaultKey = updatedChildren[0].id;
+                                            }
+
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren,
+                                                defaultSelectedKey: updatedDefaultKey
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            try {
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
+                                            } catch (err) {
+                                                console.error('Update error:', err);
+                                            }
+                                        }}
+                                    >
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        Delete This Tab
+                                    </button>
+                                </div>
+                            </fieldset>
+                        </div>
+                    );
+                }
+
+                // Tabs 컴포넌트 전체 설정 UI
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
@@ -1604,60 +1858,15 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Tab List</legend>
+                            <legend className='fieldset-legend'>Tab Management</legend>
 
-                            {/* 탭 목록 표시 */}
-                            <div className='tab-list-manager'>
-                                {selectedElementProps.children?.map((tab: any, index: number) => (
-                                    <div key={tab.id} className='tab-item'>
-                                        <input
-                                            className='control-input'
-                                            placeholder='Tab Title'
-                                            value={tab.title || ''}
-                                            onChange={async (e) => {
-                                                const updatedChildren = [...(selectedElementProps.children || [])];
-                                                updatedChildren[index] = {
-                                                    ...updatedChildren[index],
-                                                    title: e.target.value
-                                                };
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    children: updatedChildren
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-                                                try {
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Update error:', err);
-                                                }
-                                            }}
-                                        />
-                                        <button
-                                            className='control-button delete'
-                                            onClick={async () => {
-                                                const updatedChildren = selectedElementProps.children?.filter((_: any, i: number) => i !== index) || [];
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    children: updatedChildren
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-                                                try {
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Update error:', err);
-                                                }
-                                            }}
-                                        >
-                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                        </button>
-                                    </div>
-                                ))}
+                            <div className='tab-overview'>
+                                <p className='tab-overview-text'>
+                                    Total tabs: {selectedElementProps.children?.length || 0}
+                                </p>
+                                <p className='tab-overview-help'>
+                                    💡 Select individual tabs from the tree to edit them
+                                </p>
                             </div>
 
                             {/* 새 탭 추가 버튼 */}
@@ -1668,12 +1877,14 @@ function Properties() {
                                         const newTabId = `tab${Date.now()}`;
                                         const newTab = {
                                             id: newTabId,
-                                            title: `New Tab`,
+                                            title: `Tab ${(selectedElementProps.children?.length || 0) + 1}`,
                                             content: 'New tab content'
                                         };
                                         const updatedProps = {
                                             ...selectedElementProps,
-                                            children: [...(selectedElementProps.children || []), newTab]
+                                            children: [...(selectedElementProps.children || []), newTab],
+                                            // 첫 번째 탭이면 기본 선택으로 설정
+                                            defaultSelectedKey: selectedElementProps.children?.length === 0 ? newTabId : selectedElementProps.defaultSelectedKey
                                         };
                                         updateElementProps(selectedElementId, updatedProps);
                                         try {
@@ -1687,6 +1898,7 @@ function Properties() {
                                     }}
                                 >
                                     <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    Add Tab
                                 </button>
                             </div>
                         </fieldset>

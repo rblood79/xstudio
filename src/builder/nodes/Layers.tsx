@@ -56,7 +56,7 @@ export function Layers({
                         elements,
                         (el) => el.tag,
                         (el) => {
-                            setSelectedElement(el.id, el.props);
+                            setSelectedElement(el.id, { ...el.props, tag: el.tag });
                             requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
                         },
                         async (el) => {
