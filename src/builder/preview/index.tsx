@@ -28,7 +28,9 @@ import {
   Tabs,
   TabList,
   Tab,
-  TabPanel
+  TabPanel,
+  RadioGroup,
+  Radio
 } from '../components/list';
 
 interface PreviewElement {
@@ -308,6 +310,40 @@ function Preview() {
             </Checkbox>
           ))}
         </CheckboxGroup>
+      );
+    }
+
+    // RadioGroup 컴포넌트 특별 처리
+    if (el.tag === 'RadioGroup') {
+      const radiosData = el.props.children || [];
+
+      return (
+        <RadioGroup
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label}
+          value={el.props.value || ''}
+          orientation={el.props.orientation || 'vertical'}
+          onChange={(selectedValue) => {
+            const updatedProps = {
+              ...el.props,
+              value: selectedValue
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {radiosData.map((radioData: any, index: number) => (
+            <Radio
+              key={radioData.id || `radio-${index}`}
+              data-element-id={`${el.id}-radio-${index}`}
+              value={radioData.value}
+            >
+              {radioData.label || `Option ${index + 1}`}
+            </Radio>
+          ))}
+        </RadioGroup>
       );
     }
 

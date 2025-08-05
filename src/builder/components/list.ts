@@ -4,6 +4,7 @@ export * from './ToggleButton';
 export * from './ToggleButtonGroup';
 export * from './TextField';
 export * from './Field';
+export * from './Radio';
 export * from './RadioGroup';
 export * from './Select';
 export * from './ComboBox';

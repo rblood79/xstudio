@@ -8,14 +8,15 @@ interface ComponentListProps {
 }
 
 export default function ComponentList({ handleAddElement }: ComponentListProps) {
-    const components = [
-        { tag: 'Label', label: 'label', icon: Tag },
+    const basicComp = [
         { tag: 'Text', label: 'text', icon: Text },
-        { tag: 'Description', label: 'description', icon: Info },
+        { tag: 'Label', label: 'label', icon: Tag },
+        { tag: 'TextField', label: 'text field', icon: RectangleEllipsis },
         { tag: 'Input', label: 'input', icon: RectangleEllipsis },
         { tag: 'Button', label: 'button', icon: MousePointer },
         { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
         { tag: 'CheckboxGroup', label: 'check GP', icon: GroupIcon },
+        { tag: 'RadioGroup', label: 'radio GP', icon: GroupIcon },
         { tag: 'ToggleButton', label: 'toggle', icon: ToggleLeft },
         { tag: 'ToggleButtonGroup', label: 'toggle GP', icon: GroupIcon },
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
@@ -58,7 +59,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
                 </div>
 
                 <div className="component-list">
-                    {components.map((component) => (
+                    {basicComp.map((component) => (
                         <div className="component-list-item" key={component.tag}>
                             <button
                                 onClick={() => handleAddElement(component.tag, component.label)}
