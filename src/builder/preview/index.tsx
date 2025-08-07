@@ -347,29 +347,19 @@ function Preview() {
 
     // TextField 컴포넌트 특별 처리
     if (el.tag === 'TextField') {
-      const childElements = children.filter(child =>
-        ['Label', 'Input', 'Description', 'FieldError'].includes(child.tag)
-      );
-
-      // Find specific child elements by tag
-      const labelElement = childElements.find(child => child.tag === 'Label');
-      // const inputElement = childElements.find(child => child.tag === 'Input');
-      const descriptionElement = childElements.find(child => child.tag === 'Description');
-      const errorElement = childElements.find(child => child.tag === 'FieldError');
-
       return (
         <TextField
           key={el.id}
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={labelElement ? `${labelElement.props.text as string}` : ''}
-          description={descriptionElement ? `${descriptionElement.props.text as string}` : ''}
-          errorMessage={errorElement ? `${errorElement.props.text as string}` : ''}
-          isDisabled={el.props.isDisabled as boolean}
-          children={childElements.map((child) => renderElement(child))}
-        >
-        </TextField>
+          label={el.props.label || ''}
+          description={el.props.description || ''}
+          errorMessage={el.props.errorMessage || ''}
+          isDisabled={el.props.isDisabled || false}
+          isRequired={el.props.isRequired || false}
+          isReadOnly={el.props.isReadOnly || false}
+        />
       );
     }
 

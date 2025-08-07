@@ -406,50 +406,118 @@ function Properties() {
             case 'TextField':
                 return (
                     <div className="component-props">
-                        <div className="prop-group">
-                            <label className="prop-label">Label</label>
-                            <input
-                                className="prop-input"
-                                value={selectedElementProps.label || ''}
-                                onChange={async (e) => {
-                                    const updatedProps = {
-                                        ...selectedElementProps,
-                                        label: e.target.value
-                                    };
-                                    updateElementProps(selectedElementId, updatedProps);
-                                    try {
-                                        await supabase
-                                            .from('elements')
-                                            .update({ props: updatedProps })
-                                            .eq('id', selectedElementId);
-                                    } catch (err) {
-                                        console.error('Update error:', err);
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div className="prop-group">
-                            <label className="prop-label">Disabled</label>
-                            <input
-                                type="checkbox"
-                                checked={selectedElementProps.isDisabled || false}
-                                onChange={async (e) => {
-                                    const updatedProps = {
-                                        ...selectedElementProps,
-                                        isDisabled: e.target.checked
-                                    };
-                                    updateElementProps(selectedElementId, updatedProps);
-                                    try {
-                                        await supabase
-                                            .from('elements')
-                                            .update({ props: updatedProps })
-                                            .eq('id', selectedElementId);
-                                    } catch (err) {
-                                        console.error('Update error:', err);
-                                    }
-                                }}
-                            />
-                        </div>
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Label</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    placeholder='Text Field Label'
+                                    value={selectedElementProps.label || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            label: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Description</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    placeholder='Help text (optional)'
+                                    value={selectedElementProps.description || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            description: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Validation</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    placeholder='Error message (optional)'
+                                    value={selectedElementProps.errorMessage || ''}
+                                    onChange={async (e) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            errorMessage: e.target.value
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>State</legend>
+                            <div className='control-group'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isDisabled || false}
+                                    onChange={async (isSelected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            isDisabled: isSelected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    Disabled
+                                </Checkbox>
+                            </div>
+                        </fieldset>
                     </div>
                 );
 
