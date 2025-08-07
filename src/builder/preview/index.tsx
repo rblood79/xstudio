@@ -16,12 +16,8 @@ import {
   CheckboxGroup,
   ListBox,
   ListBoxItem,
-  ListBoxItemRenderer,
-  ListBoxItemData,
   GridList,
   GridListItem,
-  GridListItemRenderer,
-  CollectionItemData,
   Select,
   ComboBox,
   Slider,
@@ -30,7 +26,9 @@ import {
   Tab,
   TabPanel,
   RadioGroup,
-  Radio
+  Radio,
+  Tree,
+  TreeItem
 } from '../components/list';
 
 interface PreviewElement {
@@ -393,8 +391,7 @@ function Preview() {
 
     // GridList 컴포넌트 특별 처리
     if (el.tag === 'GridList') {
-      const childItems = children.filter(child => child.tag === 'GridListItem');
-      const items = el.props.items || [];
+      const itemsData = el.props.children || [];
 
       return (
         <GridList
@@ -414,22 +411,23 @@ function Preview() {
             };
             updateElementProps(el.id, updatedProps);
           }}
-          items={items.length > 0 ? items : undefined}
         >
-          {items.length > 0
-            ? items.map((item: CollectionItemData) => (
-              <GridListItemRenderer key={item.id} item={item} />
-            ))
-            : childItems.map(item => renderElement(item))
-          }
+          {itemsData.map((item: any, index: number) => (
+            <GridListItem
+              key={item.id || `griditem-${index}`}
+              value={item.value}
+              isDisabled={item.isDisabled}
+            >
+              {item.label}
+            </GridListItem>
+          ))}
         </GridList>
       );
     }
 
     // ListBox 컴포넌트 특별 처리
     if (el.tag === 'ListBox') {
-      const childItems = children.filter(child => child.tag === 'ListBoxItem');
-      const items = el.props.items || [];
+      const itemsData = el.props.children || [];
 
       return (
         <ListBox
@@ -449,21 +447,23 @@ function Preview() {
             };
             updateElementProps(el.id, updatedProps);
           }}
-          items={items.length > 0 ? items : undefined}
         >
-          {items.length > 0
-            ? items.map((item: CollectionItemData) => (
-              <ListBoxItemRenderer key={item.id} item={item} />
-            ))
-            : childItems.map(item => renderElement(item))
-          }
+          {itemsData.map((item: any, index: number) => (
+            <ListBoxItem
+              key={item.id || `listitem-${index}`}
+              value={item.value}
+              isDisabled={item.isDisabled}
+            >
+              {item.label}
+            </ListBoxItem>
+          ))}
         </ListBox>
       );
     }
 
     // Select 컴포넌트 특별 처리
     if (el.tag === 'Select') {
-      const items = el.props.items || [];
+      const itemsData = el.props.children || [];
 
       return (
         <Select
@@ -480,21 +480,23 @@ function Preview() {
             };
             updateElementProps(el.id, updatedProps);
           }}
-          items={items.length > 0 ? items : undefined}
         >
-          {items.length > 0
-            ? items.map((item: CollectionItemData) => (
-              <ListBoxItemRenderer key={item.id} item={item} />
-            ))
-            : children.map(item => renderElement(item))
-          }
+          {itemsData.map((item: any, index: number) => (
+            <ListBoxItem
+              key={item.id || `selectitem-${index}`}
+              value={item.value}
+              isDisabled={item.isDisabled}
+            >
+              {item.label}
+            </ListBoxItem>
+          ))}
         </Select>
       );
     }
 
     // ComboBox 컴포넌트 특별 처리
     if (el.tag === 'ComboBox') {
-      const items = el.props.items || [];
+      const itemsData = el.props.children || [];
 
       return (
         <ComboBox
@@ -511,14 +513,16 @@ function Preview() {
             };
             updateElementProps(el.id, updatedProps);
           }}
-          items={items.length > 0 ? items : undefined}
         >
-          {items.length > 0
-            ? items.map((item: CollectionItemData) => (
-              <ListBoxItemRenderer key={item.id} item={item} />
-            ))
-            : children.map(item => renderElement(item))
-          }
+          {itemsData.map((item: any, index: number) => (
+            <ListBoxItem
+              key={item.id || `comboitem-${index}`}
+              value={item.value}
+              isDisabled={item.isDisabled}
+            >
+              {item.label}
+            </ListBoxItem>
+          ))}
         </ComboBox>
       );
     }
@@ -580,6 +584,75 @@ function Preview() {
             </TabPanel>
           ))}
         </Tabs>
+      );
+    }
+
+    // Tree 컴포넌트 특별 처리
+    if (el.tag === 'Tree') {
+      // 플랫 구조를 계층 구조로 변환하는 함수
+      const buildHierarchy = (flatItems: any[]): any[] => {
+        const itemMap = new Map();
+        const rootItems: any[] = [];
+
+        // 모든 아이템을 맵에 저장
+        flatItems.forEach(item => {
+          itemMap.set(item.id, { ...item, children: [] });
+        });
+
+        // 계층 구조 구축
+        flatItems.forEach(item => {
+          const itemWithChildren = itemMap.get(item.id);
+          if (item.parent_id === null || item.parent_id === undefined) {
+            rootItems.push(itemWithChildren);
+          } else {
+            const parent = itemMap.get(item.parent_id);
+            if (parent) {
+              parent.children.push(itemWithChildren);
+            }
+          }
+        });
+
+        return rootItems;
+      };
+
+      const renderTreeItems = (items: any[]): React.ReactNode => {
+        return items.map((item: any) => (
+          <TreeItem key={item.id} id={item.id} title={item.title}>
+            {item.children && item.children.length > 0 && renderTreeItems(item.children)}
+          </TreeItem>
+        ));
+      };
+
+      const hierarchicalData = buildHierarchy(el.props.children || []);
+
+      return (
+        <Tree
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          selectionMode={el.props.selectionMode || 'single'}
+          selectionBehavior={el.props.selectionBehavior || 'replace'}
+          expandedKeys={el.props.expandedKeys || []}
+          selectedKeys={el.props.selectedKeys || []}
+          allowsDragging={el.props.allowsDragging || false}
+          onSelectionChange={(selectedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: Array.from(selectedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          onExpandedChange={(expandedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              expandedKeys: Array.from(expandedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {renderTreeItems(hierarchicalData)}
+        </Tree>
       );
     }
 

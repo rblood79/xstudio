@@ -221,8 +221,23 @@ function Builder() {
                         orientation: 'vertical',
                         selectionMode: 'none',
                         itemLayout: 'default',
-                        items: [],
-                        selectedKeys: []
+                        selectedKeys: [],
+                        children: [
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'ListBoxItem',
+                                label: 'Item 1',
+                                value: 'item1',
+                                isDisabled: false
+                            },
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'ListBoxItem',
+                                label: 'Item 2',
+                                value: 'item2',
+                                isDisabled: false
+                            }
+                        ]
                     };
 
                 case 'GridList':
@@ -231,24 +246,68 @@ function Builder() {
                         label: text || 'Grid List',
                         orientation: 'vertical',
                         selectionMode: 'none',
-                        itemLayout: 'default',
-                        items: [],
-                        selectedKeys: []
+                        selectedKeys: [],
+                        children: [
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'GridListItem',
+                                label: 'Item 1',
+                                value: 'item1',
+                                isDisabled: false
+                            },
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'GridListItem',
+                                label: 'Item 2',
+                                value: 'item2',
+                                isDisabled: false
+                            }
+                        ]
                     };
                 case 'Select':
                     return {
                         ...baseProps,
                         label: text || 'Select',
-                        items: [],
-                        selectedKey: null
+                        selectedKey: null,
+                        children: [
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'SelectItem',
+                                label: 'Option 1',
+                                value: 'option1',
+                                isDisabled: false
+                            },
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'SelectItem',
+                                label: 'Option 2',
+                                value: 'option2',
+                                isDisabled: false
+                            }
+                        ]
                     };
 
                 case 'ComboBox':
                     return {
                         ...baseProps,
                         label: text || 'ComboBox',
-                        items: [],
-                        selectedKey: null
+                        selectedKey: null,
+                        children: [
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'ComboBoxItem',
+                                label: 'Option 1',
+                                value: 'option1',
+                                isDisabled: false
+                            },
+                            {
+                                id: crypto.randomUUID(),
+                                type: 'ComboBoxItem',
+                                label: 'Option 2',
+                                value: 'option2',
+                                isDisabled: false
+                            }
+                        ]
                     };
                 case 'Text':
                     return {
@@ -285,6 +344,50 @@ function Builder() {
                             }
                         ]
                     };
+
+                case 'Tree':
+                    return {
+                        ...baseProps,
+                        label: text || 'Tree',
+                        selectionMode: 'single',
+                        selectionBehavior: 'replace',
+                        expandedKeys: ['folder1'],
+                        selectedKeys: [],
+                        allowsDragging: false,
+                        children: [
+                            {
+                                id: 'folder1',
+                                title: 'Folder 1',
+                                type: 'folder',
+                                parent_id: null
+                            },
+                            {
+                                id: 'file1',
+                                title: 'File 1.txt',
+                                type: 'file',
+                                parent_id: 'folder1'
+                            },
+                            {
+                                id: 'file2',
+                                title: 'File 2.txt',
+                                type: 'file',
+                                parent_id: 'folder1'
+                            },
+                            {
+                                id: 'folder2',
+                                title: 'Folder 2',
+                                type: 'folder',
+                                parent_id: null
+                            },
+                            {
+                                id: 'file3',
+                                title: 'File 3.txt',
+                                type: 'file',
+                                parent_id: 'folder2'
+                            }
+                        ]
+                    };
+
                 case 'Card':
                     return {
                         ...baseProps,
