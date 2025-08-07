@@ -191,7 +191,11 @@ function Builder() {
                     return {
                         ...baseProps,
                         label: text || 'Text Field',
+                        description: '', // 설명 텍스트
+                        errorMessage: '', // 에러 메시지
                         isDisabled: false,
+                        isRequired: false, // 필수 필드 여부
+                        isReadOnly: false, // 읽기 전용 여부
                     };
 
                 case 'Label':
