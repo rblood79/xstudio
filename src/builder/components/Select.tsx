@@ -54,5 +54,3 @@ export { Select as MySelect };
 export function SelectItem(props: ListBoxItemProps) {
   return <ListBoxItem {...props} />;
 }
-
-export { SelectItem as MyItem };
