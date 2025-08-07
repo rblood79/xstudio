@@ -1,8 +1,7 @@
 import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, ChevronDown, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow, Box, CheckCircle, Hash } from 'lucide-react';
 import { useStore } from '../../stores/elements';
-import { Button, Select, SelectItem } from '../../components/list';
+import { Button, Select, SelectItem, Checkbox } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
-import { EllipsisVertical } from 'lucide-react';
 import { iconProps } from '../../constants';
 import { useState, useRef, useEffect } from 'react';
 
@@ -840,6 +839,7 @@ function Properties() {
                 );
 
             case 'ListBox':
+                const listBoxChildren = selectedElementProps.children || [];
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
@@ -905,158 +905,201 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Orientation</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'>
-                                    <RotateCwSquare color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-                                </label>
-                                <Select
-                                    items={[
-                                        { id: 'horizontal', label: 'Horizontal' },
-                                        { id: 'vertical', label: 'Vertical' }
-                                    ]}
-                                    selectedKey={selectedElementProps.orientation || 'vertical'}
-                                    onSelectionChange={async (selected) => {
-                                        const updatedProps = {
-                                            ...selectedElementProps,
-                                            orientation: selected
-                                        };
-                                        updateElementProps(selectedElementId, updatedProps);
-                                        try {
-                                            await supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        } catch (err) {
-                                            console.error('Update error:', err);
-                                        }
-                                    }}
-                                >
-                                    {(item) => <SelectItem>{item.label}</SelectItem>}
-                                </Select>
-                            </div>
-                        </fieldset>
-
-                        <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Layout</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <Select
-                                    items={[
-                                        { id: 'default', label: 'Default' },
-                                        { id: 'compact', label: 'Compact' },
-                                        { id: 'detailed', label: 'Detailed' },
-                                        { id: 'grid', label: 'Grid' }
-                                    ]}
-                                    selectedKey={selectedElementProps.itemLayout || 'default'}
-                                    onSelectionChange={async (selected) => {
-                                        const updatedProps = {
-                                            ...selectedElementProps,
-                                            itemLayout: selected
-                                        };
-                                        updateElementProps(selectedElementId, updatedProps);
-                                        try {
-                                            await supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        } catch (err) {
-                                            console.error('Update error:', err);
-                                        }
-                                    }}
-                                >
-                                    {(item) => <SelectItem>{item.label}</SelectItem>}
-                                </Select>
-                            </div>
-                        </fieldset>
-
-                        <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Items</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><ListTodo color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <div className="json-input-container">
-                                    <textarea
-                                        className={`control-input ${jsonError ? 'json-error' : ''}`}
-                                        rows={10}
-                                        value={jsonInputValue}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setJsonInputValue(value);
-
-                                            if (!value.trim()) {
-                                                setJsonError(null);
-                                                return;
-                                            }
-
+                            <legend className='fieldset-legend'>Items Management</legend>
+                            <div className="tabs-management">
+                                <div className="tabs-header">
+                                    <span className="tabs-count">Total Items: {listBoxChildren.length}</span>
+                                    <Button
+                                        className="add-tab-btn"
+                                        onPress={async () => {
+                                            const newItem = {
+                                                id: crypto.randomUUID(),
+                                                type: 'ListBoxItem',
+                                                label: `Item ${listBoxChildren.length + 1}`,
+                                                value: `item${listBoxChildren.length + 1}`,
+                                                isDisabled: false
+                                            };
+                                            const updatedChildren = [...listBoxChildren, newItem];
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
                                             try {
-                                                const parsed = JSON.parse(value);
-                                                setJsonError(null);
-
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    items: parsed
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-
-                                                clearTimeout(jsonUpdateTimeout.current);
-                                                jsonUpdateTimeout.current = setTimeout(async () => {
-                                                    try {
-                                                        await supabase
-                                                            .from('elements')
-                                                            .update({ props: updatedProps })
-                                                            .eq('id', selectedElementId);
-                                                    } catch (err) {
-                                                        console.error('DB Update error:', err);
-                                                    }
-                                                }, 1000);
-
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
                                             } catch (err) {
-                                                setJsonError(err instanceof Error ? err.message : 'Invalid JSON');
+                                                console.error('Update error:', err);
                                             }
                                         }}
-                                        onBlur={async () => {
-                                            if (!jsonError && jsonInputValue.trim()) {
-                                                try {
-                                                    const parsed = JSON.parse(jsonInputValue);
-                                                    const updatedProps = {
-                                                        ...selectedElementProps,
-                                                        items: parsed
-                                                    };
+                                    >
+                                        <SquarePlus size={16} />
+                                        Add Item
+                                    </Button>
+                                </div>
 
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Final save error:', err);
-                                                }
-                                            }
-                                        }}
-                                        placeholder={`[
-  {
-    "id": "1",
-    "type": "simple",
-    "text": "Item 1"
-  },
-  {
-    "id": "2", 
-    "type": "complex",
-    "label": "Item 2",
-    "description": "Description here"
-  }
-]`}
-                                    />
-                                    {jsonError && (
-                                        <div className="json-error-message">
-                                            <span className="error-icon">⚠️</span>
-                                            {jsonError}
+                                <div className="tabs-list">
+                                    {listBoxChildren.map((item: any, index: number) => (
+                                        <div key={item.id} className="tab-item">
+                                            <div className="tab-header">
+                                                <span className="tab-number">#{index + 1}</span>
+                                                <div className="tab-controls">
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === 0}
+                                                        onPress={async () => {
+                                                            if (index > 0) {
+                                                                const newChildren = [...listBoxChildren];
+                                                                [newChildren[index - 1], newChildren[index]] = [newChildren[index], newChildren[index - 1]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronUp size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === listBoxChildren.length - 1}
+                                                        onPress={async () => {
+                                                            if (index < listBoxChildren.length - 1) {
+                                                                const newChildren = [...listBoxChildren];
+                                                                [newChildren[index], newChildren[index + 1]] = [newChildren[index + 1], newChildren[index]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronDown size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn delete-btn"
+                                                        onPress={async () => {
+                                                            const updatedChildren = listBoxChildren.filter((_, i) => i !== index);
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="tab-content">
+                                                <div className="form-group">
+                                                    <label>Label</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.label || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = listBoxChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, label: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Value</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.value || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = listBoxChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, value: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>
+                                                        <Checkbox
+                                                            isSelected={item.isDisabled || false}
+                                                            onChange={async (isSelected) => {
+                                                                const updatedChildren = listBoxChildren.map((child: any, i: number) =>
+                                                                    i === index ? { ...child, isDisabled: isSelected } : child
+                                                                );
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: updatedChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Disabled
+                                                        </Checkbox>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="json-help">
-                                        <small>
-                                            유효한 JSON 배열을 입력하세요. 각 item은 id가 필요합니다.
-                                        </small>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </fieldset>
@@ -1064,6 +1107,7 @@ function Properties() {
                 );
 
             case 'GridList':
+                const gridListChildren = selectedElementProps.children || [];
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
@@ -1129,125 +1173,201 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Layout</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <Select
-                                    items={[
-                                        { id: 'default', label: 'Default' },
-                                        { id: 'compact', label: 'Compact' },
-                                        { id: 'detailed', label: 'Detailed' },
-                                        { id: 'grid', label: 'Grid' }
-                                    ]}
-                                    selectedKey={selectedElementProps.itemLayout || 'default'}
-                                    onSelectionChange={async (selected) => {
-                                        const updatedProps = {
-                                            ...selectedElementProps,
-                                            itemLayout: selected
-                                        };
-                                        updateElementProps(selectedElementId, updatedProps);
-                                        try {
-                                            await supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        } catch (err) {
-                                            console.error('Update error:', err);
-                                        }
-                                    }}
-                                >
-                                    {(item) => <SelectItem>{item.label}</SelectItem>}
-                                </Select>
-                            </div>
-                        </fieldset>
-
-                        <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Items</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><ListTodo color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <div className="json-input-container">
-                                    <textarea
-                                        className={`control-input ${jsonError ? 'json-error' : ''}`}
-                                        rows={10}
-                                        value={jsonInputValue}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setJsonInputValue(value);
-
-                                            if (!value.trim()) {
-                                                setJsonError(null);
-                                                return;
-                                            }
-
+                            <legend className='fieldset-legend'>Items Management</legend>
+                            <div className="tabs-management">
+                                <div className="tabs-header">
+                                    <span className="tabs-count">Total Items: {gridListChildren.length}</span>
+                                    <Button
+                                        className="add-tab-btn"
+                                        onPress={async () => {
+                                            const newItem = {
+                                                id: crypto.randomUUID(),
+                                                type: 'GridListItem',
+                                                label: `Item ${gridListChildren.length + 1}`,
+                                                value: `item${gridListChildren.length + 1}`,
+                                                isDisabled: false
+                                            };
+                                            const updatedChildren = [...gridListChildren, newItem];
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
                                             try {
-                                                const parsed = JSON.parse(value);
-                                                setJsonError(null);
-
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    items: parsed
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-
-                                                clearTimeout(jsonUpdateTimeout.current);
-                                                jsonUpdateTimeout.current = setTimeout(async () => {
-                                                    try {
-                                                        await supabase
-                                                            .from('elements')
-                                                            .update({ props: updatedProps })
-                                                            .eq('id', selectedElementId);
-                                                    } catch (err) {
-                                                        console.error('DB Update error:', err);
-                                                    }
-                                                }, 1000);
-
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
                                             } catch (err) {
-                                                setJsonError(err instanceof Error ? err.message : 'Invalid JSON');
+                                                console.error('Update error:', err);
                                             }
                                         }}
-                                        onBlur={async () => {
-                                            if (!jsonError && jsonInputValue.trim()) {
-                                                try {
-                                                    const parsed = JSON.parse(jsonInputValue);
-                                                    const updatedProps = {
-                                                        ...selectedElementProps,
-                                                        items: parsed
-                                                    };
+                                    >
+                                        <SquarePlus size={16} />
+                                        Add Item
+                                    </Button>
+                                </div>
 
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Final save error:', err);
-                                                }
-                                            }
-                                        }}
-                                        placeholder={`[
-  {
-    "id": "1",
-    "type": "simple",
-    "text": "Item 1"
-  },
-  {
-    "id": "2", 
-    "type": "complex",
-    "label": "Item 2",
-    "description": "Description here"
-  }
-]`}
-                                    />
-                                    {jsonError && (
-                                        <div className="json-error-message">
-                                            <span className="error-icon">⚠️</span>
-                                            {jsonError}
+                                <div className="tabs-list">
+                                    {gridListChildren.map((item: any, index: number) => (
+                                        <div key={item.id} className="tab-item">
+                                            <div className="tab-header">
+                                                <span className="tab-number">#{index + 1}</span>
+                                                <div className="tab-controls">
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === 0}
+                                                        onPress={async () => {
+                                                            if (index > 0) {
+                                                                const newChildren = [...gridListChildren];
+                                                                [newChildren[index - 1], newChildren[index]] = [newChildren[index], newChildren[index - 1]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronUp size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === gridListChildren.length - 1}
+                                                        onPress={async () => {
+                                                            if (index < gridListChildren.length - 1) {
+                                                                const newChildren = [...gridListChildren];
+                                                                [newChildren[index], newChildren[index + 1]] = [newChildren[index + 1], newChildren[index]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronDown size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn delete-btn"
+                                                        onPress={async () => {
+                                                            const updatedChildren = gridListChildren.filter((_, i) => i !== index);
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="tab-content">
+                                                <div className="form-group">
+                                                    <label>Label</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.label || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = gridListChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, label: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Value</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.value || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = gridListChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, value: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>
+                                                        <Checkbox
+                                                            isSelected={item.isDisabled || false}
+                                                            onChange={async (isSelected) => {
+                                                                const updatedChildren = gridListChildren.map((child: any, i: number) =>
+                                                                    i === index ? { ...child, isDisabled: isSelected } : child
+                                                                );
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: updatedChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Disabled
+                                                        </Checkbox>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="json-help">
-                                        <small>
-                                            유효한 JSON 배열을 입력하세요. 각 item은 id가 필요합니다.
-                                        </small>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </fieldset>
@@ -1255,6 +1375,7 @@ function Properties() {
                 );
 
             case 'Select':
+                const selectChildren = selectedElementProps.children || [];
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
@@ -1286,92 +1407,201 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Items</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><ListTodo color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <div className="json-input-container">
-                                    <textarea
-                                        className={`control-input ${jsonError ? 'json-error' : ''}`}
-                                        rows={10}
-                                        value={jsonInputValue}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setJsonInputValue(value);
-
-                                            if (!value.trim()) {
-                                                setJsonError(null);
-                                                return;
-                                            }
-
+                            <legend className='fieldset-legend'>Options Management</legend>
+                            <div className="tabs-management">
+                                <div className="tabs-header">
+                                    <span className="tabs-count">Total Options: {selectChildren.length}</span>
+                                    <Button
+                                        className="add-tab-btn"
+                                        onPress={async () => {
+                                            const newOption = {
+                                                id: crypto.randomUUID(),
+                                                type: 'SelectItem',
+                                                label: `Option ${selectChildren.length + 1}`,
+                                                value: `option${selectChildren.length + 1}`,
+                                                isDisabled: false
+                                            };
+                                            const updatedChildren = [...selectChildren, newOption];
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
                                             try {
-                                                const parsed = JSON.parse(value);
-                                                setJsonError(null);
-
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    items: parsed
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-
-                                                clearTimeout(jsonUpdateTimeout.current);
-                                                jsonUpdateTimeout.current = setTimeout(async () => {
-                                                    try {
-                                                        await supabase
-                                                            .from('elements')
-                                                            .update({ props: updatedProps })
-                                                            .eq('id', selectedElementId);
-                                                    } catch (err) {
-                                                        console.error('DB Update error:', err);
-                                                    }
-                                                }, 1000);
-
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
                                             } catch (err) {
-                                                setJsonError(err instanceof Error ? err.message : 'Invalid JSON');
+                                                console.error('Update error:', err);
                                             }
                                         }}
-                                        onBlur={async () => {
-                                            if (!jsonError && jsonInputValue.trim()) {
-                                                try {
-                                                    const parsed = JSON.parse(jsonInputValue);
-                                                    const updatedProps = {
-                                                        ...selectedElementProps,
-                                                        items: parsed
-                                                    };
+                                    >
+                                        <SquarePlus size={16} />
+                                        Add Option
+                                    </Button>
+                                </div>
 
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Final save error:', err);
-                                                }
-                                            }
-                                        }}
-                                        placeholder={`[
-  {
-    "id": "1",
-    "type": "simple",
-    "text": "Option 1"
-  },
-  {
-    "id": "2", 
-    "type": "complex",
-    "label": "Option 2",
-    "description": "Description here"
-  }
-]`}
-                                    />
-                                    {jsonError && (
-                                        <div className="json-error-message">
-                                            <span className="error-icon">⚠️</span>
-                                            {jsonError}
+                                <div className="tabs-list">
+                                    {selectChildren.map((option: any, index: number) => (
+                                        <div key={option.id} className="tab-item">
+                                            <div className="tab-header">
+                                                <span className="tab-number">#{index + 1}</span>
+                                                <div className="tab-controls">
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === 0}
+                                                        onPress={async () => {
+                                                            if (index > 0) {
+                                                                const newChildren = [...selectChildren];
+                                                                [newChildren[index - 1], newChildren[index]] = [newChildren[index], newChildren[index - 1]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronUp size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === selectChildren.length - 1}
+                                                        onPress={async () => {
+                                                            if (index < selectChildren.length - 1) {
+                                                                const newChildren = [...selectChildren];
+                                                                [newChildren[index], newChildren[index + 1]] = [newChildren[index + 1], newChildren[index]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronDown size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn delete-btn"
+                                                        onPress={async () => {
+                                                            const updatedChildren = selectChildren.filter((_, i) => i !== index);
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="tab-content">
+                                                <div className="form-group">
+                                                    <label>Label</label>
+                                                    <input
+                                                        type="text"
+                                                        value={option.label || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = selectChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, label: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Value</label>
+                                                    <input
+                                                        type="text"
+                                                        value={option.value || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = selectChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, value: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>
+                                                        <Checkbox
+                                                            isSelected={option.isDisabled || false}
+                                                            onChange={async (isSelected) => {
+                                                                const updatedChildren = selectChildren.map((child: any, i: number) =>
+                                                                    i === index ? { ...child, isDisabled: isSelected } : child
+                                                                );
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: updatedChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Disabled
+                                                        </Checkbox>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="json-help">
-                                        <small>
-                                            유효한 JSON 배열을 입력하세요. 각 item은 id가 필요합니다.
-                                        </small>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </fieldset>
@@ -1379,6 +1609,7 @@ function Properties() {
                 );
 
             case 'ComboBox':
+                const comboBoxChildren = selectedElementProps.children || [];
                 return (
                     <div className="component-props">
                         <fieldset className="properties-aria">
@@ -1410,92 +1641,201 @@ function Properties() {
                         </fieldset>
 
                         <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Items</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'><ListTodo color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} /></label>
-                                <div className="json-input-container">
-                                    <textarea
-                                        className={`control-input ${jsonError ? 'json-error' : ''}`}
-                                        rows={10}
-                                        value={jsonInputValue}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setJsonInputValue(value);
-
-                                            if (!value.trim()) {
-                                                setJsonError(null);
-                                                return;
-                                            }
-
+                            <legend className='fieldset-legend'>Options Management</legend>
+                            <div className="tabs-management">
+                                <div className="tabs-header">
+                                    <span className="tabs-count">Total Options: {comboBoxChildren.length}</span>
+                                    <Button
+                                        className="add-tab-btn"
+                                        onPress={async () => {
+                                            const newOption = {
+                                                id: crypto.randomUUID(),
+                                                type: 'ComboBoxItem',
+                                                label: `Option ${comboBoxChildren.length + 1}`,
+                                                value: `option${comboBoxChildren.length + 1}`,
+                                                isDisabled: false
+                                            };
+                                            const updatedChildren = [...comboBoxChildren, newOption];
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
                                             try {
-                                                const parsed = JSON.parse(value);
-                                                setJsonError(null);
-
-                                                const updatedProps = {
-                                                    ...selectedElementProps,
-                                                    items: parsed
-                                                };
-                                                updateElementProps(selectedElementId, updatedProps);
-
-                                                clearTimeout(jsonUpdateTimeout.current);
-                                                jsonUpdateTimeout.current = setTimeout(async () => {
-                                                    try {
-                                                        await supabase
-                                                            .from('elements')
-                                                            .update({ props: updatedProps })
-                                                            .eq('id', selectedElementId);
-                                                    } catch (err) {
-                                                        console.error('DB Update error:', err);
-                                                    }
-                                                }, 1000);
-
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
                                             } catch (err) {
-                                                setJsonError(err instanceof Error ? err.message : 'Invalid JSON');
+                                                console.error('Update error:', err);
                                             }
                                         }}
-                                        onBlur={async () => {
-                                            if (!jsonError && jsonInputValue.trim()) {
-                                                try {
-                                                    const parsed = JSON.parse(jsonInputValue);
-                                                    const updatedProps = {
-                                                        ...selectedElementProps,
-                                                        items: parsed
-                                                    };
+                                    >
+                                        <SquarePlus size={16} />
+                                        Add Option
+                                    </Button>
+                                </div>
 
-                                                    await supabase
-                                                        .from('elements')
-                                                        .update({ props: updatedProps })
-                                                        .eq('id', selectedElementId);
-                                                } catch (err) {
-                                                    console.error('Final save error:', err);
-                                                }
-                                            }
-                                        }}
-                                        placeholder={`[
-  {
-    "id": "1",
-    "type": "simple",
-    "text": "Option 1"
-  },
-  {
-    "id": "2", 
-    "type": "complex",
-    "label": "Option 2",
-    "description": "Description here"
-  }
-]`}
-                                    />
-                                    {jsonError && (
-                                        <div className="json-error-message">
-                                            <span className="error-icon">⚠️</span>
-                                            {jsonError}
+                                <div className="tabs-list">
+                                    {comboBoxChildren.map((option: any, index: number) => (
+                                        <div key={option.id} className="tab-item">
+                                            <div className="tab-header">
+                                                <span className="tab-number">#{index + 1}</span>
+                                                <div className="tab-controls">
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === 0}
+                                                        onPress={async () => {
+                                                            if (index > 0) {
+                                                                const newChildren = [...comboBoxChildren];
+                                                                [newChildren[index - 1], newChildren[index]] = [newChildren[index], newChildren[index - 1]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronUp size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn"
+                                                        isDisabled={index === comboBoxChildren.length - 1}
+                                                        onPress={async () => {
+                                                            if (index < comboBoxChildren.length - 1) {
+                                                                const newChildren = [...comboBoxChildren];
+                                                                [newChildren[index], newChildren[index + 1]] = [newChildren[index + 1], newChildren[index]];
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: newChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <ChevronDown size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        className="icon-btn delete-btn"
+                                                        onPress={async () => {
+                                                            const updatedChildren = comboBoxChildren.filter((_, i) => i !== index);
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="tab-content">
+                                                <div className="form-group">
+                                                    <label>Label</label>
+                                                    <input
+                                                        type="text"
+                                                        value={option.label || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = comboBoxChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, label: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>Value</label>
+                                                    <input
+                                                        type="text"
+                                                        value={option.value || ''}
+                                                        onChange={async (e) => {
+                                                            const updatedChildren = comboBoxChildren.map((child: any, i: number) =>
+                                                                i === index ? { ...child, value: e.target.value } : child
+                                                            );
+                                                            const updatedProps = {
+                                                                ...selectedElementProps,
+                                                                children: updatedChildren
+                                                            };
+                                                            updateElementProps(selectedElementId, updatedProps);
+                                                            try {
+                                                                await supabase
+                                                                    .from('elements')
+                                                                    .update({ props: updatedProps })
+                                                                    .eq('id', selectedElementId);
+                                                            } catch (err) {
+                                                                console.error('Update error:', err);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label>
+                                                        <Checkbox
+                                                            isSelected={option.isDisabled || false}
+                                                            onChange={async (isSelected) => {
+                                                                const updatedChildren = comboBoxChildren.map((child: any, i: number) =>
+                                                                    i === index ? { ...child, isDisabled: isSelected } : child
+                                                                );
+                                                                const updatedProps = {
+                                                                    ...selectedElementProps,
+                                                                    children: updatedChildren
+                                                                };
+                                                                updateElementProps(selectedElementId, updatedProps);
+                                                                try {
+                                                                    await supabase
+                                                                        .from('elements')
+                                                                        .update({ props: updatedProps })
+                                                                        .eq('id', selectedElementId);
+                                                                } catch (err) {
+                                                                    console.error('Update error:', err);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Disabled
+                                                        </Checkbox>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="json-help">
-                                        <small>
-                                            유효한 JSON 배열을 입력하세요. 각 item은 id가 필요합니다.
-                                        </small>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </fieldset>
@@ -2342,6 +2682,353 @@ function Properties() {
                                 </fieldset>
                             </>
                         )}
+                    </div>
+                );
+
+            case 'Tree':
+                // 선택된 TreeItem이 있고, 현재 Tree 컴포넌트의 item인 경우 개별 TreeItem 편집 UI 표시
+                if (selectedTab && selectedTab.parentId === selectedElementId) {
+                    const flatItems = selectedElementProps.children || [];
+                    const currentItem = flatItems.find((item: any, index: number) => index === selectedTab.tabIndex);
+                    if (!currentItem) return null;
+
+                    return (
+                        <div className="component-props">
+                            <fieldset className="properties-aria">
+                                <legend className='fieldset-legend'>Selected Item: {currentItem.title || `Item ${selectedTab.tabIndex + 1}`}</legend>
+
+                                <div className='tab-content-editor'>
+                                    <div className='control-group'>
+                                        <label className='control-label'>Title</label>
+                                        <input
+                                            className='control-input'
+                                            placeholder='Item Title'
+                                            value={currentItem.title || ''}
+                                            onChange={async (e) => {
+                                                const updatedChildren = [...flatItems];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...currentItem,
+                                                    title: e.target.value
+                                                };
+
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className='control-group'>
+                                        <label className='control-label'>Type</label>
+                                        <Select
+                                            items={[
+                                                { id: 'folder', label: 'Folder' },
+                                                { id: 'file', label: 'File' }
+                                            ]}
+                                            selectedKey={currentItem.type || 'file'}
+                                            onSelectionChange={async (selected) => {
+                                                const updatedChildren = [...flatItems];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...currentItem,
+                                                    type: selected as string
+                                                };
+
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        >
+                                            {(item) => <SelectItem>{item.label}</SelectItem>}
+                                        </Select>
+                                    </div>
+
+                                    <div className='control-group'>
+                                        <label className='control-label'>Parent</label>
+                                        <Select
+                                            items={[
+                                                { id: 'root', label: 'Root (No Parent)' },
+                                                ...flatItems
+                                                    .filter((item: any) => item.type === 'folder' && item.id !== currentItem.id)
+                                                    .map((item: any) => ({ id: item.id, label: item.title }))
+                                            ]}
+                                            selectedKey={currentItem.parent_id || 'root'}
+                                            onSelectionChange={async (selected) => {
+                                                const newParentId = selected === 'root' ? null : selected as string;
+                                                const updatedChildren = [...flatItems];
+                                                updatedChildren[selectedTab.tabIndex] = {
+                                                    ...currentItem,
+                                                    parent_id: newParentId
+                                                };
+
+                                                const updatedProps = {
+                                                    ...selectedElementProps,
+                                                    children: updatedChildren
+                                                };
+
+                                                updateElementProps(selectedElementId, updatedProps);
+                                                try {
+                                                    await supabase
+                                                        .from('elements')
+                                                        .update({ props: updatedProps })
+                                                        .eq('id', selectedElementId);
+                                                } catch (err) {
+                                                    console.error('Update error:', err);
+                                                }
+                                            }}
+                                        >
+                                            {(item) => <SelectItem>{item.label}</SelectItem>}
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                {/* 자식 추가 기능 (폴더인 경우만) */}
+                                {currentItem.type === 'folder' && (
+                                    <fieldset className="properties-aria">
+                                        <legend className='fieldset-legend'>Add Child Item</legend>
+                                        <div className='tab-management-controls'>
+                                            <button
+                                                className='add-tab-button'
+                                                onClick={async () => {
+                                                    const newChild = {
+                                                        id: crypto.randomUUID(),
+                                                        title: `New Item ${flatItems.length + 1}`,
+                                                        type: 'file',
+                                                        parent_id: currentItem.id
+                                                    };
+
+                                                    const updatedChildren = [...flatItems, newChild];
+
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        children: updatedChildren
+                                                    };
+
+                                                    updateElementProps(selectedElementId, updatedProps);
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+                                                    } catch (err) {
+                                                        console.error('Update error:', err);
+                                                    }
+                                                }}
+                                            >
+                                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                                Add Child
+                                            </button>
+                                        </div>
+                                    </fieldset>
+                                )}
+
+                                {/* 개별 아이템 삭제 */}
+                                <fieldset className="properties-aria">
+                                    <legend className='fieldset-legend'>Item Actions</legend>
+                                    <div className='tab-management-controls'>
+                                        <button
+                                            className='delete-tab-button'
+                                            onClick={async () => {
+                                                if (window.confirm(`Are you sure you want to delete "${currentItem.title}"?`)) {
+                                                    // 자식 아이템들도 함께 삭제 (플랫 구조에서)
+                                                    const updatedChildren = flatItems.filter((item: any) =>
+                                                        item.id !== currentItem.id && item.parent_id !== currentItem.id
+                                                    );
+
+                                                    const updatedProps = {
+                                                        ...selectedElementProps,
+                                                        children: updatedChildren
+                                                    };
+
+                                                    updateElementProps(selectedElementId, updatedProps);
+                                                    try {
+                                                        await supabase
+                                                            .from('elements')
+                                                            .update({ props: updatedProps })
+                                                            .eq('id', selectedElementId);
+
+                                                        // 선택된 아이템이 삭제되었으므로 선택 해제
+                                                        setSelectedElement(selectedElementId, selectedElementProps);
+                                                    } catch (err) {
+                                                        console.error('Update error:', err);
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                            Delete Item
+                                        </button>
+                                    </div>
+                                </fieldset>
+                            </fieldset>
+                        </div>
+                    );
+                }
+
+                // Tree 컴포넌트 전체 설정 UI
+                const flatItems = selectedElementProps.children || [];
+                return (
+                    <div className="component-props">
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Selection</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <PointerOff color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <Select
+                                    items={[
+                                        { id: 'none', label: 'None' },
+                                        { id: 'single', label: 'Single' },
+                                        { id: 'multiple', label: 'Multiple' }
+                                    ]}
+                                    selectedKey={selectedElementProps.selectionMode || 'single'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            selectionMode: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Behavior</legend>
+                            <div className='react-aria-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                </label>
+                                <Select
+                                    items={[
+                                        { id: 'replace', label: 'Replace' },
+                                        { id: 'toggle', label: 'Toggle' }
+                                    ]}
+                                    selectedKey={selectedElementProps.selectionBehavior || 'replace'}
+                                    onSelectionChange={async (selected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            selectionBehavior: selected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Features</legend>
+                            <div className='control-group'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.allowsDragging || false}
+                                    onChange={async (isSelected) => {
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            allowsDragging: isSelected
+                                        };
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    Allow Dragging
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="properties-aria">
+                            <legend className='fieldset-legend'>Tree Items Management</legend>
+
+                            <div className='tab-overview'>
+                                <p className='tab-overview-text'>
+                                    Total items: {flatItems.length}
+                                </p>
+                                <p className='tab-overview-help'>
+                                    💡 Select individual items from tree to edit
+                                </p>
+                            </div>
+
+                            <div className='tab-management-controls'>
+                                <button
+                                    className='add-tab-button'
+                                    onClick={async () => {
+                                        const newItem = {
+                                            id: crypto.randomUUID(),
+                                            title: `New Item ${flatItems.length + 1}`,
+                                            type: 'file',
+                                            parent_id: null
+                                        };
+
+                                        const updatedChildren = [...flatItems, newItem];
+
+                                        const updatedProps = {
+                                            ...selectedElementProps,
+                                            children: updatedChildren
+                                        };
+
+                                        updateElementProps(selectedElementId, updatedProps);
+                                        try {
+                                            await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', selectedElementId);
+                                        } catch (err) {
+                                            console.error('Update error:', err);
+                                        }
+                                    }}
+                                >
+                                    <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    Add Root Item
+                                </button>
+                            </div>
+                        </fieldset>
                     </div>
                 );
 
