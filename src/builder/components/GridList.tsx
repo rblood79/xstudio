@@ -46,5 +46,3 @@ export function GridListItem(
     )
   );
 }
-
-export { GridListItem as MyItem };
