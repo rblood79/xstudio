@@ -1,5 +1,5 @@
-import { supabase } from '../../env/supabase.client'; // 수정 (@ 제거)
-import type { DesignTheme, DesignToken } from '../../types/designTheme'; // 수정
+import { supabase } from '../../env/supabase.client';
+import type { DesignTheme, DesignToken } from '../../types/designTheme';
 
 export async function fetchActiveTheme(projectId: string): Promise<DesignTheme> {
     const { data, error } = await supabase
@@ -10,8 +10,11 @@ export async function fetchActiveTheme(projectId: string): Promise<DesignTheme> 
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle();
+
     if (error) throw error;
-    if (!data) return await ensureDefaultTheme(projectId);
+    if (!data) {
+        return await ensureDefaultTheme(projectId);
+    }
     return data;
 }
 
@@ -30,6 +33,7 @@ export async function fetchTokensByTheme(themeId: string): Promise<DesignToken[]
         .from('design_tokens')
         .select('*')
         .eq('theme_id', themeId);
+
     if (error) throw error;
     return (data as DesignToken[]) || [];
 }

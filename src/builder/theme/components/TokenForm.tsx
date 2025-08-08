@@ -1,103 +1,191 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { categoryConfigs } from './CategoryTabs';
-import { validateTokenValue } from '../../../utils/tokensToCss';
-import type { TokenType, NewTokenInput } from '../../../types/designTokens';
+import { DesignToken } from '../../../types/designTheme';
 
 interface TokenFormProps {
-    category: TokenType;
-    onSubmit: (token: NewTokenInput) => Promise<boolean>;
-    isLoading: boolean;
+    rawTokens: DesignToken[];
+    onAdd: (scope: 'raw' | 'semantic', name: string, type: string, value: any, alias_of?: string | null) => void;
 }
 
-export function TokenForm({ category, onSubmit, isLoading }: TokenFormProps) {
-    const [formData, setFormData] = useState<NewTokenInput>({
+interface FormState {
+    scope: 'raw' | 'semantic';
+    name: string;
+    type: string;
+    value: string;
+    alias_of: string;
+    error: string | null;
+}
+
+const NAME_RE = /^[a-z0-9._-]+(?:\.[a-z0-9._-]+)*$/; // color.brand.primary 형태 허용
+
+export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
+    const [form, setForm] = useState<FormState>({
+        scope: 'raw',
         name: '',
-        type: category,
+        type: 'color',
         value: '',
-        css_variable: ''
+        alias_of: '',
+        error: null
     });
 
-    const config = categoryConfigs[category];
-
-    const handleNameChange = (name: string) => {
-        const cssVariable = `--${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-        setFormData(prev => ({
-            ...prev,
-            name,
-            type: category,
-            css_variable: prev.css_variable || cssVariable
-        }));
-    };
-
-    const handleSubmit = async () => {
-        if (!formData.name || !formData.value) {
-            alert('토큰 이름과 값이 필요합니다.');
+    const handleAdd = () => {
+        // validate
+        if (!form.name.trim() || !NAME_RE.test(form.name)) {
+            setForm(f => ({ ...f, error: '이름 형식 오류' }));
             return;
         }
 
-        if (!validateTokenValue(category, formData.value)) {
-            alert(`올바른 ${config.label.toLowerCase()} 값을 입력해주세요.`);
+        const existsRaw = rawTokens.some(t => t.name === form.name);
+        if (existsRaw) {
+            setForm(f => ({ ...f, error: '이미 존재하는 이름' }));
             return;
         }
 
-        const success = await onSubmit({
-            ...formData,
-            type: category
+        let value: any = form.value;
+        if (!(form.type === 'color' && /^#|rgb/i.test(value))) {
+            try {
+                value = JSON.parse(value);
+            } catch {
+                // 문자열 그대로
+            }
+        }
+
+        const alias = form.scope === 'semantic' && form.alias_of
+            ? form.alias_of
+            : undefined;
+
+        onAdd(form.scope, form.name, form.type, value, alias);
+
+        setForm({
+            scope: form.scope,
+            name: '',
+            type: form.type,
+            value: '',
+            alias_of: '',
+            error: null
         });
-
-        if (success) {
-            setFormData({
-                name: '',
-                type: category,
-                value: '',
-                css_variable: ''
-            });
-        }
     };
-
-    // 카테고리 변경 시 폼 타입 업데이트
-    React.useEffect(() => {
-        setFormData(prev => ({ ...prev, type: category }));
-    }, [category]);
 
     return (
-        <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium mb-3">새 {config.label} 토큰 추가</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input
-                    type="text"
-                    placeholder="토큰 이름"
-                    value={formData.name}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isLoading}
-                />
-                <input
-                    type="text"
-                    placeholder={config.placeholder}
-                    value={formData.value as string}
-                    onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isLoading}
-                />
-                <input
-                    type="text"
-                    placeholder="CSS 변수명 (선택사항)"
-                    value={formData.css_variable}
-                    onChange={(e) => setFormData(prev => ({ ...prev, css_variable: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isLoading}
-                />
+        <section className="flex flex-col gap-2 border-t pt-4">
+            <h4 className="text-xs font-semibold text-neutral-600">
+                새 토큰 추가
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <label className="flex flex-col gap-1">
+                    <span className="text-neutral-500">Scope</span>
+                    <select
+                        value={form.scope}
+                        onChange={e =>
+                            setForm(f => ({
+                                ...f,
+                                scope: e.target.value as 'raw' | 'semantic'
+                            }))
+                        }
+                        className="border px-2 py-1 rounded"
+                    >
+                        <option value="raw">raw</option>
+                        <option value="semantic">semantic</option>
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-neutral-500">Type</span>
+                    <select
+                        value={form.type}
+                        onChange={e =>
+                            setForm(f => ({
+                                ...f,
+                                type: e.target.value
+                            }))
+                        }
+                        className="border px-2 py-1 rounded"
+                    >
+                        <option value="color">color</option>
+                        <option value="spacing">spacing</option>
+                        <option value="radius">radius</option>
+                        <option value="font">font</option>
+                        <option value="size">size</option>
+                        <option value="other">other</option>
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1 col-span-2">
+                    <span className="text-neutral-500">
+                        Name (dot 구분)
+                    </span>
+                    <input
+                        value={form.name}
+                        onChange={e =>
+                            setForm(f => ({
+                                ...f,
+                                name: e.target.value,
+                                error: null
+                            }))
+                        }
+                        placeholder="button.primary.bg"
+                        className="border px-2 py-1 rounded"
+                    />
+                </label>
+                {form.scope === 'semantic' && (
+                    <label className="flex flex-col gap-1 col-span-2">
+                        <span className="text-neutral-500">
+                            alias_of (raw 토큰명)
+                        </span>
+                        <input
+                            value={form.alias_of}
+                            onChange={e =>
+                                setForm(f => ({
+                                    ...f,
+                                    alias_of: e.target.value
+                                }))
+                            }
+                            list="raw-token-list"
+                            placeholder="color.brand.primary"
+                            className="border px-2 py-1 rounded"
+                        />
+                        <datalist id="raw-token-list">
+                            {rawTokens.map(r => (
+                                <option
+                                    value={r.name}
+                                    key={r.name}
+                                />
+                            ))}
+                        </datalist>
+                    </label>
+                )}
+                <label className="flex flex-col gap-1 col-span-2">
+                    <span className="text-neutral-500">Value</span>
+                    <input
+                        value={form.value}
+                        onChange={e =>
+                            setForm(f => ({
+                                ...f,
+                                value: e.target.value
+                            }))
+                        }
+                        placeholder={
+                            form.scope === 'semantic' &&
+                                form.alias_of
+                                ? '(alias 사용 시 무시)'
+                                : '#3B82F6 또는 JSON'
+                        }
+                        className="border px-2 py-1 rounded"
+                    />
+                </label>
             </div>
-            <button
-                onClick={handleSubmit}
-                disabled={isLoading || !formData.name || !formData.value}
-                className="mt-3 flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-                <Plus size={16} />
-                <span>{isLoading ? '추가 중...' : '토큰 추가'}</span>
-            </button>
-        </div>
+            {form.error && (
+                <p className="text-[11px] text-red-500">
+                    {form.error}
+                </p>
+            )}
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    onClick={handleAdd}
+                    className="text-xs px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+                    disabled={!form.name.trim()}
+                >
+                    추가
+                </button>
+            </div>
+        </section>
     );
 }
