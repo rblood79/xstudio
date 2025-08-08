@@ -1,135 +1,178 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../env/supabase.client';
-import { convertTokensToCSS } from '../utils/tokensToCss';
-import { ColorValue, DesignToken, TokenType } from '../types/designTokens';
+import { useThemeStore } from '../builder/stores/themeStore';
+import { debounce } from 'lodash';
+import type { DesignToken, TokenType, TokenValue, NewTokenInput } from '../types/designTokens';
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const DEBOUNCE_DELAY = 300; // 300ms
+export function useDesignTokens(projectId: string | undefined) {
+  const { tokens, setTokens, updateToken, addToken, removeToken } = useThemeStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-interface UseDesignTokensReturn {
-  tokens: DesignToken[];
-  updateToken: (name: string, token: { type: TokenType; value: ColorValue }) => Promise<void>;
-}
+  // 토큰 로드 (XStudio 패턴 준수)
+  const loadTokens = useCallback(async () => {
+    if (!projectId) return;
 
-export function useDesignTokens(projectId: string): UseDesignTokensReturn {
-  const [tokens, setTokens] = useState<DesignToken[]>([]);
-  const styleElementRef = useRef<HTMLStyleElement | null>(null);
-  const cacheRef = useRef<{
-    tokens: DesignToken[];
-    timestamp: number;
-    projectId: string;
-  } | null>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    setIsLoading(true);
+    setError(null);
 
-  const fetchAndApplyTokens = useCallback(async (forceFetch = false) => {
     try {
-      let currentTokens;
+      const { data, error } = await supabase
+        .from('design_tokens')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('type', { ascending: true })
+        .order('name', { ascending: true });
 
-      // Check cache first
-      if (!forceFetch && cacheRef.current && cacheRef.current.projectId === projectId) {
-        const isCacheValid = Date.now() - cacheRef.current.timestamp < CACHE_DURATION;
-        if (isCacheValid) {
-          currentTokens = cacheRef.current.tokens;
-        }
-      }
+      if (error) throw error;
 
-      // Fetch if no valid cache
-      if (!currentTokens) {
-        const { data, error } = await supabase
+      // Supabase 데이터를 DesignToken 형식으로 변환
+      const formattedTokens = data?.map(token => ({
+        ...token,
+        type: token.category as TokenType, // category를 type으로 매핑
+        value: typeof token.value === 'string' ? token.value : token.value as TokenValue
+      })) || [];
+
+      setTokens(formattedTokens);
+    } catch (err) {
+      console.error('토큰 로드 실패:', err);
+      setError('토큰을 로드하는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [projectId, setTokens]);
+
+  // 디바운스된 업데이트 (XStudio 패턴: Zustand 먼저 → Supabase 저장)
+  const debouncedUpdate = useCallback(
+    debounce(async (tokenId: string, value: TokenValue) => {
+      try {
+        const { error } = await supabase
           .from('design_tokens')
-          .select('*')
-          .eq('project_id', projectId);
+          .update({
+            value: typeof value === 'object' ? JSON.stringify(value) : value,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', tokenId);
 
         if (error) throw error;
-        currentTokens = data || [];
 
-        // Update cache
-        cacheRef.current = {
-          tokens: currentTokens,
-          timestamp: Date.now(),
-          projectId
-        };
+        // iframe 프리뷰에 테마 업데이트 알림
+        window.postMessage({
+          type: "UPDATE_THEME_TOKENS",
+          tokens: useThemeStore.getState().tokens
+        }, window.location.origin);
+
+      } catch (err) {
+        console.error('토큰 업데이트 실패:', err);
+        setError('토큰 업데이트에 실패했습니다.');
       }
+    }, 300),
+    []
+  );
 
-      setTokens(currentTokens);
+  // 토큰 값 변경
+  const handleUpdateToken = useCallback((tokenId: string, value: TokenValue) => {
+    updateToken(tokenId, value);
+    debouncedUpdate(tokenId, value);
+  }, [updateToken, debouncedUpdate]);
 
-      // Apply CSS only if tokens have changed
-      const cssText = convertTokensToCSS(currentTokens);
-      if (styleElementRef.current?.textContent !== cssText) {
-        // Check if theme-tokens style element already exists
-        const existingStyleElement = document.getElementById('theme-tokens') as HTMLStyleElement;
-        if (existingStyleElement) {
-          styleElementRef.current = existingStyleElement;
-        } else {
-          styleElementRef.current = document.createElement('style');
-          styleElementRef.current.id = 'theme-tokens';
-          document.head.appendChild(styleElementRef.current);
-        }
-        if (styleElementRef.current) {
-          styleElementRef.current.textContent = cssText;
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching design tokens:', error);
+  // 토큰 추가 (XStudio 패턴 준수)
+  const handleAddToken = useCallback(async (tokenData: NewTokenInput) => {
+    if (!projectId) return false;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const insertData = {
+        project_id: projectId,
+        name: tokenData.name,
+        category: tokenData.type, // type을 category로 매핑
+        value: typeof tokenData.value === 'object' ? JSON.stringify(tokenData.value) : tokenData.value,
+        css_variable: tokenData.css_variable || `--${tokenData.name.toLowerCase().replace(/\s+/g, '-')}`
+      };
+
+      const { data, error } = await supabase
+        .from('design_tokens')
+        .insert([insertData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Supabase 응답을 DesignToken 형식으로 변환
+      const formattedToken = {
+        ...data,
+        type: data.category as TokenType,
+        value: typeof data.value === 'string' ? data.value : data.value as TokenValue
+      };
+
+      addToken(formattedToken);
+
+      // iframe 프리뷰 업데이트
+      window.postMessage({
+        type: "UPDATE_THEME_TOKENS",
+        tokens: useThemeStore.getState().tokens
+      }, window.location.origin);
+
+      return true;
+    } catch (err) {
+      console.error('토큰 추가 실패:', err);
+      setError('토큰 추가에 실패했습니다.');
+      return false;
+    } finally {
+      setIsSaving(false);
     }
-  }, [projectId]);
+  }, [projectId, addToken]);
 
-  useEffect(() => {
-    fetchAndApplyTokens();
+  // 토큰 삭제
+  const handleDeleteToken = useCallback(async (tokenId: string) => {
+    setError(null);
 
-    // Set up subscription for real-time updates
-    const subscription = supabase
-      .channel('design_tokens_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'design_tokens',
-          filter: `project_id=eq.${projectId}`
-        },
-        () => {
-          // Clear cache only for the current project
-          if (cacheRef.current?.projectId === projectId) {
-            cacheRef.current = null;
-          }
-
-          if (debounceTimeoutRef.current) {
-            clearTimeout(debounceTimeoutRef.current);
-          }
-
-          debounceTimeoutRef.current = setTimeout(() => {
-            fetchAndApplyTokens(true);
-          }, DEBOUNCE_DELAY);
-        }
-      )
-      .subscribe();
-
-    // Cleanup function
-    return () => {
-      if (styleElementRef.current) {
-        styleElementRef.current.remove();
-      }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-      subscription.unsubscribe();
-    };
-  }, [projectId, fetchAndApplyTokens]);
-
-  const updateToken = useCallback(async (name: string, token: { type: TokenType; value: ColorValue }) => {
     try {
       const { error } = await supabase
         .from('design_tokens')
-        .update(token)
-        .eq('name', name)
-        .eq('project_id', projectId);
+        .delete()
+        .eq('id', tokenId);
 
       if (error) throw error;
-    } catch (error) {
-      console.error('Error updating token:', error);
-    }
-  }, [projectId]);
 
-  return { tokens, updateToken };
-} 
+      removeToken(tokenId);
+
+      // iframe 프리뷰 업데이트
+      window.postMessage({
+        type: "UPDATE_THEME_TOKENS",
+        tokens: useThemeStore.getState().tokens
+      }, window.location.origin);
+
+      return true;
+    } catch (err) {
+      console.error('토큰 삭제 실패:', err);
+      setError('토큰 삭제에 실패했습니다.');
+      return false;
+    }
+  }, [removeToken]);
+
+  // 카테고리별 토큰 필터링
+  const getTokensByType = useCallback((type: TokenType) => {
+    return tokens.filter(token => token.type === type);
+  }, [tokens]);
+
+  useEffect(() => {
+    loadTokens();
+  }, [loadTokens]);
+
+  return {
+    tokens,
+    isLoading,
+    isSaving,
+    error,
+    handleUpdateToken,
+    handleAddToken,
+    handleDeleteToken,
+    getTokensByType,
+    reloadTokens: loadTokens,
+    clearError: () => setError(null)
+  };
+}
