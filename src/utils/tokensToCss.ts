@@ -1,93 +1,99 @@
-import { Database } from '../types/supabase';
+import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue } from '../types/designTokens';
 
-type DesignTokenBase = Database['public']['Tables']['design_tokens']['Row'];
-type DesignToken = Omit<DesignTokenBase, 'value'> & { value: TokenValue };
+// 토큰 값을 CSS 값으로 변환
+export function tokenValueToCss(token: DesignToken): string {
+  const { value } = token;
 
-interface ColorValue {
-  h: number;
-  s: number;
-  l: number;
-  a: number;
-}
-
-interface TypographyValue {
-  fontFamily: string;
-  fontSize: string;
-  fontWeight: number;
-  lineHeight: number;
-}
-
-interface ShadowValue {
-  offsetX: string;
-  offsetY: string;
-  blur: string;
-  spread: string;
-  color: string;
-}
-
-interface BorderValue {
-  width: string;
-  style: string;
-  color: string;
-}
-
-type TokenValue = ColorValue | TypographyValue | ShadowValue | BorderValue | string;
-
-function isColorValue(value: unknown): value is ColorValue {
-  return typeof value === 'object' && value !== null && 'h' in value && 's' in value && 'l' in value && 'a' in value;
-}
-
-function isTypographyValue(value: unknown): value is TypographyValue {
-  return typeof value === 'object' && value !== null && 'fontFamily' in value && 'fontSize' in value && 'fontWeight' in value && 'lineHeight' in value;
-}
-
-function isShadowValue(value: unknown): value is ShadowValue {
-  return typeof value === 'object' && value !== null && 'offsetX' in value && 'offsetY' in value && 'blur' in value && 'spread' in value && 'color' in value;
-}
-
-function isBorderValue(value: unknown): value is BorderValue {
-  return typeof value === 'object' && value !== null && 'width' in value && 'style' in value && 'color' in value;
-}
-
-export function convertTokensToCSS(tokens: DesignToken[]): string {
-  return tokens.reduce((css, token) => {
-    const cssVarName = `--${token.type}-${token.name}`.toLowerCase().replace(/\s+/g, '-');
-    let cssValue = '';
-
-    switch (token.type) {
-      case 'color': {
-        if (!isColorValue(token.value)) break;
-        cssValue = `hsl(${token.value.h}deg ${token.value.s}% ${token.value.l}% / ${token.value.a})`;
-        break;
+  switch (token.type) {
+    case 'color':
+      if (typeof value === 'object' && 'h' in value) {
+        const color = value as ColorValue;
+        return `hsla(${color.h}, ${color.s}%, ${color.l}%, ${color.a})`;
       }
-      case 'typography': {
-        if (!isTypographyValue(token.value)) break;
-        return `${css}
-  --typography-${token.name}-family: ${token.value.fontFamily};
-  --typography-${token.name}-size: ${token.value.fontSize};
-  --typography-${token.name}-weight: ${token.value.fontWeight};
-  --typography-${token.name}-line-height: ${token.value.lineHeight};`;
+      return value as string;
+
+    case 'typography':
+      if (typeof value === 'object' && 'fontFamily' in value) {
+        const typo = value as TypographyValue;
+        return `${typo.fontWeight} ${typo.fontSize}/${typo.lineHeight} ${typo.fontFamily}`;
       }
-      case 'shadow': {
-        if (!isShadowValue(token.value)) break;
-        cssValue = `${token.value.offsetX} ${token.value.offsetY} ${token.value.blur} ${token.value.spread} ${token.value.color}`;
-        break;
+      return value as string;
+
+    case 'shadow':
+      if (typeof value === 'object' && 'offsetX' in value) {
+        const shadow = value as ShadowValue;
+        return `${shadow.offsetX} ${shadow.offsetY} ${shadow.blur} ${shadow.spread} ${shadow.color}`;
       }
-      case 'border': {
-        if (!isBorderValue(token.value)) break;
-        return `${css}
-  --border-${token.name}-width: ${token.value.width};
-  --border-${token.name}-style: ${token.value.style};
-  --border-${token.name}-color: ${token.value.color};`;
+      return value as string;
+
+    case 'border':
+      if (typeof value === 'object' && 'width' in value) {
+        const border = value as BorderValue;
+        return `${border.width} ${border.style} ${border.color}`;
       }
-      case 'spacing': {
-        cssValue = String(token.value);
-        break;
-      }
-      default:
-        cssValue = String(token.value);
+      return value as string;
+
+    default:
+      return value as string;
+  }
+}
+
+// 토큰 배열을 CSS 변수로 변환
+export function generateCssVariables(tokens: DesignToken[]): string {
+  return tokens
+    .map(token => `${token.css_variable || `--${token.name}`}: ${tokenValueToCss(token)};`)
+    .join('\n');
+}
+
+// CSS :root 블록 생성
+export function generateCssRoot(tokens: DesignToken[]): string {
+  const cssVariables = generateCssVariables(tokens);
+  return `:root {\n${cssVariables}\n}`;
+}
+
+// iframe에 테마 CSS 주입 (XStudio 패턴)
+export function injectThemeToIframe(iframe: HTMLIFrameElement, tokens: DesignToken[]): void {
+  if (!iframe.contentWindow || !iframe.contentDocument) {
+    console.warn('iframe이 준비되지 않았습니다.');
+    return;
+  }
+
+  try {
+    // 기존 테마 스타일 제거
+    const existingStyle = iframe.contentDocument.getElementById('xstudio-theme');
+    if (existingStyle) {
+      existingStyle.remove();
     }
 
-    return `${css}\n  ${cssVarName}: ${cssValue};`;
-  }, ':root {') + '\n}';
-} 
+    // 새 테마 스타일 추가
+    const styleElement = iframe.contentDocument.createElement('style');
+    styleElement.id = 'xstudio-theme';
+    styleElement.textContent = generateCssRoot(tokens);
+    iframe.contentDocument.head.appendChild(styleElement);
+  } catch (error) {
+    console.error('테마 CSS 주입 실패:', error);
+  }
+}
+
+// 토큰 유효성 검증
+export function validateTokenValue(type: string, value: any): boolean {
+  switch (type) {
+    case 'color':
+      if (typeof value === 'string') {
+        return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value) ||
+          /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(value) ||
+          /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)$/.test(value);
+      }
+      return typeof value === 'object' && 'h' in value;
+
+    case 'spacing':
+      return typeof value === 'string' && /^\d+(\.\d+)?(px|rem|em|%|vh|vw)$/.test(value);
+
+    case 'typography':
+      return (typeof value === 'object' && 'fontFamily' in value) ||
+        (typeof value === 'string' && /^\d+(\.\d+)?(px|rem|em)$/.test(value));
+
+    default:
+      return typeof value === 'string' && value.length > 0;
+  }
+}

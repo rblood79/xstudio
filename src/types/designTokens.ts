@@ -36,5 +36,24 @@ export interface DesignToken {
     name: string;
     type: TokenType;
     value: TokenValue;
+    css_variable?: string; // CSS 변수명 추가
+    category?: string; // 카테고리 추가 (Supabase 테이블과 호환)
     created_at: string;
-} 
+    updated_at?: string;
+}
+
+// 새 토큰 입력을 위한 인터페이스
+export interface NewTokenInput {
+    name: string;
+    type: TokenType;
+    value: TokenValue;
+    css_variable?: string;
+}
+
+// 카테고리 설정 인터페이스
+export interface CategoryConfig {
+    icon: React.ComponentType<{ size?: number }>;
+    label: string;
+    placeholder: string;
+    validator?: (value: TokenValue) => boolean;
+}
