@@ -3,6 +3,7 @@ import './index.css';
 
 import { useParams } from 'react-router-dom';
 import ThemeEditor from './ThemeEditor';
+import { ThemeInitializer } from './ThemeInitializer';
 
 export default function Theme() {
     const { projectId } = useParams<{ projectId: string }>();
@@ -12,7 +13,10 @@ export default function Theme() {
             {!projectId ? (
                 <p className="text-red-500">Project ID is required</p>
             ) : (
-                <ThemeEditor />
+                <>
+                    <ThemeInitializer projectId={projectId} />
+                    <ThemeEditor projectId={projectId} />
+                </>
             )}
         </div>
     );

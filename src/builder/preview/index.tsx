@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from "react-router";
 import { useStore } from '../stores/elements';
 import { ElementProps } from '../../types/supabase';
@@ -46,38 +46,57 @@ function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements, updateElementProps } = useStore();
+  const [elementsState, setElementsState] = useState<any[]>([]);
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
-      if (event.data.type === "UPDATE_ELEMENTS") {
-        setElements(event.data.elements || []);
+      const data = event.data;
+      if (!data || typeof data !== 'object' || !data.type) return;
+
+      if (data.type === 'UPDATE_ELEMENTS') {
+        setElements(data.elements || []);
       }
-      if (event.data.type === "REQUEST_UPDATE") {
-        window.parent.postMessage({ type: "UPDATE_ELEMENTS", elements }, "*");
-      }
-      if (event.data.type === "UPDATE_THEME_TOKENS") {
-        // Create or update style element
-        let styleElement = document.getElementById('theme-tokens');
-        if (!styleElement) {
-          styleElement = document.createElement('style');
-          styleElement.id = 'theme-tokens';
-          document.head.appendChild(styleElement);
+
+      if (data.type === 'THEME_VARS' && Array.isArray(data.vars)) {
+        let styleEl = document.getElementById('design-theme-vars') as HTMLStyleElement | null;
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'design-theme-vars';
+          document.head.appendChild(styleEl);
         }
+        styleEl.textContent =
+          ':root {\n' +
+          data.vars.map((v: any) => `  ${v.cssVar}: ${v.value};`).join('\n') +
+          '\n}';
+        // 디버그
+        console.log('[preview] applied THEME_VARS', data.vars.length);
+      }
 
-        // Convert style object to CSS string
-        const cssString = `:root {\n${Object.entries(event.data.styles)
-          .map(([key, value]) => `  ${key}: ${value};`)
-          .join('\n')}\n}`;
-
-        styleElement.textContent = cssString;
+      if (data.type === 'UPDATE_THEME_TOKENS' && data.styles) {
+        // 하위 호환 (구 포맷)
+        let styleEl = document.getElementById('design-theme-vars') as HTMLStyleElement | null;
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'design-theme-vars';
+          document.head.appendChild(styleEl);
+        }
+        styleEl.textContent =
+          ':root {\n' +
+          Object.entries(data.styles).map(([k, v]) => `  ${k}: ${v};`).join('\n') +
+          '\n}';
+        console.log('[preview] applied UPDATE_THEME_TOKENS', Object.keys(data.styles).length);
       }
     },
-    [elements, setElements]
+    []
   );
 
   useEffect(() => {
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    window.addEventListener('message', handleMessage);
+    // 준비 신호
+    try {
+      window.parent.postMessage({ type: 'PREVIEW_READY' }, '*'); // 동일 오리진 확인 후 origin 교체
+    } catch { }
+    return () => window.removeEventListener('message', handleMessage);
   }, [handleMessage]);
 
   document.documentElement.classList.add(styles.root);
