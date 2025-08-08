@@ -40,6 +40,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
             const tokens = await fetchTokensByTheme(theme.id);
             const raw = tokens.filter(t => t.scope === 'raw');
             const semantic = tokens.filter(t => t.scope === 'semantic');
+
             injectCss(resolveTokens(tokens));
             set({
                 activeTheme: theme,
@@ -50,7 +51,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
             });
         } catch (e) {
             console.error('[theme] load failed', e);
-            set({ loading: false });
+            set({ loading: false, lastError: e.message });
         }
     },
 
@@ -84,7 +85,6 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
         const list = scope === 'raw' ? rawTokens : semanticTokens;
         const dup = list.some(t => t.name === name);
         if (dup) {
-            console.warn('[theme] duplicate token', name, scope);
             return;
         }
         const token = {

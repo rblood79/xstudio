@@ -2,122 +2,78 @@ import React from 'react';
 import { Trash2, Copy } from 'lucide-react';
 import { tokenValueToCss } from '../../../utils/tokensToCss';
 import type { DesignToken, TokenType, TokenValue } from '../../../types/designTokens';
+import { DesignToken } from '../../../types/designTheme';
 
 interface TokenListProps {
     tokens: DesignToken[];
-    category: TokenType;
-    onUpdateToken: (tokenId: string, value: TokenValue) => void;
-    onDeleteToken: (tokenId: string) => Promise<boolean>;
+    scope: 'raw' | 'semantic';
+    onUpdate: (name: string, scope: 'raw' | 'semantic', value: any) => void;
+    onDelete: (name: string, scope: 'raw' | 'semantic') => void;
 }
 
-export function TokenList({ tokens, category, onUpdateToken, onDeleteToken }: TokenListProps) {
-    const handleDeleteClick = async (tokenId: string, tokenName: string) => {
-        if (!confirm(`정말로 "${tokenName}" 토큰을 삭제하시겠습니까?`)) return;
-
-        const success = await onDeleteToken(tokenId);
-        if (!success) {
-            alert('토큰 삭제에 실패했습니다.');
+export function TokenList({ tokens, scope, onUpdate, onDelete }: TokenListProps) {
+    const confirmDelete = (name: string) => {
+        if (window.confirm(`토큰 삭제: ${name}?`)) {
+            onDelete(name, scope);
         }
     };
-
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            // 간단한 피드백 (추후 toast 시스템으로 대체 가능)
-            console.log('CSS 변수가 클립보드에 복사되었습니다:', text);
-        } catch (err) {
-            console.error('클립보드 복사 실패:', err);
-        }
-    };
-
-    const renderColorPreview = (token: DesignToken) => {
-        if (category !== 'color') return null;
-
-        const cssValue = tokenValueToCss(token);
-        return (
-            <div
-                className="w-8 h-8 rounded border border-gray-300 flex-shrink-0"
-                style={{ backgroundColor: cssValue }}
-                title={cssValue}
-            />
-        );
-    };
-
-    const renderTokenValue = (token: DesignToken) => {
-        const cssValue = tokenValueToCss(token);
-
-        return (
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                    <span className="font-medium text-gray-900 truncate">{token.name}</span>
-                    <button
-                        onClick={() => copyToClipboard(token.css_variable || `--${token.name}`)}
-                        className="flex items-center space-x-1 text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
-                        title="CSS 변수 복사"
-                    >
-                        <code className="text-gray-700">{token.css_variable || `--${token.name}`}</code>
-                        <Copy size={12} />
-                    </button>
-                </div>
-                <input
-                    type="text"
-                    value={typeof token.value === 'string' ? token.value : cssValue}
-                    onChange={(e) => onUpdateToken(token.id, e.target.value)}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="토큰 값"
-                />
-                {category === 'color' && (
-                    <div className="mt-1 text-xs text-gray-500">
-                        미리보기: {cssValue}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    if (tokens.length === 0) {
-        return (
-            <div className="text-center py-12">
-                <div className="text-gray-400 mb-2">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-2xl">🎨</span>
-                    </div>
-                </div>
-                <p className="text-gray-500 text-sm">
-                    {category} 토큰이 없습니다.
-                </p>
-                <p className="text-gray-400 text-xs mt-1">
-                    위의 폼을 사용해 새 토큰을 추가해보세요.
-                </p>
-            </div>
-        );
-    }
 
     return (
-        <div className="space-y-3">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-gray-900">
-                    {category} 토큰 ({tokens.length}개)
-                </h3>
-            </div>
-
-            {tokens.map((token) => (
-                <div
-                    key={token.id}
-                    className="flex items-center space-x-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+        <ul className="flex flex-col gap-2">
+            {tokens.map(t => (
+                <li
+                    key={t.name}
+                    className="flex items-center gap-2 group"
                 >
-                    {renderColorPreview(token)}
-                    {renderTokenValue(token)}
-
+                    <span className="w-48 text-[11px] truncate">
+                        {t.name}
+                    </span>
+                    {scope === 'semantic' && t.alias_of && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 border border-neutral-200">
+                            alias:{' '}
+                            <code className="text-[10px]">
+                                {t.alias_of}
+                            </code>
+                        </span>
+                    )}
+                    <input
+                        className="flex-1 border px-2 py-1 rounded text-xs"
+                        defaultValue={
+                            scope === 'semantic' && t.alias_of
+                                ? t.alias_of
+                                : typeof t.value === 'string'
+                                    ? t.value
+                                    : JSON.stringify(t.value)
+                        }
+                        onBlur={e => {
+                            if (scope === 'semantic' && t.alias_of) {
+                                // alias 기반이면 편집 시 alias 갱신
+                                onUpdate(t.name, scope, t.value);
+                            } else {
+                                let val: any = e.target.value;
+                                if (!(t.type === 'color' && /^#|rgb/i.test(val))) {
+                                    try {
+                                        val = JSON.parse(val);
+                                    } catch { }
+                                }
+                                onUpdate(t.name, scope, val);
+                            }
+                        }}
+                    />
                     <button
-                        onClick={() => handleDeleteClick(token.id, token.name)}
-                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title={`${token.name} 토큰 삭제`}
+                        onClick={() => confirmDelete(t.name)}
+                        className="opacity-0 group-hover:opacity-100 text-[10px] px-2 py-1 border rounded border-red-300 text-red-600 hover:bg-red-50 transition"
+                        title="삭제"
                     >
-                        <Trash2 size={16} />
+                        X
                     </button>
-                </div>
+                </li>
             ))}
-        </div>
+            {tokens.length === 0 && (
+                <li className="text-[11px] text-neutral-400">
+                    (없음)
+                </li>
+            )}
+        </ul>
     );
 }
