@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { DesignToken } from '../../../types/designTheme';
+import { DesignToken, NewTokenInput } from '../../../types/theme';
 
 interface TokenFormProps {
     rawTokens: DesignToken[];
-    onAdd: (scope: 'raw' | 'semantic', name: string, type: string, value: any, alias_of?: string | null) => void;
+    onAdd: (input: NewTokenInput) => void;
 }
 
 interface FormState {
@@ -49,11 +49,15 @@ export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
             }
         }
 
-        const alias = form.scope === 'semantic' && form.alias_of
-            ? form.alias_of
-            : undefined;
+        const input: NewTokenInput = {
+            name: form.name,
+            type: form.type as any,
+            value: value,
+            scope: form.scope,
+            alias_of: form.scope === 'semantic' && form.alias_of ? form.alias_of : undefined
+        };
 
-        onAdd(form.scope, form.name, form.type, value, alias);
+        onAdd(input);
 
         setForm({
             scope: form.scope,

@@ -1,13 +1,9 @@
-import React from 'react';
-import { Trash2, Copy } from 'lucide-react';
-import { tokenValueToCss } from '../../../utils/tokensToCss';
-import type { DesignToken, TokenType, TokenValue } from '../../../types/designTokens';
-import { DesignToken } from '../../../types/designTheme';
+import { DesignToken, TokenValue } from '../../../types/theme';
 
 interface TokenListProps {
     tokens: DesignToken[];
     scope: 'raw' | 'semantic';
-    onUpdate: (name: string, scope: 'raw' | 'semantic', value: any) => void;
+    onUpdate: (name: string, scope: 'raw' | 'semantic', value: TokenValue) => void;
     onDelete: (name: string, scope: 'raw' | 'semantic') => void;
 }
 
@@ -38,6 +34,7 @@ export function TokenList({ tokens, scope, onUpdate, onDelete }: TokenListProps)
                     )}
                     <input
                         className="flex-1 border px-2 py-1 rounded text-xs"
+                        aria-label={`${t.name} 토큰 값`}
                         defaultValue={
                             scope === 'semantic' && t.alias_of
                                 ? t.alias_of
@@ -50,11 +47,13 @@ export function TokenList({ tokens, scope, onUpdate, onDelete }: TokenListProps)
                                 // alias 기반이면 편집 시 alias 갱신
                                 onUpdate(t.name, scope, t.value);
                             } else {
-                                let val: any = e.target.value;
+                                let val: TokenValue = e.target.value;
                                 if (!(t.type === 'color' && /^#|rgb/i.test(val))) {
                                     try {
                                         val = JSON.parse(val);
-                                    } catch { }
+                                    } catch {
+                                        // 파싱 실패 시 문자열 그대로 사용
+                                    }
                                 }
                                 onUpdate(t.name, scope, val);
                             }

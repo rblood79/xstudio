@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useThemeStore } from '../stores/theme';
+
+import { useTheme } from '../../hooks/useTheme';
 import { TokenList } from './components/TokenList';
 import { TokenForm } from './components/TokenForm';
 import { ThemeHeader } from './components/ThemeHeader';
@@ -10,16 +10,20 @@ interface Props {
 }
 
 export default function ThemeEditor({ projectId }: Props) {
-    const rawTokens = useThemeStore(s => s.rawTokens);
-    const semanticTokens = useThemeStore(s => s.semanticTokens);
-    const loading = useThemeStore(s => s.loading);
-    const dirty = useThemeStore(s => s.dirty);
-    const updateTokenValue = useThemeStore(s => s.updateTokenValue);
-    const addToken = useThemeStore(s => s.addToken);
-    const deleteToken = useThemeStore(s => s.deleteToken);
-    const activeTheme = useThemeStore(s => s.activeTheme);
-    const snapshotVersion = useThemeStore(s => s.snapshotVersion);
-    const lastError = useThemeStore(s => s.lastError);
+    const {
+        activeTheme,
+        rawTokens,
+        semanticTokens,
+        loading,
+        dirty,
+        lastError,
+        updateToken,
+        addToken,
+        deleteToken,
+        saveAll,
+        snapshotVersion,
+        clearError
+    } = useTheme();
 
     if (loading) return <div className="p-3 text-xs">Loading theme...</div>;
 
@@ -32,18 +36,35 @@ export default function ThemeEditor({ projectId }: Props) {
             />
 
             {lastError && (
-                <div className="text-[11px] text-red-600">{lastError}</div>
+                <div className="text-[11px] text-red-600 flex items-center justify-between">
+                    <span>{lastError}</span>
+                    <button onClick={clearError} className="text-red-400 hover:text-red-600">×</button>
+                </div>
             )}
+
+            {/* 디버깅용 수동 저장 버튼 */}
+            <div className="flex items-center gap-2 text-[11px]">
+                <span>Status: {dirty ? 'Dirty' : 'Clean'}</span>
+                <button
+                    onClick={() => {
+                        console.log('[theme] Manual save triggered');
+                        saveAll();
+                    }}
+                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                    Manual Save
+                </button>
+            </div>
 
             {/* Raw Tokens */}
             <section className="flex flex-col gap-2">
                 <h4 className="text-xs font-semibold text-neutral-600">
-                    Raw Tokens
+                    Raw Tokens ({rawTokens.length})
                 </h4>
                 <TokenList
                     tokens={rawTokens}
                     scope="raw"
-                    onUpdate={updateTokenValue}
+                    onUpdate={updateToken}
                     onDelete={deleteToken}
                 />
             </section>
@@ -51,12 +72,12 @@ export default function ThemeEditor({ projectId }: Props) {
             {/* Semantic Tokens */}
             <section className="flex flex-col gap-2">
                 <h4 className="text-xs font-semibold text-neutral-600">
-                    Semantic Tokens
+                    Semantic Tokens ({semanticTokens.length})
                 </h4>
                 <TokenList
                     tokens={semanticTokens}
                     scope="semantic"
-                    onUpdate={updateTokenValue}
+                    onUpdate={updateToken}
                     onDelete={deleteToken}
                 />
             </section>

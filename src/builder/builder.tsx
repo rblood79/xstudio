@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../env/supabase.client";
-import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk, CheckSquare } from 'lucide-react';
+import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
 
-import { RadioGroup, Radio, Key, Label, Select, SelectItem } from 'react-aria-components';
+import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
 import { iconProps } from '../builder/constants';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import Sidebar from "./sidebar";
 
 import { useStore } from './stores/elements';
-import { useThemeStore } from './stores/themeStore';
+import { useThemeStore } from './stores/theme';
 import { debounce } from 'lodash';
+import type { ElementProps } from '../types/supabase';
+import { ColorValue } from '../types/theme';
 
 import "./builder.css";
 
@@ -28,7 +30,13 @@ interface Page {
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const themeStore = useThemeStore();
+
+    // 새로운 통합된 스토어 사용
+    const {
+        rawTokens,
+        semanticTokens,
+        loadTheme
+    } = useThemeStore();
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);
@@ -439,7 +447,7 @@ function Builder() {
                     page_id: selectedPageId,
                     tag: 'Label',
                     props: {
-                        text: newElement.props.text || 'Text Field',
+                        children: 'Text Field',
                         style: {},
                         className: ''
                     },
@@ -497,7 +505,7 @@ function Builder() {
                 });
 
                 requestAnimationFrame(() => {
-                    setSelectedElement(textFieldId, newElement.props);
+                    setSelectedElement(textFieldId, newElement.props as ElementProps);
                 });
             }
         } else if (args[0] === 'ToggleButtonGroup') {
@@ -514,7 +522,7 @@ function Builder() {
                 });
 
                 requestAnimationFrame(() => {
-                    setSelectedElement(newElement.id, newElement.props);
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
                 });
             }
 
@@ -780,7 +788,33 @@ function Builder() {
         const iframe = iframeRef.current;
         if (!iframe?.contentDocument) return;
 
-        const styleObject = themeStore.getStyleObject();
+        // 모든 토큰을 하나의 배열로 합치기
+        const allTokens = [...rawTokens, ...semanticTokens];
+
+        // CSS 변수 생성
+        const cssVariables = allTokens
+            .map(token => {
+                // css_variable이 있으면 사용하고, 없으면 기본 규칙으로 생성
+                const cssVar = token.css_variable || `--t-${token.name.toLowerCase().replace(/\./g, '-')}`;
+                let cssValue: string;
+
+                if (typeof token.value === 'object' && token.value !== null) {
+                    if ('h' in token.value) {
+                        // ColorValue
+                        const color = token.value as ColorValue;
+                        cssValue = `hsla(${color.h}, ${color.s}%, ${color.l}%, ${color.a})`;
+                    } else {
+                        cssValue = JSON.stringify(token.value);
+                    }
+                } else {
+                    cssValue = String(token.value);
+                }
+
+                return `${cssVar}: ${cssValue};`;
+            })
+            .join('\n  ');
+
+        const cssString = `:root {\n  ${cssVariables}\n}`;
 
         // Apply styles to parent document
         let parentStyleElement = document.getElementById('theme-tokens');
@@ -789,11 +823,6 @@ function Builder() {
             parentStyleElement.id = 'theme-tokens';
             document.head.appendChild(parentStyleElement);
         }
-
-        // Convert style object to CSS string
-        const cssString = `:root {\n${Object.entries(styleObject)
-            .map(([key, value]) => `  ${key}: ${value};`)
-            .join('\n')}\n}`;
 
         parentStyleElement.textContent = cssString;
 
@@ -806,13 +835,13 @@ function Builder() {
         }
 
         styleElement.textContent = cssString;
-    }, [themeStore]);
+    }, [rawTokens, semanticTokens]);
 
     useEffect(() => {
         if (projectId) {
-            themeStore.fetchTokens(projectId);
+            loadTheme(projectId);
         }
-    }, [projectId, themeStore]);
+    }, [projectId, loadTheme]);
 
     const handleIframeLoad = () => {
         const iframe = iframeRef.current;
