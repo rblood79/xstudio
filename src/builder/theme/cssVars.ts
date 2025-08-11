@@ -1,4 +1,6 @@
-import type { DesignToken } from '../../types/designTheme';
+
+import type { DesignToken, TokenValue } from '../../types/theme';
+import type { TokenType } from '../../types/theme';
 
 const IFRAME_ID = 'previewFrame';
 
@@ -7,21 +9,23 @@ interface CssPair { cssVar: string; value: string; }
 let pendingVars: CssPair[] | null = null;
 let lastSig = '';
 
-function toCssVar(name: string) {
-    return '--t-' + name
+function toCssVar(name: string, type: TokenType) {
+    const cleanName = name
         .replace(/\s+/g, '-')
         .replace(/[^a-zA-Z0-9._-]/g, '-')
         .toLowerCase();
+
+    return `--${type}-${cleanName}`;
 }
 
-function normalize(val: any): string {
+function normalize(val: TokenValue): string {
     if (val == null) return '';
     if (typeof val === 'string' || typeof val === 'number') return String(val);
     if (typeof val === 'object' && 'r' in val && 'g' in val && 'b' in val) {
-        const { r, g, b, a } = val as any;
-        return a == null || a === 1
-            ? `rgb(${r} ${g} ${b})`
-            : `rgba(${r}, ${g}, ${b}, ${a})`;
+        const color = val as { r: number; g: number; b: number; a?: number };
+        return color.a == null || color.a === 1
+            ? `rgb(${color.r} ${color.g} ${color.b})`
+            : `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
     }
     return JSON.stringify(val);
 }
@@ -32,13 +36,14 @@ export function resolveTokens(tokens: DesignToken[]) {
     const out: { cssVar: string; value: string; name: string }[] = [];
 
     for (const r of raw) {
-        out.push({ name: r.name, cssVar: toCssVar(r.name), value: normalize(r.value) });
+        out.push({ name: r.name, cssVar: toCssVar(r.name, r.type), value: normalize(r.value) });
     }
     for (const s of tokens.filter(t => t.scope === 'semantic')) {
-        const value = s.alias_of && rawMap.has(s.alias_of)
-            ? `var(${toCssVar(s.alias_of)})`
+        const referencedRaw = s.alias_of && rawMap.get(s.alias_of);
+        const value = referencedRaw
+            ? `var(${toCssVar(referencedRaw.name, referencedRaw.type)})`
             : normalize(s.value);
-        out.push({ name: s.name, cssVar: toCssVar(s.name), value });
+        out.push({ name: s.name, cssVar: toCssVar(s.name, s.type), value });
     }
     return out;
 }

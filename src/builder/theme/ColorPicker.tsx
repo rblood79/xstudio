@@ -1,5 +1,4 @@
-
-import { ColorValue } from '../../types/designTokens';
+import { ColorValue } from '../../types/theme';
 
 interface ColorPickerProps {
     label: string;

@@ -791,23 +791,43 @@ function Builder() {
         // 모든 토큰을 하나의 배열로 합치기
         const allTokens = [...rawTokens, ...semanticTokens];
 
+        // Raw 토큰 맵 생성 (alias 참조용)
+        const rawMap = new Map(rawTokens.map(r => [r.name, r]));
+
+        // Helper function for processing token value
+        const processTokenValue = (token: any) => {
+            if (typeof token.value === 'object' && token.value !== null) {
+                if ('h' in token.value) {
+                    // ColorValue
+                    const color = token.value as ColorValue;
+                    return `hsla(${color.h}, ${color.s}%, ${color.l}%, ${color.a})`;
+                } else {
+                    return JSON.stringify(token.value);
+                }
+            } else {
+                return String(token.value);
+            }
+        };
+
         // CSS 변수 생성
         const cssVariables = allTokens
             .map(token => {
-                // css_variable이 있으면 사용하고, 없으면 기본 규칙으로 생성
-                const cssVar = token.css_variable || `--t-${token.name.toLowerCase().replace(/\./g, '-')}`;
+                // css_variable이 있으면 사용하고, 없으면 Tailwind 호환 규칙으로 생성
+                const cssVar = token.css_variable || `--${token.type}-${token.name.toLowerCase().replace(/\./g, '-')}`;
                 let cssValue: string;
 
-                if (typeof token.value === 'object' && token.value !== null) {
-                    if ('h' in token.value) {
-                        // ColorValue
-                        const color = token.value as ColorValue;
-                        cssValue = `hsla(${color.h}, ${color.s}%, ${color.l}%, ${color.a})`;
+                // Semantic 토큰이고 alias_of가 있으면 Raw 토큰 참조
+                if (token.scope === 'semantic' && token.alias_of) {
+                    const referencedRaw = rawMap.get(token.alias_of);
+                    if (referencedRaw) {
+                        const refCssVar = referencedRaw.css_variable || `--${referencedRaw.type}-${referencedRaw.name.toLowerCase().replace(/\./g, '-')}`;
+                        cssValue = `var(${refCssVar})`;
                     } else {
-                        cssValue = JSON.stringify(token.value);
+                        // fallback to direct value
+                        cssValue = processTokenValue(token);
                     }
                 } else {
-                    cssValue = String(token.value);
+                    cssValue = processTokenValue(token);
                 }
 
                 return `${cssVar}: ${cssValue};`;

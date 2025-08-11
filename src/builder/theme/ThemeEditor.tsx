@@ -3,6 +3,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { TokenList } from './components/TokenList';
 import { TokenForm } from './components/TokenForm';
 import { ThemeHeader } from './components/ThemeHeader';
+import { ThemePreview } from './components/ThemePreview';
 //import './styles/components.css';
 
 interface Props {
@@ -84,6 +85,14 @@ export default function ThemeEditor({ projectId }: Props) {
 
             {/* Add Token Form */}
             <TokenForm rawTokens={rawTokens} onAdd={addToken} />
+
+            {/* Theme Preview */}
+            <section className="flex flex-col gap-2">
+                <h4 className="text-xs font-semibold text-neutral-600">
+                    Theme Preview
+                </h4>
+                <ThemePreview />
+            </section>
 
             <footer className="pt-2 border-t">
                 <p className="text-[10px] text-neutral-500">
