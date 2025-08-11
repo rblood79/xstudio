@@ -52,6 +52,7 @@
 
                     .react-aria-RadioGroup {
                         @apply flex items-center text-[var(--text-sm)];
+                        gap: 0;
                     }
 
                     .aria-Radio {

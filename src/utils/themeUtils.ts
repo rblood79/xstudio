@@ -1,4 +1,4 @@
-import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue } from '../types/theme';
+import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../types/theme';
 
 // 토큰 값을 CSS 값으로 변환
 export function tokenValueToCss(token: DesignToken): string {
@@ -38,19 +38,21 @@ export function tokenValueToCss(token: DesignToken): string {
     }
 }
 
-// CSS 변수명 생성
-export function toCssVar(name: string): string {
-    return '--t-' + name
+// CSS 변수명 생성 (Tailwind CSS 호환)
+export function toCssVar(name: string, type: TokenType): string {
+    const cleanName = name
         .replace(/\s+/g, '-')
         .replace(/[^a-zA-Z0-9._-]/g, '-')
         .toLowerCase();
+
+    return `--${type}-${cleanName}`;
 }
 
 // 토큰 배열을 CSS 변수로 변환
 export function generateCssVariables(tokens: DesignToken[]): string {
     return tokens
         .map(token => {
-            const cssVar = token.css_variable || toCssVar(token.name);
+            const cssVar = token.css_variable || toCssVar(token.name, token.type);
             return `${cssVar}: ${tokenValueToCss(token)};`;
         })
         .join('\n');

@@ -17,6 +17,17 @@ interface FormState {
 
 const NAME_RE = /^[a-z0-9._-]+(?:\.[a-z0-9._-]+)*$/; // color.brand.primary 형태 허용
 
+const tokenTypes = [
+    { value: 'color', label: 'Color' },
+    { value: 'spacing', label: 'Spacing' },
+    { value: 'border', label: 'Border' },
+    { value: 'radius', label: 'Radius' },
+    { value: 'shadow', label: 'Shadow' },
+    { value: 'font', label: 'Font' },
+    { value: 'size', label: 'Size' },
+    { value: 'other', label: 'Other' }
+] as const;
+
 export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
     const [form, setForm] = useState<FormState>({
         scope: 'raw',
@@ -91,26 +102,29 @@ export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
                         <option value="semantic">semantic</option>
                     </select>
                 </label>
-                <label className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                     <span className="text-neutral-500">Type</span>
-                    <select
-                        value={form.type}
-                        onChange={e =>
-                            setForm(f => ({
-                                ...f,
-                                type: e.target.value
-                            }))
-                        }
-                        className="border px-2 py-1 rounded"
-                    >
-                        <option value="color">color</option>
-                        <option value="spacing">spacing</option>
-                        <option value="radius">radius</option>
-                        <option value="font">font</option>
-                        <option value="size">size</option>
-                        <option value="other">other</option>
-                    </select>
-                </label>
+                    <div className="flex flex-wrap gap-1">
+                        {tokenTypes.map(type => (
+                            <button
+                                key={type.value}
+                                type="button"
+                                onClick={() =>
+                                    setForm(f => ({
+                                        ...f,
+                                        type: type.value
+                                    }))
+                                }
+                                className={`px-2 py-1 text-[10px] rounded border transition-colors ${form.type === type.value
+                                    ? 'bg-blue-500 text-white border-blue-500'
+                                    : 'bg-white text-neutral-600 border-neutral-300 hover:border-blue-300'
+                                    }`}
+                            >
+                                {type.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <label className="flex flex-col gap-1 col-span-2">
                     <span className="text-neutral-500">
                         Name (dot 구분)
