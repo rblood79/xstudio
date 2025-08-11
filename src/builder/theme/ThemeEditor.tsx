@@ -1,4 +1,5 @@
 
+import React, { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import { TokenList } from './components/TokenList';
 import { TokenForm } from './components/TokenForm';
@@ -10,7 +11,11 @@ interface Props {
     projectId: string;
 }
 
+type TabType = 'tokens' | 'preview';
+
 export default function ThemeEditor({ projectId }: Props) {
+    const [activeTab, setActiveTab] = useState<TabType>('tokens');
+    
     const {
         activeTheme,
         rawTokens,
@@ -29,7 +34,7 @@ export default function ThemeEditor({ projectId }: Props) {
     if (loading) return <div className="p-3 text-xs">Loading theme...</div>;
 
     return (
-        <div className="flex flex-col gap-6 p-3">
+        <div className="flex flex-col gap-4 p-3">
             <ThemeHeader
                 theme={activeTheme}
                 dirty={dirty}
@@ -57,42 +62,74 @@ export default function ThemeEditor({ projectId }: Props) {
                 </button>
             </div>
 
-            {/* Raw Tokens */}
-            <section className="flex flex-col gap-2">
-                <h4 className="text-xs font-semibold text-neutral-600">
-                    Raw Tokens ({rawTokens.length})
-                </h4>
-                <TokenList
-                    tokens={rawTokens}
-                    scope="raw"
-                    onUpdate={updateToken}
-                    onDelete={deleteToken}
-                />
-            </section>
+            {/* Tab Navigation */}
+            <div className="flex border-b border-gray-200">
+                <button
+                    onClick={() => setActiveTab('tokens')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'tokens'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                    🎨 Tokens
+                </button>
+                <button
+                    onClick={() => setActiveTab('preview')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'preview'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                    👁️ Preview
+                </button>
+            </div>
 
-            {/* Semantic Tokens */}
-            <section className="flex flex-col gap-2">
-                <h4 className="text-xs font-semibold text-neutral-600">
-                    Semantic Tokens ({semanticTokens.length})
-                </h4>
-                <TokenList
-                    tokens={semanticTokens}
-                    scope="semantic"
-                    onUpdate={updateToken}
-                    onDelete={deleteToken}
-                />
-            </section>
+            {/* Tab Content */}
+            <div className="flex-1 overflow-auto">
+                {activeTab === 'tokens' && (
+                    <div className="flex flex-col gap-6">
+                        {/* Raw Tokens */}
+                        <section className="flex flex-col gap-2">
+                            <h4 className="text-xs font-semibold text-neutral-600">
+                                Raw Tokens ({rawTokens.length})
+                            </h4>
+                            <TokenList
+                                tokens={rawTokens}
+                                scope="raw"
+                                onUpdate={updateToken}
+                                onDelete={deleteToken}
+                            />
+                        </section>
 
-            {/* Add Token Form */}
-            <TokenForm rawTokens={rawTokens} onAdd={addToken} />
+                        {/* Semantic Tokens */}
+                        <section className="flex flex-col gap-2">
+                            <h4 className="text-xs font-semibold text-neutral-600">
+                                Semantic Tokens ({semanticTokens.length})
+                            </h4>
+                            <TokenList
+                                tokens={semanticTokens}
+                                scope="semantic"
+                                onUpdate={updateToken}
+                                onDelete={deleteToken}
+                            />
+                        </section>
 
-            {/* Theme Preview */}
-            <section className="flex flex-col gap-2">
-                <h4 className="text-xs font-semibold text-neutral-600">
-                    Theme Preview
-                </h4>
-                <ThemePreview />
-            </section>
+                        {/* Add Token Form */}
+                        <TokenForm rawTokens={rawTokens} onAdd={addToken} />
+                    </div>
+                )}
+
+                {activeTab === 'preview' && (
+                    <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-semibold text-neutral-600">
+                            Theme Preview
+                        </h4>
+                        <ThemePreview />
+                    </div>
+                )}
+            </div>
 
             <footer className="pt-2 border-t">
                 <p className="text-[10px] text-neutral-500">
