@@ -15,7 +15,7 @@ type TabType = 'tokens' | 'preview';
 
 export default function ThemeEditor({ projectId }: Props) {
     const [activeTab, setActiveTab] = useState<TabType>('tokens');
-    
+
     const {
         activeTheme,
         rawTokens,
@@ -66,21 +66,19 @@ export default function ThemeEditor({ projectId }: Props) {
             <div className="flex border-b border-gray-200">
                 <button
                     onClick={() => setActiveTab('tokens')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === 'tokens'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tokens'
                             ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                        }`}
                 >
                     🎨 Tokens
                 </button>
                 <button
                     onClick={() => setActiveTab('preview')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === 'preview'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'preview'
                             ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                        }`}
                 >
                     👁️ Preview
                 </button>
