@@ -31,6 +31,9 @@ import {
   TreeItem
 } from '../components/list';
 
+// Panel 컴포넌트 import 추가
+import { Panel } from '../components/Panel';
+
 interface PreviewElement {
   id: string;
   tag: string;
@@ -561,8 +564,13 @@ function Preview() {
       );
     }
 
-    // Tab 컴포넌트 특별 처리
+    // Tabs 컴포넌트 특별 처리
     if (el.tag === 'Tabs') {
+      // Tabs의 실제 Panel 자식들을 찾기
+      const panelChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'Panel')
+        .sort((a, b) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+
       return (
         <Tabs
           key={el.id}
@@ -587,11 +595,16 @@ function Preview() {
               </Tab>
             ))}
           </TabList>
-          {el.props.children?.map((tab: any) => (
-            <TabPanel key={tab.id} id={tab.id}>
-              {tab.content}
-            </TabPanel>
-          ))}
+
+          {/* 실제 Panel 컴포넌트들을 TabPanel로 래핑하여 렌더링 */}
+          {panelChildren.map((panel) => {
+            const correspondingTab = el.props.children?.[panel.props.tabIndex || 0];
+            return (
+              <TabPanel key={panel.id} id={correspondingTab?.id || `tab-${panel.props.tabIndex || 0}`}>
+                {renderElement(panel)} {/* Panel 컴포넌트와 그 하위 요소들 렌더링 */}
+              </TabPanel>
+            );
+          })}
         </Tabs>
       );
     }
@@ -677,6 +690,22 @@ function Preview() {
         >
           {el.props.children}
         </Tag>
+      );
+    }
+
+    // Panel 컴포넌트 렌더링 로직 수정
+    if (el.tag === 'Panel') {
+      return (
+        <Panel
+          key={el.id}
+          data-element-id={el.id}
+          variant={el.props.variant || 'default'}
+          title={el.props.title}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {children.map((child) => renderElement(child))}
+        </Panel>
       );
     }
 
