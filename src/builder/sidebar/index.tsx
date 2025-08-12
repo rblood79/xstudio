@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Settings2, Trash, ChevronRight, Box, Type, Hash, CheckCircle, Layout, Select, SelectItem, SquarePlus, Folder, File } from 'lucide-react';
+import { Settings2, Trash, ChevronRight, Box, Folder, File, X } from 'lucide-react';
 import { useStore } from '../stores/elements';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
@@ -108,7 +108,22 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         depth: number = 0
     ): React.ReactNode => {
         const filteredItems = items
-            .filter((item) => item.parent_id === parentId || (parentId === null && item.parent_id === undefined))
+            .filter((item) => {
+                // 기본 parent_id 필터링
+                const matchesParent = item.parent_id === parentId || (parentId === null && item.parent_id === undefined);
+                if (!matchesParent) return false;
+
+                // 부모가 Tabs이고 현재 아이템이 Panel인 경우 제외 (TabPanels 가상 노드에서 렌더링됨)
+                if (parentId) {
+                    const parentItem = items.find(p => p.id === parentId);
+                    if (parentItem && 'tag' in parentItem && (parentItem as any).tag === 'Tabs' &&
+                        'tag' in item && (item as any).tag === 'Panel') {
+                        return false;
+                    }
+                }
+
+                return true;
+            })
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
         if (filteredItems.length === 0) return null;
         return (
@@ -318,38 +333,78 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                                 </div>
                                             </div>
 
-                                            {/* TabPanels가 확장되었을 때 개별 TabPanel들 */}
-                                            {expandedItems.has(`${item.id}-tabpanels`) && (item as any).props?.children?.map((tab: any, index: number) => (
-                                                <div
-                                                    key={`${item.id}-tabpanel-${index}`}
-                                                    data-depth={depth + 2}
-                                                    data-has-children={false}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // TabPanel을 클릭했을 때도 해당 Tab을 선택
-                                                        selectTabElement(item.id, (item as any).props, index);
-                                                    }}
-                                                    className="element"
-                                                >
-                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
-                                                        <div className="elementItemIndent" style={{ width: `${((depth + 2) * 8) + 0}px` }}>
-                                                        </div>
-                                                        <div className="elementItemIcon">
-                                                            <Box
-                                                                color={iconEditProps.color}
-                                                                strokeWidth={iconEditProps.stroke}
-                                                                size={iconEditProps.size}
-                                                                style={{ padding: '2px' }}
-                                                            />
-                                                        </div>
-                                                        <div className="elementItemLabel">
-                                                            {tab.title || `Tab ${index + 1}`} Panel
-                                                        </div>
-                                                        <div className="elementItemActions">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            {/* TabPanels가 확장되었을 때 실제 Panel 컴포넌트들 렌더링 */}
+                                            {expandedItems.has(`${item.id}-tabpanels`) && (() => {
+                                                const panelChildren = items.filter(child =>
+                                                    child.parent_id === item.id &&
+                                                    'tag' in child &&
+                                                    (child as any).tag === 'Panel'
+                                                );
+
+                                                // Panel들을 직접 매핑하여 렌더링 (renderTree의 구조를 따라하되 필터링 우회)
+                                                return panelChildren.map((panel) => {
+                                                    const panelHasChildren = items.some(child => child.parent_id === panel.id);
+                                                    const isPanelExpanded = expandedItems.has(panel.id);
+
+                                                    return (
+                                                        <React.Fragment key={panel.id}>
+                                                            <div
+                                                                data-depth={depth + 2}
+                                                                data-has-children={panelHasChildren}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (panelHasChildren) {
+                                                                        toggleExpand(panel.id);
+                                                                    }
+                                                                    onClick(panel);
+                                                                }}
+                                                                className="element"
+                                                            >
+                                                                <div className={`elementItem ${selectedElementId === panel.id ? 'active' : ''}`}>
+                                                                    <div className="elementItemIndent" style={{ width: `${((depth + 2) * 8) + 0}px` }}></div>
+                                                                    <div className="elementItemIcon">
+                                                                        {panelHasChildren ? (
+                                                                            <ChevronRight
+                                                                                color={iconEditProps.color}
+                                                                                strokeWidth={iconEditProps.stroke}
+                                                                                size={iconEditProps.size}
+                                                                                style={{
+                                                                                    transform: isPanelExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                                                }}
+                                                                            />
+                                                                        ) : (
+                                                                            <Box
+                                                                                color={iconEditProps.color}
+                                                                                strokeWidth={iconEditProps.stroke}
+                                                                                size={iconEditProps.size}
+                                                                                style={{ padding: '2px' }}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="elementItemLabel">{getLabel(panel)}</div>
+                                                                    <div className="elementItemActions">
+                                                                        <button onClick={async (e) => {
+                                                                            e.stopPropagation();
+                                                                            await onDelete(panel);
+                                                                        }} className="iconButton">
+                                                                            <X
+                                                                                color={iconEditProps.color}
+                                                                                strokeWidth={iconEditProps.stroke}
+                                                                                size={iconEditProps.size}
+                                                                            />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Panel의 자식들 렌더링 */}
+                                                            {isPanelExpanded && panelHasChildren &&
+                                                                renderTree(items, getLabel, onClick, onDelete, panel.id, depth + 3)
+                                                            }
+                                                        </React.Fragment>
+                                                    );
+                                                });
+                                            })()}
                                         </>
                                     )}
 

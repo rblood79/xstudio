@@ -424,6 +424,12 @@ function Builder() {
                             }
                         ]
                     };
+                case 'Panel':
+                    return {
+                        ...baseProps,
+                        variant: 'tab',
+                        title: text || 'Panel',
+                    };
                 default:
                     return baseProps;
             }
@@ -526,6 +532,43 @@ function Builder() {
                 });
             }
 
+        } else if (args[0] === 'Tabs') {
+            const tabsId = newElement.id;
+            const tabsProps = newElement.props;
+            const children = tabsProps.children || [];
+
+            // TabPanels 하위에 들어갈 Panel 컴포넌트들 생성
+            const panelElements = children.map((tab: any, index: number) => ({
+                id: crypto.randomUUID(),
+                page_id: selectedPageId,
+                tag: 'Panel',
+                props: {
+                    variant: 'tab',
+                    title: tab.title,
+                    tabIndex: index,
+                    style: {},
+                    className: '',
+                },
+                parent_id: tabsId, // Tabs를 직접 부모로 설정
+                order_num: index + 1,
+            }));
+
+            // Tabs와 Panel들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...panelElements])
+                .select();
+
+            if (error) console.error("Tabs 및 Panel 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(tabsId, newElement.props as ElementProps);
+                });
+            }
         } else {
             // TextField가 아닌 경우 기존 로직 사용
             const { data, error } = await supabase

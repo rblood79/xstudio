@@ -37,6 +37,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
     const pageComp = [
         { tag: 'section', label: 'section', icon: Square },
         { tag: 'Card', label: 'card', icon: InspectionPanel },
+        { tag: 'Panel', label: 'panel', icon: InspectionPanel }, // 추가
         { tag: 'Div', label: 'division', icon: Code },
         { tag: 'Nav', label: 'nav', icon: Menu },
         { tag: 'Sprit', label: 'sprit', icon: Info },

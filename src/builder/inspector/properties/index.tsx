@@ -1,4 +1,4 @@
-import { ListTodo, SquarePlus, Trash, Type, RotateCwSquare, Binary, TriangleRight, Square, SquareDashed, ChevronUp, ChevronDown, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, Scan, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal, CheckSquare, Layout, PointerOff, AppWindow, Box, CheckCircle, Hash } from 'lucide-react';
+import { SquarePlus, Trash, Type, Binary, TriangleRight, ChevronUp, ChevronDown, CheckSquare, Layout, PointerOff, AppWindow, CheckCircle, Hash } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem, Checkbox } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
@@ -8,7 +8,14 @@ import { useState, useRef, useEffect } from 'react';
 import './index.css';
 
 function Properties() {
-    const { selectedElementId, selectedElementProps, selectedTab, updateElementProps } = useStore();
+    const {
+        selectedElementId,
+        selectedElementProps,
+        selectedTab,
+        updateElementProps,
+        addElement,        // 추가
+        currentPageId      // 추가
+    } = useStore();
 
     // JSON 입력 관련 상태
     const [jsonInputValue, setJsonInputValue] = useState('');
@@ -2406,23 +2413,61 @@ function Properties() {
                                     className='control-button add'
                                     onClick={async () => {
                                         const newTabId = `tab${Date.now()}`;
+                                        const newTabIndex = selectedElementProps.children?.length || 0;
                                         const newTab = {
                                             id: newTabId,
-                                            title: `Tab ${(selectedElementProps.children?.length || 0) + 1}`,
+                                            title: `Tab ${newTabIndex + 1}`,
                                             content: 'New tab content'
                                         };
+
+                                        // 1. Tabs의 props 업데이트
                                         const updatedProps = {
                                             ...selectedElementProps,
                                             children: [...(selectedElementProps.children || []), newTab],
-                                            // 첫 번째 탭이면 기본 선택으로 설정
                                             defaultSelectedKey: selectedElementProps.children?.length === 0 ? newTabId : selectedElementProps.defaultSelectedKey
                                         };
-                                        updateElementProps(selectedElementId, updatedProps);
+
+                                        // 2. 새로운 Panel 컴포넌트 생성
+                                        const newPanelElement = {
+                                            id: crypto.randomUUID(),
+                                            page_id: currentPageId,
+                                            tag: 'Panel',
+                                            props: {
+                                                variant: 'tab',
+                                                title: newTab.title,
+                                                tabIndex: newTabIndex,
+                                                style: {},
+                                                className: '',
+                                            },
+                                            parent_id: selectedElementId,
+                                            order_num: newTabIndex + 1,
+                                        };
+
                                         try {
+                                            // 3. Tabs props 업데이트
                                             await supabase
                                                 .from('elements')
                                                 .update({ props: updatedProps })
                                                 .eq('id', selectedElementId);
+
+                                            // 4. 새로운 Panel 컴포넌트 생성
+                                            const { data: panelData, error: panelError } = await supabase
+                                                .from('elements')
+                                                .insert([newPanelElement])
+                                                .select()
+                                                .single();
+
+                                            if (panelError) {
+                                                console.error('Panel creation error:', panelError);
+                                                return;
+                                            }
+
+                                            // 5. 상태 업데이트
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            if (panelData) {
+                                                addElement(panelData);
+                                            }
+
                                         } catch (err) {
                                             console.error('Update error:', err);
                                         }

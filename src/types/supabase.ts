@@ -1,5 +1,5 @@
 import React from 'react';
-import { TokenValue } from './designTokens';
+import { TokenValue } from './theme';
 
 type AriaRole = 'button' | 'checkbox' | 'menuitem' | 'menubar' | 'navigation' | 'progressbar' | 'separator' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'presentation' | undefined;
 
@@ -43,6 +43,46 @@ export interface ToggleButtonGroupProps {
     'single' | 'multiple' | 'horizontal' | 'vertical' | undefined;
 }
 
+export interface PanelProps {
+    children?: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    title?: string;
+    variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
+    'data-element-id'?: string;
+    [key: string]: any;
+}
+
+export function Panel({
+    children,
+    className = '',
+    style,
+    title,
+    variant = 'default',
+    ...props
+}: PanelProps) {
+    const baseClasses = 'react-aria-Panel';
+    const variantClasses = {
+        default: 'panel-default',
+        tab: 'panel-tab',
+        sidebar: 'panel-sidebar',
+        card: 'panel-card',
+        modal: 'panel-modal'
+    };
+
+    const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
+
+    return (
+        <div { ...props } className = { combinedClasses } style = { style } >
+            { title && <div className="panel-title" > { title } </div>
+}
+<div className="panel-content" >
+    { children }
+    </div>
+    </div>
+  );
+}
+
 export interface ElementProps {
     tag?: string;
     style?: React.CSSProperties;
@@ -50,6 +90,10 @@ export interface ElementProps {
     children?: React.ReactNode;
     role?: AriaRole;
     tabIndex?: number;
+    // Panel 관련 props
+    title?: string;
+    variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
+
     // HTML 글로벌 속성
     id?: string;
     title?: string;
