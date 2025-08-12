@@ -43,46 +43,6 @@ export interface ToggleButtonGroupProps {
     'single' | 'multiple' | 'horizontal' | 'vertical' | undefined;
 }
 
-export interface PanelProps {
-    children?: React.ReactNode;
-    className?: string;
-    style?: React.CSSProperties;
-    title?: string;
-    variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
-    'data-element-id'?: string;
-    [key: string]: any;
-}
-
-export function Panel({
-    children,
-    className = '',
-    style,
-    title,
-    variant = 'default',
-    ...props
-}: PanelProps) {
-    const baseClasses = 'react-aria-Panel';
-    const variantClasses = {
-        default: 'panel-default',
-        tab: 'panel-tab',
-        sidebar: 'panel-sidebar',
-        card: 'panel-card',
-        modal: 'panel-modal'
-    };
-
-    const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
-
-    return (
-        <div { ...props } className = { combinedClasses } style = { style } >
-            { title && <div className="panel-title" > { title } </div>
-}
-<div className="panel-content" >
-    { children }
-    </div>
-    </div>
-  );
-}
-
 export interface ElementProps {
     tag?: string;
     style?: React.CSSProperties;
@@ -96,7 +56,6 @@ export interface ElementProps {
 
     // HTML 글로벌 속성
     id?: string;
-    title?: string;
     lang?: string;
     translate?: 'yes' | 'no';
     dir?: 'ltr' | 'rtl' | 'auto';
@@ -200,7 +159,7 @@ export interface ListBoxItemData {
     selected?: boolean;
     style?: React.CSSProperties;
     className?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     actions?: Array<{
         id: string;
         label: string;
@@ -209,10 +168,10 @@ export interface ListBoxItemData {
     }>;
 }
 
-export interface ListBoxProps extends ElementProps {
+export interface ListBoxProps extends Omit<ElementProps, keyof { [key: string]: unknown }> {
     label?: string;
     orientation?: 'horizontal' | 'vertical';
     itemLayout?: 'default' | 'compact' | 'detailed' | 'grid';
     items?: ListBoxItemData[];
-    [key: string]: any;
+    [key: string]: unknown;
 } 
