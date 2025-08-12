@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import { TokenList } from './components/TokenList';
 import { TokenForm } from './components/TokenForm';
@@ -67,8 +67,8 @@ export default function ThemeEditor({ projectId }: Props) {
                 <button
                     onClick={() => setActiveTab('tokens')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tokens'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                 >
                     🎨 Tokens
@@ -76,8 +76,8 @@ export default function ThemeEditor({ projectId }: Props) {
                 <button
                     onClick={() => setActiveTab('preview')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'preview'
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                 >
                     👁️ Preview

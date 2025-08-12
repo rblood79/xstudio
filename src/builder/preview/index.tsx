@@ -28,11 +28,10 @@ import {
   RadioGroup,
   Radio,
   Tree,
-  TreeItem
+  TreeItem,
+  Panel,
 } from '../components/list';
 
-// Panel 컴포넌트 import 추가
-import { Panel } from '../components/Panel';
 
 interface PreviewElement {
   id: string;
