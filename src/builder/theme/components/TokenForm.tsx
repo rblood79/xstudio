@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { DesignToken, NewTokenInput } from '../../../types/theme';
+import { useState } from 'react';
+import { DesignToken, NewTokenInput, TokenValue } from '../../../types/theme';
 
 interface TokenFormProps {
     rawTokens: DesignToken[];
@@ -51,10 +51,10 @@ export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
             return;
         }
 
-        let value: any = form.value;
-        if (!(form.type === 'color' && /^#|rgb/i.test(value))) {
+        let value: TokenValue = form.value;
+        if (!(form.type === 'color' && /^#|rgb/i.test(value as string))) {
             try {
-                value = JSON.parse(value);
+                value = JSON.parse(value as string);
             } catch {
                 // 문자열 그대로
             }
@@ -62,7 +62,7 @@ export function TokenForm({ rawTokens, onAdd }: TokenFormProps) {
 
         const input: NewTokenInput = {
             name: form.name,
-            type: form.type as any,
+            type: form.type as 'color' | 'spacing' | 'border' | 'radius' | 'shadow' | 'font' | 'size' | 'other',
             value: value,
             scope: form.scope,
             alias_of: form.scope === 'semantic' && form.alias_of ? form.alias_of : undefined

@@ -534,11 +534,11 @@ function Builder() {
 
         } else if (args[0] === 'Tabs') {
             const tabsId = newElement.id;
-            const tabsProps = newElement.props;
+            const tabsProps = newElement.props as { children?: Array<{ id: string; title: string; content: string }> };
             const children = tabsProps.children || [];
 
             // TabPanels 하위에 들어갈 Panel 컴포넌트들 생성
-            const panelElements = children.map((tab: any, index: number) => ({
+            const panelElements = children.map((tab: { id: string; title: string; content: string }, index: number) => ({
                 id: crypto.randomUUID(),
                 page_id: selectedPageId,
                 tag: 'Panel',
@@ -838,7 +838,7 @@ function Builder() {
         const rawMap = new Map(rawTokens.map(r => [r.name, r]));
 
         // Helper function for processing token value
-        const processTokenValue = (token: any) => {
+        const processTokenValue = (token: { value: unknown }) => {
             if (typeof token.value === 'object' && token.value !== null) {
                 if ('h' in token.value) {
                     // ColorValue

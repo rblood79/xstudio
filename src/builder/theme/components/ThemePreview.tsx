@@ -1,12 +1,4 @@
-import React from 'react';
-import { Button } from '../../components/Button';
-import { TextField } from '../../components/TextField';
-import { Checkbox } from '../../components/Checkbox';
-import { RadioGroup } from '../../components/RadioGroup';
-import { Radio } from '../../components/Radio';
-import { Select, SelectItem } from '../../components/Select';
-import { Slider } from '../../components/Slider';
-import { Tabs, TabList, Tab, TabPanel } from '../../components/Tabs';
+import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio } from '../../components/list';
 
 interface Option {
     id: string;
@@ -42,9 +34,10 @@ export function ThemePreview() {
                 <div className="flex flex-col gap-3">
                     <TextField
                         label="Text Input"
-                        placeholder="Enter text..."
                         description="Helper text for input field"
-                    />
+                    >
+                        <Input placeholder="Enter text..." />
+                    </TextField>
 
                     <Select
                         label="Select Dropdown"
