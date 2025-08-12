@@ -1,6 +1,7 @@
 .overlay {}
 
 .overlay-element {
+    transition: 0.16s ease-out;
     position: absolute;
     pointer-events: none;
     z-index: 1;
