@@ -1919,7 +1919,7 @@
 }
 
 .panel-title {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--color-text-heading, #111827);
