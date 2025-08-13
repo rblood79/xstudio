@@ -228,12 +228,10 @@
             .panel-header {
                 font-size: var(--text-xs);
                 font-weight: var(--font-weight-bold);
-                padding-left: calc(var(--spacing-lg));
+                /*padding-left: calc(var(--spacing-lg));*/
                 background-color: var(--color-gray-50);
                 border-top: 1px solid var(--color-gray-200);
                 border-bottom: 1px solid var(--color-gray-100);
-
-                min-height: var(--spacing-3xl);
                 display: flex;
                 flex-direction: row;
                 align-items: center;
@@ -241,6 +239,10 @@
 
                 .iconButton {
                     padding: calc(var(--spacing) * 1.375);
+                }
+
+                .panel-title {
+                    padding-left: calc(var(--spacing-lg));
                 }
             }
 
