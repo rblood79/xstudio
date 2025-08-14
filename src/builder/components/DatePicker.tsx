@@ -117,7 +117,7 @@ export function DatePicker<T extends DateValue>({
               <div className="react-aria-DatePicker-time-section">
                 <div className="time-field-wrapper">
                   <Label className="time-field-label">{timeLabel}</Label>
-                  <TimeField 
+                  <TimeField
                     hourCycle={timeFormat === '12h' ? 12 : 24}
                     className="react-aria-DatePicker-time-field"
                   >

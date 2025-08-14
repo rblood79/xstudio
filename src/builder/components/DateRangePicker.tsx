@@ -128,7 +128,7 @@ export function DateRangePicker<T extends DateValue>({
                 <div className="time-fields-container">
                   <div className="time-field-wrapper">
                     <Label className="time-field-label">{startTimeLabel}</Label>
-                    <TimeField 
+                    <TimeField
                       hourCycle={timeFormat === '12h' ? 12 : 24}
                       className="react-aria-DateRangePicker-start-time"
                     >
@@ -139,7 +139,7 @@ export function DateRangePicker<T extends DateValue>({
                   </div>
                   <div className="time-field-wrapper">
                     <Label className="time-field-label">{endTimeLabel}</Label>
-                    <TimeField 
+                    <TimeField
                       hourCycle={timeFormat === '12h' ? 12 : 24}
                       className="react-aria-DateRangePicker-end-time"
                     >
