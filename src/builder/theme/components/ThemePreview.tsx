@@ -1,4 +1,4 @@
-import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar } from '../../components/list';
+import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar, DatePicker } from '../../components/list';
 
 interface Option {
     id: string;
@@ -293,6 +293,15 @@ export function ThemePreview() {
                     ></div>
                     <span className="text-xs text-gray-500">Large</span>
                 </div>
+            </div>
+
+            {/* DatePicker */}
+            <div className="flex flex-col gap-2">
+                <h5 className="text-xs font-medium text-gray-600">Date Picker</h5>
+                <DatePicker
+                    label="Select Date"
+                    description="Choose a date from the picker"
+                />
             </div>
 
             {/* Calendar */}
