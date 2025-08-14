@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react-swc'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base: '/xstudio/', // 저장소 이름으로 변경
   server: {
     proxy: {
       "/supabase": {
