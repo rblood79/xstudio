@@ -3339,6 +3339,52 @@ function Properties() {
                                     Show Week Numbers
                                 </Checkbox>
                             </div>
+
+                            {/* 새로운 Time 옵션들 추가 */}
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.includeTime || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        includeTime: checked
+                                    })}
+                                >
+                                    Include Time Selection
+                                </Checkbox>
+                            </div>
+
+                            {/* includeTime이 true일 때만 시간 관련 옵션들 표시 */}
+                            {selectedElementProps.includeTime && (
+                                <>
+                                    <div className='property-group'>
+                                        <label className='property-label'>Time Format</label>
+                                        <Select
+                                            selectedKey={selectedElementProps.timeFormat || '24h'}
+                                            onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                timeFormat: value
+                                            })}
+                                        >
+                                            <SelectItem id="12h">12 Hour (AM/PM)</SelectItem>
+                                            <SelectItem id="24h">24 Hour</SelectItem>
+                                        </Select>
+                                    </div>
+
+                                    <div className='property-group'>
+                                        <label className='property-label'>Time Label</label>
+                                        <input
+                                            type="text"
+                                            value={selectedElementProps.timeLabel || '시간'}
+                                            onChange={(e) => updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                timeLabel: e.target.value
+                                            })}
+                                            className='property-input'
+                                            placeholder="시간"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </fieldset>
 
                         {/* Format & Behavior */}
@@ -3620,6 +3666,66 @@ function Properties() {
                                     Show Week Numbers
                                 </Checkbox>
                             </div>
+
+                            {/* 새로운 Time 옵션들 추가 */}
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.includeTime || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        includeTime: checked
+                                    })}
+                                >
+                                    Include Time Selection
+                                </Checkbox>
+                            </div>
+
+                            {/* includeTime이 true일 때만 시간 관련 옵션들 표시 */}
+                            {selectedElementProps.includeTime && (
+                                <>
+                                    <div className='property-group'>
+                                        <label className='property-label'>Time Format</label>
+                                        <Select
+                                            selectedKey={selectedElementProps.timeFormat || '24h'}
+                                            onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                timeFormat: value
+                                            })}
+                                        >
+                                            <SelectItem id="12h">12 Hour (AM/PM)</SelectItem>
+                                            <SelectItem id="24h">24 Hour</SelectItem>
+                                        </Select>
+                                    </div>
+
+                                    <div className='property-group'>
+                                        <label className='property-label'>Start Time Label</label>
+                                        <input
+                                            type="text"
+                                            value={selectedElementProps.startTimeLabel || '시작 시간'}
+                                            onChange={(e) => updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                startTimeLabel: e.target.value
+                                            })}
+                                            className='property-input'
+                                            placeholder="시작 시간"
+                                        />
+                                    </div>
+
+                                    <div className='property-group'>
+                                        <label className='property-label'>End Time Label</label>
+                                        <input
+                                            type="text"
+                                            value={selectedElementProps.endTimeLabel || '종료 시간'}
+                                            onChange={(e) => updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                endTimeLabel: e.target.value
+                                            })}
+                                            className='property-input'
+                                            placeholder="종료 시간"
+                                        />
+                                    </div>
+                                </>
+                            )}
                         </fieldset>
 
                         {/* Format & Behavior */}

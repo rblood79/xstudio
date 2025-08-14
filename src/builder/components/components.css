@@ -2040,11 +2040,11 @@
     }
 
     &:focus {
-        color: var(--highlight-foreground);
-        background: var(--highlight-background);
+        color: var(--color-primary-500);
+        background: var(--color-background);
         outline: none;
         border-radius: 4px;
-        caret-color: transparent;
+        caret-color: var(--color-primary-500);
     }
 
     &[data-invalid] {
