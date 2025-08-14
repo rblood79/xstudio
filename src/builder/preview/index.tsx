@@ -30,6 +30,7 @@ import {
   Tree,
   TreeItem,
   Panel,
+  Calendar,
 } from '../components/list';
 
 
@@ -689,6 +690,31 @@ function Preview() {
         >
           {el.props.children}
         </Tag>
+      );
+    }
+
+    // Calendar 컴포넌트 특별 처리
+    if (el.tag === 'Calendar') {
+      return (
+        <Calendar
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          aria-label={el.props['aria-label'] || 'Calendar'}
+          isDisabled={el.props.isDisabled || false}
+          visibleDuration={el.props.visibleDuration || { months: 1 }}
+          pageBehavior={el.props.pageBehavior || 'visible'}
+          value={el.props.value}
+          onChange={(date) => {
+            const updatedProps = {
+              ...el.props,
+              value: date
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          errorMessage={el.props.errorMessage}
+        />
       );
     }
 

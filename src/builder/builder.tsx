@@ -430,6 +430,14 @@ function Builder() {
                         variant: 'tab',
                         title: text || 'Panel',
                     };
+                case 'Calendar':
+                    return {
+                        ...baseProps,
+                        'aria-label': text || 'Calendar',
+                        isDisabled: false,
+                        visibleDuration: { months: 1 },
+                        pageBehavior: 'visible',
+                    };
                 default:
                     return baseProps;
             }
