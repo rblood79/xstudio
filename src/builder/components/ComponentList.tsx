@@ -1,4 +1,4 @@
-import { ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, CalendarCheck, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search } from 'lucide-react';
+import { ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, Info, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search } from 'lucide-react';
 import { iconProps } from '../../builder/constants';
 import './ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -27,11 +27,12 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Tree', label: 'tree', icon: ListTree },
         { tag: 'Table', label: 'table', icon: TableProperties },
         { tag: 'Calendar', label: 'calendar', icon: Calendar },
+        { tag: 'DatePicker', label: 'date picker', icon: CalendarCheck },
+        { tag: 'DateRangePicker', label: 'date range', icon: CalendarDays },
         { tag: 'ListBox', label: 'list box', icon: ListIcon },
         { tag: 'GridList', label: 'grid List', icon: Grid },
         { tag: 'Select', label: 'select', icon: ChevronDown },
         { tag: 'ComboBox', label: 'combo box', icon: Search },
-        { tag: 'DatePicker', label: 'date picker', icon: CalendarCheck },
     ];
 
     const pageComp = [

@@ -3145,6 +3145,654 @@ function Properties() {
                     </div>
                 );
 
+            case 'DatePicker':
+                return (
+                    <div className="component-props">
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>DatePicker Settings</legend>
+
+                            {/* Basic Properties */}
+                            <div className='property-group'>
+                                <label className='property-label'>Label</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.label || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        label: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Date Picker"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Description</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.description || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        description: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Helper text"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Error Message</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.errorMessage || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        errorMessage: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Error text"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Placeholder</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.placeholder || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        placeholder: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Select date..."
+                                />
+                            </div>
+                        </fieldset>
+
+                        {/* State Properties */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>State & Behavior</legend>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isDisabled || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isDisabled: checked
+                                    })}
+                                >
+                                    Disabled
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isRequired || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isRequired: checked
+                                    })}
+                                >
+                                    Required
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isReadOnly || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isReadOnly: checked
+                                    })}
+                                >
+                                    Read Only
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isInvalid || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isInvalid: checked
+                                    })}
+                                >
+                                    Invalid
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.autoFocus || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        autoFocus: checked
+                                    })}
+                                >
+                                    Auto Focus
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+
+                        {/* UI Options */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>UI Options</legend>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.showCalendarIcon !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        showCalendarIcon: checked
+                                    })}
+                                >
+                                    Show Calendar Icon
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Icon Position</label>
+                                <Select
+                                    selectedKey={selectedElementProps.calendarIconPosition || 'right'}
+                                    onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        calendarIconPosition: value
+                                    })}
+                                >
+                                    <SelectItem id="left">Left</SelectItem>
+                                    <SelectItem id="right">Right</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.allowClear !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        allowClear: checked
+                                    })}
+                                >
+                                    Allow Clear
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.highlightToday !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        highlightToday: checked
+                                    })}
+                                >
+                                    Highlight Today
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.showWeekNumbers || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        showWeekNumbers: checked
+                                    })}
+                                >
+                                    Show Week Numbers
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+
+                        {/* Format & Behavior */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>Format & Behavior</legend>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Granularity</label>
+                                <Select
+                                    selectedKey={
+                                        ['day', 'hour', 'minute', 'second'].includes(selectedElementProps.granularity)
+                                            ? selectedElementProps.granularity
+                                            : 'day'
+                                    }
+                                    onSelectionChange={(value) => {
+                                        if (['day', 'hour', 'minute', 'second'].includes(value)) { // 유효한 값만 허용
+                                            updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                granularity: value
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <SelectItem id="day">Day</SelectItem>
+                                    <SelectItem id="hour">Hour</SelectItem>
+                                    <SelectItem id="minute">Minute</SelectItem>
+                                    <SelectItem id="second">Second</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>First Day of Week</label>
+                                <Select
+                                    selectedKey={String(
+                                        (typeof selectedElementProps.firstDayOfWeek === 'number' &&
+                                            selectedElementProps.firstDayOfWeek >= 0 &&
+                                            selectedElementProps.firstDayOfWeek <= 6)
+                                            ? selectedElementProps.firstDayOfWeek
+                                            : 0
+                                    )}
+                                    onSelectionChange={(value) => {
+                                        const dayNum = Number(value);
+                                        if (dayNum >= 0 && dayNum <= 6) { // 안전한 범위 체크
+                                            updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                firstDayOfWeek: dayNum
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <SelectItem id="0">Sunday</SelectItem>
+                                    <SelectItem id="1">Monday</SelectItem>
+                                    <SelectItem id="2">Tuesday</SelectItem>
+                                    <SelectItem id="3">Wednesday</SelectItem>
+                                    <SelectItem id="4">Thursday</SelectItem>
+                                    <SelectItem id="5">Friday</SelectItem>
+                                    <SelectItem id="6">Saturday</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.shouldForceLeadingZeros !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        shouldForceLeadingZeros: checked
+                                    })}
+                                >
+                                    Force Leading Zeros
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.shouldCloseOnSelect !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        shouldCloseOnSelect: checked
+                                    })}
+                                >
+                                    Close on Select
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
+            case 'DateRangePicker':
+                return (
+                    <div className="component-props">
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>DateRangePicker Settings</legend>
+
+                            {/* Basic Properties */}
+                            <div className='property-group'>
+                                <label className='property-label'>Label</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.label || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        label: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Date Range Picker"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Description</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.description || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        description: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Helper text"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Error Message</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.errorMessage || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        errorMessage: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Error text"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Placeholder</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.placeholder || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        placeholder: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Select date range..."
+                                />
+                            </div>
+                        </fieldset>
+
+                        {/* State Properties */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>State & Behavior</legend>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isDisabled || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isDisabled: checked
+                                    })}
+                                >
+                                    Disabled
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isRequired || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isRequired: checked
+                                    })}
+                                >
+                                    Required
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isReadOnly || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isReadOnly: checked
+                                    })}
+                                >
+                                    Read Only
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isInvalid || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isInvalid: checked
+                                    })}
+                                >
+                                    Invalid
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.autoFocus || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        autoFocus: checked
+                                    })}
+                                >
+                                    Auto Focus
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+
+                        {/* UI Options */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>UI Options</legend>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.showCalendarIcon !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        showCalendarIcon: checked
+                                    })}
+                                >
+                                    Show Calendar Icon
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Icon Position</label>
+                                <Select
+                                    selectedKey={selectedElementProps.calendarIconPosition || 'right'}
+                                    onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        calendarIconPosition: value
+                                    })}
+                                >
+                                    <SelectItem id="left">Left</SelectItem>
+                                    <SelectItem id="right">Right</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.allowClear !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        allowClear: checked
+                                    })}
+                                >
+                                    Allow Clear
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.highlightToday !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        highlightToday: checked
+                                    })}
+                                >
+                                    Highlight Today
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.showWeekNumbers || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        showWeekNumbers: checked
+                                    })}
+                                >
+                                    Show Week Numbers
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+
+                        {/* Format & Behavior */}
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>Format & Behavior</legend>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Granularity</label>
+                                <Select
+                                    selectedKey={selectedElementProps.granularity || 'day'}
+                                    onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        granularity: value
+                                    })}
+                                >
+                                    <SelectItem id="day">Day</SelectItem>
+                                    <SelectItem id="hour">Hour</SelectItem>
+                                    <SelectItem id="minute">Minute</SelectItem>
+                                    <SelectItem id="second">Second</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>First Day of Week</label>
+                                <Select
+                                    selectedKey={String(selectedElementProps.firstDayOfWeek || 0)}
+                                    onSelectionChange={(value) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        firstDayOfWeek: Number(value)
+                                    })}
+                                >
+                                    <SelectItem id="0">Sunday</SelectItem>
+                                    <SelectItem id="1">Monday</SelectItem>
+                                    <SelectItem id="2">Tuesday</SelectItem>
+                                    <SelectItem id="3">Wednesday</SelectItem>
+                                    <SelectItem id="4">Thursday</SelectItem>
+                                    <SelectItem id="5">Friday</SelectItem>
+                                    <SelectItem id="6">Saturday</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.shouldForceLeadingZeros !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        shouldForceLeadingZeros: checked
+                                    })}
+                                >
+                                    Force Leading Zeros
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.shouldCloseOnSelect !== false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        shouldCloseOnSelect: checked
+                                    })}
+                                >
+                                    Close on Select
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.allowsNonContiguousRanges || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        allowsNonContiguousRanges: checked
+                                    })}
+                                >
+                                    Allow Non-Contiguous Ranges
+                                </Checkbox>
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
+            case 'Calendar':
+                return (
+                    <div className="component-props">
+                        <fieldset className='property-fieldset'>
+                            <legend className='fieldset-legend'>Calendar Settings</legend>
+
+                            <div className='property-group'>
+                                <label className='property-label'>ARIA Label</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps['aria-label'] || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        'aria-label': e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Calendar"
+                                />
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Error Message</label>
+                                <input
+                                    type="text"
+                                    value={selectedElementProps.errorMessage || ''}
+                                    onChange={(e) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        errorMessage: e.target.value
+                                    })}
+                                    className='property-input'
+                                    placeholder="Error text"
+                                />
+                            </div>
+
+                            <div className='property-row'>
+                                <Checkbox
+                                    isSelected={selectedElementProps.isDisabled || false}
+                                    onChange={(checked) => updateElementProps(selectedElementId, {
+                                        ...selectedElementProps,
+                                        isDisabled: checked
+                                    })}
+                                >
+                                    Disabled
+                                </Checkbox>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Visible Months</label>
+                                <Select
+                                    selectedKey={String(
+                                        (typeof selectedElementProps.visibleDuration === 'object' &&
+                                            selectedElementProps.visibleDuration !== null &&
+                                            'months' in selectedElementProps.visibleDuration)
+                                            ? selectedElementProps.visibleDuration.months
+                                            : 1
+                                    )}
+                                    onSelectionChange={(value) => {
+                                        const months = Number(value);
+                                        if (months >= 1 && months <= 12) { // 안전한 범위 체크
+                                            updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                visibleDuration: { months: months }
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <SelectItem id="1">1 Month</SelectItem>
+                                    <SelectItem id="2">2 Months</SelectItem>
+                                    <SelectItem id="3">3 Months</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className='property-group'>
+                                <label className='property-label'>Page Behavior</label>
+                                <Select
+                                    selectedKey={selectedElementProps.pageBehavior || 'visible'}
+                                    onSelectionChange={(value) => {
+                                        if (value === 'visible' || value === 'single') { // 유효한 값만 허용
+                                            updateElementProps(selectedElementId, {
+                                                ...selectedElementProps,
+                                                pageBehavior: value
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <SelectItem id="visible">Visible</SelectItem>
+                                    <SelectItem id="single">Single</SelectItem>
+                                </Select>
+                            </div>
+                        </fieldset>
+                    </div>
+                );
+
             default:
                 return <div>지원하지 않는 컴포넌트입니다.</div>;
         }

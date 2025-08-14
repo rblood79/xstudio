@@ -31,7 +31,8 @@ import {
   TreeItem,
   Panel,
   Calendar,
-  DatePicker, // 추가
+  DatePicker,
+  DateRangePicker, // 추가
 } from '../components/list';
 
 
@@ -694,8 +695,26 @@ function Preview() {
       );
     }
 
-    // Calendar 컴포넌트 특별 처리
+    // Calendar 컴포넌트 특별 처리 - 안전한 props 처리
     if (el.tag === 'Calendar') {
+      // visibleDuration 안전 처리
+      const getVisibleDuration = () => {
+        const vd = el.props.visibleDuration;
+        if (typeof vd === 'object' && vd !== null && 'months' in vd) {
+          const months = Number(vd.months);
+          if (months >= 1 && months <= 12) {
+            return { months };
+          }
+        }
+        return { months: 1 }; // 기본값
+      };
+
+      // pageBehavior 안전 처리
+      const getPageBehavior = () => {
+        const pb = el.props.pageBehavior;
+        return (pb === 'visible' || pb === 'single') ? pb : 'visible';
+      };
+
       return (
         <Calendar
           key={el.id}
@@ -703,10 +722,71 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           aria-label={el.props['aria-label'] || 'Calendar'}
-          isDisabled={el.props.isDisabled || false}
-          visibleDuration={el.props.visibleDuration || { months: 1 }}
-          pageBehavior={el.props.pageBehavior || 'visible'}
+          isDisabled={Boolean(el.props.isDisabled)}
+          visibleDuration={getVisibleDuration()}
+          pageBehavior={getPageBehavior()}
           value={el.props.value}
+          onChange={(date) => {
+            const updatedProps = {
+              ...el.props,
+              value: date
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+          errorMessage={el.props.errorMessage}
+        />
+      );
+    }
+
+    // DatePicker 컴포넌트 특별 처리 - 안전한 처리
+    if (el.tag === 'DatePicker') {
+      // granularity 안전 처리
+      const getGranularity = () => {
+        const g = el.props.granularity;
+        return ['day', 'hour', 'minute', 'second'].includes(g) ? g : 'day';
+      };
+
+      // firstDayOfWeek 안전 처리
+      const getFirstDayOfWeek = () => {
+        const fdow = Number(el.props.firstDayOfWeek);
+        return (fdow >= 0 && fdow <= 6) ? fdow : 0;
+      };
+
+      // calendarIconPosition 안전 처리
+      const getCalendarIconPosition = () => {
+        const cip = el.props.calendarIconPosition;
+        return (cip === 'left' || cip === 'right') ? cip : 'right';
+      };
+
+      return (
+        <DatePicker
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label || 'Date Picker'}
+          description={el.props.description}
+          errorMessage={el.props.errorMessage}
+          placeholder={el.props.placeholder}
+          isDisabled={Boolean(el.props.isDisabled)}
+          isRequired={Boolean(el.props.isRequired)}
+          isReadOnly={Boolean(el.props.isReadOnly)}
+          isInvalid={Boolean(el.props.isInvalid)}
+          value={el.props.value}
+          defaultValue={el.props.defaultValue}
+          minValue={el.props.minValue}
+          maxValue={el.props.maxValue}
+          placeholderValue={el.props.placeholderValue}
+          granularity={getGranularity()}
+          firstDayOfWeek={getFirstDayOfWeek()}
+          showCalendarIcon={el.props.showCalendarIcon !== false}
+          calendarIconPosition={getCalendarIconPosition()}
+          showWeekNumbers={Boolean(el.props.showWeekNumbers)}
+          highlightToday={el.props.highlightToday !== false}
+          allowClear={el.props.allowClear !== false}
+          autoFocus={Boolean(el.props.autoFocus)}
+          shouldForceLeadingZeros={el.props.shouldForceLeadingZeros !== false}
+          shouldCloseOnSelect={el.props.shouldCloseOnSelect !== false}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
@@ -718,30 +798,58 @@ function Preview() {
       );
     }
 
-    // DatePicker 컴포넌트 특별 처리
-    if (el.tag === 'DatePicker') {
+    // DateRangePicker 컴포넌트 특별 처리 - 안전한 처리
+    if (el.tag === 'DateRangePicker') {
+      // 동일한 안전 처리 함수들 사용
+      const getGranularity = () => {
+        const g = el.props.granularity;
+        return ['day', 'hour', 'minute', 'second'].includes(g) ? g : 'day';
+      };
+
+      const getFirstDayOfWeek = () => {
+        const fdow = Number(el.props.firstDayOfWeek);
+        return (fdow >= 0 && fdow <= 6) ? fdow : 0;
+      };
+
+      const getCalendarIconPosition = () => {
+        const cip = el.props.calendarIconPosition;
+        return (cip === 'left' || cip === 'right') ? cip : 'right';
+      };
+
       return (
-        <DatePicker
+        <DateRangePicker
           key={el.id}
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label || 'Date Picker'}
+          label={el.props.label || 'Date Range Picker'}
           description={el.props.description}
           errorMessage={el.props.errorMessage}
-          isDisabled={el.props.isDisabled || false}
-          isRequired={el.props.isRequired || false}
-          isReadOnly={el.props.isReadOnly || false}
-          isInvalid={el.props.isInvalid || false}
+          placeholder={el.props.placeholder}
+          isDisabled={Boolean(el.props.isDisabled)}
+          isRequired={Boolean(el.props.isRequired)}
+          isReadOnly={Boolean(el.props.isReadOnly)}
+          isInvalid={Boolean(el.props.isInvalid)}
           value={el.props.value}
+          defaultValue={el.props.defaultValue}
           minValue={el.props.minValue}
           maxValue={el.props.maxValue}
           placeholderValue={el.props.placeholderValue}
-          granularity={el.props.granularity || 'day'}
-          onChange={(date) => {
+          granularity={getGranularity()}
+          firstDayOfWeek={getFirstDayOfWeek()}
+          showCalendarIcon={el.props.showCalendarIcon !== false}
+          calendarIconPosition={getCalendarIconPosition()}
+          showWeekNumbers={Boolean(el.props.showWeekNumbers)}
+          highlightToday={el.props.highlightToday !== false}
+          allowClear={el.props.allowClear !== false}
+          autoFocus={Boolean(el.props.autoFocus)}
+          shouldForceLeadingZeros={el.props.shouldForceLeadingZeros !== false}
+          shouldCloseOnSelect={el.props.shouldCloseOnSelect !== false}
+          allowsNonContiguousRanges={Boolean(el.props.allowsNonContiguousRanges)}
+          onChange={(dateRange) => {
             const updatedProps = {
               ...el.props,
-              value: date
+              value: dateRange
             };
             updateElementProps(el.id, updatedProps);
           }}
