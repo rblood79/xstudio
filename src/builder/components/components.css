@@ -1909,6 +1909,85 @@
     }
 }
 
+.react-aria-Calendar {
+    width: fit-content;
+    max-width: 100%;
+    color: var(--text-color);
+
+    header {
+        display: flex;
+        align-items: center;
+        margin: 0 4px .5rem 4px;
+
+        .react-aria-Heading {
+            flex: 1;
+            margin: 0;
+            text-align: center;
+            font-size: var(--text-sm);
+        }
+    }
+
+    .react-aria-Button {
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+    }
+
+    .react-aria-CalendarCell {
+        width: 2rem;
+        line-height: 2rem;
+        text-align: center;
+        border-radius: 6px;
+        cursor: default;
+        outline: none;
+        margin: 1px;
+        forced-color-adjust: none;
+
+        &[data-outside-month] {
+            display: none;
+        }
+
+        &[data-pressed] {
+            background: var(--gray-100);
+        }
+
+        &[data-focus-visible] {
+            outline: 2px solid var(--focus-ring-color);
+            outline-offset: 2px;
+        }
+
+        &[data-selected] {
+            background: var(--color-primary, #3B82F6);
+            color: var(--color-white);
+        }
+    }
+
+    .react-aria-CalendarCell {
+        &[data-disabled] {
+            color: var(--text-color-disabled);
+        }
+    }
+
+    .react-aria-CalendarCell {
+        &[data-unavailable] {
+            text-decoration: line-through;
+            color: var(--invalid-color);
+        }
+    }
+
+    .react-aria-CalendarCell {
+        &[data-invalid] {
+            background: var(--invalid-color);
+            color: var(--highlight-foreground);
+        }
+    }
+
+    [slot=errorMessage] {
+        font-size: 12px;
+        color: var(--invalid-color);
+    }
+}
+
 /* Panel 컴포넌트 스타일 */
 .react-aria-Panel {
     display: flex;
@@ -1967,13 +2046,15 @@
 /* Card 컴포넌트 스타일 */
 .react-aria-Card {
     border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-md);
     background-color: var(--color-background);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-xs);
     transition: box-shadow 0.2s ease;
+
+    min-height: 96px;
 }
 
 .react-aria-Card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-sm);
 }

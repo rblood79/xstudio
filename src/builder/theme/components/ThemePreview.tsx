@@ -1,4 +1,4 @@
-import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio } from '../../components/list';
+import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar } from '../../components/list';
 
 interface Option {
     id: string;
@@ -293,6 +293,15 @@ export function ThemePreview() {
                     ></div>
                     <span className="text-xs text-gray-500">Large</span>
                 </div>
+            </div>
+
+            {/* Calendar */}
+            <div className="flex flex-col gap-2">
+                <h5 className="text-xs font-medium text-gray-600">Calendar</h5>
+                <Calendar
+                    aria-label="Date Selection"
+                    visibleDuration={{ months: 1 }}
+                />
             </div>
         </div>
     );
