@@ -84,11 +84,13 @@
     @keyframes mymodal-blur {
         from {
             background: rgba(45 0 0 / 0);
+            -webkit-backdrop-filter: blur(0);
             backdrop-filter: blur(0);
         }
 
         to {
             background: rgba(45 0 0 / .3);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
     }
