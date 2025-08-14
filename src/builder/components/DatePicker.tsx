@@ -15,6 +15,7 @@ import {
   Label,
   Popover,
   Text,
+  TimeField,
   ValidationResult
 } from 'react-aria-components';
 
@@ -33,6 +34,10 @@ export interface DatePickerProps<T extends DateValue>
   showWeekNumbers?: boolean;
   highlightToday?: boolean;
   allowClear?: boolean;
+  // 새로운 time 옵션
+  includeTime?: boolean;
+  timeFormat?: '12h' | '24h';
+  timeLabel?: string;
 }
 
 export function DatePicker<T extends DateValue>({
@@ -46,10 +51,23 @@ export function DatePicker<T extends DateValue>({
   showWeekNumbers = false,
   highlightToday = true,
   allowClear = false,
+  includeTime = false,
+  timeFormat = '24h',
+  timeLabel = '시간',
+  granularity,
   ...props
 }: DatePickerProps<T>) {
+  // includeTime이 true일 때 granularity를 자동으로 설정
+  const effectiveGranularity = includeTime
+    ? (granularity || 'minute')
+    : (granularity || 'day');
+
   return (
-    <AriaDatePicker {...props} className="react-aria-DatePicker">
+    <AriaDatePicker
+      {...props}
+      className="react-aria-DatePicker"
+      granularity={effectiveGranularity}
+    >
       {label && <Label>{label}</Label>}
       <Group>
         {showCalendarIcon && calendarIconPosition === 'left' && (
@@ -79,20 +97,38 @@ export function DatePicker<T extends DateValue>({
       <FieldError>{errorMessage}</FieldError>
       <Popover>
         <Dialog>
-          <Calendar
-            firstDayOfWeek={firstDayOfWeek}
-            data-highlight-today={highlightToday}
-            data-show-week-numbers={showWeekNumbers}
-          >
-            <header>
-              <Button slot="previous">◀</Button>
-              <Heading />
-              <Button slot="next">▶</Button>
-            </header>
-            <CalendarGrid>
-              {(date) => <CalendarCell date={date} />}
-            </CalendarGrid>
-          </Calendar>
+          <div className="react-aria-DatePicker-popup">
+            <Calendar
+              firstDayOfWeek={firstDayOfWeek}
+              data-highlight-today={highlightToday}
+              data-show-week-numbers={showWeekNumbers}
+            >
+              <header>
+                <Button slot="previous">◀</Button>
+                <Heading />
+                <Button slot="next">▶</Button>
+              </header>
+              <CalendarGrid>
+                {(date) => <CalendarCell date={date} />}
+              </CalendarGrid>
+            </Calendar>
+
+            {includeTime && (
+              <div className="react-aria-DatePicker-time-section">
+                <div className="time-field-wrapper">
+                  <Label className="time-field-label">{timeLabel}</Label>
+                  <TimeField 
+                    hourCycle={timeFormat === '12h' ? 12 : 24}
+                    className="react-aria-DatePicker-time-field"
+                  >
+                    <DateInput>
+                      {(segment) => <DateSegment segment={segment} />}
+                    </DateInput>
+                  </TimeField>
+                </div>
+              </div>
+            )}
+          </div>
         </Dialog>
       </Popover>
     </AriaDatePicker>

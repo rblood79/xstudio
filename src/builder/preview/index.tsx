@@ -742,8 +742,14 @@ function Preview() {
     if (el.tag === 'DatePicker') {
       // granularity 안전 처리
       const getGranularity = () => {
-        const g = el.props.granularity;
-        return ['day', 'hour', 'minute', 'second'].includes(g) ? g : 'day';
+        // includeTime이 true이면 minute로, 아니면 기본값 또는 day
+        if (el.props.includeTime) {
+          const g = el.props.granularity;
+          return ['hour', 'minute', 'second'].includes(g) ? g : 'minute';
+        } else {
+          const g = el.props.granularity;
+          return ['day'].includes(g) ? g : 'day';
+        }
       };
 
       // firstDayOfWeek 안전 처리
@@ -787,6 +793,10 @@ function Preview() {
           autoFocus={Boolean(el.props.autoFocus)}
           shouldForceLeadingZeros={el.props.shouldForceLeadingZeros !== false}
           shouldCloseOnSelect={el.props.shouldCloseOnSelect !== false}
+          // 새로운 Time 관련 props 추가
+          includeTime={Boolean(el.props.includeTime)}
+          timeFormat={el.props.timeFormat || '24h'}
+          timeLabel={el.props.timeLabel || '시간'}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
@@ -846,6 +856,11 @@ function Preview() {
           shouldForceLeadingZeros={el.props.shouldForceLeadingZeros !== false}
           shouldCloseOnSelect={el.props.shouldCloseOnSelect !== false}
           allowsNonContiguousRanges={Boolean(el.props.allowsNonContiguousRanges)}
+          // 새로운 Time 관련 props 추가
+          includeTime={Boolean(el.props.includeTime)}
+          timeFormat={el.props.timeFormat || '24h'}
+          startTimeLabel={el.props.startTimeLabel || '시작 시간'}
+          endTimeLabel={el.props.endTimeLabel || '종료 시간'}
           onChange={(dateRange) => {
             const updatedProps = {
               ...el.props,
