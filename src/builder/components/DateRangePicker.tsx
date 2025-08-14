@@ -1,11 +1,10 @@
 import {
   Button,
-  Calendar,
   CalendarCell,
   CalendarGrid,
   DateInput,
-  DatePicker as AriaDatePicker,
-  DatePickerProps as AriaDatePickerProps,
+  DateRangePicker as AriaDateRangePicker,
+  DateRangePickerProps as AriaDateRangePickerProps,
   DateSegment,
   DateValue,
   Dialog,
@@ -14,14 +13,15 @@ import {
   Heading,
   Label,
   Popover,
+  RangeCalendar,
   Text,
   ValidationResult
 } from 'react-aria-components';
 
 import './components.css';
 
-export interface DatePickerProps<T extends DateValue>
-  extends AriaDatePickerProps<T> {
+export interface DateRangePickerProps<T extends DateValue>
+  extends AriaDateRangePickerProps<T> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -29,13 +29,12 @@ export interface DatePickerProps<T extends DateValue>
   showCalendarIcon?: boolean;
   calendarIconPosition?: 'left' | 'right';
   placeholder?: string;
-  dateFormat?: string;
   showWeekNumbers?: boolean;
   highlightToday?: boolean;
   allowClear?: boolean;
 }
 
-export function DatePicker<T extends DateValue>({
+export function DateRangePicker<T extends DateValue>({
   label,
   description,
   errorMessage,
@@ -47,15 +46,24 @@ export function DatePicker<T extends DateValue>({
   highlightToday = true,
   allowClear = false,
   ...props
-}: DatePickerProps<T>) {
+}: DateRangePickerProps<T>) {
   return (
-    <AriaDatePicker {...props} className="react-aria-DatePicker">
+    <AriaDateRangePicker {...props} className="react-aria-DateRangePicker">
       {label && <Label>{label}</Label>}
       <Group>
         {showCalendarIcon && calendarIconPosition === 'left' && (
           <Button slot="prefix">📅</Button>
         )}
-        <DateInput>
+        <DateInput slot="start">
+          {(segment) => (
+            <DateSegment
+              segment={segment}
+              data-placeholder={!segment.isPlaceholder ? undefined : placeholder}
+            />
+          )}
+        </DateInput>
+        <span aria-hidden="true">–</span>
+        <DateInput slot="end">
           {(segment) => (
             <DateSegment
               segment={segment}
@@ -69,7 +77,7 @@ export function DatePicker<T extends DateValue>({
         {allowClear && props.value && (
           <Button
             onPress={() => props.onChange?.(null)}
-            aria-label="Clear date"
+            aria-label="Clear date range"
           >
             ✕
           </Button>
@@ -79,7 +87,7 @@ export function DatePicker<T extends DateValue>({
       <FieldError>{errorMessage}</FieldError>
       <Popover>
         <Dialog>
-          <Calendar
+          <RangeCalendar
             firstDayOfWeek={firstDayOfWeek}
             data-highlight-today={highlightToday}
             data-show-week-numbers={showWeekNumbers}
@@ -92,9 +100,9 @@ export function DatePicker<T extends DateValue>({
             <CalendarGrid>
               {(date) => <CalendarCell date={date} />}
             </CalendarGrid>
-          </Calendar>
+          </RangeCalendar>
         </Dialog>
       </Popover>
-    </AriaDatePicker>
+    </AriaDateRangePicker>
   );
 }

@@ -1,4 +1,4 @@
-import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar, DatePicker } from '../../components/list';
+import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar, DatePicker, DateRangePicker } from '../../components/list';
 
 interface Option {
     id: string;
@@ -301,6 +301,21 @@ export function ThemePreview() {
                 <DatePicker
                     label="Select Date"
                     description="Choose a date from the picker"
+                    placeholder="Pick a date..."
+                    showCalendarIcon={true}
+                    allowClear={true}
+                />
+            </div>
+
+            {/* DateRangePicker */}
+            <div className="flex flex-col gap-2">
+                <h5 className="text-xs font-medium text-gray-600">Date Range Picker</h5>
+                <DateRangePicker
+                    label="Select Date Range"
+                    description="Choose start and end dates"
+                    placeholder="Pick date range..."
+                    showCalendarIcon={true}
+                    allowClear={true}
                 />
             </div>
 
