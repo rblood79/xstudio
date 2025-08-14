@@ -438,6 +438,22 @@ function Builder() {
                         visibleDuration: { months: 1 },
                         pageBehavior: 'visible',
                     };
+                case 'DatePicker':
+                    return {
+                        ...baseProps,
+                        label: text || 'Date Picker',
+                        description: '',
+                        errorMessage: '',
+                        isDisabled: false,
+                        isRequired: false,
+                        isReadOnly: false,
+                        isInvalid: false,
+                        value: null,
+                        minValue: null,
+                        maxValue: null,
+                        placeholderValue: null,
+                        granularity: 'day',
+                    };
                 default:
                     return baseProps;
             }

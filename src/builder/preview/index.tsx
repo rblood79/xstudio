@@ -31,6 +31,7 @@ import {
   TreeItem,
   Panel,
   Calendar,
+  DatePicker, // 추가
 } from '../components/list';
 
 
@@ -713,7 +714,37 @@ function Preview() {
             };
             updateElementProps(el.id, updatedProps);
           }}
+        />
+      );
+    }
+
+    // DatePicker 컴포넌트 특별 처리
+    if (el.tag === 'DatePicker') {
+      return (
+        <DatePicker
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={el.props.label || 'Date Picker'}
+          description={el.props.description}
           errorMessage={el.props.errorMessage}
+          isDisabled={el.props.isDisabled || false}
+          isRequired={el.props.isRequired || false}
+          isReadOnly={el.props.isReadOnly || false}
+          isInvalid={el.props.isInvalid || false}
+          value={el.props.value}
+          minValue={el.props.minValue}
+          maxValue={el.props.maxValue}
+          placeholderValue={el.props.placeholderValue}
+          granularity={el.props.granularity || 'day'}
+          onChange={(date) => {
+            const updatedProps = {
+              ...el.props,
+              value: date
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
         />
       );
     }

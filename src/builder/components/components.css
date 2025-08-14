@@ -9,6 +9,99 @@
         }
     }
 
+    .react-aria-Dialog {
+        outline: none;
+        padding: 30px;
+        max-height: inherit;
+        box-sizing: border-box;
+        overflow: auto;
+
+        .react-aria-Heading[slot=title] {
+            line-height: 1em;
+            margin-top: 0;
+        }
+    }
+
+    .react-aria-ModalOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: var(--visual-viewport-height);
+        background: rgba(0 0 0 / .5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+
+        &[data-entering] {
+            animation: modal-fade 200ms;
+        }
+
+        &[data-exiting] {
+            animation: modal-fade 150ms reverse ease-in;
+        }
+    }
+
+    .react-aria-Modal {
+        box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
+        border-radius: 6px;
+        background: var(--overlay-background);
+        color: var(--text-color);
+        border: 1px solid var(--gray-400);
+        outline: none;
+        max-width: 300px;
+
+        &[data-entering] {
+            animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .react-aria-TextField {
+            margin-bottom: 8px;
+        }
+    }
+
+    @keyframes modal-fade {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes modal-zoom {
+        from {
+            transform: scale(0.8);
+        }
+
+        to {
+            transform: scale(1);
+        }
+    }
+
+    @keyframes mymodal-blur {
+        from {
+            background: rgba(45 0 0 / 0);
+            backdrop-filter: blur(0);
+        }
+
+        to {
+            background: rgba(45 0 0 / .3);
+            backdrop-filter: blur(10px);
+        }
+    }
+
+    @keyframes mymodal-slide {
+        from {
+            transform: translateX(100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
 
     .react-aria-Label {
         font-size: var(--text-sm);
@@ -1906,6 +1999,137 @@
     .listbox-container {
         display: flex;
         flex-direction: column;
+    }
+}
+
+.react-aria-DateField {
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.react-aria-DateInput {
+    display: inline;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--field-background);
+    width: fit-content;
+    min-width: 150px;
+    white-space: nowrap;
+    forced-color-adjust: none;
+
+    &[data-focus-within] {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -1px;
+    }
+}
+
+.react-aria-DateSegment {
+    padding: 0 2px;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    color: var(--text-color);
+
+    &[data-type=literal] {
+        padding: 0;
+    }
+
+    &[data-placeholder] {
+        color: var(--text-color-placeholder);
+        font-style: italic;
+    }
+
+    &:focus {
+        color: var(--highlight-foreground);
+        background: var(--highlight-background);
+        outline: none;
+        border-radius: 4px;
+        caret-color: transparent;
+    }
+
+    &[data-invalid] {
+        color: var(--invalid-color);
+
+        &:focus {
+            background: var(--highlight-background-invalid);
+            color: var(--highlight-foreground);
+        }
+    }
+}
+
+.react-aria-DateField {
+    .react-aria-FieldError {
+        font-size: 12px;
+        color: var(--invalid-color);
+    }
+
+    [slot=description] {
+        font-size: 12px;
+    }
+}
+
+.react-aria-DatePicker {
+    color: var(--text-color);
+
+    .react-aria-Group {
+        display: flex;
+        width: fit-content;
+        align-items: center;
+    }
+
+    .react-aria-Button {
+        background: var(--highlight-background);
+        color: var(--highlight-foreground);
+        border: 2px solid var(--field-background);
+        forced-color-adjust: none;
+        border-radius: 4px;
+        border: none;
+        margin-left: -1.929rem;
+        width: 1.429rem;
+        height: 1.429rem;
+        padding: 0;
+        font-size: 0.857rem;
+        box-sizing: content-box;
+
+        &[data-pressed] {
+            box-shadow: none;
+            background: var(--highlight-background);
+        }
+
+        &[data-focus-visible] {
+            outline: 2px solid var(--focus-ring-color);
+            outline-offset: 2px;
+        }
+    }
+
+    .react-aria-DateInput {
+        padding: 4px 2.5rem 4px 8px;
+    }
+}
+
+.react-aria-Popover[data-trigger=DatePicker] {
+    max-width: unset;
+}
+
+.react-aria-DatePicker {
+    &[data-invalid] {
+        .react-aria-DateInput:after {
+            content: '🚫' / '';
+            content: '🚫';
+            alt: ' ';
+            flex: 1;
+            text-align: end;
+        }
+    }
+
+    .react-aria-FieldError {
+        font-size: 12px;
+        color: var(--invalid-color);
+    }
+
+    [slot=description] {
+        font-size: 12px;
     }
 }
 
