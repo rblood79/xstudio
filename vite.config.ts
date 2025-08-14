@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/xstudio/', // 저장소 이름으로 변경
+  base: command === 'build' ? '/xstudio/' : '/',
   server: {
     proxy: {
       "/supabase": {
@@ -32,4 +32,4 @@ export default defineConfig({
       generateScopedName: '[name]__[local]__[hash:base64:5]', // 고유 클래스 이름 생성 규칙
     },
   },
-})
+}))
