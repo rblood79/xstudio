@@ -11,7 +11,7 @@ import Sidebar from "./sidebar";
 
 import { useStore } from './stores/elements';
 import { useThemeStore } from './stores/theme';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import type { ElementProps } from '../types/supabase';
 import { ColorValue } from '../types/theme';
 

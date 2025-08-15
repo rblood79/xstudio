@@ -1,10 +1,63 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { visualizer } from 'rollup-plugin-visualizer'
+import viteCompression from 'vite-plugin-compression'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      filename: 'dist/stats.html'
+    }),
+    // Add compression for production builds
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: 'gzip',
+      ext: '.gz'
+    }),
+    // Brotli compression for even better compression
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: 'brotliCompress',
+      ext: '.br'
+    })
+  ],
   base: command === 'build' ? '/xstudio/' : '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router', 'react-router-dom'],
+          'ui-vendor': ['react-aria-components', 'tailwind-merge', 'tailwind-variants', 'clsx'],
+          'supabase': ['@supabase/supabase-js'],
+          'utils': ['lodash', 'immer', 'zustand'],
+          'icons': ['lucide-react', '@lucide/lab'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 500,
+    // Enable CSS code splitting
+    cssCodeSplit: true,
+    // Minify CSS
+    cssMinify: 'esbuild',
+    // Better sourcemaps for production
+    sourcemap: false,
+    // Optimize deps
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router', 'react-router-dom'],
+  },
   server: {
     proxy: {
       "/supabase": {
