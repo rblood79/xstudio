@@ -2313,21 +2313,24 @@ function Properties() {
                                     />
                                 </div>
 
-                                {/* 탭 내용 편집 */}
+                                {/* 탭 variant 설정 */}
                                 <div className='react-aria-control react-aria-Group'>
                                     <label className='control-label'>
-                                        <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                        <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
                                     </label>
-                                    <textarea
-                                        className='control-input'
-                                        placeholder='Tab Content'
-                                        value={currentTab.content || ''}
-                                        rows={5}
-                                        onChange={async (e) => {
+                                    <Select
+                                        items={[
+                                            { id: 'default', label: 'Default' },
+                                            { id: 'bordered', label: 'Bordered' },
+                                            { id: 'underlined', label: 'Underlined' },
+                                            { id: 'pill', label: 'Pill' }
+                                        ]}
+                                        selectedKey={currentTab.variant || 'default'}
+                                        onSelectionChange={async (selected) => {
                                             const updatedChildren = [...(selectedElementProps.children || [])];
                                             updatedChildren[selectedTab.tabIndex] = {
                                                 ...updatedChildren[selectedTab.tabIndex],
-                                                content: e.target.value
+                                                variant: selected
                                             };
                                             const updatedProps = {
                                                 ...selectedElementProps,
@@ -2343,7 +2346,47 @@ function Properties() {
                                                 console.error('Update error:', err);
                                             }
                                         }}
-                                    />
+                                    >
+                                        {(item) => <SelectItem>{item.label}</SelectItem>}
+                                    </Select>
+                                </div>
+
+                                {/* 탭 appearance 설정 */}
+                                <div className='react-aria-control react-aria-Group'>
+                                    <label className='control-label'>
+                                        <AppWindow color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                                    </label>
+                                    <Select
+                                        items={[
+                                            { id: 'light', label: 'Light' },
+                                            { id: 'dark', label: 'Dark' },
+                                            { id: 'solid', label: 'Solid' },
+                                            { id: 'bordered', label: 'Bordered' }
+                                        ]}
+                                        selectedKey={currentTab.appearance || 'light'}
+                                        onSelectionChange={async (selected) => {
+                                            const updatedChildren = [...(selectedElementProps.children || [])];
+                                            updatedChildren[selectedTab.tabIndex] = {
+                                                ...updatedChildren[selectedTab.tabIndex],
+                                                appearance: selected
+                                            };
+                                            const updatedProps = {
+                                                ...selectedElementProps,
+                                                children: updatedChildren
+                                            };
+                                            updateElementProps(selectedElementId, updatedProps);
+                                            try {
+                                                await supabase
+                                                    .from('elements')
+                                                    .update({ props: updatedProps })
+                                                    .eq('id', selectedElementId);
+                                            } catch (err) {
+                                                console.error('Update error:', err);
+                                            }
+                                        }}
+                                    >
+                                        {(item) => <SelectItem>{item.label}</SelectItem>}
+                                    </Select>
                                 </div>
 
                                 {/* 탭 삭제 */}
@@ -2462,7 +2505,7 @@ function Properties() {
                                     Total tabs: {selectedElementProps.children?.length || 0}
                                 </p>
                                 <p className='tab-overview-help'>
-                                    💡 Select individual tabs from tree to edit
+                                    💡 Select individual tabs from tree to edit title, variant, and appearance
                                 </p>
                             </div>
 
@@ -2476,7 +2519,8 @@ function Properties() {
                                         const newTab = {
                                             id: newTabId,
                                             title: `Tab ${newTabIndex + 1}`,
-                                            content: 'New tab content'
+                                            variant: 'default',
+                                            appearance: 'light'
                                         };
 
                                         const updatedProps = {
@@ -2563,70 +2607,6 @@ function Properties() {
                                 >
                                     Disabled
                                 </Checkbox>
-                            </div>
-                        </fieldset>
-                    </div>
-                );
-
-            case 'Div':
-                return (
-                    <div className="component-props">
-                        <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Content</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'>
-                                    <Type color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-                                </label>
-                                <textarea
-                                    className='control-input'
-                                    value={selectedElementProps.children || ''}
-                                    onChange={async (e) => {
-                                        const updatedProps = {
-                                            ...selectedElementProps,
-                                            children: e.target.value
-                                        };
-                                        updateElementProps(selectedElementId, updatedProps);
-                                        try {
-                                            await supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        } catch (err) {
-                                            console.error('Update error:', err);
-                                        }
-                                    }}
-                                    placeholder="Enter div content"
-                                    rows={3}
-                                />
-                            </div>
-                        </fieldset>
-
-                        <fieldset className="properties-aria">
-                            <legend className='fieldset-legend'>Layout</legend>
-                            <div className='react-aria-control react-aria-Group'>
-                                <label className='control-label'>
-                                    <Layout color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
-                                </label>
-                                <input
-                                    className='control-input'
-                                    value={selectedElementProps.className || ''}
-                                    onChange={async (e) => {
-                                        const updatedProps = {
-                                            ...selectedElementProps,
-                                            className: e.target.value
-                                        };
-                                        updateElementProps(selectedElementId, updatedProps);
-                                        try {
-                                            await supabase
-                                                .from('elements')
-                                                .update({ props: updatedProps })
-                                                .eq('id', selectedElementId);
-                                        } catch (err) {
-                                            console.error('Update error:', err);
-                                        }
-                                    }}
-                                    placeholder="CSS classes"
-                                />
                             </div>
                         </fieldset>
                     </div>
