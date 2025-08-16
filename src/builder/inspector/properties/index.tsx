@@ -1,4 +1,4 @@
-import { SquarePlus, Trash, Type, Binary, TriangleRight, ChevronUp, ChevronDown, CheckSquare, Layout, PointerOff, AppWindow, CheckCircle, Hash } from 'lucide-react';
+import { SquarePlus, Trash, Type, Binary, TriangleRight, ChevronUp, CheckSquare, Layout, PointerOff, AppWindow, CheckCircle, Hash } from 'lucide-react';
 import { useStore } from '../../stores/elements';
 import { Button, Select, SelectItem, Checkbox } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';

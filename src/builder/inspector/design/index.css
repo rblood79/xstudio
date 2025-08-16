@@ -6,6 +6,10 @@
             background-color: var(--color-gray-100);
             border-radius: var(--radius-md);
             width: 100%;
+
+            .control-button {
+                width: 100%;
+            }
         }
 
         .react-aria-Button,
