@@ -242,12 +242,12 @@
                 }
 
                 .panel-title {
-                    padding-left: calc(var(--spacing-lg));
+                    padding-left: calc(var(--spacing-sm));
                 }
             }
 
             .panel-content {
-                padding: calc(var(--spacing-lg));
+                padding: calc(var(--spacing-sm));
 
                 display: flex;
                 flex-direction: column;

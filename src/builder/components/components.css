@@ -470,11 +470,10 @@
         overflow: auto;
         padding: 4px;
         border: 1px solid var(--border-color);
-        border-radius: 6px;
+        border-radius: var(--spacing-sm);
         background: var(--overlay-background);
         forced-color-adjust: none;
         outline: none;
-        width: 250px;
         max-height: 300px;
         min-height: 100px;
         box-sizing: border-box;
