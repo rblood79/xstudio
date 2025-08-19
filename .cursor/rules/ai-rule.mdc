@@ -273,16 +273,30 @@ CREATE TABLE public.breakpoints (
 요소와 디자인 토큰 간의 다대다 관계를 관리합니다.
 요소가 여러 토큰을 참조하고, 하나의 토큰이 여러 요소에 적용될 수 있도록 합니다.
 
-CREATE TABLE public.element_design_tokens (
-  element_id UUID NOT NULL,
-  token_id UUID NOT NULL,
-  order_num INT DEFAULT 0,
-  PRIMARY KEY (element_id, token_id),
-  CONSTRAINT fk_edt_element FOREIGN KEY (element_id)
-    REFERENCES public.elements(id) ON DELETE CASCADE,
-  CONSTRAINT fk_edt_token FOREIGN KEY (token_id)
-    REFERENCES public.design_tokens(id) ON DELETE CASCADE
+-- design_tokens 테이블 (theme_id 포함)
+CREATE TABLE IF NOT EXISTS public.design_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  theme_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  value JSONB NOT NULL,
+  scope TEXT NOT NULL DEFAULT 'raw' CHECK (scope IN ('raw', 'semantic')),
+  alias_of TEXT,
+  css_variable TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT fk_tokens_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tokens_theme FOREIGN KEY (theme_id)
+    REFERENCES public.design_themes(id) ON DELETE CASCADE,
+  UNIQUE (project_id, theme_id, name, scope)
 );
+
+-- 인덱스
+CREATE INDEX idx_design_tokens_theme_id ON public.design_tokens(theme_id);
+CREATE INDEX idx_design_tokens_project_theme ON public.design_tokens(project_id, theme_id);
+CREATE INDEX idx_design_tokens_scope ON public.design_tokens(scope);
 
 10. 
 
