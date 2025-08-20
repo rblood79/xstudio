@@ -143,35 +143,7 @@ const Signin = () => {
           )}
         </form>
 
-        {!isSignUp && (
-          <div className="auth-divider">
-            <div className="divider-text">
-              또는 다음으로 계속하기
-            </div>
-            <div className="social-buttons">
-              <Button
-                type="button"
-                className="social-button google"
-                onPress={() => {
-                  // Google OAuth 구현
-                  console.log('Google sign in clicked');
-                }}
-              >
-                Google
-              </Button>
-              <Button
-                type="button"
-                className="social-button facebook"
-                onPress={() => {
-                  // Facebook OAuth 구현
-                  console.log('Facebook sign in clicked');
-                }}
-              >
-                Facebook
-              </Button>
-            </div>
-          </div>
-        )}
+
       </div>
     </main>
   );
