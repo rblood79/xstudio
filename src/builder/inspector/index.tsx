@@ -3,6 +3,7 @@
 import './index.css';
 import Design from './design';
 import Properties from './properties';
+import Events from './events';
 import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
 
 function Inspector() {
@@ -21,8 +22,7 @@ function Inspector() {
                     <Properties />
                 </TabPanel>
                 <TabPanel id="events">
-                    <h3 className='panel-title'>Events</h3>
-                    Content for Events
+                    <Events />
                 </TabPanel>
             </Tabs>
 
