@@ -1720,8 +1720,13 @@
     .react-aria-TextField {
         display: flex;
         flex-direction: column;
-        width: fit-content;
+        width: 100%;
         color: var(--text-color);
+
+
+        .react-aria-Label {
+            width: fit-content;
+        }
 
         .react-aria-Input,
         .react-aria-TextArea {
@@ -1732,6 +1737,7 @@
             background: var(--field-background);
             font-size: var(--text-sm);
             color: var(--field-text-color);
+            flex: auto;
 
             &[data-focused] {
                 outline: 2px solid var(--focus-ring-color);
