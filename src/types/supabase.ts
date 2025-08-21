@@ -1,5 +1,6 @@
 import React from 'react';
 import { TokenValue } from './theme';
+import type { ElementEvent } from './events';
 
 type AriaRole = 'button' | 'checkbox' | 'menuitem' | 'menubar' | 'navigation' | 'progressbar' | 'separator' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'presentation' | undefined;
 
@@ -88,8 +89,13 @@ export interface ElementProps {
     onKeyUp?: (event: React.KeyboardEvent<HTMLElement>) => void;
     // 데이터 속성
     [key: `data-${string}`]: string | number | boolean | undefined;
-    // 추가 속성
+
+    // 이벤트 시스템 (명시적으로 정의)
+    events?: ElementEvent[];
+
+    // 추가 속성 (인덱스 시그니처에 ElementEvent[] 타입 추가)
     [key: string]: string | number | boolean | React.CSSProperties | React.ReactNode | readonly string[] |
+    ElementEvent[] |
     ((event: React.MouseEvent<HTMLElement>) => void) |
     ((event: React.ChangeEvent<HTMLElement>) => void) |
     ((event: React.FocusEvent<HTMLElement>) => void) |
@@ -174,4 +180,4 @@ export interface ListBoxProps extends Omit<ElementProps, keyof { [key: string]: 
     itemLayout?: 'default' | 'compact' | 'detailed' | 'grid';
     items?: ListBoxItemData[];
     [key: string]: unknown;
-} 
+}
