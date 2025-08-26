@@ -34,6 +34,8 @@ import {
   DatePicker,
   DateRangePicker, // 추가
 } from '../components/list';
+import EventEngine from '../../utils/eventEngine';
+import { ElementEvent, EventContext } from '../../types/events';
 
 
 interface PreviewElement {
@@ -52,6 +54,7 @@ function Preview() {
   const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements, updateElementProps } = useStore();
   const [elementsState, setElementsState] = useState<any[]>([]);
+  const eventEngine = EventEngine.getInstance();
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
@@ -106,6 +109,38 @@ function Preview() {
 
   document.documentElement.classList.add(styles.root);
 
+  // 이벤트 핸들러 생성 함수 (디버깅 코드 제거)
+  const createEventHandler = (element: PreviewElement, eventType: string) => {
+    return async (event: Event) => {
+      // 요소의 이벤트 찾기
+      const elementEvents = element.props.events as ElementEvent[] || [];
+      const matchingEvents = elementEvents.filter(e => e.event_type === eventType && e.enabled !== false);
+
+      if (matchingEvents.length === 0) {
+        return;
+      }
+
+      // 이벤트 컨텍스트 생성
+      const context: EventContext = {
+        event,
+        element: event.target as HTMLElement,
+        elementId: element.id,
+        pageId: element.page_id || '',
+        projectId: projectId || '',
+        state: eventEngine.getState()
+      };
+
+      // 각 이벤트 실행
+      for (const elementEvent of matchingEvents) {
+        try {
+          await eventEngine.executeEvent(elementEvent, context);
+        } catch (error) {
+          console.error('이벤트 실행 오류:', error);
+        }
+      }
+    };
+  };
+
   const renderElement = (el: PreviewElement): React.ReactNode => {
     const children = elements
       .filter((child) => child.parent_id === el.id)
@@ -118,6 +153,65 @@ function Preview() {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
+    };
+
+    // 이벤트 핸들러 추가
+    const eventHandlers: any = {};
+
+    if (el.props.events && Array.isArray(el.props.events)) {
+      const events = el.props.events as ElementEvent[];
+
+      events.forEach(event => {
+        if (event.enabled === false) return;
+
+        switch (event.event_type) {
+          case 'onClick':
+            eventHandlers.onClick = createEventHandler(el, 'onClick');
+            break;
+          case 'onMouseEnter':
+            eventHandlers.onMouseEnter = createEventHandler(el, 'onMouseEnter');
+            break;
+          case 'onMouseLeave':
+            eventHandlers.onMouseLeave = createEventHandler(el, 'onMouseLeave');
+            break;
+          case 'onFocus':
+            eventHandlers.onFocus = createEventHandler(el, 'onFocus');
+            break;
+          case 'onBlur':
+            eventHandlers.onBlur = createEventHandler(el, 'onBlur');
+            break;
+          case 'onChange':
+            eventHandlers.onChange = createEventHandler(el, 'onChange');
+            break;
+          case 'onSubmit':
+            eventHandlers.onSubmit = createEventHandler(el, 'onSubmit');
+            break;
+          case 'onDoubleClick':
+            eventHandlers.onDoubleClick = createEventHandler(el, 'onDoubleClick');
+            break;
+          case 'onKeyDown':
+            eventHandlers.onKeyDown = createEventHandler(el, 'onKeyDown');
+            break;
+          case 'onKeyUp':
+            eventHandlers.onKeyUp = createEventHandler(el, 'onKeyUp');
+            break;
+          case 'onInput':
+            eventHandlers.onInput = createEventHandler(el, 'onInput');
+            break;
+          case 'onScroll':
+            eventHandlers.onScroll = createEventHandler(el, 'onScroll');
+            break;
+          case 'onResize':
+            eventHandlers.onResize = createEventHandler(el, 'onResize');
+            break;
+        }
+      });
+    }
+
+    // 기존 props와 이벤트 핸들러 결합
+    const finalProps = {
+      ...newProps,
+      ...eventHandlers
     };
 
     // ToggleButton 렌더링 함수
@@ -387,7 +481,7 @@ function Preview() {
       );
     }
 
-    // Button 컴포넌트 특별 처리
+    // Button 컴포넌트 특별 처리 (디버깅 코드 제거)
     if (el.tag === 'Button') {
       return (
         <Button
@@ -397,6 +491,27 @@ function Preview() {
           variant={el.props.variant as 'primary' | 'secondary' | 'surface' | 'icon'}
           style={el.props.style}
           className={el.props.className}
+          onPress={eventHandlers.onClick}
+          onHoverStart={eventHandlers.onMouseEnter}
+          onHoverEnd={eventHandlers.onMouseLeave}
+          onFocus={eventHandlers.onFocus}
+          onBlur={eventHandlers.onBlur}
+          onKeyDown={eventHandlers.onKeyDown}
+          onKeyUp={eventHandlers.onKeyUp}
+          // DOM 이벤트를 직접 연결 (더블클릭)
+          ref={(buttonElement) => {
+            if (buttonElement && eventHandlers.onDoubleClick) {
+              const handleDoubleClick = (e: MouseEvent) => {
+                eventHandlers.onDoubleClick(e);
+              };
+
+              buttonElement.addEventListener('dblclick', handleDoubleClick);
+
+              return () => {
+                buttonElement.removeEventListener('dblclick', handleDoubleClick);
+              };
+            }
+          }}
         >
           {typeof el.props.children === 'string' ? el.props.children : 'Button'}
         </Button>
@@ -912,7 +1027,7 @@ function Preview() {
       ...children.map((child) => renderElement(child))
     ].filter(Boolean);
 
-    return React.createElement(tag, newProps, content.length > 0 ? content : undefined);
+    return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {
