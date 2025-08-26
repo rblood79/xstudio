@@ -196,52 +196,18 @@ function Preview() {
     if (el.props.events && Array.isArray(el.props.events)) {
       const events = el.props.events as ElementEvent[];
 
-      events.forEach(event => {
-        if (event.enabled === false) return;
+      // 활성화된 이벤트 타입들만 추출
+      const enabledEventTypes = events
+        .filter(event => event.enabled !== false)
+        .map(event => event.event_type);
 
-        switch (event.event_type) {
-          case 'onClick':
-            eventHandlers.onClick = createEventHandler(el, 'onClick');
-            break;
-          case 'onMouseEnter':
-            eventHandlers.onMouseEnter = createEventHandler(el, 'onMouseEnter');
-            break;
-          case 'onMouseLeave':
-            eventHandlers.onMouseLeave = createEventHandler(el, 'onMouseLeave');
-            break;
-          case 'onFocus':
-            eventHandlers.onFocus = createEventHandler(el, 'onFocus');
-            break;
-          case 'onBlur':
-            eventHandlers.onBlur = createEventHandler(el, 'onBlur');
-            break;
-          case 'onChange':
-            eventHandlers.onChange = createEventHandler(el, 'onChange');
-            break;
-          case 'onSubmit':
-            eventHandlers.onSubmit = createEventHandler(el, 'onSubmit');
-            break;
-          case 'onDoubleClick':
-            eventHandlers.onDoubleClick = createEventHandler(el, 'onDoubleClick');
-            break;
-          case 'onKeyDown':
-            eventHandlers.onKeyDown = createEventHandler(el, 'onKeyDown');
-            break;
-          case 'onKeyUp':
-            eventHandlers.onKeyUp = createEventHandler(el, 'onKeyUp');
-            break;
-          case 'onInput':
-            eventHandlers.onInput = createEventHandler(el, 'onInput');
-            break;
-          case 'onScroll':
-            eventHandlers.onScroll = createEventHandler(el, 'onScroll');
-            break;
-          case 'onResize':
-            eventHandlers.onResize = createEventHandler(el, 'onResize');
-            break;
-        }
+      // 중복 제거 후 핸들러 생성
+      [...new Set(enabledEventTypes)].forEach(eventType => {
+        eventHandlers[eventType] = createEventHandler(el, eventType);
       });
     }
+
+    // 기존 props와 이벤트 핸들러 결합
 
     // 기존 props와 이벤트 핸들러 결합
     const finalProps = {

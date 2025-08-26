@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings, Play, Pause, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Settings, Play, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, Select, SelectItem, TextField } from '../../components/list';
 import { useStore } from '../../stores/elements';
 import {
