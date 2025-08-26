@@ -177,6 +177,43 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 </div>
             );
 
+        case 'update_props':
+            return (
+                <div className="action-value-editor">
+
+                    <TextField
+                        label="속성 (JSON)"
+                        value={value.props ? JSON.stringify(value.props, null, 2) : '{"children": "새 텍스트"}'}
+                        onChange={(newProps) => {
+                            try {
+                                const parsedProps = JSON.parse(newProps);
+                                const updatedValue = { ...value, props: parsedProps };
+                                setValue(updatedValue);
+                                onUpdate({ ...action, value: updatedValue });
+                            } catch (err) {
+                                console.warn('JSON 파싱 오류:', err);
+                            }
+                        }}
+                        multiline
+                        rows={3}
+                    />
+                    <div className="checkbox-group">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={value.merge || false}
+                                onChange={(e) => {
+                                    const updatedValue = { ...value, merge: e.target.checked };
+                                    setValue(updatedValue);
+                                    onUpdate({ ...action, value: updatedValue });
+                                }}
+                            />
+                            기존 속성과 병합
+                        </label>
+                    </div>
+                </div>
+            );
+
         default:
             return (
                 <div className="action-value-editor">

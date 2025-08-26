@@ -245,12 +245,27 @@ class EventEngine {
             return null;
         }
 
-        if (value.merge && typeof this.globalState[value.key] === 'object' && typeof value.value === 'object') {
+        // 값이 문자열이고 표현식처럼 보이면 평가 시도
+        let processedValue = value.value;
+        if (typeof value.value === 'string') {
+            try {
+                // 간단한 수식 평가 (state 컨텍스트 포함)
+                const func = new Function('state', `return ${value.value}`);
+                processedValue = func(this.globalState);
+                console.log('상태 값 평가:', value.value, '→', processedValue);
+            } catch (error) {
+                // 평가 실패시 원본 값 사용
+                console.log('상태 값 평가 실패, 원본 사용:', value.value);
+                processedValue = value.value;
+            }
+        }
+
+        if (value.merge && typeof this.globalState[value.key] === 'object' && typeof processedValue === 'object') {
             // 객체 병합
-            this.setState(value.key, { ...this.globalState[value.key], ...value.value });
+            this.setState(value.key, { ...this.globalState[value.key], ...processedValue });
         } else {
             // 값 교체
-            this.setState(value.key, value.value);
+            this.setState(value.key, processedValue);
         }
 
         return this.globalState[value.key];
@@ -275,11 +290,87 @@ class EventEngine {
         return { url: value.url, newTab: value.newTab, replace: value.replace };
     }
 
-    // 다른 액션들 구현 (기본 틀)
+    // 표시/숨김 토글 액션 실행
     private executeToggleVisibilityAction(action: EventAction, context: EventContext): any {
+        const value = action.value as any;
         console.log('표시/숨김 토글 액션 실행:', action);
-        // TODO: 구현
-        return null;
+
+        // 대상 요소 찾기
+        let targetElement: HTMLElement | null = null;
+
+        if (action.target) {
+            // 특정 요소 ID가 지정된 경우
+            targetElement = document.querySelector(`[data-element-id="${action.target}"]`);
+        } else {
+            // 대상이 지정되지 않은 경우 현재 요소
+            targetElement = context.element;
+        }
+
+        if (!targetElement) {
+            console.warn('대상 요소를 찾을 수 없습니다:', action.target);
+            return null;
+        }
+
+        // 현재 표시 상태 확인
+        const isCurrentlyVisible = targetElement.style.display !== 'none';
+
+        // 새로운 표시 상태 결정
+        let shouldShow: boolean;
+        if (value.show === undefined) {
+            // 토글 모드
+            shouldShow = !isCurrentlyVisible;
+        } else {
+            // 명시적 표시/숨김
+            shouldShow = value.show;
+        }
+
+        console.log(`요소 ${action.target || 'current'}: ${isCurrentlyVisible ? '표시' : '숨김'} → ${shouldShow ? '표시' : '숨김'}`);
+
+        // 애니메이션 적용
+        if (value.duration && value.duration > 0) {
+            // CSS transition 적용
+            const originalTransition = targetElement.style.transition;
+            const easing = value.easing || 'ease';
+            targetElement.style.transition = `opacity ${value.duration}ms ${easing}`;
+
+            if (shouldShow) {
+                targetElement.style.display = '';
+                targetElement.style.opacity = '0';
+                // 다음 프레임에서 opacity 변경
+                requestAnimationFrame(() => {
+                    targetElement!.style.opacity = '1';
+                });
+            } else {
+                targetElement.style.opacity = '0';
+                // 애니메이션 완료 후 display none
+                setTimeout(() => {
+                    if (targetElement!.style.opacity === '0') {
+                        targetElement!.style.display = 'none';
+                    }
+                }, value.duration);
+            }
+
+            // 애니메이션 완료 후 transition 복원
+            setTimeout(() => {
+                targetElement!.style.transition = originalTransition;
+            }, value.duration);
+        } else {
+            // 즉시 변경
+            if (shouldShow) {
+                targetElement.style.display = '';
+                targetElement.style.opacity = '1';
+            } else {
+                targetElement.style.display = 'none';
+                targetElement.style.opacity = '0';
+            }
+        }
+
+        return {
+            target: action.target || context.elementId,
+            wasVisible: isCurrentlyVisible,
+            isVisible: shouldShow,
+            animated: !!(value.duration && value.duration > 0)
+        };
     }
 
     private executeShowModalAction(action: EventAction, context: EventContext): any {
@@ -306,10 +397,99 @@ class EventEngine {
         return null;
     }
 
+    // 속성 업데이트 액션 실행
     private executeUpdatePropsAction(action: EventAction, context: EventContext): any {
+        const value = action.value as any;
         console.log('속성 업데이트 액션 실행:', action);
-        // TODO: 구현
-        return null;
+        console.log('원본 props:', value.props);
+
+        if (!action.target || !value?.props) {
+            console.warn('대상 요소 ID 또는 속성이 없습니다:', { target: action.target, props: value?.props });
+            return null;
+        }
+
+        // 대상 요소 찾기 (DOM에서)
+        const targetElement = document.querySelector(`[data-element-id="${action.target}"]`);
+        if (!targetElement) {
+            console.warn('대상 요소를 찾을 수 없습니다:', action.target);
+            return null;
+        }
+
+        // 속성 값에서 템플릿 변수 처리
+        const processedProps = this.processTemplateVariables(value.props, context);
+        console.log('처리된 props:', processedProps);
+
+        // 스토어에서도 요소 업데이트 (React 리렌더링 트리거)
+        try {
+            // window.postMessage를 통해 부모에게 속성 업데이트 요청
+            window.parent.postMessage({
+                type: 'UPDATE_ELEMENT_PROPS',
+                elementId: action.target,
+                props: processedProps,
+                merge: value.merge !== false
+            }, window.location.origin);
+
+            console.log(`요소 ${action.target} 속성 업데이트:`, processedProps);
+
+            return {
+                elementId: action.target,
+                updatedProps: value.props,
+                merged: value.merge !== false
+            };
+        } catch (error) {
+            console.error('속성 업데이트 실패:', error);
+            return null;
+        }
+    }
+
+    private processTemplateVariables(props: any, context: EventContext): any {
+        if (!props || typeof props !== 'object') {
+            return props;
+        }
+
+        const processedProps = { ...props };
+        const state = this.globalState;
+
+        console.log('현재 상태:', state);
+
+        // 모든 속성을 순회하면서 템플릿 변수 처리
+        for (const [key, value] of Object.entries(processedProps)) {
+            if (typeof value === 'string') {
+                try {
+                    // JavaScript 표현식 평가 (${...} 패턴)
+                    processedProps[key] = value.replace(/\$\{([^}]+)\}/g, (match, expression) => {
+                        try {
+                            // 숫자 변환을 위한 헬퍼 함수들을 컨텍스트에 추가
+                            const func = new Function('state', 'Number', 'parseInt', 'parseFloat', `
+                                // state의 모든 값을 숫자로 변환 시도
+                                const numericState = {};
+                                for (const [key, val] of Object.entries(state)) {
+                                    const num = Number(val);
+                                    numericState[key] = isNaN(num) ? val : num;
+                                }
+                                
+                                // 원본 state와 숫자 변환된 state 모두 사용 가능하게
+                                const result = (function() {
+                                    const state = numericState;
+                                    return ${expression};
+                                })();
+                                return result;
+                            `);
+                            const result = func(state, Number, parseInt, parseFloat);
+                            console.log('표현식 평가:', expression, '→', result);
+                            return result !== undefined ? result : match;
+                        } catch (error) {
+                            console.warn('템플릿 표현식 평가 실패:', expression, error);
+                            return match;
+                        }
+                    });
+                } catch (error) {
+                    console.warn('템플릿 처리 실패:', value, error);
+                }
+            }
+        }
+
+        return processedProps;
     }
 }
 

@@ -774,7 +774,7 @@ function Builder() {
                 setSelectedElement(event.data.elementId, event.data.payload?.props);
             }
             if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
-                updateElementProps(event.data.elementId, event.data.payload.props);
+                updateElementProps(event.data.elementId, event.data.props || event.data.payload?.props);
             }
             // 프리뷰에서 보내는 element-props-update 메시지 처리
             if (event.data.type === "element-props-update" && event.data.elementId) {

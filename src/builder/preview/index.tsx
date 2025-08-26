@@ -65,6 +65,40 @@ function Preview() {
         setElements(data.elements || []);
       }
 
+      // 새로 추가: 개별 요소 속성 업데이트 처리
+      if (data.type === 'UPDATE_ELEMENT_PROPS') {
+        const { elementId, props, merge } = data;
+
+        console.log('UPDATE_ELEMENT_PROPS 메시지 받음:', { elementId, props, merge });
+
+        // 요소 찾기
+        const elementIndex = elements.findIndex(el => el.id === elementId);
+        if (elementIndex !== -1) {
+          const updatedElements = [...elements];
+          const element = updatedElements[elementIndex];
+
+          // 요소가 존재하고 props가 있는지 확인
+          if (element && element.props) {
+            // 속성 업데이트 (병합 또는 교체)
+            if (merge) {
+              element.props = { ...element.props, ...props };
+            } else {
+              element.props = { ...element.props, ...props };
+            }
+
+            // 상태 업데이트로 리렌더링 트리거
+            setElements(updatedElements);
+
+            console.log(`요소 ${elementId} 속성 업데이트됨:`, props);
+          } else {
+            console.warn('요소가 존재하지 않거나 props가 없습니다:', element);
+          }
+        } else {
+          console.warn('요소를 찾을 수 없습니다:', elementId);
+        }
+      }
+
+      // 기존 THEME_VARS 처리...
       if (data.type === 'THEME_VARS' && Array.isArray(data.vars)) {
         let styleEl = document.getElementById('design-theme-vars') as HTMLStyleElement | null;
         if (!styleEl) {
@@ -80,6 +114,7 @@ function Preview() {
         console.log('[preview] applied THEME_VARS', data.vars.length);
       }
 
+      // 기존 UPDATE_THEME_TOKENS 처리...
       if (data.type === 'UPDATE_THEME_TOKENS' && data.styles) {
         // 하위 호환 (구 포맷)
         let styleEl = document.getElementById('design-theme-vars') as HTMLStyleElement | null;
@@ -95,7 +130,7 @@ function Preview() {
         console.log('[preview] applied UPDATE_THEME_TOKENS', Object.keys(data.styles).length);
       }
     },
-    []
+    [elements, setElements] // elements 의존성 추가
   );
 
   useEffect(() => {
@@ -340,7 +375,7 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
         >
-          {typeof el.props.text === 'string' ? el.props.text : 'Label'}
+          {typeof el.props.children === 'string' ? el.props.children : 'Label'}
         </Label>
       );
     }
