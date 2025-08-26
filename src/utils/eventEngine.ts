@@ -2,8 +2,7 @@ import {
     EventAction,
     ElementEvent,
     EventContext,
-    EventExecutionResult,
-    ActionType
+    EventExecutionResult
 } from '../types/events';
 
 class EventEngine {
@@ -237,6 +236,17 @@ class EventEngine {
         }
     }
 
+    // 공통 표현식 평가 함수
+    private evaluateExpression(expression: string, state: any): any {
+        try {
+            const func = new Function('state', `return ${expression}`);
+            return func(state);
+        } catch (error) {
+            console.warn('표현식 평가 실패:', expression, error);
+            return expression; // 원본 반환
+        }
+    }
+
     // 상태 업데이트 액션 실행
     private executeUpdateStateAction(action: EventAction, context: EventContext): any {
         const value = action.value as any;
@@ -245,20 +255,10 @@ class EventEngine {
             return null;
         }
 
-        // 값이 문자열이고 표현식처럼 보이면 평가 시도
-        let processedValue = value.value;
-        if (typeof value.value === 'string') {
-            try {
-                // 간단한 수식 평가 (state 컨텍스트 포함)
-                const func = new Function('state', `return ${value.value}`);
-                processedValue = func(this.globalState);
-                console.log('상태 값 평가:', value.value, '→', processedValue);
-            } catch (error) {
-                // 평가 실패시 원본 값 사용
-                console.log('상태 값 평가 실패, 원본 사용:', value.value);
-                processedValue = value.value;
-            }
-        }
+        // 표현식 평가 (공통 함수 사용)
+        const processedValue = typeof value.value === 'string'
+            ? this.evaluateExpression(value.value, this.globalState)
+            : value.value;
 
         if (value.merge && typeof this.globalState[value.key] === 'object' && typeof processedValue === 'object') {
             // 객체 병합
@@ -289,6 +289,8 @@ class EventEngine {
 
         return { url: value.url, newTab: value.newTab, replace: value.replace };
     }
+
+
 
     // 표시/숨김 토글 액션 실행
     private executeToggleVisibilityAction(action: EventAction, context: EventContext): any {
@@ -450,42 +452,14 @@ class EventEngine {
         const processedProps = { ...props };
         const state = this.globalState;
 
-        console.log('현재 상태:', state);
-
         // 모든 속성을 순회하면서 템플릿 변수 처리
         for (const [key, value] of Object.entries(processedProps)) {
             if (typeof value === 'string') {
-                try {
-                    // JavaScript 표현식 평가 (${...} 패턴)
-                    processedProps[key] = value.replace(/\$\{([^}]+)\}/g, (match, expression) => {
-                        try {
-                            // 숫자 변환을 위한 헬퍼 함수들을 컨텍스트에 추가
-                            const func = new Function('state', 'Number', 'parseInt', 'parseFloat', `
-                                // state의 모든 값을 숫자로 변환 시도
-                                const numericState = {};
-                                for (const [key, val] of Object.entries(state)) {
-                                    const num = Number(val);
-                                    numericState[key] = isNaN(num) ? val : num;
-                                }
-                                
-                                // 원본 state와 숫자 변환된 state 모두 사용 가능하게
-                                const result = (function() {
-                                    const state = numericState;
-                                    return ${expression};
-                                })();
-                                return result;
-                            `);
-                            const result = func(state, Number, parseInt, parseFloat);
-                            console.log('표현식 평가:', expression, '→', result);
-                            return result !== undefined ? result : match;
-                        } catch (error) {
-                            console.warn('템플릿 표현식 평가 실패:', expression, error);
-                            return match;
-                        }
-                    });
-                } catch (error) {
-                    console.warn('템플릿 처리 실패:', value, error);
-                }
+                // ${...} 패턴을 찾아서 표현식 평가
+                processedProps[key] = value.replace(/\$\{([^}]+)\}/g, (match, expression) => {
+                    const result = this.evaluateExpression(expression, state);
+                    return result !== undefined ? result : match;
+                });
             }
         }
 
