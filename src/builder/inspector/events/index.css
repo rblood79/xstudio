@@ -227,6 +227,33 @@
     accent-color: var(--color-primary);
 }
 
+.select-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+}
+
+.select-wrapper label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.event-type-select {
+    padding: var(--spacing-2xs);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--field-background);
+    font-size: var(--text-sm);
+    color: var(--field-text-color);
+}
+
+.event-type-select:focus {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: -1px;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
     .events-container {

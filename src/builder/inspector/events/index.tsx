@@ -38,14 +38,22 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                     <TextField
                         label="URL"
                         value={value.url || ''}
-                        onChange={(value) => updateValue({ ...value, url: value })}
+                        onChange={(newUrl) => {
+                            const updatedValue = { ...value, url: newUrl };
+                            setValue(updatedValue);
+                            onUpdate({ ...action, value: updatedValue });
+                        }}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
                                 checked={value.newTab || false}
-                                onChange={(e) => updateValue({ ...value, newTab: e.target.checked })}
+                                onChange={(e) => {
+                                    const updatedValue = { ...value, newTab: e.target.checked };
+                                    setValue(updatedValue);
+                                    onUpdate({ ...action, value: updatedValue });
+                                }}
                             />
                             새 탭에서 열기
                         </label>
@@ -83,19 +91,31 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                     <TextField
                         label="상태 키"
                         value={value.key || ''}
-                        onChange={(value) => updateValue({ ...value, key: value })}
+                        onChange={(newKey) => {
+                            const updatedValue = { ...value, key: newKey };
+                            setValue(updatedValue);
+                            onUpdate({ ...action, value: updatedValue });
+                        }}
                     />
                     <TextField
                         label="값"
                         value={value.value || ''}
-                        onChange={(value) => updateValue({ ...value, value: value })}
+                        onChange={(newVal) => {
+                            const updatedValue = { ...value, value: newVal };
+                            setValue(updatedValue);
+                            onUpdate({ ...action, value: updatedValue });
+                        }}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
                                 checked={value.merge || false}
-                                onChange={(e) => updateValue({ ...value, merge: e.target.checked })}
+                                onChange={(e) => {
+                                    const updatedValue = { ...value, merge: e.target.checked };
+                                    setValue(updatedValue);
+                                    onUpdate({ ...action, value: updatedValue });
+                                }}
                             />
                             객체 병합
                         </label>
@@ -130,7 +150,12 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                     <TextField
                         label="함수 코드"
                         value={value.code || ''}
-                        onChange={(value) => updateValue({ ...value, code: value })}
+                        onChange={(newCode) => {
+                            // 직접 code 속성만 업데이트
+                            const updatedValue = { ...value, code: newCode };
+                            setValue(updatedValue);
+                            onUpdate({ ...action, value: updatedValue });
+                        }}
                         multiline
                         rows={4}
                     />
@@ -139,7 +164,12 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                             <input
                                 type="checkbox"
                                 checked={value.async || false}
-                                onChange={(e) => updateValue({ ...value, async: e.target.checked })}
+                                onChange={(e) => {
+                                    // 직접 async 속성만 업데이트
+                                    const updatedValue = { ...value, async: e.target.checked };
+                                    setValue(updatedValue);
+                                    onUpdate({ ...action, value: updatedValue });
+                                }}
                             />
                             비동기 함수
                         </label>
@@ -153,10 +183,11 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                     <TextField
                         label="설정값 (JSON)"
                         value={JSON.stringify(value, null, 2)}
-                        onChange={(value) => {
+                        onChange={(jsonValue) => {
                             try {
-                                const parsed = JSON.parse(value);
-                                updateValue(parsed);
+                                const parsed = JSON.parse(jsonValue);
+                                setValue(parsed);
+                                onUpdate({ ...action, value: parsed });
                             } catch (err) {
                                 // JSON 파싱 에러는 무시
                             }
@@ -205,17 +236,47 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
 
             {isExpanded && (
                 <div className="action-content">
-                    <Select
-                        label="액션 타입"
-                        selectedKey={action.type}
-                        onSelectionChange={(key) => onUpdate({ ...action, type: key as ActionType })}
-                    >
-                        {Object.entries(ACTION_TYPE_LABELS).map(([actionType, label]) => (
-                            <SelectItem key={actionType}>
-                                {label}
-                            </SelectItem>
-                        ))}
-                    </Select>
+                    <div className="select-wrapper">
+                        <label>액션 타입</label>
+                        <select
+                            value={action.type}
+                            onChange={(e) => {
+                                const selectedType = e.target.value as ActionType;
+                                console.log('액션 타입 변경:', selectedType);
+
+                                // 액션 타입에 따른 기본값 설정
+                                let defaultValue = {};
+
+                                if (selectedType === 'custom_function') {
+                                    defaultValue = { code: 'console.log("이벤트 발생:", event);' };
+                                } else if (selectedType === 'navigate') {
+                                    defaultValue = { url: '' };
+                                } else if (selectedType === 'update_state') {
+                                    defaultValue = { key: '', value: '' };
+                                } else if (selectedType === 'toggle_visibility') {
+                                    defaultValue = { show: undefined };
+                                } else if (selectedType === 'show_modal') {
+                                    defaultValue = { modalId: '', backdrop: true };
+                                }
+
+                                const updatedAction = {
+                                    ...action,
+                                    type: selectedType,
+                                    value: defaultValue
+                                };
+
+                                console.log('업데이트된 액션:', updatedAction);
+                                onUpdate(updatedAction);
+                            }}
+                            className="action-type-select"
+                        >
+                            {Object.entries(ACTION_TYPE_LABELS).map(([actionType, label]) => (
+                                <option key={actionType} value={actionType}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     <TextField
                         label="대상 요소 ID"
@@ -254,7 +315,11 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
                         onChange={(value) => onUpdate({ ...action, description: value })}
                     />
 
-                    <ActionValueEditor action={action} onUpdate={onUpdate} />
+                    <ActionValueEditor
+                        key={action.type}  // 타입이 변경될 때마다 컴포넌트 재생성
+                        action={action}
+                        onUpdate={onUpdate}
+                    />
                 </div>
             )}
         </div>
@@ -326,15 +391,24 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
 
             {isExpanded && (
                 <div className="event-content">
-                    <Select
-                        label="이벤트 타입"
-                        selectedKey={event.event_type}
-                        onSelectionChange={(key) => onUpdate({ ...event, event_type: key as EventType })}
-                    >
-                        {Object.entries(EVENT_TYPE_LABELS).map(([type, label]) => (
-                            <SelectItem key={type}>{label}</SelectItem>
-                        ))}
-                    </Select>
+                    <div className="select-wrapper">
+                        <label>이벤트 타입</label>
+                        <select
+                            value={event.event_type}
+                            onChange={(e) => {
+                                const selectedType = e.target.value as EventType;
+                                console.log('이벤트 타입 변경:', selectedType);
+                                onUpdate({ ...event, event_type: selectedType });
+                            }}
+                            className="event-type-select"
+                        >
+                            {Object.entries(EVENT_TYPE_LABELS).map(([type, label]) => (
+                                <option key={type} value={type}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     <TextField
                         label="설명"
