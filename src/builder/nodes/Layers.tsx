@@ -1,5 +1,5 @@
 import { CopyMinus } from 'lucide-react';
-import { iconProps } from '../constants';
+import { iconProps } from '../../utils/uiConstants';
 import { Database, ElementProps } from '../../types/supabase';
 import { supabase } from '../../env/supabase.client';
 
