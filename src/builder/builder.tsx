@@ -4,7 +4,7 @@ import { supabase } from "../env/supabase.client";
 import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
 
 import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
-import { iconProps } from '../builder/constants';
+import { iconProps } from '../utils/uiConstants';
 import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import Sidebar from "./sidebar";

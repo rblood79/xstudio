@@ -1,7 +1,7 @@
 import React from "react";
 //import "./SidebarNav.css";
 import { File, SquarePlus, DatabaseZap, LibraryBig, Palette, WandSparkles, Users, Settings } from 'lucide-react';
-import { iconProps } from '../constants';
+import { iconProps } from '../../utils/uiConstants';
 
 export type Tab = 'nodes' | 'components' | 'library' | 'dataset' | 'theme' | 'ai' | 'user' | 'settings';
 

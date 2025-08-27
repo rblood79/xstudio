@@ -1,8 +1,8 @@
 import { SquarePlus, Trash, Type, Binary, TriangleRight, ChevronUp, CheckSquare, Layout, PointerOff, AppWindow, CheckCircle, Hash } from 'lucide-react';
 import { useStore } from '../../stores/elements';
-import { Button, Select, SelectItem, Checkbox } from '../../components/list';
+import { Select, SelectItem, Checkbox } from '../../components/list';
 import { supabase } from '../../../env/supabase.client';
-import { iconProps } from '../../constants';
+import { iconProps } from '../../../utils/uiConstants';
 import { useState, useRef, useEffect } from 'react';
 
 import './index.css';

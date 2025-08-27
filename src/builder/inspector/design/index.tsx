@@ -1,5 +1,5 @@
 import { Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
-import { iconProps } from '../../constants';
+import { iconProps } from '../../../utils/uiConstants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
 import { ElementProps } from '../../../types/supabase';

@@ -1,5 +1,5 @@
 import { CirclePlus } from 'lucide-react';
-import { iconProps } from '../../builder/constants';
+import { iconProps } from '../../utils/uiConstants';
 import { Database } from '../../types/supabase';
 import { supabase } from '../../env/supabase.client';
 

@@ -14,7 +14,7 @@ import {
     DEFAULT_THROTTLE_TIME
 } from '../../../types/events';
 import { supabase } from '../../../env/supabase.client';
-import { iconProps } from '../../constants';
+//import { iconProps } from '../../../utils/uiConstants';
 
 import './index.css';
 
