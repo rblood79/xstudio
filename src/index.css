@@ -1,4 +1,4 @@
-@import '../node_modules/pretendard/dist/web/static/pretendard.css');
+@import './fonts.css';
 
 @import "tailwindcss";
 @plugin "tailwindcss-react-aria-components";
