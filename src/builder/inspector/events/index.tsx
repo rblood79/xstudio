@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, Settings, Play, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, Select, SelectItem, TextField } from '../../components/list';
 import { useStore } from '../../stores/elements';
@@ -9,7 +9,6 @@ import {
     EventAction,
     EVENT_TYPE_LABELS,
     ACTION_TYPE_LABELS,
-    ACTION_CATEGORIES,
     DEFAULT_DEBOUNCE_TIME,
     DEFAULT_THROTTLE_TIME
 } from '../../../types/events';
@@ -24,9 +23,9 @@ interface ActionValueEditorProps {
 }
 
 function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
-    const [value, setValue] = useState<any>(action.value || {});
+    const [value, setValue] = useState<Record<string, unknown>>(action.value as Record<string, unknown> || {});
 
-    const updateValue = (newValue: any) => {
+    const updateValue = (newValue: Record<string, unknown>) => {
         setValue(newValue);
         onUpdate({ ...action, value: newValue });
     };
@@ -39,9 +38,7 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                         label="URL"
                         value={value.url || ''}
                         onChange={(newUrl) => {
-                            const updatedValue = { ...value, url: newUrl };
-                            setValue(updatedValue);
-                            onUpdate({ ...action, value: updatedValue });
+                            updateValue({ ...(value as Record<string, unknown>), url: newUrl });
                         }}
                     />
                     <div className="checkbox-group">
@@ -190,8 +187,8 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                                 const updatedValue = { ...value, props: parsedProps };
                                 setValue(updatedValue);
                                 onUpdate({ ...action, value: updatedValue });
-                            } catch (err) {
-                                console.warn('JSON 파싱 오류:', err);
+                            } catch {
+                                console.error('JSON 파싱 오류');
                             }
                         }}
                         multiline
@@ -324,8 +321,8 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
                     <TextField
                         label="지연 시간 (ms)"
                         type="number"
-                        value={action.delay || ''}
-                        onChange={(value) => onUpdate({ ...action, delay: parseInt(value) || undefined })}
+                        value={String(action.delay || 0)}
+                        onChange={(value) => onUpdate({ ...action, delay: Number(value) })}
                     />
 
                     <TextField

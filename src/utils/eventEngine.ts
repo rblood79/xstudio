@@ -2,12 +2,17 @@ import {
     EventAction,
     ElementEvent,
     EventContext,
-    EventExecutionResult
+    EventExecutionResult,
+    CustomFunctionActionValue,
+    UpdateStateActionValue,
+    NavigateActionValue,
+    ToggleVisibilityActionValue,
+    UpdatePropsActionValue
 } from '../types/events';
 
 class EventEngine {
     private static instance: EventEngine;
-    private globalState: Record<string, any> = {};
+    private globalState: Record<string, unknown> = {};
 
     static getInstance(): EventEngine {
         if (!EventEngine.instance) {
@@ -17,7 +22,7 @@ class EventEngine {
     }
 
     // 전역 상태 관리
-    setState(key: string, value: any) {
+    setState(key: string, value: unknown) {
         this.globalState[key] = value;
     }
 
@@ -31,7 +36,12 @@ class EventEngine {
         context: EventContext
     ): Promise<EventExecutionResult> {
         const startTime = Date.now();
-        const actionResults: any[] = [];
+        const actionResults: Array<{
+            actionId: string;
+            success: boolean;
+            data?: unknown;
+            error?: string;
+        }> = [];
 
         // 이벤트가 비활성화되어 있으면 실행하지 않음
         if (event.enabled === false) {
@@ -81,7 +91,7 @@ class EventEngine {
     }
 
     // 개별 액션 실행
-    private async executeAction(action: EventAction, context: EventContext): Promise<any> {
+    private async executeAction(action: EventAction, context: EventContext): Promise<unknown> {
         // 액션이 비활성화되어 있으면 실행하지 않음
         if (action.enabled === false) {
             return null;
@@ -108,31 +118,31 @@ class EventEngine {
         // 액션 타입별 실행
         switch (action.type) {
             case 'navigate':
-                return this.executeNavigateAction(action, context);
+                return this.executeNavigateAction(action);
 
             case 'toggle_visibility':
                 return this.executeToggleVisibilityAction(action, context);
 
             case 'update_state':
-                return this.executeUpdateStateAction(action, context);
+                return this.executeUpdateStateAction(action);
 
             case 'show_modal':
-                return this.executeShowModalAction(action, context);
+                return this.executeShowModalAction(action);
 
             case 'hide_modal':
-                return this.executeHideModalAction(action, context);
+                return this.executeHideModalAction(action);
 
             case 'custom_function':
                 return this.executeCustomFunctionAction(action, context);
 
             case 'scroll_to':
-                return this.executeScrollToAction(action, context);
+                return this.executeScrollToAction(action);
 
             case 'copy_to_clipboard':
-                return this.executeCopyToClipboardAction(action, context);
+                return this.executeCopyToClipboardAction(action);
 
             case 'update_props':
-                return this.executeUpdatePropsAction(action, context);
+                return this.executeUpdatePropsAction(action);
 
             default:
                 console.warn('지원되지 않는 액션 타입:', action.type);
@@ -174,8 +184,8 @@ class EventEngine {
     }
 
     // 커스텀 함수 액션 실행 (디버깅 코드 제거)
-    private async executeCustomFunctionAction(action: EventAction, context: EventContext): Promise<any> {
-        const value = action.value as any;
+    private async executeCustomFunctionAction(action: EventAction, context: EventContext): Promise<unknown> {
+        const value = action.value as CustomFunctionActionValue;
         if (!value?.code) {
             console.warn('커스텀 함수 코드가 없습니다');
             return null;
@@ -190,7 +200,7 @@ class EventEngine {
                 pageId: context.pageId,
                 projectId: context.projectId,
                 state: this.getState(),
-                setState: (key: string, val: any) => this.setState(key, val),
+                setState: (key: string, val: unknown) => this.setState(key, val),
                 console: console
             };
 
@@ -237,7 +247,7 @@ class EventEngine {
     }
 
     // 공통 표현식 평가 함수
-    private evaluateExpression(expression: string, state: any): any {
+    private evaluateExpression(expression: string, state: Record<string, unknown>): unknown {
         try {
             const func = new Function('state', `return ${expression}`);
             return func(state);
@@ -248,8 +258,8 @@ class EventEngine {
     }
 
     // 상태 업데이트 액션 실행
-    private executeUpdateStateAction(action: EventAction, context: EventContext): any {
-        const value = action.value as any;
+    private executeUpdateStateAction(action: EventAction): unknown {
+        const value = action.value as UpdateStateActionValue;
         if (!value?.key) {
             console.warn('상태 키가 없습니다');
             return null;
@@ -261,10 +271,11 @@ class EventEngine {
             : value.value;
 
         if (value.merge && typeof this.globalState[value.key] === 'object' && typeof processedValue === 'object') {
-            // 객체 병합
-            this.setState(value.key, { ...this.globalState[value.key], ...processedValue });
+            this.setState(value.key, {
+                ...(this.globalState[value.key] as Record<string, unknown>),
+                ...(processedValue as Record<string, unknown>)
+            });
         } else {
-            // 값 교체
             this.setState(value.key, processedValue);
         }
 
@@ -272,8 +283,8 @@ class EventEngine {
     }
 
     // 네비게이션 액션 실행
-    private executeNavigateAction(action: EventAction, context: EventContext): any {
-        const value = action.value as any;
+    private executeNavigateAction(action: EventAction): unknown {
+        const value = action.value as NavigateActionValue;
         if (!value?.url) {
             console.warn('네비게이션 URL이 없습니다');
             return null;
@@ -293,8 +304,8 @@ class EventEngine {
 
 
     // 표시/숨김 토글 액션 실행
-    private executeToggleVisibilityAction(action: EventAction, context: EventContext): any {
-        const value = action.value as any;
+    private executeToggleVisibilityAction(action: EventAction, context: EventContext): unknown {
+        const value = action.value as ToggleVisibilityActionValue;
         console.log('표시/숨김 토글 액션 실행:', action);
 
         // 대상 요소 찾기
@@ -375,33 +386,33 @@ class EventEngine {
         };
     }
 
-    private executeShowModalAction(action: EventAction, context: EventContext): any {
+    private executeShowModalAction(action: EventAction): unknown {
         console.log('모달 표시 액션 실행:', action);
         // TODO: 구현
         return null;
     }
 
-    private executeHideModalAction(action: EventAction, context: EventContext): any {
+    private executeHideModalAction(action: EventAction): unknown {
         console.log('모달 숨김 액션 실행:', action);
         // TODO: 구현
         return null;
     }
 
-    private executeScrollToAction(action: EventAction, context: EventContext): any {
+    private executeScrollToAction(action: EventAction): unknown {
         console.log('스크롤 이동 액션 실행:', action);
         // TODO: 구현
         return null;
     }
 
-    private executeCopyToClipboardAction(action: EventAction, context: EventContext): any {
+    private executeCopyToClipboardAction(action: EventAction): unknown {
         console.log('클립보드 복사 액션 실행:', action);
         // TODO: 구현
         return null;
     }
 
     // 속성 업데이트 액션 실행
-    private executeUpdatePropsAction(action: EventAction, context: EventContext): any {
-        const value = action.value as any;
+    private executeUpdatePropsAction(action: EventAction): unknown {
+        const value = action.value as UpdatePropsActionValue;
         console.log('속성 업데이트 액션 실행:', action);
         console.log('원본 props:', value.props);
 
@@ -418,7 +429,7 @@ class EventEngine {
         }
 
         // 속성 값에서 템플릿 변수 처리
-        const processedProps = this.processTemplateVariables(value.props, context);
+        const processedProps = this.processTemplateVariables(value.props);
         console.log('처리된 props:', processedProps);
 
         // 스토어에서도 요소 업데이트 (React 리렌더링 트리거)
@@ -444,7 +455,7 @@ class EventEngine {
         }
     }
 
-    private processTemplateVariables(props: any, context: EventContext): any {
+    private processTemplateVariables(props: Record<string, unknown>): Record<string, unknown> {
         if (!props || typeof props !== 'object') {
             return props;
         }
@@ -458,7 +469,7 @@ class EventEngine {
                 // ${...} 패턴을 찾아서 표현식 평가
                 processedProps[key] = value.replace(/\$\{([^}]+)\}/g, (match, expression) => {
                     const result = this.evaluateExpression(expression, state);
-                    return result !== undefined ? result : match;
+                    return result !== undefined ? String(result) : match;
                 });
             }
         }
