@@ -2,7 +2,6 @@ import { Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, S
 import { iconProps } from '../../../utils/uiConstants';
 import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
 import { useStore } from '../../stores/elements';
-import { ElementProps } from '../../../types/supabase';
 import { supabase } from '../../../env/supabase.client';
 
 import './index.css';
@@ -588,7 +587,7 @@ function Design() {
                                 ]}
                                 selectedKey={(() => {
                                     const gap = selectedElementProps.style?.gap || '0px';
-                                    return gap.replace('px', '');
+                                    return typeof gap === 'string' ? gap.replace('px', '') : String(gap);
                                 })()}
                                 aria-label="Gap value selector"
                                 onSelectionChange={(selected) => {
@@ -621,7 +620,7 @@ function Design() {
                                     className='control-input'
                                     value={(() => {
                                         const padding = selectedElementProps.style?.padding || '0px';
-                                        return padding.replace('px', '');
+                                        return typeof padding === 'string' ? padding.replace('px', '') : String(padding);
                                     })()}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -652,9 +651,7 @@ function Design() {
                                     ]}
                                     selectedKey={(() => {
                                         const padding = selectedElementProps.style?.padding || '0px';
-                                        const paddingValue = padding.replace('px', '');
-                                        if (isNaN(Number(paddingValue))) return 'class';
-                                        return paddingValue;
+                                        return typeof padding === 'string' ? padding.replace('px', '') : String(padding);
                                     })()}
                                     aria-label="Padding value selector"
                                     onSelectionChange={(selected) => {
@@ -685,7 +682,7 @@ function Design() {
                                     className='control-input'
                                     value={(() => {
                                         const margin = selectedElementProps.style?.margin || '0px';
-                                        return margin.replace('px', '');
+                                        return typeof margin === 'string' ? margin.replace('px', '') : String(margin);
                                     })()}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -716,9 +713,7 @@ function Design() {
                                     ]}
                                     selectedKey={(() => {
                                         const margin = selectedElementProps.style?.margin || '0px';
-                                        const marginValue = margin.replace('px', '');
-                                        if (isNaN(Number(marginValue))) return 'class';
-                                        return marginValue;
+                                        return typeof margin === 'string' ? margin.replace('px', '') : String(margin);
                                     })()}
                                     aria-label="Margin value selector"
                                     onSelectionChange={(selected) => {
@@ -827,7 +822,7 @@ function Design() {
                                     className='control-input'
                                     value={(() => {
                                         const borderWidth = selectedElementProps.style?.borderWidth || '0px';
-                                        return borderWidth.replace('px', '');
+                                        return typeof borderWidth === 'string' ? borderWidth.replace('px', '') : String(borderWidth);
                                     })()}
                                     onChange={(e) => {
                                         const value = e.target.value;
@@ -857,9 +852,7 @@ function Design() {
                                     ]}
                                     selectedKey={(() => {
                                         const borderWidth = selectedElementProps.style?.borderWidth || '0px';
-                                        const borderValue = borderWidth.replace('px', '');
-                                        if (isNaN(Number(borderValue))) return 'class';
-                                        return borderValue;
+                                        return typeof borderWidth === 'string' ? borderWidth.replace('px', '') : String(borderWidth);
                                     })()}
                                     aria-label="Border width selector"
                                     onSelectionChange={(selected) => {
@@ -918,9 +911,7 @@ function Design() {
                                     ]}
                                     selectedKey={(() => {
                                         const borderRadius = selectedElementProps.style?.borderRadius || '0px';
-                                        const radiusValue = borderRadius.replace('px', '');
-                                        if (isNaN(Number(radiusValue))) return 'class';
-                                        return radiusValue;
+                                        return typeof borderRadius === 'string' ? borderRadius.replace('px', '') : String(borderRadius);
                                     })()}
                                     aria-label="Border radius selector"
                                     onSelectionChange={async (selected) => {
@@ -990,7 +981,7 @@ function Design() {
                                             ...selectedElementProps,
                                             style: {
                                                 ...selectedElementProps.style,
-                                                ...(selected === 'class' ? { borderStyle: undefined } : { borderStyle: selected })
+                                                ...(selected === 'class' ? { borderStyle: undefined } : { borderStyle: selected as 'solid' | 'dashed' | 'dotted' | 'double' })
                                             }
                                         };
                                         updateElementProps(selectedElementId, updatedProps);

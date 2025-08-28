@@ -1,10 +1,10 @@
-export type EventType = 
-    | 'onClick' 
-    | 'onMouseEnter' 
-    | 'onMouseLeave' 
-    | 'onFocus' 
-    | 'onBlur' 
-    | 'onChange' 
+export type EventType =
+    | 'onClick'
+    | 'onMouseEnter'
+    | 'onMouseLeave'
+    | 'onFocus'
+    | 'onBlur'
+    | 'onChange'
     | 'onSubmit'
     | 'onDoubleClick'
     | 'onKeyDown'
@@ -13,10 +13,10 @@ export type EventType =
     | 'onScroll'
     | 'onResize';
 
-export type ActionType = 
-    | 'navigate' 
-    | 'toggle_visibility' 
-    | 'update_state' 
+export type ActionType =
+    | 'navigate'
+    | 'toggle_visibility'
+    | 'update_state'
     | 'show_modal'
     | 'hide_modal'
     | 'custom_function'
@@ -42,13 +42,13 @@ export interface ToggleVisibilityActionValue {
 
 export interface UpdateStateActionValue {
     key: string;
-    value: any;
+    value: unknown;
     merge?: boolean; // 객체 병합 여부
 }
 
 export interface ShowModalActionValue {
     modalId: string;
-    data?: any;
+    data?: unknown;
     backdrop?: boolean;
     closable?: boolean;
 }
@@ -66,7 +66,7 @@ export interface ScrollToActionValue {
 
 export interface CustomFunctionActionValue {
     code: string;
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
     async?: boolean;
 }
 
@@ -80,7 +80,7 @@ export interface CopyToClipboardActionValue {
 
 export interface UpdatePropsActionValue {
     elementId: string;
-    props: Record<string, any>;
+    props: Record<string, unknown>;
     merge?: boolean;
 }
 
@@ -104,13 +104,13 @@ export interface SendAnalyticsActionValue {
     category?: string;
     label?: string;
     value?: number;
-    customData?: Record<string, any>;
+    customData?: Record<string, unknown>;
 }
 
 // 모든 액션 값 타입의 유니온
-export type ActionValue = 
+export type ActionValue =
     | NavigateActionValue
-    | ToggleVisibilityActionValue  
+    | ToggleVisibilityActionValue
     | UpdateStateActionValue
     | ShowModalActionValue
     | HideModalActionValue
@@ -154,7 +154,7 @@ export interface EventContext {
     elementId: string;
     pageId: string;
     projectId: string;
-    state: Record<string, any>;
+    state: Record<string, unknown>;
 }
 
 // 이벤트 실행 결과
@@ -164,7 +164,7 @@ export interface EventExecutionResult {
         actionId: string;
         success: boolean;
         error?: string;
-        data?: any;
+        data?: unknown;
     }>;
     totalExecutionTime: number;
 }
@@ -215,7 +215,7 @@ export function isCustomFunctionAction(action: EventAction): action is EventActi
 // 이벤트 유틸리티 타입들
 export type EventHandlerMap = Record<EventType, (context: EventContext) => Promise<EventExecutionResult>>;
 
-export type ActionHandlerMap = Record<ActionType, (action: EventAction, context: EventContext) => Promise<any>>;
+export type ActionHandlerMap = Record<ActionType, (action: EventAction, context: EventContext) => Promise<unknown>>;
 
 // 이벤트 상수들
 export const DEFAULT_DEBOUNCE_TIME = 300;

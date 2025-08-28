@@ -10,7 +10,7 @@ import Signin from './auth/Signin';
 import { supabase } from './env/supabase.client';
 import { Session } from '@supabase/supabase-js';
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 

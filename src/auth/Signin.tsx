@@ -21,7 +21,7 @@ const Signin = () => {
 
     if (isSignUp) {
       // 회원가입
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password
       });
@@ -72,7 +72,6 @@ const Signin = () => {
             <TextField
               label="이메일 주소"
               type="email"
-              placeholder="이메일을 입력하세요"
               value={email}
               onChange={setEmail}
               isRequired={true}
@@ -84,7 +83,6 @@ const Signin = () => {
             <TextField
               label="비밀번호"
               type="password"
-              placeholder="비밀번호를 입력하세요"
               value={password}
               onChange={setPassword}
               isRequired={true}
