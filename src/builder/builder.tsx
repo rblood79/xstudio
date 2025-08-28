@@ -51,30 +51,13 @@ function Builder() {
     // Breakpoints structure aligned with future Supabase table
     const [breakpoints] = React.useState([
         { id: 'screen', label: 'Screen', max_width: '100%', max_height: '100%' },
-        //{ id: 'desktop', label: 'Desktop', min_width: 1920, min_height: 1080 },
         { id: 'desktop', label: 'Desktop', max_width: 1280, max_height: 1080 },
         { id: 'tablet', label: 'Tablet', max_width: 1024, max_height: 800 },
         { id: 'mobile', label: 'Mobile', max_width: 390, max_height: 844 }
     ]);
 
     // Future integration with Supabase - commented out for now
-    /*
-    useEffect(() => {
-        const fetchBreakpoints = async () => {
-            if (!projectId) return;
-            const { data, error } = await supabase
-                .from("breakpoints")
-                .select("id, label, max_width, max_height")
-                .eq("project_id", projectId);
-            if (error) {
-                console.error("Breakpoints fetch error:", error);
-            } else if (data) {
-                setBreakpoints(data);
-            }
-        };
-        if (projectId) fetchBreakpoints();
-    }, [projectId]);
-    */
+
 
     // 진행 중 여부를 추적하는 플래그
     let isProcessing = false;
