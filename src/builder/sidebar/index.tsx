@@ -12,7 +12,6 @@ import AI from '../ai';
 import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
-import { Radio, RadioGroup, Tree, TreeItem } from 'react-aria-components';
 
 type Page = Database['public']['Tables']['pages']['Row'];
 type Element = Database['public']['Tables']['elements']['Row'];
