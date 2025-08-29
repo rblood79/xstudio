@@ -5,9 +5,13 @@ import {
     ButtonEditor,
     TextFieldEditor,
     SelectEditor,
+    ComboBoxEditor,
     CheckboxEditor,
+    CheckboxGroupEditor,
     RadioGroupEditor,
+    ToggleButtonGroupEditor,
     ListBoxEditor,
+    GridListEditor,
     TabsEditor,
     PanelEditor,
     SliderEditor
@@ -28,11 +32,11 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Slider: SliderEditor,
 
     // 추가로 지원할 컴포넌트들
-    ComboBox: SelectEditor, // Select와 유사한 props
-    CheckboxGroup: RadioGroupEditor, // RadioGroup과 유사한 props
-    GridList: ListBoxEditor, // ListBox와 유사한 props
+    ComboBox: ComboBoxEditor,
+    CheckboxGroup: CheckboxGroupEditor,
+    GridList: GridListEditor,
     ToggleButton: ButtonEditor, // Button과 유사한 props
-    ToggleButtonGroup: RadioGroupEditor, // RadioGroup과 유사한 props
+    ToggleButtonGroup: ToggleButtonGroupEditor,
 
     // 기본 HTML 요소들
     div: () => <div>div 요소에는 특별한 속성이 없습니다.</div>,
