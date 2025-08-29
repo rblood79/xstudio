@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, ListFilter } from 'lucide-react';
+import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, FileText, Search } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, SelectItem } from '../types/editorTypes';
+import { PropertyEditorProps, ComboBoxItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
@@ -11,7 +11,7 @@ interface SelectedOptionState {
     optionIndex: number;
 }
 
-export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
     const { addElement } = useStore();
 
@@ -28,12 +28,12 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         onUpdate(updatedProps);
     };
 
-    // 셀렉트 옵션 배열 가져오기
-    const selectOptions = Array.isArray(currentProps.children) ? currentProps.children as SelectItem[] : [];
+    // 콤보박스 옵션 배열 가져오기
+    const comboOptions = Array.isArray(currentProps.children) ? currentProps.children as ComboBoxItem[] : [];
 
-    // 선택된 옵션이 있고, 현재 Select 컴포넌트의 옵션인 경우 개별 옵션 편집 UI 표시
+    // 선택된 옵션이 있고, 현재 ComboBox 컴포넌트의 옵션인 경우 개별 옵션 편집 UI 표시
     if (selectedOption && selectedOption.parentId === elementId) {
-        const currentOption = selectOptions[selectedOption.optionIndex];
+        const currentOption = comboOptions[selectedOption.optionIndex];
         if (!currentOption) return null;
 
         return (
@@ -46,7 +46,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         label="라벨"
                         value={String(currentOption.label || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
+                            const updatedOptions = [...comboOptions];
                             updatedOptions[selectedOption.optionIndex] = {
                                 ...updatedOptions[selectedOption.optionIndex],
                                 label: value
@@ -61,7 +61,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         label="값"
                         value={String(currentOption.value || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
+                            const updatedOptions = [...comboOptions];
                             updatedOptions[selectedOption.optionIndex] = {
                                 ...updatedOptions[selectedOption.optionIndex],
                                 value: value
@@ -71,12 +71,27 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         icon={Hash}
                     />
 
+                    {/* 옵션 설명 편집 */}
+                    <PropertyInput
+                        label="설명"
+                        value={String(currentOption.description || '')}
+                        onChange={(value) => {
+                            const updatedOptions = [...comboOptions];
+                            updatedOptions[selectedOption.optionIndex] = {
+                                ...updatedOptions[selectedOption.optionIndex],
+                                description: value
+                            };
+                            updateProp('children', updatedOptions);
+                        }}
+                        icon={FileText}
+                    />
+
                     {/* 옵션 텍스트 값 편집 */}
                     <PropertyInput
                         label="텍스트 값"
                         value={String(currentOption.textValue || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
+                            const updatedOptions = [...comboOptions];
                             updatedOptions[selectedOption.optionIndex] = {
                                 ...updatedOptions[selectedOption.optionIndex],
                                 textValue: value
@@ -90,7 +105,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         label="비활성화"
                         checked={Boolean(currentOption.isDisabled)}
                         onChange={(checked) => {
-                            const updatedOptions = [...selectOptions];
+                            const updatedOptions = [...comboOptions];
                             updatedOptions[selectedOption.optionIndex] = {
                                 ...updatedOptions[selectedOption.optionIndex],
                                 isDisabled: checked
@@ -105,7 +120,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         <button
                             className='control-button delete'
                             onClick={() => {
-                                const updatedOptions = [...selectOptions];
+                                const updatedOptions = [...comboOptions];
                                 updatedOptions.splice(selectedOption.optionIndex, 1);
                                 updateProp('children', updatedOptions);
                                 setSelectedOption(null);
@@ -123,18 +138,18 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         className='control-button secondary'
                         onClick={() => setSelectedOption(null)}
                     >
-                        Back to Select Settings
+                        Back to ComboBox Settings
                     </button>
                 </div>
             </div>
         );
     }
 
-    // Select 컴포넌트 전체 설정 UI
+    // ComboBox 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Select Settings</legend>
+                <legend className='fieldset-legend'>ComboBox Settings</legend>
 
                 {/* 라벨 설정 */}
                 <PropertyInput
@@ -182,6 +197,40 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                 />
 
+                {/* 입력 값 설정 */}
+                <PropertyInput
+                    label="입력 값"
+                    value={String(currentProps.inputValue || '')}
+                    onChange={(value) => updateProp('inputValue', value)}
+                    icon={Search}
+                />
+
+                {/* 기본 입력 값 설정 */}
+                <PropertyInput
+                    label="기본 입력 값"
+                    value={String(currentProps.defaultInputValue || '')}
+                    onChange={(value) => updateProp('defaultInputValue', value)}
+                />
+
+                {/* 메뉴 트리거 설정 */}
+                <PropertySelect
+                    label="메뉴 트리거"
+                    value={String(currentProps.menuTrigger || 'input')}
+                    onChange={(value) => updateProp('menuTrigger', value)}
+                    options={[
+                        { id: 'focus', label: 'Focus' },
+                        { id: 'input', label: 'Input' },
+                        { id: 'manual', label: 'Manual' }
+                    ]}
+                />
+
+                {/* 사용자 정의 값 허용 설정 */}
+                <PropertyCheckbox
+                    label="사용자 정의 값 허용"
+                    checked={Boolean(currentProps.allowsCustomValue)}
+                    onChange={(checked) => updateProp('allowsCustomValue', checked)}
+                />
+
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
                     label="빈 선택 허용 안함"
@@ -225,17 +274,17 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 {/* 옵션 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total options: {selectOptions.length || 0}
+                        Total options: {comboOptions.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Select individual options from list to edit label, value, and state
+                        💡 Select individual options from list to edit label, value, description, and state
                     </p>
                 </div>
 
                 {/* 옵션 목록 */}
-                {selectOptions.length > 0 && (
+                {comboOptions.length > 0 && (
                     <div className='tabs-list'>
-                        {selectOptions.map((option, index) => (
+                        {comboOptions.map((option, index) => (
                             <div key={option.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {option.label || `Option ${index + 1}`}
@@ -260,14 +309,15 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             const newOptionId = `option${Date.now()}`;
                             const newOption = {
                                 id: newOptionId,
-                                label: `Option ${(selectOptions.length || 0) + 1}`,
-                                value: `option${(selectOptions.length || 0) + 1}`,
+                                label: `Option ${(comboOptions.length || 0) + 1}`,
+                                value: `option${(comboOptions.length || 0) + 1}`,
+                                description: '',
                                 isDisabled: false
                             };
 
                             const updatedProps = {
                                 ...currentProps,
-                                children: [...selectOptions, newOption]
+                                children: [...comboOptions, newOption]
                             };
 
                             onUpdate(updatedProps);

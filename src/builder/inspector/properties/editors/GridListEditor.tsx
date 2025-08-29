@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Type, Layout, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, List } from 'lucide-react';
+import { Type, Layout, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Grid, MoveHorizontal, FileText } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, ListBoxItem } from '../types/editorTypes';
+import { PropertyEditorProps, GridListItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
@@ -11,7 +11,7 @@ interface SelectedItemState {
     itemIndex: number;
 }
 
-export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(null);
     const { addElement } = useStore();
 
@@ -28,12 +28,12 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
         onUpdate(updatedProps);
     };
 
-    // 리스트박스 아이템 배열 가져오기
-    const listItems = Array.isArray(currentProps.children) ? currentProps.children as ListBoxItem[] : [];
+    // 그리드 리스트 아이템 배열 가져오기
+    const gridItems = Array.isArray(currentProps.children) ? currentProps.children as GridListItem[] : [];
 
-    // 선택된 아이템이 있고, 현재 ListBox 컴포넌트의 아이템인 경우 개별 아이템 편집 UI 표시
+    // 선택된 아이템이 있고, 현재 GridList 컴포넌트의 아이템인 경우 개별 아이템 편집 UI 표시
     if (selectedItem && selectedItem.parentId === elementId) {
-        const currentItem = listItems[selectedItem.itemIndex];
+        const currentItem = gridItems[selectedItem.itemIndex];
         if (!currentItem) return null;
 
         return (
@@ -46,7 +46,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         label="라벨"
                         value={String(currentItem.label || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
+                            const updatedItems = [...gridItems];
                             updatedItems[selectedItem.itemIndex] = {
                                 ...updatedItems[selectedItem.itemIndex],
                                 label: value
@@ -61,7 +61,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         label="값"
                         value={String(currentItem.value || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
+                            const updatedItems = [...gridItems];
                             updatedItems[selectedItem.itemIndex] = {
                                 ...updatedItems[selectedItem.itemIndex],
                                 value: value
@@ -71,12 +71,27 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         icon={Type}
                     />
 
+                    {/* 아이템 설명 편집 */}
+                    <PropertyInput
+                        label="설명"
+                        value={String(currentItem.description || '')}
+                        onChange={(value) => {
+                            const updatedItems = [...gridItems];
+                            updatedItems[selectedItem.itemIndex] = {
+                                ...updatedItems[selectedItem.itemIndex],
+                                description: value
+                            };
+                            updateProp('children', updatedItems);
+                        }}
+                        icon={FileText}
+                    />
+
                     {/* 아이템 텍스트 값 편집 */}
                     <PropertyInput
                         label="텍스트 값"
                         value={String(currentItem.textValue || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
+                            const updatedItems = [...gridItems];
                             updatedItems[selectedItem.itemIndex] = {
                                 ...updatedItems[selectedItem.itemIndex],
                                 textValue: value
@@ -90,7 +105,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         label="비활성화"
                         checked={Boolean(currentItem.isDisabled)}
                         onChange={(checked) => {
-                            const updatedItems = [...listItems];
+                            const updatedItems = [...gridItems];
                             updatedItems[selectedItem.itemIndex] = {
                                 ...updatedItems[selectedItem.itemIndex],
                                 isDisabled: checked
@@ -105,7 +120,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         <button
                             className='control-button delete'
                             onClick={() => {
-                                const updatedItems = [...listItems];
+                                const updatedItems = [...gridItems];
                                 updatedItems.splice(selectedItem.itemIndex, 1);
                                 updateProp('children', updatedItems);
                                 setSelectedItem(null);
@@ -123,18 +138,18 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         className='control-button secondary'
                         onClick={() => setSelectedItem(null)}
                     >
-                        Back to ListBox Settings
+                        Back to GridList Settings
                     </button>
                 </div>
             </div>
         );
     }
 
-    // ListBox 컴포넌트 전체 설정 UI
+    // GridList 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>ListBox Settings</legend>
+                <legend className='fieldset-legend'>GridList Settings</legend>
 
                 {/* 라벨 설정 */}
                 <PropertyInput
@@ -169,7 +184,18 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         { id: 'single', label: 'Single' },
                         { id: 'multiple', label: 'Multiple' }
                     ]}
-                    icon={List}
+                    icon={Grid}
+                />
+
+                {/* 선택 동작 설정 */}
+                <PropertySelect
+                    label="선택 동작"
+                    value={String(currentProps.selectionBehavior || 'toggle')}
+                    onChange={(value) => updateProp('selectionBehavior', value)}
+                    options={[
+                        { id: 'toggle', label: 'Toggle' },
+                        { id: 'replace', label: 'Replace' }
+                    ]}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
@@ -193,6 +219,21 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                 />
+
+                {/* 드래그 허용 설정 */}
+                <PropertyCheckbox
+                    label="드래그 허용"
+                    checked={Boolean(currentProps.allowsDragging)}
+                    onChange={(checked) => updateProp('allowsDragging', checked)}
+                    icon={MoveHorizontal}
+                />
+
+                {/* 빈 상태 렌더링 설정 */}
+                <PropertyCheckbox
+                    label="빈 상태 렌더링"
+                    checked={Boolean(currentProps.renderEmptyState)}
+                    onChange={(checked) => updateProp('renderEmptyState', checked)}
+                />
             </fieldset>
 
             <fieldset className="properties-aria">
@@ -201,17 +242,17 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total items: {listItems.length || 0}
+                        Total items: {gridItems.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Select individual items from list to edit label, value, and state
+                        💡 Select individual items from list to edit label, value, description, and state
                     </p>
                 </div>
 
                 {/* 아이템 목록 */}
-                {listItems.length > 0 && (
+                {gridItems.length > 0 && (
                     <div className='tabs-list'>
-                        {listItems.map((item, index) => (
+                        {gridItems.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {item.label || `Item ${index + 1}`}
@@ -235,14 +276,15 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                             const newItemId = `item${Date.now()}`;
                             const newItem = {
                                 id: newItemId,
-                                label: `Item ${(listItems.length || 0) + 1}`,
-                                value: `item${(listItems.length || 0) + 1}`,
+                                label: `Item ${(gridItems.length || 0) + 1}`,
+                                value: `item${(gridItems.length || 0) + 1}`,
+                                description: '',
                                 isDisabled: false
                             };
 
                             const updatedProps = {
                                 ...currentProps,
-                                children: [...listItems, newItem]
+                                children: [...gridItems, newItem]
                             };
 
                             onUpdate(updatedProps);
