@@ -215,3 +215,152 @@
     color: #64748b;
     line-height: 1.4;
 }
+
+/* Tabs 에디터 관련 스타일 */
+.tabs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    border: 1px solid var(--color-gray-200);
+}
+
+.tab-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: white;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-gray-200);
+}
+
+.tab-title {
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
+.tab-edit-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    cursor: pointer;
+}
+
+.tab-edit-button:hover {
+    background-color: var(--color-gray-200);
+}
+
+.tab-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.control-button.add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto;
+    height: auto;
+    justify-content: center;
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0284c7;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.control-button.add:hover {
+    background-color: #e0f2fe;
+}
+
+.control-button.delete {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto;
+    height: auto;
+    justify-content: center;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.control-button.delete:hover {
+    background-color: #fee2e2;
+}
+
+.control-button.secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    width: auto;
+    height: auto;
+    justify-content: center;
+    background-color: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    color: var(--color-gray-700);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.control-button.secondary:hover {
+    background-color: var(--color-gray-200);
+}
+
+.tab-overview {
+    padding: 12px;
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-gray-200);
+    margin-bottom: 12px;
+}
+
+.tab-overview-text {
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    color: var(--color-gray-700);
+}
+
+.tab-overview-help {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-gray-500);
+    font-style: italic;
+}
+
+/* Panel 에디터 관련 스타일 */
+.tab-panel-info {
+    padding: 12px;
+    background-color: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-gray-200);
+    margin-top: 16px;
+}
+
+.tab-panel-note {
+    margin: 0 0 8px 0;
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
+.tab-panel-help {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-gray-500);
+    font-style: italic;
+}

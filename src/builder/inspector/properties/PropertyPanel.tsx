@@ -7,7 +7,9 @@ import {
     SelectEditor,
     CheckboxEditor,
     RadioGroupEditor,
-    ListBoxEditor
+    ListBoxEditor,
+    TabsEditor,
+    PanelEditor
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
 // ElementProps import 제거
@@ -20,6 +22,8 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Checkbox: CheckboxEditor,
     RadioGroup: RadioGroupEditor,
     ListBox: ListBoxEditor,
+    Tabs: TabsEditor,
+    Panel: PanelEditor,
 
     // 추가로 지원할 컴포넌트들
     ComboBox: SelectEditor, // Select와 유사한 props
