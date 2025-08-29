@@ -66,6 +66,18 @@ export interface EditablePanelProps {
     style?: Record<string, string | number>;
 }
 
+export interface EditableSliderProps {
+    label?: string;
+    value?: number | number[];
+    defaultValue?: number | number[];
+    minValue?: number;
+    maxValue?: number;
+    step?: number;
+    orientation?: 'horizontal' | 'vertical';
+    isDisabled?: boolean;
+    thumbLabels?: string[];
+}
+
 // 프로퍼티 에디터 공통 인터페이스
 export interface PropertyEditorProps {
     elementId: string;
@@ -81,6 +93,7 @@ export interface ComponentPropsMapping {
     Checkbox: EditableCheckboxProps;
     Tabs: EditableTabsProps;
     Panel: EditablePanelProps;
+    Slider: EditableSliderProps;
 }
 
 // 프로퍼티 필드 정의
@@ -159,5 +172,22 @@ export const COMPONENT_PROPERTY_FIELDS: Record<string, PropertyField[]> = {
         },
         { key: 'isOpen', label: '열림 상태', type: 'boolean' },
         { key: 'isDismissable', label: '닫기 가능', type: 'boolean' }
+    ],
+    Slider: [
+        { key: 'label', label: '라벨', type: 'text' },
+        { key: 'value', label: '기본값', type: 'number' },
+        { key: 'minValue', label: '최소값', type: 'number' },
+        { key: 'maxValue', label: '최대값', type: 'number' },
+        { key: 'step', label: '단계', type: 'number' },
+        {
+            key: 'orientation',
+            label: '방향',
+            type: 'select',
+            options: [
+                { id: 'horizontal', label: 'Horizontal' },
+                { id: 'vertical', label: 'Vertical' }
+            ]
+        },
+        { key: 'isDisabled', label: '비활성화', type: 'boolean' }
     ],
 };
