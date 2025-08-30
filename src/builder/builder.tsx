@@ -159,6 +159,14 @@ function Builder() {
                             }
                         ]
                     };
+                case 'Checkbox':
+                    return {
+                        ...baseProps,
+                        isSelected: false,
+                        isIndeterminate: false,
+                        isDisabled: false,
+                        children: text || 'Checkbox',
+                    };
                 case 'CheckboxGroup':
                     return {
                         ...baseProps,
@@ -482,13 +490,21 @@ function Builder() {
             }
         };
 
+        // 부모가 선택되어 있으면 해당 부모의 자식들 중 최대 order_num + 1을 사용
+        const parentId = selectedElementId || null;
+        const nextOrder = parentId
+            ? (elements
+                .filter(el => el.parent_id === parentId)
+                .reduce((m, el) => Math.max(m, el.order_num || 0), 0) + 1)
+            : (maxOrderNum + 1);
+
         const newElement = {
             id: crypto.randomUUID(),
             page_id: selectedPageId,
             tag: args[0],
             props: getDefaultProps(args[0], args[1]),
-            parent_id: selectedElementId || null,
-            order_num: maxOrderNum + 1,
+            parent_id: parentId,
+            order_num: nextOrder,
         };
 
         // TextField 컴포넌트인 경우 내부 구성 요소들도 함께 생성

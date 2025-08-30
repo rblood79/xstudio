@@ -327,7 +327,8 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {typeof el.props.children === 'string' ? el.props.children : 'Checkbox'}
+          {typeof el.props.children === 'string' ? el.props.children : null}
+          {children.map((child) => renderElement(child))}
         </Checkbox>
       );
     }
@@ -341,7 +342,8 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
         >
-          {typeof el.props.children === 'string' ? el.props.children : 'Label'}
+          {typeof el.props.children === 'string' ? el.props.children : null}
+          {children.map((child) => renderElement(child))}
         </Label>
       );
     }
@@ -365,7 +367,8 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
         >
-          {typeof el.props.text === 'string' ? el.props.text : 'Description'}
+          {typeof el.props.text === 'string' ? el.props.text : null}
+          {children.map((child) => renderElement(child))}
         </Description>
       );
     }
@@ -378,7 +381,8 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
         >
-          {typeof el.props.text === 'string' ? el.props.text : 'FieldError'}
+          {typeof el.props.text === 'string' ? el.props.text : null}
+          {children.map((child) => renderElement(child))}
         </FieldError>
       );
     }
@@ -514,7 +518,8 @@ function Preview() {
             }
           }}
         >
-          {typeof el.props.children === 'string' ? el.props.children : 'Button'}
+          {typeof el.props.children === 'string' ? el.props.children : (children.length === 0 ? 'Button' : null)}
+          {children.map((child) => renderElement(child))}
         </Button>
       );
     }
@@ -807,6 +812,7 @@ function Preview() {
           className={el.props.className}
         >
           {el.props.children}
+          {children.map((child) => renderElement(child))}
         </Tag>
       );
     }
