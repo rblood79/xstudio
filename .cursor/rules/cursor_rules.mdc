@@ -1,5 +1,5 @@
 ---
-description: Guidelines for creating and maintaining Cursor rules to ensure consistency and effectiveness.
+description: Project-specific guidelines for creating and maintaining Cursor rule files in xstudio.
 globs: .cursor/rules/*.mdc
 alwaysApply: true
 ---
@@ -19,31 +19,35 @@ alwaysApply: true
 
 - **File References:**
   - Use `[filename](mdc:path/to/file)` ([filename](mdc:filename)) to reference files
-  - Example: [prisma.mdc](mdc:.cursor/rules/prisma.mdc) for rule references
-  - Example: [schema.prisma](mdc:prisma/schema.prisma) for code references
+  - Example: [ai-rule.mdc](mdc:.cursor/rules/ai-rule.mdc) or [dev_workflow.mdc](mdc:.cursor/rules/dev_workflow.mdc) for rule references
+  - Example: [App.tsx](mdc:src/App.tsx) or [tailwind.config.ts](mdc:tailwind.config.ts) for code references
 
 - **Code Examples:**
   - Use language-specific code blocks
-  ```typescript
+  ```tsx
   // ✅ DO: Show good examples
-  const goodExample = true;
-  
+  export function Greeting({name}: {name: string}) {
+    return <div className="text-lg">Hello {name}</div>;
+  }
+
   // ❌ DON'T: Show anti-patterns
-  const badExample = false;
+  export function BadGreeting(props: any) {
+    return <span>Hello {props.name}</span>;
+  }
   ```
 
 - **Rule Content Guidelines:**
   - Start with high-level overview
   - Include specific, actionable requirements
   - Show examples of correct implementation
-  - Reference existing code when possible
+  - Reference existing code in `src/` or configuration files when possible
   - Keep rules DRY by referencing other rules
 
 - **Rule Maintenance:**
   - Update rules when new patterns emerge
-  - Add examples from actual codebase
+  - Add examples from the actual codebase (e.g., components in `src/` or config files)
   - Remove outdated patterns
-  - Cross-reference related rules
+  - Cross-reference related rules such as [dev_workflow.mdc](mdc:.cursor/rules/dev_workflow.mdc)
 
 - **Best Practices:**
   - Use bullet points for clarity
