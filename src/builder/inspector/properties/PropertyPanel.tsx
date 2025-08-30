@@ -74,7 +74,7 @@ export function PropertyPanel() {
 
     if (!EditorComponent || !componentTag) {
         return (
-            <div className="property-panel">
+            <div className="property-container">
                 <div>지원되지 않는 컴포넌트입니다: {componentTag || 'unknown'}</div>
                 <div>현재 지원되는 컴포넌트:</div>
                 <ul>
@@ -87,13 +87,17 @@ export function PropertyPanel() {
     }
 
     return (
-        <div className="property-panel">
-            <h4>Properties: {componentTag}</h4>
-            <EditorComponent
-                elementId={selectedElementId}
-                currentProps={selectedElementProps}
-                onUpdate={handleUpdate}
-            />
+        <div className="property-container">
+            <div className="panel-header">
+                <h3 className="panel-title">Properties: {componentTag}</h3>
+            </div>
+            <div className="panel-content">
+                <EditorComponent
+                    elementId={selectedElementId}
+                    currentProps={selectedElementProps}
+                    onUpdate={handleUpdate}
+                />
+            </div>
         </div>
     );
 }

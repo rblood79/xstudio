@@ -222,7 +222,11 @@ export interface PropertyField {
     key: string;
     label: string;
     type: 'text' | 'boolean' | 'select' | 'number' | 'color' | 'array' | 'object';
-    icon?: React.ComponentType<any>;
+    icon?: React.ComponentType<{
+        color?: string;
+        size?: number;
+        strokeWidth?: number;
+    }>;
     options?: Array<{ id: string; label: string }>;
     description?: string;
     required?: boolean;
