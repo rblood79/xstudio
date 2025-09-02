@@ -213,22 +213,7 @@ function Builder() {
                         orientation: 'vertical',
                         selectionMode: 'none',
                         selectedKeys: [],
-                        children: [
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'GridListItem',
-                                label: 'Item 1',
-                                value: 'item1',
-                                isDisabled: false
-                            },
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'GridListItem',
-                                label: 'Item 2',
-                                value: 'item2',
-                                isDisabled: false
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경 - 실제 GridListItem 컴포넌트들이 별도로 생성됨
                     };
                 case 'Select':
                     return {
@@ -730,6 +715,61 @@ function Builder() {
                 .select();
 
             if (error) console.error("ListBox 및 ListBoxItem 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
+        } else if (args[0] === 'GridList') {
+            const gridListId = newElement.id;
+
+            // 기본 2개의 GridListItem 생성
+            const defaultItems = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'GridListItem',
+                    props: {
+                        label: 'Item 1',
+                        value: 'item1',
+                        description: '',
+                        textValue: 'item1',
+                        isDisabled: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: gridListId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'GridListItem',
+                    props: {
+                        label: 'Item 2',
+                        value: 'item2',
+                        description: '',
+                        textValue: 'item2',
+                        isDisabled: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: gridListId,
+                    order_num: 2,
+                }
+            ];
+
+            // GridList와 기본 GridListItem들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultItems])
+                .select();
+
+            if (error) console.error("GridList 및 GridListItem 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);
