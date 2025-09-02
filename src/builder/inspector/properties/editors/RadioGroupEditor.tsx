@@ -165,6 +165,18 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={AlertTriangle}
                 />
 
+                {/* 방향 설정 */}
+                <PropertySelect
+                    label="방향"
+                    value={String(currentProps.orientation || 'vertical')}
+                    options={[
+                        { id: 'vertical', label: '수직' },
+                        { id: 'horizontal', label: '수평' },
+                    ]}
+                    onChange={(value) => updateProp('orientation', value)}
+                    icon={Layout}
+                />
+
                 {/* 선택 값 설정 */}
                 <PropertyInput
                     label="선택 값"
