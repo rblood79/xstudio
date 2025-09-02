@@ -363,6 +363,58 @@ function Preview() {
       );
     }
 
+    // Radio 컴포넌트 특별 처리
+    if (el.tag === 'Radio') {
+      return (
+        <Radio
+          key={el.id}
+          data-element-id={el.id}
+          value={el.props.value}
+          isDisabled={el.props.isDisabled || false}
+          style={el.props.style}
+          className={el.props.className}
+          onChange={(isSelected) => {
+            // Radio의 선택 상태가 변경될 때 부모 RadioGroup의 value 업데이트
+            if (isSelected) {
+              const parentGroup = elements.find(parent =>
+                parent.id === el.parent_id && parent.tag === 'RadioGroup'
+              );
+
+              if (parentGroup) {
+                updateElementProps(parentGroup.id, {
+                  ...parentGroup.props,
+                  value: el.props.value
+                });
+
+                // 다른 Radio들의 isSelected 상태 업데이트
+                const siblingRadios = elements.filter(sibling =>
+                  sibling.parent_id === el.parent_id &&
+                  sibling.tag === 'Radio' &&
+                  sibling.id !== el.id
+                );
+
+                siblingRadios.forEach(siblingRadio => {
+                  updateElementProps(siblingRadio.id, {
+                    ...siblingRadio.props,
+                    isSelected: false
+                  });
+                });
+
+                // 현재 Radio의 isSelected 상태 업데이트
+                updateElementProps(el.id, {
+                  ...el.props,
+                  isSelected: true
+                });
+              }
+            }
+          }}
+        >
+          {typeof el.props.children === 'string' ? el.props.children : null}
+          {children.map((child) => renderElement(child))}
+        </Radio>
+      );
+    }
+
     // Label 컴포넌트 특별 처리
     if (el.tag === 'Label') {
       return (
@@ -465,7 +517,10 @@ function Preview() {
 
     // RadioGroup 컴포넌트 특별 처리
     if (el.tag === 'RadioGroup') {
-      const radiosData = el.props.children || [];
+      // 실제 Radio 자식 요소들을 찾기
+      const radioChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'Radio')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <RadioGroup
@@ -482,17 +537,20 @@ function Preview() {
               value: selectedValue
             };
             updateElementProps(el.id, updatedProps);
+
+            // 개별 Radio의 isSelected도 동기화
+            for (const radio of radioChildren) {
+              const isSelected = radio.props.value === selectedValue;
+              if (radio.props.isSelected !== isSelected) {
+                updateElementProps(radio.id, {
+                  ...radio.props,
+                  isSelected
+                });
+              }
+            }
           }}
         >
-          {radiosData.map((radioData: any, index: number) => (
-            <Radio
-              key={radioData.id || `radio-${index}`}
-              data-element-id={`${el.id}-radio-${index}`}
-              value={radioData.value}
-            >
-              {radioData.label || `Option ${index + 1}`}
-            </Radio>
-          ))}
+          {radioChildren.map((radio) => renderElement(radio))}
         </RadioGroup>
       );
     }
