@@ -649,7 +649,10 @@ function Preview() {
 
     // ListBox 컴포넌트 특별 처리
     if (el.tag === 'ListBox') {
-      const itemsData = el.props.children || [];
+      // 실제 ListBoxItem 자식 요소들을 찾기
+      const listBoxChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'ListBoxItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <ListBox
@@ -670,13 +673,13 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {itemsData.map((item: any, index: number) => (
+          {listBoxChildren.map((item) => (
             <ListBoxItem
-              key={item.id || `listitem-${index}`}
-              value={item.value}
-              isDisabled={item.isDisabled}
+              key={item.id}
+              value={item.props.value}
+              isDisabled={item.props.isDisabled}
             >
-              {item.label}
+              {item.props.label}
             </ListBoxItem>
           ))}
         </ListBox>
@@ -746,6 +749,22 @@ function Preview() {
             </ListBoxItem>
           ))}
         </ComboBox>
+      );
+    }
+
+    // ListBoxItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
+    if (el.tag === 'ListBoxItem') {
+      return (
+        <ListBoxItem
+          key={el.id}
+          data-element-id={el.id}
+          value={el.props.value}
+          isDisabled={el.props.isDisabled}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {el.props.label}
+        </ListBoxItem>
       );
     }
 

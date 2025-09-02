@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Type, Layout, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, List } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, ListBoxItem } from '../types/editorTypes';
@@ -13,7 +13,7 @@ interface SelectedItemState {
 
 export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(null);
-    const { addElement } = useStore();
+    const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
     useEffect(() => {
         // 아이템 선택 상태 초기화
@@ -28,12 +28,16 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
         onUpdate(updatedProps);
     };
 
-    // 리스트박스 아이템 배열 가져오기
-    const listItems = Array.isArray(currentProps.children) ? currentProps.children as ListBoxItem[] : [];
+    // 실제 ListBoxItem 자식 요소들을 찾기 (useMemo로 최적화)
+    const listBoxChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'ListBoxItem')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 아이템이 있고, 현재 ListBox 컴포넌트의 아이템인 경우 개별 아이템 편집 UI 표시
     if (selectedItem && selectedItem.parentId === elementId) {
-        const currentItem = listItems[selectedItem.itemIndex];
+        const currentItem = listBoxChildren[selectedItem.itemIndex];
         if (!currentItem) return null;
 
         return (
@@ -44,14 +48,14 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
                         label="라벨"
-                        value={String(currentItem.label || '')}
+                        value={String(currentItem.props.label || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
-                            updatedItems[selectedItem.itemIndex] = {
-                                ...updatedItems[selectedItem.itemIndex],
+                            // 실제 ListBoxItem 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentItem.props,
                                 label: value
                             };
-                            updateProp('children', updatedItems);
+                            updateElementProps(currentItem.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -59,14 +63,14 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 값 편집 */}
                     <PropertyInput
                         label="값"
-                        value={String(currentItem.value || '')}
+                        value={String(currentItem.props.value || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
-                            updatedItems[selectedItem.itemIndex] = {
-                                ...updatedItems[selectedItem.itemIndex],
+                            // 실제 ListBoxItem 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentItem.props,
                                 value: value
                             };
-                            updateProp('children', updatedItems);
+                            updateElementProps(currentItem.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -74,28 +78,28 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 텍스트 값 편집 */}
                     <PropertyInput
                         label="텍스트 값"
-                        value={String(currentItem.textValue || '')}
+                        value={String(currentItem.props.textValue || '')}
                         onChange={(value) => {
-                            const updatedItems = [...listItems];
-                            updatedItems[selectedItem.itemIndex] = {
-                                ...updatedItems[selectedItem.itemIndex],
+                            // 실제 ListBoxItem 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentItem.props,
                                 textValue: value
                             };
-                            updateProp('children', updatedItems);
+                            updateElementProps(currentItem.id, updatedProps);
                         }}
                     />
 
                     {/* 아이템 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
-                        checked={Boolean(currentItem.isDisabled)}
+                        checked={Boolean(currentItem.props.isDisabled)}
                         onChange={(checked) => {
-                            const updatedItems = [...listItems];
-                            updatedItems[selectedItem.itemIndex] = {
-                                ...updatedItems[selectedItem.itemIndex],
+                            // 실제 ListBoxItem 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentItem.props,
                                 isDisabled: checked
                             };
-                            updateProp('children', updatedItems);
+                            updateElementProps(currentItem.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
@@ -104,11 +108,26 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     <div className='tab-actions'>
                         <button
                             className='control-button delete'
-                            onClick={() => {
-                                const updatedItems = [...listItems];
-                                updatedItems.splice(selectedItem.itemIndex, 1);
-                                updateProp('children', updatedItems);
-                                setSelectedItem(null);
+                            onClick={async () => {
+                                try {
+                                    // 실제 ListBoxItem 컴포넌트를 데이터베이스에서 삭제
+                                    const { error } = await supabase
+                                        .from('elements')
+                                        .delete()
+                                        .eq('id', currentItem.id);
+
+                                    if (error) {
+                                        console.error('ListBoxItem 삭제 에러:', error);
+                                        return;
+                                    }
+
+                                    // 스토어에서도 제거
+                                    const updatedElements = storeElements.filter(el => el.id !== currentItem.id);
+                                    setElements(updatedElements);
+                                    setSelectedItem(null);
+                                } catch (error) {
+                                    console.error('ListBoxItem 삭제 중 오류:', error);
+                                }
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
@@ -201,7 +220,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total items: {listItems.length || 0}
+                        Total items: {listBoxChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Select individual items from list to edit label, value, and state
@@ -209,12 +228,12 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 </div>
 
                 {/* 아이템 목록 */}
-                {listItems.length > 0 && (
+                {listBoxChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {listItems.map((item, index) => (
+                        {listBoxChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {item.label || `Item ${index + 1}`}
+                                    {item.props.label || `Item ${index + 1}`}
                                 </span>
                                 <button
                                     className='tab-edit-button'
@@ -231,21 +250,44 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={() => {
-                            const newItemId = `item${Date.now()}`;
-                            const newItem = {
-                                id: newItemId,
-                                label: `Item ${(listItems.length || 0) + 1}`,
-                                value: `item${(listItems.length || 0) + 1}`,
-                                isDisabled: false
-                            };
+                        onClick={async () => {
+                            try {
+                                // 새로운 ListBoxItem 요소를 Supabase에 직접 삽입
+                                const newItem = {
+                                    id: crypto.randomUUID(),
+                                    page_id: currentPageId || '1',
+                                    tag: 'ListBoxItem',
+                                    props: {
+                                        label: `Item ${(listBoxChildren.length || 0) + 1}`,
+                                        value: `item${(listBoxChildren.length || 0) + 1}`,
+                                        textValue: `item${(listBoxChildren.length || 0) + 1}`,
+                                        isDisabled: false,
+                                        style: {},
+                                        className: '',
+                                    },
+                                    parent_id: elementId,
+                                    order_num: (listBoxChildren.length || 0) + 1,
+                                };
 
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...listItems, newItem]
-                            };
+                                const { data, error } = await supabase
+                                    .from('elements')
+                                    .insert(newItem)
+                                    .select()
+                                    .single();
 
-                            onUpdate(updatedProps);
+                                if (error) {
+                                    console.error('ListBoxItem 추가 에러:', error);
+                                    return;
+                                }
+
+                                if (data) {
+                                    // 스토어에 새 요소 추가
+                                    addElement(data);
+                                    console.log('새 ListBoxItem 추가됨:', data);
+                                }
+                            } catch (error) {
+                                console.error('ListBoxItem 추가 중 오류:', error);
+                            }
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
