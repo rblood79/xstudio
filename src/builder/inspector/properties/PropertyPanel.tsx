@@ -103,6 +103,7 @@ export function PropertyPanel() {
             </div>
             <div className="panel-content">
                 <EditorComponent
+                    key={selectedElementId} // 이 줄을 추가
                     elementId={selectedElementId}
                     currentProps={selectedElementProps}
                     onUpdate={handleUpdate}

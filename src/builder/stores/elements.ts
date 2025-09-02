@@ -147,11 +147,38 @@ export const useStore = create<Store>((set, get) => ({
         if (!element) return;
 
         let hasChanges = false;
-        Object.keys(props).forEach(key => {
-          if (JSON.stringify(element.props[key]) !== JSON.stringify(props[key])) {
-            hasChanges = true;
+        const newProps = { ...element.props, ...props }; // 변경될 새로운 props
+
+        // 이전 props와 새로운 props를 비교하여 실제 변경이 있는지 확인
+        if (Object.keys(element.props).length !== Object.keys(newProps).length) {
+          hasChanges = true;
+        } else {
+          for (const key in newProps) {
+            if (JSON.stringify(element.props[key]) !== JSON.stringify(newProps[key])) {
+              hasChanges = true;
+              break;
+            }
           }
-        });
+        }
+
+        // selectedElementProps 업데이트 로직 수정
+        if (state.selectedElementId === elementId) {
+          // 현재 selectedElementProps와 새로 업데이트될 props를 비교
+          let selectedPropsChanged = false;
+          if (Object.keys(state.selectedElementProps).length !== Object.keys(newProps).length) {
+            selectedPropsChanged = true;
+          } else {
+            for (const key in newProps) {
+              if (JSON.stringify(state.selectedElementProps[key]) !== JSON.stringify(newProps[key])) {
+                selectedPropsChanged = true;
+                break;
+              }
+            }
+          }
+          if (selectedPropsChanged) {
+            state.selectedElementProps = newProps; // 실제 변경이 있을 때만 새 객체 생성
+          }
+        }
 
         if (hasChanges) {
           const prevState = state.elements.map((el: Element) => ({
@@ -159,17 +186,14 @@ export const useStore = create<Store>((set, get) => ({
             props: { ...el.props }
           }));
 
-          element.props = { ...element.props, ...props };
+          element.props = newProps; // 이전에 계산된 newProps 사용
           updateHistory(state, prevState, state.elements.map((el: Element) => ({
             ...el,
             props: { ...el.props }
           })));
         } else {
-          element.props = { ...element.props, ...props };
-        }
-
-        if (state.selectedElementId === elementId) {
-          state.selectedElementProps = { ...element.props };
+          // 실제 변경이 없더라도 props를 적용 (예: 불필요한 키 제거 방지)
+          element.props = newProps;
         }
       })
     ),

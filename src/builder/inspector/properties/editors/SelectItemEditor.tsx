@@ -1,29 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyInput } from '../components/PropertyInput';
 import { PropertyCheckbox } from '../components/PropertyCheckbox';
-import { useStore } from '../../../stores/elements';
+import { PropertyEditorProps } from '../types/editorTypes';
 
-interface SelectItemEditorProps {
-    elementId: string;
-}
+export function SelectItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // 로컬 상태로 프로퍼티 관리
+    const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-export function SelectItemEditor({ elementId }: SelectItemEditorProps) {
-    const element = useStore((state) =>
-        state.elements.find((el) => el.id === elementId)
-    );
-    const { updateElementProps } = useStore();
+    // 초기 로컬 상태 설정
+    useEffect(() => {
+        setLocalProps({ ...currentProps });
+    }, [currentProps]);
 
-    if (!element) {
-        return <div>요소를 찾을 수 없습니다.</div>;
-    }
+    // 디바운스된 저장 함수
+    const saveToStore = useCallback((props: Record<string, unknown>) => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
 
-    const handlePropertyChange = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...element.props,
+        debounceTimerRef.current = setTimeout(() => {
+            onUpdate(props);
+        }, 300); // 300ms 디바운스
+    }, [onUpdate]);
+
+    // 프로퍼티 변경 핸들러
+    const handlePropertyChange = useCallback((key: string, value: unknown) => {
+        const newProps = {
+            ...localProps,
             [key]: value
         };
-        updateElementProps(elementId, updatedProps as any);
-    };
+
+        // 로컬 상태 즉시 업데이트
+        setLocalProps(newProps);
+
+        // 디바운스된 저장
+        saveToStore(newProps);
+    }, [localProps, saveToStore]);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="space-y-4">
@@ -31,31 +53,31 @@ export function SelectItemEditor({ elementId }: SelectItemEditorProps) {
 
             <PropertyInput
                 label="라벨"
-                value={String(element.props.label || '')}
+                value={String(localProps.label || '')}
                 onChange={(value) => handlePropertyChange('label', value)}
             />
 
             <PropertyInput
                 label="값"
-                value={String(element.props.value || '')}
+                value={String(localProps.value || '')}
                 onChange={(value) => handlePropertyChange('value', value)}
             />
 
             <PropertyInput
                 label="설명"
-                value={String(element.props.description || '')}
+                value={String(localProps.description || '')}
                 onChange={(value) => handlePropertyChange('description', value)}
             />
 
             <PropertyCheckbox
                 label="비활성화"
-                checked={Boolean(element.props.isDisabled)}
+                checked={Boolean(localProps.isDisabled)}
                 onChange={(checked) => handlePropertyChange('isDisabled', checked)}
             />
 
             <PropertyCheckbox
                 label="읽기 전용"
-                checked={Boolean(element.props.isReadOnly)}
+                checked={Boolean(localProps.isReadOnly)}
                 onChange={(checked) => handlePropertyChange('isReadOnly', checked)}
             />
         </div>
