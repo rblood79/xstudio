@@ -617,6 +617,61 @@ function Builder() {
                     setSelectedElement(newElement.id, newElement.props as ElementProps);
                 });
             }
+        } else if (args[0] === 'CheckboxGroup') {
+            const checkboxGroupId = newElement.id;
+
+            // 기본 2개의 Checkbox 생성
+            const defaultCheckboxes = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Checkbox',
+                    props: {
+                        isSelected: false,
+                        isDisabled: false,
+                        isIndeterminate: false,
+                        children: 'Option 1',
+                        style: {},
+                        className: '',
+                        value: 'option1',
+                    },
+                    parent_id: checkboxGroupId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Checkbox',
+                    props: {
+                        isSelected: false,
+                        isDisabled: false,
+                        isIndeterminate: false,
+                        children: 'Option 2',
+                        style: {},
+                        className: '',
+                        value: 'option2',
+                    },
+                    parent_id: checkboxGroupId,
+                    order_num: 2,
+                }
+            ];
+
+            // CheckboxGroup과 기본 Checkbox들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultCheckboxes])
+                .select();
+
+            if (error) console.error("CheckboxGroup 및 Checkbox 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
         } else if (args[0] === 'Tabs') {
             const tabsId = newElement.id;
             const tabsProps = newElement.props as { children?: Array<{ id: string; title: string; content: string }> };

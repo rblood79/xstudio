@@ -419,12 +419,15 @@ function Preview() {
 
     // CheckboxGroup 컴포넌트 특별 처리
     if (el.tag === 'CheckboxGroup') {
-      const checkboxesData = el.props.children || [];
+      // 실제 Checkbox 자식 요소들을 찾기
+      const checkboxChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'Checkbox')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // isSelected: true인 체크박스들의 ID를 value 배열로 생성
-      const selectedValues = checkboxesData
-        .filter((checkbox: any) => checkbox.isSelected)
-        .map((checkbox: any) => checkbox.id);
+      const selectedValues = checkboxChildren
+        .filter((checkbox) => checkbox.props.isSelected)
+        .map((checkbox) => checkbox.id);
 
       return (
         <CheckboxGroup
@@ -437,29 +440,25 @@ function Preview() {
           orientation={el.props.orientation || 'vertical'}
           onChange={async (newSelectedValues) => {
             // CheckboxGroup의 onChange: 전체 value 배열 업데이트
-            // 동시에 개별 체크박스의 isSelected도 동기화
-            const updatedChildren = checkboxesData.map((checkbox: any) => ({
-              ...checkbox,
-              isSelected: newSelectedValues.includes(checkbox.id)
-            }));
-
             const updatedProps = {
               ...el.props,
-              value: newSelectedValues, // value 배열도 저장
-              children: updatedChildren
+              value: newSelectedValues
             };
             updateElementProps(el.id, updatedProps);
+
+            // 개별 체크박스의 isSelected도 동기화
+            for (const checkbox of checkboxChildren) {
+              const isSelected = newSelectedValues.includes(checkbox.id);
+              if (checkbox.props.isSelected !== isSelected) {
+                updateElementProps(checkbox.id, {
+                  ...checkbox.props,
+                  isSelected
+                });
+              }
+            }
           }}
         >
-          {checkboxesData.map((checkboxData: any, index: number) => (
-            <Checkbox
-              key={checkboxData.id || `checkbox-${index}`}
-              data-element-id={`${el.id}-checkbox-${index}`}
-              value={checkboxData.id} // CheckboxGroup이 어떤 체크박스인지 식별할 수 있도록
-            >
-              {checkboxData.label || `Option ${index + 1}`}
-            </Checkbox>
-          ))}
+          {checkboxChildren.map((checkbox) => renderElement(checkbox))}
         </CheckboxGroup>
       );
     }
