@@ -13,7 +13,7 @@ interface SelectedButtonState {
 
 export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedButton, setSelectedButton] = useState<SelectedButtonState | null>(null);
-    const { addElement } = useStore();
+    const { addElement, currentPageId } = useStore(); // 👈 이것만 사용
 
     useEffect(() => {
         // 버튼 선택 상태 초기화
@@ -199,20 +199,44 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={() => {
-                            const newButtonId = `button${Date.now()}`;
-                            const newButton = {
-                                id: newButtonId,
-                                title: `Button ${(buttonItems.length || 0) + 1}`,
-                                isSelected: false
+                        onClick={async () => {
+                            if (!currentPageId) {
+                                console.error("페이지 ID를 찾을 수 없습니다.");
+                                return;
+                            }
+
+                            const newToggleButton = {
+                                id: crypto.randomUUID(),
+                                page_id: currentPageId, // 👈 직접 사용
+                                tag: 'ToggleButton',
+                                props: {
+                                    isSelected: false,
+                                    defaultSelected: false,
+                                    children: `Button ${(buttonItems.length || 0) + 1}`,
+                                    style: {},
+                                    className: '',
+                                },
+                                parent_id: elementId,
+                                order_num: (buttonItems.length || 0) + 1,
                             };
 
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...buttonItems, newButton]
-                            };
+                            console.log("새 ToggleButton 추가 시도:", {
+                                newToggleButton,
+                                currentPageId,
+                                elementId
+                            });
 
-                            onUpdate(updatedProps);
+                            const { data, error } = await supabase
+                                .from("elements")
+                                .insert([newToggleButton])
+                                .select();
+
+                            if (error) {
+                                console.error("ToggleButton 추가 에러:", error);
+                            } else if (data) {
+                                console.log("ToggleButton 추가 성공:", data[0]);
+                                addElement(data[0]);
+                            }
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />

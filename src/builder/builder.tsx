@@ -146,18 +146,7 @@ function Builder() {
                         selectionMode: 'single',
                         orientation: 'horizontal',
                         isDisabled: false,
-                        children: [
-                            {
-                                id: 'toggle1',
-                                title: 'Option 1',
-                                isSelected: false
-                            },
-                            {
-                                id: 'toggle2',
-                                title: 'Option 2',
-                                isSelected: false
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경
                     };
                 case 'Checkbox':
                     return {
@@ -578,13 +567,47 @@ function Builder() {
                 });
             }
         } else if (args[0] === 'ToggleButtonGroup') {
-            // ToggleButtonGroup은 자식 요소 없이 단독으로 추가 (가상 노드 방식 사용)
+            const toggleGroupId = newElement.id;
+
+            // 기본 2개의 ToggleButton 생성
+            const defaultToggleButtons = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ToggleButton',
+                    props: {
+                        isSelected: false,
+                        defaultSelected: false,
+                        children: 'Option 1',
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: toggleGroupId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ToggleButton',
+                    props: {
+                        isSelected: false,
+                        defaultSelected: false,
+                        children: 'Option 2',
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: toggleGroupId,
+                    order_num: 2,
+                }
+            ];
+
+            // ToggleButtonGroup과 기본 ToggleButton들을 함께 삽입
             const { data, error } = await supabase
                 .from("elements")
-                .insert([newElement])
+                .insert([newElement, ...defaultToggleButtons])
                 .select();
 
-            if (error) console.error("요소 추가 에러:", error);
+            if (error) console.error("ToggleButtonGroup 및 ToggleButton 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);
@@ -594,7 +617,6 @@ function Builder() {
                     setSelectedElement(newElement.id, newElement.props as ElementProps);
                 });
             }
-
         } else if (args[0] === 'Tabs') {
             const tabsId = newElement.id;
             const tabsProps = newElement.props as { children?: Array<{ id: string; title: string; content: string }> };
