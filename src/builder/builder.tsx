@@ -219,23 +219,18 @@ function Builder() {
                     return {
                         ...baseProps,
                         label: text || 'Select',
+                        description: '',
+                        errorMessage: '',
+                        placeholder: '옵션을 선택하세요',
                         selectedKey: null,
-                        children: [
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'SelectItem',
-                                label: 'Option 1',
-                                value: 'option1',
-                                isDisabled: false
-                            },
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'SelectItem',
-                                label: 'Option 2',
-                                value: 'option2',
-                                isDisabled: false
-                            }
-                        ]
+                        defaultSelectedKey: null,
+                        menuTrigger: 'click',
+                        disallowEmptySelection: false,
+                        isDisabled: false,
+                        isRequired: false,
+                        isReadOnly: false,
+                        autoFocus: false,
+                        children: [] // 빈 배열로 변경 - 실제 SelectItem 컴포넌트들이 별도로 생성됨
                     };
 
                 case 'ComboBox':
@@ -770,6 +765,63 @@ function Builder() {
                 .select();
 
             if (error) console.error("GridList 및 GridListItem 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
+        } else if (args[0] === 'Select') {
+            const selectId = newElement.id;
+
+            // 기본 2개의 SelectItem 생성
+            const defaultItems = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'SelectItem',
+                    props: {
+                        label: 'Option 1',
+                        value: 'option1',
+                        textValue: 'option1',
+                        description: '',
+                        isDisabled: false,
+                        isReadOnly: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: selectId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'SelectItem',
+                    props: {
+                        label: 'Option 2',
+                        value: 'option2',
+                        textValue: 'option2',
+                        description: '',
+                        isDisabled: false,
+                        isReadOnly: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: selectId,
+                    order_num: 2,
+                }
+            ];
+
+            // Select와 기본 SelectItem들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultItems])
+                .select();
+
+            if (error) console.error("Select 및 SelectItem 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);

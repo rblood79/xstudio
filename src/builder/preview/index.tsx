@@ -19,6 +19,7 @@ import {
   GridList,
   GridListItem,
   Select,
+  SelectItem,
   ComboBox,
   Slider,
   Tabs,
@@ -691,7 +692,10 @@ function Preview() {
 
     // Select 컴포넌트 특별 처리
     if (el.tag === 'Select') {
-      const itemsData = el.props.children || [];
+      // 실제 SelectItem 자식 요소들을 찾기
+      const selectItemChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'SelectItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <Select
@@ -700,7 +704,17 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           label={el.props.label}
+          description={el.props.description}
+          errorMessage={el.props.errorMessage}
+          placeholder={el.props.placeholder}
           selectedKey={el.props.selectedKey}
+          defaultSelectedKey={el.props.defaultSelectedKey}
+          menuTrigger={el.props.menuTrigger || 'click'}
+          disallowEmptySelection={el.props.disallowEmptySelection}
+          isDisabled={el.props.isDisabled}
+          isRequired={el.props.isRequired}
+          isReadOnly={el.props.isReadOnly}
+          autoFocus={el.props.autoFocus}
           onSelectionChange={(selectedKey) => {
             const updatedProps = {
               ...el.props,
@@ -709,14 +723,15 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {itemsData.map((item: any, index: number) => (
-            <ListBoxItem
-              key={item.id || `selectitem-${index}`}
-              value={item.value}
-              isDisabled={item.isDisabled}
+          {selectItemChildren.map((item) => (
+            <SelectItem
+              key={item.id}
+              value={item.props.value}
+              isDisabled={item.props.isDisabled}
+              isReadOnly={item.props.isReadOnly}
             >
-              {item.label}
-            </ListBoxItem>
+              {item.props.label}
+            </SelectItem>
           ))}
         </Select>
       );
@@ -768,6 +783,23 @@ function Preview() {
         >
           {el.props.label}
         </ListBoxItem>
+      );
+    }
+
+    // SelectItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
+    if (el.tag === 'SelectItem') {
+      return (
+        <SelectItem
+          key={el.id}
+          data-element-id={el.id}
+          value={el.props.value}
+          isDisabled={el.props.isDisabled}
+          isReadOnly={el.props.isReadOnly}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {el.props.label}
+        </SelectItem>
       );
     }
 

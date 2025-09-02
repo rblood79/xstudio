@@ -1,24 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, ListFilter } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, SelectItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
 interface SelectedOptionState {
     parentId: string;
-    optionIndex: number;
+    optionId: string;
 }
 
 export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement } = useStore();
-
-    useEffect(() => {
-        // 옵션 선택 상태 초기화
-        setSelectedOption(null);
-    }, [elementId]);
+    const { addElement, removeElement, setElements, elements: storeElements, currentPageId } = useStore();
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -28,30 +23,34 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         onUpdate(updatedProps);
     };
 
-    // 셀렉트 옵션 배열 가져오기
-    const selectOptions = Array.isArray(currentProps.children) ? currentProps.children as SelectItem[] : [];
+    // 실제 SelectItem 자식 요소들을 찾기
+    const selectItemChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'SelectItem')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 옵션이 있고, 현재 Select 컴포넌트의 옵션인 경우 개별 옵션 편집 UI 표시
     if (selectedOption && selectedOption.parentId === elementId) {
-        const currentOption = selectOptions[selectedOption.optionIndex];
+        const currentOption = selectItemChildren.find(child => child.id === selectedOption.optionId);
         if (!currentOption) return null;
 
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Option Properties</legend>
+                    <legend className='fieldset-legend'>Select Item Properties</legend>
 
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
                         label="라벨"
-                        value={String(currentOption.label || '')}
+                        value={String(currentOption.props.label || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
-                            updatedOptions[selectedOption.optionIndex] = {
-                                ...updatedOptions[selectedOption.optionIndex],
+                            const updatedProps = {
+                                ...currentOption.props,
                                 label: value
                             };
-                            updateProp('children', updatedOptions);
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentOption.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -59,14 +58,14 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     {/* 옵션 값 편집 */}
                     <PropertyInput
                         label="값"
-                        value={String(currentOption.value || '')}
+                        value={String(currentOption.props.value || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
-                            updatedOptions[selectedOption.optionIndex] = {
-                                ...updatedOptions[selectedOption.optionIndex],
+                            const updatedProps = {
+                                ...currentOption.props,
                                 value: value
                             };
-                            updateProp('children', updatedOptions);
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentOption.id, updatedProps);
                         }}
                         icon={Hash}
                     />
@@ -74,28 +73,28 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     {/* 옵션 텍스트 값 편집 */}
                     <PropertyInput
                         label="텍스트 값"
-                        value={String(currentOption.textValue || '')}
+                        value={String(currentOption.props.textValue || '')}
                         onChange={(value) => {
-                            const updatedOptions = [...selectOptions];
-                            updatedOptions[selectedOption.optionIndex] = {
-                                ...updatedOptions[selectedOption.optionIndex],
+                            const updatedProps = {
+                                ...currentOption.props,
                                 textValue: value
                             };
-                            updateProp('children', updatedOptions);
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentOption.id, updatedProps);
                         }}
                     />
 
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
-                        checked={Boolean(currentOption.isDisabled)}
+                        checked={Boolean(currentOption.props.isDisabled)}
                         onChange={(checked) => {
-                            const updatedOptions = [...selectOptions];
-                            updatedOptions[selectedOption.optionIndex] = {
-                                ...updatedOptions[selectedOption.optionIndex],
+                            const updatedProps = {
+                                ...currentOption.props,
                                 isDisabled: checked
                             };
-                            updateProp('children', updatedOptions);
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentOption.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
@@ -104,15 +103,29 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     <div className='tab-actions'>
                         <button
                             className='control-button delete'
-                            onClick={() => {
-                                const updatedOptions = [...selectOptions];
-                                updatedOptions.splice(selectedOption.optionIndex, 1);
-                                updateProp('children', updatedOptions);
-                                setSelectedOption(null);
+                            onClick={async () => {
+                                try {
+                                    // Supabase에서 삭제
+                                    const { error } = await supabase
+                                        .from("elements")
+                                        .delete()
+                                        .eq("id", currentOption.id);
+
+                                    if (error) {
+                                        console.error("SelectItem 삭제 에러:", error);
+                                        return;
+                                    }
+
+                                    // 로컬 상태에서 제거
+                                    removeElement(currentOption.id);
+                                    setSelectedOption(null);
+                                } catch (error) {
+                                    console.error("SelectItem 삭제 중 오류:", error);
+                                }
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Option
+                            Delete This Item
                         </button>
                     </div>
                 </fieldset>
@@ -182,6 +195,17 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                 />
 
+                {/* 메뉴 트리거 설정 */}
+                <PropertySelect
+                    label="메뉴 트리거"
+                    value={String(currentProps.menuTrigger || 'click')}
+                    onChange={(value) => updateProp('menuTrigger', value)}
+                    options={[
+                        { id: 'click', label: 'Click' },
+                        { id: 'hover', label: 'Hover' }
+                    ]}
+                />
+
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
                     label="빈 선택 허용 안함"
@@ -220,30 +244,30 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Option Management</legend>
+                <legend className='fieldset-legend'>Item Management</legend>
 
-                {/* 옵션 개수 표시 */}
+                {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total options: {selectOptions.length || 0}
+                        Total items: {selectItemChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Select individual options from list to edit label, value, and state
+                        💡 Select individual items from list to edit properties
                     </p>
                 </div>
 
-                {/* 옵션 목록 */}
-                {selectOptions.length > 0 && (
+                {/* 아이템 목록 */}
+                {selectItemChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {selectOptions.map((option, index) => (
-                            <div key={option.id} className='tab-list-item'>
+                        {selectItemChildren.map((item, index) => (
+                            <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {option.label || `Option ${index + 1}`}
-                                    {currentProps.selectedKey === option.value && ' ✓'}
+                                    {item.props.label || `Item ${index + 1}`}
+                                    {currentProps.selectedKey === item.props.value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'
-                                    onClick={() => setSelectedOption({ parentId: elementId, optionIndex: index })}
+                                    onClick={() => setSelectedOption({ parentId: elementId, optionId: item.id })}
                                 >
                                     Edit
                                 </button>
@@ -252,29 +276,53 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     </div>
                 )}
 
-                {/* 새 옵션 추가 */}
+                {/* 새 아이템 추가 */}
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={() => {
-                            const newOptionId = `option${Date.now()}`;
-                            const newOption = {
-                                id: newOptionId,
-                                label: `Option ${(selectOptions.length || 0) + 1}`,
-                                value: `option${(selectOptions.length || 0) + 1}`,
-                                isDisabled: false
-                            };
+                        onClick={async () => {
+                            try {
+                                const newItemId = crypto.randomUUID();
+                                const newItem = {
+                                    id: newItemId,
+                                    page_id: currentPageId || '1',
+                                    tag: 'SelectItem',
+                                    props: {
+                                        label: `Option ${(selectItemChildren.length || 0) + 1}`,
+                                        value: `option${(selectItemChildren.length || 0) + 1}`,
+                                        textValue: `option${(selectItemChildren.length || 0) + 1}`,
+                                        description: '',
+                                        isDisabled: false,
+                                        isReadOnly: false,
+                                        style: {},
+                                        className: '',
+                                    },
+                                    parent_id: elementId,
+                                    order_num: (selectItemChildren.length || 0) + 1,
+                                };
 
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...selectOptions, newOption]
-                            };
+                                // Supabase에 삽입
+                                const { data, error } = await supabase
+                                    .from("elements")
+                                    .insert(newItem)
+                                    .select();
 
-                            onUpdate(updatedProps);
+                                if (error) {
+                                    console.error("SelectItem 추가 에러:", error);
+                                    return;
+                                }
+
+                                if (data && data[0]) {
+                                    // 로컬 상태에 추가
+                                    addElement(data[0]);
+                                }
+                            } catch (error) {
+                                console.error("SelectItem 추가 중 오류:", error);
+                            }
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add Option
+                        Add Item
                     </button>
                 </div>
             </fieldset>
