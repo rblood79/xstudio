@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Type, Layout, SquarePlus, Trash, CheckSquare, PointerOff, HelpCircle, AlertTriangle } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, CheckboxItem } from '../types/editorTypes';
@@ -13,7 +13,7 @@ interface SelectedCheckboxState {
 
 export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedCheckbox, setSelectedCheckbox] = useState<SelectedCheckboxState | null>(null);
-    const { addElement } = useStore();
+    const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
     useEffect(() => {
         // 체크박스 선택 상태 초기화
@@ -28,12 +28,16 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
         onUpdate(updatedProps);
     };
 
-    // 체크박스 배열 가져오기
-    const checkboxes = Array.isArray(currentProps.children) ? currentProps.children as CheckboxItem[] : [];
+    // 실제 Checkbox 자식 요소들을 찾기 (useMemo로 최적화)
+    const checkboxChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'Checkbox')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 체크박스가 있고, 현재 CheckboxGroup 컴포넌트의 체크박스인 경우 개별 체크박스 편집 UI 표시
     if (selectedCheckbox && selectedCheckbox.parentId === elementId) {
-        const currentCheckbox = checkboxes[selectedCheckbox.checkboxIndex];
+        const currentCheckbox = checkboxChildren[selectedCheckbox.checkboxIndex];
         if (!currentCheckbox) return null;
 
         return (
@@ -44,14 +48,14 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 라벨 편집 */}
                     <PropertyInput
                         label="라벨"
-                        value={String(currentCheckbox.label || '')}
+                        value={String(currentCheckbox.props.children || '')}
                         onChange={(value) => {
-                            const updatedCheckboxes = [...checkboxes];
-                            updatedCheckboxes[selectedCheckbox.checkboxIndex] = {
-                                ...updatedCheckboxes[selectedCheckbox.checkboxIndex],
-                                label: value
+                            // 실제 Checkbox 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentCheckbox.props,
+                                children: value
                             };
-                            updateProp('children', updatedCheckboxes);
+                            updateElementProps(currentCheckbox.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -59,14 +63,14 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 값 편집 */}
                     <PropertyInput
                         label="값"
-                        value={String(currentCheckbox.value || '')}
+                        value={String(currentCheckbox.props.value || '')}
                         onChange={(value) => {
-                            const updatedCheckboxes = [...checkboxes];
-                            updatedCheckboxes[selectedCheckbox.checkboxIndex] = {
-                                ...updatedCheckboxes[selectedCheckbox.checkboxIndex],
+                            // 실제 Checkbox 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentCheckbox.props,
                                 value: value
                             };
-                            updateProp('children', updatedCheckboxes);
+                            updateElementProps(currentCheckbox.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -74,14 +78,14 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 선택 상태 편집 */}
                     <PropertyCheckbox
                         label="선택됨"
-                        checked={Boolean(currentCheckbox.isSelected)}
+                        checked={Boolean(currentCheckbox.props.isSelected)}
                         onChange={(checked) => {
-                            const updatedCheckboxes = [...checkboxes];
-                            updatedCheckboxes[selectedCheckbox.checkboxIndex] = {
-                                ...updatedCheckboxes[selectedCheckbox.checkboxIndex],
+                            // 실제 Checkbox 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentCheckbox.props,
                                 isSelected: checked
                             };
-                            updateProp('children', updatedCheckboxes);
+                            updateElementProps(currentCheckbox.id, updatedProps);
                         }}
                         icon={CheckSquare}
                     />
@@ -89,17 +93,48 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
-                        checked={Boolean(currentCheckbox.isDisabled)}
+                        checked={Boolean(currentCheckbox.props.isDisabled)}
                         onChange={(checked) => {
-                            const updatedCheckboxes = [...checkboxes];
-                            updatedCheckboxes[selectedCheckbox.checkboxIndex] = {
-                                ...updatedCheckboxes[selectedCheckbox.checkboxIndex],
+                            // 실제 Checkbox 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentCheckbox.props,
                                 isDisabled: checked
                             };
-                            updateProp('children', updatedCheckboxes);
+                            updateElementProps(currentCheckbox.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
+
+                    {/* 체크박스 삭제 버튼 */}
+                    <div className='tab-actions'>
+                        <button
+                            className='control-button delete'
+                            onClick={async () => {
+                                try {
+                                    // 실제 Checkbox 컴포넌트를 데이터베이스에서 삭제
+                                    const { error } = await supabase
+                                        .from('elements')
+                                        .delete()
+                                        .eq('id', currentCheckbox.id);
+
+                                    if (error) {
+                                        console.error('Checkbox 삭제 에러:', error);
+                                        return;
+                                    }
+
+                                    // 스토어에서도 제거
+                                    const updatedElements = storeElements.filter(el => el.id !== currentCheckbox.id);
+                                    setElements(updatedElements);
+                                    setSelectedCheckbox(null);
+                                } catch (error) {
+                                    console.error('Checkbox 삭제 중 오류:', error);
+                                }
+                            }}
+                        >
+                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            Delete This Checkbox
+                        </button>
+                    </div>
 
                     {/* 체크박스 불확실 상태 편집 */}
                     <PropertyCheckbox
@@ -217,7 +252,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                 {/* 체크박스 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total checkboxes: {checkboxes.length || 0}
+                        Total checkboxes: {checkboxChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Select individual checkboxes from list to edit label, value, and state
@@ -225,13 +260,13 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                 </div>
 
                 {/* 체크박스 목록 */}
-                {checkboxes.length > 0 && (
+                {checkboxChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {checkboxes.map((checkbox, index) => (
+                        {checkboxChildren.map((checkbox, index) => (
                             <div key={checkbox.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {checkbox.label || `Option ${index + 1}`}
-                                    {checkbox.isSelected && ' ✓'}
+                                    {checkbox.props.children || `Option ${index + 1}`}
+                                    {checkbox.props.isSelected && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'
@@ -248,21 +283,45 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={() => {
-                            const newCheckboxId = `checkbox${Date.now()}`;
-                            const newCheckbox = {
-                                id: newCheckboxId,
-                                label: `Option ${(checkboxes.length || 0) + 1}`,
-                                value: `option${(checkboxes.length || 0) + 1}`,
-                                isSelected: false
-                            };
+                        onClick={async () => {
+                            try {
+                                // 새로운 Checkbox 요소를 Supabase에 직접 삽입
+                                const newCheckbox = {
+                                    id: crypto.randomUUID(),
+                                    page_id: currentPageId || '1',
+                                    tag: 'Checkbox',
+                                    props: {
+                                        children: `Option ${(checkboxChildren.length || 0) + 1}`,
+                                        value: `option${(checkboxChildren.length || 0) + 1}`,
+                                        isSelected: false,
+                                        isDisabled: false,
+                                        isIndeterminate: false,
+                                        style: {},
+                                        className: '',
+                                    },
+                                    parent_id: elementId,
+                                    order_num: (checkboxChildren.length || 0) + 1,
+                                };
 
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...checkboxes, newCheckbox]
-                            };
+                                const { data, error } = await supabase
+                                    .from('elements')
+                                    .insert(newCheckbox)
+                                    .select()
+                                    .single();
 
-                            onUpdate(updatedProps);
+                                if (error) {
+                                    console.error('Checkbox 추가 에러:', error);
+                                    return;
+                                }
+
+                                if (data) {
+                                    // 스토어에 새 요소 추가
+                                    addElement(data);
+                                    console.log('새 Checkbox 추가됨:', data);
+                                }
+                            } catch (error) {
+                                console.error('Checkbox 추가 중 오류:', error);
+                            }
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
