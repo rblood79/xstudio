@@ -162,18 +162,7 @@ function Builder() {
                         label: text || 'Checkbox Group',
                         orientation: 'vertical',
                         isDisabled: false,
-                        children: [
-                            {
-                                id: 'checkbox1',
-                                label: 'Option 1',
-                                isSelected: false
-                            },
-                            {
-                                id: 'checkbox2',
-                                label: 'Option 2',
-                                isSelected: false
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경 - 실제 Checkbox 컴포넌트들이 별도로 생성됨
                     };
                 case 'TextField':
                     return {
