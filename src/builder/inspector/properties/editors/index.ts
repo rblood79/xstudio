@@ -9,6 +9,7 @@ export { RadioGroupEditor } from './RadioGroupEditor';
 export { ToggleButtonEditor } from './ToggleButtonEditor';
 export { ToggleButtonGroupEditor } from './ToggleButtonGroupEditor';
 export { ListBoxEditor } from './ListBoxEditor';
+export { ListBoxItemEditor } from './ListBoxItemEditor';
 export { GridListEditor } from './GridListEditor';
 export { TabsEditor } from './TabsEditor';
 export { PanelEditor } from './PanelEditor';

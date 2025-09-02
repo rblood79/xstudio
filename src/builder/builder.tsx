@@ -203,22 +203,7 @@ function Builder() {
                         selectionMode: 'none',
                         itemLayout: 'default',
                         selectedKeys: [],
-                        children: [
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'ListBoxItem',
-                                label: 'Item 1',
-                                value: 'item1',
-                                isDisabled: false
-                            },
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'ListBoxItem',
-                                label: 'Item 2',
-                                value: 'item2',
-                                isDisabled: false
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경 - 실제 ListBoxItem 컴포넌트들이 별도로 생성됨
                     };
 
                 case 'GridList':
@@ -692,6 +677,59 @@ function Builder() {
                 .select();
 
             if (error) console.error("RadioGroup 및 Radio 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
+        } else if (args[0] === 'ListBox') {
+            const listBoxId = newElement.id;
+
+            // 기본 2개의 ListBoxItem 생성
+            const defaultItems = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ListBoxItem',
+                    props: {
+                        label: 'Item 1',
+                        value: 'item1',
+                        textValue: 'item1',
+                        isDisabled: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: listBoxId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ListBoxItem',
+                    props: {
+                        label: 'Item 2',
+                        value: 'item2',
+                        textValue: 'item2',
+                        isDisabled: false,
+                        style: {},
+                        className: '',
+                    },
+                    parent_id: listBoxId,
+                    order_num: 2,
+                }
+            ];
+
+            // ListBox와 기본 ListBoxItem들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultItems])
+                .select();
+
+            if (error) console.error("ListBox 및 ListBoxItem 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);
