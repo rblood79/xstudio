@@ -219,6 +219,11 @@ function Preview() {
     const renderToggleButton = (button: PreviewElement, parentGroup?: PreviewElement) => {
       const isInGroup = parentGroup?.tag === 'ToggleButtonGroup';
 
+      // 하위 children 요소들을 가져옴
+      const buttonChildren = elements
+        .filter((child) => child.parent_id === button.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
       return (
         <ToggleButton
           key={button.id}
@@ -240,7 +245,8 @@ function Preview() {
             }
           }}
         >
-          {typeof button.props.children === 'string' ? button.props.children : ''}
+          {typeof button.props.children === 'string' ? button.props.children : null}
+          {buttonChildren.map((child) => renderElement(child))}
         </ToggleButton>
       );
     };
@@ -305,7 +311,32 @@ function Preview() {
 
     // 단독 ToggleButton 컴포넌트 특별 처리
     if (el.tag === 'ToggleButton') {
-      return renderToggleButton(el);
+      const buttonChildren = elements
+        .filter((child) => child.parent_id === el.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      return (
+        <ToggleButton
+          key={el.id}
+          id={el.id}
+          data-element-id={el.id}
+          isSelected={el.props.isSelected}
+          defaultSelected={el.props.defaultSelected}
+          isDisabled={el.props.isDisabled}
+          style={el.props.style}
+          className={el.props.className}
+          onPress={() => {
+            const updatedProps = {
+              ...el.props,
+              isSelected: !el.props.isSelected
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {typeof el.props.children === 'string' ? el.props.children : null}
+          {buttonChildren.map((child) => renderElement(child))}
+        </ToggleButton>
+      );
     }
 
     // Checkbox 컴포넌트 특별 처리
