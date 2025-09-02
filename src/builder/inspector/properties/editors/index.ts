@@ -12,6 +12,7 @@ export { ListBoxEditor } from './ListBoxEditor';
 export { ListBoxItemEditor } from './ListBoxItemEditor';
 export { GridListEditor } from './GridListEditor';
 export { GridListItemEditor } from './GridListItemEditor';
+export { SelectItemEditor } from './SelectItemEditor';
 export { TabsEditor } from './TabsEditor';
 export { PanelEditor } from './PanelEditor';
 export { SliderEditor } from './SliderEditor';
