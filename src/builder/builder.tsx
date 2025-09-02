@@ -380,18 +380,7 @@ function Builder() {
                         label: text || 'Radio Group',
                         orientation: 'vertical',
                         isDisabled: false,
-                        children: [
-                            {
-                                id: 'radio1',
-                                label: 'Option 1',
-                                value: 'option1'
-                            },
-                            {
-                                id: 'radio2',
-                                label: 'Option 2',
-                                value: 'option2'
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경 - 실제 Radio 컴포넌트들이 별도로 생성됨
                     };
                 case 'Panel':
                     return {
@@ -652,6 +641,57 @@ function Builder() {
                 .select();
 
             if (error) console.error("CheckboxGroup 및 Checkbox 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
+        } else if (args[0] === 'RadioGroup') {
+            const radioGroupId = newElement.id;
+
+            // 기본 2개의 Radio 생성
+            const defaultRadios = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Radio',
+                    props: {
+                        isDisabled: false,
+                        children: 'Option 1',
+                        style: {},
+                        className: '',
+                        value: 'option1',
+                    },
+                    parent_id: radioGroupId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'Radio',
+                    props: {
+                        isDisabled: false,
+                        children: 'Option 2',
+                        style: {},
+                        className: '',
+                        value: 'option2',
+                    },
+                    parent_id: radioGroupId,
+                    order_num: 2,
+                }
+            ];
+
+            // RadioGroup과 기본 Radio들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultRadios])
+                .select();
+
+            if (error) console.error("RadioGroup 및 Radio 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);

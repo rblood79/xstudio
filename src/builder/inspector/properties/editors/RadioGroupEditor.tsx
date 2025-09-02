@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Type, Layout, SquarePlus, Trash, CircleDot, PointerOff, HelpCircle, AlertTriangle } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, RadioItem } from '../types/editorTypes';
@@ -13,7 +13,7 @@ interface SelectedRadioState {
 
 export function RadioGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedRadio, setSelectedRadio] = useState<SelectedRadioState | null>(null);
-    const { addElement } = useStore();
+    const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
     useEffect(() => {
         // 라디오 선택 상태 초기화
@@ -28,12 +28,16 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
         onUpdate(updatedProps);
     };
 
-    // 라디오 버튼 배열 가져오기
-    const radioItems = Array.isArray(currentProps.children) ? currentProps.children as RadioItem[] : [];
+    // 실제 Radio 자식 요소들을 찾기 (useMemo로 최적화)
+    const radioChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'Radio')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 라디오 버튼이 있고, 현재 RadioGroup 컴포넌트의 라디오인 경우 개별 라디오 편집 UI 표시
     if (selectedRadio && selectedRadio.parentId === elementId) {
-        const currentRadio = radioItems[selectedRadio.radioIndex];
+        const currentRadio = radioChildren[selectedRadio.radioIndex];
         if (!currentRadio) return null;
 
         return (
@@ -44,14 +48,14 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 라벨 편집 */}
                     <PropertyInput
                         label="라벨"
-                        value={String(currentRadio.label || '')}
+                        value={String(currentRadio.props.children || '')}
                         onChange={(value) => {
-                            const updatedRadios = [...radioItems];
-                            updatedRadios[selectedRadio.radioIndex] = {
-                                ...updatedRadios[selectedRadio.radioIndex],
-                                label: value
+                            // 실제 Radio 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentRadio.props,
+                                children: value
                             };
-                            updateProp('children', updatedRadios);
+                            updateElementProps(currentRadio.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -59,14 +63,14 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 값 편집 */}
                     <PropertyInput
                         label="값"
-                        value={String(currentRadio.value || '')}
+                        value={String(currentRadio.props.value || '')}
                         onChange={(value) => {
-                            const updatedRadios = [...radioItems];
-                            updatedRadios[selectedRadio.radioIndex] = {
-                                ...updatedRadios[selectedRadio.radioIndex],
+                            // 실제 Radio 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentRadio.props,
                                 value: value
                             };
-                            updateProp('children', updatedRadios);
+                            updateElementProps(currentRadio.id, updatedProps);
                         }}
                         icon={Type}
                     />
@@ -74,14 +78,14 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
-                        checked={Boolean(currentRadio.isDisabled)}
+                        checked={Boolean(currentRadio.props.isDisabled)}
                         onChange={(checked) => {
-                            const updatedRadios = [...radioItems];
-                            updatedRadios[selectedRadio.radioIndex] = {
-                                ...updatedRadios[selectedRadio.radioIndex],
+                            // 실제 Radio 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentRadio.props,
                                 isDisabled: checked
                             };
-                            updateProp('children', updatedRadios);
+                            updateElementProps(currentRadio.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
@@ -90,11 +94,26 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     <div className='tab-actions'>
                         <button
                             className='control-button delete'
-                            onClick={() => {
-                                const updatedRadios = [...radioItems];
-                                updatedRadios.splice(selectedRadio.radioIndex, 1);
-                                updateProp('children', updatedRadios);
-                                setSelectedRadio(null);
+                            onClick={async () => {
+                                try {
+                                    // 실제 Radio 컴포넌트를 데이터베이스에서 삭제
+                                    const { error } = await supabase
+                                        .from('elements')
+                                        .delete()
+                                        .eq('id', currentRadio.id);
+
+                                    if (error) {
+                                        console.error('Radio 삭제 에러:', error);
+                                        return;
+                                    }
+
+                                    // 스토어에서도 제거
+                                    const updatedElements = storeElements.filter(el => el.id !== currentRadio.id);
+                                    setElements(updatedElements);
+                                    setSelectedRadio(null);
+                                } catch (error) {
+                                    console.error('Radio 삭제 중 오류:', error);
+                                }
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
@@ -191,7 +210,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                 {/* 라디오 버튼 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total radio options: {radioItems.length || 0}
+                        Total radio options: {radioChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Select individual radio options from list to edit label, value, and state
@@ -199,13 +218,13 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                 </div>
 
                 {/* 라디오 버튼 목록 */}
-                {radioItems.length > 0 && (
+                {radioChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {radioItems.map((radio, index) => (
+                        {radioChildren.map((radio, index) => (
                             <div key={radio.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {radio.label || `Option ${index + 1}`}
-                                    {currentProps.value === radio.value && ' ✓'}
+                                    {radio.props.children || `Option ${index + 1}`}
+                                    {currentProps.value === radio.props.value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'
@@ -222,20 +241,43 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={() => {
-                            const newRadioId = `radio${Date.now()}`;
-                            const newRadio = {
-                                id: newRadioId,
-                                label: `Option ${(radioItems.length || 0) + 1}`,
-                                value: `option${(radioItems.length || 0) + 1}`
-                            };
+                        onClick={async () => {
+                            try {
+                                // 새로운 Radio 요소를 Supabase에 직접 삽입
+                                const newRadio = {
+                                    id: crypto.randomUUID(),
+                                    page_id: currentPageId || '1',
+                                    tag: 'Radio',
+                                    props: {
+                                        children: `Option ${(radioChildren.length || 0) + 1}`,
+                                        value: `option${(radioChildren.length || 0) + 1}`,
+                                        isDisabled: false,
+                                        style: {},
+                                        className: '',
+                                    },
+                                    parent_id: elementId,
+                                    order_num: (radioChildren.length || 0) + 1,
+                                };
 
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...radioItems, newRadio]
-                            };
+                                const { data, error } = await supabase
+                                    .from('elements')
+                                    .insert(newRadio)
+                                    .select()
+                                    .single();
 
-                            onUpdate(updatedProps);
+                                if (error) {
+                                    console.error('Radio 추가 에러:', error);
+                                    return;
+                                }
+
+                                if (data) {
+                                    // 스토어에 새 요소 추가
+                                    addElement(data);
+                                    console.log('새 Radio 추가됨:', data);
+                                }
+                            } catch (error) {
+                                console.error('Radio 추가 중 오류:', error);
+                            }
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
