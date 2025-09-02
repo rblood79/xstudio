@@ -674,12 +674,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                                     const rootItems: any[] = [];
 
                                                     // 모든 아이템을 맵에 저장
-                                                    items.forEach((treeItem, originalIndex) => {
-                                                        itemMap.set(treeItem.id, { ...treeItem, children: [], originalIndex });
+                                                    items.forEach((treeItem) => {
+                                                        itemMap.set(treeItem.id, { ...treeItem, children: [], originalIndex: items.indexOf(treeItem) });
                                                     });
 
                                                     // 계층 구조 구축
-                                                    items.forEach((treeItem, originalIndex) => {
+                                                    items.forEach((treeItem) => {
                                                         const itemWithChildren = itemMap.get(treeItem.id);
                                                         if (treeItem.parent_id === null || treeItem.parent_id === undefined) {
                                                             rootItems.push(itemWithChildren);
