@@ -8,7 +8,9 @@ import {
     ComboBoxEditor,
     CheckboxEditor,
     CheckboxGroupEditor,
+    RadioEditor,
     RadioGroupEditor,
+    ToggleButtonEditor,
     ToggleButtonGroupEditor,
     ListBoxEditor,
     GridListEditor,
@@ -25,6 +27,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     TextField: TextFieldEditor,
     Select: SelectEditor,
     Checkbox: CheckboxEditor,
+    Radio: RadioEditor,
     RadioGroup: RadioGroupEditor,
     ListBox: ListBoxEditor,
     Tabs: TabsEditor,
@@ -35,7 +38,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     ComboBox: ComboBoxEditor,
     CheckboxGroup: CheckboxGroupEditor,
     GridList: GridListEditor,
-    ToggleButton: ButtonEditor, // Button과 유사한 props
+    ToggleButton: ToggleButtonEditor, // 개별 ToggleButton 에디터 사용
     ToggleButtonGroup: ToggleButtonGroupEditor,
 
     // 기본 HTML 요소들
