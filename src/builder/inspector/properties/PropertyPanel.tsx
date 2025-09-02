@@ -15,6 +15,7 @@ import {
     ListBoxEditor,
     ListBoxItemEditor,
     GridListEditor,
+    GridListItemEditor,
     TabsEditor,
     PanelEditor,
     SliderEditor
@@ -32,6 +33,8 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     RadioGroup: RadioGroupEditor,
     ListBox: ListBoxEditor,
     ListBoxItem: ListBoxItemEditor,
+    GridList: GridListEditor,
+    GridListItem: GridListItemEditor,
     Tabs: TabsEditor,
     Panel: PanelEditor,
     Slider: SliderEditor,

@@ -613,7 +613,10 @@ function Preview() {
 
     // GridList 컴포넌트 특별 처리
     if (el.tag === 'GridList') {
-      const itemsData = el.props.children || [];
+      // 실제 GridListItem 자식 요소들을 찾기
+      const gridListChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'GridListItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <GridList
@@ -634,13 +637,13 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {itemsData.map((item: any, index: number) => (
+          {gridListChildren.map((item) => (
             <GridListItem
-              key={item.id || `griditem-${index}`}
-              value={item.value}
-              isDisabled={item.isDisabled}
+              key={item.id}
+              value={item.props.value}
+              isDisabled={item.props.isDisabled}
             >
-              {item.label}
+              {item.props.label}
             </GridListItem>
           ))}
         </GridList>
@@ -765,6 +768,22 @@ function Preview() {
         >
           {el.props.label}
         </ListBoxItem>
+      );
+    }
+
+    // GridListItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
+    if (el.tag === 'GridListItem') {
+      return (
+        <GridListItem
+          key={el.id}
+          data-element-id={el.id}
+          value={el.props.value}
+          isDisabled={el.props.isDisabled}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {el.props.label}
+        </GridListItem>
       );
     }
 
