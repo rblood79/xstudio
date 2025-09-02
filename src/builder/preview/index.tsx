@@ -254,7 +254,11 @@ function Preview() {
     // ToggleButtonGroup 컴포넌트 특별 처리
     if (el.tag === 'ToggleButtonGroup') {
       const orientation = el.props.orientation as 'horizontal' | 'vertical';
-      const buttonsData = el.props.children || []; // children 배열 사용
+
+      // 실제 ToggleButton 자식 요소들을 찾기
+      const toggleButtonChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'ToggleButton')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <ToggleButtonGroup
@@ -273,68 +277,63 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {buttonsData.map((buttonData: any, index: number) => (
-            <ToggleButton
-              key={buttonData.id || `toggle-${index}`}
-              data-element-id={`${el.id}-toggle-${index}`}
-              isSelected={buttonData.isSelected || false}
-              onPress={() => {
-                const updatedChildren = [...buttonsData];
-
-                if (el.props.selectionMode === 'multiple') {
-                  updatedChildren[index] = {
-                    ...updatedChildren[index],
-                    isSelected: !updatedChildren[index].isSelected
-                  };
-                } else {
-                  updatedChildren.forEach((btn, i) => {
-                    updatedChildren[i] = {
-                      ...btn,
-                      isSelected: i === index ? !btn.isSelected : false
-                    };
-                  });
-                }
-
-                const updatedProps = {
-                  ...el.props,
-                  children: updatedChildren
-                };
-                updateElementProps(el.id, updatedProps);
-              }}
-            >
-              {buttonData.title || `Option ${index + 1}`}
-            </ToggleButton>
-          ))}
+          {toggleButtonChildren.map((toggleButton) => renderElement(toggleButton))}
         </ToggleButtonGroup>
       );
     }
 
-    // 단독 ToggleButton 컴포넌트 특별 처리
+    // 단독 ToggleButton 또는 ToggleButtonGroup 내부의 ToggleButton 처리
     if (el.tag === 'ToggleButton') {
-      const buttonChildren = elements
-        .filter((child) => child.parent_id === el.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      const isInGroup = elements.some(parent =>
+        parent.id === el.parent_id && parent.tag === 'ToggleButtonGroup'
+      );
+
+      const parentGroup = isInGroup ?
+        elements.find(parent => parent.id === el.parent_id) : null;
 
       return (
         <ToggleButton
           key={el.id}
           id={el.id}
           data-element-id={el.id}
-          isSelected={el.props.isSelected}
+          isSelected={isInGroup ?
+            parentGroup?.props.value?.includes(el.id) :
+            el.props.isSelected
+          }
           defaultSelected={el.props.defaultSelected}
           isDisabled={el.props.isDisabled}
           style={el.props.style}
           className={el.props.className}
           onPress={() => {
-            const updatedProps = {
-              ...el.props,
-              isSelected: !el.props.isSelected
-            };
-            updateElementProps(el.id, updatedProps);
+            if (isInGroup && parentGroup) {
+              // 그룹 내 토글버튼인 경우 - 그룹의 value 업데이트
+              const currentValue = parentGroup.props.value || [];
+              let newValue;
+
+              if (parentGroup.props.selectionMode === 'multiple') {
+                newValue = currentValue.includes(el.id) ?
+                  currentValue.filter((id: string) => id !== el.id) :
+                  [...currentValue, el.id];
+              } else {
+                newValue = currentValue.includes(el.id) ? [] : [el.id];
+              }
+
+              updateElementProps(parentGroup.id, {
+                ...parentGroup.props,
+                value: newValue
+              });
+            } else {
+              // 단독 토글버튼인 경우
+              const updatedProps = {
+                ...el.props,
+                isSelected: !el.props.isSelected
+              };
+              updateElementProps(el.id, updatedProps);
+            }
           }}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
-          {buttonChildren.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child))}
         </ToggleButton>
       );
     }
