@@ -1,13 +1,17 @@
 import React from 'react';
-import { FieldErrorProps, Group, GroupProps, InputProps, LabelProps, FieldError as RACFieldError, Input as RACInput, Label as RACLabel, Text, TextProps } from "react-aria-components";
+import { FieldErrorProps, Group, GroupProps, InputProps, LabelProps, FieldError as RACFieldError, Input as RACInput, Label as RACLabel, TextProps, Text as RACText } from "react-aria-components";
 
 
 export function Label(props: LabelProps) {
   return <RACLabel {...props} className="react-aria-Label" />;
 }
 
+export function Text(props: TextProps) {
+  return <RACText {...props} className="react-aria-Text" />;
+}
+
 export function Description(props: TextProps) {
-  return <Text {...props} slot="description" className="react-aria-Text" />;
+  return <RACText {...props} slot="description" className="react-aria-Description" />;
 }
 
 export function FieldError(props: FieldErrorProps) {
