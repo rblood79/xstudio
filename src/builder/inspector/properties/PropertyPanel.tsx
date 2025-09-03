@@ -44,7 +44,6 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     // 추가로 지원할 컴포넌트들
     ComboBox: ComboBoxEditor,
     CheckboxGroup: CheckboxGroupEditor,
-    GridList: GridListEditor,
     ToggleButton: ToggleButtonEditor, // 개별 ToggleButton 에디터 사용
     ToggleButtonGroup: ToggleButtonGroupEditor,
 
