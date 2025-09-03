@@ -286,7 +286,7 @@
     .react-aria-RadioGroup {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: var(--spacing-sm);
         color: var(--color-gray-200);
     }
 
@@ -297,9 +297,10 @@
         align-items: center;
         gap: var(--spacing-sm);
         font-size: var(--text-sm);
-        line-height: calc(var(--spacing) * 6);
+        line-height: var(--text-lg);
         color: var(--color-gray-800);
         forced-color-adjust: none;
+        padding: var(--spacing-sm);
 
         &:before {
             content: '';
@@ -381,9 +382,10 @@
         align-items: center;
         gap: var(--spacing-sm);
         font-size: var(--text-sm);
-        line-height: calc(var(--spacing) * 6);
+        line-height: var(--text-lg);
         color: var(--color-gray-800);
         forced-color-adjust: none;
+        padding: var(--spacing-sm);
 
         .checkbox {
             width: var(--spacing-md);
@@ -491,7 +493,7 @@
     .react-aria-CheckboxGroup[data-orientation="horizontal"] {
         display: flex;
         flex-direction: row;
-        gap: 1rem;
+        gap: var(--spacing-sm);
         align-items: flex-start;
     }
 
@@ -505,13 +507,13 @@
     .react-aria-ListBox {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--spacing-sm);
         max-height: inherit;
         overflow: auto;
-        padding: 4px;
+        padding: var(--spacing-sm);
         border: 1px solid var(--border-color);
         border-radius: var(--spacing-sm);
-        background: var(--overlay-background);
+        background: var(--color-white, --overlay-background);
         forced-color-adjust: none;
         outline: none;
         max-height: 300px;
@@ -525,13 +527,13 @@
     }
 
     .react-aria-ListBoxItem {
-        padding: var(--spacing-2xs) var(--spacing-sm);
+        padding: var(--spacing-sm);
         border-radius: var(--radius-sm);
         outline: none;
         cursor: default;
         color: var(--text-color);
         font-size: var(--text-sm);
-        line-height: calc(var(--spacing) * 6);
+        line-height: var(--text-lg);
         position: relative;
         display: flex;
         flex-direction: column;
@@ -562,7 +564,7 @@
 
     .react-aria-ListBox {
         .react-aria-ListBoxSection:not(:first-child) {
-            margin-top: 12px;
+            margin-top: var(--spacing-sm);
         }
 
         .react-aria-Header {
@@ -620,8 +622,8 @@
                     height: 22px;
                     border-radius: 22px;
                     box-sizing: border-box;
-                    font-size: 14px;
-                    line-height: 1em;
+                    font-size: var(--text-sm);
+                    line-height: var(--text-lg);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -974,7 +976,7 @@
         }
 
         .react-aria-ListBoxItem {
-            padding: var(--spacing-2xs) var(--spacing-sm) var(--spacing-2xs) var(--spacing-xl);
+            padding-left: var(--spacing-xl);
 
             &[data-focus-visible] {
                 outline: none;
@@ -1468,15 +1470,16 @@
             display: flex;
             align-items: center;
             gap: 0.571rem;
-            min-height: 28px;
-            padding: 0.286rem 0.286rem 0.286rem 0.571rem;
-            border-radius: 6px;
+            min-height: var(--spacing-md);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-sm);
             outline: none;
             cursor: default;
             color: var(--text-color);
-            font-size: 1.072rem;
+            font-size: var(--text-sm);
             position: relative;
             transform: translateZ(0);
+
 
             &[data-focus-visible] {
                 outline: 2px solid var(--focus-ring-color);
@@ -1688,7 +1691,7 @@
         }
 
         .react-aria-ListBoxItem {
-            padding: var(--spacing-2xs) var(--spacing-sm) var(--spacing-2xs) var(--spacing-sm);
+            padding-left: var(--spacing-xl);
 
             &[data-focus-visible] {
                 outline: none;
