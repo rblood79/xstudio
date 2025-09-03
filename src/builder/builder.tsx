@@ -193,7 +193,7 @@ function Builder() {
                         type: 'text',
                         value: '',
                         placeholder: text || 'Input',
-                        'aria-label': text || 'Input',
+                        'react-aria-label': text || 'Input',
                     };
                 case 'ListBox':
                     return {
@@ -356,7 +356,7 @@ function Builder() {
                 case 'Calendar':
                     return {
                         ...baseProps,
-                        'aria-label': text || 'Calendar',
+                        'react-aria-label': text || 'Calendar',
                         isDisabled: false,
                         visibleDuration: { months: 1 },
                         pageBehavior: 'visible',
