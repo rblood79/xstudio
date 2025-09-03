@@ -1,6 +1,6 @@
 import "./index.css";
 import React from "react";
-import { Settings2, Trash, ChevronRight, Box, Folder, File, X } from 'lucide-react';
+import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores/elements';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
@@ -98,7 +98,6 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         });
     };
 
-    type TabItem = { id: string; title: string; content?: string };
     type ButtonItem = { id: string; title: string; isSelected?: boolean };
     type CheckboxItem = { id: string; label: string; isSelected?: boolean };
     type RadioItem = { id: string; label: string; value: string };
