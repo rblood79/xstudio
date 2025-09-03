@@ -833,40 +833,68 @@ function Builder() {
             }
         } else if (args[0] === 'Tabs') {
             const tabsId = newElement.id;
-            const tabsProps = newElement.props as { children?: Array<{ id: string; title: string; content: string }> };
-            const children = tabsProps.children || [];
 
-            // TabPanels 하위에 들어갈 Panel 컴포넌트들 생성
-            const panelElements = children.map((tab: { id: string; title: string; content: string }, index: number) => ({
+            // Tabs props에서 children 배열 제거
+            const tabsProps = {
+                ...newElement.props,
+                children: undefined // children 배열 제거
+            };
+
+            // 기본 Tab과 Panel 요소들 생성
+            const defaultTab = {
+                id: crypto.randomUUID(),
+                page_id: selectedPageId,
+                tag: 'Tab',
+                props: {
+                    title: 'Tab 1',
+                    variant: 'default',
+                    appearance: 'light',
+                    style: {},
+                    className: '',
+                },
+                parent_id: tabsId,
+                order_num: 1,
+            };
+
+            const defaultPanel = {
                 id: crypto.randomUUID(),
                 page_id: selectedPageId,
                 tag: 'Panel',
                 props: {
                     variant: 'tab',
-                    title: tab.title,
-                    tabIndex: index,
+                    title: 'Tab 1',
+                    tabIndex: 0,
                     style: {},
                     className: '',
                 },
-                parent_id: tabsId, // Tabs를 직접 부모로 설정
-                order_num: index + 1,
-            }));
+                parent_id: tabsId,
+                order_num: 1,
+            };
 
-            // Tabs와 Panel들을 함께 삽입
-            const { data, error } = await supabase
-                .from("elements")
-                .insert([newElement, ...panelElements])
-                .select();
+            try {
+                // Tabs, Tab, Panel을 함께 삽입 (children 배열 없이)
+                const { data, error } = await supabase
+                    .from("elements")
+                    .insert([{ ...newElement, props: tabsProps }, defaultTab, defaultPanel])
+                    .select();
 
-            if (error) console.error("Tabs 및 Panel 추가 에러:", error);
-            else if (data) {
-                data.forEach(element => {
-                    addElement(element);
-                });
+                if (error) {
+                    console.error("Tabs, Tab, Panel 추가 에러:", error);
+                    return;
+                }
 
-                requestAnimationFrame(() => {
-                    setSelectedElement(tabsId, newElement.props as ElementProps);
-                });
+                if (data && data.length >= 3) {
+                    // 각 요소를 개별적으로 스토어에 추가
+                    data.forEach((element, index) => {
+                        addElement(element);
+                    });
+
+                    requestAnimationFrame(() => {
+                        setSelectedElement(tabsId, tabsProps as ElementProps);
+                    });
+                }
+            } catch (err) {
+                console.error("Tabs 생성 중 오류:", err);
             }
         } else {
             // TextField가 아닌 경우 기존 로직 사용

@@ -846,7 +846,11 @@ function Preview() {
 
     // Tabs 컴포넌트 특별 처리
     if (el.tag === 'Tabs') {
-      // Tabs의 실제 Panel 자식들을 찾기
+      // Tabs의 실제 Tab과 Panel 자식들을 찾기
+      const tabChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'Tab')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
       const panelChildren = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'Panel')
         .sort((a, b) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
@@ -869,19 +873,19 @@ function Preview() {
           }}
         >
           <TabList orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}>
-            {el.props.children?.map((tab: any) => (
+            {tabChildren.map((tab) => (
               <Tab key={tab.id} id={tab.id}>
-                {tab.title}
+                {tab.props.title}
               </Tab>
             ))}
           </TabList>
 
           {/* 실제 Panel 컴포넌트들을 TabPanel로 래핑하여 렌더링 */}
           {panelChildren.map((panel) => {
-            const correspondingTab = el.props.children?.[panel.props.tabIndex || 0];
+            const correspondingTab = tabChildren[panel.props.tabIndex || 0];
             return (
               <TabPanel key={panel.id} id={correspondingTab?.id || `tab-${panel.props.tabIndex || 0}`}>
-                {renderElement(panel)} {/* Panel 컴포넌트와 그 하위 요소들 렌더링 */}
+                {renderElement(panel)}
               </TabPanel>
             );
           })}

@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppWindow, Layout, Type, Trash, Plus } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
-import { PropertyEditorProps, TabItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
+
+interface SelectedTabState {
+    parentId: string;
+    tabIndex: number;
+}
 
 // 상수 정의
 const TAB_VARIANTS = [
@@ -27,11 +32,6 @@ const ORIENTATIONS = [
 ] as const;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-interface SelectedTabState {
-    parentId: string;
-    tabIndex: number;
-}
 
 // 커스텀 훅: 페이지 ID 관리
 function usePageId() {
@@ -100,36 +100,19 @@ function usePageId() {
     return { localPageId, storePageId, validatePageId };
 }
 
-// 공통 함수: 탭 업데이트
-function updateTabProperty(
-    tabs: TabItem[],
-    tabIndex: number,
-    property: keyof TabItem,
-    value: unknown,
-    onUpdate: (props: any) => void,
-    currentProps: any
-) {
-    const updatedTabs = [...tabs];
-    updatedTabs[tabIndex] = {
-        ...updatedTabs[tabIndex],
-        [property]: value
-    };
-
-    const updatedProps = {
-        ...currentProps,
-        children: updatedTabs
-    };
-    onUpdate(updatedProps);
-}
-
 export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedTab, setSelectedTab] = useState<SelectedTabState | null>(null);
-    const { addElement, removeElement } = useStore();
+    const { addElement, removeElement, elements: storeElements, selectedTab: storeSelectedTab } = useStore();
     const { localPageId, storePageId, validatePageId } = usePageId();
 
     useEffect(() => {
-        setSelectedTab(null);
-    }, [elementId]);
+        // 스토어에서 선택된 Tab 정보가 있으면 로컬 상태와 동기화
+        if (storeSelectedTab && storeSelectedTab.parentId === elementId) {
+            setSelectedTab(storeSelectedTab);
+        } else {
+            setSelectedTab(null);
+        }
+    }, [elementId, storeSelectedTab]);
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -139,12 +122,20 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         onUpdate(updatedProps);
     };
 
-    const tabs = Array.isArray(currentProps.children) ? currentProps.children as TabItem[] : [];
+    // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
+    const tabChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'Tab')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 탭 편집 UI
     if (selectedTab && selectedTab.parentId === elementId) {
-        const currentTab = tabs[selectedTab.tabIndex];
-        if (!currentTab) return null;
+        const currentTab = tabChildren[selectedTab.tabIndex];
+        if (!currentTab) {
+            console.warn('선택된 Tab을 찾을 수 없습니다:', selectedTab, tabChildren);
+            return null;
+        }
 
         return (
             <div className="component-props">
@@ -153,23 +144,45 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
                     <PropertyInput
                         label="Tab Title"
-                        value={currentTab.title || ''}
-                        onChange={(value) => updateTabProperty(tabs, selectedTab.tabIndex, 'title', value, onUpdate, currentProps)}
+                        value={String(currentTab.props.title || '')}
+                        onChange={(value) => {
+                            const updatedProps = {
+                                ...currentTab.props,
+                                title: value
+                            };
+                            // 실제 Tab 컴포넌트의 props 업데이트
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentTab.id, updatedProps);
+                        }}
                         icon={Type}
                     />
 
                     <PropertySelect
                         label="Variant"
-                        value={currentTab.variant || 'default'}
-                        onChange={(value) => updateTabProperty(tabs, selectedTab.tabIndex, 'variant', value, onUpdate, currentProps)}
+                        value={currentTab.props.variant || 'default'}
+                        onChange={(value) => {
+                            const updatedProps = {
+                                ...currentTab.props,
+                                variant: value as 'default' | 'bordered' | 'underlined' | 'pill'
+                            };
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentTab.id, updatedProps);
+                        }}
                         options={TAB_VARIANTS}
                         icon={Layout}
                     />
 
                     <PropertySelect
                         label="Appearance"
-                        value={currentTab.appearance || 'light'}
-                        onChange={(value) => updateTabProperty(tabs, selectedTab.tabIndex, 'appearance', value, onUpdate, currentProps)}
+                        value={currentTab.props.appearance || 'light'}
+                        onChange={(value) => {
+                            const updatedProps = {
+                                ...currentTab.props,
+                                appearance: value as 'light' | 'dark' | 'solid' | 'bordered'
+                            };
+                            const { updateElementProps } = useStore.getState();
+                            updateElementProps(currentTab.id, updatedProps);
+                        }}
                         options={TAB_APPEARANCES}
                         icon={AppWindow}
                     />
@@ -179,7 +192,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                             className='control-button delete'
                             onClick={async () => {
                                 try {
-                                    await deleteTab(selectedTab.tabIndex, tabs, currentProps, elementId, onUpdate, addElement, removeElement);
+                                    await deleteTab(selectedTab.tabIndex, tabChildren, currentProps, elementId, onUpdate, addElement, removeElement);
                                     setSelectedTab(null);
                                 } catch (err) {
                                     console.error('Delete tab error:', err);
@@ -220,7 +233,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 return;
             }
 
-            await createNewTab(tabs, currentProps, elementId, pageIdToUse, onUpdate, addElement);
+            await createNewTab(tabChildren, currentProps, elementId, pageIdToUse, onUpdate, addElement);
         } catch (err) {
             console.error('Add tab error:', err);
             alert('탭 추가 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -236,9 +249,9 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     label="Default Tab"
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
-                    options={tabs.map(tab => ({
+                    options={tabChildren.map(tab => ({
                         id: tab.id,
-                        label: tab.title
+                        label: tab.props.title || 'Untitled Tab'
                     }))}
                     icon={AppWindow}
                 />
@@ -257,18 +270,18 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total tabs: {tabs.length || 0}
+                        Total tabs: {tabChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Select individual tabs from tree to edit title, variant, and appearance
                     </p>
                 </div>
 
-                {tabs.length > 0 && (
+                {tabChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {tabs.map((tab, index) => (
+                        {tabChildren.map((tab, index) => (
                             <div key={tab.id} className='tab-list-item'>
-                                <span className='tab-title'>{tab.title || `Tab ${index + 1}`}</span>
+                                <span className='tab-title'>{tab.props.title || `Tab ${index + 1}`}</span>
                                 <button
                                     className='tab-edit-button'
                                     onClick={() => setSelectedTab({ parentId: elementId, tabIndex: index })}
@@ -298,39 +311,49 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 // 유틸리티 함수들
 async function deleteTab(
     tabIndex: number,
-    tabs: TabItem[],
+    tabChildren: any[],
     currentProps: any,
     elementId: string,
     onUpdate: (props: any) => void,
     addElement: (element: any) => void,
     removeElement: (id: string) => void
 ) {
-    // 1. 삭제할 탭의 패널 ID 찾기
+    const currentTab = tabChildren[tabIndex];
+    if (!currentTab) return;
+
+    // 1. Tab 요소 삭제
+    await supabase.from('elements').delete().eq('id', currentTab.id);
+    removeElement(currentTab.id);
+
+    // 2. 해당 Tab과 연결된 Panel 요소 찾기 및 삭제
     const { data: panelElements } = await supabase
         .from('elements')
         .select('*')
         .eq('parent_id', elementId)
         .eq('props->tabIndex', tabIndex);
 
-    // 2. 패널 요소 삭제
     if (panelElements && panelElements.length > 0) {
         const panelToDelete = panelElements[0];
         await supabase.from('elements').delete().eq('id', panelToDelete.id);
         removeElement(panelToDelete.id);
     }
 
-    // 3. 탭 배열에서 제거
-    const updatedTabs = [...tabs];
-    updatedTabs.splice(tabIndex, 1);
+    // 3. 남은 Tab들의 order_num 업데이트
+    const remainingTabs = tabChildren.filter((_, index) => index !== tabIndex);
+    for (let i = 0; i < remainingTabs.length; i++) {
+        const tab = remainingTabs[i];
+        const updatedProps = { ...tab.props, order_num: i + 1 };
+        const { updateElementProps } = useStore.getState();
+        updateElementProps(tab.id, updatedProps);
+    }
 
-    // 4. 남은 탭들의 패널 인덱스 업데이트
-    await updateRemainingPanelIndices(elementId, tabIndex, updatedTabs.length, addElement, removeElement);
+    // 4. 남은 Panel들의 tabIndex 업데이트
+    await updateRemainingPanelIndices(elementId, tabIndex, remainingTabs.length, addElement, removeElement);
 
-    // 5. Tabs props 업데이트
+    // 5. Tabs props 업데이트 (defaultSelectedKey만, children 제거)
     const updatedProps = {
         ...currentProps,
-        children: updatedTabs,
-        defaultSelectedKey: updatedTabs.length > 0 ? updatedTabs[0].id : undefined
+        defaultSelectedKey: remainingTabs.length > 0 ? remainingTabs[0].id : undefined
     };
 
     const { error: tabsUpdateError } = await supabase
@@ -383,29 +406,39 @@ async function updateRemainingPanelIndices(
 }
 
 async function createNewTab(
-    tabs: TabItem[],
+    tabChildren: any[],
     currentProps: any,
     elementId: string,
     pageId: string,
     onUpdate: (props: any) => void,
     addElement: (element: any) => void
 ) {
-    const newTabId = `tab${Date.now()}`;
-    const newTabIndex = tabs.length || 0;
-    const newTab = {
-        id: newTabId,
-        title: `Tab ${newTabIndex + 1}`,
-        variant: 'default',
-        appearance: 'light'
+    const newTabIndex = tabChildren.length || 0;
+
+    // 새로운 Tab 요소 생성
+    const newTabElement = {
+        id: crypto.randomUUID(),
+        page_id: pageId,
+        tag: 'Tab',
+        props: {
+            title: `Tab ${newTabIndex + 1}`,
+            variant: 'default',
+            appearance: 'light',
+            style: {},
+            className: '',
+        },
+        parent_id: elementId,
+        order_num: newTabIndex + 1,
     };
 
+    // 새로운 Panel 요소 생성
     const newPanelElement = {
         id: crypto.randomUUID(),
         page_id: pageId,
         tag: 'Panel',
         props: {
             variant: 'tab',
-            title: newTab.title,
+            title: newTabElement.props.title,
             tabIndex: newTabIndex,
             style: {},
             className: '',
@@ -414,34 +447,53 @@ async function createNewTab(
         order_num: newTabIndex + 1,
     };
 
-    const { data: panelData, error: panelError } = await supabase
-        .from('elements')
-        .insert([newPanelElement])
-        .select()
-        .single();
+    try {
+        // Tab과 Panel을 함께 삽입
+        const { data, error } = await supabase
+            .from('elements')
+            .insert([newTabElement, newPanelElement])
+            .select();
 
-    if (panelError) {
-        throw new Error('Panel creation failed');
-    }
+        if (error) {
+            throw new Error('Tab and Panel creation failed');
+        }
 
-    const updatedProps = {
-        ...currentProps,
-        children: [...tabs, newTab],
-        defaultSelectedKey: tabs.length === 0 ? newTabId : currentProps.defaultSelectedKey
-    };
+        // Tabs props 업데이트 (defaultSelectedKey만, children 제거)
+        const updatedProps = {
+            ...currentProps,
+            defaultSelectedKey: tabChildren.length === 0 ? newTabElement.id : currentProps.defaultSelectedKey
+        };
 
-    const { error: updateError } = await supabase
-        .from('elements')
-        .update({ props: updatedProps })
-        .eq('id', elementId);
+        const { error: updateError } = await supabase
+            .from('elements')
+            .update({ props: updatedProps })
+            .eq('id', elementId);
 
-    if (updateError) {
-        await supabase.from('elements').delete().eq('id', newPanelElement.id);
-        throw new Error('Tabs update failed');
-    }
+        if (updateError) {
+            // Tabs 업데이트 실패 시 생성된 요소들 삭제
+            await supabase.from('elements').delete().eq('id', newTabElement.id);
+            await supabase.from('elements').delete().eq('id', newPanelElement.id);
+            throw new Error('Tabs update failed');
+        }
 
-    onUpdate(updatedProps);
-    if (panelData) {
-        addElement(panelData);
+        // 성공 시 상태 업데이트
+        onUpdate(updatedProps);
+
+        // 스토어에 새 요소들 추가 - 각각 개별적으로 추가
+        if (data && data.length >= 2) {
+            // Tab 요소 추가
+            addElement(data[0]);
+            // Panel 요소 추가
+            addElement(data[1]);
+
+            console.log('새 Tab과 Panel이 스토어에 추가됨:', {
+                tab: data[0],
+                panel: data[1]
+            });
+        }
+
+    } catch (err) {
+        console.error('createNewTab error:', err);
+        throw err;
     }
 }
