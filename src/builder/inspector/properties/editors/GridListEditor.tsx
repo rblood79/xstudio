@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Layout, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Grid, MoveHorizontal, FileText } from 'lucide-react';
+import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Grid, MoveHorizontal, FileText } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, GridListItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';

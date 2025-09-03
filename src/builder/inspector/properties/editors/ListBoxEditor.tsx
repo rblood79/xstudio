@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Layout, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, List } from 'lucide-react';
+import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, List } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, ListBoxItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
@@ -233,7 +233,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         {listBoxChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {item.props.label || `Item ${index + 1}`}
+                                    {String(item.props.label || `Item ${index + 1}`)}
                                 </span>
                                 <button
                                     className='tab-edit-button'

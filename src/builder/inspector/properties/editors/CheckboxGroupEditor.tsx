@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Type, Layout, SquarePlus, Trash, CheckSquare, PointerOff, HelpCircle, AlertTriangle } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, CheckboxItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
@@ -105,6 +105,21 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         icon={PointerOff}
                     />
 
+                    {/* 체크박스 불확실 상태 편집 */}
+                    <PropertyCheckbox
+                        label="불확실 상태"
+                        checked={Boolean(currentCheckbox.props.isIndeterminate)}
+                        onChange={(checked) => {
+                            // 실제 Checkbox 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentCheckbox.props,
+                                isIndeterminate: checked
+                            };
+                            updateElementProps(currentCheckbox.id, updatedProps);
+                        }}
+                        icon={CheckSquare}
+                    />
+
                     {/* 체크박스 삭제 버튼 */}
                     <div className='tab-actions'>
                         <button
@@ -129,37 +144,6 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                                 } catch (error) {
                                     console.error('Checkbox 삭제 중 오류:', error);
                                 }
-                            }}
-                        >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Checkbox
-                        </button>
-                    </div>
-
-                    {/* 체크박스 불확실 상태 편집 */}
-                    <PropertyCheckbox
-                        label="불확실 상태"
-                        checked={Boolean(currentCheckbox.isIndeterminate)}
-                        onChange={(checked) => {
-                            const updatedCheckboxes = [...checkboxes];
-                            updatedCheckboxes[selectedCheckbox.checkboxIndex] = {
-                                ...updatedCheckboxes[selectedCheckbox.checkboxIndex],
-                                isIndeterminate: checked
-                            };
-                            updateProp('children', updatedCheckboxes);
-                        }}
-                        icon={CheckSquare}
-                    />
-
-                    {/* 체크박스 삭제 버튼 */}
-                    <div className='tab-actions'>
-                        <button
-                            className='control-button delete'
-                            onClick={() => {
-                                const updatedCheckboxes = [...checkboxes];
-                                updatedCheckboxes.splice(selectedCheckbox.checkboxIndex, 1);
-                                updateProp('children', updatedCheckboxes);
-                                setSelectedCheckbox(null);
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
