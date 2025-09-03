@@ -59,23 +59,40 @@ function Dashboard() {
     const projectId = newProject.id;
 
     // Step 2: pages 테이블에 기본 페이지 생성 (예: Home Page)
-    const { error: pageError } = await supabase
+    const { data: pageData, error: pageError } = await supabase
       .from("pages")
-      .insert([{ project_id: projectId, title: "Home", slug: "home" }]);
+      .insert([{ project_id: projectId, title: "Home", slug: "home" }])
+      .select(); // 삽입된 데이터 반환
     if (pageError) {
       console.error("기본 페이지 생성 에러:", pageError);
       // 필요시 프로젝트 생성 롤백 고려
+      return;
     }
 
-    // Step 3: project_users 테이블에 프로젝트 소유자 기록 추가
+    // Step 3: Home 페이지에 기본 body 요소 생성
+    const homePageId = pageData[0].id;
+    const bodyElement = {
+      tag: 'body',
+      props: { style: {} },
+      page_id: homePageId,
+      parent_id: null, // 최상위 요소
+      order_num: 0
+    };
+
+    const { error: bodyError } = await supabase
+      .from("elements")
+      .insert([bodyElement]);
+    if (bodyError) {
+      console.error("기본 body 요소 생성 에러:", bodyError);
+    }
+
+    // Step 4: project_users 테이블에 프로젝트 소유자 기록 추가
     const { error: puError } = await supabase
       .from("project_users")
       .insert([{ project_id: projectId, user_id: userId, role: "owner" }]);
     if (puError) {
       console.error("프로젝트 사용자 추가 에러:", puError);
     }
-
-    // (선택적) Step 4: pages에 기본 템플릿 요소(elements) 생성 - 생략
 
     // 상태 업데이트: 새 프로젝트를 목록에 추가
     setProjects((prev) => [...prev, newProject]);
