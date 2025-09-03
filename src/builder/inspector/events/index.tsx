@@ -595,16 +595,18 @@ function Events() {
 
     return (
         <div className="events-container">
-            <div className="events-header">
-                <h3>이벤트</h3>
-                <Button onPress={addEvent}>
-                    <Plus size={16} />
-                </Button>
+            <div className="panel-header">
+                <h3 className="panel-title">이벤트</h3>
+                <div className="header-actions">
+                    <Button onPress={addEvent}>
+                        <Plus size={16} />
+                    </Button>
+                </div>
             </div>
 
             {events.length === 0 ? (
                 <div className="no-events">
-                    <Play size={48} />
+                    <Play size={24} />
                     <h4>이벤트가 없습니다</h4>
                     <p>첫 번째 이벤트를 추가해보세요.</p>
                     <Button onPress={addEvent} variant="outline">
@@ -613,7 +615,7 @@ function Events() {
                     </Button>
                 </div>
             ) : (
-                <div className="events-list">
+                <div className="panel-content">
                     {events.map(event => (
                         <EventEditor
                             key={event.id}
