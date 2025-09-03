@@ -13,17 +13,97 @@ interface SelectedTabState {
 
 export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedTab, setSelectedTab] = useState<SelectedTabState | null>(null);
-    const { addElement } = useStore();
-    const [currentPageId, setCurrentPageId] = useState<string>('');
+    const { addElement, currentPageId: storePageId, setCurrentPageId } = useStore();
+    const [localPageId, setLocalPageId] = useState<string>('');
 
     useEffect(() => {
-        // 현재 페이지 ID 가져오기
-        const pageId = window.location.pathname.split('/').pop() || '';
-        setCurrentPageId(pageId);
+        // 1. 스토어에서 페이지 ID 가져오기 (우선순위 1)
+        if (storePageId) {
+            console.log('Using page ID from store:', storePageId);
+            setLocalPageId(storePageId);
+            return;
+        }
+
+        // 2. URL에서 페이지 ID 추출 (우선순위 2)
+        const pathParts = window.location.pathname.split('/');
+        const urlPageId = pathParts[pathParts.length - 1];
+
+        // UUID 형식인지 확인
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        if (urlPageId && uuidRegex.test(urlPageId)) {
+            console.log('Using page ID from URL:', urlPageId);
+            setLocalPageId(urlPageId);
+            // 스토어에도 설정
+            setCurrentPageId(urlPageId);
+        } else {
+            console.warn('Invalid page ID from URL:', urlPageId);
+            // 3. 프로젝트 ID로 현재 페이지 조회 (우선순위 3)
+            const projectId = pathParts[pathParts.length - 2];
+            if (projectId) {
+                fetchCurrentPageId(projectId);
+            }
+        }
 
         // 탭 선택 상태 초기화
         setSelectedTab(null);
-    }, [elementId]);
+    }, [elementId, storePageId, setCurrentPageId]);
+
+    // 프로젝트 ID로 현재 페이지 ID 가져오기
+    const fetchCurrentPageId = async (projectId: string) => {
+        try {
+            console.log('Fetching current page ID for project:', projectId);
+
+            const { data: pages, error } = await supabase
+                .from('pages')
+                .select('id, name')
+                .eq('project_id', projectId)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) {
+                console.error('Error fetching pages:', error);
+                return;
+            }
+
+            if (pages && pages.length > 0) {
+                const pageId = pages[0].id;
+                console.log('Fetched current page ID:', pageId, 'Name:', pages[0].name);
+                setLocalPageId(pageId);
+                setCurrentPageId(pageId);
+            } else {
+                console.warn('No pages found for project:', projectId);
+            }
+        } catch (err) {
+            console.error('Failed to fetch current page ID:', err);
+        }
+    };
+
+    // 페이지 ID 유효성 검증
+    const validatePageId = async (pageId: string): Promise<boolean> => {
+        try {
+            const { data, error } = await supabase
+                .from('pages')
+                .select('id, name')
+                .eq('id', pageId)
+                .single();
+
+            if (error) {
+                console.error('Page validation error:', error);
+                return false;
+            }
+
+            if (data) {
+                console.log('Page validation successful:', data.id, data.name);
+                return true;
+            }
+
+            return false;
+        } catch (err) {
+            console.error('Page validation failed:', err);
+            return false;
+        }
+    };
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -35,6 +115,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     // 탭 배열 가져오기
     const tabs = Array.isArray(currentProps.children) ? currentProps.children as TabItem[] : [];
+    console.log('Tabs array:', tabs);
 
     // 선택된 탭이 있고, 현재 Tabs 컴포넌트의 탭인 경우 개별 탭 편집 UI 표시
     if (selectedTab && selectedTab.parentId === elementId) {
@@ -267,7 +348,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                             // 새로운 Panel 컴포넌트 생성
                             const newPanelElement = {
                                 id: crypto.randomUUID(),
-                                page_id: currentPageId,
+                                page_id: localPageId || storePageId, // 페이지 ID 사용
                                 tag: 'Panel',
                                 props: {
                                     variant: 'tab',

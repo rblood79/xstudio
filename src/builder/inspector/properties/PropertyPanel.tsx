@@ -98,7 +98,7 @@ export function PropertyPanel() {
     return (
         <div className="property-container">
             <div className="panel-header">
-                <h3 className="panel-title">Properties: {componentTag}</h3>
+                <h3 className="panel-title">{componentTag}</h3>
             </div>
             <div className="panel-content">
                 <EditorComponent
