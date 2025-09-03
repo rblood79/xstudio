@@ -48,6 +48,7 @@ interface Store {
   setCurrentPageId: (pageId: string) => void;
   undo: () => void;
   redo: () => void;
+  removeElement: (elementId: string) => void;
 }
 
 const sanitizeElement = (el: Element) => ({
@@ -314,6 +315,39 @@ export const useStore = create<Store>((set, get) => ({
       })
     );
   },
+  removeElement: (elementId: string) =>
+    set(
+      produce((state) => {
+        const prevState = [...state.elements];
+        state.elements = state.elements.filter((el: Element) => el.id !== elementId);
+
+        // 히스토리 업데이트
+        if (state.history.length > 0) {
+          state.history = [
+            ...state.history.slice(0, state.historyIndex + 1),
+            {
+              patches: [],
+              inversePatches: [],
+              snapshot: {
+                prev: prevState,
+                current: [...state.elements]
+              }
+            }
+          ];
+          state.historyIndex = state.history.length - 1;
+        }
+
+        // postMessage로 변경사항 알림
+        try {
+          window.postMessage({
+            type: "UPDATE_ELEMENTS",
+            elements: state.elements.map(sanitizeElement)
+          }, window.location.origin);
+        } catch (error) {
+          console.error("Failed to send message:", error);
+        }
+      })
+    ),
 }));
 
 // addElement, updateElementProps 등의 상태 변경 함수들에서 공통으로 사용할 히스토리 업데이트 로직

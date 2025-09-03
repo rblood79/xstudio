@@ -13,7 +13,7 @@ interface SelectedTabState {
 
 export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedTab, setSelectedTab] = useState<SelectedTabState | null>(null);
-    const { addElement, currentPageId: storePageId, setCurrentPageId } = useStore();
+    const { addElement, removeElement, currentPageId: storePageId, setCurrentPageId } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 
     useEffect(() => {
@@ -85,6 +85,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         }
     };
 
+    // 공통 updateProp 함수 - 다른 컴포넌트와 동일한 패턴
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
@@ -169,26 +170,34 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                             className='control-button delete'
                             onClick={async () => {
                                 try {
-                                    // 삭제할 탭의 패널 ID 찾기
+                                    // 1. 삭제할 탭의 패널 ID 찾기
                                     const { data: panelElements } = await supabase
                                         .from('elements')
                                         .select('*')
                                         .eq('parent_id', elementId)
                                         .eq('props->tabIndex', selectedTab.tabIndex);
 
-                                    // 패널 요소 삭제
+                                    // 2. 패널 요소 삭제 및 스토어에서 제거
                                     if (panelElements && panelElements.length > 0) {
+                                        const panelToDelete = panelElements[0];
+
+                                        // 데이터베이스에서 패널 삭제
                                         await supabase
                                             .from('elements')
                                             .delete()
-                                            .eq('id', panelElements[0].id);
+                                            .eq('id', panelToDelete.id);
+
+                                        // 스토어에서도 패널 제거 (Layer 트리에서 사라지도록)
+                                        removeElement(panelToDelete.id);
+
+                                        console.log('Panel removed from store:', panelToDelete.id);
                                     }
 
-                                    // 탭 배열에서 제거
+                                    // 3. 탭 배열에서 제거
                                     const updatedTabs = [...tabs];
                                     updatedTabs.splice(selectedTab.tabIndex, 1);
 
-                                    // 탭 인덱스 업데이트
+                                    // 4. 남은 탭들의 패널 인덱스 업데이트
                                     for (let i = selectedTab.tabIndex; i < updatedTabs.length; i++) {
                                         const { data: panelsToUpdate } = await supabase
                                             .from('elements')
@@ -197,30 +206,67 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                                             .eq('props->tabIndex', i + 1);
 
                                         if (panelsToUpdate && panelsToUpdate.length > 0) {
+                                            const panelToUpdate = panelsToUpdate[0];
+
+                                            // 데이터베이스 업데이트
                                             await supabase
                                                 .from('elements')
                                                 .update({
                                                     props: {
-                                                        ...panelsToUpdate[0].props,
+                                                        ...panelToUpdate.props,
                                                         tabIndex: i
                                                     }
                                                 })
-                                                .eq('id', panelsToUpdate[0].id);
+                                                .eq('id', panelToUpdate.id);
+
+                                            // 스토어에서 해당 요소 찾아서 업데이트
+                                            const storeElement = useStore.getState().elements.find(el => el.id === panelToUpdate.id);
+                                            if (storeElement) {
+                                                const updatedElement = {
+                                                    ...storeElement,
+                                                    props: {
+                                                        ...storeElement.props,
+                                                        tabIndex: i
+                                                    }
+                                                };
+
+                                                // 기존 요소 제거 후 업데이트된 요소 추가
+                                                removeElement(panelToUpdate.id);
+                                                addElement(updatedElement);
+                                            }
                                         }
                                     }
 
-                                    // Tabs 업데이트
+                                    // 5. Tabs props 업데이트
                                     const updatedProps = {
                                         ...currentProps,
                                         children: updatedTabs,
                                         defaultSelectedKey: updatedTabs.length > 0 ? updatedTabs[0].id : undefined
                                     };
+
+                                    // 6. 데이터베이스에 Tabs 업데이트
+                                    const { error: tabsUpdateError } = await supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+
+                                    if (tabsUpdateError) {
+                                        console.error('Tabs update error:', tabsUpdateError);
+                                        alert('탭 삭제에 실패했습니다. 다시 시도해주세요.');
+                                        return;
+                                    }
+
+                                    // 7. 로컬 상태 업데이트
                                     onUpdate(updatedProps);
 
-                                    // 선택 상태 초기화
+                                    // 8. 선택 상태 초기화
                                     setSelectedTab(null);
+
+                                    console.log('Tab and panel deleted successfully');
+
                                 } catch (err) {
                                     console.error('Delete tab error:', err);
+                                    alert('탭 삭제 중 오류가 발생했습니다.');
                                 }
                             }}
                         >
