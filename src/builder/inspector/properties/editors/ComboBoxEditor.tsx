@@ -3,8 +3,6 @@ import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, F
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, ComboBoxItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
-import { supabase } from '../../../../env/supabase.client';
-import { useStore } from '../../../stores/elements';
 
 interface SelectedOptionState {
     parentId: string;
@@ -13,7 +11,6 @@ interface SelectedOptionState {
 
 export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement } = useStore();
 
     useEffect(() => {
         // 옵션 선택 상태 초기화
