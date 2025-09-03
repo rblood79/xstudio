@@ -147,7 +147,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         // 디버깅 로그 추가
-        if (parentId) {
+        /*if (parentId) {
             const parentItem = items.find(p => p.id === parentId);
             if (parentItem && hasTag(parentItem) && parentItem.tag === 'Tabs') {
                 console.log(' Tabs 하위 아이템들:', {
@@ -156,7 +156,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                     allItems: items.filter(item => item.parent_id === parentId).map(item => ({ id: item.id, tag: item.tag, title: hasProps(item) ? item.props.title : 'N/A' }))
                 });
             }
-        }
+        }*/
 
         if (filteredItems.length === 0) return null;
 
