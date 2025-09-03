@@ -19,7 +19,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     useEffect(() => {
         // 1. 스토어에서 페이지 ID 가져오기 (우선순위 1)
         if (storePageId) {
-            console.log('Using page ID from store:', storePageId);
             setLocalPageId(storePageId);
             return;
         }
@@ -32,12 +31,9 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
         if (urlPageId && uuidRegex.test(urlPageId)) {
-            console.log('Using page ID from URL:', urlPageId);
             setLocalPageId(urlPageId);
-            // 스토어에도 설정
             setCurrentPageId(urlPageId);
         } else {
-            console.warn('Invalid page ID from URL:', urlPageId);
             // 3. 프로젝트 ID로 현재 페이지 조회 (우선순위 3)
             const projectId = pathParts[pathParts.length - 2];
             if (projectId) {
@@ -45,15 +41,12 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             }
         }
 
-        // 탭 선택 상태 초기화
         setSelectedTab(null);
     }, [elementId, storePageId, setCurrentPageId]);
 
     // 프로젝트 ID로 현재 페이지 ID 가져오기
     const fetchCurrentPageId = async (projectId: string) => {
         try {
-            console.log('Fetching current page ID for project:', projectId);
-
             const { data: pages, error } = await supabase
                 .from('pages')
                 .select('id, name')
@@ -68,11 +61,8 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
             if (pages && pages.length > 0) {
                 const pageId = pages[0].id;
-                console.log('Fetched current page ID:', pageId, 'Name:', pages[0].name);
                 setLocalPageId(pageId);
                 setCurrentPageId(pageId);
-            } else {
-                console.warn('No pages found for project:', projectId);
             }
         } catch (err) {
             console.error('Failed to fetch current page ID:', err);
@@ -84,21 +74,11 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         try {
             const { data, error } = await supabase
                 .from('pages')
-                .select('id, name')
+                .select('id')
                 .eq('id', pageId)
                 .single();
 
-            if (error) {
-                console.error('Page validation error:', error);
-                return false;
-            }
-
-            if (data) {
-                console.log('Page validation successful:', data.id, data.name);
-                return true;
-            }
-
-            return false;
+            return !error && !!data;
         } catch (err) {
             console.error('Page validation failed:', err);
             return false;
@@ -115,7 +95,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     // 탭 배열 가져오기
     const tabs = Array.isArray(currentProps.children) ? currentProps.children as TabItem[] : [];
-    console.log('Tabs array:', tabs);
 
     // 선택된 탭이 있고, 현재 Tabs 컴포넌트의 탭인 경우 개별 탭 편집 UI 표시
     if (selectedTab && selectedTab.parentId === elementId) {
@@ -189,8 +168,8 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         <button
                             className='control-button delete'
                             onClick={async () => {
-                                // 삭제할 탭의 패널 ID 찾기
                                 try {
+                                    // 삭제할 탭의 패널 ID 찾기
                                     const { data: panelElements } = await supabase
                                         .from('elements')
                                         .select('*')
@@ -264,6 +243,96 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         );
     }
 
+    // 새 탭 추가 함수
+    const addNewTab = async () => {
+        try {
+            const pageIdToUse = localPageId || storePageId;
+            if (!pageIdToUse) {
+                alert('페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+                return;
+            }
+
+            // 페이지 ID 유효성 검증
+            const isValidPage = await validatePageId(pageIdToUse);
+            if (!isValidPage) {
+                alert('유효하지 않은 페이지입니다. 페이지를 새로고침해주세요.');
+                return;
+            }
+
+            // 새 탭 데이터 생성
+            const newTabId = `tab${Date.now()}`;
+            const newTabIndex = tabs.length || 0;
+            const newTab = {
+                id: newTabId,
+                title: `Tab ${newTabIndex + 1}`,
+                variant: 'default',
+                appearance: 'light'
+            };
+
+            // 새로운 Panel 컴포넌트 생성
+            const newPanelElement = {
+                id: crypto.randomUUID(),
+                page_id: pageIdToUse,
+                tag: 'Panel',
+                props: {
+                    variant: 'tab',
+                    title: newTab.title,
+                    tabIndex: newTabIndex,
+                    style: {},
+                    className: '',
+                },
+                parent_id: elementId,
+                order_num: newTabIndex + 1,
+            };
+
+            // Panel 생성
+            const { data: panelData, error: panelError } = await supabase
+                .from('elements')
+                .insert([newPanelElement])
+                .select()
+                .single();
+
+            if (panelError) {
+                alert('탭 패널 생성에 실패했습니다. 다시 시도해주세요.');
+                return;
+            }
+
+            // Tabs props 업데이트
+            const updatedProps = {
+                ...currentProps,
+                children: [...tabs, newTab],
+                defaultSelectedKey: tabs.length === 0 ? newTabId : currentProps.defaultSelectedKey
+            };
+
+            const { error: updateError } = await supabase
+                .from('elements')
+                .update({ props: updatedProps })
+                .eq('id', elementId);
+
+            if (updateError) {
+                // Tabs 업데이트 실패 시 생성된 Panel 삭제
+                await supabase
+                    .from('elements')
+                    .delete()
+                    .eq('id', newPanelElement.id);
+                alert('탭 추가에 실패했습니다. 다시 시도해주세요.');
+                return;
+            }
+
+            // 성공 시 상태 업데이트
+            onUpdate(updatedProps);
+
+            // 스토어에 새 패널 추가
+            if (panelData) {
+                addElement(panelData);
+            }
+
+        } catch (err) {
+            console.error('Add tab error:', err);
+            alert('탭 추가 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+    };
+
     // Tabs 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
@@ -329,68 +398,8 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={async () => {
-                            const newTabId = `tab${Date.now()}`;
-                            const newTabIndex = tabs.length || 0;
-                            const newTab = {
-                                id: newTabId,
-                                title: `Tab ${newTabIndex + 1}`,
-                                variant: 'default',
-                                appearance: 'light'
-                            };
-
-                            const updatedProps = {
-                                ...currentProps,
-                                children: [...tabs, newTab],
-                                defaultSelectedKey: tabs.length === 0 ? newTabId : currentProps.defaultSelectedKey
-                            };
-
-                            // 새로운 Panel 컴포넌트 생성
-                            const newPanelElement = {
-                                id: crypto.randomUUID(),
-                                page_id: localPageId || storePageId, // 페이지 ID 사용
-                                tag: 'Panel',
-                                props: {
-                                    variant: 'tab',
-                                    title: newTab.title,
-                                    tabIndex: newTabIndex,
-                                    style: {},
-                                    className: '',
-                                },
-                                parent_id: elementId,
-                                order_num: newTabIndex + 1,
-                            };
-
-                            try {
-                                // Tabs props 업데이트
-                                await supabase
-                                    .from('elements')
-                                    .update({ props: updatedProps })
-                                    .eq('id', elementId);
-
-                                // 새로운 Panel 컴포넌트 생성
-                                const { data: panelData, error: panelError } = await supabase
-                                    .from('elements')
-                                    .insert([newPanelElement])
-                                    .select()
-                                    .single();
-
-                                if (panelError) {
-                                    console.error('Panel creation error:', panelError);
-                                    return;
-                                }
-
-                                // 상태 업데이트
-                                onUpdate(updatedProps);
-
-                                // 스토어에 새 패널 추가
-                                if (panelData) {
-                                    addElement(panelData);
-                                }
-                            } catch (err) {
-                                console.error('Add tab error:', err);
-                            }
-                        }}
+                        onClick={addNewTab}
+                        disabled={!localPageId && !storePageId}
                     >
                         <Plus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         Add New Tab
