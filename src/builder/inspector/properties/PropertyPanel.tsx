@@ -1,6 +1,4 @@
 import React from 'react';
-import { useStore } from '../../stores/elements';
-import { supabase } from '../../../env/supabase.client';
 import {
     ButtonEditor,
     TextFieldEditor,
@@ -18,87 +16,97 @@ import {
     GridListItemEditor,
     SelectItemEditor,
     TabsEditor,
-    TabEditor, // TabEditor 추가
+    TabEditor,
     PanelEditor,
     SliderEditor,
-    SwitchEditor, // SwitchEditor 추가
-    TableEditor // TableEditor 추가
+    SwitchEditor,
+    TableEditor
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
-// ElementProps import 제거
+import { useSelectedElement, useElementUpdate } from '../shared/hooks';
+import { COMPONENT_CATEGORIES } from '../shared/constants';
 
-// 컴포넌트별 에디터 매핑
+// Component editor registry for better organization
 const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>> = {
+    // Form components
     Button: ButtonEditor,
     TextField: TextFieldEditor,
     Select: SelectEditor,
     Checkbox: CheckboxEditor,
     Radio: RadioEditor,
     RadioGroup: RadioGroupEditor,
+    ComboBox: ComboBoxEditor,
+    CheckboxGroup: CheckboxGroupEditor,
+    
+    // Interactive components
+    ToggleButton: ToggleButtonEditor,
+    ToggleButtonGroup: ToggleButtonGroupEditor,
+    Tabs: TabsEditor,
+    Tab: TabEditor,
+    Panel: PanelEditor,
+    
+    // Data components
     ListBox: ListBoxEditor,
     ListBoxItem: ListBoxItemEditor,
     GridList: GridListEditor,
     GridListItem: GridListItemEditor,
     SelectItem: SelectItemEditor,
-    Tabs: TabsEditor,
-    Tab: TabEditor, // Tab 에디터 추가
-    Panel: PanelEditor,
+    Table: TableEditor,
+    
+    // Input components
     Slider: SliderEditor,
-    Switch: SwitchEditor, // Switch 매핑 추가
-    Table: TableEditor, // Table 매핑 추가
+    Switch: SwitchEditor,
 
-    // 추가로 지원할 컴포넌트들
-    ComboBox: ComboBoxEditor,
-    CheckboxGroup: CheckboxGroupEditor,
-    ToggleButton: ToggleButtonEditor, // 개별 ToggleButton 에디터 사용
-    ToggleButtonGroup: ToggleButtonGroupEditor,
-
-    // 기본 HTML 요소들
-    div: () => <div>div 요소에는 특별한 속성이 없습니다.</div>,
-    span: () => <div>span 요소에는 특별한 속성이 없습니다.</div>,
-    p: () => <div>p 요소에는 특별한 속성이 없습니다.</div>,
-    h1: () => <div>h1 요소에는 특별한 속성이 없습니다.</div>,
-    h2: () => <div>h2 요소에는 특별한 속성이 없습니다.</div>,
-    h3: () => <div>h3 요소에는 특별한 속성이 없습니다.</div>,
+    // Basic HTML elements - using a generic message for unsupported elements
+    ...Object.fromEntries(
+        COMPONENT_CATEGORIES.LAYOUT.map(tag => [
+            tag, 
+            () => <div className="empty-state">
+                <p>{tag} 요소에는 특별한 속성이 없습니다.</p>
+            </div>
+        ])
+    )
 };
 
-export function PropertyPanel() {
-    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+function UnsupportedComponent({ componentTag }: { componentTag?: string }) {
+    return (
+        <div className="property-container">
+            <div className="empty-state">
+                <h4>지원되지 않는 컴포넌트</h4>
+                <p>컴포넌트: {componentTag || 'unknown'}</p>
+                <details>
+                    <summary>지원되는 컴포넌트 목록</summary>
+                    <ul style={{ textAlign: 'left', marginTop: '1rem' }}>
+                        {Object.keys(COMPONENT_EDITORS).map(tag => (
+                            <li key={tag}>{tag}</li>
+                        ))}
+                    </ul>
+                </details>
+            </div>
+        </div>
+    );
+}
 
-    if (!selectedElementId) {
-        return <div>요소를 선택해주세요</div>;
+export function PropertyPanel() {
+    const { elementId, elementProps, isSelected } = useSelectedElement();
+    const { updateElement } = useElementUpdate();
+
+    if (!isSelected) {
+        return (
+            <div className="property-container">
+                <div className="empty-state">
+                    <h4>요소를 선택해주세요</h4>
+                    <p>편집할 요소를 먼저 선택하세요.</p>
+                </div>
+            </div>
+        );
     }
 
-    const handleUpdate = async (updatedProps: Record<string, unknown>) => {
-        // Store 업데이트 - 타입 단언으로 처리
-        updateElementProps(selectedElementId, updatedProps as Record<string, string | number | boolean | undefined>);
-
-        // Supabase 업데이트
-        try {
-            await supabase
-                .from('elements')
-                .update({ props: updatedProps })
-                .eq('id', selectedElementId);
-        } catch (err) {
-            console.error('Update error:', err);
-        }
-    };
-
-    const componentTag = selectedElementProps?.tag;
+    const componentTag = elementProps?.tag;
     const EditorComponent = componentTag ? COMPONENT_EDITORS[componentTag] : undefined;
 
     if (!EditorComponent || !componentTag) {
-        return (
-            <div className="property-container">
-                <div>지원되지 않는 컴포넌트입니다: {componentTag || 'unknown'}</div>
-                <div>현재 지원되는 컴포넌트:</div>
-                <ul>
-                    {Object.keys(COMPONENT_EDITORS).map(tag => (
-                        <li key={tag}>{tag}</li>
-                    ))}
-                </ul>
-            </div>
-        );
+        return <UnsupportedComponent componentTag={componentTag} />;
     }
 
     return (
@@ -108,10 +116,10 @@ export function PropertyPanel() {
             </div>
             <div className="panel-content">
                 <EditorComponent
-                    key={selectedElementId} // 이 줄을 추가
-                    elementId={selectedElementId}
-                    currentProps={selectedElementProps}
-                    onUpdate={handleUpdate}
+                    key={elementId}
+                    elementId={elementId!}
+                    currentProps={elementProps}
+                    onUpdate={updateElement}
                 />
             </div>
         </div>

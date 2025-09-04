@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Settings, Play, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, Select, SelectItem, TextField } from '../../components/list';
-import { useStore } from '../../stores/elements';
 import {
     EventType,
     ActionType,
@@ -13,7 +12,8 @@ import {
     DEFAULT_THROTTLE_TIME
 } from '../../../types/events';
 import { supabase } from '../../../env/supabase.client';
-//import { iconProps } from '../../../utils/uiConstants';
+import { useSelectedElement } from '../shared/hooks';
+import { ICON_PROPS } from '../shared/constants';
 
 import './index.css';
 
@@ -525,36 +525,34 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
 }
 
 function Events() {
-    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+    const { elementId, elementProps, isSelected } = useSelectedElement();
     const [events, setEvents] = useState<ElementEvent[]>([]);
 
     // 선택된 요소의 이벤트 로드
     useEffect(() => {
-        if (selectedElementProps?.events) {
-            setEvents(selectedElementProps.events);
+        if (elementProps?.events) {
+            setEvents(elementProps.events);
         } else {
             setEvents([]);
         }
-    }, [selectedElementProps?.events]);
+    }, [elementProps?.events]);
 
     // 이벤트 업데이트 처리
     const updateEvents = async (newEvents: ElementEvent[]) => {
         setEvents(newEvents);
 
-        if (selectedElementId) {
+        if (elementId) {
             const updatedProps = {
-                ...selectedElementProps,
+                ...elementProps,
                 events: newEvents
             };
 
-            updateElementProps(selectedElementId, updatedProps);
-
-            // Supabase 업데이트
+            // Update via Supabase
             try {
                 await supabase
                     .from('elements')
                     .update({ props: updatedProps })
-                    .eq('id', selectedElementId);
+                    .eq('id', elementId);
             } catch (err) {
                 console.error('Events update error:', err);
             }
@@ -581,10 +579,10 @@ function Events() {
         updateEvents(events.filter(event => event.id !== eventId));
     };
 
-    if (!selectedElementId) {
+    if (!isSelected) {
         return (
             <div className="events-container">
-                <div className="no-selection">
+                <div className="empty-state">
                     <Settings size={48} />
                     <h3>요소를 선택해주세요</h3>
                     <p>이벤트를 추가하려면 먼저 요소를 선택하세요.</p>
@@ -605,7 +603,7 @@ function Events() {
             </div>
 
             {events.length === 0 ? (
-                <div className="no-events">
+                <div className="empty-state">
                     <Play size={24} />
                     <h4>이벤트가 없습니다</h4>
                     <p>첫 번째 이벤트를 추가해보세요.</p>

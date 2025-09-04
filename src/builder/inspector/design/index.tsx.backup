@@ -1,0 +1,1075 @@
+import { Square, SquareDashed, ChevronUp, EllipsisVertical, Frame, LayoutGrid, SquareDashedBottom, StretchHorizontal, StretchVertical, AlignHorizontalSpaceAround, GalleryHorizontal, SquareRoundCorner, SquareSquare, AlignHorizontalJustifyCenter, AlignStartVertical, AlignVerticalJustifyCenter, AlignEndVertical, AlignStartHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { ToggleButton, ToggleButtonGroup, Button, Select, SelectItem } from '../../components/list';
+import { supabase } from '../../../env/supabase.client';
+import { useSelectedElement, useElementUpdate } from '../shared/hooks';
+import { ICON_PROPS } from '../shared/constants';
+
+import './index.css';
+
+function Design() {
+    const { elementId, elementProps, isSelected } = useSelectedElement();
+    const { updateElement } = useElementUpdate();
+
+    // 선택된 요소가 없을 때의 처리
+    if (!isSelected) {
+        return (
+            <div className='design-container'>
+                <div className="empty-state">
+                    <h4>요소를 선택해주세요</h4>
+                    <p>디자인을 편집하려면 먼저 요소를 선택하세요.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className='design-container'>
+            <div className="inspect_page">
+                <div className='tag'>{elementProps.tag || 'No tag'}</div>
+                <div className='testID'>testID: {elementId}</div>
+                <div className="panel-header">
+                    <h3 className='panel-title'>Transform</h3>
+                    <div className="header-actions">
+                        <button
+                            className='iconButton'
+                            aria-label="Add Element"
+                        ><ChevronUp color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} /></button>
+                    </div>
+                </div>
+                <div className='panel-content'>
+                    <fieldset className="transform-alignment">
+                        <legend className='fieldset-legend'>Alignment</legend>
+                        <div className='alignment-controls-horizontal'>
+                            <ToggleButtonGroup>
+                                <ToggleButton><AlignStartVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                                <ToggleButton><AlignHorizontalJustifyCenter color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                                <ToggleButton><AlignEndVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='alignment-controls-vertical'>
+                            <ToggleButtonGroup>
+                                <ToggleButton><AlignStartHorizontal color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                                <ToggleButton><AlignVerticalJustifyCenter color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                                <ToggleButton><AlignEndHorizontal color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset className="transform-size">
+                        <legend className='fieldset-legend'>Size</legend>
+                        <div className='size-control-width react-aria-Group'>
+                            <label className='control-label'>W</label>
+                            <input
+                                className='control-input'
+                                type="text"
+                                value={(() => {
+                                    const width = elementProps.style?.width || '';
+                                    if (width === 'auto' || !width) return '';
+                                    const match = String(width).match(/^(\d*\.?\d*)/);
+                                    return match ? match[1] : '';
+                                })()}
+                                onChange={async (e) => {
+                                    const numericValue = e.target.value;
+
+                                    if (!elementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
+                                    if (!numericValue) {
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                width: 'auto'
+                                            }
+                                        };
+                                    } else {
+                                        // 현재 단위 추출 (기본값: px)
+                                        const currentWidth = elementProps.style?.width || '';
+                                        let unit = 'px';
+                                        if (currentWidth && currentWidth !== 'auto') {
+                                            const unitMatch = String(currentWidth).match(/[a-z%]+$/i);
+                                            if (unitMatch) unit = unitMatch[0];
+                                        }
+
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                width: `${numericValue}${unit}` as string
+                                            }
+                                        };
+                                    }
+
+                                    console.log('Updating element:', elementId);
+                                    console.log('Current props:', elementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElement(updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
+                                    }
+                                }}
+                                placeholder="auto"
+                            />
+                            <Select
+                                items={[
+                                    { id: 'auto', label: 'auto' },
+                                    { id: 'px', label: 'px' },
+                                    { id: '%', label: '%' },
+                                    { id: 'vw', label: 'vw' }
+                                ]}
+                                selectedKey={(() => {
+                                    const width = elementProps.style?.width || '';
+                                    if (!width || width === 'auto') return 'auto';
+                                    const unitMatch = String(width).match(/[a-z%]+$/i);
+                                    return unitMatch ? unitMatch[0] : 'px';
+                                })()}
+                                onSelectionChange={async (key) => {
+                                    const selectedUnit = key as string;
+
+                                    if (!elementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
+                                    if (selectedUnit === 'auto') {
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                width: 'auto'
+                                            }
+                                        };
+                                    } else {
+                                        // 현재 숫자 값 추출
+                                        const currentWidth = elementProps.style?.width || '';
+                                        let numericValue = '100'; // 기본값
+
+                                        if (currentWidth && currentWidth !== 'auto') {
+                                            const match = String(currentWidth).match(/^(\d*\.?\d*)/);
+                                            if (match && match[1]) {
+                                                numericValue = match[1];
+                                            }
+                                        }
+
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                width: `${numericValue}${selectedUnit}` as string
+                                            }
+                                        };
+                                    }
+
+                                    console.log('Updating element:', elementId);
+                                    console.log('Current props:', elementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElement(updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
+                            </Select>
+                        </div>
+                        <div className='size-control-height react-aria-Group'>
+                            <label className='control-label'>H</label>
+                            <input
+                                className='control-input'
+                                type="text"
+                                value={(() => {
+                                    const height = elementProps.style?.height || '';
+                                    if (height === 'auto' || !height) return '';
+                                    const match = String(height).match(/^(\d*\.?\d*)/);
+                                    return match ? match[1] : '';
+                                })()}
+                                onChange={async (e) => {
+                                    const numericValue = e.target.value;
+
+                                    if (!numericValue) {
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                height: 'auto'
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                        return;
+                                    }
+
+                                    // 현재 단위 추출 (기본값: px)
+                                    const currentHeight = elementProps.style?.height || '';
+                                    let unit = 'px';
+                                    if (currentHeight && currentHeight !== 'auto') {
+                                        const unitMatch = String(currentHeight).match(/[a-z%]+$/i);
+                                        if (unitMatch) unit = unitMatch[0];
+                                    }
+
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            height: `${numericValue}${unit}`
+                                        }
+                                    };
+                                    updateElement(updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+                                }}
+                                placeholder="auto"
+                            />
+                            <Select
+                                items={[
+                                    { id: 'auto', label: 'auto' },
+                                    { id: 'px', label: 'px' },
+                                    { id: '%', label: '%' },
+                                    { id: 'vh', label: 'vh' }
+                                ]}
+                                selectedKey={(() => {
+                                    const height = elementProps.style?.height || '';
+                                    if (!height || height === 'auto') return 'auto';
+                                    const unitMatch = String(height).match(/[a-z%]+$/i);
+                                    return unitMatch ? unitMatch[0] : 'px';
+                                })()}
+                                onSelectionChange={async (key) => {
+                                    const selectedUnit = key as string;
+
+                                    if (!elementId) {
+                                        console.error('No selected element ID');
+                                        return;
+                                    }
+
+                                    let updatedProps;
+                                    if (selectedUnit === 'auto') {
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                height: 'auto'
+                                            }
+                                        };
+                                    } else {
+                                        // 현재 숫자 값 추출
+                                        const currentHeight = elementProps.style?.height || '';
+                                        let numericValue = '100'; // 기본값
+
+                                        if (currentHeight && currentHeight !== 'auto') {
+                                            const match = String(currentHeight).match(/^(\d*\.?\d*)/);
+                                            if (match && match[1]) {
+                                                numericValue = match[1];
+                                            }
+                                        }
+
+                                        updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                height: `${numericValue}${selectedUnit}` as string
+                                            }
+                                        };
+                                    }
+
+                                    console.log('Updating element:', elementId);
+                                    console.log('Current props:', elementProps);
+                                    console.log('Updated props:', updatedProps);
+
+                                    // Store 업데이트
+                                    updateElement(updatedProps);
+
+                                    // Supabase 업데이트
+                                    try {
+                                        const { data, error } = await supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+
+                                        if (error) {
+                                            console.error('Supabase update error:', error);
+                                            console.error('Error details:', error.details);
+                                            console.error('Error hint:', error.hint);
+                                        } else {
+                                            console.log('Supabase update successful:', data);
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error during Supabase update:', err);
+                                    }
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
+                            </Select>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset className="transform-position">
+                        <legend className='fieldset-legend'>Position</legend>
+                        <div className='position-control-x react-aria-Group'>
+                            <label className='control-label'>X</label>
+                            <input className='control-input'></input>
+                        </div>
+                        <div className='position-control-y react-aria-Group'>
+                            <label className='control-label'>Y</label>
+                            <input className='control-input'></input>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <div className="inspect_page">
+                <div className="panel-header">
+                    <h3 className='panel-title'>Layout</h3>
+                    <div className="header-actions">
+                        <button
+                            className='iconButton'
+                            aria-label="Add Element"
+                        ><ChevronUp color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} /></button>
+                    </div>
+                </div>
+                <div className='panel-content'>
+                    <fieldset className="layout-direction">
+                        <legend className='fieldset-legend'>Direction</legend>
+                        <div className='direction-controls'>
+                            <ToggleButtonGroup
+                                aria-label="Flex direction"
+                                onSelectionChange={(selectedKey) => {
+                                    if (!elementId) return;
+                                    const key = Array.from(selectedKey)[0] as string;
+
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            ...(key === 'reset'
+                                                ? { display: undefined, flexDirection: undefined }
+                                                : {
+                                                    display: 'flex',
+                                                    flexDirection: key as 'row' | 'column'
+                                                }
+                                            )
+                                        }
+                                    };
+
+                                    // Store 업데이트
+                                    updateElement(updatedProps);
+
+                                    // Supabase 업데이트
+                                    supabase
+                                        .from("elements")
+                                        .update({ props: updatedProps })
+                                        .eq("id", elementId)
+                                        .then(({ error }) => {
+                                            if (error) {
+                                                console.error("Supabase update error:", error);
+                                            }
+                                        });
+                                }}
+                                selectedKeys={new Set([
+                                    elementProps.style?.display === 'flex'
+                                        ? elementProps.style?.flexDirection || 'row'
+                                        : 'reset'
+                                ])}
+                            >
+                                <ToggleButton id="reset">
+                                    <Square color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                                <ToggleButton id="row">
+                                    <StretchVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                                <ToggleButton id="column">
+                                    <StretchHorizontal color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='direction-alignment-grid'>
+                            <ToggleButtonGroup
+                                aria-label="Flex alignment"
+                                onSelectionChange={(selectedKey) => {
+                                    if (!elementId) return;
+                                    const key = Array.from(selectedKey)[0] as string;
+
+                                    const isColumn = elementProps.style?.flexDirection === 'column';
+                                    const alignmentMap: Record<string, { alignItems: string, justifyContent: string }> = {
+                                        'leftTop': {
+                                            alignItems: isColumn ? 'flex-start' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'flex-start'
+                                        },
+                                        'centerTop': {
+                                            alignItems: isColumn ? 'center' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'center'
+                                        },
+                                        'rightTop': {
+                                            alignItems: isColumn ? 'flex-end' : 'flex-start',
+                                            justifyContent: isColumn ? 'flex-start' : 'flex-end'
+                                        },
+                                        'leftCenter': {
+                                            alignItems: isColumn ? 'flex-start' : 'center',
+                                            justifyContent: isColumn ? 'center' : 'flex-start'
+                                        },
+                                        'centerCenter': {
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        },
+                                        'rightCenter': {
+                                            alignItems: isColumn ? 'flex-end' : 'center',
+                                            justifyContent: isColumn ? 'center' : 'flex-end'
+                                        },
+                                        'leftBottom': {
+                                            alignItems: isColumn ? 'flex-start' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'flex-start'
+                                        },
+                                        'centerBottom': {
+                                            alignItems: isColumn ? 'center' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'center'
+                                        },
+                                        'rightBottom': {
+                                            alignItems: isColumn ? 'flex-end' : 'flex-end',
+                                            justifyContent: isColumn ? 'flex-end' : 'flex-end'
+                                        }
+                                    };
+
+                                    const alignment = alignmentMap[key];
+                                    if (!alignment) return;
+
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            display: 'flex',
+                                            alignItems: alignment.alignItems,
+                                            justifyContent: alignment.justifyContent
+                                        }
+                                    };
+
+                                    // Store 업데이트
+                                    updateElement(updatedProps);
+
+                                    // Supabase 업데이트
+                                    supabase
+                                        .from("elements")
+                                        .update({ props: updatedProps })
+                                        .eq("id", elementId)
+                                        .then(({ error }) => {
+                                            if (error) {
+                                                console.error("Supabase update error:", error);
+                                            }
+                                        });
+                                }}
+                                selectedKeys={(() => {
+                                    if (elementProps.style?.display !== 'flex') return new Set(['centerCenter']);
+
+                                    const isColumn = elementProps.style?.flexDirection === 'column';
+                                    const alignItems = elementProps.style?.alignItems || 'center';
+                                    const justifyContent = elementProps.style?.justifyContent || 'center';
+
+                                    const getPositionKey = (align: string, justify: string) => {
+                                        if (isColumn) {
+                                            // column일 때는 alignItems가 수평, justifyContent가 수직
+                                            const horizontal = align === 'flex-start' ? 'left' : align === 'flex-end' ? 'right' : 'center';
+                                            const vertical = justify === 'flex-start' ? 'top' : justify === 'flex-end' ? 'bottom' : 'center';
+                                            return `${horizontal}${vertical.charAt(0).toUpperCase() + vertical.slice(1)}`;
+                                        } else {
+                                            // row일 때는 justifyContent가 수평, alignItems가 수직
+                                            const horizontal = justify === 'flex-start' ? 'left' : justify === 'flex-end' ? 'right' : 'center';
+                                            const vertical = align === 'flex-start' ? 'top' : align === 'flex-end' ? 'bottom' : 'center';
+                                            return `${horizontal}${vertical.charAt(0).toUpperCase() + vertical.slice(1)}`;
+                                        }
+                                    };
+
+                                    return new Set([getPositionKey(alignItems, justifyContent)]);
+                                })()}
+                            >
+                                <ToggleButton id="leftTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightTop"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="leftCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightCenter"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="leftBottom"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="centerBottom"><span className='alignment-dot' /></ToggleButton>
+                                <ToggleButton id="rightBottom"><span className='alignment-dot' /></ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                        <div className='justify-control'>
+                            <ToggleButtonGroup
+                                aria-label="Justify content alignment"
+                                onSelectionChange={(selected) => {
+                                    if (!elementId) return;
+                                    const key = Array.from(selected)[0] as string;
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            display: 'flex',
+                                            ...(key === 'class' ? { justifyContent: undefined } : { justifyContent: key })
+                                        }
+                                    };
+                                    updateElement(updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+                                }}
+                                selectedKeys={new Set([
+                                    elementProps.style?.display === 'flex'
+                                        ? elementProps.style?.justifyContent || 'class'
+                                        : 'class'
+                                ])}
+                            >
+                                <ToggleButton id="space-around">
+                                    <AlignHorizontalSpaceAround color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                                <ToggleButton id="space-between">
+                                    <GalleryHorizontal color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                                <ToggleButton id="space-evenly">
+                                    <AlignHorizontalSpaceAround color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        <div className='gap-control react-aria-Group'>
+                            <label className='control-label'><LayoutGrid color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></label>
+                            <input className='control-input'></input>
+                            <Select
+                                items={[
+                                    { id: 'class', label: 'class' },
+                                    { id: '0', label: '0' },
+                                    { id: '2', label: '2' },
+                                    { id: '4', label: '4' },
+                                ]}
+                                selectedKey={(() => {
+                                    const gap = elementProps.style?.gap || '0px';
+                                    return typeof gap === 'string' ? gap.replace('px', '') : String(gap);
+                                })()}
+                                aria-label="Gap value selector"
+                                onSelectionChange={(selected) => {
+                                    if (!elementId) return;
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            ...(selected === 'class' ? { gap: undefined } : { gap: `${selected}px` })
+                                        }
+                                    };
+                                    updateElement(updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
+                            </Select>
+                        </div>
+                    </fieldset>
+
+                    <div className='spacing-controls-container'>
+                        <fieldset className='spacing-padding'>
+                            <legend className='fieldset-legend'>Padding</legend>
+                            <div className='spacing-control react-aria-Group'>
+                                <label className='control-label'><SquareSquare color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></label>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const padding = elementProps.style?.padding || '0px';
+                                        return typeof padding === 'string' ? padding.replace('px', '') : String(padding);
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(value === 'class' ? { padding: undefined } : { padding: `${value}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' },
+                                        { id: '32', label: '32' },
+                                        { id: '64', label: '64' },
+                                    ]}
+                                    selectedKey={(() => {
+                                        const padding = elementProps.style?.padding || '0px';
+                                        return typeof padding === 'string' ? padding.replace('px', '') : String(padding);
+                                    })()}
+                                    aria-label="Padding value selector"
+                                    onSelectionChange={(selected) => {
+                                        if (!elementId) return;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(selected === 'class' ? { padding: undefined } : { padding: `${selected}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <fieldset className='spacing-margin'>
+                            <legend className='fieldset-legend'>Margin</legend>
+                            <div className='spacing-control react-aria-Group'>
+                                <label className='control-label'><Frame color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></label>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const margin = elementProps.style?.margin || '0px';
+                                        return typeof margin === 'string' ? margin.replace('px', '') : String(margin);
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(value === 'class' ? { margin: undefined } : { margin: `${value}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' },
+                                        { id: '32', label: '32' },
+                                        { id: '64', label: '64' },
+                                    ]}
+                                    selectedKey={(() => {
+                                        const margin = elementProps.style?.margin || '0px';
+                                        return typeof margin === 'string' ? margin.replace('px', '') : String(margin);
+                                    })()}
+                                    aria-label="Margin value selector"
+                                    onSelectionChange={(selected) => {
+                                        if (!elementId) return;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(selected === 'class' ? { margin: undefined } : { margin: `${selected}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="inspect_page">
+                <div className="panel-header">
+                    <h3 className='panel-title'>Style</h3>
+                    <div className="header-actions">
+                        <button
+                            className='iconButton'
+                            aria-label="Add Element"
+                        ><ChevronUp color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} /></button>
+                    </div>
+                </div>
+                <div className='panel-content'>
+                    <fieldset className='style-background'>
+                        <legend className='fieldset-legend'>Background</legend>
+                        <div className='color-control react-aria-Group'>
+                            <label className='control-label'>
+                                <Square fill={elementProps.style?.backgroundColor || '#ffffff'} size={18} strokeWidth={0} />
+                            </label>
+                            <input
+                                className='control-input'
+                                value={elementProps.style?.backgroundColor || '#ffffff'}
+                                onChange={(e) => {
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            backgroundColor: e.target.value
+                                        }
+                                    };
+                                    updateElement(updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+                                }}
+                            />
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </fieldset>
+                    <div className='border-controls-container'>
+                        <fieldset className='style-border'>
+                            <legend className='fieldset-legend'>Border Color</legend>
+                            <div className='color-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <Square fill={elementProps.style?.borderColor || '#cccccc'} size={18} strokeWidth={0} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={elementProps.style?.borderColor || '#cccccc'}
+                                    onChange={(e) => {
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                borderColor: e.target.value
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                            </div>
+
+                        </fieldset>
+                        <fieldset className='style-border-width'>
+                            <legend className='fieldset-legend'>Border Width</legend>
+
+                            <div className='border-width-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <SquareDashed color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={(() => {
+                                        const borderWidth = elementProps.style?.borderWidth || '0px';
+                                        return typeof borderWidth === 'string' ? borderWidth.replace('px', '') : String(borderWidth);
+                                    })()}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(value === 'class' ? { borderWidth: undefined } : { borderWidth: `${value}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '1', label: '1' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' }
+                                    ]}
+                                    selectedKey={(() => {
+                                        const borderWidth = elementProps.style?.borderWidth || '0px';
+                                        return typeof borderWidth === 'string' ? borderWidth.replace('px', '') : String(borderWidth);
+                                    })()}
+                                    aria-label="Border width selector"
+                                    onSelectionChange={(selected) => {
+                                        if (selected) {
+                                            const updatedProps = {
+                                                ...elementProps,
+                                                style: {
+                                                    ...elementProps.style,
+                                                    ...(selected === 'class' ? { borderWidth: undefined } : { borderWidth: `${selected}px` })
+                                                }
+                                            };
+                                            updateElement(updatedProps);
+                                            supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', elementId);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <fieldset className='style-border-radius'>
+                            <legend className='fieldset-legend'>Border Radius</legend>
+                            <div className='border-radius-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <SquareRoundCorner color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={elementProps.style?.borderRadius || '0px'}
+                                    onChange={(e) => {
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                borderRadius: e.target.value
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', label: 'class' },
+                                        { id: '0', label: '0' },
+                                        { id: '2', label: '2' },
+                                        { id: '4', label: '4' },
+                                        { id: '8', label: '8' },
+                                        { id: '16', label: '16' }
+                                    ]}
+                                    selectedKey={(() => {
+                                        const borderRadius = elementProps.style?.borderRadius || '0px';
+                                        return typeof borderRadius === 'string' ? borderRadius.replace('px', '') : String(borderRadius);
+                                    })()}
+                                    aria-label="Border radius selector"
+                                    onSelectionChange={async (selected) => {
+                                        if (!elementId) return;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(selected === 'class' ? { borderRadius: undefined } : { borderRadius: `${selected}px` })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        try {
+                                            const { error } = await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', elementId);
+                                            if (error) {
+                                                console.error('Supabase update error:', error);
+                                            }
+                                        } catch (err) {
+                                            console.error('Unexpected error during Supabase update:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <fieldset className='style-border-style'>
+                            <legend className='fieldset-legend'>Border Style</legend>
+                            <div className='border-style-control react-aria-Group'>
+                                <label className='control-label'>
+                                    <SquareDashedBottom color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} />
+                                </label>
+                                <input
+                                    className='control-input'
+                                    value={elementProps.style?.borderStyle || 'solid'}
+                                    onChange={(e) => {
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                borderStyle: e.target.value
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        supabase
+                                            .from('elements')
+                                            .update({ props: updatedProps })
+                                            .eq('id', elementId);
+                                    }}
+                                />
+                                <Select
+                                    items={[
+                                        { id: 'class', label: 'class' },
+                                        { id: 'solid', label: 'solid' },
+                                        { id: 'dashed', label: 'dashed' },
+                                        { id: 'dotted', label: 'dotted' },
+                                        { id: 'double', label: 'double' }
+                                    ]}
+                                    selectedKey={elementProps.style?.borderStyle || 'class'}
+                                    aria-label="Border style selector"
+                                    onSelectionChange={async (selected) => {
+                                        if (!elementId) return;
+                                        const updatedProps = {
+                                            ...elementProps,
+                                            style: {
+                                                ...elementProps.style,
+                                                ...(selected === 'class' ? { borderStyle: undefined } : { borderStyle: selected as 'solid' | 'dashed' | 'dotted' | 'double' })
+                                            }
+                                        };
+                                        updateElement(updatedProps);
+                                        try {
+                                            const { error } = await supabase
+                                                .from('elements')
+                                                .update({ props: updatedProps })
+                                                .eq('id', elementId);
+                                            if (error) {
+                                                console.error('Supabase update error:', error);
+                                            }
+                                        } catch (err) {
+                                            console.error('Unexpected error during Supabase update:', err);
+                                        }
+                                    }}
+                                >
+                                    {(item) => <SelectItem>{item.label}</SelectItem>}
+                                </Select>
+                            </div>
+                        </fieldset>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <div className="inspect_page">
+                <div className="panel-header">
+                    <h3 className='panel-title'>Text</h3>
+                    <div className="header-actions">
+                        <button
+                            className='iconButton'
+                            aria-label="Add Element"
+                        ><ChevronUp color={ICON_PROPS.color} strokeWidth={ICON_PROPS.strokeWidth} size={ICON_PROPS.size} /></button>
+                    </div>
+                </div>
+                <div className='panel-content'>
+                    <fieldset className="typography-font">
+                        <legend className='fieldset-legend'>Font</legend>
+                        <div className='font-select-control react-aria-Group'>
+                            <Select
+                                items={[
+                                    { id: 'Arial', label: 'Arial' },
+                                    { id: 'Helvetica', label: 'Helvetica' },
+                                    { id: 'Times New Roman', label: 'Times New Roman' },
+                                    { id: 'Georgia', label: 'Georgia' },
+                                    { id: 'Courier New', label: 'Courier New' },
+                                    { id: 'Verdana', label: 'Verdana' }
+                                ]}
+                                selectedKey={elementProps.style?.fontFamily || 'Arial'}
+                                onSelectionChange={(key) => {
+                                    const updatedProps = {
+                                        ...elementProps,
+                                        style: {
+                                            ...elementProps.style,
+                                            fontFamily: key as string
+                                        }
+                                    };
+                                    updateElement(updatedProps);
+                                    supabase
+                                        .from('elements')
+                                        .update({ props: updatedProps })
+                                        .eq('id', elementId);
+                                }}
+                            >
+                                {(item) => <SelectItem>{item.label}</SelectItem>}
+                            </Select>
+                        </div>
+                        <div className='fieldset-actions'>
+                            <Button><EllipsisVertical color={ICON_PROPS.color} size={ICON_PROPS.size} strokeWidth={ICON_PROPS.strokeWidth} /></Button>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+
+        </div>
+    );
+}
+
+export default Design;
