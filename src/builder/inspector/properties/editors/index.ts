@@ -14,6 +14,7 @@ export { GridListEditor } from './GridListEditor';
 export { GridListItemEditor } from './GridListItemEditor';
 export { SelectItemEditor } from './SelectItemEditor';
 export { TabsEditor } from './TabsEditor';
+export { TabEditor } from './TabEditor';
 export { PanelEditor } from './PanelEditor';
 export { SliderEditor } from './SliderEditor';
 

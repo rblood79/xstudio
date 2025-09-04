@@ -18,6 +18,7 @@ import {
     GridListItemEditor,
     SelectItemEditor,
     TabsEditor,
+    TabEditor, // TabEditor 추가
     PanelEditor,
     SliderEditor
 } from './editors';
@@ -38,6 +39,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     GridListItem: GridListItemEditor,
     SelectItem: SelectItemEditor,
     Tabs: TabsEditor,
+    Tab: TabEditor, // Tab 에디터 추가
     Panel: PanelEditor,
     Slider: SliderEditor,
 
