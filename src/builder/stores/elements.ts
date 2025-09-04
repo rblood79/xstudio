@@ -230,11 +230,14 @@ export const useStore = create<Store>((set, get) => ({
         return state;
       }
 
+      // Tab 또는 Panel의 실제 부모 Tabs 컴포넌트 ID를 찾습니다
+      const actualParentId = element.parent_id || elementId;
+
       return {
         ...state,
         selectedElementId: elementId,
         selectedElementProps: createCompleteProps(element, props),
-        selectedTab: { parentId: elementId, tabIndex }
+        selectedTab: { parentId: actualParentId, tabIndex }
       };
     }),
   setPages: (pages) =>

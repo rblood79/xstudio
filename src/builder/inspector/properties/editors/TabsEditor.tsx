@@ -101,18 +101,8 @@ function usePageId() {
 }
 
 export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const [selectedTab, setSelectedTab] = useState<SelectedTabState | null>(null);
-    const { addElement, removeElement, elements: storeElements, selectedTab: storeSelectedTab } = useStore();
-    const { localPageId, storePageId, validatePageId } = usePageId();
-
-    useEffect(() => {
-        // 스토어에서 선택된 Tab 정보가 있으면 로컬 상태와 동기화
-        if (storeSelectedTab && storeSelectedTab.parentId === elementId) {
-            setSelectedTab(storeSelectedTab);
-        } else {
-            setSelectedTab(null);
-        }
-    }, [elementId, storeSelectedTab]);
+    const { addElement, removeElement, elements: storeElements } = useStore();
+    const { localPageId, storePageId } = usePageId();
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -129,107 +119,12 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
     }, [storeElements, elementId]);
 
-    // 선택된 탭 편집 UI
-    if (selectedTab && selectedTab.parentId === elementId) {
-        const currentTab = tabChildren[selectedTab.tabIndex];
-        if (!currentTab) {
-            console.warn('선택된 Tab을 찾을 수 없습니다:', selectedTab, tabChildren);
-            return null;
-        }
-
-        return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Tab Properties</legend>
-
-                    <PropertyInput
-                        label="Tab Title"
-                        value={String(currentTab.props.title || '')}
-                        onChange={(value) => {
-                            const updatedProps = {
-                                ...currentTab.props,
-                                title: value
-                            };
-                            // 실제 Tab 컴포넌트의 props 업데이트
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentTab.id, updatedProps);
-                        }}
-                        icon={Type}
-                    />
-
-                    <PropertySelect
-                        label="Variant"
-                        value={currentTab.props.variant || 'default'}
-                        onChange={(value) => {
-                            const updatedProps = {
-                                ...currentTab.props,
-                                variant: value as 'default' | 'bordered' | 'underlined' | 'pill'
-                            };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentTab.id, updatedProps);
-                        }}
-                        options={TAB_VARIANTS}
-                        icon={Layout}
-                    />
-
-                    <PropertySelect
-                        label="Appearance"
-                        value={currentTab.props.appearance || 'light'}
-                        onChange={(value) => {
-                            const updatedProps = {
-                                ...currentTab.props,
-                                appearance: value as 'light' | 'dark' | 'solid' | 'bordered'
-                            };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentTab.id, updatedProps);
-                        }}
-                        options={TAB_APPEARANCES}
-                        icon={AppWindow}
-                    />
-
-                    <div className='tab-actions'>
-                        <button
-                            className='control-button delete'
-                            onClick={async () => {
-                                try {
-                                    await deleteTab(selectedTab.tabIndex, tabChildren, currentProps, elementId, onUpdate, addElement, removeElement);
-                                    setSelectedTab(null);
-                                } catch (err) {
-                                    console.error('Delete tab error:', err);
-                                    alert('탭 삭제 중 오류가 발생했습니다.');
-                                }
-                            }}
-                        >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Tab
-                        </button>
-                    </div>
-                </fieldset>
-
-                <div className='tab-actions'>
-                    <button
-                        className='control-button secondary'
-                        onClick={() => setSelectedTab(null)}
-                    >
-                        Back to Tabs Settings
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // 새 탭 추가
+    // 새 탭 추가 함수 정의
     const addNewTab = async () => {
         try {
             const pageIdToUse = localPageId || storePageId;
             if (!pageIdToUse) {
                 alert('페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-                return;
-            }
-
-            const isValidPage = await validatePageId(pageIdToUse);
-            if (!isValidPage) {
-                alert('유효하지 않은 페이지입니다. 페이지를 새로고침해주세요.');
                 return;
             }
 
@@ -240,10 +135,11 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         }
     };
 
+    // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tab Settings</legend>
+                <legend className='fieldset-legend'>Tabs Component Properties</legend>
 
                 <PropertySelect
                     label="Default Tab"
@@ -263,6 +159,27 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     options={ORIENTATIONS}
                     icon={Layout}
                 />
+
+                <PropertyInput
+                    label="Default Selected Key"
+                    value={String(currentProps.defaultSelectedKey || '')}
+                    onChange={(value) => updateProp('defaultSelectedKey', value)}
+                    icon={AppWindow}
+                />
+
+                <PropertyInput
+                    label="Selected Key"
+                    value={String(currentProps.selectedKey || '')}
+                    onChange={(value) => updateProp('selectedKey', value)}
+                    icon={AppWindow}
+                />
+
+                <PropertyInput
+                    label="Disabled"
+                    value={String(currentProps.isDisabled || false)}
+                    onChange={(value) => updateProp('isDisabled', value === 'true')}
+                    icon={AppWindow}
+                />
             </fieldset>
 
             <fieldset className="properties-aria">
@@ -273,25 +190,9 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         Total tabs: {tabChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Select individual tabs from tree to edit title, variant, and appearance
+                        💡 Select individual tabs from layer tree to edit their properties
                     </p>
                 </div>
-
-                {tabChildren.length > 0 && (
-                    <div className='tabs-list'>
-                        {tabChildren.map((tab, index) => (
-                            <div key={tab.id} className='tab-list-item'>
-                                <span className='tab-title'>{tab.props.title || `Tab ${index + 1}`}</span>
-                                <button
-                                    className='tab-edit-button'
-                                    onClick={() => setSelectedTab({ parentId: elementId, tabIndex: index })}
-                                >
-                                    Edit
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
 
                 <div className='tab-actions'>
                     <button
@@ -308,14 +209,14 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     );
 }
 
-// 유틸리티 함수들
+// 유틸리티 함수들 - 타입 수정
 async function deleteTab(
     tabIndex: number,
-    tabChildren: any[],
-    currentProps: any,
+    tabChildren: any[], // Element 타입 대신 any 사용 (타입 충돌 해결)
+    currentProps: any, // ElementProps 타입 대신 any 사용
     elementId: string,
-    onUpdate: (props: any) => void,
-    addElement: (element: any) => void,
+    onUpdate: (props: any) => void, // ElementProps 타입 대신 any 사용
+    addElement: (element: any) => void, // Element 타입 대신 any 사용
     removeElement: (id: string) => void
 ) {
     const currentTab = tabChildren[tabIndex];
@@ -372,7 +273,7 @@ async function updateRemainingPanelIndices(
     elementId: string,
     deletedIndex: number,
     totalTabs: number,
-    addElement: (element: any) => void,
+    addElement: (element: any) => void, // Element 타입 대신 any 사용
     removeElement: (id: string) => void
 ) {
     for (let i = deletedIndex; i < totalTabs; i++) {
@@ -406,12 +307,12 @@ async function updateRemainingPanelIndices(
 }
 
 async function createNewTab(
-    tabChildren: any[],
-    currentProps: any,
+    tabChildren: any[], // Element 타입 대신 any 사용
+    currentProps: any, // ElementProps 타입 대신 any 사용
     elementId: string,
     pageId: string,
-    onUpdate: (props: any) => void,
-    addElement: (element: any) => void
+    onUpdate: (props: any) => void, // ElementProps 타입 대신 any 사용
+    addElement: (element: any) => void // Element 타입 대신 any 사용
 ) {
     const newTabIndex = tabChildren.length || 0;
 
