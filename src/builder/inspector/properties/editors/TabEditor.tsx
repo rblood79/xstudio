@@ -8,16 +8,16 @@ const TAB_VARIANTS = [
     { id: 'bordered', label: 'Bordered' },
     { id: 'underlined', label: 'Underlined' },
     { id: 'pill', label: 'Pill' }
-] as const;
+];
 
 const TAB_APPEARANCES = [
     { id: 'light', label: 'Light' },
     { id: 'dark', label: 'Dark' },
     { id: 'solid', label: 'Solid' },
     { id: 'bordered', label: 'Bordered' }
-] as const;
+];
 
-export function TabEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
