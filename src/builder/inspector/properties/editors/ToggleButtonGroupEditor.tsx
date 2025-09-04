@@ -39,7 +39,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Toggle Button Properties</legend>
+
 
                     {/* 토글 버튼 제목 편집 */}
                     <PropertyInput
@@ -120,7 +120,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Group Settings</legend>
+
 
                 {/* 방향 설정 */}
                 <PropertySelect

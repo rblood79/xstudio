@@ -43,7 +43,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Radio Properties</legend>
+
 
                     {/* 라디오 버튼 라벨 편집 */}
                     <PropertyInput
@@ -139,7 +139,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Group Settings</legend>
+
 
                 {/* 라벨 설정 */}
                 <PropertyInput

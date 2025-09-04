@@ -168,7 +168,6 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>GridList Settings</legend>
 
                 {/* 라벨 설정 */}
                 <PropertyInput

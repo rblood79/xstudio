@@ -14,7 +14,7 @@ export function TextFieldEditor({ currentProps, onUpdate }: PropertyEditorProps)
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>TextField 설정</legend>
+
 
                 <PropertyInput
                     label="라벨"

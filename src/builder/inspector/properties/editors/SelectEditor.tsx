@@ -38,7 +38,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Select Item Properties</legend>
+
 
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
@@ -147,7 +147,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Select Settings</legend>
+
 
                 {/* 라벨 설정 */}
                 <PropertyInput
