@@ -18,7 +18,8 @@ export * from './Panel';
 export * from './Calendar';
 export * from './DatePicker';
 export * from './DateRangePicker';
-export * from './Switch'; // Switch 추가
+export * from './Switch';
+export * from './Table'; // Table 추가
 export * from './types';
 export type { Key } from 'react-aria-components';
 // 추가 컴포넌트는 여기에 계속 export
