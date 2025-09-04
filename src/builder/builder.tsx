@@ -840,8 +840,8 @@ function Builder() {
                 children: undefined // children 배열 제거
             };
 
-            // 기본 Tab과 Panel 요소들 생성
-            const defaultTab = {
+            // 기본 Tab과 Panel 요소들 생성 (2개로 변경)
+            const defaultTab1 = {
                 id: crypto.randomUUID(),
                 page_id: selectedPageId,
                 tag: 'Tab',
@@ -856,7 +856,7 @@ function Builder() {
                 order_num: 1,
             };
 
-            const defaultPanel = {
+            const defaultPanel1 = {
                 id: crypto.randomUUID(),
                 page_id: selectedPageId,
                 tag: 'Panel',
@@ -871,11 +871,47 @@ function Builder() {
                 order_num: 1,
             };
 
+            const defaultTab2 = {
+                id: crypto.randomUUID(),
+                page_id: selectedPageId,
+                tag: 'Tab',
+                props: {
+                    title: 'Tab 2',
+                    variant: 'default',
+                    appearance: 'light',
+                    style: {},
+                    className: '',
+                },
+                parent_id: tabsId,
+                order_num: 2,
+            };
+
+            const defaultPanel2 = {
+                id: crypto.randomUUID(),
+                page_id: selectedPageId,
+                tag: 'Panel',
+                props: {
+                    variant: 'tab',
+                    title: 'Tab 2',
+                    tabIndex: 1,
+                    style: {},
+                    className: '',
+                },
+                parent_id: tabsId,
+                order_num: 2,
+            };
+
             try {
-                // Tabs, Tab, Panel을 함께 삽입 (children 배열 없이)
+                // Tabs, Tab1, Panel1, Tab2, Panel2를 함께 삽입
                 const { data, error } = await supabase
                     .from("elements")
-                    .insert([{ ...newElement, props: tabsProps }, defaultTab, defaultPanel])
+                    .insert([
+                        { ...newElement, props: tabsProps },
+                        defaultTab1,
+                        defaultPanel1,
+                        defaultTab2,
+                        defaultPanel2
+                    ])
                     .select();
 
                 if (error) {
@@ -883,9 +919,9 @@ function Builder() {
                     return;
                 }
 
-                if (data && data.length >= 3) {
+                if (data && data.length >= 5) {
                     // 각 요소를 개별적으로 스토어에 추가
-                    data.forEach((element, index) => {
+                    data.forEach((element) => {
                         addElement(element);
                     });
 
