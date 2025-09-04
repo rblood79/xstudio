@@ -13,7 +13,6 @@ import {
 } from '../../../types/events';
 import { supabase } from '../../../env/supabase.client';
 import { useSelectedElement } from '../shared/hooks';
-import { ICON_PROPS } from '../shared/constants';
 
 import './index.css';
 
@@ -222,7 +221,7 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                                 const parsed = JSON.parse(jsonValue);
                                 setValue(parsed);
                                 onUpdate({ ...action, value: parsed });
-                            } catch (err) {
+                            } catch {
                                 // JSON 파싱 에러는 무시
                             }
                         }}
