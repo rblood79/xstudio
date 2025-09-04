@@ -417,6 +417,15 @@ function Builder() {
                         shouldCloseOnSelect: true,
                         allowsNonContiguousRanges: false,
                     };
+                case 'Switch':
+                    return {
+                        ...baseProps,
+                        isSelected: false,
+                        isDisabled: false,
+                        isReadOnly: false,
+                        isRequired: false,
+                        children: text || 'Switch',
+                    };
                 default:
                     return baseProps;
             }
@@ -931,6 +940,21 @@ function Builder() {
                 }
             } catch (err) {
                 console.error("Tabs 생성 중 오류:", err);
+            }
+        } else if (args[0] === 'Switch') {
+            const switchId = newElement.id;
+
+            const { data, error } = await supabase
+                .from('elements')
+                .insert([newElement])
+                .select();
+
+            if (error) console.error("Switch 추가 에러:", error);
+            else if (data) {
+                addElement(data[0]);
+                requestAnimationFrame(() => {
+                    setSelectedElement(switchId, newElement.props as ElementProps);
+                });
             }
         } else {
             // TextField가 아닌 경우 기존 로직 사용
