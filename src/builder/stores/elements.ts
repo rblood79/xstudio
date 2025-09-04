@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { produce, Patch, enablePatches } from 'immer';
 import { ElementProps } from '../../types/supabase';
+import { supabase } from '../../env/supabase.client'; // supabase import 추가
 
 enablePatches();
 
@@ -48,7 +49,8 @@ interface Store {
   setCurrentPageId: (pageId: string) => void;
   undo: () => void;
   redo: () => void;
-  removeElement: (elementId: string) => void;
+  removeElement: (elementId: string) => Promise<void>;
+  removeTabPair: (elementId: string) => void;
 }
 
 const sanitizeElement = (el: Element) => ({
@@ -318,36 +320,305 @@ export const useStore = create<Store>((set, get) => ({
       })
     );
   },
-  removeElement: (elementId: string) =>
-    set(
-      produce((state) => {
-        const prevState = [...state.elements];
-        state.elements = state.elements.filter((el: Element) => el.id !== elementId);
+  removeElement: async (elementId: string) => {
+    const state = get();
+    const elementToRemove = state.elements.find(el => el.id === elementId);
 
-        // 히스토리 업데이트
-        if (state.history.length > 0) {
-          state.history = [
-            ...state.history.slice(0, state.historyIndex + 1),
-            {
-              patches: [],
-              inversePatches: [],
-              snapshot: {
-                prev: prevState,
-                current: [...state.elements]
-              }
-            }
-          ];
-          state.historyIndex = state.history.length - 1;
+    if (!elementToRemove) {
+      console.log('삭제할 요소를 찾을 수 없음:', elementId);
+      return;
+    }
+
+    console.log('삭제할 요소:', {
+      id: elementToRemove.id,
+      tag: elementToRemove.tag,
+      parent_id: elementToRemove.parent_id,
+      tabIndex: elementToRemove.props.tabIndex,
+      props: elementToRemove.props
+    });
+
+    // Tab 또는 Panel인 경우 쌍으로 삭제
+    if (elementToRemove.tag === 'Tab' || elementToRemove.tag === 'Panel') {
+      const parentId = elementToRemove.parent_id;
+      const tabIndex = elementToRemove.props.tabIndex;
+
+      console.log('쌍 찾기 조건:', {
+        parentId,
+        tabIndex,
+        currentTag: elementToRemove.tag
+      });
+
+      // tabIndex가 undefined인 경우 order_num으로 찾기
+      let pairedElement = null;
+
+      if (tabIndex !== undefined) {
+        // tabIndex로 찾기
+        pairedElement = state.elements.find(el =>
+          el.parent_id === parentId &&
+          el.props.tabIndex === tabIndex &&
+          el.tag !== elementToRemove.tag
+        );
+      } else {
+        // tabIndex가 undefined인 경우 order_num으로 찾기
+        const currentOrderNum = elementToRemove.order_num;
+        pairedElement = state.elements.find(el =>
+          el.parent_id === parentId &&
+          el.order_num === currentOrderNum &&
+          el.tag !== elementToRemove.tag
+        );
+      }
+
+      if (pairedElement) {
+        console.log('쌍 요소 발견:', {
+          id: pairedElement.id,
+          tag: pairedElement.tag,
+          parent_id: pairedElement.parent_id,
+          tabIndex: pairedElement.props.tabIndex,
+          order_num: pairedElement.order_num
+        });
+      } else {
+        console.log('쌍 요소를 찾을 수 없음. 모든 요소들:',
+          state.elements
+            .filter(el => el.parent_id === parentId)
+            .map(el => ({
+              id: el.id,
+              tag: el.tag,
+              tabIndex: el.props.tabIndex,
+              order_num: el.order_num
+            }))
+        );
+      }
+
+      // Supabase에서 두 요소 모두 삭제
+      try {
+        const idsToDelete = [elementId];
+        if (pairedElement) {
+          idsToDelete.push(pairedElement.id);
         }
 
-        // postMessage로 변경사항 알림
+        console.log('삭제할 ID들:', idsToDelete);
+
+        const { error } = await supabase
+          .from('elements')
+          .delete()
+          .in('id', idsToDelete);
+
+        if (error) {
+          console.error('Tab/Panel 쌍 삭제 에러:', error);
+          return;
+        }
+
+        console.log('Tab/Panel 쌍이 데이터베이스에서 삭제됨:', idsToDelete);
+      } catch (err) {
+        console.error('Tab/Panel 쌍 삭제 중 오류:', err);
+        return;
+      }
+
+      // 로컬 상태 업데이트 (produce 내부에서 async 사용하지 않음)
+      set(
+        produce((state) => {
+          const prevState = [...state.elements];
+
+          console.log('삭제 전 요소 수:', state.elements.length);
+
+          // 두 요소 모두 제거
+          state.elements = state.elements.filter((el: Element) => {
+            const shouldRemove = el.id === elementId ||
+              (pairedElement && el.id === pairedElement.id);
+
+            if (shouldRemove) {
+              console.log('제거할 요소:', { id: el.id, tag: el.tag });
+            }
+
+            return !shouldRemove;
+          });
+
+          console.log('삭제 후 요소 수:', state.elements.length);
+
+          // 남은 Tab들의 order_num과 tabIndex 재정렬
+          if (parentId) {
+            const remainingTabs = state.elements
+              .filter(el => el.parent_id === parentId && el.tag === 'Tab')
+              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+            const remainingPanels = state.elements
+              .filter(el => el.parent_id === parentId && el.tag === 'Panel')
+              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+            console.log('남은 Tab들:', remainingTabs.map(t => ({ id: t.id, tabIndex: t.props.tabIndex, order_num: t.order_num })));
+            console.log('남은 Panel들:', remainingPanels.map(p => ({ id: p.id, tabIndex: p.props.tabIndex, order_num: p.order_num })));
+
+            // Tab 재정렬
+            remainingTabs.forEach((tab, index) => {
+              tab.order_num = index + 1;
+              tab.props.tabIndex = index;
+            });
+
+            // Panel 재정렬
+            remainingPanels.forEach((panel, index) => {
+              panel.order_num = index + 1;
+              panel.props.tabIndex = index;
+            });
+          }
+
+          // 히스토리 업데이트
+          if (state.history.length > 0) {
+            state.history = [
+              ...state.history.slice(0, state.historyIndex + 1),
+              {
+                patches: [],
+                inversePatches: [],
+                snapshot: {
+                  prev: prevState,
+                  current: [...state.elements]
+                }
+              }
+            ];
+            state.historyIndex = state.history.length - 1;
+          }
+        })
+      );
+
+      // 재정렬된 데이터를 Supabase에 업데이트 (produce 외부에서 실행)
+      if (parentId) {
         try {
-          window.postMessage({
-            type: "UPDATE_ELEMENTS",
-            elements: state.elements.map(sanitizeElement)
-          }, window.location.origin);
-        } catch (error) {
-          console.error("Failed to send message:", error);
+          const currentState = get();
+          const remainingTabs = currentState.elements
+            .filter(el => el.parent_id === parentId && el.tag === 'Tab')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          const remainingPanels = currentState.elements
+            .filter(el => el.parent_id === parentId && el.tag === 'Panel')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          const allRemainingElements = [...remainingTabs, ...remainingPanels];
+
+          for (const element of allRemainingElements) {
+            try {
+              await supabase
+                .from('elements')
+                .update({
+                  order_num: element.order_num,
+                  props: element.props
+                })
+                .eq('id', element.id);
+            } catch (err) {
+              console.error('요소 재정렬 업데이트 에러:', err);
+            }
+          }
+        } catch (err) {
+          console.error('재정렬 업데이트 중 오류:', err);
+        }
+      }
+    } else {
+      // 일반 요소 삭제
+      try {
+        const { error } = await supabase
+          .from('elements')
+          .delete()
+          .eq('id', elementId);
+
+        if (error) {
+          console.error('요소 삭제 에러:', error);
+          return;
+        }
+      } catch (err) {
+        console.error('요소 삭제 중 오류:', err);
+        return;
+      }
+
+      // 로컬 상태 업데이트
+      set(
+        produce((state) => {
+          const prevState = [...state.elements];
+          state.elements = state.elements.filter((el: Element) => el.id !== elementId);
+
+          // 히스토리 업데이트
+          if (state.history.length > 0) {
+            state.history = [
+              ...state.history.slice(0, state.historyIndex + 1),
+              {
+                patches: [],
+                inversePatches: [],
+                snapshot: {
+                  prev: prevState,
+                  current: [...state.elements]
+                }
+              }
+            ];
+            state.historyIndex = state.history.length - 1;
+          }
+        })
+      );
+    }
+  },
+  removeTabPair: (elementId: string) =>
+    set(
+      produce(async (state) => {
+        const elementToRemove = state.elements.find(el => el.id === elementId);
+
+        if (!elementToRemove || (elementToRemove.tag !== 'Tab' && elementToRemove.tag !== 'Panel')) {
+          return;
+        }
+
+        const parentId = elementToRemove.parent_id;
+        const tabIndex = elementToRemove.props.tabIndex;
+
+        // 같은 parent_id와 tabIndex를 가진 반대편 요소 찾기
+        const pairedElement = state.elements.find(el =>
+          el.parent_id === parentId &&
+          el.props.tabIndex === tabIndex &&
+          el.tag !== elementToRemove.tag
+        );
+
+        // Supabase에서 두 요소 모두 삭제
+        try {
+          const idsToDelete = [elementId];
+          if (pairedElement) {
+            idsToDelete.push(pairedElement.id);
+          }
+
+          const { error } = await supabase
+            .from('elements')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (error) {
+            console.error('Tab/Panel 쌍 삭제 에러:', error);
+            return;
+          }
+        } catch (err) {
+          console.error('Tab/Panel 쌍 삭제 중 오류:', err);
+          return;
+        }
+
+        // 로컬 상태에서 두 요소 모두 제거
+        state.elements = state.elements.filter((el: Element) =>
+          el.id !== elementId &&
+          (pairedElement ? el.id !== pairedElement.id : true)
+        );
+
+        // 남은 Tab들의 order_num과 tabIndex 재정렬
+        if (parentId) {
+          const remainingTabs = state.elements
+            .filter(el => el.parent_id === parentId && el.tag === 'Tab')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          const remainingPanels = state.elements
+            .filter(el => el.parent_id === parentId && el.tag === 'Panel')
+            .sort((a, b) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+
+          // Tab 재정렬
+          remainingTabs.forEach((tab, index) => {
+            tab.order_num = index + 1;
+            tab.props.tabIndex = index;
+          });
+
+          // Panel 재정렬
+          remainingPanels.forEach((panel, index) => {
+            panel.order_num = index + 1;
+            panel.props.tabIndex = index;
+          });
         }
       })
     ),

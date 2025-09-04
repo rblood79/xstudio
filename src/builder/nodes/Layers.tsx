@@ -2,6 +2,7 @@ import { CopyMinus } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import { Database, ElementProps } from '../../types/supabase';
 import { supabase } from '../../env/supabase.client';
+import { useStore } from '../stores/elements'; // useStore 추가
 
 type Element = Database['public']['Tables']['elements']['Row'];
 
@@ -29,6 +30,8 @@ export function Layers({
     sendElementSelectedMessage,
     collapseAllTreeItems
 }: LayersProps) {
+    const { removeElement } = useStore(); // removeElement 함수 가져오기
+
     return (
         <div className="sidebar_elements">
             <div className="panel-header">
@@ -60,14 +63,13 @@ export function Layers({
                             requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
                         },
                         async (el) => {
-                            const { error } = await supabase.from("elements").delete().eq("id", el.id);
-                            if (error) console.error("요소 삭제 에러:", error);
-                            else {
-                                if (el.id === selectedElementId) {
-                                    setSelectedElement(null);
-                                    window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
-                                }
-                                setElements(elements.filter((e) => e.id !== el.id));
+                            // removeElement 함수 사용 (Tab/Panel 쌍 삭제 로직 포함)
+                            await removeElement(el.id);
+
+                            // 선택된 요소가 삭제된 경우 선택 해제
+                            if (el.id === selectedElementId) {
+                                setSelectedElement(null);
+                                window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
                             }
                         }
                     )
