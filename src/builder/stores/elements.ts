@@ -332,7 +332,7 @@ export const useStore = create<Store>((set, get) => ({
       const tabIndex = elementToRemove.props.tabIndex;
 
       // 쌍 요소 찾기 (tabIndex 또는 order_num으로)
-      const pairedElement = state.elements.find(el => {
+      const pairedElement = state.elements.find((el: Element) => {
         if (el.parent_id !== parentId || el.tag === elementToRemove.tag) return false;
 
         return tabIndex !== undefined
@@ -375,20 +375,20 @@ export const useStore = create<Store>((set, get) => ({
           // 남은 Tab/Panel 재정렬
           if (parentId) {
             const remainingTabs = state.elements
-              .filter(el => el.parent_id === parentId && el.tag === 'Tab')
-              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+              .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+              .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
 
             const remainingPanels = state.elements
-              .filter(el => el.parent_id === parentId && el.tag === 'Panel')
-              .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+              .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+              .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
 
             // 재정렬
-            remainingTabs.forEach((tab, index) => {
+            remainingTabs.forEach((tab: Element, index: number) => {
               tab.order_num = index + 1;
               tab.props.tabIndex = index;
             });
 
-            remainingPanels.forEach((panel, index) => {
+            remainingPanels.forEach((panel: Element, index: number) => {
               panel.order_num = index + 1;
               panel.props.tabIndex = index;
             });
@@ -417,8 +417,8 @@ export const useStore = create<Store>((set, get) => ({
         try {
           const currentState = get();
           const remainingElements = currentState.elements
-            .filter(el => el.parent_id === parentId && (el.tag === 'Tab' || el.tag === 'Panel'))
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+            .filter((el: Element) => el.parent_id === parentId && (el.tag === 'Tab' || el.tag === 'Panel'))
+            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
 
           for (const element of remainingElements) {
             try {
@@ -482,7 +482,7 @@ export const useStore = create<Store>((set, get) => ({
   removeTabPair: (elementId: string) =>
     set(
       produce(async (state) => {
-        const elementToRemove = state.elements.find(el => el.id === elementId);
+        const elementToRemove = state.elements.find((el: Element) => el.id === elementId);
 
         if (!elementToRemove || (elementToRemove.tag !== 'Tab' && elementToRemove.tag !== 'Panel')) {
           return;
@@ -492,7 +492,7 @@ export const useStore = create<Store>((set, get) => ({
         const tabIndex = elementToRemove.props.tabIndex;
 
         // 같은 parent_id와 tabIndex를 가진 반대편 요소 찾기
-        const pairedElement = state.elements.find(el =>
+        const pairedElement = state.elements.find((el: Element) =>
           el.parent_id === parentId &&
           el.props.tabIndex === tabIndex &&
           el.tag !== elementToRemove.tag
@@ -528,21 +528,21 @@ export const useStore = create<Store>((set, get) => ({
         // 남은 Tab들의 order_num과 tabIndex 재정렬
         if (parentId) {
           const remainingTabs = state.elements
-            .filter(el => el.parent_id === parentId && el.tag === 'Tab')
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
 
           const remainingPanels = state.elements
-            .filter(el => el.parent_id === parentId && el.tag === 'Panel')
-            .sort((a, b) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+            .sort((a: Element, b: Element) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
 
           // Tab 재정렬
-          remainingTabs.forEach((tab, index) => {
+          remainingTabs.forEach((tab: Element, index: number) => {
             tab.order_num = index + 1;
             tab.props.tabIndex = index;
           });
 
           // Panel 재정렬
-          remainingPanels.forEach((panel, index) => {
+          remainingPanels.forEach((panel: Element, index: number) => {
             panel.order_num = index + 1;
             panel.props.tabIndex = index;
           });
