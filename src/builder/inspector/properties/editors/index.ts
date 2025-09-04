@@ -17,5 +17,6 @@ export { TabsEditor } from './TabsEditor';
 export { TabEditor } from './TabEditor';
 export { PanelEditor } from './PanelEditor';
 export { SliderEditor } from './SliderEditor';
+export { SwitchEditor } from './SwitchEditor';
 
 
