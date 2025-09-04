@@ -35,6 +35,11 @@ import {
   DatePicker,
   DateRangePicker,
   Switch, // Switch 추가
+  Table, // Table 추가
+  Column,
+  TableHeader,
+  Row,
+  Cell,
 } from '../components/list';
 import EventEngine from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
@@ -1210,6 +1215,30 @@ function Preview() {
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
         </Switch>
+      );
+    }
+
+    // Table 컴포넌트 특별 처리
+    if (el.tag === 'Table') {
+      return (
+        <Table
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          selectionMode={el.props.selectionMode || 'none'}
+          selectionBehavior={el.props.selectionBehavior || 'toggle'}
+          allowsDragging={el.props.allowsDragging || false}
+          onSelectionChange={(selectedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: Array.from(selectedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {children.map((child) => renderElement(child))}
+        </Table>
       );
     }
 

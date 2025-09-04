@@ -426,6 +426,17 @@ function Builder() {
                         isRequired: false,
                         children: text || 'Switch',
                     };
+
+                case 'Table':
+                    return {
+                        ...baseProps,
+                        selectionMode: 'none',
+                        selectionBehavior: 'toggle',
+                        allowsDragging: false,
+                        selectedKeys: [],
+                        children: [], // Table의 자식 요소들 (Column, Row 등)
+                    };
+
                 default:
                     return baseProps;
             }
