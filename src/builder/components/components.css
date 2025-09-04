@@ -9,6 +9,7 @@
         }
     }
 
+    /* Dialog 컴포넌트 스타일 시작 */
     .react-aria-Dialog {
         outline: none;
         padding: var(--spacing-md);
@@ -22,6 +23,7 @@
         }
     }
 
+    /* ModalOverlay 컴포넌트 스타일 시작 */
     .react-aria-ModalOverlay {
         position: fixed;
         top: 0;
@@ -43,6 +45,7 @@
         }
     }
 
+    /* Modal 컴포넌트 스타일 시작 */
     .react-aria-Modal {
         box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
         border-radius: 6px;
@@ -61,6 +64,7 @@
         }
     }
 
+    /* Modal 컴포넌트 스타일 종료 */
     @keyframes modal-fade {
         from {
             opacity: 0;
@@ -71,6 +75,7 @@
         }
     }
 
+    /* Modal 컴포넌트 스타일 종료 */
     @keyframes modal-zoom {
         from {
             transform: scale(0.8);
@@ -81,6 +86,7 @@
         }
     }
 
+    /* Modal 컴포넌트 스타일 종료 */
     @keyframes mymodal-blur {
         from {
             background: rgba(45 0 0 / 0);
@@ -95,6 +101,7 @@
         }
     }
 
+    /* Modal 컴포넌트 스타일 종료 */
     @keyframes mymodal-slide {
         from {
             transform: translateX(100%);
@@ -105,6 +112,7 @@
         }
     }
 
+    /* Input 컴포넌트 스타일 시작 */
     .react-aria-Input,
     .react-aria-TextArea {
         padding: 0.286rem;
@@ -121,6 +129,7 @@
         }
     }
 
+    /* Input 컴포넌트 스타일 종료 */
     .react-aria-Input,
     .react-aria-TextArea {
         &[data-invalid] {
@@ -128,15 +137,18 @@
         }
     }
 
+    /* FieldError 컴포넌트 스타일 시작 */
     .react-aria-FieldError {
         font-size: 12px;
         color: var(--invalid-color);
     }
 
+    /* FieldError 컴포넌트 스타일 종료 */
     [slot=description] {
         font-size: 12px;
     }
 
+    /* Input 컴포넌트 스타일 시작 */
     .react-aria-Input,
     .react-aria-TextArea {
         &[data-disabled] {
@@ -145,6 +157,7 @@
         }
     }
 
+    /* Label 컴포넌트 스타일 시작 */
     .react-aria-Label {
         font-size: var(--text-sm);
         line-height: var(--text-lg);
@@ -152,6 +165,7 @@
         padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 0;
     }
 
+    /* Label 컴포넌트 스타일 종료 */
     .react-aria-Button {
         color: var(--color-gray-800);
         background: var(--color-gray-50);
@@ -185,6 +199,7 @@
         }
     }
 
+    /* ToggleButton 컴포넌트 스타일 시작 */
     .react-aria-ToggleButton {
         color: var(--color-gray-800);
         background: var(--color-gray-50);
@@ -230,6 +245,7 @@
         }
     }
 
+    /* ToggleButtonGroup 컴포넌트 스타일 시작 */
     .react-aria-ToggleButtonGroup {
         display: flex;
 
@@ -283,6 +299,7 @@
         }
     }
 
+    /* RadioGroup 컴포넌트 스타일 시작 */
     .react-aria-RadioGroup {
         display: flex;
         flex-direction: column;
@@ -290,6 +307,7 @@
         color: var(--color-gray-200);
     }
 
+    /* Radio 컴포넌트 스타일 시작 */
     .react-aria-Radio {
         display: flex;
         /* This is needed so the HiddenInput is positioned correctly */
@@ -345,6 +363,7 @@
         }
     }
 
+    /* RadioGroup 컴포넌트 스타일 종료 */
     .react-aria-RadioGroup {
         .react-aria-FieldError {
             font-size: var(--text-xs);
@@ -361,6 +380,7 @@
         }
     }
 
+    /* Radio 컴포넌트 스타일 종료 */
     .react-aria-Radio {
         &[data-disabled] {
             color: var(--text-color-disabled);
@@ -371,6 +391,7 @@
         }
     }
 
+    /* Checkbox 컴포넌트 스타일 시작 */
     .react-aria-Checkbox {
         --selected-color: var(--color-gray-600);
         --selected-color-pressed: var(--color-gray-800);
@@ -474,6 +495,7 @@
         }
     }
 
+    /* CheckboxGroup 컴포넌트 스타일 시작 */
     .react-aria-CheckboxGroup {
         display: flex;
         flex-direction: column;
@@ -504,6 +526,7 @@
         align-items: flex-start;
     }
 
+    /* ListBox 컴포넌트 스타일 시작 */
     .react-aria-ListBox {
         display: flex;
         flex-direction: column;
@@ -526,6 +549,7 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 시작 */
     .react-aria-ListBoxItem {
         padding: var(--spacing-sm);
         border-radius: var(--radius-sm);
@@ -562,6 +586,7 @@
         -webkit-touch-callout: none;
     }
 
+    /* ListBox 컴포넌트 스타일 종료 */
     .react-aria-ListBox {
         .react-aria-ListBoxSection:not(:first-child) {
             margin-top: var(--spacing-sm);
@@ -574,6 +599,7 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 종료 */
     .react-aria-ListBoxItem {
         [slot=label] {
             font-weight: bold;
@@ -584,6 +610,7 @@
         }
     }
 
+    /* ListBox 컴포넌트 스타일 종료 */
     .react-aria-ListBox[data-orientation=horizontal],
     .react-aria-ListBox[data-layout=grid] {
         flex-direction: row;
@@ -682,12 +709,14 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 종료 */
     .react-aria-ListBoxItem {
         &[data-disabled] {
             color: var(--text-color-disabled);
         }
     }
 
+    /* ListBox 컴포넌트 스타일 시작 */
     .react-aria-ListBox {
         &[data-empty] {
             align-items: center;
@@ -696,31 +725,37 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 시작 */
     .react-aria-ListBoxItem {
         &[data-dragging] {
             opacity: 0.6;
         }
     }
 
+    /* DropIndicator 컴포넌트 스타일 시작 */
     .react-aria-DropIndicator[data-drop-target] {
         outline: 1px solid var(--highlight-background);
     }
 
+    /* ListBox 컴포넌트 스타일 시작 */
     .react-aria-ListBox[data-drop-target] {
         outline: 2px solid var(--highlight-background);
         outline-offset: -1px;
         background: var(--highlight-overlay)
     }
 
+    /* ListBoxItem 컴포넌트 스타일 시작 */
     .react-aria-ListBoxItem[data-drop-target] {
         outline: 2px solid var(--highlight-background);
         background: var(--highlight-overlay)
     }
 
+    /* DropIndicator 컴포넌트 스타일 시작 */
     .react-aria-DropIndicator[data-drop-target] {
         outline: 1px solid var(--highlight-background);
     }
 
+    /* Tree 컴포넌트 스타일 시작 */
     .react-aria-Tree {
         display: flex;
         flex-direction: column;
@@ -741,6 +776,7 @@
             outline-offset: -1px;
         }
 
+        /* TreeItem 컴포넌트 스타일 시작 */
         .react-aria-TreeItem {
             display: flex;
             align-items: center;
@@ -920,6 +956,7 @@
         background: var(--highlight-overlay);
     }
 
+    /* Select 컴포넌트 스타일 시작 */
     .react-aria-Select {
         color: var(--text-color);
 
@@ -960,6 +997,7 @@
         }
     }
 
+    /* Select 컴포넌트 스타일 종료 */
     .react-aria-Popover[data-trigger=Select] {
         min-width: var(--trigger-width);
 
@@ -1005,11 +1043,13 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 종료 */
     .react-aria-ListBoxItem[href] {
         text-decoration: none;
         cursor: pointer;
     }
 
+    /* Select 컴포넌트 스타일 시작 */
     .react-aria-Select {
         .react-aria-SelectValue {
             [slot=description] {
@@ -1036,6 +1076,7 @@
         }
     }
 
+    /* Slider 컴포넌트 스타일 시작 */
     .react-aria-Slider {
         display: grid;
         grid-template-areas: "label output"
@@ -1140,6 +1181,7 @@
         }
     }
 
+    /* Tabs 컴포넌트 스타일 시작 */
     .react-aria-Tabs {
         display: flex;
         color: var(--text-color);
@@ -1150,6 +1192,7 @@
     }
 
 
+    /* TabList 컴포넌트 스타일 시작 */
     .react-aria-TabList {
         display: flex;
         background-color: var(--color-gray-50);
@@ -1168,6 +1211,7 @@
         }
     }
 
+    /* Tab 컴포넌트 스타일 시작 */
     .react-aria-Tab {
         font-size: var(--text-sm);
         cursor: default;
@@ -1213,6 +1257,7 @@
         }
     }
 
+    /* TabPanel 컴포넌트 스타일 시작 */
     .react-aria-TabPanel {
         font-size: var(--text-sm);
         padding: 10px;
@@ -1225,12 +1270,14 @@
     }
 
 
+    /* Tabs 컴포넌트 스타일 종료 */
     .react-aria-Tabs {
         &[data-orientation=vertical] {
             flex-direction: row;
         }
     }
 
+    /* TabList 컴포넌트 스타일 시작 */
     .react-aria-TabList {
         &[data-orientation=vertical] {
             flex-direction: column;
@@ -1242,6 +1289,7 @@
         }
     }
 
+    /* Tab 컴포넌트 스타일 시작 */
     .react-aria-Tab {
         &[data-disabled] {
             color: var(--text-color-disabled);
@@ -1364,6 +1412,7 @@
         }
     }
 
+    /* Select 컴포넌트 스타일 시작 */
     .react-aria-Select {
         .react-aria-FieldError {
             font-size: var(--text-sm);
@@ -1375,6 +1424,7 @@
         }
     }
 
+    /* Popover 컴포넌트 스타일 시작 */
     .react-aria-Popover {
 
         border: 1px solid var(--border-color);
@@ -1444,6 +1494,7 @@
         }
     }
 
+    /* GridList 컴포넌트 스타일 시작 */
     .react-aria-GridList {
         display: flex;
         flex-direction: column;
@@ -1563,6 +1614,7 @@
         cursor: pointer;
     }
 
+    /* GridList 컴포넌트 스타일 시작 */
     .react-aria-GridList {
         &[data-empty] {
             align-items: center;
@@ -1571,6 +1623,7 @@
         }
     }
 
+    /* GridListItem 컴포넌트 스타일 시작 */
     .react-aria-GridListItem {
         &[data-allows-dragging] {
             padding-left: 4px;
@@ -1592,6 +1645,7 @@
         }
     }
 
+    /* DropIndicator 컴포넌트 스타일 시작 */
     .react-aria-DropIndicator {
         &[data-drop-target] {
             outline: 1px solid var(--highlight-background);
@@ -1625,6 +1679,7 @@
         }
     }
 
+    /* ComboBox 컴포넌트 스타일 시작 */
     .react-aria-ComboBox {
         color: var(--text-color);
 
@@ -1675,6 +1730,7 @@
         }
     }
 
+    /* ComboBox 컴포넌트 스타일 종료 */
     .react-aria-Popover[data-trigger=ComboBox] {
         width: var(--trigger-width);
 
@@ -1720,11 +1776,13 @@
         }
     }
 
+    /* ListBoxItem 컴포넌트 스타일 시작 */
     .react-aria-ListBoxItem[href] {
         text-decoration: none;
         cursor: pointer;
     }
 
+    /* ComboBox 컴포넌트 스타일 시작 */
     .react-aria-ComboBox {
 
         >div:has(.react-aria-Input) {
@@ -1760,6 +1818,7 @@
         }
     }
 
+    /* TextField 컴포넌트 스타일 시작 */
     .react-aria-TextField {
         display: flex;
         flex-direction: column;
@@ -2443,7 +2502,83 @@
     }
 }
 
-/* Panel 컴포넌트 스타일 */
+/* Switch 컴포넌트 스타일 */
+.react-aria-Switch {
+    display: flex;
+    /* This is needed so the HiddenInput is positioned correctly */
+    position: relative;
+    align-items: center;
+    gap: 0.571rem;
+    font-size: var(--text-sm);
+    color: var(--text-color);
+    forced-color-adjust: none;
+
+    .indicator {
+        width: calc(var(--spacing-2xl) * 1.25);
+        height: var(--spacing-xl);
+        border: 2px solid var(--color-gray-500);
+        background: var(--background-color);
+        border-radius: var(--radius-xl);
+        transition: all 200ms;
+
+        &:before {
+            content: '';
+            display: block;
+            margin: var(--spacing-2xs);
+            width: var(--spacing-lg);
+            height: var(--spacing-lg);
+            background: var(--color-primary-600);
+            border-radius: 16px;
+            transition: all 200ms;
+        }
+    }
+
+    &[data-pressed] .indicator {
+        border-color: var(--border-color-pressed);
+
+        &:before {
+            background: var(--highlight-background-pressed);
+        }
+    }
+
+    &[data-selected] {
+        .indicator {
+            border-color: var(--color-primary-600);
+            background: var(--color-primary-600);
+
+            &:before {
+                background: var(--color-gray-50);
+                transform: translateX(100%);
+            }
+        }
+
+        &[data-pressed] {
+            .indicator {
+                border-color: var(--highlight-background-pressed);
+                background: var(--highlight-background-pressed);
+            }
+        }
+    }
+
+    &[data-focus-visible] .indicator {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: 2px;
+    }
+
+    &[data-disabled] {
+        color: var(--text-color-disabled);
+
+        .indicator {
+            border-color: var(--border-color-disabled);
+
+            &:before {
+                background: var(--border-color-disabled);
+            }
+        }
+    }
+}
+
+/* Panel 컴포넌트 스타일 시작 */
 .react-aria-Panel {
     display: flex;
     flex-direction: column;
@@ -2465,7 +2600,7 @@
     flex: 1;
 }
 
-/* 변형별 스타일 */
+/* 변형별 스타일 시작 */
 .panel-tab {
     border: none;
     border-radius: 0;
@@ -2498,7 +2633,7 @@
     border-radius: 0.5rem;
 }
 
-/* Card 컴포넌트 스타일 */
+/* Card 컴포넌트 스타일 시작 */
 .react-aria-Card {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-2xl);

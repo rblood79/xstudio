@@ -33,7 +33,8 @@ import {
   Panel,
   Calendar,
   DatePicker,
-  DateRangePicker, // 추가
+  DateRangePicker,
+  Switch, // Switch 추가
 } from '../components/list';
 import EventEngine from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
@@ -1186,6 +1187,29 @@ function Preview() {
           {el.props.children}
           {children.map((child) => renderElement(child))}
         </Tag>
+      );
+    }
+
+    // Switch 컴포넌트 특별 처리
+    if (el.tag === 'Switch') {
+      return (
+        <Switch
+          key={el.id}
+          data-element-id={el.id}
+          isSelected={el.props.isSelected || false}
+          isDisabled={el.props.isDisabled || false}
+          style={el.props.style}
+          className={el.props.className}
+          onChange={(isSelected) => {
+            const updatedProps = {
+              ...el.props,
+              isSelected
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
+        >
+          {typeof el.props.children === 'string' ? el.props.children : null}
+        </Switch>
       );
     }
 

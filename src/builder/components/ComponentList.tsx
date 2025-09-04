@@ -1,4 +1,4 @@
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search } from 'lucide-react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import './ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -15,6 +15,7 @@ export default function ComponentList({ handleAddElement }: ComponentListProps) 
         { tag: 'Button', label: 'button', icon: MousePointer },
         { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
         { tag: 'ToggleButton', label: 'toggle', icon: ToggleLeft },
+        { tag: 'Switch', label: 'switch', icon: ToggleRight }, // Switch 추가
         { tag: 'Slider', label: 'slider', icon: SlidersHorizontal },
     ];
 
