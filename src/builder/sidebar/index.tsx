@@ -126,24 +126,40 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         parentId: string | null = null,
         depth: number = 0
     ): React.ReactNode => {
-        const filteredItems = items
+        let filteredItems = items
             .filter((item) => {
                 // 기본 parent_id 필터링
                 const matchesParent = item.parent_id === parentId || (parentId === null && item.parent_id === undefined);
                 if (!matchesParent) return false;
 
-                // Panel을 Tabs 하위에서 제외하지 않음 - 이 조건 제거
-                // if (parentId) {
-                //     const parentItem = items.find(p => p.id === parentId);
-                //     if (parentItem && hasTag(parentItem) && parentItem.tag === 'Tabs' &&
-                //         hasTag(item) && item.tag === 'Panel') {
-                //         return false;
-                //     }
-                // }
-
                 return true;
-            })
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+            });
+
+        // Tabs 하위의 Tab과 Panel을 쌍으로 그룹화
+        if (parentId) {
+            const parentItem = items.find(p => p.id === parentId);
+            if (parentItem && hasTag(parentItem) && parentItem.tag === 'Tabs') {
+                const tabs = filteredItems.filter(item => hasTag(item) && item.tag === 'Tab')
+                    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+                const panels = filteredItems.filter(item => hasTag(item) && item.tag === 'Panel')
+                    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+                // Tab과 Panel을 쌍으로 결합
+                const pairedItems: T[] = [];
+                for (let i = 0; i < Math.max(tabs.length, panels.length); i++) {
+                    if (tabs[i]) pairedItems.push(tabs[i]);
+                    if (panels[i]) pairedItems.push(panels[i]);
+                }
+
+                filteredItems = pairedItems;
+            } else {
+                // 일반적인 정렬
+                filteredItems = filteredItems.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+            }
+        } else {
+            // 일반적인 정렬
+            filteredItems = filteredItems.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        }
 
         // 디버깅 로그 추가
         /*if (parentId) {
