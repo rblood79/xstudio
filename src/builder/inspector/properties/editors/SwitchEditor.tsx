@@ -14,7 +14,7 @@ export function SwitchEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Switch Properties</legend>
+
 
                 <PropertyInput
                     label="Switch Label"

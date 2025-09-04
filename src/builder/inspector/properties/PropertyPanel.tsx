@@ -20,7 +20,8 @@ import {
     TabsEditor,
     TabEditor, // TabEditor 추가
     PanelEditor,
-    SliderEditor
+    SliderEditor,
+    SwitchEditor // SwitchEditor 추가
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
 // ElementProps import 제거
@@ -42,6 +43,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Tab: TabEditor, // Tab 에디터 추가
     Panel: PanelEditor,
     Slider: SliderEditor,
+    Switch: SwitchEditor, // Switch 매핑 추가
 
     // 추가로 지원할 컴포넌트들
     ComboBox: ComboBoxEditor,
