@@ -36,7 +36,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Option Properties</legend>
+
 
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput

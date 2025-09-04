@@ -43,7 +43,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Item Properties</legend>
+
 
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
@@ -153,7 +153,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>ListBox Settings</legend>
+
 
                 {/* 라벨 설정 */}
                 <PropertyInput

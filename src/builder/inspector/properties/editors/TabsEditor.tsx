@@ -121,8 +121,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tabs Component Properties</legend>
-
                 <PropertySelect
                     label="Default Tab"
                     value={String(currentProps.defaultSelectedKey || '')}
@@ -140,20 +138,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('orientation', value)}
                     options={ORIENTATIONS}
                     icon={Layout}
-                />
-
-                <PropertyInput
-                    label="Default Selected Key"
-                    value={String(currentProps.defaultSelectedKey || '')}
-                    onChange={(value) => updateProp('defaultSelectedKey', value)}
-                    icon={AppWindow}
-                />
-
-                <PropertyInput
-                    label="Selected Key"
-                    value={String(currentProps.selectedKey || '')}
-                    onChange={(value) => updateProp('selectedKey', value)}
-                    icon={AppWindow}
                 />
 
                 <PropertyInput
