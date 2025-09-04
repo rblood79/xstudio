@@ -1,35 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
-import { AppWindow, Layout, Type, Trash, Plus } from 'lucide-react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { AppWindow, Layout, Plus } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
-
-interface SelectedTabState {
-    parentId: string;
-    tabIndex: number;
-}
+import type { Element } from '../../../stores/elements';
 
 // 상수 정의
-const TAB_VARIANTS = [
-    { id: 'default', label: 'Default' },
-    { id: 'bordered', label: 'Bordered' },
-    { id: 'underlined', label: 'Underlined' },
-    { id: 'pill', label: 'Pill' }
-] as const;
-
-const TAB_APPEARANCES = [
-    { id: 'light', label: 'Light' },
-    { id: 'dark', label: 'Dark' },
-    { id: 'solid', label: 'Solid' },
-    { id: 'bordered', label: 'Bordered' }
-] as const;
-
-const ORIENTATIONS = [
+const ORIENTATIONS: Array<{ id: string; label: string }> = [
     { id: 'horizontal', label: 'Horizontal' },
     { id: 'vertical', label: 'Vertical' }
-] as const;
+];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -38,27 +20,7 @@ function usePageId() {
     const { currentPageId: storePageId, setCurrentPageId } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 
-    useEffect(() => {
-        if (storePageId) {
-            setLocalPageId(storePageId);
-            return;
-        }
-
-        const pathParts = window.location.pathname.split('/');
-        const urlPageId = pathParts[pathParts.length - 1];
-
-        if (urlPageId && UUID_REGEX.test(urlPageId)) {
-            setLocalPageId(urlPageId);
-            setCurrentPageId(urlPageId);
-        } else {
-            const projectId = pathParts[pathParts.length - 2];
-            if (projectId) {
-                fetchCurrentPageId(projectId);
-            }
-        }
-    }, [storePageId, setCurrentPageId]);
-
-    const fetchCurrentPageId = async (projectId: string) => {
+    const fetchCurrentPageId = useCallback(async (projectId: string) => {
         try {
             const { data: pages, error } = await supabase
                 .from('pages')
@@ -80,7 +42,27 @@ function usePageId() {
         } catch (err) {
             console.error('Failed to fetch current page ID:', err);
         }
-    };
+    }, [setCurrentPageId]);
+
+    useEffect(() => {
+        if (storePageId) {
+            setLocalPageId(storePageId);
+            return;
+        }
+
+        const pathParts = window.location.pathname.split('/');
+        const urlPageId = pathParts[pathParts.length - 1];
+
+        if (urlPageId && UUID_REGEX.test(urlPageId)) {
+            setLocalPageId(urlPageId);
+            setCurrentPageId(urlPageId);
+        } else {
+            const projectId = pathParts[pathParts.length - 2];
+            if (projectId) {
+                fetchCurrentPageId(projectId);
+            }
+        }
+    }, [storePageId, setCurrentPageId, fetchCurrentPageId]);
 
     const validatePageId = async (pageId: string): Promise<boolean> => {
         try {
@@ -101,7 +83,7 @@ function usePageId() {
 }
 
 export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const { addElement, removeElement, elements: storeElements } = useStore();
+    const { addElement, elements: storeElements } = useStore();
     const { localPageId, storePageId } = usePageId();
 
     const updateProp = (key: string, value: unknown) => {
@@ -209,110 +191,14 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     );
 }
 
-// 유틸리티 함수들 - 타입 수정
-async function deleteTab(
-    tabIndex: number,
-    tabChildren: any[], // Element 타입 대신 any 사용 (타입 충돌 해결)
-    currentProps: any, // ElementProps 타입 대신 any 사용
-    elementId: string,
-    onUpdate: (props: any) => void, // ElementProps 타입 대신 any 사용
-    addElement: (element: any) => void, // Element 타입 대신 any 사용
-    removeElement: (id: string) => void
-) {
-    const currentTab = tabChildren[tabIndex];
-    if (!currentTab) return;
-
-    // 1. Tab 요소 삭제
-    await supabase.from('elements').delete().eq('id', currentTab.id);
-    removeElement(currentTab.id);
-
-    // 2. 해당 Tab과 연결된 Panel 요소 찾기 및 삭제
-    const { data: panelElements } = await supabase
-        .from('elements')
-        .select('*')
-        .eq('parent_id', elementId)
-        .eq('props->tabIndex', tabIndex);
-
-    if (panelElements && panelElements.length > 0) {
-        const panelToDelete = panelElements[0];
-        await supabase.from('elements').delete().eq('id', panelToDelete.id);
-        removeElement(panelToDelete.id);
-    }
-
-    // 3. 남은 Tab들의 order_num 업데이트
-    const remainingTabs = tabChildren.filter((_, index) => index !== tabIndex);
-    for (let i = 0; i < remainingTabs.length; i++) {
-        const tab = remainingTabs[i];
-        const updatedProps = { ...tab.props, order_num: i + 1 };
-        const { updateElementProps } = useStore.getState();
-        updateElementProps(tab.id, updatedProps);
-    }
-
-    // 4. 남은 Panel들의 tabIndex 업데이트
-    await updateRemainingPanelIndices(elementId, tabIndex, remainingTabs.length, addElement, removeElement);
-
-    // 5. Tabs props 업데이트 (defaultSelectedKey만, children 제거)
-    const updatedProps = {
-        ...currentProps,
-        defaultSelectedKey: remainingTabs.length > 0 ? remainingTabs[0].id : undefined
-    };
-
-    const { error: tabsUpdateError } = await supabase
-        .from('elements')
-        .update({ props: updatedProps })
-        .eq('id', elementId);
-
-    if (tabsUpdateError) {
-        throw new Error('Tabs update failed');
-    }
-
-    onUpdate(updatedProps);
-}
-
-async function updateRemainingPanelIndices(
-    elementId: string,
-    deletedIndex: number,
-    totalTabs: number,
-    addElement: (element: any) => void, // Element 타입 대신 any 사용
-    removeElement: (id: string) => void
-) {
-    for (let i = deletedIndex; i < totalTabs; i++) {
-        const { data: panelsToUpdate } = await supabase
-            .from('elements')
-            .select('*')
-            .eq('parent_id', elementId)
-            .eq('props->tabIndex', i + 1);
-
-        if (panelsToUpdate && panelsToUpdate.length > 0) {
-            const panelToUpdate = panelsToUpdate[0];
-            const updatedProps = {
-                ...panelToUpdate.props,
-                tabIndex: i
-            };
-
-            await supabase
-                .from('elements')
-                .update({ props: updatedProps })
-                .eq('id', panelToUpdate.id);
-
-            // 스토어 업데이트
-            const storeElement = useStore.getState().elements.find(el => el.id === panelToUpdate.id);
-            if (storeElement) {
-                const updatedElement = { ...storeElement, props: updatedProps };
-                removeElement(panelToUpdate.id);
-                addElement(updatedElement);
-            }
-        }
-    }
-}
-
+// 유틸리티 함수들
 async function createNewTab(
-    tabChildren: any[], // Element 타입 대신 any 사용
-    currentProps: any, // ElementProps 타입 대신 any 사용
+    tabChildren: Array<{ id: string; props: Record<string, unknown>; order_num?: number }>,
+    currentProps: Record<string, unknown>,
     elementId: string,
     pageId: string,
-    onUpdate: (props: any) => void, // ElementProps 타입 대신 any 사용
-    addElement: (element: any) => void // Element 타입 대신 any 사용
+    onUpdate: (props: Record<string, unknown>) => void,
+    addElement: (element: Element) => void
 ) {
     const newTabIndex = tabChildren.length || 0;
 
