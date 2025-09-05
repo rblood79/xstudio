@@ -188,8 +188,8 @@ function Preview() {
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-    // body 태그를 div로 대체
-    const tag = el.tag === 'body' ? 'div' : el.tag;
+    // body 태그를 div로 대체하는 로직 제거
+    // const tag = el.tag === 'body' ? 'div' : el.tag;
 
     const newProps = {
       ...el.props,
@@ -1267,7 +1267,7 @@ function Preview() {
       ...children.map((child) => renderElement(child))
     ].filter(Boolean);
 
-    return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
+    return React.createElement(el.tag, finalProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {
@@ -1309,7 +1309,7 @@ function Preview() {
   };
 
   const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
-  const RootTag = rootElement.tag === 'body' ? 'div' : rootElement.tag;
+  const RootTag = rootElement.tag; // body 태그를 div로 변환하지 않음
 
   return React.createElement(
     RootTag,
@@ -1318,11 +1318,6 @@ function Preview() {
       id: projectId || undefined,
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
-      // If the root element was a body tag, apply its props to the actual body element
-      ...(rootElement.tag === 'body' ? {
-        //style: { ...document.body.style, ...(rootElement.props.style || {}) },
-        className: `${styles.main} ${rootElement.props.className || ''}`,
-      } : {}),
     },
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );
