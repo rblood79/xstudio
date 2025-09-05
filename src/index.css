@@ -414,6 +414,11 @@
     padding: 0
   }
 
+  #root {
+    height: inherit;
+    width: inherit;
+  }
+
   html,
   : host {
     -webkit-text-size-adjust: 100%;
