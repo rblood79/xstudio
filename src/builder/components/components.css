@@ -319,16 +319,17 @@
         color: var(--color-gray-800);
         forced-color-adjust: none;
         padding: var(--spacing-sm);
+        padding-left: var(--spacing);
 
         &:before {
             content: '';
             display: block;
-            width: var(--spacing-md);
-            height: var(--spacing-md);
+            width: var(--spacing-lg);
+            height: var(--spacing-lg);
             box-sizing: border-box;
             border: var(--spacing-2xs) solid var(--border-color);
             background: var(--field-background);
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-lg);
             transition: all 200ms;
         }
 
@@ -1111,7 +1112,7 @@
             height: var(--spacing-lg);
             border-radius: 50%;
             background: var(--color-primary-50);
-            border: 2px solid var(--color-primary-500);
+            border: var(--spacing-2xs) solid var(--color-primary-500);
             forced-color-adjust: none;
 
             &[data-dragging] {
@@ -2509,7 +2510,7 @@
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
     align-items: center;
-    gap: 0.571rem;
+    gap: var(--spacing-sm);
     font-size: var(--text-sm);
     color: var(--text-color);
     forced-color-adjust: none;
@@ -2517,7 +2518,7 @@
     .indicator {
         width: calc(var(--spacing-2xl) * 1.25);
         height: var(--spacing-xl);
-        border: 2px solid var(--color-gray-500);
+        border: var(--spacing-2xs) solid var(--color-gray-500);
         background: var(--background-color);
         border-radius: var(--radius-xl);
         transition: all 200ms;
@@ -2529,7 +2530,7 @@
             width: var(--spacing-lg);
             height: var(--spacing-lg);
             background: var(--color-primary-600);
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             transition: all 200ms;
         }
     }
