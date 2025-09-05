@@ -517,7 +517,26 @@ function Preview() {
             }
           }}
         >
-          {checkboxChildren.map((checkbox) => renderElement(checkbox))}
+          {checkboxChildren.map((checkbox) => (
+            <Checkbox
+              key={checkbox.id}
+              data-element-id={checkbox.id}
+              value={checkbox.id} // CheckboxGroup 내부에서는 value prop 사용
+              isIndeterminate={checkbox.props.isIndeterminate}
+              isDisabled={checkbox.props.isDisabled}
+              style={checkbox.props.style}
+              className={checkbox.props.className}
+              onChange={(isSelected) => {
+                const updatedProps = {
+                  ...checkbox.props,
+                  isSelected
+                };
+                updateElementProps(checkbox.id, updatedProps);
+              }}
+            >
+              {typeof checkbox.props.children === 'string' ? checkbox.props.children : null}
+            </Checkbox>
+          ))}
         </CheckboxGroup>
       );
     }
