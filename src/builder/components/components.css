@@ -1082,7 +1082,7 @@
         grid-template-areas: "label output"
             "track track";
         grid-template-columns: 1fr auto;
-        max-width: 300px;
+        /* max-width: 300px; */
         color: var(--text-color);
 
         .react-aria-Label {
@@ -1107,11 +1107,11 @@
         }
 
         .react-aria-SliderThumb {
-            width: 1.429rem;
-            height: 1.429rem;
+            width: var(--spacing-lg);
+            height: var(--spacing-lg);
             border-radius: 50%;
-            background: var(--color-primary-500);
-            border: 2px solid var(--color-white);
+            background: var(--color-primary-50);
+            border: 2px solid var(--color-primary-500);
             forced-color-adjust: none;
 
             &[data-dragging] {
@@ -1125,11 +1125,12 @@
 
         &[data-orientation=horizontal] {
             flex-direction: column;
-            width: 300px;
+            /* width: 300px; */
 
             .react-aria-SliderTrack {
                 height: 30px;
-                width: 100%;
+                width: calc(100% - var(--spacing-xl));
+                left: var(--spacing-md);
 
                 &:before {
                     height: 3px;

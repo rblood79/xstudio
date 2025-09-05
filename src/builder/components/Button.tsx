@@ -5,4 +5,4 @@ export function Button(props: ButtonProps) {
   return <RACButton {...props} className='react-aria-Button' />;
 }
 
-export * from './Slider';
+export { Slider } from './Slider';
