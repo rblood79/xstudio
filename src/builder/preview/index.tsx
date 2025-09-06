@@ -36,6 +36,7 @@ import {
   DateRangePicker,
   Switch, // Switch 추가
   Table, // Table 추가
+  Card,
   Column,
   TableHeader,
   Row,
@@ -43,7 +44,6 @@ import {
 } from '../components/list';
 import EventEngine from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
-import { Card } from '../components/Card';
 
 
 interface PreviewElement {
@@ -1359,6 +1359,7 @@ function Preview() {
     {
       className: styles.main,
       id: rootElement.tag === 'body' ? rootElement.id : (projectId || undefined),
+      "data-element-id": rootElement.tag === 'body' ? rootElement.id : undefined,
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
     },
