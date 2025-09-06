@@ -1352,7 +1352,8 @@ function Preview() {
   const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
 
   // body 태그인 경우 실제 HTML body를 사용
-  const RootTag = rootElement.tag === 'body' ? 'body' : rootElement.tag;
+  //const RootTag = rootElement.tag === 'body' ? 'body' : rootElement.tag;
+  const RootTag = rootElement.tag === 'body' ? 'div' : rootElement.tag;
 
   return React.createElement(
     RootTag,
