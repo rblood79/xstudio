@@ -198,10 +198,10 @@ function Preview() {
       "data-element-id": el.id,
     };
 
-    // body 태그인 경우 tag 속성 제거 (div로 렌더링하므로)
-    if (el.tag === 'body' && newProps.tag) {
-      delete newProps.tag;
-    }
+    // body 태그인 경우 tag 속성 제거하지 않음 (초기 렌더링 시에도 표시되도록)
+    // if (el.tag === 'body' && newProps.tag) {
+    //   delete newProps.tag;
+    // }
 
     // 이벤트 핸들러 추가
     const eventHandlers: any = {};
@@ -1362,6 +1362,8 @@ function Preview() {
       "data-element-id": rootElement.tag === 'body' ? rootElement.id : undefined,
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
+      // body 태그인 경우 명시적으로 tag 속성 추가
+      ...(rootElement.tag === 'body' ? { tag: 'body' } : {}),
     },
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );
