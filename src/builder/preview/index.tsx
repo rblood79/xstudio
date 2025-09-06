@@ -189,14 +189,19 @@ function Preview() {
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-    // body 태그를 div로 대체하는 로직 제거
-    // const tag = el.tag === 'body' ? 'div' : el.tag;
+    // body 태그인 경우 특별 처리 - 실제 body는 이미 존재하므로 div로 렌더링
+    const tag = el.tag === 'body' ? 'div' : el.tag;
 
     const newProps = {
       ...el.props,
       key: el.id,
       "data-element-id": el.id,
     };
+
+    // body 태그인 경우 tag 속성 제거 (div로 렌더링하므로)
+    if (el.tag === 'body' && newProps.tag) {
+      delete newProps.tag;
+    }
 
     // 이벤트 핸들러 추가
     const eventHandlers: any = {};
@@ -1292,14 +1297,25 @@ function Preview() {
       ...children.map((child) => renderElement(child))
     ].filter(Boolean);
 
-    return React.createElement(el.tag, finalProps, content.length > 0 ? content : undefined);
+    return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {
-    const sortedRootElements = elements
-      .filter((el) => !el.parent_id)
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    return sortedRootElements.map((el) => renderElement(el));
+    const rootElement = elements.length > 0 ? elements[0] : null;
+
+    if (rootElement && rootElement.tag === 'body') {
+      // body가 루트인 경우, body의 직접 자식 요소들만 렌더링
+      const bodyChildren = elements
+        .filter((el) => el.parent_id === rootElement.id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      return bodyChildren.map((el) => renderElement(el));
+    } else {
+      // body가 아닌 경우 기존 로직 사용
+      const sortedRootElements = elements
+        .filter((el) => !el.parent_id)
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      return sortedRootElements.map((el) => renderElement(el));
+    }
   };
 
   const handleGlobalClick = (e: React.MouseEvent) => {
@@ -1334,13 +1350,15 @@ function Preview() {
   };
 
   const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
-  const RootTag = rootElement.tag; // body 태그를 div로 변환하지 않음
+
+  // body 태그인 경우 실제 HTML body를 사용
+  const RootTag = rootElement.tag === 'body' ? 'body' : rootElement.tag;
 
   return React.createElement(
     RootTag,
     {
       className: styles.main,
-      id: projectId || undefined,
+      id: rootElement.tag === 'body' ? rootElement.id : (projectId || undefined),
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
     },
