@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import { supabase } from "../env/supabase.client";
 import { useState, useEffect } from "react";
+import { TextField, Button } from '../builder/components/list';
 
 import "./index.css";
 
@@ -129,14 +130,15 @@ function Dashboard() {
         <main className='main'>
           <h2>Projects List</h2>
           <form onSubmit={handleAddProject}>
-            <input
+            <TextField
               type="text"
               value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="프로젝트 이름 입력"
-              required
+              label="프로젝트 이름"
+              onChange={(value) => setNewProjectName(value)}
+              isRequired={true}
+              description="프로젝트 이름을 입력하세요."
             />
-            <button type="submit">프로젝트 추가</button>
+            <Button type="submit">프로젝트 추가</Button>
           </form>
 
           <section className='projects'>

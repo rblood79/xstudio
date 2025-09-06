@@ -43,6 +43,7 @@ import {
 } from '../components/list';
 import EventEngine from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
+import { Card } from '../components/Card';
 
 
 interface PreviewElement {
@@ -1193,6 +1194,30 @@ function Preview() {
         >
           {children.map((child) => renderElement(child))}
         </Panel>
+      );
+    }
+
+    // Card 컴포넌트 특별 처리 수정
+    if (el.tag === 'Card') {
+      return (
+        <Card
+          key={el.id}
+          data-element-id={el.id}
+          title={el.props.title}
+          description={el.props.description}
+          variant={el.props.variant || 'default'}
+          size={el.props.size || 'medium'}
+          isQuiet={el.props.isQuiet || false}
+          isSelected={el.props.isSelected || false}
+          isDisabled={el.props.isDisabled || false}
+          isFocused={el.props.isFocused || false}
+          style={el.props.style}
+          className={el.props.className}
+          onClick={eventHandlers.onClick}
+        >
+          {typeof el.props.children === 'string' ? el.props.children : null}
+          {children.map((child) => renderElement(child))}
+        </Card>
       );
     }
 
