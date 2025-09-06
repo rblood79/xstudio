@@ -22,7 +22,8 @@ import {
     PanelEditor,
     SliderEditor,
     SwitchEditor, // SwitchEditor 추가
-    TableEditor // TableEditor 추가
+    TableEditor, // TableEditor 추가
+    CardEditor // CardEditor 추가
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
 // ElementProps import 제거
@@ -46,6 +47,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Slider: SliderEditor,
     Switch: SwitchEditor, // Switch 매핑 추가
     Table: TableEditor, // Table 매핑 추가
+    Card: CardEditor, // Card 매핑 추가
 
     // 추가로 지원할 컴포넌트들
     ComboBox: ComboBoxEditor,
@@ -100,6 +102,8 @@ export function PropertyPanel() {
             </div>
         );
     }
+
+
 
     return (
         <div className="property-container">

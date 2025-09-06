@@ -2914,3 +2914,92 @@
     object-fit: cover;
     display: block;
 }
+
+/* Card 컴포넌트 스타일 */
+.react-aria-Card {
+    display: block;
+    border-radius: 8px;
+    background-color: var(--spectrum-global-color-gray-50);
+    border: 1px solid var(--spectrum-global-color-gray-200);
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.react-aria-Card:hover {
+    border-color: var(--spectrum-global-color-gray-300);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.react-aria-Card:focus {
+    outline: 2px solid var(--spectrum-global-color-blue-400);
+    outline-offset: 2px;
+}
+
+/* Variants */
+.react-aria-Card--default {
+    background-color: var(--spectrum-global-color-gray-50);
+    border-color: var(--spectrum-global-color-gray-200);
+}
+
+.react-aria-Card--elevated {
+    background-color: var(--spectrum-global-color-gray-50);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.react-aria-Card--outlined {
+    background-color: transparent;
+    border: 2px solid var(--spectrum-global-color-gray-300);
+}
+
+/* Sizes */
+.react-aria-Card--small {
+    padding: 12px;
+    min-height: 60px;
+}
+
+.react-aria-Card--medium {
+    padding: 16px;
+    min-height: 80px;
+}
+
+.react-aria-Card--large {
+    padding: 24px;
+    min-height: 120px;
+}
+
+/* States */
+.react-aria-Card--quiet {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.react-aria-Card--quiet:hover {
+    background-color: var(--spectrum-global-color-gray-100);
+    border: none;
+    box-shadow: none;
+}
+
+.react-aria-Card--selected {
+    border-color: var(--spectrum-global-color-blue-400);
+    background-color: var(--spectrum-global-color-blue-50);
+}
+
+.react-aria-Card--selected:hover {
+    border-color: var(--spectrum-global-color-blue-500);
+    background-color: var(--spectrum-global-color-blue-100);
+}
+
+.react-aria-Card--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.react-aria-Card--disabled:hover {
+    border-color: var(--spectrum-global-color-gray-200);
+    box-shadow: none;
+}
