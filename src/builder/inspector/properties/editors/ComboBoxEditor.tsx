@@ -96,19 +96,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         icon={FileText}
                     />
 
-                    {/* 옵션 텍스트 값 편집 */}
-                    <PropertyInput
-                        label="텍스트 값"
-                        value={String(currentOption.props.textValue || '')}
-                        onChange={(value) => {
-                            const updatedProps = {
-                                ...currentOption.props,
-                                textValue: value
-                            };
-                            updateElementProps(currentOption.id, updatedProps);
-                        }}
-                    />
-
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
@@ -290,7 +277,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     props: {
                                         label: `Option ${(comboBoxItemChildren.length || 0) + 1}`,
                                         value: `option${(comboBoxItemChildren.length || 0) + 1}`,
-                                        textValue: `option${(comboBoxItemChildren.length || 0) + 1}`,
                                         description: '',
                                         isDisabled: false,
                                         style: {},

@@ -75,20 +75,6 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         icon={Type}
                     />
 
-                    {/* 아이템 텍스트 값 편집 */}
-                    <PropertyInput
-                        label="텍스트 값"
-                        value={String(currentItem.props.textValue || '')}
-                        onChange={(value) => {
-                            // 실제 ListBoxItem 컴포넌트의 props 업데이트
-                            const updatedProps = {
-                                ...currentItem.props,
-                                textValue: value
-                            };
-                            updateElementProps(currentItem.id, updatedProps);
-                        }}
-                    />
-
                     {/* 아이템 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
@@ -260,7 +246,6 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                                     props: {
                                         label: `Item ${(listBoxChildren.length || 0) + 1}`,
                                         value: `item${(listBoxChildren.length || 0) + 1}`,
-                                        textValue: `item${(listBoxChildren.length || 0) + 1}`,
                                         isDisabled: false,
                                         style: {},
                                         className: '',
