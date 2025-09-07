@@ -222,7 +222,7 @@ function Builder() {
                         label: text || 'Select',
                         description: '',
                         errorMessage: '',
-                        placeholder: '옵션을 선택하세요',
+                        placeholder: 'Select an option',
                         selectedKey: null,
                         defaultSelectedKey: null,
                         menuTrigger: 'click',
@@ -238,6 +238,7 @@ function Builder() {
                     return {
                         ...baseProps,
                         label: text || 'ComboBox',
+                        placeholder: 'Select an option',
                         selectedKey: null,
                         children: [] // 빈 배열로 변경 - 실제 ComboBoxItem 컴포넌트들이 별도로 생성됨
                     };
