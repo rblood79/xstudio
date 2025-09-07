@@ -2925,6 +2925,29 @@
     cursor: pointer;
     position: relative;
     overflow: hidden;
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .card-title {
+            font-size: var(--text-md);
+            font-weight: 600;
+        }
+    }
+
+
+
+    .card-description {
+        font-size: var(--text-sm);
+        color: var(--spectrum-global-color-gray-600);
+    }
+
+    .card-content {
+        font-size: var(--text-sm);
+        color: var(--spectrum-global-color-gray-600);
+    }
 }
 
 .react-aria-Card:hover {
