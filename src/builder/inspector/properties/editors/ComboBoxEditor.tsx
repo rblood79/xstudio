@@ -13,7 +13,7 @@ interface SelectedOptionState {
 
 export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement, removeElement, setElements, elements: storeElements, currentPageId, updateElementProps } = useStore();
+    const { addElement, removeElement, elements: storeElements, currentPageId, updateElementProps } = useStore();
 
     useEffect(() => {
         // 옵션 선택 상태 초기화
@@ -116,7 +116,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             className='control-button close'
                             onClick={() => setSelectedOption(null)}
                         >
-                            <HelpCircle {...iconProps} />
+                            <HelpCircle size={16} stroke="1" color="var(--color-gray-400)" />
                             닫기
                         </button>
                     </div>
@@ -129,8 +129,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend>ComboBox 속성</legend>
-
                 {/* 기본 속성들 */}
                 <PropertyInput
                     label="라벨"
@@ -245,8 +243,8 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     className="option-button"
                                     onClick={() => setSelectedOption({ parentId: elementId, optionId: item.id })}
                                 >
-                                    <span className="option-label">{item.props.label || `Option ${index + 1}`}</span>
-                                    <span className="option-value">({item.props.value})</span>
+                                    <span className="option-label">{String(item.props.label) || `Option ${index + 1}`}</span>
+                                    <span className="option-value">({String(item.props.value)})</span>
                                 </button>
                                 <button
                                     className="delete-option-button"
@@ -254,7 +252,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                         await removeElement(item.id);
                                     }}
                                 >
-                                    <Trash {...iconProps} />
+                                    <Trash size={16} stroke="1" color="var(--color-gray-400)" />
                                 </button>
                             </div>
                         ))}
@@ -279,7 +277,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                         value: `option${(comboBoxItemChildren.length || 0) + 1}`,
                                         description: '',
                                         isDisabled: false,
-                                        style: {},
                                     },
                                     parent_id: elementId,
                                     order_num: (comboBoxItemChildren.length || 0) + 1,
@@ -304,7 +301,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             }
                         }}
                     >
-                        <SquarePlus {...iconProps} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         옵션 추가
                     </button>
                 </div>
