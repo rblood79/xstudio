@@ -2,6 +2,7 @@ export { ButtonEditor } from './ButtonEditor';
 export { TextFieldEditor } from './TextFieldEditor';
 export { SelectEditor } from './SelectEditor';
 export { ComboBoxEditor } from './ComboBoxEditor';
+export { ComboBoxItemEditor } from './ComboBoxItemEditor';
 export { CheckboxEditor } from './CheckboxEditor';
 export { CheckboxGroupEditor } from './CheckboxGroupEditor';
 export { RadioEditor } from './RadioEditor';
