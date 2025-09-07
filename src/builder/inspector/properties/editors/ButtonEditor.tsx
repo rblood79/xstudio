@@ -1,6 +1,7 @@
 import { Type, PointerOff } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {
@@ -14,27 +15,27 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     return (
         <div className="component-props">
             <PropertyInput
-                label="Text"
+                label={PROPERTY_LABELS.TEXT}
                 value={String(currentProps.children || '')}
                 onChange={(value) => updateProp('children', value)}
                 icon={Type}
             />
 
             <PropertyCheckbox
-                label="Disabled"
+                label={PROPERTY_LABELS.DISABLED}
                 checked={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
 
             <PropertySelect
-                label="Type"
+                label={PROPERTY_LABELS.TYPE}
                 value={String(currentProps.type || 'button')}
                 onChange={(value) => updateProp('type', value)}
                 options={[
-                    { id: 'button', label: 'Button' },
-                    { id: 'submit', label: 'Submit' },
-                    { id: 'reset', label: 'Reset' }
+                    { id: 'button', label: PROPERTY_LABELS.BUTTON },
+                    { id: 'submit', label: PROPERTY_LABELS.SUBMIT },
+                    { id: 'reset', label: PROPERTY_LABELS.RESET }
                 ]}
             />
         </div>

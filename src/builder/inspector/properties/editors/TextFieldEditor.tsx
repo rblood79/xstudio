@@ -1,6 +1,7 @@
 import { Type, Binary, CheckSquare, HelpCircle, AlertTriangle, PointerOff } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function TextFieldEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {
@@ -14,64 +15,62 @@ export function TextFieldEditor({ currentProps, onUpdate }: PropertyEditorProps)
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-
-
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
                 />
 
                 <PropertyInput
-                    label="값"
+                    label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
                     onChange={(value) => updateProp('value', value)}
                     icon={Binary}
                 />
 
                 <PropertyInput
-                    label="기본값"
+                    label={PROPERTY_LABELS.DEFAULT_VALUE}
                     value={String(currentProps.defaultValue || '')}
                     onChange={(value) => updateProp('defaultValue', value)}
                 />
 
                 <PropertyInput
-                    label="플레이스홀더"
+                    label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
                 />
 
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={HelpCircle}
                 />
 
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
 
                 <PropertyCheckbox
-                    label="필수"
+                    label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
 
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 <PropertyCheckbox
-                    label="읽기 전용"
+                    label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                 />

@@ -3,14 +3,15 @@ import { AppWindow, Layout, Plus } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 import type { Element } from '../../../stores/elements';
 
 // 상수 정의
 const ORIENTATIONS: Array<{ id: string; label: string }> = [
-    { id: 'horizontal', label: 'Horizontal' },
-    { id: 'vertical', label: 'Vertical' }
+    { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+    { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
 ];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -122,7 +123,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         <div className="component-props">
             <fieldset className="properties-aria">
                 <PropertySelect
-                    label="Default Tab"
+                    label={PROPERTY_LABELS.DEFAULT_TAB}
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                     options={tabChildren.map(tab => ({
@@ -133,7 +134,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
 
                 <PropertySelect
-                    label="Orientation"
+                    label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'horizontal')}
                     onChange={(value) => updateProp('orientation', value)}
                     options={ORIENTATIONS}
@@ -141,7 +142,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
 
                 <PropertyInput
-                    label="Disabled"
+                    label={PROPERTY_LABELS.DISABLED}
                     value={String(currentProps.isDisabled || false)}
                     onChange={(value) => updateProp('isDisabled', value === 'true')}
                     icon={AppWindow}
@@ -149,7 +150,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tab Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TAB_MANAGEMENT}</legend>
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -167,7 +168,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         disabled={!localPageId && !storePageId}
                     >
                         <Plus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add New Tab
+                        {PROPERTY_LABELS.ADD_TAB}
                     </button>
                 </div>
             </fieldset>
