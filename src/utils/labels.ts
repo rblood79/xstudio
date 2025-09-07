@@ -17,6 +17,7 @@ export const PROPERTY_LABELS = {
     // Text and content
     TEXT: 'Text',
     CHILDREN: 'Children',
+    TITLE: 'Title',
     DEFAULT_VALUE: 'Default Value',
     MIN_VALUE: 'Min Value',
     MAX_VALUE: 'Max Value',
@@ -57,6 +58,7 @@ export const PROPERTY_LABELS = {
     ADD_RADIO: 'Add Radio Option',
     ADD_CHECKBOX: 'Add Checkbox',
     ADD_TAB: 'Add New Tab',
+    ADD_TOGGLE_BUTTON: 'Add Toggle Button',
     CLOSE: 'Close',
     NO_OPTIONS: 'No options available',
     NO_ITEMS: 'No items available',
@@ -66,6 +68,7 @@ export const PROPERTY_LABELS = {
     RADIO_MANAGEMENT: 'Radio Management',
     CHECKBOX_MANAGEMENT: 'Checkbox Management',
     ITEM_MANAGEMENT: 'Item Management',
+    BUTTON_MANAGEMENT: 'Button Management',
 
     // Menu trigger options
     MENU_TRIGGER_FOCUS: 'Focus',
@@ -94,10 +97,12 @@ export const PROPERTY_LABELS = {
     DELETE_THIS_ITEM: 'Delete This Item',
     DELETE_THIS_RADIO: 'Delete This Radio',
     DELETE_THIS_CHECKBOX: 'Delete This Checkbox',
+    DELETE_THIS_BUTTON: 'Delete This Button',
 
     // Back actions
     BACK_TO_SELECT_SETTINGS: 'Back to Select Settings',
     BACK_TO_RADIO_GROUP_SETTINGS: 'Back to RadioGroup Settings',
     BACK_TO_CHECKBOX_GROUP_SETTINGS: 'Back to CheckboxGroup Settings',
     BACK_TO_LISTBOX_SETTINGS: 'Back to ListBox Settings',
+    BACK_TO_TOGGLE_BUTTON_GROUP_SETTINGS: 'Back to ToggleButtonGroup Settings',
 } as const;
