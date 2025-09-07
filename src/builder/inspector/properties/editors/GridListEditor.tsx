@@ -273,7 +273,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         {gridListChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {item.props.label || `Item ${index + 1}`}
+                                    {String(item.props.label) || `Item ${index + 1}`}
                                 </span>
                                 <button
                                     className='tab-edit-button'

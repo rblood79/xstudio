@@ -143,4 +143,17 @@ export const PROPERTY_LABELS = {
     CARD_SIZE_SMALL: 'Small',
     CARD_SIZE_MEDIUM: 'Medium',
     CARD_SIZE_LARGE: 'Large',
+
+    // Grid specific
+    TEXT_VALUE: 'Text Value',
+    ALLOWS_DRAGGING: 'Allows Dragging',
+    RENDER_EMPTY_STATE: 'Render Empty State',
+    ITEM_PROPERTIES: 'Item Properties',
+    BACK_TO_GRID_LIST_SETTINGS: 'Back to GridList Settings',
+
+    // Panel variants
+    PANEL_VARIANT_TAB: 'Tab',
+    PANEL_VARIANT_CARD: 'Card',
+    PANEL_VARIANT_BORDERED: 'Bordered',
+    PANEL_VARIANT_SHADOW: 'Shadow',
 } as const;
