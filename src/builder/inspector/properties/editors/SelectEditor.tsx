@@ -3,6 +3,7 @@ import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, L
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -42,7 +43,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
-                        label="라벨"
+                        label={PROPERTY_LABELS.LABEL}
                         value={String(currentOption.props.label || '')}
                         onChange={(value) => {
                             const updatedProps = {
@@ -57,7 +58,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                     {/* 옵션 값 편집 */}
                     <PropertyInput
-                        label="값"
+                        label={PROPERTY_LABELS.VALUE}
                         value={String(currentOption.props.value || '')}
                         onChange={(value) => {
                             const updatedProps = {
@@ -72,7 +73,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentOption.props.isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
@@ -137,7 +138,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 라벨 설정 */}
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
@@ -145,7 +146,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 설명 설정 */}
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={HelpCircle}
@@ -153,7 +154,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 오류 메시지 설정 */}
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
@@ -161,14 +162,14 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 플레이스홀더 설정 */}
                 <PropertyInput
-                    label="플레이스홀더"
+                    label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
                 />
 
                 {/* 선택된 키 설정 */}
                 <PropertyInput
-                    label="선택된 키"
+                    label={PROPERTY_LABELS.SELECTED_KEY}
                     value={String(currentProps.selectedKey || '')}
                     onChange={(value) => updateProp('selectedKey', value)}
                     icon={Hash}
@@ -176,14 +177,14 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 기본 선택 키 설정 */}
                 <PropertyInput
-                    label="기본 선택 키"
+                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                 />
 
                 {/* 메뉴 트리거 설정 */}
                 <PropertySelect
-                    label="메뉴 트리거"
+                    label={PROPERTY_LABELS.MENU_TRIGGER}
                     value={String(currentProps.menuTrigger || 'click')}
                     onChange={(value) => updateProp('menuTrigger', value)}
                     options={[
@@ -194,14 +195,14 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
-                    label="빈 선택 허용 안함"
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                 />
 
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
@@ -209,21 +210,21 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 필수 설정 */}
                 <PropertyCheckbox
-                    label="필수"
+                    label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                 />
 
                 {/* 읽기 전용 설정 */}
                 <PropertyCheckbox
-                    label="읽기 전용"
+                    label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                 />
 
                 {/* 자동 포커스 설정 */}
                 <PropertyCheckbox
-                    label="자동 포커스"
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                 />
