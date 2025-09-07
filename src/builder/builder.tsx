@@ -42,7 +42,8 @@ function Builder() {
     const selectedElementId = useStore((state) => state.selectedElementId);
     const currentPageId = useStore((state) => state.currentPageId);
     const pageHistories = useStore((state) => state.pageHistories);
-    const { addElement, setSelectedElement, updateElementProps, undo, redo, loadPageElements } = useStore();
+    const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const { addElement, updateElementProps, undo, redo, loadPageElements } = useStore();
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
 
@@ -238,22 +239,7 @@ function Builder() {
                         ...baseProps,
                         label: text || 'ComboBox',
                         selectedKey: null,
-                        children: [
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'ComboBoxItem',
-                                label: 'Option 1',
-                                value: 'option1',
-                                isDisabled: false
-                            },
-                            {
-                                id: crypto.randomUUID(),
-                                type: 'ComboBoxItem',
-                                label: 'Option 2',
-                                value: 'option2',
-                                isDisabled: false
-                            }
-                        ]
+                        children: [] // 빈 배열로 변경 - 실제 ComboBoxItem 컴포넌트들이 별도로 생성됨
                     };
                 case 'Text':
                     return {
@@ -842,6 +828,61 @@ function Builder() {
                 .select();
 
             if (error) console.error("Select 및 SelectItem 추가 에러:", error);
+            else if (data) {
+                data.forEach(element => {
+                    addElement(element);
+                });
+
+                requestAnimationFrame(() => {
+                    setSelectedElement(newElement.id, newElement.props as ElementProps);
+                });
+            }
+        } else if (args[0] === 'ComboBox') {
+            const comboBoxId = newElement.id;
+
+            // 기본 2개의 ComboBoxItem 생성
+            const defaultItems = [
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ComboBoxItem',
+                    props: {
+                        label: 'Option 1',
+                        value: 'option1',
+                        textValue: 'option1',
+                        description: '',
+                        isDisabled: false,
+                        style: {},
+                        // className 제거
+                    },
+                    parent_id: comboBoxId,
+                    order_num: 1,
+                },
+                {
+                    id: crypto.randomUUID(),
+                    page_id: selectedPageId,
+                    tag: 'ComboBoxItem',
+                    props: {
+                        label: 'Option 2',
+                        value: 'option2',
+                        textValue: 'option2',
+                        description: '',
+                        isDisabled: false,
+                        style: {},
+                        // className 제거
+                    },
+                    parent_id: comboBoxId,
+                    order_num: 2,
+                }
+            ];
+
+            // ComboBox와 기본 ComboBoxItem들을 함께 삽입
+            const { data, error } = await supabase
+                .from("elements")
+                .insert([newElement, ...defaultItems])
+                .select();
+
+            if (error) console.error("ComboBox 및 ComboBoxItem 추가 에러:", error);
             else if (data) {
                 data.forEach(element => {
                     addElement(element);

@@ -27,22 +27,20 @@ export function ComboBox<T extends object>(
   { label, description, errorMessage, children, ...props }: ComboBoxProps<T>
 ) {
   return (
-    (
-      <AriaComboBox {...props} className='react-aria-ComboBox'>
-        <Label>{label}</Label>
-        <div className="my-combobox-container">
-          <Input />
-          <Button>▼</Button>
-        </div>
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-        <Popover>
-          <ListBox>
-            {children}
-          </ListBox>
-        </Popover>
-      </AriaComboBox>
-    )
+    <AriaComboBox {...props} className='react-aria-ComboBox'>
+      <Label>{label}</Label>
+      <div className="my-combobox-container">
+        <Input />
+        <Button>▼</Button>
+      </div>
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+      <Popover>
+        <ListBox>
+          {children}
+        </ListBox>
+      </Popover>
+    </AriaComboBox>
   );
 }
 

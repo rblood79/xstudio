@@ -21,6 +21,7 @@ import {
   Select,
   SelectItem,
   ComboBox,
+  ComboBoxItem,
   Slider,
   Tabs,
   TabList,
@@ -770,7 +771,10 @@ function Preview() {
 
     // ComboBox 컴포넌트 특별 처리
     if (el.tag === 'ComboBox') {
-      const itemsData = el.props.children || [];
+      // 실제 ComboBoxItem 자식 요소들을 찾기
+      const comboBoxItemChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'ComboBoxItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <ComboBox
@@ -779,7 +783,20 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           label={el.props.label}
+          description={el.props.description}
+          errorMessage={el.props.errorMessage}
+          placeholder={el.props.placeholder}
           selectedKey={el.props.selectedKey}
+          defaultSelectedKey={el.props.defaultSelectedKey}
+          inputValue={el.props.inputValue}
+          defaultInputValue={el.props.defaultInputValue}
+          allowsCustomValue={el.props.allowsCustomValue}
+          menuTrigger={el.props.menuTrigger || 'focus'}
+          disallowEmptySelection={el.props.disallowEmptySelection}
+          isDisabled={el.props.isDisabled}
+          isRequired={el.props.isRequired}
+          isReadOnly={el.props.isReadOnly}
+          autoFocus={el.props.autoFocus}
           onSelectionChange={(selectedKey) => {
             const updatedProps = {
               ...el.props,
@@ -788,14 +805,14 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {itemsData.map((item: any, index: number) => (
-            <ListBoxItem
-              key={item.id || `comboitem-${index}`}
-              value={item.value}
-              isDisabled={item.isDisabled}
+          {comboBoxItemChildren.map((item) => (
+            <ComboBoxItem
+              key={item.id}
+              value={item.props.value}
+              isDisabled={item.props.isDisabled}
             >
-              {item.label}
-            </ListBoxItem>
+              {item.props.label}
+            </ComboBoxItem>
           ))}
         </ComboBox>
       );
