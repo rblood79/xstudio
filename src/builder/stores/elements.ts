@@ -331,14 +331,23 @@ export const useStore = create<Store>((set, get) => ({
       const parentId = elementToRemove.parent_id;
       const tabIndex = elementToRemove.props.tabIndex;
 
-      // 쌍 요소 찾기 (tabIndex 또는 order_num으로)
+      // 쌍 요소 찾기 - 더 정확한 매칭 로직
       const pairedElement = state.elements.find((el: Element) => {
         if (el.parent_id !== parentId || el.tag === elementToRemove.tag) return false;
 
-        return tabIndex !== undefined
-          ? el.props.tabIndex === tabIndex
-          : el.order_num === elementToRemove.order_num;
+        // tabIndex가 있는 경우 tabIndex로 매칭
+        if (tabIndex !== undefined && el.props.tabIndex !== undefined) {
+          return el.props.tabIndex === tabIndex;
+        }
+
+        // tabIndex가 없는 경우 order_num으로 매칭
+        return el.order_num === elementToRemove.order_num;
       });
+
+      // 쌍을 찾지 못한 경우 경고 로그
+      if (!pairedElement) {
+        console.warn(`Tab/Panel 쌍을 찾을 수 없습니다. elementId: ${elementId}, tabIndex: ${tabIndex}, order_num: ${elementToRemove.order_num}`);
+      }
 
       // Supabase에서 삭제
       try {
