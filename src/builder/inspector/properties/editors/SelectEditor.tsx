@@ -70,20 +70,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         icon={Hash}
                     />
 
-                    {/* 옵션 텍스트 값 편집 */}
-                    <PropertyInput
-                        label="텍스트 값"
-                        value={String(currentOption.props.textValue || '')}
-                        onChange={(value) => {
-                            const updatedProps = {
-                                ...currentOption.props,
-                                textValue: value
-                            };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentOption.id, updatedProps);
-                        }}
-                    />
-
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label="비활성화"
@@ -290,7 +276,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                     props: {
                                         label: `Option ${(selectItemChildren.length || 0) + 1}`,
                                         value: `option${(selectItemChildren.length || 0) + 1}`,
-                                        textValue: `option${(selectItemChildren.length || 0) + 1}`,
                                         description: '',
                                         isDisabled: false,
                                         isReadOnly: false,

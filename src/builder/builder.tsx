@@ -684,10 +684,8 @@ function Builder() {
                     props: {
                         label: 'Item 1',
                         value: 'item1',
-                        textValue: 'item1',
                         isDisabled: false,
                         style: {},
-                        className: '',
                     },
                     parent_id: listBoxId,
                     order_num: 1,
@@ -699,10 +697,8 @@ function Builder() {
                     props: {
                         label: 'Item 2',
                         value: 'item2',
-                        textValue: 'item2',
                         isDisabled: false,
                         style: {},
-                        className: '',
                     },
                     parent_id: listBoxId,
                     order_num: 2,
@@ -792,12 +788,10 @@ function Builder() {
                     props: {
                         label: 'Option 1',
                         value: 'option1',
-                        textValue: 'option1',
                         description: '',
                         isDisabled: false,
                         isReadOnly: false,
                         style: {},
-                        className: '',
                     },
                     parent_id: selectId,
                     order_num: 1,
@@ -809,12 +803,10 @@ function Builder() {
                     props: {
                         label: 'Option 2',
                         value: 'option2',
-                        textValue: 'option2',
                         description: '',
                         isDisabled: false,
                         isReadOnly: false,
                         style: {},
-                        className: '',
                     },
                     parent_id: selectId,
                     order_num: 2,
@@ -849,11 +841,9 @@ function Builder() {
                     props: {
                         label: 'Option 1',
                         value: 'option1',
-                        textValue: 'option1',
                         description: '',
                         isDisabled: false,
                         style: {},
-                        // className 제거
                     },
                     parent_id: comboBoxId,
                     order_num: 1,
@@ -865,11 +855,9 @@ function Builder() {
                     props: {
                         label: 'Option 2',
                         value: 'option2',
-                        textValue: 'option2',
                         description: '',
                         isDisabled: false,
                         style: {},
-                        // className 제거
                     },
                     parent_id: comboBoxId,
                     order_num: 2,
