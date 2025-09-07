@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, ListFilter } from 'lucide-react';
+import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -14,7 +14,7 @@ interface SelectedOptionState {
 
 export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement, removeElement, setElements, elements: storeElements, currentPageId } = useStore();
+    const { addElement, removeElement, elements: storeElements, currentPageId } = useStore();
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -249,7 +249,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         {selectItemChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {item.props.label || `Item ${index + 1}`}
+                                    {String(item.props.label) || `Item ${index + 1}`}
                                     {currentProps.selectedKey === item.props.value && ' ✓'}
                                 </span>
                                 <button

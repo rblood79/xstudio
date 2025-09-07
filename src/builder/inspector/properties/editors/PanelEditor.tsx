@@ -63,7 +63,7 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
             {isTabPanel && (
                 <div className="tab-panel-info">
                     <p className="tab-panel-note">
-                        This panel is part of a tab component. (Index: {currentProps.tabIndex})
+                        This panel is part of a tab component. (Index: {String(currentProps.tabIndex)})
                     </p>
                     <p className="tab-panel-help">
                         💡 You can edit tab properties from the tab component.
