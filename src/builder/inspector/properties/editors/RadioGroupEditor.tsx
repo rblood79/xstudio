@@ -3,6 +3,7 @@ import { Type, Layout, SquarePlus, Trash, CircleDot, PointerOff, HelpCircle, Ale
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, RadioItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -47,7 +48,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                     {/* 라디오 버튼 라벨 편집 */}
                     <PropertyInput
-                        label="라벨"
+                        label={PROPERTY_LABELS.CHILDREN}
                         value={String(currentRadio.props.children || '')}
                         onChange={(value) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
@@ -62,7 +63,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                     {/* 라디오 버튼 값 편집 */}
                     <PropertyInput
-                        label="값"
+                        label={PROPERTY_LABELS.VALUE}
                         value={String(currentRadio.props.value || '')}
                         onChange={(value) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
@@ -77,7 +78,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                     {/* 라디오 버튼 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentRadio.props.isDisabled)}
                         onChange={(checked) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
@@ -117,7 +118,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Radio
+                            {PROPERTY_LABELS.DELETE_THIS_RADIO}
                         </button>
                     </div>
                 </fieldset>
@@ -128,7 +129,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                         className='control-button secondary'
                         onClick={() => setSelectedRadio(null)}
                     >
-                        Back to RadioGroup Settings
+                        {PROPERTY_LABELS.BACK_TO_RADIO_GROUP_SETTINGS}
                     </button>
                 </div>
             </div>
@@ -143,7 +144,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 라벨 설정 */}
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
@@ -151,7 +152,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 설명 설정 */}
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={HelpCircle}
@@ -159,7 +160,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 오류 메시지 설정 */}
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
@@ -167,11 +168,11 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 방향 설정 */}
                 <PropertySelect
-                    label="방향"
+                    label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'vertical')}
                     options={[
-                        { id: 'vertical', label: '수직' },
-                        { id: 'horizontal', label: '수평' },
+                        { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
+                        { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                     ]}
                     onChange={(value) => updateProp('orientation', value)}
                     icon={Layout}
@@ -179,7 +180,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 선택 값 설정 */}
                 <PropertyInput
-                    label="선택 값"
+                    label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
                     onChange={(value) => updateProp('value', value)}
                     icon={CircleDot}
@@ -187,7 +188,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 기본 선택 값 설정 */}
                 <PropertyInput
-                    label="기본 선택 값"
+                    label={PROPERTY_LABELS.DEFAULT_VALUE}
                     value={String(currentProps.defaultValue || '')}
                     onChange={(value) => updateProp('defaultValue', value)}
                     icon={CircleDot}
@@ -195,7 +196,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
@@ -203,21 +204,21 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                 {/* 필수 설정 */}
                 <PropertyCheckbox
-                    label="필수"
+                    label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                 />
 
                 {/* 읽기 전용 설정 */}
                 <PropertyCheckbox
-                    label="읽기 전용"
+                    label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Radio Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.RADIO_MANAGEMENT}</legend>
 
                 {/* 라디오 버튼 개수 표시 */}
                 <div className='tab-overview'>
@@ -293,7 +294,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add Radio Option
+                        {PROPERTY_LABELS.ADD_RADIO}
                     </button>
                 </div>
             </fieldset>

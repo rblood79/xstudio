@@ -3,6 +3,7 @@ import { Type, Layout, SquarePlus, Trash, CheckSquare, PointerOff, HelpCircle, A
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -47,7 +48,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                     {/* 체크박스 라벨 편집 */}
                     <PropertyInput
-                        label="라벨"
+                        label={PROPERTY_LABELS.LABEL}
                         value={String(currentCheckbox.props.children || '')}
                         onChange={(value) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
@@ -62,7 +63,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                     {/* 체크박스 값 편집 */}
                     <PropertyInput
-                        label="값"
+                        label={PROPERTY_LABELS.VALUE}
                         value={String(currentCheckbox.props.value || '')}
                         onChange={(value) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
@@ -77,7 +78,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                     {/* 체크박스 선택 상태 편집 */}
                     <PropertyCheckbox
-                        label="선택됨"
+                        label={PROPERTY_LABELS.SELECTED}
                         checked={Boolean(currentCheckbox.props.isSelected)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
@@ -92,7 +93,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                     {/* 체크박스 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentCheckbox.props.isDisabled)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
@@ -107,7 +108,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                     {/* 체크박스 불확실 상태 편집 */}
                     <PropertyCheckbox
-                        label="불확실 상태"
+                        label={PROPERTY_LABELS.INDETERMINATE}
                         checked={Boolean(currentCheckbox.props.isIndeterminate)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
@@ -147,7 +148,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Checkbox
+                            {PROPERTY_LABELS.DELETE_THIS_CHECKBOX}
                         </button>
                     </div>
                 </fieldset>
@@ -158,7 +159,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         className='control-button secondary'
                         onClick={() => setSelectedCheckbox(null)}
                     >
-                        Back to CheckboxGroup Settings
+                        {PROPERTY_LABELS.BACK_TO_CHECKBOX_GROUP_SETTINGS}
                     </button>
                 </div>
             </div>
@@ -173,7 +174,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                 {/* 라벨 설정 */}
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
@@ -181,7 +182,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                 {/* 설명 설정 */}
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={HelpCircle}
@@ -189,7 +190,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                 {/* 오류 메시지 설정 */}
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
@@ -197,19 +198,19 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                 {/* 방향 설정 */}
                 <PropertySelect
-                    label="방향"
+                    label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'vertical')}
                     onChange={(value) => updateProp('orientation', value)}
                     options={[
-                        { id: 'horizontal', label: 'Horizontal' },
-                        { id: 'vertical', label: 'Vertical' }
+                        { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
                     icon={Layout}
                 />
 
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
@@ -217,21 +218,21 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                 {/* 필수 설정 */}
                 <PropertyCheckbox
-                    label="필수"
+                    label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                 />
 
                 {/* 읽기 전용 설정 */}
                 <PropertyCheckbox
-                    label="읽기 전용"
+                    label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Checkbox Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.CHECKBOX_MANAGEMENT}</legend>
 
                 {/* 체크박스 개수 표시 */}
                 <div className='tab-overview'>
@@ -309,7 +310,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add Checkbox
+                        {PROPERTY_LABELS.ADD_CHECKBOX}
                     </button>
                 </div>
             </fieldset>
