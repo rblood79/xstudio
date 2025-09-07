@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyInput } from '../components/PropertyInput';
 import { PropertyCheckbox } from '../components/PropertyCheckbox';
 import { PropertyEditorProps } from '../types/editorTypes';
 
-export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function ComboBoxItemEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     // 로컬 상태로 프로퍼티 관리
     const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,8 +49,6 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">ComboBox Item</h3>
-
             <PropertyInput
                 label="라벨"
                 value={String(localProps.label || '')}

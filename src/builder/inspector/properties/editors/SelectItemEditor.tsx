@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyInput } from '../components/PropertyInput';
 import { PropertyCheckbox } from '../components/PropertyCheckbox';
 import { PropertyEditorProps } from '../types/editorTypes';
 
-export function SelectItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     // 로컬 상태로 프로퍼티 관리
     const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,7 +49,6 @@ export function SelectItemEditor({ elementId, currentProps, onUpdate }: Property
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Select Item</h3>
 
             <PropertyInput
                 label="라벨"
