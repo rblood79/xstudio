@@ -3,6 +3,7 @@ import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, F
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -45,7 +46,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <fieldset className="properties-aria">
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
-                        label="라벨"
+                        label={PROPERTY_LABELS.LABEL}
                         value={String(currentOption.props.label || '')}
                         onChange={(value) => {
                             const updatedProps = {
@@ -64,7 +65,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 옵션 값 편집 */}
                     <PropertyInput
-                        label="값"
+                        label={PROPERTY_LABELS.VALUE}
                         value={String(currentOption.props.value || '')}
                         onChange={(value) => {
                             const oldValue = currentOption.props.value;
@@ -84,7 +85,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 옵션 설명 편집 */}
                     <PropertyInput
-                        label="설명"
+                        label={PROPERTY_LABELS.DESCRIPTION}
                         value={String(currentOption.props.description || '')}
                         onChange={(value) => {
                             const updatedProps = {
@@ -98,7 +99,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentOption.props.isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
@@ -117,7 +118,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             onClick={() => setSelectedOption(null)}
                         >
                             <HelpCircle size={16} stroke="1" color="var(--color-gray-400)" />
-                            닫기
+                            {PROPERTY_LABELS.CLOSE}
                         </button>
                     </div>
                 </fieldset>
@@ -131,108 +132,108 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
             <fieldset className="properties-aria">
                 {/* 기본 속성들 */}
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
                 />
 
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={FileText}
                 />
 
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
 
                 <PropertyInput
-                    label="플레이스홀더"
+                    label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
                     icon={Search}
                 />
 
                 <PropertyInput
-                    label="선택된 키"
+                    label={PROPERTY_LABELS.SELECTED_KEY}
                     value={String(currentProps.selectedKey || '')}
                     onChange={(value) => updateProp('selectedKey', value)}
                 />
 
                 <PropertyInput
-                    label="기본 선택 키"
+                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                 />
 
                 <PropertyInput
-                    label="입력 값"
+                    label={PROPERTY_LABELS.INPUT_VALUE}
                     value={String(currentProps.inputValue || '')}
                     onChange={(value) => updateProp('inputValue', value)}
                 />
 
                 <PropertyInput
-                    label="기본 입력 값"
+                    label={PROPERTY_LABELS.DEFAULT_INPUT_VALUE}
                     value={String(currentProps.defaultInputValue || '')}
                     onChange={(value) => updateProp('defaultInputValue', value)}
                 />
 
                 <PropertyCheckbox
-                    label="사용자 정의 값 허용"
+                    label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
                     checked={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                 />
 
                 <PropertySelect
-                    label="메뉴 트리거"
+                    label={PROPERTY_LABELS.MENU_TRIGGER}
                     value={String(currentProps.menuTrigger || 'focus')}
                     onChange={(value) => updateProp('menuTrigger', value)}
                     options={[
-                        { id: 'focus', label: 'Focus' },
-                        { id: 'input', label: 'Input' },
-                        { id: 'manual', label: 'Manual' }
+                        { id: 'focus', label: PROPERTY_LABELS.MENU_TRIGGER_FOCUS },
+                        { id: 'input', label: PROPERTY_LABELS.MENU_TRIGGER_INPUT },
+                        { id: 'manual', label: PROPERTY_LABELS.MENU_TRIGGER_MANUAL }
                     ]}
                 />
 
                 <PropertyCheckbox
-                    label="빈 선택 허용 안함"
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                 />
 
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 <PropertyCheckbox
-                    label="필수"
+                    label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                 />
 
                 <PropertyCheckbox
-                    label="읽기 전용"
+                    label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                 />
 
                 <PropertyCheckbox
-                    label="자동 포커스"
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend>ComboBox 옵션 목록</legend>
+                <legend>{PROPERTY_LABELS.ADD_OPTION}</legend>
 
                 {/* 옵션 목록 표시 */}
                 {comboBoxItemChildren.length > 0 ? (
@@ -258,7 +259,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         ))}
                     </div>
                 ) : (
-                    <p className="no-options">옵션이 없습니다.</p>
+                    <p className="no-options">{PROPERTY_LABELS.NO_OPTIONS}</p>
                 )}
 
                 {/* 새 아이템 추가 */}
@@ -302,7 +303,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        옵션 추가
+                        {PROPERTY_LABELS.ADD_OPTION}
                     </button>
                 </div>
             </fieldset>

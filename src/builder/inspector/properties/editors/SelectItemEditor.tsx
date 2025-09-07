@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { PropertyInput } from '../components/PropertyInput';
 import { PropertyCheckbox } from '../components/PropertyCheckbox';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     // 로컬 상태로 프로퍼티 관리
@@ -49,33 +50,32 @@ export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps
 
     return (
         <div className="space-y-4">
-
             <PropertyInput
-                label="라벨"
+                label={PROPERTY_LABELS.LABEL}
                 value={String(localProps.label || '')}
                 onChange={(value) => handlePropertyChange('label', value)}
             />
 
             <PropertyInput
-                label="값"
+                label={PROPERTY_LABELS.VALUE}
                 value={String(localProps.value || '')}
                 onChange={(value) => handlePropertyChange('value', value)}
             />
 
             <PropertyInput
-                label="설명"
+                label={PROPERTY_LABELS.DESCRIPTION}
                 value={String(localProps.description || '')}
                 onChange={(value) => handlePropertyChange('description', value)}
             />
 
             <PropertyCheckbox
-                label="비활성화"
+                label={PROPERTY_LABELS.DISABLED}
                 checked={Boolean(localProps.isDisabled)}
                 onChange={(checked) => handlePropertyChange('isDisabled', checked)}
             />
 
             <PropertyCheckbox
-                label="읽기 전용"
+                label={PROPERTY_LABELS.READONLY}
                 checked={Boolean(localProps.isReadOnly)}
                 onChange={(checked) => handlePropertyChange('isReadOnly', checked)}
             />
