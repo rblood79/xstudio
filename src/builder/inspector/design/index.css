@@ -1,6 +1,15 @@
 @layer utilities {
     aside.inspector {
 
+        .react-aria-Select {
+            span[aria-hidden] {
+                width: calc(var(--spacing-lg) * 1.25);
+                height: calc(var(--spacing-lg) * 1.25);
+                margin-left: 0;
+            }
+        }
+
+
         .react-aria-ToggleButtonGroup,
         .react-aria-Group {
             background-color: var(--color-gray-100);
@@ -35,6 +44,8 @@
                 border-width: 1px;
 
             }
+
+
         }
 
         .fieldset-actions {
