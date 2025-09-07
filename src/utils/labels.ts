@@ -105,4 +105,27 @@ export const PROPERTY_LABELS = {
     BACK_TO_CHECKBOX_GROUP_SETTINGS: 'Back to CheckboxGroup Settings',
     BACK_TO_LISTBOX_SETTINGS: 'Back to ListBox Settings',
     BACK_TO_TOGGLE_BUTTON_GROUP_SETTINGS: 'Back to ToggleButtonGroup Settings',
+
+    // Panel specific
+    STYLE: 'Style',
+    IS_OPEN: 'Is Open',
+    IS_DISMISSABLE: 'Is Dismissable',
+    TAB_INDEX: 'Tab Index',
+
+    // Tab specific
+    TAB_TITLE: 'Tab Title',
+    VARIANT: 'Variant',
+    APPEARANCE: 'Appearance',
+
+    // Tab variants
+    TAB_VARIANT_DEFAULT: 'Default',
+    TAB_VARIANT_BORDERED: 'Bordered',
+    TAB_VARIANT_UNDERLINED: 'Underlined',
+    TAB_VARIANT_PILL: 'Pill',
+
+    // Tab appearances
+    TAB_APPEARANCE_LIGHT: 'Light',
+    TAB_APPEARANCE_DARK: 'Dark',
+    TAB_APPEARANCE_SOLID: 'Solid',
+    TAB_APPEARANCE_BORDERED: 'Bordered',
 } as const;

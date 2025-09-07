@@ -3,6 +3,7 @@ import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Grid, M
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -43,11 +44,11 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>Item Properties</legend>
+                    <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_PROPERTIES}</legend>
 
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
-                        label="라벨"
+                        label={PROPERTY_LABELS.LABEL}
                         value={String(currentItem.props.label || '')}
                         onChange={(value) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
@@ -62,7 +63,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 아이템 값 편집 */}
                     <PropertyInput
-                        label="값"
+                        label={PROPERTY_LABELS.VALUE}
                         value={String(currentItem.props.value || '')}
                         onChange={(value) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
@@ -77,7 +78,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 아이템 설명 편집 */}
                     <PropertyInput
-                        label="설명"
+                        label={PROPERTY_LABELS.DESCRIPTION}
                         value={String(currentItem.props.description || '')}
                         onChange={(value) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
@@ -92,7 +93,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 아이템 텍스트 값 편집 */}
                     <PropertyInput
-                        label="텍스트 값"
+                        label={PROPERTY_LABELS.TEXT_VALUE}
                         value={String(currentItem.props.textValue || '')}
                         onChange={(value) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
@@ -106,7 +107,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     {/* 아이템 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentItem.props.isDisabled)}
                         onChange={(checked) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
@@ -146,7 +147,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Item
+                            {PROPERTY_LABELS.DELETE_THIS_ITEM}
                         </button>
                     </div>
                 </fieldset>
@@ -157,7 +158,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         className='control-button secondary'
                         onClick={() => setSelectedItem(null)}
                     >
-                        Back to GridList Settings
+                        {PROPERTY_LABELS.BACK_TO_GRID_LIST_SETTINGS}
                     </button>
                 </div>
             </div>
@@ -168,10 +169,9 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-
                 {/* 라벨 설정 */}
                 <PropertyInput
-                    label="라벨"
+                    label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
                     icon={Type}
@@ -179,7 +179,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                 {/* 설명 설정 */}
                 <PropertyInput
-                    label="설명"
+                    label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
                     icon={HelpCircle}
@@ -187,7 +187,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                 {/* 오류 메시지 설정 */}
                 <PropertyInput
-                    label="오류 메시지"
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
@@ -195,37 +195,37 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                 {/* 선택 모드 설정 */}
                 <PropertySelect
-                    label="선택 모드"
+                    label={PROPERTY_LABELS.SELECTION_MODE}
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', label: 'Single' },
-                        { id: 'multiple', label: 'Multiple' }
+                        { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={Grid}
                 />
 
                 {/* 선택 동작 설정 */}
                 <PropertySelect
-                    label="선택 동작"
+                    label={PROPERTY_LABELS.SELECTION_BEHAVIOR}
                     value={String(currentProps.selectionBehavior || 'toggle')}
                     onChange={(value) => updateProp('selectionBehavior', value)}
                     options={[
-                        { id: 'toggle', label: 'Toggle' },
-                        { id: 'replace', label: 'Replace' }
+                        { id: 'toggle', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_TOGGLE },
+                        { id: 'replace', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_REPLACE }
                     ]}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
-                    label="빈 선택 허용 안함"
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                 />
 
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
@@ -233,14 +233,14 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                 {/* 자동 포커스 설정 */}
                 <PropertyCheckbox
-                    label="자동 포커스"
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                 />
 
                 {/* 드래그 허용 설정 */}
                 <PropertyCheckbox
-                    label="드래그 허용"
+                    label={PROPERTY_LABELS.ALLOWS_DRAGGING}
                     checked={Boolean(currentProps.allowsDragging)}
                     onChange={(checked) => updateProp('allowsDragging', checked)}
                     icon={MoveHorizontal}
@@ -248,14 +248,14 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                 {/* 빈 상태 렌더링 설정 */}
                 <PropertyCheckbox
-                    label="빈 상태 렌더링"
+                    label={PROPERTY_LABELS.RENDER_EMPTY_STATE}
                     checked={Boolean(currentProps.renderEmptyState)}
                     onChange={(checked) => updateProp('renderEmptyState', checked)}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Item Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
 
                 {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>
@@ -332,7 +332,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add Item
+                        {PROPERTY_LABELS.ADD_ITEM}
                     </button>
                 </div>
             </fieldset>

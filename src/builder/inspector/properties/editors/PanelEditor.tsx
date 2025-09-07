@@ -1,6 +1,7 @@
 import { Type, Layout, ToggleLeft, X } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {
@@ -18,7 +19,7 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
         <div className="component-props">
             {/* 제목 설정 */}
             <PropertyInput
-                label="제목"
+                label={PROPERTY_LABELS.TITLE}
                 value={String(currentProps.title || '')}
                 onChange={(value) => updateProp('title', value)}
                 icon={Type}
@@ -26,14 +27,14 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
 
             {/* 스타일 설정 */}
             <PropertySelect
-                label="스타일"
+                label={PROPERTY_LABELS.STYLE}
                 value={String(currentProps.variant || 'card')}
                 onChange={(value) => updateProp('variant', value as 'tab' | 'card' | 'bordered' | 'shadow')}
                 options={[
-                    { id: 'tab', label: 'Tab' },
-                    { id: 'card', label: 'Card' },
-                    { id: 'bordered', label: 'Bordered' },
-                    { id: 'shadow', label: 'Shadow' }
+                    { id: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
+                    { id: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
+                    { id: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
+                    { id: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
                 ]}
                 icon={Layout}
             />
@@ -41,7 +42,7 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
             {/* 열림 상태 설정 (Tab 패널이 아닌 경우에만) */}
             {!isTabPanel && (
                 <PropertyCheckbox
-                    label="열림 상태"
+                    label={PROPERTY_LABELS.IS_OPEN}
                     checked={Boolean(currentProps.isOpen)}
                     onChange={(checked) => updateProp('isOpen', checked)}
                     icon={ToggleLeft}
@@ -51,7 +52,7 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
             {/* 닫기 가능 설정 (Tab 패널이 아닌 경우에만) */}
             {!isTabPanel && (
                 <PropertyCheckbox
-                    label="닫기 가능"
+                    label={PROPERTY_LABELS.IS_DISMISSABLE}
                     checked={Boolean(currentProps.isDismissable)}
                     onChange={(checked) => updateProp('isDismissable', checked)}
                     icon={X}
@@ -62,10 +63,10 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
             {isTabPanel && (
                 <div className="tab-panel-info">
                     <p className="tab-panel-note">
-                        이 패널은 탭 컴포넌트의 일부입니다. (인덱스: {currentProps.tabIndex})
+                        This panel is part of a tab component. (Index: {currentProps.tabIndex})
                     </p>
                     <p className="tab-panel-help">
-                        💡 탭 컴포넌트에서 탭 속성을 편집할 수 있습니다.
+                        💡 You can edit tab properties from the tab component.
                     </p>
                 </div>
             )}
