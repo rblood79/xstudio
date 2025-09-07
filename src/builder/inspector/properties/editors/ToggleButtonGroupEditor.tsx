@@ -3,6 +3,7 @@ import { Type, Layout, SquarePlus, Trash, PointerOff, ToggleLeft } from 'lucide-
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, ToggleButtonItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores/elements';
 
@@ -13,7 +14,7 @@ interface SelectedButtonState {
 
 export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedButton, setSelectedButton] = useState<SelectedButtonState | null>(null);
-    const { addElement, currentPageId } = useStore(); // 👈 이것만 사용
+    const { addElement, currentPageId } = useStore();
 
     useEffect(() => {
         // 버튼 선택 상태 초기화
@@ -39,11 +40,9 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-
-
                     {/* 토글 버튼 제목 편집 */}
                     <PropertyInput
-                        label="제목"
+                        label={PROPERTY_LABELS.TITLE}
                         value={String(currentButton.title || '')}
                         onChange={(value) => {
                             const updatedButtons = [...buttonItems];
@@ -58,7 +57,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                     {/* 토글 버튼 선택 상태 편집 */}
                     <PropertyCheckbox
-                        label="선택됨"
+                        label={PROPERTY_LABELS.SELECTED}
                         checked={Boolean(currentButton.isSelected)}
                         onChange={(checked) => {
                             const updatedButtons = [...buttonItems];
@@ -73,7 +72,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                     {/* 토글 버튼 비활성화 상태 편집 */}
                     <PropertyCheckbox
-                        label="비활성화"
+                        label={PROPERTY_LABELS.DISABLED}
                         checked={Boolean(currentButton.isDisabled)}
                         onChange={(checked) => {
                             const updatedButtons = [...buttonItems];
@@ -98,7 +97,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Delete This Button
+                            {PROPERTY_LABELS.DELETE_THIS_BUTTON}
                         </button>
                     </div>
                 </fieldset>
@@ -109,7 +108,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         className='control-button secondary'
                         onClick={() => setSelectedButton(null)}
                     >
-                        Back to ToggleButtonGroup Settings
+                        {PROPERTY_LABELS.BACK_TO_TOGGLE_BUTTON_GROUP_SETTINGS}
                     </button>
                 </div>
             </div>
@@ -120,42 +119,40 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-
-
                 {/* 방향 설정 */}
                 <PropertySelect
-                    label="방향"
+                    label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'horizontal')}
                     onChange={(value) => updateProp('orientation', value)}
                     options={[
-                        { id: 'horizontal', label: 'Horizontal' },
-                        { id: 'vertical', label: 'Vertical' }
+                        { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
                     icon={Layout}
                 />
 
                 {/* 선택 모드 설정 */}
                 <PropertySelect
-                    label="선택 모드"
+                    label={PROPERTY_LABELS.SELECTION_MODE}
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', label: 'Single' },
-                        { id: 'multiple', label: 'Multiple' }
+                        { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={ToggleLeft}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
-                    label="빈 선택 허용 안함"
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                 />
 
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
-                    label="비활성화"
+                    label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
@@ -163,7 +160,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Button Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.BUTTON_MANAGEMENT}</legend>
 
                 {/* 토글 버튼 개수 표시 */}
                 <div className='tab-overview'>
@@ -207,7 +204,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                             const newToggleButton = {
                                 id: crypto.randomUUID(),
-                                page_id: currentPageId, // 👈 직접 사용
+                                page_id: currentPageId,
                                 tag: 'ToggleButton',
                                 props: {
                                     isSelected: false,
@@ -240,7 +237,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         }}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        Add Toggle Button
+                        {PROPERTY_LABELS.ADD_TOGGLE_BUTTON}
                     </button>
                 </div>
             </fieldset>

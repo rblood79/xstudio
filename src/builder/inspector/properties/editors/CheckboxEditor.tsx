@@ -15,7 +15,7 @@ export function CheckboxEditor({ currentProps, onUpdate }: PropertyEditorProps) 
     return (
         <div className="component-props">
             <PropertyInput
-                label={PROPERTY_LABELS.TEXT}
+                label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.children || '')}
                 onChange={(value) => updateProp('children', value)}
                 icon={Type}
