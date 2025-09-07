@@ -1,20 +1,21 @@
 import { AppWindow, Layout, Type } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 // 상수 정의
 const TAB_VARIANTS = [
-    { id: 'default', label: 'Default' },
-    { id: 'bordered', label: 'Bordered' },
-    { id: 'underlined', label: 'Underlined' },
-    { id: 'pill', label: 'Pill' }
+    { id: 'default', label: PROPERTY_LABELS.TAB_VARIANT_DEFAULT },
+    { id: 'bordered', label: PROPERTY_LABELS.TAB_VARIANT_BORDERED },
+    { id: 'underlined', label: PROPERTY_LABELS.TAB_VARIANT_UNDERLINED },
+    { id: 'pill', label: PROPERTY_LABELS.TAB_VARIANT_PILL }
 ];
 
 const TAB_APPEARANCES = [
-    { id: 'light', label: 'Light' },
-    { id: 'dark', label: 'Dark' },
-    { id: 'solid', label: 'Solid' },
-    { id: 'bordered', label: 'Bordered' }
+    { id: 'light', label: PROPERTY_LABELS.TAB_APPEARANCE_LIGHT },
+    { id: 'dark', label: PROPERTY_LABELS.TAB_APPEARANCE_DARK },
+    { id: 'solid', label: PROPERTY_LABELS.TAB_APPEARANCE_SOLID },
+    { id: 'bordered', label: PROPERTY_LABELS.TAB_APPEARANCE_BORDERED }
 ];
 
 export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
@@ -29,17 +30,15 @@ export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tab Properties</legend>
-
                 <PropertyInput
-                    label="Tab Title"
+                    label={PROPERTY_LABELS.TAB_TITLE}
                     value={String(currentProps.title || '')}
                     onChange={(value) => updateProp('title', value)}
                     icon={Type}
                 />
 
                 <PropertySelect
-                    label="Variant"
+                    label={PROPERTY_LABELS.VARIANT}
                     value={String(currentProps.variant || 'default')}
                     onChange={(value) => updateProp('variant', value)}
                     options={TAB_VARIANTS}
@@ -47,7 +46,7 @@ export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 />
 
                 <PropertySelect
-                    label="Appearance"
+                    label={PROPERTY_LABELS.APPEARANCE}
                     value={String(currentProps.appearance || 'light')}
                     onChange={(value) => updateProp('appearance', value)}
                     options={TAB_APPEARANCES}
@@ -55,7 +54,7 @@ export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 />
 
                 <PropertyInput
-                    label="Disabled"
+                    label={PROPERTY_LABELS.DISABLED}
                     value={String(currentProps.isDisabled || false)}
                     onChange={(value) => updateProp('isDisabled', value === 'true')}
                     icon={AppWindow}
