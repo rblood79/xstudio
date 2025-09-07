@@ -2,6 +2,7 @@
 import { Type, FileText, Layout, Eye, EyeOff, PointerOff, Focus } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {
@@ -15,65 +16,65 @@ export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     return (
         <div className="component-props">
             <PropertyInput
-                label="제목"
+                label={PROPERTY_LABELS.TITLE}
                 value={String(currentProps.title || '')}
                 onChange={(value) => updateProp('title', value)}
                 icon={Type}
             />
 
             <PropertyInput
-                label="설명"
+                label={PROPERTY_LABELS.DESCRIPTION}
                 value={String(currentProps.description || '')}
                 onChange={(value) => updateProp('description', value)}
                 icon={FileText}
             />
 
             <PropertySelect
-                label="변형"
+                label={PROPERTY_LABELS.VARIANT}
                 value={String(currentProps.variant || 'default')}
                 onChange={(value) => updateProp('variant', value)}
                 options={[
-                    { id: 'default', label: '기본' },
-                    { id: 'elevated', label: '들림' },
-                    { id: 'outlined', label: '테두리' }
+                    { id: 'default', label: PROPERTY_LABELS.CARD_VARIANT_DEFAULT },
+                    { id: 'elevated', label: PROPERTY_LABELS.CARD_VARIANT_ELEVATED },
+                    { id: 'outlined', label: PROPERTY_LABELS.CARD_VARIANT_OUTLINED }
                 ]}
                 icon={Layout}
             />
 
             <PropertySelect
-                label="크기"
+                label={PROPERTY_LABELS.SIZE}
                 value={String(currentProps.size || 'medium')}
                 onChange={(value) => updateProp('size', value)}
                 options={[
-                    { id: 'small', label: '작음' },
-                    { id: 'medium', label: '보통' },
-                    { id: 'large', label: '큼' }
+                    { id: 'small', label: PROPERTY_LABELS.CARD_SIZE_SMALL },
+                    { id: 'medium', label: PROPERTY_LABELS.CARD_SIZE_MEDIUM },
+                    { id: 'large', label: PROPERTY_LABELS.CARD_SIZE_LARGE }
                 ]}
             />
 
             <PropertyCheckbox
-                label="조용한 모드"
+                label={PROPERTY_LABELS.IS_QUIET}
                 checked={Boolean(currentProps.isQuiet)}
                 onChange={(checked) => updateProp('isQuiet', checked)}
                 icon={EyeOff}
             />
 
             <PropertyCheckbox
-                label="선택됨"
+                label={PROPERTY_LABELS.SELECTED}
                 checked={Boolean(currentProps.isSelected)}
                 onChange={(checked) => updateProp('isSelected', checked)}
                 icon={Eye}
             />
 
             <PropertyCheckbox
-                label="비활성화"
+                label={PROPERTY_LABELS.DISABLED}
                 checked={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
 
             <PropertyCheckbox
-                label="포커스됨"
+                label={PROPERTY_LABELS.IS_FOCUSED}
                 checked={Boolean(currentProps.isFocused)}
                 onChange={(checked) => updateProp('isFocused', checked)}
                 icon={Focus}
