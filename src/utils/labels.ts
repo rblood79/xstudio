@@ -128,4 +128,19 @@ export const PROPERTY_LABELS = {
     TAB_APPEARANCE_DARK: 'Dark',
     TAB_APPEARANCE_SOLID: 'Solid',
     TAB_APPEARANCE_BORDERED: 'Bordered',
+
+    // Card specific
+    SIZE: 'Size',
+    IS_QUIET: 'Is Quiet',
+    IS_FOCUSED: 'Is Focused',
+
+    // Card variants
+    CARD_VARIANT_DEFAULT: 'Default',
+    CARD_VARIANT_ELEVATED: 'Elevated',
+    CARD_VARIANT_OUTLINED: 'Outlined',
+
+    // Card sizes
+    CARD_SIZE_SMALL: 'Small',
+    CARD_SIZE_MEDIUM: 'Medium',
+    CARD_SIZE_LARGE: 'Large',
 } as const;
