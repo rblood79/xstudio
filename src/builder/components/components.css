@@ -958,22 +958,25 @@
 
     /* Select 컴포넌트 스타일 시작 */
     .react-aria-Select {
+        width: fit-content;
         color: var(--text-color);
 
         .react-aria-Button {
 
             border-radius: var(--radius-md);
-
-            padding-right: var(--spacing-sm);
+            padding-right: var(--spacing);
             display: flex;
             align-items: center;
             max-width: 100%;
+            width: 100%;
 
             &[data-focus-visible] {
                 outline: 2px solid var(--focus-ring-color);
                 outline-offset: -1px;
             }
         }
+
+
 
         .react-aria-SelectValue {
 
@@ -985,12 +988,17 @@
         }
 
         span[aria-hidden] {
-            width: 1.5rem;
-            line-height: 1.375rem;
+            width: var(--spacing-xl);
+            height: var(--spacing-xl);
+            line-height: var(--spacing-lg);
+            margin-left: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-            padding: 1px;
-            background: transparent;
-            color: var(--color-gray-600);
+            padding: var(--spacing-2xs);
+            background: var(--color-primary-600);
+            color: var(--color-white);
             forced-color-adjust: none;
             border-radius: var(--radius-md);
             font-size: var(--text-xs);

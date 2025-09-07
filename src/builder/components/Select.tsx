@@ -12,7 +12,7 @@ import {
   Text,
   ValidationResult
 } from 'react-aria-components';
-
+import { ChevronDown } from 'lucide-react';
 import './components.css';
 
 export interface SelectProps<T extends object>
@@ -35,7 +35,9 @@ export function Select<T extends object>(
         <Label>{label}</Label>
         <Button>
           <SelectValue />
-          <span aria-hidden="true">▼</span>
+          <span aria-hidden="true">
+            <ChevronDown size={16} />
+          </span>
         </Button>
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
