@@ -27,7 +27,11 @@ export function ComboBox<T extends object>(
   { label, description, errorMessage, children, ...props }: ComboBoxProps<T>
 ) {
   return (
-    <AriaComboBox {...props} className='react-aria-ComboBox'>
+    <AriaComboBox
+      {...props}
+      className='react-aria-ComboBox'
+      menuTrigger="manual"
+    >
       <Label>{label}</Label>
       <div className="my-combobox-container">
         <Input />
