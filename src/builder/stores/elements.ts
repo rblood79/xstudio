@@ -42,7 +42,7 @@ interface Store {
   setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => void;
-  updateElementProps: (elementId: string, props: ElementProps) => void;
+  updateElementProps: (elementId: string, props: ElementProps) => void; // 동기 함수로 수정
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   selectTabElement: (elementId: string, props: ElementProps, tabIndex: number) => void;
   setPages: (pages: Page[]) => void;
@@ -143,14 +143,14 @@ export const useStore = create<Store>((set, get) => ({
         updateHistory(state, prevState, [...state.elements]);
       })
     ),
-  updateElementProps: (elementId, props) =>
+  updateElementProps: (elementId, props) => {
     set(
       produce((state) => {
         const element = state.elements.find((el: Element) => el.id === elementId);
         if (!element) return;
 
         let hasChanges = false;
-        const newProps = { ...element.props, ...props }; // 변경될 새로운 props
+        const newProps = { ...element.props, ...props };
 
         // 이전 props와 새로운 props를 비교하여 실제 변경이 있는지 확인
         if (Object.keys(element.props).length !== Object.keys(newProps).length) {
@@ -164,42 +164,41 @@ export const useStore = create<Store>((set, get) => ({
           }
         }
 
-        // selectedElementProps 업데이트 로직 수정
-        if (state.selectedElementId === elementId) {
-          // 현재 selectedElementProps와 새로 업데이트될 props를 비교
-          let selectedPropsChanged = false;
-          if (Object.keys(state.selectedElementProps).length !== Object.keys(newProps).length) {
-            selectedPropsChanged = true;
-          } else {
-            for (const key in newProps) {
-              if (JSON.stringify(state.selectedElementProps[key]) !== JSON.stringify(newProps[key])) {
-                selectedPropsChanged = true;
-                break;
-              }
-            }
-          }
-          if (selectedPropsChanged) {
-            state.selectedElementProps = newProps; // 실제 변경이 있을 때만 새 객체 생성
-          }
-        }
-
         if (hasChanges) {
           const prevState = state.elements.map((el: Element) => ({
             ...el,
             props: { ...el.props }
           }));
 
-          element.props = newProps; // 이전에 계산된 newProps 사용
+          element.props = newProps;
+
+          // selectedElementProps 업데이트
+          if (state.selectedElementId === elementId) {
+            state.selectedElementProps = newProps;
+          }
+
           updateHistory(state, prevState, state.elements.map((el: Element) => ({
             ...el,
             props: { ...el.props }
           })));
-        } else {
-          // 실제 변경이 없더라도 props를 적용 (예: 불필요한 키 제거 방지)
-          element.props = newProps;
+
+          // 데이터베이스 업데이트 (비동기로 처리)
+          supabase
+            .from('elements')
+            .update({ props: newProps })
+            .eq('id', elementId)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Element props 업데이트 에러:', error);
+              }
+            })
+            .catch((err) => {
+              console.error('Element props 업데이트 중 오류:', err);
+            });
         }
       })
-    ),
+    );
+  },
   setSelectedElement: (elementId, props) =>
     set((state) => {
       if (!elementId) {
