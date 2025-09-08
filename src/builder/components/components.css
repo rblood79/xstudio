@@ -980,7 +980,6 @@
 
 
         .react-aria-SelectValue {
-            width: 100%;
 
             &[data-placeholder] {
                 font-style: italic;

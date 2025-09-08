@@ -123,7 +123,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         className='control-button secondary'
                         onClick={() => setSelectedOption(null)}
                     >
-                        Back to Select Settings
+                        {PROPERTY_LABELS.CLOSE}
                     </button>
                 </div>
             </div>
