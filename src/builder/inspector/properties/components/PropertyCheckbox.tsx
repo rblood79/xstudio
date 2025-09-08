@@ -1,5 +1,6 @@
 import React from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
+import { Checkbox, Switch } from '../../../components/list';
 
 interface PropertyCheckboxProps {
     label: string;
@@ -22,11 +23,12 @@ export function PropertyCheckbox({
 }: PropertyCheckboxProps) {
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
-            <input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) => onChange(e.target.checked)}
-            />
+            <Checkbox
+                isSelected={checked}
+                onChange={(checked) => onChange(checked)}
+            >
+
+            </Checkbox>
         </PropertyFieldset>
     );
 }
