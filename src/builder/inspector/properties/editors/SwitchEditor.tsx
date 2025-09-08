@@ -1,4 +1,4 @@
-import { ToggleLeft, ToggleRight } from 'lucide-react';
+import { ToggleLeft, Eye, EyeOff, PenOff, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -26,28 +26,28 @@ export function SwitchEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                     label={PROPERTY_LABELS.SELECTED}
                     checked={Boolean(currentProps.isSelected)}
                     onChange={(checked) => updateProp('isSelected', checked)}
-                    icon={ToggleRight}
+                    icon={Eye}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.DISABLED}
                     checked={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={ToggleLeft}
+                    icon={EyeOff}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={ToggleLeft}
+                    icon={PenOff}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={ToggleLeft}
+                    icon={CheckSquare}
                 />
             </fieldset>
         </div>

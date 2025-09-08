@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Layout, SquarePlus, Trash, CheckSquare, PointerOff, HelpCircle, AlertTriangle } from 'lucide-react';
+import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -58,7 +58,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                             };
                             updateElementProps(currentCheckbox.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
                     {/* 체크박스 값 편집 */}
@@ -177,7 +177,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
-                    icon={Type}
+                    icon={Tag}
                 />
 
                 {/* 설명 설정 */}
@@ -185,7 +185,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
-                    icon={HelpCircle}
+                    icon={FileText}
                 />
 
                 {/* 오류 메시지 설정 */}
@@ -205,7 +205,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                         { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
-                    icon={Layout}
+                    icon={Ratio}
                 />
 
                 {/* 비활성화 설정 */}
@@ -221,6 +221,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
                 />
 
                 {/* 읽기 전용 설정 */}
@@ -228,6 +229,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
+                    icon={PenOff}
                 />
             </fieldset>
 

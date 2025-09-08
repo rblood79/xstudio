@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Type, Layout, SquarePlus, Trash, PointerOff, ToggleLeft } from 'lucide-react';
+import { Type, Ratio, SquarePlus, Trash, PointerOff, ToggleLeft, SquareX, SquareMousePointer } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, ToggleButtonItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -128,7 +128,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                         { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
-                    icon={Layout}
+                    icon={Ratio}
                 />
 
                 {/* 선택 모드 설정 */}
@@ -140,7 +140,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
                         { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
-                    icon={ToggleLeft}
+                    icon={SquareMousePointer}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
@@ -148,6 +148,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}

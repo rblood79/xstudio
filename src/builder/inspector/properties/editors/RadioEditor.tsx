@@ -1,4 +1,4 @@
-import { Type, CircleDot, PointerOff } from 'lucide-react';
+import { Tag, PointerOff, CheckCheck, PenOff, Binary } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -18,21 +18,21 @@ export function RadioEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.children || '')}
                 onChange={(value) => updateProp('children', value)}
-                icon={Type}
+                icon={Tag}
             />
 
             <PropertyInput
                 label={PROPERTY_LABELS.VALUE}
                 value={String(currentProps.value || '')}
                 onChange={(value) => updateProp('value', value)}
-                icon={CircleDot}
+                icon={Binary}
             />
 
             <PropertyCheckbox
                 label={PROPERTY_LABELS.SELECTED}
                 checked={Boolean(currentProps.isSelected)}
                 onChange={(checked) => updateProp('isSelected', checked)}
-                icon={CircleDot}
+                icon={CheckCheck}
             />
 
             <PropertyCheckbox
@@ -46,6 +46,7 @@ export function RadioEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 label={PROPERTY_LABELS.READONLY}
                 checked={Boolean(currentProps.isReadOnly)}
                 onChange={(checked) => updateProp('isReadOnly', checked)}
+                icon={PenOff}
             />
         </div>
     );

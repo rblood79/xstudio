@@ -1,4 +1,4 @@
-import { Type, PointerOff } from 'lucide-react';
+import { Type, PointerOff, Parentheses } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -37,6 +37,7 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                     { id: 'submit', label: PROPERTY_LABELS.SUBMIT },
                     { id: 'reset', label: PROPERTY_LABELS.RESET }
                 ]}
+                icon={Parentheses}
             />
         </div>
     );

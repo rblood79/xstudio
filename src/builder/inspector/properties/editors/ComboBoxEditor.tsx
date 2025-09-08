@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, SquarePlus, PointerOff, AlertTriangle, Hash, FileText, Search, Trash } from 'lucide-react';
+import { Tag, SquarePlus, PointerOff, AlertTriangle, Hash, FileText, SpellCheck2, Trash, Binary, SquareMousePointer, Menu, SquareX, CheckSquare, PenOff, Focus } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -60,7 +60,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 updateProp('defaultSelectedKey', currentOption.props.value);
                             }
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
                     {/* 옵션 값 편집 */}
@@ -80,7 +80,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 updateProp('defaultSelectedKey', value);
                             }
                         }}
-                        icon={Hash}
+                        icon={Binary}
                     />
 
                     {/* 옵션 설명 편집 */}
@@ -165,7 +165,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
-                    icon={Type}
+                    icon={Tag}
                 />
 
                 <PropertyInput
@@ -186,37 +186,42 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
-                    icon={Search}
+                    icon={SpellCheck2}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.SELECTED_KEY}
                     value={String(currentProps.selectedKey || '')}
                     onChange={(value) => updateProp('selectedKey', value)}
+                    icon={Hash}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
+                    icon={Hash}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.INPUT_VALUE}
                     value={String(currentProps.inputValue || '')}
                     onChange={(value) => updateProp('inputValue', value)}
+                    icon={Hash}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.DEFAULT_INPUT_VALUE}
                     value={String(currentProps.defaultInputValue || '')}
                     onChange={(value) => updateProp('defaultInputValue', value)}
+                    icon={Hash}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
                     checked={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
+                    icon={SquareMousePointer}
                 />
 
                 <PropertySelect
@@ -228,12 +233,14 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         { id: 'input', label: PROPERTY_LABELS.MENU_TRIGGER_INPUT },
                         { id: 'manual', label: PROPERTY_LABELS.MENU_TRIGGER_MANUAL }
                     ]}
+                    icon={Menu}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 <PropertyCheckbox
@@ -247,18 +254,21 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
+                    icon={PenOff}
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
                 />
             </fieldset>
 

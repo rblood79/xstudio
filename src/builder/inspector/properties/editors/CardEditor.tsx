@@ -1,5 +1,4 @@
-
-import { Type, FileText, Layout, Eye, EyeOff, PointerOff, Focus } from 'lucide-react';
+import { Type, FileText, Layout, Eye, EyeOff, PointerOff, Focus, PencilRuler } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -50,6 +49,7 @@ export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                     { id: 'medium', label: PROPERTY_LABELS.CARD_SIZE_MEDIUM },
                     { id: 'large', label: PROPERTY_LABELS.CARD_SIZE_LARGE }
                 ]}
+                icon={PencilRuler}
             />
 
             <PropertyCheckbox
