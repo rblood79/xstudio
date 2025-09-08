@@ -2579,10 +2579,10 @@
         color: var(--text-color-disabled);
 
         .indicator {
-            border-color: var(--border-color-disabled);
+            border-color: var(--color-gray-200);
 
             &:before {
-                background: var(--border-color-disabled);
+                background: var(--color-gray-200);
             }
         }
     }

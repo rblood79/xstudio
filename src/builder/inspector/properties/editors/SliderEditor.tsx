@@ -1,4 +1,4 @@
-import { Type, Binary, TriangleRight, Layout, ToggleLeft } from 'lucide-react';
+import { Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -32,7 +32,7 @@ export function SliderEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.value || '')}
                 onChange={(value) => updateNumberProp('value', value)}
                 type="number"
-                icon={Binary}
+                icon={NotebookTabs}
             />
 
             <PropertyInput
@@ -40,7 +40,7 @@ export function SliderEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.minValue || '0')}
                 onChange={(value) => updateNumberProp('minValue', value, 0)}
                 type="number"
-                icon={Binary}
+
             />
 
             <PropertyInput

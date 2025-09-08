@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Tag, Binary, FileText, PointerOff } from 'lucide-react';
 import { PropertyInput } from '../components/PropertyInput';
 import { PropertyCheckbox } from '../components/PropertyCheckbox';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -54,24 +55,28 @@ export function ComboBoxItemEditor({ currentProps, onUpdate }: PropertyEditorPro
                 label={PROPERTY_LABELS.LABEL}
                 value={String(localProps.label || '')}
                 onChange={(value) => handlePropertyChange('label', value)}
+                icon={Tag}
             />
 
             <PropertyInput
                 label={PROPERTY_LABELS.VALUE}
                 value={String(localProps.value || '')}
                 onChange={(value) => handlePropertyChange('value', value)}
+                icon={Binary}
             />
 
             <PropertyInput
                 label={PROPERTY_LABELS.DESCRIPTION}
                 value={String(localProps.description || '')}
                 onChange={(value) => handlePropertyChange('description', value)}
+                icon={FileText}
             />
 
             <PropertyCheckbox
                 label={PROPERTY_LABELS.DISABLED}
                 checked={Boolean(localProps.isDisabled)}
                 onChange={(checked) => handlePropertyChange('isDisabled', checked)}
+                icon={PointerOff}
             />
         </div>
     );

@@ -1,4 +1,4 @@
-import { Type, PointerOff, CheckSquare } from 'lucide-react';
+import { Tag, PointerOff, CheckSquare, PenOff } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -18,7 +18,7 @@ export function ToggleButtonEditor({ currentProps, onUpdate }: PropertyEditorPro
                 label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.children || '')}
                 onChange={(value) => updateProp('children', value)}
-                icon={Type}
+                icon={Tag}
             />
 
             <PropertyCheckbox
@@ -39,6 +39,7 @@ export function ToggleButtonEditor({ currentProps, onUpdate }: PropertyEditorPro
                 label={PROPERTY_LABELS.READONLY}
                 checked={Boolean(currentProps.isReadOnly)}
                 onChange={(checked) => updateProp('isReadOnly', checked)}
+                icon={PenOff}
             />
         </div>
     );

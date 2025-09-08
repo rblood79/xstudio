@@ -1,4 +1,4 @@
-import { Type, CheckSquare, PointerOff } from 'lucide-react';
+import { Tag, CheckSquare, PointerOff, PenOff, Minus } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -18,7 +18,7 @@ export function CheckboxEditor({ currentProps, onUpdate }: PropertyEditorProps) 
                 label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.children || '')}
                 onChange={(value) => updateProp('children', value)}
-                icon={Type}
+                icon={Tag}
             />
 
             <PropertyCheckbox
@@ -39,12 +39,14 @@ export function CheckboxEditor({ currentProps, onUpdate }: PropertyEditorProps) 
                 label={PROPERTY_LABELS.READONLY}
                 checked={Boolean(currentProps.isReadOnly)}
                 onChange={(checked) => updateProp('isReadOnly', checked)}
+                icon={PenOff}
             />
 
             <PropertyCheckbox
                 label={PROPERTY_LABELS.INDETERMINATE}
                 checked={Boolean(currentProps.isIndeterminate)}
                 onChange={(checked) => updateProp('isIndeterminate', checked)}
+                icon={Minus}
             />
         </div>
     );

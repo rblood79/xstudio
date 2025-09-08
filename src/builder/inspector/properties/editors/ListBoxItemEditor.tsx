@@ -1,4 +1,4 @@
-import { Type, CircleDot, PointerOff } from 'lucide-react';
+import { Tag, Binary, PointerOff, PenOff } from 'lucide-react';
 import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -18,14 +18,14 @@ export function ListBoxItemEditor({ currentProps, onUpdate }: PropertyEditorProp
                 label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.label || '')}
                 onChange={(value) => updateProp('label', value)}
-                icon={Type}
+                icon={Tag}
             />
 
             <PropertyInput
                 label={PROPERTY_LABELS.VALUE}
                 value={String(currentProps.value || '')}
                 onChange={(value) => updateProp('value', value)}
-                icon={CircleDot}
+                icon={Binary}
             />
 
             <PropertyCheckbox
@@ -39,6 +39,7 @@ export function ListBoxItemEditor({ currentProps, onUpdate }: PropertyEditorProp
                 label={PROPERTY_LABELS.READONLY}
                 checked={Boolean(currentProps.isReadOnly)}
                 onChange={(checked) => updateProp('isReadOnly', checked)}
+                icon={PenOff}
             />
         </div>
     );

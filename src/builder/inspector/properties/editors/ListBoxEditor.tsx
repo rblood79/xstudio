@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, List } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, List, SquareX, Focus, Binary, FileText } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -58,7 +58,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                             };
                             updateElementProps(currentItem.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
                     {/* 아이템 값 편집 */}
@@ -73,7 +73,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                             };
                             updateElementProps(currentItem.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Binary}
                     />
 
                     {/* 아이템 비활성화 상태 편집 */}
@@ -147,7 +147,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
-                    icon={Type}
+                    icon={Tag}
                 />
 
                 {/* 설명 설정 */}
@@ -155,7 +155,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
-                    icon={HelpCircle}
+                    icon={FileText}
                 />
 
                 {/* 오류 메시지 설정 */}
@@ -183,6 +183,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}
@@ -198,6 +199,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
                 />
             </fieldset>
 

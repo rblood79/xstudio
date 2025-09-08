@@ -1,4 +1,4 @@
-import { AppWindow, Layout, Type } from 'lucide-react';
+import { AppWindow, Type, Menu } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -42,7 +42,7 @@ export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                     value={String(currentProps.variant || 'default')}
                     onChange={(value) => updateProp('variant', value)}
                     options={TAB_VARIANTS}
-                    icon={Layout}
+                    icon={Menu}
                 />
 
                 <PropertySelect

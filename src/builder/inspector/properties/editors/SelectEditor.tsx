@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -53,7 +53,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             const { updateElementProps } = useStore.getState();
                             updateElementProps(currentOption.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
                     {/* 옵션 값 편집 */}
@@ -68,7 +68,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             const { updateElementProps } = useStore.getState();
                             updateElementProps(currentOption.id, updatedProps);
                         }}
-                        icon={Hash}
+                        icon={Binary}
                     />
 
                     {/* 옵션 비활성화 상태 편집 */}
@@ -141,7 +141,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
-                    icon={Type}
+                    icon={Tag}
                 />
 
                 {/* 설명 설정 */}
@@ -149,7 +149,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
-                    icon={HelpCircle}
+                    icon={FileText}
                 />
 
                 {/* 오류 메시지 설정 */}
@@ -165,6 +165,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
+                    icon={SpellCheck2}
                 />
 
                 {/* 선택된 키 설정 */}
@@ -180,6 +181,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
                     value={String(currentProps.defaultSelectedKey || '')}
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
+                    icon={Hash}
                 />
 
                 {/* 메뉴 트리거 설정 */}
@@ -191,6 +193,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         { id: 'click', label: 'Click' },
                         { id: 'hover', label: 'Hover' }
                     ]}
+                    icon={Menu}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
@@ -198,6 +201,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}
@@ -213,6 +217,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.REQUIRED}
                     checked={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
                 />
 
                 {/* 읽기 전용 설정 */}
@@ -220,6 +225,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.READONLY}
                     checked={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
+                    icon={PenOff}
                 />
 
                 {/* 자동 포커스 설정 */}
@@ -227,6 +233,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
                 />
             </fieldset>
 

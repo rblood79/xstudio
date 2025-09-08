@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { AppWindow, Layout, Plus } from 'lucide-react';
+import { AppWindow, Plus, Ratio, PointerOff } from 'lucide-react';
 import { PropertyInput, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -138,14 +138,14 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     value={String(currentProps.orientation || 'horizontal')}
                     onChange={(value) => updateProp('orientation', value)}
                     options={ORIENTATIONS}
-                    icon={Layout}
+                    icon={Ratio}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.DISABLED}
                     value={String(currentProps.isDisabled || false)}
                     onChange={(value) => updateProp('isDisabled', value === 'true')}
-                    icon={AppWindow}
+                    icon={PointerOff}
                 />
             </fieldset>
 

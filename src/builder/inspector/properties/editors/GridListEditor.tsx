@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Grid, MoveHorizontal, FileText } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -58,7 +58,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             };
                             updateElementProps(currentItem.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
                     {/* 아이템 값 편집 */}
@@ -73,7 +73,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             };
                             updateElementProps(currentItem.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Binary}
                     />
 
                     {/* 아이템 설명 편집 */}
@@ -103,6 +103,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             };
                             updateElementProps(currentItem.id, updatedProps);
                         }}
+                        icon={Binary}
                     />
 
                     {/* 아이템 비활성화 상태 편집 */}
@@ -174,7 +175,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value)}
-                    icon={Type}
+                    icon={Tag}
                 />
 
                 {/* 설명 설정 */}
@@ -182,7 +183,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value)}
-                    icon={HelpCircle}
+                    icon={FileText}
                 />
 
                 {/* 오류 메시지 설정 */}
@@ -214,6 +215,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         { id: 'toggle', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_TOGGLE },
                         { id: 'replace', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_REPLACE }
                     ]}
+                    icon={Menu}
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
@@ -221,6 +223,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     checked={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}
@@ -236,6 +239,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
                 />
 
                 {/* 드래그 허용 설정 */}
@@ -251,6 +255,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.RENDER_EMPTY_STATE}
                     checked={Boolean(currentProps.renderEmptyState)}
                     onChange={(checked) => updateProp('renderEmptyState', checked)}
+                    icon={Square}
                 />
             </fieldset>
 
