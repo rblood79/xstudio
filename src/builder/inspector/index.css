@@ -10,6 +10,14 @@
             padding: calc(var(--spacing-sm));
         }
     }*/
+    .testID {
+        font-size: var(--text-xs);
+        color: var(--color-gray-500);
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        padding: var(--spacing-sm);
+    }
 }
 
 

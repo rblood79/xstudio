@@ -23,6 +23,7 @@
     font-weight: 600;
     background-color: #fff;
     border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
     color: #666;
     transition: all 0.2s ease;
 }
