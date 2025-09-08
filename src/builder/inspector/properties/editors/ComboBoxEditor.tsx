@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, SquarePlus, Trash, PointerOff, HelpCircle, AlertTriangle, Hash, FileText, Search } from 'lucide-react';
+import { Type, SquarePlus, PointerOff, AlertTriangle, Hash, FileText, Search, Trash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -111,16 +111,46 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         icon={PointerOff}
                     />
 
+                    {/* 옵션 삭제 버튼 */}
+                    <div className='tab-actions'>
+                        <button
+                            className='control-button delete'
+                            onClick={async () => {
+                                try {
+                                    // Supabase에서 삭제
+                                    const { error } = await supabase
+                                        .from("elements")
+                                        .delete()
+                                        .eq("id", currentOption.id);
+
+                                    if (error) {
+                                        console.error("SelectItem 삭제 에러:", error);
+                                        return;
+                                    }
+
+                                    // 로컬 상태에서 제거
+                                    removeElement(currentOption.id);
+                                    setSelectedOption(null);
+                                } catch (error) {
+                                    console.error("SelectItem 삭제 중 오류:", error);
+                                }
+                            }}
+                        >
+                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            Delete This Item
+                        </button>
+                    </div>
+
                     {/* 닫기 버튼 */}
                     <div className='tab-actions'>
                         <button
-                            className='control-button close'
+                            className='control-button secondary'
                             onClick={() => setSelectedOption(null)}
                         >
-                            <HelpCircle size={16} stroke="1" color="var(--color-gray-400)" />
                             {PROPERTY_LABELS.CLOSE}
                         </button>
                     </div>
+
                 </fieldset>
             </div>
         );
@@ -235,25 +265,21 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
             <fieldset className="properties-aria">
                 <legend>{PROPERTY_LABELS.ADD_OPTION}</legend>
 
+
                 {/* 옵션 목록 표시 */}
                 {comboBoxItemChildren.length > 0 ? (
-                    <div className="options-list">
+                    <div className="tabs-list">
                         {comboBoxItemChildren.map((item, index) => (
-                            <div key={item.id} className="option-item">
+                            <div key={item.id} className='tab-list-item'>
+                                <span className='tab-title'>
+                                    {String(item.props.label) || `Item ${index + 1}`}
+                                    {currentProps.selectedKey === item.props.value && ' ✓'}
+                                </span>
                                 <button
-                                    className="option-button"
+                                    className='tab-edit-button'
                                     onClick={() => setSelectedOption({ parentId: elementId, optionId: item.id })}
                                 >
-                                    <span className="option-label">{String(item.props.label) || `Option ${index + 1}`}</span>
-                                    <span className="option-value">({String(item.props.value)})</span>
-                                </button>
-                                <button
-                                    className="delete-option-button"
-                                    onClick={async () => {
-                                        await removeElement(item.id);
-                                    }}
-                                >
-                                    <Trash size={16} stroke="1" color="var(--color-gray-400)" />
+                                    Edit
                                 </button>
                             </div>
                         ))}
