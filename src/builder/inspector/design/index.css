@@ -15,7 +15,6 @@
             background-color: var(--color-gray-100);
             border-radius: var(--radius-md);
             width: 100%;
-            height: 27px;
 
             .control-button {
                 width: 100%;
