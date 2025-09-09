@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
+import { ElementProps } from '../types/supabase';
 import "./index.css";
 
 function Dashboard() {
@@ -60,7 +61,7 @@ function Dashboard() {
       const bodyElement = {
         id: crypto.randomUUID(),
         tag: 'body',
-        props: {} as any,
+        props: {} as ElementProps,
         parent_id: null,
         page_id: homePage.id,
         order_num: 0,
