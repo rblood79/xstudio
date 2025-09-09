@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useThemeStore } from '../stores/theme';
+import { useStore } from '../stores';
 
 export function ThemeInitializer({ projectId }: { projectId: string }) {
-    const loadTheme = useThemeStore(s => s.loadTheme);
+    const loadTheme = useStore(s => s.loadTheme);
     useEffect(() => {
         if (projectId) {
             loadTheme(projectId);

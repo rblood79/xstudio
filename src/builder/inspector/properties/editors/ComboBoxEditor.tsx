@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
-import { useStore } from '../../../stores/elements';
+import { useStore } from '../../../stores';
 
 interface SelectedOptionState {
     parentId: string;
@@ -16,12 +16,22 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
     const { addElement, removeElement, elements: storeElements, currentPageId, updateElementProps } = useStore();
 
+    // 디버깅을 위한 로그 추가
+    useEffect(() => {
+        console.log('ComboBoxEditor currentProps 업데이트:', {
+            elementId,
+            selectedKey: currentProps.selectedKey,
+            currentProps
+        });
+    }, [currentProps, elementId]);
+
     useEffect(() => {
         // 옵션 선택 상태 초기화
         setSelectedOption(null);
     }, [elementId]);
 
     const updateProp = (key: string, value: unknown) => {
+        console.log('ComboBoxEditor updateProp 호출:', { key, value });
         const updatedProps = {
             ...currentProps,
             [key]: value
@@ -186,61 +196,22 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}
-                    icon={SpellCheck2}
+                    icon={FileText}
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.SELECTED_KEY}
-                    value={String(currentProps.selectedKey || '')}
-                    onChange={(value) => updateProp('selectedKey', value)}
-                    icon={Hash}
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
-                    value={String(currentProps.defaultSelectedKey || '')}
-                    onChange={(value) => updateProp('defaultSelectedKey', value)}
-                    icon={Hash}
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.INPUT_VALUE}
-                    value={String(currentProps.inputValue || '')}
-                    onChange={(value) => updateProp('inputValue', value)}
-                    icon={Hash}
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_INPUT_VALUE}
-                    value={String(currentProps.defaultInputValue || '')}
-                    onChange={(value) => updateProp('defaultInputValue', value)}
-                    icon={Hash}
+                    label={PROPERTY_LABELS.VALUE}
+                    value={String(currentProps.selectedValue || '')}
+                    onChange={(value) => updateProp('selectedValue', value)}
+                    icon={Tag}
+                    placeholder="선택된 값이 여기에 표시됩니다"
                 />
 
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
                     checked={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
-                    icon={SquareMousePointer}
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.MENU_TRIGGER}
-                    value={String(currentProps.menuTrigger || 'focus')}
-                    onChange={(value) => updateProp('menuTrigger', value)}
-                    options={[
-                        { id: 'focus', label: PROPERTY_LABELS.MENU_TRIGGER_FOCUS },
-                        { id: 'input', label: PROPERTY_LABELS.MENU_TRIGGER_INPUT },
-                        { id: 'manual', label: PROPERTY_LABELS.MENU_TRIGGER_MANUAL }
-                    ]}
-                    icon={Menu}
-                />
-
-                <PropertyCheckbox
-                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
-                    onChange={(checked) => updateProp('disallowEmptySelection', checked)}
-                    icon={SquareX}
+                    icon={Binary}
                 />
 
                 <PropertyCheckbox
@@ -283,7 +254,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {String(item.props.label) || `Item ${index + 1}`}
-                                    {currentProps.selectedKey === item.props.value && ' ✓'}
+                                    {currentProps.selectedValue === item.props.value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'

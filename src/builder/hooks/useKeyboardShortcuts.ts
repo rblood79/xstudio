@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useStore } from '../stores/elements';
+import { useStore } from '../stores';
 
 export function useKeyboardShortcuts() {
     const { undo, redo } = useStore();

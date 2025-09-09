@@ -9,8 +9,7 @@ import SelectionOverlay from "./overlay";
 import Inspector from "./inspector";
 import Sidebar from "./sidebar";
 
-import { useStore } from './stores/elements';
-import { useThemeStore } from './stores/theme';
+import { useStore } from './stores';
 import { debounce } from 'lodash';
 import type { ElementProps } from '../types/supabase';
 import { ColorValue } from '../types/theme';
@@ -32,11 +31,9 @@ function Builder() {
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // 새로운 통합된 스토어 사용
-    const {
-        rawTokens,
-        semanticTokens,
-        loadTheme
-    } = useThemeStore();
+    const rawTokens = useStore(state => state.rawTokens);
+    const semanticTokens = useStore(state => state.semanticTokens);
+    const loadTheme = useStore(state => state.loadTheme);
 
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore((state) => state.selectedElementId);

@@ -5,8 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
-import { useStore } from '../../../stores/elements';
-import type { Element } from '../../../stores/elements';
+import { useStore } from '../../../stores';
 
 // 상수 정의
 const ORIENTATIONS: Array<{ id: string; label: string }> = [

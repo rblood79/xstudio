@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
-import { useStore } from '../../../stores/elements';
+import { useStore } from '../../../stores';
 
 interface SelectedCheckboxState {
     parentId: string;

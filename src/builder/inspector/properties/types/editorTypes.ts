@@ -254,25 +254,10 @@ export const COMPONENT_PROPERTY_FIELDS: Record<string, PropertyField[]> = {
         { key: 'errorMessage', label: '오류 메시지', type: 'text' },
         { key: 'placeholder', label: '플레이스홀더', type: 'text' },
         { key: 'selectedKey', label: '선택된 키', type: 'text' },
-        { key: 'defaultSelectedKey', label: '기본 선택 키', type: 'text' },
-        { key: 'inputValue', label: '입력 값', type: 'text' },
-        { key: 'defaultInputValue', label: '기본 입력 값', type: 'text' },
         { key: 'allowsCustomValue', label: '사용자 정의 값 허용', type: 'boolean' },
-        {
-            key: 'menuTrigger',
-            label: '메뉴 트리거',
-            type: 'select',
-            options: [
-                { id: 'focus', label: 'Focus' },
-                { id: 'input', label: 'Input' },
-                { id: 'manual', label: 'Manual' }
-            ]
-        },
-        { key: 'disallowEmptySelection', label: '빈 선택 허용 안함', type: 'boolean' },
         { key: 'isDisabled', label: '비활성화', type: 'boolean' },
         { key: 'isRequired', label: '필수', type: 'boolean' },
         { key: 'isReadOnly', label: '읽기 전용', type: 'boolean' },
-        { key: 'autoFocus', label: '자동 포커스', type: 'boolean' },
         { key: 'children', label: '옵션 목록', type: 'array' },
     ],
     ListBox: [

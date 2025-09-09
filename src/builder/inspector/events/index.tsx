@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Settings, Play, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, Select, SelectItem, TextField } from '../../components/list';
-import { useStore } from '../../stores/elements';
+import { useStore } from '../../stores';
 import {
     EventType,
     ActionType,
@@ -36,7 +36,7 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 <div className="action-value-editor">
                     <TextField
                         label="URL"
-                        value={value.url || ''}
+                        value={String(value.url || '')}
                         onChange={(newUrl) => {
                             updateValue({ ...(value as Record<string, unknown>), url: newUrl });
                         }}
@@ -45,11 +45,10 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                         <label>
                             <input
                                 type="checkbox"
-                                checked={value.newTab || false}
+                                checked={Boolean(value.newTab)}
                                 onChange={(e) => {
                                     const updatedValue = { ...value, newTab: e.target.checked };
-                                    setValue(updatedValue);
-                                    onUpdate({ ...action, value: updatedValue });
+                                    updateValue({ ...updatedValue, url: value.url || '' });
                                 }}
                             />
                             새 탭에서 열기
@@ -76,8 +75,8 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                     <TextField
                         label="애니메이션 지속시간 (ms)"
                         type="number"
-                        value={value.duration || ''}
-                        onChange={(value) => updateValue({ ...value, duration: parseInt(value) || undefined })}
+                        value={String(value.duration || '')}
+                        onChange={(newValue) => updateValue({ ...value, duration: parseInt(newValue) || undefined })}
                     />
                 </div>
             );
@@ -87,31 +86,25 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 <div className="action-value-editor">
                     <TextField
                         label="상태 키"
-                        value={value.key || ''}
+                        value={String(value.key || '')}
                         onChange={(newKey) => {
-                            const updatedValue = { ...value, key: newKey };
-                            setValue(updatedValue);
-                            onUpdate({ ...action, value: updatedValue });
+                            updateValue({ ...value, key: newKey, value: value.value || '' });
                         }}
                     />
                     <TextField
-                        label="값"
-                        value={value.value || ''}
-                        onChange={(newVal) => {
-                            const updatedValue = { ...value, value: newVal };
-                            setValue(updatedValue);
-                            onUpdate({ ...action, value: updatedValue });
+                        label="상태 값"
+                        value={String(value.value || '')}
+                        onChange={(newValue) => {
+                            updateValue({ ...value, value: newValue });
                         }}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
-                                checked={value.merge || false}
+                                checked={Boolean(value.merge)}
                                 onChange={(e) => {
-                                    const updatedValue = { ...value, merge: e.target.checked };
-                                    setValue(updatedValue);
-                                    onUpdate({ ...action, value: updatedValue });
+                                    updateValue({ ...value, merge: e.target.checked, key: value.key || '', value: value.value || '' });
                                 }}
                             />
                             객체 병합
@@ -125,14 +118,14 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 <div className="action-value-editor">
                     <TextField
                         label="모달 ID"
-                        value={value.modalId || ''}
-                        onChange={(value) => updateValue({ ...value, modalId: value })}
+                        value={String(value.modalId || '')}
+                        onChange={(newValue) => updateValue({ ...value, modalId: newValue })}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
-                                checked={value.backdrop !== false}
+                                checked={Boolean(value.backdrop !== false)}
                                 onChange={(e) => updateValue({ ...value, backdrop: e.target.checked })}
                             />
                             배경 클릭으로 닫기
@@ -145,30 +138,22 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
             return (
                 <div className="action-value-editor">
                     <TextField
-                        label="함수 코드"
-                        value={value.code || ''}
+                        label="JavaScript 코드"
+                        value={String(value.code || '')}
                         onChange={(newCode) => {
-                            // 직접 code 속성만 업데이트
-                            const updatedValue = { ...value, code: newCode };
-                            setValue(updatedValue);
-                            onUpdate({ ...action, value: updatedValue });
+                            updateValue({ ...value, code: newCode, async: Boolean(value.async) });
                         }}
-                        multiline
-                        rows={4}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
-                                checked={value.async || false}
+                                checked={Boolean(value.async)}
                                 onChange={(e) => {
-                                    // 직접 async 속성만 업데이트
-                                    const updatedValue = { ...value, async: e.target.checked };
-                                    setValue(updatedValue);
-                                    onUpdate({ ...action, value: updatedValue });
+                                    updateValue({ ...value, async: e.target.checked, code: value.code || '' });
                                 }}
                             />
-                            비동기 함수
+                            비동기 실행
                         </label>
                     </div>
                 </div>
@@ -177,32 +162,27 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
         case 'update_props':
             return (
                 <div className="action-value-editor">
-
                     <TextField
-                        label="속성 (JSON)"
-                        value={value.props ? JSON.stringify(value.props, null, 2) : '{"children": "새 텍스트"}'}
+                        label="Props (JSON)"
+                        value={JSON.stringify(value.props || {}, null, 2)}
                         onChange={(newProps) => {
                             try {
                                 const parsedProps = JSON.parse(newProps);
                                 const updatedValue = { ...value, props: parsedProps };
                                 setValue(updatedValue);
-                                onUpdate({ ...action, value: updatedValue });
+                                onUpdate({ ...action, value: { ...updatedValue, elementId: String(value.elementId || ''), props: parsedProps } });
                             } catch {
                                 console.error('JSON 파싱 오류');
                             }
                         }}
-                        multiline
-                        rows={3}
                     />
                     <div className="checkbox-group">
                         <label>
                             <input
                                 type="checkbox"
-                                checked={value.merge || false}
+                                checked={Boolean(value.merge)}
                                 onChange={(e) => {
-                                    const updatedValue = { ...value, merge: e.target.checked };
-                                    setValue(updatedValue);
-                                    onUpdate({ ...action, value: updatedValue });
+                                    updateValue({ ...value, merge: e.target.checked, props: value.props || {} });
                                 }}
                             />
                             기존 속성과 병합
@@ -215,19 +195,16 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
             return (
                 <div className="action-value-editor">
                     <TextField
-                        label="설정값 (JSON)"
+                        label="Props (JSON)"
                         value={JSON.stringify(value, null, 2)}
                         onChange={(jsonValue) => {
                             try {
-                                const parsed = JSON.parse(jsonValue);
-                                setValue(parsed);
-                                onUpdate({ ...action, value: parsed });
-                            } catch (err) {
-                                // JSON 파싱 에러는 무시
+                                const props = JSON.parse(jsonValue);
+                                updateValue({ ...value, props });
+                            } catch {
+                                // JSON 파싱 실패 시 무시
                             }
                         }}
-                        multiline
-                        rows={3}
                     />
                 </div>
             );
@@ -252,15 +229,11 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
                 </div>
                 <div className="action-controls">
                     <Button
-                        size="sm"
-                        variant="ghost"
                         onPress={() => setIsExpanded(!isExpanded)}
                     >
                         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </Button>
                     <Button
-                        size="sm"
-                        variant="ghost"
                         onPress={onDelete}
                     >
                         <Trash2 size={16} />
@@ -322,7 +295,7 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
                         label="지연 시간 (ms)"
                         type="number"
                         value={String(action.delay || 0)}
-                        onChange={(value) => onUpdate({ ...action, delay: Number(value) })}
+                        onChange={(newValue) => onUpdate({ ...action, delay: parseInt(newValue) || undefined })}
                     />
 
                     <TextField
@@ -407,15 +380,11 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
                 </div>
                 <div className="event-controls">
                     <Button
-                        size="sm"
-                        variant="ghost"
                         onPress={() => setIsExpanded(!isExpanded)}
                     >
                         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </Button>
                     <Button
-                        size="sm"
-                        variant="ghost"
                         onPress={onDelete}
                     >
                         <Trash2 size={16} />
@@ -486,7 +455,7 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
                     <TextField
                         label="디바운스 시간 (ms)"
                         type="number"
-                        value={event.debounce || ''}
+                        value={String(event.debounce || '')}
                         onChange={(value) => onUpdate({ ...event, debounce: parseInt(value) || undefined })}
                         description={`기본값: ${DEFAULT_DEBOUNCE_TIME}ms`}
                     />
@@ -494,7 +463,7 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
                     <TextField
                         label="스로틀 시간 (ms)"
                         type="number"
-                        value={event.throttle || ''}
+                        value={String(event.throttle || '')}
                         onChange={(value) => onUpdate({ ...event, throttle: parseInt(value) || undefined })}
                         description={`기본값: ${DEFAULT_THROTTLE_TIME}ms`}
                     />
@@ -502,7 +471,7 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
                     <div className="actions-section">
                         <div className="actions-header">
                             <h4>액션</h4>
-                            <Button size="sm" onPress={addAction}>
+                            <Button onPress={addAction}>
                                 <Plus size={16} />
                             </Button>
                         </div>
@@ -609,7 +578,7 @@ function Events() {
                     <Play size={24} />
                     <h4>이벤트가 없습니다</h4>
                     <p>첫 번째 이벤트를 추가해보세요.</p>
-                    <Button onPress={addEvent} variant="outline">
+                    <Button onPress={addEvent}>
                         <Plus size={16} />
                         이벤트 추가
                     </Button>
