@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { produce } from 'immer';
 import { ElementProps } from '../../types/supabase';
-import { supabase } from '../../env/supabase.client';
+import { elementsApi } from '../../services/api';
 import { useStore } from './';
 
 // Element 인터페이스를 직접 정의
@@ -165,16 +165,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
     removeElement: async (elementId) => {
         try {
-            // Supabase에서 실제로 삭제
-            const { error } = await supabase
-                .from('elements')
-                .delete()
-                .eq('id', elementId);
-
-            if (error) {
-                console.error('Element 삭제 에러:', error);
-                return;
-            }
+            // 서비스 레이어를 통한 삭제
+            await elementsApi.deleteElement(elementId);
 
             // 로컬 상태에서도 제거
             set(
@@ -208,16 +200,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
     removeTabPair: async (elementId) => {
         try {
-            // Tab과 Panel 쌍을 모두 Supabase에서 삭제
-            const { error } = await supabase
-                .from('elements')
-                .delete()
-                .or(`id.eq.${elementId},parent_id.eq.${elementId}`);
+            // Tab과 Panel 쌍을 모두 서비스 레이어를 통해 삭제
+            //const tabElement = useStore.getState().elements.find(el => el.id === elementId);
+            const panelElements = useStore.getState().elements.filter(el => el.parent_id === elementId);
 
-            if (error) {
-                console.error('Tab/Panel 쌍 삭제 에러:', error);
-                return;
-            }
+            const elementIdsToDelete = [elementId, ...panelElements.map(el => el.id)];
+            await elementsApi.deleteMultipleElements(elementIdsToDelete);
 
             // 로컬 상태에서도 제거
             set(

@@ -8,7 +8,7 @@ export interface PanelProps {
     title?: string;
     variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
     'data-element-id'?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export function Panel({

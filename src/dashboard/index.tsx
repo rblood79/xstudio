@@ -1,160 +1,161 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { supabase } from "../env/supabase.client";
-import { useState, useEffect } from "react";
-import { TextField, Button } from '../builder/components/list';
-
+import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
 import "./index.css";
 
 function Dashboard() {
   const navigate = useNavigate();
-  interface Project {
-    id: string;
-    name: string;
-    created_by: string;
-    updated_at: string;
-  }
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [newProjectName, setNewProjectName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data, error } = await supabase.from("projects").select("*");
-      if (error) {
-        console.error("프로젝트 조회 에러:", error);
-      } else {
-        setProjects(data);
+      try {
+        setLoading(true);
+        setError(null);
+        const projectsData = await projectsApi.fetchProjects();
+        setProjects(projectsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '프로젝트를 불러오는데 실패했습니다.');
+        console.error("프로젝트 조회 에러:", err);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchProjects();
   }, []);
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // 현재 사용자 세션과 ID 가져오기
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData?.session) {
-      console.error("세션 조회 에러:", sessionError);
-      return;
-    }
-    const userId = sessionData.session.user.id;
-
     if (!newProjectName.trim()) {
-      console.error("프로젝트 이름이 비어 있습니다.");
+      setError("프로젝트 이름을 입력해주세요.");
       return;
     }
 
-    // Step 1: projects 테이블에 새 프로젝트 생성
-    const { data: projectData, error: projectError } = await supabase
-      .from("projects")
-      .insert([{ name: newProjectName, created_by: userId }])
-      .select(); // 삽입된 데이터 반환
-    if (projectError) {
-      console.error("프로젝트 추가 에러:", projectError);
-      return;
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 현재 사용자 정보 가져오기
+      const user = await projectsApi.getCurrentUser();
+
+      // 프로젝트 생성
+      const newProject = await projectsApi.createProject({
+        name: newProjectName.trim(),
+        created_by: user.id
+      });
+
+      // 기본 페이지 생성
+      const homePage = await pagesApi.createPage({
+        project_id: newProject.id,
+        title: "Home",
+        slug: "home"
+      });
+
+      // 기본 body 요소 생성
+      const bodyElement = {
+        id: crypto.randomUUID(),
+        tag: 'body',
+        props: {} as any,
+        parent_id: null,
+        page_id: homePage.id,
+        order_num: 0,
+      };
+
+      await elementsApi.createElement(bodyElement);
+
+      // 프로젝트 목록 업데이트
+      setProjects(prev => [newProject, ...prev]);
+      setNewProjectName("");
+
+      // 빌더 페이지로 이동
+      navigate(`/builder/${newProject.id}`);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '프로젝트 생성에 실패했습니다.');
+      console.error("프로젝트 생성 에러:", err);
+    } finally {
+      setLoading(false);
     }
-
-    // 새 프로젝트 정보 추출
-    const newProject = projectData[0];
-    const projectId = newProject.id;
-
-    // Step 2: pages 테이블에 기본 페이지 생성 (예: Home Page)
-    const { data: pageData, error: pageError } = await supabase
-      .from("pages")
-      .insert([{ project_id: projectId, title: "Home", slug: "home" }])
-      .select(); // 삽입된 데이터 반환
-    if (pageError) {
-      console.error("기본 페이지 생성 에러:", pageError);
-      // 필요시 프로젝트 생성 롤백 고려
-      return;
-    }
-
-    // Step 3: Home 페이지에 기본 body 요소 생성
-    const homePageId = pageData[0].id;
-    const bodyElement = {
-      tag: 'body',
-      props: { style: {} },
-      page_id: homePageId,
-      parent_id: null, // 최상위 요소
-      order_num: 0
-    };
-
-    const { error: bodyError } = await supabase
-      .from("elements")
-      .insert([bodyElement]);
-    if (bodyError) {
-      console.error("기본 body 요소 생성 에러:", bodyError);
-    }
-
-    // Step 4: project_users 테이블에 프로젝트 소유자 기록 추가
-    const { error: puError } = await supabase
-      .from("project_users")
-      .insert([{ project_id: projectId, user_id: userId, role: "owner" }]);
-    if (puError) {
-      console.error("프로젝트 사용자 추가 에러:", puError);
-    }
-
-    // 상태 업데이트: 새 프로젝트를 목록에 추가
-    setProjects((prev) => [...prev, newProject]);
-    setNewProjectName("");
   };
 
   const handleDeleteProject = async (id: string) => {
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) {
-      console.error("프로젝트 삭제 에러:", error);
-    } else {
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await projectsApi.deleteProject(id);
+      setProjects(prev => prev.filter(project => project.id !== id));
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '프로젝트 삭제에 실패했습니다.');
+      console.error("프로젝트 삭제 에러:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleProject = async (project: Project) => {
-    // 변경: project.name을 쿼리 파라미터에 추가
-    const url = `/builder/${encodeURIComponent(project.id)}?name=${encodeURIComponent(project.name)}`;
-    navigate(url);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
-
-
+  if (loading && projects.length === 0) {
+    return (
+      <div className="dashboard">
+        <div className="loading">프로젝트를 불러오는 중...</div>
+      </div>
+    );
+  }
 
   return (
-    <div id="app">
-      <div className='contents'>
+    <div className="dashboard">
+      <h1>XStudio Dashboard</h1>
 
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
-        <main className='main'>
-          <h2>Projects List</h2>
-          <form onSubmit={handleAddProject}>
-            <TextField
-              type="text"
-              value={newProjectName}
-              label="프로젝트 이름"
-              onChange={(value) => setNewProjectName(value)}
-              isRequired={true}
-              description="프로젝트 이름을 입력하세요."
-            />
-            <Button type="submit">프로젝트 추가</Button>
-          </form>
+      <form onSubmit={handleAddProject} className="add-project-form">
+        <input
+          type="text"
+          value={newProjectName}
+          onChange={(e) => setNewProjectName(e.target.value)}
+          placeholder="새 프로젝트 이름"
+          disabled={loading}
+        />
+        <button type="submit" disabled={loading || !newProjectName.trim()}>
+          {loading ? '생성 중...' : '프로젝트 추가'}
+        </button>
+      </form>
 
-          <section className='projects'>
-            {projects.map((project) => (
-              <div key={project.id} className='project-item'>
-                <div>{project.name}</div>
-                <div>{project.updated_at}</div>
-                <button className='open-builder' onClick={() => handleProject(project)}>빌더 열기</button>
-                <button className='close-builder' onClick={() => handleDeleteProject(project.id)}>삭제</button>
-              </div>
-            ))}
-          </section>
-        </main>
-        <aside className='left-sidebar'>left-sidebar</aside>
-        <nav className='header'>header<button onClick={handleLogout}>로그아웃</button></nav>
-        <footer className='footer'>footer</footer>
+      <div className="projects-grid">
+        {projects.map((project) => (
+          <div key={project.id} className="project-card">
+            <h3>{project.name}</h3>
+            <p>생성일: {new Date(project.created_at).toLocaleDateString()}</p>
+            <div className="project-actions">
+              <button
+                onClick={() => navigate(`/builder/${project.id}`)}
+                disabled={loading}
+              >
+                편집
+              </button>
+              <button
+                onClick={() => handleDeleteProject(project.id)}
+                disabled={loading}
+                className="delete-btn"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
