@@ -57,7 +57,7 @@ export class ProjectsApiService extends BaseApiService {
     async deleteProject(projectId: string): Promise<void> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'deleteProject');
 
-        await this.handleApiCall('deleteProject', async () => {
+        await this.handleDeleteCall('deleteProject', async () => {
             return await this.supabase
                 .from("projects")
                 .delete()
