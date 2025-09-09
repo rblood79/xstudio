@@ -20,7 +20,7 @@ interface SidebarProps {
     pages: Page[];
     setPages: React.Dispatch<React.SetStateAction<Page[]>>;
     handleAddPage: () => Promise<void>;
-    handleAddElement: (tag: string, text: string) => Promise<void>;
+    handleAddElement: (tag: string) => Promise<void>;
     fetchElements: (pageId: string) => Promise<void>;
     selectedPageId: string | null;
     children?: React.ReactNode;

@@ -5,7 +5,7 @@ import './ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {
-    handleAddElement: (tag: string, label: string) => void;
+    handleAddElement: (tag: string) => void;
 }
 
 // 컴포넌트 정의를 메모이제이션
@@ -56,11 +56,11 @@ const pageComp = [
 // 개별 컴포넌트 아이템을 메모이제이션
 const ComponentItem = memo(({ component, onAdd }: {
     component: { tag: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
-    onAdd: (tag: string, label: string) => void;
+    onAdd: (tag: string) => void;
 }) => {
     const handleClick = useCallback(() => {
-        onAdd(component.tag, component.label);
-    }, [component.tag, component.label, onAdd]);
+        onAdd(component.tag);
+    }, [component.tag, onAdd]);
 
     return (
         <div className="component-list-item">
@@ -80,8 +80,8 @@ ComponentItem.displayName = 'ComponentItem';
 // 메인 컴포넌트
 const ComponentList = memo(({ handleAddElement }: ComponentListProps) => {
     // 이벤트 핸들러를 메모이제이션
-    const handleComponentAdd = useCallback((tag: string, label: string) => {
-        handleAddElement(tag, label);
+    const handleComponentAdd = useCallback((tag: string) => {
+        handleAddElement(tag);
     }, [handleAddElement]);
 
     // 컴포넌트 그룹을 메모이제이션

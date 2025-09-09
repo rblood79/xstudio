@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from "react-router";
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
-import { supabase } from '../../env/supabase.client'; // Supabase import 추가
+import { elementsApi } from '../../services/api';
 import styles from "./index.module.css";
 import {
   ToggleButton,
@@ -792,18 +792,10 @@ function Preview() {
 
             // 데이터베이스에도 저장
             try {
-              const { data, error } = await supabase
-                .from('elements')
-                .update({ props: updatedProps })
-                .eq('id', el.id);
-
-              if (error) {
-                console.error('Supabase update error:', error);
-              } else {
-                console.log('Supabase update successful:', data);
-              }
+              await elementsApi.updateElementProps(el.id, updatedProps);
+              console.log('Element props updated successfully');
             } catch (err) {
-              console.error('Unexpected error during Supabase update:', err);
+              console.error('Error updating element props:', err);
             }
 
             // SelectEditor에 즉시 상태 변경 알림
@@ -894,18 +886,10 @@ function Preview() {
 
             // 데이터베이스에도 저장
             try {
-              const { data, error } = await supabase
-                .from('elements')
-                .update({ props: updatedProps })
-                .eq('id', el.id);
-
-              if (error) {
-                console.error('Supabase update error:', error);
-              } else {
-                console.log('Supabase update successful:', data);
-              }
+              await elementsApi.updateElementProps(el.id, updatedProps);
+              console.log('Element props updated successfully');
             } catch (err) {
-              console.error('Unexpected error during Supabase update:', err);
+              console.error('Error updating element props:', err);
             }
 
             // ComboBoxEditor에 즉시 상태 변경 알림

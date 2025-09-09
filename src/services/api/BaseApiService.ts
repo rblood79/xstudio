@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Element } from '../../types/store';
+import { classifyError, logError, ApiError, ApiErrorType } from './ErrorHandler';
 
 export abstract class BaseApiService {
     protected readonly supabase: SupabaseClient;
@@ -31,16 +32,30 @@ export abstract class BaseApiService {
         const count = this.rateLimiter.get(key) || 0;
 
         if (count >= this.maxRequestsPerMinute) {
-            throw new Error('Rate limit exceeded. Please try again later.');
+            const error: ApiError = {
+                type: ApiErrorType.RATE_LIMIT_ERROR,
+                message: 'Rate limit exceeded. Please try again later.',
+                operation,
+                timestamp: new Date().toISOString()
+            };
+            logError(error);
+            throw new Error(error.message);
         }
 
         this.rateLimiter.set(key, count + 1);
         return true;
     }
 
-    protected validateInput<T>(input: T, validator: (input: T) => boolean): T {
+    protected validateInput<T>(input: T, validator: (input: T) => boolean, operation: string): T {
         if (!validator(input)) {
-            throw new Error('Invalid input provided');
+            const error: ApiError = {
+                type: ApiErrorType.VALIDATION_ERROR,
+                message: 'Invalid input provided',
+                operation,
+                timestamp: new Date().toISOString()
+            };
+            logError(error);
+            throw new Error(error.message);
         }
         return input;
     }
@@ -55,32 +70,57 @@ export abstract class BaseApiService {
             const { data, error } = await apiCall();
 
             if (error) {
-                console.error(`API Error [${operation}]:`, error);
-                throw new Error(`API call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                const apiError = classifyError(error, operation);
+                logError(apiError);
+                throw new Error(apiError.message);
             }
 
             if (!data) {
-                throw new Error(`No data returned from ${operation}`);
+                const apiError: ApiError = {
+                    type: ApiErrorType.NOT_FOUND_ERROR,
+                    message: `No data returned from ${operation}`,
+                    operation,
+                    timestamp: new Date().toISOString()
+                };
+                logError(apiError);
+                throw new Error(apiError.message);
             }
 
             return data;
         } catch (error) {
-            // 에러 로깅 및 모니터링
-            this.logError(operation, error);
+            const apiError = classifyError(error, operation);
+            logError(apiError);
             throw error;
         }
     }
 
-    private logError(operation: string, error: unknown) {
-        // 에러 모니터링 서비스로 전송 (예: Sentry)
-        console.error(`[${operation}] Error:`, error);
+    // 삭제 작업을 위한 별도 메서드 (데이터 반환 불필요)
+    protected async handleDeleteCall(
+        operation: string,
+        apiCall: () => Promise<{ error: unknown }>
+    ): Promise<void> {
+        await this.rateLimitCheck(operation);
+
+        try {
+            const { error } = await apiCall();
+
+            if (error) {
+                const apiError = classifyError(error, operation);
+                logError(apiError);
+                throw new Error(apiError.message);
+            }
+        } catch (error) {
+            const apiError = classifyError(error, operation);
+            logError(apiError);
+            throw error;
+        }
     }
 }
 
 // Elements API Service
 export class ElementsApiService extends BaseApiService {
     async fetchElements(pageId: string): Promise<Element[]> {
-        this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0);
+        this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0, 'fetchElements');
 
         return this.handleApiCall('fetchElements', async () => {
             return await this.supabase
@@ -92,7 +132,7 @@ export class ElementsApiService extends BaseApiService {
     }
 
     async createElement(element: Partial<Element>): Promise<Element> {
-        this.validateInput(element, (el) => el && typeof el === 'object');
+        this.validateInput(element, (el) => el && typeof el === 'object', 'createElement');
 
         return this.handleApiCall('createElement', async () => {
             return await this.supabase
@@ -104,8 +144,8 @@ export class ElementsApiService extends BaseApiService {
     }
 
     async updateElementProps(elementId: string, props: Record<string, unknown>): Promise<Element> {
-        this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0);
-        this.validateInput(props, (p) => p && typeof p === 'object');
+        this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0, 'updateElementProps');
+        this.validateInput(props, (p) => p && typeof p === 'object', 'updateElementProps');
 
         return this.handleApiCall('updateElementProps', async () => {
             return await this.supabase
@@ -118,9 +158,9 @@ export class ElementsApiService extends BaseApiService {
     }
 
     async deleteElement(elementId: string): Promise<void> {
-        this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0);
+        this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0, 'deleteElement');
 
-        await this.handleApiCall('deleteElement', async () => {
+        await this.handleDeleteCall('deleteElement', async () => {
             return await this.supabase
                 .from("elements")
                 .delete()
