@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useStore } from './stores/elements';
+import { useStore } from './stores';
 import { useParams } from 'react-router';
 
 function Builder() {

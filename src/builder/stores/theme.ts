@@ -1,10 +1,11 @@
-import { create } from 'zustand';
+import { StateCreator } from 'zustand';
+import { produce } from 'immer';
 import type { DesignTheme, DesignToken, TokenValue, NewTokenInput } from '../../types/theme';
 import { fetchActiveTheme, fetchTokensByTheme, bulkUpsertTokens, deleteDesignToken } from '../theme/themeApi';
 import { resolveTokens, injectCss } from '../theme/cssVars';
 import { v4 as uuidv4 } from 'uuid';
 
-interface ThemeState {
+export interface ThemeState {
     // 상태
     activeTheme: DesignTheme | null;
     rawTokens: DesignToken[];
@@ -23,7 +24,7 @@ interface ThemeState {
     clearError: () => void;
 }
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
+export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
     activeTheme: null,
     rawTokens: [],
     semanticTokens: [],
@@ -51,152 +52,112 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
             console.error('[theme] load failed', e);
             set({
                 loading: false,
-                lastError: e instanceof Error ? e.message : '테마 로드 실패'
+                lastError: '테마 로드 실패: 서버 연결 오류'
             });
         }
     },
 
     updateTokenValue: (name, scope, value) => {
-        console.log('[theme] Updating token:', { name, scope, value });
-        const { rawTokens, semanticTokens } = get();
-        const list = scope === 'raw' ? rawTokens : semanticTokens;
-        const idx = list.findIndex(t => t.name === name && t.scope === scope);
-        if (idx === -1) {
-            console.warn('[theme] Token not found:', { name, scope });
-            return;
-        }
+        set(
+            produce((state: ThemeState) => {
+                const tokens = scope === 'raw' ? state.rawTokens : state.semanticTokens;
+                const token = tokens.find(t => t.name === name);
 
-        const updated = { ...list[idx], value };
-        const nextList = [...list];
-        nextList[idx] = updated;
-        const merged = scope === 'raw'
-            ? [...nextList, ...semanticTokens]
-            : [...rawTokens, ...nextList];
+                if (token) {
+                    token.value = value;
+                    token.updated_at = new Date().toISOString();
+                    state.dirty = true;
 
-        injectCss(resolveTokens(merged));
-        if (scope === 'raw') {
-            set({ rawTokens: nextList, dirty: true });
-        } else {
-            set({ semanticTokens: nextList, dirty: true });
-        }
-        console.log('[theme] Token updated, scheduling save');
-        scheduleSave();
+                    // CSS 즉시 업데이트
+                    const allTokens = [...state.rawTokens, ...state.semanticTokens];
+                    injectCss(resolveTokens(allTokens));
+                }
+            })
+        );
     },
 
     addToken: (input) => {
-        console.log('[theme] Adding token:', input);
-        const { rawTokens, semanticTokens, activeTheme } = get();
-        if (!activeTheme) {
-            console.warn('[theme] No active theme');
-            return;
-        }
+        set(
+            produce((state: ThemeState) => {
+                const newToken: DesignToken = {
+                    id: uuidv4(),
+                    project_id: state.activeTheme?.project_id || '',
+                    theme_id: state.activeTheme?.id || '',
+                    name: input.name,
+                    type: input.type,
+                    value: input.value,
+                    scope: input.scope,
+                    alias_of: input.alias_of,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
 
-        const list = input.scope === 'raw' ? rawTokens : semanticTokens;
-        const dup = list.some(t => t.name === input.name);
-        if (dup) {
-            console.warn('[theme] Duplicate token:', input.name);
-            return;
-        }
+                if (input.scope === 'raw') {
+                    state.rawTokens.push(newToken);
+                } else {
+                    state.semanticTokens.push(newToken);
+                }
 
-        // css_variable 필드를 제거하고 기본 토큰 구조만 사용
-        const token: Omit<DesignToken, 'css_variable'> = {
-            id: uuidv4(),
-            project_id: activeTheme.project_id,
-            theme_id: activeTheme.id,
-            name: input.name,
-            type: input.type,
-            value: input.value,
-            scope: input.scope,
-            alias_of: input.alias_of || null
-        };
+                state.dirty = true;
 
-        const nextRaw = input.scope === 'raw' ? [...rawTokens, token as DesignToken] : rawTokens;
-        const nextSem = input.scope === 'semantic' ? [...semanticTokens, token as DesignToken] : semanticTokens;
-        const merged = [...nextRaw, ...nextSem];
-
-        injectCss(resolveTokens(merged));
-        set({
-            rawTokens: nextRaw,
-            semanticTokens: nextSem,
-            dirty: true
-        });
-        console.log('[theme] Token added, scheduling save');
-        scheduleSave();
+                // CSS 즉시 업데이트
+                const allTokens = [...state.rawTokens, ...state.semanticTokens];
+                injectCss(resolveTokens(allTokens));
+            })
+        );
     },
 
     deleteToken: async (name, scope) => {
-        const { rawTokens, semanticTokens, activeTheme } = get();
-        if (!activeTheme) return false;
-
-        // 참조 보호: raw 삭제 시 semantic alias 사용 여부 검사
-        if (scope === 'raw') {
-            const dependents = semanticTokens.filter(t => t.alias_of === name);
-            if (dependents.length) {
-                set({
-                    lastError: `삭제 불가: semantic 토큰 ${dependents.map(d => d.name).join(', ')} 가 alias_of 로 참조`
-                });
-                return false;
-            }
-        }
-
-        const targetList = scope === 'raw' ? rawTokens : semanticTokens;
-        if (!targetList.some(t => t.name === name)) {
-            return false;
-        }
-
-        // 낙관적 제거
-        const nextRaw = scope === 'raw' ? rawTokens.filter(t => t.name !== name) : rawTokens;
-        const nextSem = scope === 'semantic' ? semanticTokens.filter(t => t.name !== name) : semanticTokens;
-
-        injectCss(resolveTokens([...nextRaw, ...nextSem]));
-        set({
-            rawTokens: nextRaw,
-            semanticTokens: nextSem,
-            dirty: true,
-            lastError: null
-        });
-
-        // 서버 삭제
         try {
+            const { activeTheme } = get();
+            if (!activeTheme) return false;
+
+            const tokens = scope === 'raw' ? get().rawTokens : get().semanticTokens;
+            const token = tokens.find(t => t.name === name);
+
+            if (!token) return false;
+
             await deleteDesignToken({
                 projectId: activeTheme.project_id,
                 themeId: activeTheme.id,
-                name,
-                scope
+                name: token.name,
+                scope: scope
             });
+
+            set(
+                produce((state: ThemeState) => {
+                    if (scope === 'raw') {
+                        state.rawTokens = state.rawTokens.filter(t => t.name !== name);
+                    } else {
+                        state.semanticTokens = state.semanticTokens.filter(t => t.name !== name);
+                    }
+                    state.dirty = true;
+
+                    // CSS 즉시 업데이트
+                    const allTokens = [...state.rawTokens, ...state.semanticTokens];
+                    injectCss(resolveTokens(allTokens));
+                })
+            );
+
             return true;
         } catch (e) {
             console.error('[theme] delete failed', e);
-            // 롤백
-            set({
-                rawTokens: rawTokens,
-                semanticTokens: semanticTokens,
-                lastError: '삭제 실패: 서버 오류'
-            });
-            injectCss(resolveTokens([...rawTokens, ...semanticTokens]));
+            set({ lastError: '토큰 삭제 실패: 서버 오류' });
             return false;
         }
     },
 
     saveAll: async () => {
         const { activeTheme, rawTokens, semanticTokens, dirty } = get();
-        console.log('[theme] saveAll called:', {
-            hasActiveTheme: !!activeTheme,
-            dirty,
-            tokenCount: rawTokens.length + semanticTokens.length
-        });
 
         if (!activeTheme || !dirty) {
-            console.log('[theme] Save skipped - no active theme or not dirty');
             return;
         }
 
         try {
             const allTokens = [...rawTokens, ...semanticTokens];
-            console.log('[theme] Saving tokens:', allTokens);
             await bulkUpsertTokens(allTokens);
             set({ dirty: false });
-            console.log('[theme] Save successful');
         } catch (e) {
             console.error('[theme] save failed', e);
             set({ lastError: '저장 실패: 서버 오류' });
@@ -215,13 +176,17 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
             );
             if (error) throw error;
 
-            set({
-                activeTheme: {
-                    ...activeTheme,
-                    version: activeTheme.version + 1,
-                    updated_at: new Date().toISOString()
-                }
-            });
+            set(
+                produce((state: ThemeState) => {
+                    if (state.activeTheme) {
+                        state.activeTheme = {
+                            ...state.activeTheme,
+                            version: state.activeTheme.version + 1,
+                            updated_at: new Date().toISOString()
+                        };
+                    }
+                })
+            );
         } catch (e) {
             console.error('[theme] snapshot failed', e);
             set({ lastError: '버전 스냅샷 생성 실패' });
@@ -229,17 +194,4 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     },
 
     clearError: () => set({ lastError: null })
-}));
-
-let saveTimer: number | null = null;
-function scheduleSave() {
-    console.log('[theme] Scheduling save...');
-    if (saveTimer) {
-        console.log('[theme] Clearing existing save timer');
-        window.clearTimeout(saveTimer);
-    }
-    saveTimer = window.setTimeout(() => {
-        console.log('[theme] Executing scheduled save');
-        useThemeStore.getState().saveAll();
-    }, 800);
-}
+});

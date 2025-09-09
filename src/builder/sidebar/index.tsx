@@ -1,7 +1,7 @@
 import "./index.css";
 import React from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
-import { useStore } from '../stores/elements';
+import { useStore } from '../stores';
 import { Database, ElementProps } from '../../types/supabase';
 import { Nodes } from '../nodes';
 import Components from '../components';

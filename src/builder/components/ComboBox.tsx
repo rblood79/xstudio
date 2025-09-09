@@ -30,7 +30,6 @@ export function ComboBox<T extends object>(
     <AriaComboBox
       {...props}
       className='react-aria-ComboBox'
-      menuTrigger="manual"
     >
       <Label>{label}</Label>
       <div className="my-combobox-container">

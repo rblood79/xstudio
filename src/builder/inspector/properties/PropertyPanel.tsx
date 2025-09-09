@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore } from '../../stores/elements';
+import { useStore } from '../../stores';
 import { supabase } from '../../../env/supabase.client';
 import {
     ButtonEditor,

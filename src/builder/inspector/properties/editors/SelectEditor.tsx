@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
-import { useStore } from '../../../stores/elements';
+import { useStore } from '../../../stores';
 
 interface SelectedOptionState {
     parentId: string;
@@ -170,9 +170,9 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* 선택된 키 설정 */}
                 <PropertyInput
-                    label={PROPERTY_LABELS.SELECTED_KEY}
-                    value={String(currentProps.selectedKey || '')}
-                    onChange={(value) => updateProp('selectedKey', value)}
+                    label={PROPERTY_LABELS.VALUE}
+                    value={String(currentProps.selectedValue || '')} // selectedValue 사용
+                    onChange={(value) => updateProp('selectedValue', value)}
                     icon={Hash}
                 />
 
@@ -257,7 +257,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {String(item.props.label) || `Item ${index + 1}`}
-                                    {currentProps.selectedKey === item.props.value && ' ✓'}
+                                    {currentProps.selectedValue === item.props.value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useStore } from "../stores/elements";
+import { useStore } from "../stores";
 import { ChevronUp } from 'lucide-react';
 
 import "./index.css";

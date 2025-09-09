@@ -1,8 +1,7 @@
 import { CopyMinus } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import { Database, ElementProps } from '../../types/supabase';
-import { supabase } from '../../env/supabase.client';
-import { useStore } from '../stores/elements'; // useStore 추가
+import { useStore } from '../stores'; // useStore 추가
 
 type Element = Database['public']['Tables']['elements']['Row'];
 

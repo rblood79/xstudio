@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from "react-router";
-import { useStore } from '../stores/elements';
+import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
+import { supabase } from '../../env/supabase.client'; // Supabase import 추가
 import styles from "./index.module.css";
 import {
   ToggleButton,
@@ -43,7 +44,7 @@ import {
   Row,
   Cell,
 } from '../components/list';
-import EventEngine from '../../utils/eventEngine';
+import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
 
 
@@ -729,6 +730,18 @@ function Preview() {
         .filter((child) => child.parent_id === el.id && child.tag === 'SelectItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+      // 디버깅을 위한 로그
+      console.log('Select 렌더링:', {
+        id: el.id,
+        selectedKey: el.props.selectedKey,
+        children: selectItemChildren.map((item, index) => ({
+          index,
+          id: item.id,
+          value: item.props.value,
+          label: item.props.label
+        }))
+      });
+
       return (
         <Select
           key={el.id}
@@ -747,24 +760,86 @@ function Preview() {
           isRequired={el.props.isRequired}
           isReadOnly={el.props.isReadOnly}
           autoFocus={el.props.autoFocus}
-          onSelectionChange={(selectedKey) => {
+          onSelectionChange={async (selectedKey) => {
+            console.log('Select 선택 변경:', selectedKey);
+
+            // React Aria의 내부 ID를 실제 값으로 변환 (데이터베이스 저장용)
+            let actualValue = selectedKey;
+            if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
+              // react-aria-1, react-aria-2 등을 실제 인덱스로 변환
+              const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
+              const selectedItem = selectItemChildren[index];
+              if (selectedItem) {
+                actualValue = selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`;
+              }
+            }
+
+            // React Aria는 내부 ID를 그대로 사용, 데이터베이스에는 실제 값 저장
             const updatedProps = {
               ...el.props,
-              selectedKey
+              selectedKey, // React Aria 내부 ID 그대로 사용 (프리뷰용)
+              selectedValue: actualValue // 실제 값 별도 저장 (데이터베이스용)
             };
+
+            console.log('Select 상태 업데이트 전:', {
+              elementId: el.id,
+              selectedKey,
+              actualValue,
+              updatedProps
+            });
+
             updateElementProps(el.id, updatedProps);
+
+            // 데이터베이스에도 저장
+            try {
+              const { data, error } = await supabase
+                .from('elements')
+                .update({ props: updatedProps })
+                .eq('id', el.id);
+
+              if (error) {
+                console.error('Supabase update error:', error);
+              } else {
+                console.log('Supabase update successful:', data);
+              }
+            } catch (err) {
+              console.error('Unexpected error during Supabase update:', err);
+            }
+
+            // SelectEditor에 즉시 상태 변경 알림
+            window.parent.postMessage({
+              type: 'UPDATE_ELEMENT_PROPS',
+              elementId: el.id,
+              props: {
+                selectedKey, // 내부 ID (프리뷰용)
+                selectedValue: actualValue // 실제 값 (SelectEditor용)
+              },
+              merge: true
+            }, window.location.origin);
+
+            console.log('Select 상태 업데이트 후:', {
+              elementId: el.id,
+              selectedKey,
+              actualValue,
+              updatedProps
+            });
           }}
         >
-          {selectItemChildren.map((item) => (
-            <SelectItem
-              key={item.id}
-              value={item.props.value}
-              isDisabled={item.props.isDisabled}
-              isReadOnly={item.props.isReadOnly}
-            >
-              {item.props.label}
-            </SelectItem>
-          ))}
+          {selectItemChildren.map((item, index) => {
+            // 실제 value를 명시적으로 설정
+            const actualValue = item.props.value || item.props.label || `option-${index + 1}`;
+
+            return (
+              <SelectItem
+                key={item.id}
+                value={actualValue} // 실제 값 사용
+                isDisabled={item.props.isDisabled}
+                isReadOnly={item.props.isReadOnly}
+              >
+                {item.props.label || item.id}
+              </SelectItem>
+            );
+          })}
         </Select>
       );
     }
@@ -786,68 +861,88 @@ function Preview() {
           description={el.props.description}
           errorMessage={el.props.errorMessage}
           placeholder={el.props.placeholder}
-          selectedKey={el.props.selectedKey}
-          defaultSelectedKey={el.props.defaultSelectedKey}
+          selectedKey={el.props.selectedValue || el.props.selectedKey} // selectedValue 우선 사용
           inputValue={el.props.inputValue}
-          defaultInputValue={el.props.defaultInputValue}
           allowsCustomValue={el.props.allowsCustomValue}
-          menuTrigger={el.props.menuTrigger || 'focus'}
-          disallowEmptySelection={el.props.disallowEmptySelection}
           isDisabled={el.props.isDisabled}
           isRequired={el.props.isRequired}
           isReadOnly={el.props.isReadOnly}
-          autoFocus={el.props.autoFocus}
-          onSelectionChange={(selectedKey) => {
+          onSelectionChange={async (selectedKey) => {
+            console.log('ComboBox 선택 변경:', selectedKey);
+
+            // React Aria의 내부 ID를 실제 값으로 변환
+            let actualValue = selectedKey;
+            let displayValue = selectedKey;
+
+            if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
+              const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
+              const selectedItem = comboBoxItemChildren[index];
+              if (selectedItem) {
+                actualValue = selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`;
+                displayValue = selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`;
+              }
+            }
+
             const updatedProps = {
               ...el.props,
-              selectedKey
+              selectedKey, // React Aria 내부 ID (프리뷰용)
+              selectedValue: actualValue, // 실제 값 (데이터베이스용)
+              inputValue: displayValue // 표시용 라벨
+            };
+
+            updateElementProps(el.id, updatedProps);
+
+            // 데이터베이스에도 저장
+            try {
+              const { data, error } = await supabase
+                .from('elements')
+                .update({ props: updatedProps })
+                .eq('id', el.id);
+
+              if (error) {
+                console.error('Supabase update error:', error);
+              } else {
+                console.log('Supabase update successful:', data);
+              }
+            } catch (err) {
+              console.error('Unexpected error during Supabase update:', err);
+            }
+
+            // ComboBoxEditor에 즉시 상태 변경 알림
+            window.parent.postMessage({
+              type: 'UPDATE_ELEMENT_PROPS',
+              elementId: el.id,
+              props: {
+                selectedKey, // 내부 ID (프리뷰용)
+                selectedValue: actualValue, // 실제 값 (ComboBoxEditor용)
+                inputValue: displayValue
+              },
+              merge: true
+            }, window.location.origin);
+          }}
+          onInputChange={(inputValue) => {
+            const updatedProps = {
+              ...el.props,
+              inputValue
             };
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {comboBoxItemChildren.map((item) => (
-            <ComboBoxItem
-              key={item.id}
-              value={item.props.value}
-              isDisabled={item.props.isDisabled}
-            >
-              {item.props.label}
-            </ComboBoxItem>
-          ))}
+          {comboBoxItemChildren.map((item, index) => {
+            // 실제 value를 명시적으로 설정
+            const actualValue = item.props.value || item.props.label || `option-${index + 1}`;
+
+            return (
+              <ComboBoxItem
+                key={item.id} // key는 item.id 유지
+                value={actualValue} // value만 actualValue로 설정
+                isDisabled={item.props.isDisabled}
+              >
+                {item.props.label || item.id}
+              </ComboBoxItem>
+            );
+          })}
         </ComboBox>
-      );
-    }
-
-    // ListBoxItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
-    if (el.tag === 'ListBoxItem') {
-      return (
-        <ListBoxItem
-          key={el.id}
-          data-element-id={el.id}
-          value={el.props.value}
-          isDisabled={el.props.isDisabled}
-          style={el.props.style}
-          className={el.props.className}
-        >
-          {el.props.label}
-        </ListBoxItem>
-      );
-    }
-
-    // SelectItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
-    if (el.tag === 'SelectItem') {
-      return (
-        <SelectItem
-          key={el.id}
-          data-element-id={el.id}
-          value={el.props.value}
-          isDisabled={el.props.isDisabled}
-          isReadOnly={el.props.isReadOnly}
-          style={el.props.style}
-          className={el.props.className}
-        >
-          {el.props.label}
-        </SelectItem>
       );
     }
 
