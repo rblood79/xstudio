@@ -1345,7 +1345,6 @@ function Preview() {
             <Tag
               key={tag.id}
               data-element-id={tag.id}
-              value={tag.id}
               isDisabled={Boolean(tag.props.isDisabled)}
               style={tag.props.style}
               className={tag.props.className}
@@ -1363,7 +1362,6 @@ function Preview() {
         <Tag
           key={el.id}
           data-element-id={el.id}
-          value={el.id}
           isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
