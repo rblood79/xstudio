@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useParams } from "react-router";
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
@@ -39,10 +39,10 @@ import {
   Switch, // Switch 추가
   Table, // Table 추가
   Card,
-  Column,
+  /*Column,
   TableHeader,
   Row,
-  Cell,
+  Cell,*/
 } from '../components/list';
 import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
@@ -63,7 +63,6 @@ function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
   const { setElements, updateElementProps } = useStore();
-  const [elementsState, setElementsState] = useState<any[]>([]);
   const eventEngine = EventEngine.getInstance();
 
   const handleMessage = useCallback(
@@ -97,7 +96,7 @@ function Preview() {
             }
 
             // 상태 업데이트로 리렌더링 트리거
-            setElements(updatedElements);
+            setElements(updatedElements as any);
 
             console.log(`요소 ${elementId} 속성 업데이트됨:`, props);
           } else {
@@ -118,7 +117,7 @@ function Preview() {
         }
         styleEl.textContent =
           ':root {\n' +
-          data.vars.map((v: any) => `  ${v.cssVar}: ${v.value};`).join('\n') +
+          data.vars.map((v: { cssVar: string; value: string }) => `  ${v.cssVar}: ${v.value};`).join('\n') +
           '\n}';
         // 디버그
         console.log('[preview] applied THEME_VARS', data.vars.length);
@@ -148,7 +147,9 @@ function Preview() {
     // 준비 신호
     try {
       window.parent.postMessage({ type: 'PREVIEW_READY' }, '*'); // 동일 오리진 확인 후 origin 교체
-    } catch { }
+    } catch {
+      console.error('Error posting PREVIEW_READY message');
+    }
     return () => window.removeEventListener('message', handleMessage);
   }, [handleMessage]);
 
@@ -206,7 +207,7 @@ function Preview() {
     // }
 
     // 이벤트 핸들러 추가
-    const eventHandlers: any = {};
+    const eventHandlers: Record<string, (e: Event) => void> = {};
 
     if (el.props.events && Array.isArray(el.props.events)) {
       const events = el.props.events as ElementEvent[];
@@ -231,40 +232,10 @@ function Preview() {
     };
 
     // ToggleButton 렌더링 함수
-    const renderToggleButton = (button: PreviewElement, parentGroup?: PreviewElement) => {
-      const isInGroup = parentGroup?.tag === 'ToggleButtonGroup';
-
-      // 하위 children 요소들을 가져옴
-      const buttonChildren = elements
-        .filter((child) => child.parent_id === button.id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-      return (
-        <ToggleButton
-          key={button.id}
-          id={button.id}
-          data-element-id={button.id}
-          isSelected={isInGroup ? parentGroup.props.value?.includes(button.id) : button.props.isSelected}
-          defaultSelected={button.props.defaultSelected}
-          isDisabled={button.props.isDisabled}
-          style={button.props.style}
-          className={button.props.className}
-          onPress={() => {
-            if (!isInGroup) {
-              // 단독 ToggleButton의 경우 상태 토글
-              const updatedProps = {
-                ...button.props,
-                isSelected: !button.props.isSelected
-              };
-              updateElementProps(button.id, updatedProps);
-            }
-          }}
-        >
-          {typeof button.props.children === 'string' ? button.props.children : null}
-          {buttonChildren.map((child) => renderElement(child))}
-        </ToggleButton>
-      );
-    };
+    // Remove the entire renderToggleButton function (lines 234-267)
+    // const renderToggleButton = (button: PreviewElement, parentGroup?: PreviewElement) => {
+    //   ... entire function body ...
+    // };
 
     // ToggleButtonGroup 컴포넌트 특별 처리
     if (el.tag === 'ToggleButtonGroup') {
@@ -283,11 +254,12 @@ function Preview() {
           className={el.props.className}
           orientation={orientation}
           selectionMode={el.props.selectionMode as 'single' | 'multiple'}
-          value={el.props.value || []}
-          onChange={async (selected) => {
+          // ... existing code ...
+          selectedKeys={Array.isArray(el.props.value) ? el.props.value : []}
+          onSelectionChange={async (selectedKeys) => {
             const updatedProps = {
               ...el.props,
-              value: selected
+              value: Array.from(selectedKeys).map(key => String(key))
             };
             updateElementProps(el.id, updatedProps);
           }}
@@ -312,17 +284,17 @@ function Preview() {
           id={el.id}
           data-element-id={el.id}
           isSelected={isInGroup ?
-            parentGroup?.props.value?.includes(el.id) :
+            Array.isArray(parentGroup?.props.value) && parentGroup.props.value.includes(el.id) :
             el.props.isSelected
           }
           defaultSelected={el.props.defaultSelected}
-          isDisabled={el.props.isDisabled}
+          isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
           onPress={() => {
             if (isInGroup && parentGroup) {
               // 그룹 내 토글버튼인 경우 - 그룹의 value 업데이트
-              const currentValue = parentGroup.props.value || [];
+              const currentValue = Array.isArray(parentGroup.props.value) ? parentGroup.props.value : [];
               let newValue;
 
               if (parentGroup.props.selectionMode === 'multiple') {
@@ -359,15 +331,15 @@ function Preview() {
         <Checkbox
           key={el.id}
           data-element-id={el.id}
-          isSelected={el.props.isSelected}
-          isIndeterminate={el.props.isIndeterminate}
-          isDisabled={el.props.isDisabled}
+          isSelected={Boolean(el.props.isSelected)}
+          isIndeterminate={Boolean(el.props.isIndeterminate)}
+          isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
           onChange={(isSelected) => {
             const updatedProps = {
               ...el.props,
-              isSelected
+              isSelected: Boolean(isSelected)
             };
             updateElementProps(el.id, updatedProps);
           }}
@@ -384,45 +356,10 @@ function Preview() {
         <Radio
           key={el.id}
           data-element-id={el.id}
-          value={el.props.value}
-          isDisabled={el.props.isDisabled || false}
+          value={String(el.props.value || '')}
+          isDisabled={Boolean(el.props.isDisabled || false)}
           style={el.props.style}
           className={el.props.className}
-          onChange={(isSelected) => {
-            // Radio의 선택 상태가 변경될 때 부모 RadioGroup의 value 업데이트
-            if (isSelected) {
-              const parentGroup = elements.find(parent =>
-                parent.id === el.parent_id && parent.tag === 'RadioGroup'
-              );
-
-              if (parentGroup) {
-                updateElementProps(parentGroup.id, {
-                  ...parentGroup.props,
-                  value: el.props.value
-                });
-
-                // 다른 Radio들의 isSelected 상태 업데이트
-                const siblingRadios = elements.filter(sibling =>
-                  sibling.parent_id === el.parent_id &&
-                  sibling.tag === 'Radio' &&
-                  sibling.id !== el.id
-                );
-
-                siblingRadios.forEach(siblingRadio => {
-                  updateElementProps(siblingRadio.id, {
-                    ...siblingRadio.props,
-                    isSelected: false
-                  });
-                });
-
-                // 현재 Radio의 isSelected 상태 업데이트
-                updateElementProps(el.id, {
-                  ...el.props,
-                  isSelected: true
-                });
-              }
-            }
-          }}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
           {children.map((child) => renderElement(child))}
@@ -502,9 +439,9 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label}
+          label={String(el.props.label || '')}
           value={selectedValues} // 동적으로 생성된 value 배열 사용
-          orientation={el.props.orientation || 'vertical'}
+          orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           onChange={async (newSelectedValues) => {
             // CheckboxGroup의 onChange: 전체 value 배열 업데이트
             const updatedProps = {
@@ -530,11 +467,11 @@ function Preview() {
               key={checkbox.id}
               data-element-id={checkbox.id}
               value={checkbox.id} // CheckboxGroup 내부에서는 value prop 사용
-              isIndeterminate={checkbox.props.isIndeterminate}
-              isDisabled={checkbox.props.isDisabled}
+              isIndeterminate={Boolean(checkbox.props.isIndeterminate)}
+              isDisabled={Boolean(checkbox.props.isDisabled)}
               style={checkbox.props.style}
               className={checkbox.props.className}
-              onChange={(isSelected) => {
+              onChange={(isSelected: boolean) => {
                 const updatedProps = {
                   ...checkbox.props,
                   isSelected
@@ -562,9 +499,9 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label}
-          value={el.props.value || ''}
-          orientation={el.props.orientation || 'vertical'}
+          label={String(el.props.label || '')}
+          value={String(el.props.value || '')}
+          orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           onChange={(selectedValue) => {
             const updatedProps = {
               ...el.props,
@@ -597,12 +534,12 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label || ''}
-          description={el.props.description || ''}
-          errorMessage={el.props.errorMessage || ''}
-          isDisabled={el.props.isDisabled || false}
-          isRequired={el.props.isRequired || false}
-          isReadOnly={el.props.isReadOnly || false}
+          label={String(el.props.label || '')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
+          isDisabled={Boolean(el.props.isDisabled || false)}
+          isRequired={Boolean(el.props.isRequired || false)}
+          isReadOnly={Boolean(el.props.isReadOnly || false)}
         />
       );
     }
@@ -613,17 +550,16 @@ function Preview() {
         <Button
           key={el.id}
           data-element-id={el.id}
-          isDisabled={el.props.isDisabled as boolean}
-          variant={el.props.variant as 'primary' | 'secondary' | 'surface' | 'icon'}
+          isDisabled={Boolean(el.props.isDisabled as boolean)}
           style={el.props.style}
           className={el.props.className}
-          onPress={eventHandlers.onClick}
-          onHoverStart={eventHandlers.onMouseEnter}
-          onHoverEnd={eventHandlers.onMouseLeave}
-          onFocus={eventHandlers.onFocus}
-          onBlur={eventHandlers.onBlur}
-          onKeyDown={eventHandlers.onKeyDown}
-          onKeyUp={eventHandlers.onKeyUp}
+          onPress={eventHandlers.onClick as any}
+          onHoverStart={eventHandlers.onMouseEnter as any}
+          onHoverEnd={eventHandlers.onMouseLeave as any}
+          onFocus={eventHandlers.onFocus as any}
+          onBlur={eventHandlers.onBlur as any}
+          onKeyDown={eventHandlers.onKeyDown as any}
+          onKeyUp={eventHandlers.onKeyUp as any}
           // DOM 이벤트를 직접 연결 (더블클릭)
           ref={(buttonElement) => {
             if (buttonElement && eventHandlers.onDoubleClick) {
@@ -658,11 +594,10 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          orientation={el.props.orientation || 'vertical'}
-          label={el.props.label}
-          itemLayout={el.props.itemLayout || 'default'}
-          selectionMode={el.props.selectionMode || 'none'}
-          selectedKeys={el.props.selectedKeys || []}
+          selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
+          // ... existing code ...
+          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as any : []}
+          // ... existing code ...
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -674,10 +609,10 @@ function Preview() {
           {gridListChildren.map((item) => (
             <GridListItem
               key={item.id}
-              value={item.props.value}
-              isDisabled={item.props.isDisabled}
+              value={item.props.value as object}
+              isDisabled={Boolean(item.props.isDisabled)}
             >
-              {item.props.label}
+              {String(item.props.label || '')}
             </GridListItem>
           ))}
         </GridList>
@@ -697,11 +632,9 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          orientation={el.props.orientation || 'vertical'}
-          label={el.props.label}
-          itemLayout={el.props.itemLayout || 'default'}
-          selectionMode={el.props.selectionMode || 'none'}
-          selectedKeys={el.props.selectedKeys || []}
+          orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
+          selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
+          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as any : []}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -713,10 +646,10 @@ function Preview() {
           {listBoxChildren.map((item) => (
             <ListBoxItem
               key={item.id}
-              value={item.props.value}
-              isDisabled={item.props.isDisabled}
+              value={item.props.value as object}
+              isDisabled={Boolean(item.props.isDisabled)}
             >
-              {item.props.label}
+              {String(item.props.label || '')}
             </ListBoxItem>
           ))}
         </ListBox>
@@ -748,18 +681,15 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label}
-          description={el.props.description}
-          errorMessage={el.props.errorMessage}
+          label={String(el.props.label || '')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
           placeholder={el.props.placeholder}
-          selectedKey={el.props.selectedKey}
-          defaultSelectedKey={el.props.defaultSelectedKey}
-          menuTrigger={el.props.menuTrigger || 'click'}
-          disallowEmptySelection={el.props.disallowEmptySelection}
-          isDisabled={el.props.isDisabled}
-          isRequired={el.props.isRequired}
-          isReadOnly={el.props.isReadOnly}
-          autoFocus={el.props.autoFocus}
+          selectedKey={String(el.props.selectedKey || '')}
+          defaultSelectedKey={String(el.props.defaultSelectedKey || '')}
+          isDisabled={Boolean(el.props.isDisabled)}
+          isRequired={Boolean(el.props.isRequired)}
+          autoFocus={Boolean(el.props.autoFocus)}
           onSelectionChange={async (selectedKey) => {
             console.log('Select 선택 변경:', selectedKey);
 
@@ -770,7 +700,7 @@ function Preview() {
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = selectItemChildren[index];
               if (selectedItem) {
-                actualValue = selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`;
+                actualValue = String(selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`);
               }
             }
 
@@ -824,11 +754,10 @@ function Preview() {
             return (
               <SelectItem
                 key={item.id}
-                value={actualValue} // 실제 값 사용
-                isDisabled={item.props.isDisabled}
-                isReadOnly={item.props.isReadOnly}
+                value={String(actualValue) as unknown as object} // 실제 값 사용
+                isDisabled={Boolean(item.props.isDisabled)}
               >
-                {item.props.label || item.id}
+                {String(item.props.label || item.id)}
               </SelectItem>
             );
           })}
@@ -849,16 +778,15 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label}
-          description={el.props.description}
-          errorMessage={el.props.errorMessage}
-          placeholder={el.props.placeholder}
-          selectedKey={el.props.selectedValue || el.props.selectedKey} // selectedValue 우선 사용
-          inputValue={el.props.inputValue}
-          allowsCustomValue={el.props.allowsCustomValue}
-          isDisabled={el.props.isDisabled}
-          isRequired={el.props.isRequired}
-          isReadOnly={el.props.isReadOnly}
+          label={String(el.props.label || '')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
+          selectedKey={String(el.props.selectedValue || el.props.selectedKey)} // selectedValue 우선 사용
+          inputValue={String(el.props.inputValue || '')}
+          allowsCustomValue={Boolean(el.props.allowsCustomValue)}
+          isDisabled={Boolean(el.props.isDisabled)}
+          isRequired={Boolean(el.props.isRequired)}
+          isReadOnly={Boolean(el.props.isReadOnly)}
           onSelectionChange={async (selectedKey) => {
             console.log('ComboBox 선택 변경:', selectedKey);
 
@@ -870,8 +798,8 @@ function Preview() {
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = comboBoxItemChildren[index];
               if (selectedItem) {
-                actualValue = selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`;
-                displayValue = selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`;
+                actualValue = String(selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`);
+                displayValue = String(selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`);
               }
             }
 
@@ -919,10 +847,10 @@ function Preview() {
             return (
               <ComboBoxItem
                 key={item.id} // key는 item.id 유지
-                value={actualValue} // value만 actualValue로 설정
-                isDisabled={item.props.isDisabled}
+                value={String(actualValue) as unknown as object} // value만 actualValue로 설정
+                isDisabled={Boolean(item.props.isDisabled)}
               >
-                {item.props.label || item.id}
+                {String(item.props.label || item.id)}
               </ComboBoxItem>
             );
           })}
@@ -936,12 +864,12 @@ function Preview() {
         <GridListItem
           key={el.id}
           data-element-id={el.id}
-          value={el.props.value}
-          isDisabled={el.props.isDisabled}
+          value={el.props.value as object}
+          isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
         >
-          {el.props.label}
+          {String(el.props.label || '')}
         </GridListItem>
       );
     }
@@ -954,12 +882,12 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label}
-          value={el.props.value || [50]}
-          minValue={el.props.minValue || 0}
-          maxValue={el.props.maxValue || 100}
-          step={el.props.step || 1}
-          orientation={el.props.orientation as 'horizontal' | 'vertical'}
+          label={String(el.props.label || '')}
+          value={Array.isArray(el.props.value) ? el.props.value : [50]}
+          minValue={Number(el.props.minValue) || 0}
+          maxValue={Number(el.props.maxValue) || 100}
+          step={Number(el.props.step) || 1}
+          orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'horizontal'}
           onChange={(value) => {
             const updatedProps = {
               ...el.props,
@@ -988,9 +916,9 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          defaultSelectedKey={el.props.defaultSelectedKey}
+          defaultSelectedKey={String(el.props.defaultSelectedKey || '')}
           orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}
-          isDisabled={el.props.isDisabled}
+          isDisabled={Boolean(el.props.isDisabled)}
           onSelectionChange={(key) => {
             const updatedProps = {
               ...el.props,
@@ -1064,11 +992,11 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          selectionMode={el.props.selectionMode || 'single'}
-          selectionBehavior={el.props.selectionBehavior || 'replace'}
-          expandedKeys={el.props.expandedKeys || []}
-          selectedKeys={el.props.selectedKeys || []}
-          allowsDragging={el.props.allowsDragging || false}
+          selectionMode={(el.props.selectionMode as 'single' | 'multiple') || 'single'}
+          selectionBehavior={(el.props.selectionBehavior as 'replace' | 'toggle') || 'replace'}
+          expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as any : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as any : []}
+          allowsDragging={Boolean(el.props.allowsDragging)}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1134,16 +1062,16 @@ function Preview() {
           aria-label={el.props['aria-label'] || 'Calendar'}
           isDisabled={Boolean(el.props.isDisabled)}
           visibleDuration={getVisibleDuration()}
-          pageBehavior={getPageBehavior()}
-          value={el.props.value}
+          pageBehavior={getPageBehavior() as 'visible' | 'single'}
+          value={el.props.value as unknown as any}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
-              value: date
+              value: String(date || '')
             };
             updateElementProps(el.id, updatedProps);
           }}
-          errorMessage={el.props.errorMessage}
+          errorMessage={String(el.props.errorMessage || '')}
         />
       );
     }
@@ -1180,23 +1108,23 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label || 'Date Picker'}
-          description={el.props.description}
-          errorMessage={el.props.errorMessage}
+          label={String(el.props.label || 'Date Picker')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
           placeholder={el.props.placeholder}
           isDisabled={Boolean(el.props.isDisabled)}
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value}
-          defaultValue={el.props.defaultValue}
-          minValue={el.props.minValue}
-          maxValue={el.props.maxValue}
-          placeholderValue={el.props.placeholderValue}
-          granularity={getGranularity()}
-          firstDayOfWeek={getFirstDayOfWeek()}
+          value={el.props.value as unknown as any}
+          defaultValue={el.props.defaultValue as unknown as any}
+          minValue={el.props.minValue as unknown as any}
+          maxValue={el.props.maxValue as unknown as any}
+          placeholderValue={el.props.placeholderValue as unknown as any}
+          granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
+          firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
-          calendarIconPosition={getCalendarIconPosition()}
+          calendarIconPosition={getCalendarIconPosition() as 'left' | 'right'}
           showWeekNumbers={Boolean(el.props.showWeekNumbers)}
           highlightToday={el.props.highlightToday !== false}
           allowClear={el.props.allowClear !== false}
@@ -1205,12 +1133,12 @@ function Preview() {
           shouldCloseOnSelect={el.props.shouldCloseOnSelect !== false}
           // 새로운 Time 관련 props 추가
           includeTime={Boolean(el.props.includeTime)}
-          timeFormat={el.props.timeFormat || '24h'}
-          timeLabel={el.props.timeLabel || '시간'}
+          timeFormat={el.props.timeFormat as '12h' | '24h' || '24h'}
+          timeLabel={el.props.timeLabel as string || '시간'}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
-              value: date
+              value: String(date || '')
             };
             updateElementProps(el.id, updatedProps);
           }}
@@ -1242,23 +1170,23 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label || 'Date Range Picker'}
-          description={el.props.description}
-          errorMessage={el.props.errorMessage}
-          placeholder={el.props.placeholder}
+          label={String(el.props.label || 'Date Range Picker')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
+          placeholder={el.props.placeholder as string || ''}
           isDisabled={Boolean(el.props.isDisabled)}
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value}
-          defaultValue={el.props.defaultValue}
-          minValue={el.props.minValue}
-          maxValue={el.props.maxValue}
-          placeholderValue={el.props.placeholderValue}
-          granularity={getGranularity()}
-          firstDayOfWeek={getFirstDayOfWeek()}
+          value={el.props.value as unknown as any}
+          defaultValue={el.props.defaultValue as unknown as any}
+          minValue={el.props.minValue as unknown as any}
+          maxValue={el.props.maxValue as unknown as any}
+          placeholderValue={el.props.placeholderValue as unknown as any}
+          granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
+          firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
-          calendarIconPosition={getCalendarIconPosition()}
+          calendarIconPosition={getCalendarIconPosition() as 'left' | 'right'}
           showWeekNumbers={Boolean(el.props.showWeekNumbers)}
           highlightToday={el.props.highlightToday !== false}
           allowClear={el.props.allowClear !== false}
@@ -1268,13 +1196,13 @@ function Preview() {
           allowsNonContiguousRanges={Boolean(el.props.allowsNonContiguousRanges)}
           // 새로운 Time 관련 props 추가
           includeTime={Boolean(el.props.includeTime)}
-          timeFormat={el.props.timeFormat || '24h'}
-          startTimeLabel={el.props.startTimeLabel || '시작 시간'}
-          endTimeLabel={el.props.endTimeLabel || '종료 시간'}
+          timeFormat={el.props.timeFormat as '12h' | '24h' || '24h'}
+          startTimeLabel={el.props.startTimeLabel as string || '시작 시간'}
+          endTimeLabel={el.props.endTimeLabel as string || '종료 시간'}
           onChange={(dateRange) => {
             const updatedProps = {
               ...el.props,
-              value: dateRange
+              value: String(dateRange || '')
             };
             updateElementProps(el.id, updatedProps);
           }}
@@ -1288,7 +1216,7 @@ function Preview() {
         <Panel
           key={el.id}
           data-element-id={el.id}
-          variant={el.props.variant || 'default'}
+          variant={(el.props.variant as 'default' | 'tab' | 'sidebar' | 'card' | 'modal') || 'default'}
           title={el.props.title}
           style={el.props.style}
           className={el.props.className}
@@ -1305,16 +1233,16 @@ function Preview() {
           key={el.id}
           data-element-id={el.id}
           title={el.props.title}
-          description={el.props.description}
-          variant={el.props.variant || 'default'}
-          size={el.props.size || 'medium'}
-          isQuiet={el.props.isQuiet || false}
-          isSelected={el.props.isSelected || false}
-          isDisabled={el.props.isDisabled || false}
-          isFocused={el.props.isFocused || false}
+          description={String(el.props.description || '')}
+          variant={(el.props.variant as 'default' | 'elevated' | 'outlined') || 'default'}
+          size={el.props.size as 'small' | 'medium' | 'large' || 'medium'}
+          isQuiet={Boolean(el.props.isQuiet)}
+          isSelected={Boolean(el.props.isSelected)}
+          isDisabled={Boolean(el.props.isDisabled)}
+          isFocused={Boolean(el.props.isFocused)}
           style={el.props.style}
           className={el.props.className}
-          onClick={eventHandlers.onClick}
+          onClick={eventHandlers.onClick as any}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
           {children.map((child) => renderElement(child))}
@@ -1346,8 +1274,8 @@ function Preview() {
         <Switch
           key={el.id}
           data-element-id={el.id}
-          isSelected={el.props.isSelected || false}
-          isDisabled={el.props.isDisabled || false}
+          isSelected={Boolean(el.props.isSelected)}
+          isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
           onChange={(isSelected) => {
@@ -1371,9 +1299,8 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          selectionMode={el.props.selectionMode || 'none'}
-          selectionBehavior={el.props.selectionBehavior || 'toggle'}
-          allowsDragging={el.props.allowsDragging || false}
+          selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
+          selectionBehavior={(el.props.selectionBehavior as 'toggle' | 'replace') || 'toggle'}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1455,8 +1382,8 @@ function Preview() {
     RootTag,
     {
       className: styles.main,
-      id: rootElement.tag === 'body' ? rootElement.id : (projectId || undefined),
-      "data-element-id": rootElement.tag === 'body' ? rootElement.id : undefined,
+      id: rootElement.tag === 'body' ? (rootElement as PreviewElement).id : (projectId || undefined),
+      "data-element-id": rootElement.tag === 'body' ? (rootElement as PreviewElement).id : undefined,
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
       // body 태그인 경우 명시적으로 tag 속성 추가
