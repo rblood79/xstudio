@@ -46,6 +46,7 @@ import {
 } from '../components/list';
 import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
+//import { useBatchUpdate } from '../stores';
 
 
 interface PreviewElement {
@@ -54,7 +55,7 @@ interface PreviewElement {
   props: ElementProps;
   text?: string;
   parent_id?: string | null;
-  page_id?: string;
+  page_id: string; // 필수 속성으로 변경 (store의 Element와 일치)
   order_num?: number;
 }
 
@@ -96,7 +97,7 @@ function Preview() {
             }
 
             // 상태 업데이트로 리렌더링 트리거
-            setElements(updatedElements as any);
+            setElements(updatedElements as PreviewElement[]);
 
             console.log(`요소 ${elementId} 속성 업데이트됨:`, props);
           } else {
@@ -553,15 +554,15 @@ function Preview() {
           isDisabled={Boolean(el.props.isDisabled as boolean)}
           style={el.props.style}
           className={el.props.className}
-          onPress={eventHandlers.onClick as any}
-          onHoverStart={eventHandlers.onMouseEnter as any}
-          onHoverEnd={eventHandlers.onMouseLeave as any}
-          onFocus={eventHandlers.onFocus as any}
-          onBlur={eventHandlers.onBlur as any}
-          onKeyDown={eventHandlers.onKeyDown as any}
-          onKeyUp={eventHandlers.onKeyUp as any}
+          onPress={eventHandlers.onClick as unknown as () => void}
+          onHoverStart={eventHandlers.onMouseEnter as unknown as (e: unknown) => void}
+          onHoverEnd={eventHandlers.onMouseLeave as unknown as (e: unknown) => void}
+          onFocus={eventHandlers.onFocus as unknown as (e: unknown) => void}
+          onBlur={eventHandlers.onBlur as unknown as (e: unknown) => void}
+          onKeyDown={eventHandlers.onKeyDown as unknown as (e: unknown) => void}
+          onKeyUp={eventHandlers.onKeyUp as unknown as (e: unknown) => void}
           // DOM 이벤트를 직접 연결 (더블클릭)
-          ref={(buttonElement) => {
+          ref={(buttonElement: HTMLElement) => {
             if (buttonElement && eventHandlers.onDoubleClick) {
               const handleDoubleClick = (e: MouseEvent) => {
                 eventHandlers.onDoubleClick(e);
@@ -596,7 +597,7 @@ function Preview() {
           className={el.props.className}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           // ... existing code ...
-          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as any : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as unknown as string[] : []}
           // ... existing code ...
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
@@ -634,7 +635,7 @@ function Preview() {
           className={el.props.className}
           orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
-          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as any : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as unknown as string[] : []}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -951,24 +952,24 @@ function Preview() {
     // Tree 컴포넌트 특별 처리
     if (el.tag === 'Tree') {
       // 플랫 구조를 계층 구조로 변환하는 함수
-      const buildHierarchy = (flatItems: any[]): any[] => {
-        const itemMap = new Map();
-        const rootItems: any[] = [];
+      const buildHierarchy = (flatItems: Record<string, unknown>[]): Record<string, unknown>[] => {
+        const itemMap = new Map<string, Record<string, unknown>>();
+        const rootItems: Record<string, unknown>[] = [];
 
         // 모든 아이템을 맵에 저장
         flatItems.forEach(item => {
-          itemMap.set(item.id, { ...item, children: [] });
+          itemMap.set(item.id as string, { ...item, children: [] });
         });
 
         // 계층 구조 구축
         flatItems.forEach(item => {
-          const itemWithChildren = itemMap.get(item.id);
+          const itemWithChildren = itemMap.get(item.id as string);
           if (item.parent_id === null || item.parent_id === undefined) {
-            rootItems.push(itemWithChildren);
+            rootItems.push(itemWithChildren as Record<string, unknown>);
           } else {
-            const parent = itemMap.get(item.parent_id);
-            if (parent) {
-              parent.children.push(itemWithChildren);
+            const parent = itemMap.get(item.parent_id as string);
+            if (parent && itemWithChildren) {
+              (parent.children as Record<string, unknown>[]).push(itemWithChildren);
             }
           }
         });
@@ -976,10 +977,10 @@ function Preview() {
         return rootItems;
       };
 
-      const renderTreeItems = (items: any[]): React.ReactNode => {
-        return items.map((item: any) => (
-          <TreeItem key={item.id} id={item.id} title={item.title}>
-            {item.children && item.children.length > 0 && renderTreeItems(item.children)}
+      const renderTreeItems = (items: Record<string, unknown>[]): React.ReactNode => {
+        return items.map((item: Record<string, unknown>) => (
+          <TreeItem key={item.id as string} id={item.id as string} title={item.title as string}>
+            {item.children && (item.children as Record<string, unknown>[]).length > 0 ? renderTreeItems(item.children as Record<string, unknown>[]) : null}
           </TreeItem>
         ));
       };
@@ -994,8 +995,8 @@ function Preview() {
           className={el.props.className}
           selectionMode={(el.props.selectionMode as 'single' | 'multiple') || 'single'}
           selectionBehavior={(el.props.selectionBehavior as 'replace' | 'toggle') || 'replace'}
-          expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as any : []}
-          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as any : []}
+          expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as unknown as string[] : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1062,7 +1063,7 @@ function Preview() {
           isDisabled={Boolean(el.props.isDisabled)}
           visibleDuration={getVisibleDuration()}
           pageBehavior={getPageBehavior() as 'visible' | 'single'}
-          value={el.props.value as unknown as any}
+          value={el.props.value as unknown as never}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
@@ -1115,11 +1116,11 @@ function Preview() {
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value as unknown as any}
-          defaultValue={el.props.defaultValue as unknown as any}
-          minValue={el.props.minValue as unknown as any}
-          maxValue={el.props.maxValue as unknown as any}
-          placeholderValue={el.props.placeholderValue as unknown as any}
+          value={el.props.value as unknown as never}
+          defaultValue={el.props.defaultValue as unknown as never}
+          minValue={el.props.minValue as unknown as never}
+          maxValue={el.props.maxValue as unknown as never}
+          placeholderValue={el.props.placeholderValue as unknown as never}
           granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
           firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1177,11 +1178,11 @@ function Preview() {
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value as unknown as any}
-          defaultValue={el.props.defaultValue as unknown as any}
-          minValue={el.props.minValue as unknown as any}
-          maxValue={el.props.maxValue as unknown as any}
-          placeholderValue={el.props.placeholderValue as unknown as any}
+          value={el.props.value as unknown as never}
+          defaultValue={el.props.defaultValue as unknown as never}
+          minValue={el.props.minValue as unknown as never}
+          maxValue={el.props.maxValue as unknown as never}
+          placeholderValue={el.props.placeholderValue as unknown as never}
           granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
           firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1241,7 +1242,7 @@ function Preview() {
           isFocused={Boolean(el.props.isFocused)}
           style={el.props.style}
           className={el.props.className}
-          onClick={eventHandlers.onClick as any}
+          onClick={eventHandlers.onClick as unknown as () => void}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
           {children.map((child) => renderElement(child))}
