@@ -42,7 +42,7 @@ export function Select<T extends object>(
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
         <Popover>
-          <ListBox items={items}>
+          <ListBox items={items} className='react-aria-ListBox'>
             {children}
           </ListBox>
         </Popover>

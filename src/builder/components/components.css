@@ -1701,11 +1701,12 @@
         .react-aria-Input {
             margin: 0;
             font-size: var(--text-sm);
+            line-height: calc(var(--spacing) * 6);
             background: var(--color-gray-50);
             color: var(--color-gray-800);
             border: 1px solid var(--color-gray-200);
             border-radius: var(--radius-md);
-            padding: var(--spacing-2xs) var(--spacing-sm);
+            padding: var(--spacing) var(--spacing-md);
             vertical-align: middle;
             outline: none;
             min-width: 0;
@@ -1717,25 +1718,31 @@
         }
 
         .react-aria-Button {
-            background: var(--color-gray-50);
-            color: var(--color-gray-800);
-            forced-color-adjust: none;
-            border-radius: 4px;
+
             border: none;
-            margin-left: -27px;
-            width: 25px;
-            height: 25px;
-            padding: 0;
-            font-size: var(--text-sm);
+
             cursor: default;
             flex-shrink: 0;
+
+
+            width: var(--spacing-xl);
+            height: var(--spacing-xl);
+            line-height: var(--spacing-lg);
+            margin-left: calc(-1 * var(--spacing-xl) - var(--spacing) - 1px);
             display: flex;
             align-items: center;
             justify-content: center;
 
+            padding: var(--spacing-2xs);
+            background: var(--color-primary-600);
+            color: var(--color-white);
+            forced-color-adjust: none;
+            border-radius: var(--radius-md);
+            font-size: var(--text-xs);
+
             &[data-pressed] {
                 box-shadow: none;
-                background: var(--highlight-background);
+                background: var(--color-primary-800);
             }
         }
     }
@@ -1744,7 +1751,7 @@
     .react-aria-Popover[data-trigger=ComboBox] {
         width: var(--trigger-width);
 
-        .react-aria-ListBox {
+        /*.react-aria-ListBox {
             display: block;
             width: unset;
             max-height: inherit;
@@ -1783,7 +1790,7 @@
                 background: var(--highlight-background);
                 color: var(--highlight-foreground);
             }
-        }
+        }*/
     }
 
     /* ListBoxItem 컴포넌트 스타일 시작 */
