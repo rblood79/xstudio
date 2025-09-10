@@ -768,6 +768,8 @@ function Preview() {
       );
     }
 
+    // ...existing code...
+
     // ComboBox 컴포넌트 특별 처리
     if (el.tag === 'ComboBox') {
       // 실제 ComboBoxItem 자식 요소들을 찾기
@@ -792,7 +794,6 @@ function Preview() {
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           onSelectionChange={async (selectedKey) => {
-
             // selectedKey가 undefined이면 선택 해제로 처리
             if (selectedKey === undefined || selectedKey === null) {
               const updatedProps = {
@@ -805,24 +806,36 @@ function Preview() {
               return;
             }
 
-            // 선택된 아이템의 실제 label 찾기
-            let displayValue = String(selectedKey);
-            let selectedValue = String(selectedKey);
-
+            // React Aria의 내부 ID를 실제 값으로 변환
+            let actualValue = selectedKey;
+            let displayValue = String(selectedKey); // 기본값으로 selectedKey 사용
 
             if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = comboBoxItemChildren[index];
               if (selectedItem) {
-                displayValue = String(selectedItem.props.label);
-                selectedValue = String(selectedItem.props.value);
+                // 여기가 핵심: label을 표시용으로, value를 데이터 저장용으로 사용
+                actualValue = String(selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`);
+                displayValue = String(selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`);
+              }
+            } else {
+              // React Aria 내부 ID가 아닌 경우, 직접 선택된 아이템 찾기
+              const selectedItem = comboBoxItemChildren.find(item =>
+                String(item.props.value) === String(selectedKey) ||
+                String(item.props.label) === String(selectedKey)
+              );
+
+              if (selectedItem) {
+                actualValue = String(selectedItem.props.value || selectedItem.props.label || selectedKey);
+                displayValue = String(selectedItem.props.label || selectedItem.props.value || selectedKey);
               }
             }
+
             const updatedProps = {
               ...el.props,
-              selectedKey, // React Aria 내부 ID (프리뷰용)
-              selectedValue: selectedValue, // selectedKey를 그대로 사용
-              inputValue: displayValue // 실제 label 사용
+              selectedKey, // React Aria 내부 ID 그대로 사용 (프리뷰용)
+              selectedValue: actualValue, // 실제 값 별도 저장 (데이터베이스용)
+              inputValue: displayValue // 표시용 라벨 (사용자가 보는 값)
             };
 
             updateElementProps(el.id, updatedProps);
@@ -830,9 +843,9 @@ function Preview() {
             // 데이터베이스에도 저장
             try {
               await elementsApi.updateElementProps(el.id, updatedProps);
-              console.log('Element props updated successfully');
+              console.log('ComboBox element props updated successfully');
             } catch (err) {
-              console.error('Error updating element props:', err);
+              console.error('Error updating ComboBox element props:', err);
             }
 
             // ComboBoxEditor에 즉시 상태 변경 알림
@@ -841,13 +854,14 @@ function Preview() {
               elementId: el.id,
               props: {
                 selectedKey, // 내부 ID (프리뷰용)
-                selectedValue: selectedValue, // selectedKey를 그대로 사용
-                inputValue: displayValue // 실제 label 사용
+                selectedValue: actualValue, // 실제 값 (ComboBoxEditor용)
+                inputValue: displayValue // 표시용 라벨 (사용자가 보는 값)
               },
               merge: true
             }, window.location.origin);
           }}
           onInputChange={(inputValue) => {
+            // 사용자가 직접 입력하는 경우에만 업데이트
             const updatedProps = {
               ...el.props,
               inputValue
@@ -872,6 +886,8 @@ function Preview() {
         </ComboBox>
       );
     }
+
+    // ...existing code...
 
     // GridListItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
     if (el.tag === 'GridListItem') {
@@ -1273,11 +1289,11 @@ function Preview() {
         <Tag
           key={el.id}
           data-element-id={el.id}
+          isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
-          className={`${el.props.className || ''} ${el.tag === 'Card' ? 'react-aria-Card' : ''}`.trim()}
+          className={el.props.className}
         >
-          {el.props.children}
-          {children.map((child) => renderElement(child))}
+          {String(el.props.children || '')}
         </Tag>
       );
     }
@@ -1377,6 +1393,7 @@ function Preview() {
           isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
+          textValue={String(el.props.children || '')}
         >
           {String(el.props.children || '')}
         </Tag>
@@ -1389,7 +1406,24 @@ function Preview() {
       ...children.map((child) => renderElement(child))
     ].filter(Boolean);
 
-    return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
+    // HTML 요소에 대해서는 React Aria 전용 props 제거
+    const cleanProps = { ...finalProps };
+
+    // React Aria 전용 props 제거 (HTML 요소에는 존재하지 않음)
+    const reactAriaProps = [
+      'isDisabled', 'isSelected', 'isIndeterminate', 'isRequired',
+      'isReadOnly', 'isInvalid', 'onPress', 'onHoverStart', 'onHoverEnd',
+      'selectionMode', 'selectionBehavior', 'orientation', 'variant',
+      'size', 'isQuiet', 'isFocused', 'allowsRemoving', 'textValue'
+    ];
+
+    reactAriaProps.forEach(prop => {
+      if (prop in cleanProps) {
+        delete (cleanProps as Record<string, unknown>)[prop];
+      }
+    });
+
+    return React.createElement(tag, cleanProps, content.length > 0 ? content : undefined);
   };
 
   const renderElementsTree = (): React.ReactNode => {

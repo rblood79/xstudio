@@ -21,15 +21,19 @@ export interface ComboBoxProps<T extends object>
   description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
+  inputValue?: string;
+  onInputChange?: (value: string) => void;
   children: React.ReactNode | ((item: T) => React.ReactNode);
 }
 
 export function ComboBox<T extends object>(
-  { label, description, errorMessage, children, placeholder, ...props }: ComboBoxProps<T>
+  { label, description, errorMessage, children, placeholder, inputValue, onInputChange, ...props }: ComboBoxProps<T>
 ) {
   return (
     <AriaComboBox
       {...props}
+      inputValue={inputValue}
+      onInputChange={onInputChange}
       className='react-aria-ComboBox'
     >
       <Label>{label}</Label>
@@ -42,7 +46,7 @@ export function ComboBox<T extends object>(
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>
       <Popover>
-        <ListBox>
+        <ListBox className='react-aria-ListBox'>
           {children}
         </ListBox>
       </Popover>
@@ -51,5 +55,5 @@ export function ComboBox<T extends object>(
 }
 
 export function ComboBoxItem(props: ListBoxItemProps) {
-  return <ListBoxItem {...props} className='react-aria-ComboBoxItem' />;
+  return <ListBoxItem {...props} />;
 }
