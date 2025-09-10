@@ -621,7 +621,12 @@ function Builder() {
                     {
                         id: crypto.randomUUID(),
                         tag: 'Tag',
-                        props: { children: 'Tag 1' } as ElementProps,
+                        props: {
+                            children: 'Tag 1',
+                            isDisabled: false,
+                            style: {},
+                            className: ''
+                        } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 0,
@@ -629,7 +634,12 @@ function Builder() {
                     {
                         id: crypto.randomUUID(),
                         tag: 'Tag',
-                        props: { children: 'Tag 2' } as ElementProps,
+                        props: {
+                            children: 'Tag 2',
+                            isDisabled: false,
+                            style: {},
+                            className: ''
+                        } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 1,
