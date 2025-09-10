@@ -20,11 +20,12 @@ export interface ComboBoxProps<T extends object>
   label?: string;
   description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);
+  placeholder?: string;
   children: React.ReactNode | ((item: T) => React.ReactNode);
 }
 
 export function ComboBox<T extends object>(
-  { label, description, errorMessage, children, ...props }: ComboBoxProps<T>
+  { label, description, errorMessage, children, placeholder, ...props }: ComboBoxProps<T>
 ) {
   return (
     <AriaComboBox
@@ -33,7 +34,7 @@ export function ComboBox<T extends object>(
     >
       <Label>{label}</Label>
       <div className="my-combobox-container">
-        <Input />
+        <Input placeholder={placeholder} />
         <Button>
           <ChevronDown size={16} />
         </Button>

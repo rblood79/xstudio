@@ -784,7 +784,9 @@ function Preview() {
           label={String(el.props.label || '')}
           description={String(el.props.description || '')}
           errorMessage={String(el.props.errorMessage || '')}
-          selectedKey={String(el.props.selectedValue || el.props.selectedKey)} // selectedValue 우선 사용
+          placeholder={String(el.props.placeholder || '')}
+          {...(el.props.selectedValue || el.props.selectedKey ? { selectedKey: String(el.props.selectedValue || el.props.selectedKey) } : {})}
+          selectedKey={String(el.props.selectedValue || el.props.selectedKey)}
           inputValue={String(el.props.inputValue || '')}
           allowsCustomValue={Boolean(el.props.allowsCustomValue)}
           isDisabled={Boolean(el.props.isDisabled)}
@@ -793,15 +795,24 @@ function Preview() {
           onSelectionChange={async (selectedKey) => {
             console.log('ComboBox 선택 변경:', selectedKey);
 
-            // React Aria의 내부 ID를 실제 값으로 변환
-            let actualValue = selectedKey;
-            let displayValue = selectedKey;
+            // selectedKey가 undefined이면 선택 해제로 처리
+            if (selectedKey === undefined || selectedKey === null) {
+              const updatedProps = {
+                ...el.props,
+                selectedKey: undefined,
+                selectedValue: undefined,
+                inputValue: ''
+              };
+              updateElementProps(el.id, updatedProps);
+              return;
+            }
 
+            // 선택된 아이템의 실제 label 찾기
+            let displayValue = String(selectedKey);
             if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = comboBoxItemChildren[index];
               if (selectedItem) {
-                actualValue = String(selectedItem.props.value || selectedItem.props.label || `option-${index + 1}`);
                 displayValue = String(selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`);
               }
             }
@@ -809,8 +820,8 @@ function Preview() {
             const updatedProps = {
               ...el.props,
               selectedKey, // React Aria 내부 ID (프리뷰용)
-              selectedValue: actualValue, // 실제 값 (데이터베이스용)
-              inputValue: displayValue // 표시용 라벨
+              selectedValue: selectedKey, // selectedKey를 그대로 사용
+              inputValue: displayValue // 실제 label 사용
             };
 
             updateElementProps(el.id, updatedProps);
@@ -829,8 +840,8 @@ function Preview() {
               elementId: el.id,
               props: {
                 selectedKey, // 내부 ID (프리뷰용)
-                selectedValue: actualValue, // 실제 값 (ComboBoxEditor용)
-                inputValue: displayValue
+                selectedValue: selectedKey, // selectedKey를 그대로 사용
+                inputValue: displayValue // 실제 label 사용
               },
               merge: true
             }, window.location.origin);
