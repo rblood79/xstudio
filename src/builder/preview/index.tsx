@@ -1444,7 +1444,7 @@ function Preview() {
       onMouseUp: handleGlobalClick,
       ...rootElement.props,
       // body 태그인 경우 명시적으로 tag 속성 추가
-      ...(rootElement.tag === 'body' ? { tag: 'body' } : {}),
+      //...(rootElement.tag === 'body' ? { tag: 'body' } : {}),
     },
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );
