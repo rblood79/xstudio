@@ -984,7 +984,7 @@ function Preview() {
         ));
       };
 
-      const hierarchicalData = buildHierarchy(el.props.children || []);
+      const hierarchicalData = buildHierarchy(Array.isArray(el.props.children) ? el.props.children : []);
 
       return (
         <Tree
@@ -996,7 +996,6 @@ function Preview() {
           selectionBehavior={(el.props.selectionBehavior as 'replace' | 'toggle') || 'replace'}
           expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as any : []}
           selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as any : []}
-          allowsDragging={Boolean(el.props.allowsDragging)}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1082,10 +1081,10 @@ function Preview() {
       const getGranularity = () => {
         // includeTime이 true이면 minute로, 아니면 기본값 또는 day
         if (el.props.includeTime) {
-          const g = el.props.granularity;
+          const g = String(el.props.granularity || '');
           return ['hour', 'minute', 'second'].includes(g) ? g : 'minute';
         } else {
-          const g = el.props.granularity;
+          const g = String(el.props.granularity || '');
           return ['day'].includes(g) ? g : 'day';
         }
       };
@@ -1150,7 +1149,7 @@ function Preview() {
     if (el.tag === 'DateRangePicker') {
       // 동일한 안전 처리 함수들 사용
       const getGranularity = () => {
-        const g = el.props.granularity;
+        const g = String(el.props.granularity || '');
         return ['day', 'hour', 'minute', 'second'].includes(g) ? g : 'day';
       };
 
