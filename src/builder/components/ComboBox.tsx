@@ -37,7 +37,7 @@ export function ComboBox<T extends object>(
       className='react-aria-ComboBox'
     >
       <Label>{label}</Label>
-      <div className="my-combobox-container">
+      <div className="combobox-container">
         <Input placeholder={placeholder} />
         <Button>
           <ChevronDown size={16} />

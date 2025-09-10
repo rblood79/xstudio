@@ -1007,7 +1007,8 @@
     }
 
     /* Select 컴포넌트 스타일 종료 */
-    .react-aria-Popover[data-trigger=Select] {
+    .react-aria-Popover[data-trigger=Select],
+    .react-aria-Popover[data-trigger=ComboBox] {
         min-width: var(--trigger-width);
 
         .react-aria-ListBox {
@@ -1032,7 +1033,7 @@
             &[data-selected] {
                 font-weight: 600;
                 background: unset;
-                color: var(--text-color);
+                color: var(--color-primary-600);
 
                 &::before {
                     content: '✓';
@@ -1082,6 +1083,154 @@
                     }
                 }
             }
+        }
+    }
+
+    /* ComboBox 컴포넌트 스타일 시작 */
+    .react-aria-ComboBox {
+        display: flex;
+        flex-direction: column;
+        width: fit-content;
+        color: var(--text-color);
+
+        >div:has(.react-aria-Input) {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .react-aria-Input {
+            margin: 0;
+            font-size: var(--text-sm);
+            line-height: calc(var(--spacing) * 6);
+            background: var(--color-gray-50);
+            color: var(--color-gray-800);
+            border: 1px solid var(--color-gray-200);
+            border-radius: var(--radius-md);
+            padding: var(--spacing) var(--spacing-md);
+            vertical-align: middle;
+            outline: none;
+            width: 100%;
+            min-width: 0;
+
+            &[data-focused] {
+                outline: 2px solid var(--focus-ring-color);
+                outline-offset: -1px;
+            }
+        }
+
+        .react-aria-Button {
+            position: absolute;
+            right: calc(var(--spacing) * 1.25);
+            border: none;
+            cursor: default;
+            flex-shrink: 0;
+            width: var(--spacing-xl);
+            height: var(--spacing-xl);
+            line-height: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: var(--spacing-2xs);
+            background: var(--color-primary-600);
+            color: var(--color-white);
+            forced-color-adjust: none;
+            border-radius: var(--radius-md);
+            font-size: var(--text-xs);
+
+            &[data-pressed] {
+                box-shadow: none;
+                background: var(--color-primary-800);
+            }
+        }
+    }
+
+    /* ComboBox 컴포넌트 스타일 종료 */
+    /*.react-aria-Popover[data-trigger=ComboBox] {
+        width: var(--trigger-width);
+
+        .react-aria-ListBox {
+            display: block;
+            width: unset;
+            max-height: inherit;
+            min-height: unset;
+            border: none;
+
+            .react-aria-Header {
+                padding-left: 1.571rem;
+            }
+        }
+
+        .react-aria-ListBoxItem {
+            padding-left: var(--spacing-xl);
+
+            &[data-focus-visible] {
+                outline: none;
+            }
+
+            &[data-selected] {
+                font-weight: 600;
+                background: unset;
+                color: var(--text-color);
+
+                &::before {
+                    content: '✓';
+                    content: '✓' / '';
+                    alt: ' ';
+                    position: absolute;
+                    top: var(--spacing-xs);
+                    left: var(--spacing);
+                }
+            }
+
+            &[data-focused],
+            &[data-pressed] {
+                background: var(--color-gray-600);
+                color: var(--color-white);
+            }
+        }
+    }*/
+
+    /* ListBoxItem 컴포넌트 스타일 시작 */
+    .react-aria-ListBoxItem[href] {
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /* ComboBox 컴포넌트 스타일 시작 */
+    .react-aria-ComboBox {
+
+        >div:has(.react-aria-Input) {
+            display: flex;
+            align-items: center;
+        }
+
+        .react-aria-Input {
+            &[data-disabled] {
+                border-color: var(--border-color-disabled);
+            }
+        }
+
+        .react-aria-Button {
+            &[data-disabled] {
+                background: var(--border-color-disabled);
+            }
+        }
+
+        .react-aria-Input {
+            &[data-invalid]:not([data-focused]) {
+                border-color: var(--invalid-color);
+            }
+        }
+
+        .react-aria-FieldError {
+            font-size: 12px;
+            color: var(--invalid-color);
+        }
+
+        [slot=description] {
+            font-size: 12px;
         }
     }
 
@@ -1689,151 +1838,7 @@
         }
     }
 
-    /* ComboBox 컴포넌트 스타일 시작 */
-    .react-aria-ComboBox {
-        color: var(--text-color);
 
-        >div:has(.react-aria-Input) {
-            display: flex;
-            align-items: center;
-        }
-
-        .react-aria-Input {
-            margin: 0;
-            font-size: var(--text-sm);
-            line-height: calc(var(--spacing) * 6);
-            background: var(--color-gray-50);
-            color: var(--color-gray-800);
-            border: 1px solid var(--color-gray-200);
-            border-radius: var(--radius-md);
-            padding: var(--spacing) var(--spacing-md);
-            vertical-align: middle;
-            outline: none;
-            min-width: 0;
-
-            &[data-focused] {
-                outline: 2px solid var(--focus-ring-color);
-                outline-offset: -1px;
-            }
-        }
-
-        .react-aria-Button {
-
-            border: none;
-
-            cursor: default;
-            flex-shrink: 0;
-
-
-            width: var(--spacing-xl);
-            height: var(--spacing-xl);
-            line-height: var(--spacing-lg);
-            margin-left: calc(-1 * var(--spacing-xl) - var(--spacing) - 1px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: var(--spacing-2xs);
-            background: var(--color-primary-600);
-            color: var(--color-white);
-            forced-color-adjust: none;
-            border-radius: var(--radius-md);
-            font-size: var(--text-xs);
-
-            &[data-pressed] {
-                box-shadow: none;
-                background: var(--color-primary-800);
-            }
-        }
-    }
-
-    /* ComboBox 컴포넌트 스타일 종료 */
-    .react-aria-Popover[data-trigger=ComboBox] {
-        width: var(--trigger-width);
-
-        /*.react-aria-ListBox {
-            display: block;
-            width: unset;
-            max-height: inherit;
-            min-height: unset;
-            border: none;
-
-            .react-aria-Header {
-                padding-left: 1.571rem;
-            }
-        }
-
-        .react-aria-ListBoxItem {
-            padding-left: var(--spacing-xl);
-
-            &[data-focus-visible] {
-                outline: none;
-            }
-
-            &[data-selected] {
-                font-weight: 600;
-                background: unset;
-                color: var(--text-color);
-
-                &::before {
-                    content: '✓';
-                    content: '✓' / '';
-                    alt: ' ';
-                    position: absolute;
-                    top: 4px;
-                    left: 4px;
-                }
-            }
-
-            &[data-focused],
-            &[data-pressed] {
-                background: var(--highlight-background);
-                color: var(--highlight-foreground);
-            }
-        }*/
-    }
-
-    /* ListBoxItem 컴포넌트 스타일 시작 */
-    .react-aria-ListBoxItem[href] {
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    /* ComboBox 컴포넌트 스타일 시작 */
-    .react-aria-ComboBox {
-
-        >div:has(.react-aria-Input) {
-            display: flex;
-            align-items: center;
-        }
-
-        .react-aria-Input {
-            &[data-disabled] {
-                border-color: var(--border-color-disabled);
-            }
-        }
-
-        .react-aria-Button {
-            &[data-disabled] {
-                background: var(--border-color-disabled);
-            }
-        }
-
-        .react-aria-Input {
-            &[data-invalid]:not([data-focused]) {
-                border-color: var(--invalid-color);
-            }
-        }
-
-        .react-aria-FieldError {
-            font-size: 12px;
-            color: var(--invalid-color);
-        }
-
-        [slot=description] {
-            font-size: 12px;
-        }
-    }
 
     /* TextField 컴포넌트 스타일 시작 */
     .react-aria-TextField {

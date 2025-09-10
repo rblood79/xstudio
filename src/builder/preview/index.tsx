@@ -787,7 +787,9 @@ function Preview() {
           description={String(el.props.description || '')}
           errorMessage={String(el.props.errorMessage || '')}
           placeholder={String(el.props.placeholder || '')}
-          {...(el.props.selectedValue || el.props.selectedKey ? { selectedKey: String(el.props.selectedValue || el.props.selectedKey) } : {})}
+          {...(el.props.selectedKey || el.props.selectedValue ? {
+            selectedKey: String(el.props.selectedKey || el.props.selectedValue)
+          } : {})}
           inputValue={String(el.props.inputValue || '')}
           allowsCustomValue={Boolean(el.props.allowsCustomValue)}
           isDisabled={Boolean(el.props.isDisabled)}
@@ -869,14 +871,15 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {comboBoxItemChildren.map((item) => {
+          {comboBoxItemChildren.map((item, index) => {
             // 실제 value를 명시적으로 설정
-            const actualValue = item.props.value;
+            const reactAriaId = `react-aria-${index + 1}`;
+            //const actualValue = item.props.value;
 
             return (
               <ComboBoxItem
                 key={item.id} // key는 item.id 유지
-                value={String(actualValue) as unknown as object} // value만 actualValue로 설정
+                value={reactAriaId as unknown as object} // React Aria 내부 ID 사용
                 isDisabled={Boolean(item.props.isDisabled)}
               >
                 {String(item.props.label || item.id)}
