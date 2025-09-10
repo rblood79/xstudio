@@ -232,6 +232,13 @@ function Builder() {
                             orientation: 'vertical',
                             value: ''
                         } as ElementProps;
+                    case 'TagGroup':
+                        return {
+                            label: 'Tag Group',
+                            items: [],
+                            allowsRemoving: true,
+                            allowsCustomValue: false
+                        } as ElementProps;
                     case 'Card':
                         return {
                             title: 'Card Title',
@@ -608,6 +615,34 @@ function Builder() {
                 const data = await elementsApi.createElement(newElement);
                 // Remove the error check since the service layer handles errors internally
                 // if (error) throw error;
+                addElement(data);
+            } else if (componentType === 'TagGroup') {
+                const defaultTags = [
+                    {
+                        id: crypto.randomUUID(),
+                        tag: 'Tag',
+                        props: { children: 'Tag 1' } as ElementProps,
+                        parent_id: newElement.id,
+                        page_id: currentPageId!,
+                        order_num: 0,
+                    },
+                    {
+                        id: crypto.randomUUID(),
+                        tag: 'Tag',
+                        props: { children: 'Tag 2' } as ElementProps,
+                        parent_id: newElement.id,
+                        page_id: currentPageId!,
+                        order_num: 1,
+                    }
+                ];
+
+                const data = await elementsApi.createElement(newElement);
+
+                for (const tag of defaultTags) {
+                    const tagData = await elementsApi.createElement(tag);
+                    addElement(tagData);
+                }
+
                 addElement(data);
             } else {
                 // TextField가 아닌 경우 기존 로직 사용
