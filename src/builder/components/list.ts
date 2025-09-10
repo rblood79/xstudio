@@ -21,6 +21,7 @@ export * from './DateRangePicker';
 export * from './Switch';
 export * from './Table'; // Table 추가
 export * from './Card';
+export * from './TagGroup'; // TagGroup 추가
 export * from './types';
 export type { Key } from 'react-aria-components';
 // 추가 컴포넌트는 여기에 계속 export

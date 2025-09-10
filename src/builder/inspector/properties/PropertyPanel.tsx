@@ -19,12 +19,14 @@ import {
     GridListItemEditor,
     SelectItemEditor,
     TabsEditor,
-    TabEditor, // TabEditor 추가
+    TabEditor,
     PanelEditor,
     SliderEditor,
-    SwitchEditor, // SwitchEditor 추가
-    TableEditor, // TableEditor 추가
-    CardEditor // CardEditor 추가
+    SwitchEditor,
+    TableEditor,
+    CardEditor,
+    TagGroupEditor, // TagGroupEditor 추가
+    TagEditor // TagEditor 추가
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
 // ElementProps import 제거
@@ -44,17 +46,19 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     SelectItem: SelectItemEditor,
     ComboBoxItem: ComboBoxItemEditor,
     Tabs: TabsEditor,
-    Tab: TabEditor, // Tab 에디터 추가
+    Tab: TabEditor,
     Panel: PanelEditor,
     Slider: SliderEditor,
-    Switch: SwitchEditor, // Switch 매핑 추가
-    Table: TableEditor, // Table 매핑 추가
-    Card: CardEditor, // Card 매핑 추가
+    Switch: SwitchEditor,
+    Table: TableEditor,
+    Card: CardEditor,
+    TagGroup: TagGroupEditor, // TagGroup 매핑 추가
+    Tag: TagEditor, // Tag 매핑 추가
 
     // 추가로 지원할 컴포넌트들
     ComboBox: ComboBoxEditor,
     CheckboxGroup: CheckboxGroupEditor,
-    ToggleButton: ToggleButtonEditor, // 개별 ToggleButton 에디터 사용
+    ToggleButton: ToggleButtonEditor,
     ToggleButtonGroup: ToggleButtonGroupEditor,
 
     // 기본 HTML 요소들

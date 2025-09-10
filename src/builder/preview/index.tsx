@@ -39,6 +39,8 @@ import {
   Switch, // Switch 추가
   Table, // Table 추가
   Card,
+  TagGroup,
+  Tag,
   /*Column,
   TableHeader,
   Row,
@@ -1311,6 +1313,65 @@ function Preview() {
         >
           {children.map((child) => renderElement(child))}
         </Table>
+      );
+    }
+
+    // TagGroup 컴포넌트 특별 처리
+    if (el.tag === 'TagGroup') {
+      const tagChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'Tag')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      return (
+        <TagGroup
+          key={el.id}
+          data-element-id={el.id}
+          style={el.props.style}
+          className={el.props.className}
+          label={String(el.props.label || '')}
+          description={String(el.props.description || '')}
+          errorMessage={String(el.props.errorMessage || '')}
+          allowsRemoving={Boolean(el.props.allowsRemoving)}
+          onRemove={(keys) => {
+            // 태그 제거 로직 구현
+            console.log('Removing tags:', Array.from(keys));
+            // 실제로는 데이터베이스에서 삭제하고 스토어 업데이트
+          }}
+          items={tagChildren.map(tag => ({
+            id: tag.id,
+            label: String(tag.props.children || ''),
+            value: tag.id
+          }))}
+        >
+          {tagChildren.map((tag) => (
+            <Tag
+              key={tag.id}
+              data-element-id={tag.id}
+              value={tag.id}
+              isDisabled={Boolean(tag.props.isDisabled)}
+              style={tag.props.style}
+              className={tag.props.className}
+            >
+              {String(tag.props.children || '')}
+            </Tag>
+          ))}
+        </TagGroup>
+      );
+    }
+
+    // Tag 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
+    if (el.tag === 'Tag') {
+      return (
+        <Tag
+          key={el.id}
+          data-element-id={el.id}
+          value={el.id}
+          isDisabled={Boolean(el.props.isDisabled)}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          {String(el.props.children || '')}
+        </Tag>
       );
     }
 

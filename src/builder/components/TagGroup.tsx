@@ -19,6 +19,8 @@ export interface TagGroupProps<T>
   label?: string;
   description?: string;
   errorMessage?: string;
+  allowsRemoving?: boolean;
+  onRemove?: (keys: Set<React.Key>) => void;
 }
 
 export function TagGroup<T extends object>(
@@ -29,14 +31,25 @@ export function TagGroup<T extends object>(
     items,
     children,
     renderEmptyState,
+    allowsRemoving,
+    onRemove,
     ...props
   }: TagGroupProps<T>
 ) {
   return (
     (
-      <AriaTagGroup {...props} className='react-aria-TagGroup'>
+      <AriaTagGroup
+        {...props}
+        allowsRemoving={allowsRemoving}
+        onRemove={onRemove}
+        className='react-aria-TagGroup'
+      >
         <Label>{label}</Label>
-        <TagList items={items} renderEmptyState={renderEmptyState}>
+        <TagList
+          items={items}
+          renderEmptyState={renderEmptyState}
+          className='react-aria-TagList'
+        >
           {children}
         </TagList>
         {description && <Text slot="description">{description}</Text>}
@@ -54,7 +67,7 @@ export function Tag(
   const textValue = typeof children === 'string' ? children : undefined;
   return (
     (
-      <AriaTag textValue={textValue} {...props}>
+      <AriaTag textValue={textValue} {...props} className='react-aria-Tag'>
         {({ allowsRemoving }) => (
           <>
             {children}
