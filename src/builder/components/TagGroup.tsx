@@ -40,8 +40,7 @@ export function TagGroup<T extends object>(
     (
       <AriaTagGroup
         {...props}
-        allowsRemoving={allowsRemoving}
-        onRemove={onRemove}
+        onRemove={allowsRemoving ? onRemove : undefined}
         className='react-aria-TagGroup'
       >
         <Label>{label}</Label>

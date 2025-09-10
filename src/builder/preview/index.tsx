@@ -1333,9 +1333,7 @@ function Preview() {
           errorMessage={String(el.props.errorMessage || '')}
           allowsRemoving={Boolean(el.props.allowsRemoving)}
           onRemove={(keys) => {
-            // 태그 제거 로직 구현
             console.log('Removing tags:', Array.from(keys));
-            // 실제로는 데이터베이스에서 삭제하고 스토어 업데이트
           }}
           items={tagChildren.map(tag => ({
             id: tag.id,
