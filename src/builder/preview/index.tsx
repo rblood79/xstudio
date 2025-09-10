@@ -786,14 +786,12 @@ function Preview() {
           errorMessage={String(el.props.errorMessage || '')}
           placeholder={String(el.props.placeholder || '')}
           {...(el.props.selectedValue || el.props.selectedKey ? { selectedKey: String(el.props.selectedValue || el.props.selectedKey) } : {})}
-          selectedKey={String(el.props.selectedValue || el.props.selectedKey)}
           inputValue={String(el.props.inputValue || '')}
           allowsCustomValue={Boolean(el.props.allowsCustomValue)}
           isDisabled={Boolean(el.props.isDisabled)}
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           onSelectionChange={async (selectedKey) => {
-            console.log('ComboBox 선택 변경:', selectedKey);
 
             // selectedKey가 undefined이면 선택 해제로 처리
             if (selectedKey === undefined || selectedKey === null) {
@@ -809,18 +807,21 @@ function Preview() {
 
             // 선택된 아이템의 실제 label 찾기
             let displayValue = String(selectedKey);
+            let selectedValue = String(selectedKey);
+
+
             if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = comboBoxItemChildren[index];
               if (selectedItem) {
-                displayValue = String(selectedItem.props.label || selectedItem.props.value || `option-${index + 1}`);
+                displayValue = String(selectedItem.props.label);
+                selectedValue = String(selectedItem.props.value);
               }
             }
-
             const updatedProps = {
               ...el.props,
               selectedKey, // React Aria 내부 ID (프리뷰용)
-              selectedValue: selectedKey, // selectedKey를 그대로 사용
+              selectedValue: selectedValue, // selectedKey를 그대로 사용
               inputValue: displayValue // 실제 label 사용
             };
 
@@ -840,7 +841,7 @@ function Preview() {
               elementId: el.id,
               props: {
                 selectedKey, // 내부 ID (프리뷰용)
-                selectedValue: selectedKey, // selectedKey를 그대로 사용
+                selectedValue: selectedValue, // selectedKey를 그대로 사용
                 inputValue: displayValue // 실제 label 사용
               },
               merge: true
@@ -854,9 +855,9 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {comboBoxItemChildren.map((item, index) => {
+          {comboBoxItemChildren.map((item) => {
             // 실제 value를 명시적으로 설정
-            const actualValue = item.props.value || item.props.label || `option-${index + 1}`;
+            const actualValue = item.props.value;
 
             return (
               <ComboBoxItem
