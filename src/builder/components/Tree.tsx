@@ -8,7 +8,7 @@ import {
   TreeItemProps as AriaTreeItemProps,
   TreeProps
 } from 'react-aria-components';
-
+import { InfoIcon } from 'lucide-react';
 import { MyCheckbox } from './Checkbox';
 
 import './components.css';
@@ -24,11 +24,10 @@ export function TreeItemContent(
     (
       <AriaTreeItemContent {...props}>
         {(
-          { selectionBehavior, selectionMode, allowsDragging }:
+          { selectionBehavior, selectionMode }:
             TreeItemContentRenderProps
         ) => (
           <>
-            {allowsDragging && <Button slot="drag">≡</Button>}
             {selectionBehavior === 'toggle' && selectionMode !== 'none' && (
               <MyCheckbox slot="selection" />
             )}
@@ -55,6 +54,9 @@ export function TreeItem(props: TreeItemProps) {
       <AriaTreeItem textValue={props.title} {...props} className='react-aria-TreeItem'>
         <TreeItemContent>
           {props.title}
+          <Button aria-label="Info">
+            <InfoIcon size={20} />
+          </Button>
         </TreeItemContent>
         {props.children}
       </AriaTreeItem>

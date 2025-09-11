@@ -768,7 +768,7 @@
         background: var(--overlay-background);
         forced-color-adjust: none;
         outline: none;
-        width: 250px;
+        width: fit-content;
         max-height: 300px;
         box-sizing: border-box;
 
