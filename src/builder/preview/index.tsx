@@ -943,7 +943,7 @@ function Preview() {
 
       const panelChildren = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'Panel')
-        .sort((a, b) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <Tabs
@@ -970,23 +970,36 @@ function Preview() {
             ))}
           </TabList>
 
-          {/* 실제 Panel 컴포넌트들을 TabPanel로 래핑하여 렌더링 */}
-          {panelChildren.map((panel) => {
-            const correspondingTab = tabChildren[panel.props.tabIndex || 0];
+          {/* Tab과 Panel을 순서대로 매칭하여 렌더링 */}
+          {tabChildren.map((tab) => {
+            // 같은 순서의 Panel 찾기 (order_num 기준)
+            const correspondingPanel = panelChildren.find(panel => {
+              // tabId가 있으면 tabId로 매칭
+              if (panel.props.tabId && tab.props.tabId) {
+                return panel.props.tabId === tab.props.tabId;
+              }
+              // tabId가 없으면 순서로 매칭
+              return (panel.order_num || 0) === (tab.order_num || 0) + 1;
+            });
+
+            if (!correspondingPanel) {
+              console.warn(`No corresponding panel found for tab ${tab.id}`);
+              return null;
+            }
 
             return (
-              <TabPanel key={panel.id} id={correspondingTab?.id || `tab-${panel.props.tabIndex || 0}`}>
+              <TabPanel key={correspondingPanel.id} id={tab.id}>
                 {/* Panel 컴포넌트를 직접 렌더링하되, TabPanel 안에서만 */}
                 <Panel
-                  key={panel.id}
-                  data-element-id={panel.id}
-                  variant={(panel.props.variant as 'default' | 'tab' | 'sidebar' | 'card' | 'modal') || 'tab'}
-                  title={panel.props.title}
-                  style={panel.props.style}
-                  className={panel.props.className}
+                  key={correspondingPanel.id}
+                  data-element-id={correspondingPanel.id}
+                  variant={(correspondingPanel.props.variant as 'default' | 'tab' | 'sidebar' | 'card' | 'modal') || 'tab'}
+                  title={correspondingPanel.props.title}
+                  style={correspondingPanel.props.style}
+                  className={correspondingPanel.props.className}
                 >
                   {elements
-                    .filter((child) => child.parent_id === panel.id)
+                    .filter((child) => child.parent_id === correspondingPanel.id)
                     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
                     .map((child) => renderElement(child))}
                 </Panel>
