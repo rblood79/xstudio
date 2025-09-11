@@ -3,6 +3,7 @@ import React from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores';
 import { Database, ElementProps } from '../../types/supabase';
+import { Page } from '../stores/elements';
 import { Nodes } from '../nodes';
 import Components from '../components';
 import Library from '../library';
@@ -13,7 +14,6 @@ import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
 
-type Page = Database['public']['Tables']['pages']['Row'];
 type Element = Database['public']['Tables']['elements']['Row'];
 
 interface SidebarProps {

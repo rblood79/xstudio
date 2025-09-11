@@ -12,9 +12,10 @@ import { useStore } from './stores';
 import { debounce } from 'lodash';
 import type { ElementProps } from '../types/supabase';
 import { ColorValue } from '../types/theme';
+import { Page } from './stores/elements'; // 추가
 
 // 서비스 레이어 import
-import { elementsApi, pagesApi, type Page as ApiPage } from '../services/api';
+import { elementsApi, pagesApi } from '../services/api';
 
 import "./builder.css";
 
@@ -32,7 +33,7 @@ function Builder() {
     const pageHistories = useStore((state) => state.pageHistories);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const { addElement, updateElementProps, undo, redo, loadPageElements } = useStore();
-    const [pages, setPages] = React.useState<ApiPage[]>([]);
+    const [pages, setPages] = React.useState<Page[]>([]); // 타입 변경
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
 
     const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
@@ -567,37 +568,43 @@ function Builder() {
                         props: tabsProps
                     });
 
+                    // Tabs 생성 시 Tab과 Panel을 다른 ID로 생성하되, props에 tabId로 연결
+                    const tab1Id = crypto.randomUUID();
+                    const panel1Id = crypto.randomUUID();
+                    const tab2Id = crypto.randomUUID();
+                    const panel2Id = crypto.randomUUID();
+
                     const tab1Data = await elementsApi.createElement({
-                        id: crypto.randomUUID(),
+                        id: tab1Id,
                         tag: 'Tab',
-                        props: { title: 'Tab 1' } as ElementProps,
+                        props: { title: 'Tab 1', tabId: tab1Id } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 0,
                     });
 
                     const panel1Data = await elementsApi.createElement({
-                        id: crypto.randomUUID(),
+                        id: panel1Id,
                         tag: 'Panel',
-                        props: { title: 'Panel 1', tabIndex: 0 } as ElementProps,
+                        props: { title: 'Panel 1', tabIndex: 0, tabId: tab1Id } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 1,
                     });
 
                     const tab2Data = await elementsApi.createElement({
-                        id: crypto.randomUUID(),
+                        id: tab2Id,
                         tag: 'Tab',
-                        props: { title: 'Tab 2' } as ElementProps,
+                        props: { title: 'Tab 2', tabId: tab2Id } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 2,
                     });
 
                     const panel2Data = await elementsApi.createElement({
-                        id: crypto.randomUUID(),
+                        id: panel2Id,
                         tag: 'Panel',
-                        props: { title: 'Panel 2', tabIndex: 1 } as ElementProps,
+                        props: { title: 'Panel 2', tabIndex: 1, tabId: tab2Id } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
                         order_num: 3,
@@ -1040,7 +1047,7 @@ function Builder() {
 
                 <Sidebar
                     pages={pages}
-                    setPages={setPages as any}
+                    setPages={setPages}
                     handleAddPage={handleAddPage}
                     handleAddElement={handleAddElement}
                     fetchElements={fetchElements}
