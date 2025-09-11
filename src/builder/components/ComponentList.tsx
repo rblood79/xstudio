@@ -5,7 +5,8 @@ import './ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {
-    handleAddElement: (tag: string) => void;
+    handleAddElement: (tag: string, parentId?: string) => void;
+    selectedElementId?: string | null;
 }
 
 // 컴포넌트 정의를 메모이제이션
@@ -54,13 +55,14 @@ const pageComp = [
 ] as const;
 
 // 개별 컴포넌트 아이템을 메모이제이션
-const ComponentItem = memo(({ component, onAdd }: {
+const ComponentItem = ({ component, onAdd, selectedElementId }: {
     component: { tag: string; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> };
-    onAdd: (tag: string) => void;
+    onAdd: (tag: string, parentId?: string) => void;
+    selectedElementId?: string | null;
 }) => {
     const handleClick = useCallback(() => {
-        onAdd(component.tag);
-    }, [component.tag, onAdd]);
+        onAdd(component.tag, selectedElementId || undefined);
+    }, [component.tag, onAdd, selectedElementId]);
 
     return (
         <div className="component-list-item">
@@ -73,15 +75,15 @@ const ComponentItem = memo(({ component, onAdd }: {
             <label>{component.label}</label>
         </div>
     );
-});
+};
 
 ComponentItem.displayName = 'ComponentItem';
 
 // 메인 컴포넌트
-const ComponentList = memo(({ handleAddElement }: ComponentListProps) => {
+const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentListProps) => {
     // 이벤트 핸들러를 메모이제이션
-    const handleComponentAdd = useCallback((tag: string) => {
-        handleAddElement(tag);
+    const handleComponentAdd = useCallback((tag: string, parentId?: string) => {
+        handleAddElement(tag, parentId);
     }, [handleAddElement]);
 
     // 컴포넌트 그룹을 메모이제이션
@@ -111,6 +113,7 @@ const ComponentList = memo(({ handleAddElement }: ComponentListProps) => {
                                 key={component.tag}
                                 component={component}
                                 onAdd={handleComponentAdd}
+                                selectedElementId={selectedElementId}
                             />
                         ))}
                     </div>

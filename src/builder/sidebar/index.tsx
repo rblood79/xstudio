@@ -655,7 +655,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         if (activeTabs.has('components')) {
             contents.push(
                 <div key="components" className="sidebar-section components">
-                    <Components handleAddElement={handleAddElement} />
+                    <Components handleAddElement={handleAddElement} selectedElementId={selectedElementId} />
                 </div>
             );
         }
