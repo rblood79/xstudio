@@ -186,6 +186,7 @@ async function createNewTab(
     addElement: (element: Element) => void
 ) {
     const newTabIndex = tabChildren.length || 0;
+    const tabId = crypto.randomUUID(); // 공통 tabId 생성
 
     // 새로운 Tab 요소 생성
     const newTabElement = {
@@ -198,6 +199,7 @@ async function createNewTab(
             appearance: 'light',
             style: {},
             className: '',
+            tabId: tabId, // tabId 추가
         },
         parent_id: elementId,
         order_num: newTabIndex + 1,
@@ -214,6 +216,7 @@ async function createNewTab(
             tabIndex: newTabIndex,
             style: {},
             className: '',
+            tabId: tabId, // 같은 tabId 추가
         },
         parent_id: elementId,
         order_num: newTabIndex + 1,
