@@ -5,15 +5,16 @@ import ComponentList from './ComponentList';
 import './index.css';
 
 interface ComponentsProps {
-    handleAddElement: (tag: string) => Promise<void>;
+    handleAddElement: (tag: string, parentId?: string) => Promise<void>;
+    selectedElementId?: string | null;
 }
 
-function Components({ handleAddElement }: ComponentsProps) {
+function Components({ handleAddElement, selectedElementId }: ComponentsProps) {
     return (
-
-        <ComponentList handleAddElement={handleAddElement} />
-
-
+        <ComponentList
+            handleAddElement={handleAddElement}
+            selectedElementId={selectedElementId}
+        />
     );
 }
 
