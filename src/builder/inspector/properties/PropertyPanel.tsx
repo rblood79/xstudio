@@ -26,7 +26,9 @@ import {
     TableEditor,
     CardEditor,
     TagGroupEditor, // TagGroupEditor 추가
-    TagEditor // TagEditor 추가
+    TagEditor, // TagEditor 추가
+    TreeEditor, // TreeEditor 추가
+    TreeItemEditor // TreeItemEditor 추가
 } from './editors';
 import { PropertyEditorProps } from './types/editorTypes';
 // ElementProps import 제거
@@ -54,6 +56,8 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Card: CardEditor,
     TagGroup: TagGroupEditor, // TagGroup 매핑 추가
     Tag: TagEditor, // Tag 매핑 추가
+    Tree: TreeEditor, // Tree 매핑 추가
+    TreeItem: TreeItemEditor, // TreeItem 매핑 추가
 
     // 추가로 지원할 컴포넌트들
     ComboBox: ComboBoxEditor,
