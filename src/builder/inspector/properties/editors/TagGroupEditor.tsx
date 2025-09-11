@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../components';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight } from 'lucide-react';
+import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -144,6 +144,40 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     checked={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                     icon={PenOff}
+                />
+            </fieldset>
+
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Selection Settings</legend>
+
+                <PropertySelect
+                    label="Selection Mode"
+                    value={String(currentProps.selectionMode || 'none')}
+                    onChange={(value) => updateProp('selectionMode', value)}
+                    options={[
+                        { id: 'none', label: 'None' },
+                        { id: 'single', label: 'Single' },
+                        { id: 'multiple', label: 'Multiple' }
+                    ]}
+                    icon={MousePointer}
+                />
+
+                <PropertySelect
+                    label="Selection Behavior"
+                    value={String(currentProps.selectionBehavior || 'toggle')}
+                    onChange={(value) => updateProp('selectionBehavior', value)}
+                    options={[
+                        { id: 'toggle', label: 'Toggle' },
+                        { id: 'replace', label: 'Replace' }
+                    ]}
+                    icon={ToggleLeft}
+                />
+
+                <PropertyCheckbox
+                    label="Disallow Empty Selection"
+                    checked={Boolean(currentProps.disallowEmptySelection)}
+                    onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={ToggleRight}
                 />
             </fieldset>
 
