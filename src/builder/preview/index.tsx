@@ -77,37 +77,42 @@ function Preview() {
         setElements(data.elements || []);
       }
 
-      // 새로 추가: 개별 요소 속성 업데이트 처리
+      // 개별 요소 속성 업데이트 처리
       if (data.type === 'UPDATE_ELEMENT_PROPS') {
-        const { elementId, props, merge } = data;
+        const { elementId, props, merge = true } = data;
 
-        console.log('UPDATE_ELEMENT_PROPS 메시지 받음:', { elementId, props, merge });
-
-        // 요소 찾기
-        const elementIndex = elements.findIndex(el => el.id === elementId);
-        if (elementIndex !== -1) {
-          const updatedElements = [...elements];
-          const element = updatedElements[elementIndex];
-
-          // 요소가 존재하고 props가 있는지 확인
-          if (element && element.props) {
-            // 속성 업데이트 (병합 또는 교체)
-            if (merge) {
-              element.props = { ...element.props, ...props };
-            } else {
-              element.props = { ...element.props, ...props };
-            }
-
-            // 상태 업데이트로 리렌더링 트리거
-            setElements(updatedElements as PreviewElement[]);
-
-            console.log(`요소 ${elementId} 속성 업데이트됨:`, props);
+        if (merge) {
+          const element = elements.find(el => el.id === elementId);
+          if (element) {
+            updateElementProps(elementId, {
+              ...element.props,
+              ...props
+            });
           } else {
-            console.warn('요소가 존재하지 않거나 props가 없습니다:', element);
+            updateElementProps(elementId, props);
           }
         } else {
-          console.warn('요소를 찾을 수 없습니다:', elementId);
+          updateElementProps(elementId, props);
         }
+        return;
+      }
+
+      // 요소 삭제 처리 추가
+      if (data.type === 'DELETE_ELEMENTS' && Array.isArray(data.elementIds)) {
+        const updatedElements = elements.filter(element =>
+          !data.elementIds.includes(element.id)
+        );
+        setElements(updatedElements);
+        return;
+      }
+
+      // 단일 요소 삭제 처리 추가
+      if (data.type === 'DELETE_ELEMENT' && data.elementId) {
+        const updatedElements = elements.filter(element =>
+          element.id !== data.elementId
+        );
+        setElements(updatedElements);
+        return;
       }
 
       // 기존 THEME_VARS 처리...
@@ -142,7 +147,7 @@ function Preview() {
         console.log('[preview] applied UPDATE_THEME_TOKENS', Object.keys(data.styles).length);
       }
     },
-    [elements, setElements] // elements 의존성 추가
+    [elements, setElements, updateElementProps]
   );
 
   useEffect(() => {
@@ -599,7 +604,7 @@ function Preview() {
           className={el.props.className}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           // ... existing code ...
-          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as unknown as string[] : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
           // ... existing code ...
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
@@ -637,7 +642,7 @@ function Preview() {
           className={el.props.className}
           orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
-          selectedKeys={Array.isArray(el.props.selectedKeys) && el.props.selectedKeys.length > 0 && typeof el.props.selectedKeys[0] !== 'object' ? el.props.selectedKeys as unknown as string[] : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -768,8 +773,6 @@ function Preview() {
       );
     }
 
-    // ...existing code...
-
     // ComboBox 컴포넌트 특별 처리
     if (el.tag === 'ComboBox') {
       // 실제 ComboBoxItem 자식 요소들을 찾기
@@ -889,8 +892,6 @@ function Preview() {
         </ComboBox>
       );
     }
-
-    // ...existing code...
 
     // GridListItem 컴포넌트 특별 처리 (독립적으로 렌더링될 때)
     if (el.tag === 'GridListItem') {
@@ -1365,7 +1366,7 @@ function Preview() {
           allowsRemoving={Boolean(el.props.allowsRemoving)}
           selectionMode={el.props.selectionMode as 'none' | 'single' | 'multiple' || 'none'}
           selectionBehavior={el.props.selectionBehavior as 'toggle' | 'replace' || 'toggle'}
-          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
           orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}
           isDisabled={Boolean(el.props.isDisabled)}
           disallowEmptySelection={Boolean(el.props.disallowEmptySelection)}
@@ -1413,8 +1414,8 @@ function Preview() {
               }
 
               try {
-                await elementsApi.deleteElement(tagId);
-                deletedTagIds.push(tagId);
+                await elementsApi.deleteElement(String(tagId));
+                deletedTagIds.push(String(tagId));
                 console.log(`Tag ${tagId} deleted successfully`);
               } catch (err) {
                 console.error(`Error deleting tag ${tagId}:`, err);
@@ -1426,7 +1427,7 @@ function Preview() {
             const updatedElements = currentElements.filter(el => !deletedTagIds.includes(el.id));
 
             // 3. TagGroup의 selectedKeys 업데이트
-            const currentSelectedKeys = Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys : [];
+            const currentSelectedKeys = Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : [];
             const updatedSelectedKeys = currentSelectedKeys.filter(key => !keysToRemove.includes(key));
 
             const updatedProps = {
@@ -1491,7 +1492,7 @@ function Preview() {
       );
     }
 
-    // 일반 요소 처리
+    // 일반 요소 처리 부분 수정
     const content = [
       el.props.text && String(el.props.text),
       ...children.map((child) => renderElement(child))
@@ -1500,21 +1501,36 @@ function Preview() {
     // HTML 요소에 대해서는 React Aria 전용 props 제거
     const cleanProps = { ...finalProps };
 
-    // React Aria 전용 props 제거 (HTML 요소에는 존재하지 않음)
-    const reactAriaProps = [
+    // React Aria 전용 props 및 사용자 정의 props 제거 (더 포괄적으로)
+    const propsToRemove = [
       'isDisabled', 'isSelected', 'isIndeterminate', 'isRequired',
       'isReadOnly', 'isInvalid', 'onPress', 'onHoverStart', 'onHoverEnd',
       'selectionMode', 'selectionBehavior', 'orientation', 'variant',
-      'size', 'isQuiet', 'isFocused', 'allowsRemoving', 'textValue'
+      'size', 'isQuiet', 'isFocused', 'allowsRemoving', 'textValue',
+      'selectedKeys', 'defaultSelectedKey', 'allowsCustomValue',
+      'granularity', 'firstDayOfWeek', 'calendarIconPosition',
+      'showCalendarIcon', 'showWeekNumbers', 'highlightToday',
+      'allowClear', 'shouldForceLeadingZeros', 'shouldCloseOnSelect',
+      'includeTime', 'timeFormat', 'timeLabel', 'startTimeLabel', 'endTimeLabel',
+      'allowsNonContiguousRanges', 'visibleDuration', 'pageBehavior',
+      'disallowEmptySelection', 'text', 'children', 'events'
     ];
 
-    reactAriaProps.forEach(prop => {
+    propsToRemove.forEach(prop => {
       if (prop in cleanProps) {
         delete (cleanProps as Record<string, unknown>)[prop];
       }
     });
 
-    return React.createElement(tag, cleanProps, content.length > 0 ? content : undefined);
+    // tag가 소문자로 시작하는 HTML 요소인지 확인
+    const isHTMLElement = tag && typeof tag === 'string' && tag[0] === tag[0].toLowerCase();
+
+    if (isHTMLElement) {
+      return React.createElement(tag, cleanProps, content.length > 0 ? content : undefined);
+    } else {
+      // React 컴포넌트인 경우 원본 props 사용
+      return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
+    }
   };
 
   const renderElementsTree = (): React.ReactNode => {
