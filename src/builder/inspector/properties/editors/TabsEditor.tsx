@@ -199,10 +199,10 @@ async function createNewTab(
             appearance: 'light',
             style: {},
             className: '',
-            tabId: tabId, // tabId 추가
+            tabId: tabId,
         },
         parent_id: elementId,
-        order_num: newTabIndex + 1,
+        order_num: newTabIndex * 2, // Tab은 짝수 인덱스
     };
 
     // 새로운 Panel 요소 생성
@@ -216,10 +216,10 @@ async function createNewTab(
             tabIndex: newTabIndex,
             style: {},
             className: '',
-            tabId: tabId, // 같은 tabId 추가
+            tabId: tabId,
         },
         parent_id: elementId,
-        order_num: newTabIndex + 1,
+        order_num: newTabIndex * 2 + 1, // Panel은 홀수 인덱스
     };
 
     try {
