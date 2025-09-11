@@ -169,17 +169,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
         try {
             const elementToDelete = useStore.getState().elements.find(el => el.id === elementId);
             if (!elementToDelete) {
-                console.log('Element not found:', elementId);
+                //console.log('Element not found:', elementId);
                 return;
             }
 
-            console.log('Deleting element:', elementToDelete);
+            //console.log('Deleting element:', elementToDelete);
             const deletedIds: string[] = [];
 
             // Tab이나 Panel인 경우 쌍으로 삭제
             if (elementToDelete.tag === 'Tab' || elementToDelete.tag === 'Panel') {
                 const parentId = elementToDelete.parent_id;
-                console.log('Parent ID:', parentId);
+                //console.log('Parent ID:', parentId);
 
                 if (!parentId) {
                     // 부모가 없으면 단일 삭제
@@ -188,12 +188,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                 } else {
                     // 같은 부모를 가진 Tab과 Panel들을 찾기
                     const siblings = useStore.getState().elements.filter(el => el.parent_id === parentId);
-                    console.log('Siblings:', siblings);
+                    //console.log('Siblings:', siblings);
 
                     if (elementToDelete.tag === 'Tab') {
                         // Tab을 삭제하는 경우, 같은 tabId를 가진 Panel 찾기
                         const tabId = elementToDelete.props.tabId || elementId;
-                        console.log('Tab ID to match:', tabId);
+                        //console.log('Tab ID to match:', tabId);
 
                         let correspondingPanel = siblings.find(el =>
                             el.tag === 'Panel' && el.props.tabId === tabId
@@ -205,10 +205,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                             correspondingPanel = siblings.find(el =>
                                 el.tag === 'Panel' && el.order_num === tabOrderNum + 1
                             );
-                            console.log('Fallback: Found Panel by order_num:', correspondingPanel);
+                            //console.log('Fallback: Found Panel by order_num:', correspondingPanel);
                         }
 
-                        console.log('Corresponding Panel:', correspondingPanel);
+                        //console.log('Corresponding Panel:', correspondingPanel);
 
                         // Tab 삭제
                         await elementsApi.deleteElement(elementId);
@@ -218,14 +218,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         if (correspondingPanel) {
                             await elementsApi.deleteElement(correspondingPanel.id);
                             deletedIds.push(correspondingPanel.id);
-                            console.log('Deleted Tab and Panel pair');
+                            //console.log('Deleted Tab and Panel pair');
                         } else {
-                            console.log('No corresponding Panel found');
+                            //console.log('No corresponding Panel found');
                         }
                     } else if (elementToDelete.tag === 'Panel') {
                         // Panel을 삭제하는 경우, 같은 tabId를 가진 Tab 찾기
                         const tabId = elementToDelete.props.tabId;
-                        console.log('Panel tabId:', tabId);
+                        //console.log('Panel tabId:', tabId);
 
                         let correspondingTab = null;
 
@@ -239,10 +239,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                             correspondingTab = siblings.find(el =>
                                 el.tag === 'Tab' && el.order_num === panelOrderNum - 1
                             );
-                            console.log('Fallback: Found Tab by order_num:', correspondingTab);
+                            //console.log('Fallback: Found Tab by order_num:', correspondingTab);
                         }
 
-                        console.log('Corresponding Tab:', correspondingTab);
+                        //console.log('Corresponding Tab:', correspondingTab);
 
                         // Panel 삭제
                         await elementsApi.deleteElement(elementId);
@@ -252,9 +252,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         if (correspondingTab) {
                             await elementsApi.deleteElement(correspondingTab.id);
                             deletedIds.push(correspondingTab.id);
-                            console.log('Deleted Panel and Tab pair');
+                            //console.log('Deleted Panel and Tab pair');
                         } else {
-                            console.log('No corresponding Tab found');
+                            //console.log('No corresponding Tab found');
                         }
                     }
                 }
@@ -264,7 +264,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                 deletedIds.push(elementId);
             }
 
-            console.log('Deleted IDs:', deletedIds);
+            //console.log('Deleted IDs:', deletedIds);
 
             // 로컬 상태에서도 제거
             set(
