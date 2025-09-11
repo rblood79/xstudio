@@ -973,9 +973,23 @@ function Preview() {
           {/* 실제 Panel 컴포넌트들을 TabPanel로 래핑하여 렌더링 */}
           {panelChildren.map((panel) => {
             const correspondingTab = tabChildren[panel.props.tabIndex || 0];
+
             return (
               <TabPanel key={panel.id} id={correspondingTab?.id || `tab-${panel.props.tabIndex || 0}`}>
-                {renderElement(panel)}
+                {/* Panel 컴포넌트를 직접 렌더링하되, TabPanel 안에서만 */}
+                <Panel
+                  key={panel.id}
+                  data-element-id={panel.id}
+                  variant={(panel.props.variant as 'default' | 'tab' | 'sidebar' | 'card' | 'modal') || 'tab'}
+                  title={panel.props.title}
+                  style={panel.props.style}
+                  className={panel.props.className}
+                >
+                  {elements
+                    .filter((child) => child.parent_id === panel.id)
+                    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+                    .map((child) => renderElement(child))}
+                </Panel>
               </TabPanel>
             );
           })}
