@@ -32,6 +32,7 @@ import {
   Radio,
   Tree,
   TreeItem,
+  TreeItemContent, // 추가
   Panel,
   Calendar,
   DatePicker,
@@ -1012,41 +1013,10 @@ function Preview() {
 
     // Tree 컴포넌트 특별 처리
     if (el.tag === 'Tree') {
-      // 플랫 구조를 계층 구조로 변환하는 함수
-      const buildHierarchy = (flatItems: Record<string, unknown>[]): Record<string, unknown>[] => {
-        const itemMap = new Map<string, Record<string, unknown>>();
-        const rootItems: Record<string, unknown>[] = [];
-
-        // 모든 아이템을 맵에 저장
-        flatItems.forEach(item => {
-          itemMap.set(item.id as string, { ...item, children: [] });
-        });
-
-        // 계층 구조 구축
-        flatItems.forEach(item => {
-          const itemWithChildren = itemMap.get(item.id as string);
-          if (item.parent_id === null || item.parent_id === undefined) {
-            rootItems.push(itemWithChildren as Record<string, unknown>);
-          } else {
-            const parent = itemMap.get(item.parent_id as string);
-            if (parent && itemWithChildren) {
-              (parent.children as Record<string, unknown>[]).push(itemWithChildren);
-            }
-          }
-        });
-
-        return rootItems;
-      };
-
-      const renderTreeItems = (items: Record<string, unknown>[]): React.ReactNode => {
-        return items.map((item: Record<string, unknown>) => (
-          <TreeItem key={item.id as string} id={item.id as string} title={item.title as string}>
-            {item.children && (item.children as Record<string, unknown>[]).length > 0 ? renderTreeItems(item.children as Record<string, unknown>[]) : null}
-          </TreeItem>
-        ));
-      };
-
-      const hierarchicalData = buildHierarchy(Array.isArray(el.props.children) ? el.props.children : []);
+      // Tree의 실제 TreeItem 자식 요소들을 찾기
+      const treeItemChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
         <Tree
@@ -1054,10 +1024,14 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          selectionMode={(el.props.selectionMode as 'single' | 'multiple') || 'single'}
+          aria-label={String(el.props['aria-label'] || 'Tree')}
+          selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'single'}
           selectionBehavior={(el.props.selectionBehavior as 'replace' | 'toggle') || 'replace'}
           expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as unknown as string[] : []}
           selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
+          defaultExpandedKeys={Array.isArray(el.props.defaultExpandedKeys) ? el.props.defaultExpandedKeys as unknown as string[] : []}
+          defaultSelectedKeys={Array.isArray(el.props.defaultSelectedKeys) ? el.props.defaultSelectedKeys as unknown as string[] : []}
+          disallowEmptySelection={Boolean(el.props.disallowEmptySelection)}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1073,8 +1047,34 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {renderTreeItems(hierarchicalData)}
+          {treeItemChildren.map((item) => renderElement(item))}
         </Tree>
+      );
+    }
+
+    // TreeItem 컴포넌트 특별 처리
+    if (el.tag === 'TreeItem') {
+      // TreeItem의 직접 자식 TreeItem들을 찾기 (한 단계만)
+      const directChildTreeItems = elements
+        .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      return (
+        <TreeItem
+          key={el.id}
+          id={el.id}
+          data-element-id={el.id}
+          textValue={String(el.props.textValue || el.props.title || el.props.children || '')}
+          title={String(el.props.title || el.props.children || '')}
+          isDisabled={Boolean(el.props.isDisabled)}
+          style={el.props.style}
+          className={el.props.className}
+        >
+          <TreeItemContent>
+            {String(el.props.children || el.props.title || '')}
+          </TreeItemContent>
+          {directChildTreeItems.length > 0 && directChildTreeItems.map((child) => renderElement(child))}
+        </TreeItem>
       );
     }
 

@@ -196,8 +196,20 @@ function Builder() {
                         } as ElementProps;
                     case 'Tree':
                         return {
+                            'aria-label': 'Tree',
                             selectionMode: 'single',
-                            selectionBehavior: 'replace'
+                            selectionBehavior: 'replace',
+                            expandedKeys: [],
+                            selectedKeys: [],
+                            defaultExpandedKeys: [],
+                            defaultSelectedKeys: [],
+                            disallowEmptySelection: false
+                        } as ElementProps;
+                    case 'TreeItem':
+                        return {
+                            title: 'Tree Item',
+                            textValue: 'Tree Item',
+                            isDisabled: false
                         } as ElementProps;
                     case 'Table':
                         return {
@@ -658,6 +670,41 @@ function Builder() {
                 for (const tag of defaultTags) {
                     const tagData = await elementsApi.createElement(tag);
                     addElement(tagData);
+                }
+
+                addElement(data);
+            } else if (componentType === 'Tree') {
+                const defaultTreeItems = [
+                    {
+                        id: crypto.randomUUID(),
+                        tag: 'TreeItem',
+                        props: {
+                            title: 'Documents',
+                            textValue: 'Documents'
+                        } as ElementProps,
+                        parent_id: newElement.id,
+                        page_id: currentPageId!,
+                        order_num: 0,
+                    },
+                    {
+                        id: crypto.randomUUID(),
+                        tag: 'TreeItem',
+                        props: {
+                            title: 'Photos',
+                            textValue: 'Photos'
+                        } as ElementProps,
+                        parent_id: newElement.id,
+                        page_id: currentPageId!,
+                        order_num: 1,
+                    }
+                ];
+
+                // Tree와 기본 TreeItem들을 함께 삽입
+                const data = await elementsApi.createElement(newElement);
+
+                for (const treeItem of defaultTreeItems) {
+                    const treeItemData = await elementsApi.createElement(treeItem);
+                    addElement(treeItemData);
                 }
 
                 addElement(data);

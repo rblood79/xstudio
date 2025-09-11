@@ -23,5 +23,7 @@ export { TableEditor } from './TableEditor';
 export { CardEditor } from './CardEditor';
 export { TagGroupEditor } from './TagGroupEditor';
 export { TagEditor } from './TagEditor';
+export { TreeEditor } from './TreeEditor';
+export { TreeItemEditor } from './TreeItemEditor';
 
 

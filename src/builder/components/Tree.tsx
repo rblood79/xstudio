@@ -14,7 +14,7 @@ import { MyCheckbox } from './Checkbox';
 import './components.css';
 
 export function Tree<T extends object>(props: TreeProps<T>) {
-  return <AriaTree {...props} />;
+  return <AriaTree {...props} className='react-aria-Tree' />;
 }
 
 export function TreeItemContent(
@@ -22,9 +22,9 @@ export function TreeItemContent(
 ) {
   return (
     (
-      <AriaTreeItemContent className='react-aria-TreeItemContent'>
+      <AriaTreeItemContent {...props}>
         {(
-          { hasChildItems, selectionBehavior, selectionMode, allowsDragging }:
+          { selectionBehavior, selectionMode, allowsDragging }:
             TreeItemContentRenderProps
         ) => (
           <>
