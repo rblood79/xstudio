@@ -165,16 +165,67 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
     removeElement: async (elementId) => {
         try {
-            // 서비스 레이어를 통한 삭제
-            await elementsApi.deleteElement(elementId);
+            const elementToDelete = useStore.getState().elements.find(el => el.id === elementId);
+            if (!elementToDelete) return;
+
+            const deletedIds: string[] = [];
+
+            // Tab이나 Panel인 경우 쌍으로 삭제
+            if (elementToDelete.tag === 'Tab' || elementToDelete.tag === 'Panel') {
+                const parentId = elementToDelete.parent_id;
+                if (!parentId) {
+                    // 부모가 없으면 단일 삭제
+                    await elementsApi.deleteElement(elementId);
+                    deletedIds.push(elementId);
+                } else {
+                    // 같은 부모를 가진 Tab과 Panel들을 찾기
+                    const siblings = useStore.getState().elements.filter(el => el.parent_id === parentId);
+                    const tabs = siblings.filter(el => el.tag === 'Tab').sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+                    const panels = siblings.filter(el => el.tag === 'Panel').sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+                    if (elementToDelete.tag === 'Tab') {
+                        // Tab을 삭제하는 경우, 같은 order_num을 가진 Panel 찾기
+                        const tabOrderNum = elementToDelete.order_num;
+                        const correspondingPanel = panels.find(panel => panel.order_num === tabOrderNum);
+
+                        // Tab 삭제
+                        await elementsApi.deleteElement(elementId);
+                        deletedIds.push(elementId);
+
+                        // 해당 Panel 삭제
+                        if (correspondingPanel) {
+                            await elementsApi.deleteElement(correspondingPanel.id);
+                            deletedIds.push(correspondingPanel.id);
+                        }
+                    } else if (elementToDelete.tag === 'Panel') {
+                        // Panel을 삭제하는 경우, 같은 order_num을 가진 Tab 찾기
+                        const panelOrderNum = elementToDelete.order_num;
+                        const correspondingTab = tabs.find(tab => tab.order_num === panelOrderNum);
+
+                        // Panel 삭제
+                        await elementsApi.deleteElement(elementId);
+                        deletedIds.push(elementId);
+
+                        // 해당 Tab 삭제
+                        if (correspondingTab) {
+                            await elementsApi.deleteElement(correspondingTab.id);
+                            deletedIds.push(correspondingTab.id);
+                        }
+                    }
+                }
+            } else {
+                // 일반 요소는 단일 삭제
+                await elementsApi.deleteElement(elementId);
+                deletedIds.push(elementId);
+            }
 
             // 로컬 상태에서도 제거
             set(
                 produce((state) => {
-                    state.elements = state.elements.filter((el: Element) => el.id !== elementId);
+                    state.elements = state.elements.filter((el: Element) => !deletedIds.includes(el.id));
 
                     // 선택된 요소가 삭제된 경우 선택 해제
-                    if (state.selectedElementId === elementId) {
+                    if (deletedIds.includes(state.selectedElementId)) {
                         state.selectedElementId = null;
                         state.selectedElementProps = {};
                         state.selectedTab = null;
@@ -183,7 +234,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
             );
 
             // iframe에 업데이트된 요소 목록 전송
-            const updatedElements = useStore.getState().elements.filter((el: Element) => el.id !== elementId);
+            const updatedElements = useStore.getState().elements;
             try {
                 window.postMessage({
                     type: "UPDATE_ELEMENTS",
