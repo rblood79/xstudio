@@ -1,3 +1,4 @@
+import { JSX } from 'react';
 import {
   Button,
   Label,
@@ -9,7 +10,8 @@ import {
   TagProps,
   Text
 } from 'react-aria-components';
-
+import { X } from 'lucide-react';
+import type { Key, Selection } from '@react-types/shared';
 import './components.css';
 
 export interface TagGroupProps<T>
@@ -20,7 +22,18 @@ export interface TagGroupProps<T>
   description?: string;
   errorMessage?: string;
   allowsRemoving?: boolean;
-  onRemove?: (keys: Set<React.Key>) => void;
+  onRemove?: (keys: Selection) => void;
+  // 선택 관련 프로퍼티 추가
+  selectionMode?: 'none' | 'single' | 'multiple';
+  selectionBehavior?: 'toggle' | 'replace';
+  selectedKeys?: 'all' | Iterable<Key>;
+  defaultSelectedKeys?: 'all' | Iterable<Key>;
+  onSelectionChange?: (keys: Selection) => void;
+  // 비활성화 관련 프로퍼티 추가
+  isDisabled?: boolean;
+  // 기타 유용한 프로퍼티들
+  orientation?: 'horizontal' | 'vertical';
+  disallowEmptySelection?: boolean;
 }
 
 export function TagGroup<T extends object>(
@@ -33,47 +46,51 @@ export function TagGroup<T extends object>(
     renderEmptyState,
     allowsRemoving,
     onRemove,
+    selectionMode = 'none',
+    selectionBehavior = 'toggle',
+    selectedKeys,
+    defaultSelectedKeys,
+    onSelectionChange,
+    disallowEmptySelection = false,
     ...props
   }: TagGroupProps<T>
-) {
+): JSX.Element {
   return (
-    (
-      <AriaTagGroup
-        {...props}
-        onRemove={allowsRemoving ? onRemove : undefined}
-        className='react-aria-TagGroup'
+    <AriaTagGroup
+      {...props}
+      selectionMode={selectionMode}
+      selectionBehavior={selectionBehavior}
+      selectedKeys={selectedKeys}
+      defaultSelectedKeys={defaultSelectedKeys}
+      onSelectionChange={onSelectionChange}
+      disallowEmptySelection={disallowEmptySelection}
+      onRemove={allowsRemoving ? onRemove : undefined}
+      className='react-aria-TagGroup'
+    >
+      <Label>{label}</Label>
+      <TagList
+        items={items}
+        renderEmptyState={renderEmptyState}
+        className='react-aria-TagList'
       >
-        <Label>{label}</Label>
-        <TagList
-          items={items}
-          renderEmptyState={renderEmptyState}
-          className='react-aria-TagList'
-        >
-          {children}
-        </TagList>
-        {description && <Text slot="description">{description}</Text>}
-        {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
-      </AriaTagGroup>
-    )
+        {children}
+      </TagList>
+      {description && <Text slot="description">{description}</Text>}
+      {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
+    </AriaTagGroup>
   );
 }
 
-export function Tag(
-  { children, ...props }: Omit<TagProps, 'children'> & {
-    children?: React.ReactNode;
-  }
-) {
+export function Tag({ children, ...props }: TagProps): JSX.Element {
   const textValue = typeof children === 'string' ? children : undefined;
   return (
-    (
-      <AriaTag textValue={textValue} {...props} className='react-aria-Tag'>
-        {({ allowsRemoving }) => (
-          <>
-            {children}
-            {allowsRemoving && <Button slot="remove">ⓧ</Button>}
-          </>
-        )}
-      </AriaTag>
-    )
+    <AriaTag textValue={textValue} {...props} className='react-aria-Tag'>
+      {({ allowsRemoving }) => (
+        <>
+          {children}
+          {allowsRemoving && <Button slot="remove"><X size={14} /></Button>}
+        </>
+      )}
+    </AriaTag>
   );
 }

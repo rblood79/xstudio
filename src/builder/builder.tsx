@@ -797,6 +797,14 @@ function Builder() {
                 styleElement.textContent = cssString;
             }
 
+            // 프리뷰에서 보내는 UPDATE_ELEMENTS 메시지 처리 (새로 추가)
+            if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
+                console.log("Received UPDATE_ELEMENTS from preview:", event.data.elements.length);
+                // 스토어의 elements를 업데이트
+                const { setElements } = useStore.getState();
+                setElements(event.data.elements);
+            }
+
             if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
                 setSelectedElement(event.data.elementId, event.data.payload?.props);
             }

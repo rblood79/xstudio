@@ -1363,8 +1363,96 @@ function Preview() {
           description={String(el.props.description || '')}
           errorMessage={String(el.props.errorMessage || '')}
           allowsRemoving={Boolean(el.props.allowsRemoving)}
-          onRemove={(keys) => {
+          selectionMode={el.props.selectionMode as 'none' | 'single' | 'multiple' || 'none'}
+          selectionBehavior={el.props.selectionBehavior as 'toggle' | 'replace' || 'toggle'}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys : []}
+          orientation={el.props.orientation as 'horizontal' | 'vertical' || 'horizontal'}
+          isDisabled={Boolean(el.props.isDisabled)}
+          disallowEmptySelection={Boolean(el.props.disallowEmptySelection)}
+          onSelectionChange={async (selectedKeys) => {
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: Array.from(selectedKeys)
+            };
+            updateElementProps(el.id, updatedProps);
+
+            // 데이터베이스에도 저장
+            try {
+              await elementsApi.updateElementProps(el.id, updatedProps);
+              console.log('TagGroup selectedKeys updated successfully');
+            } catch (err) {
+              console.error('Error updating TagGroup selectedKeys:', err);
+            }
+
+            // TagGroupEditor에 즉시 상태 변경 알림
+            window.parent.postMessage({
+              type: 'UPDATE_ELEMENT_PROPS',
+              elementId: el.id,
+              props: {
+                selectedKeys: Array.from(selectedKeys)
+              },
+              merge: true
+            }, window.location.origin);
+          }}
+          onRemove={async (keys) => {
             console.log('Removing tags:', Array.from(keys));
+
+            // 선택된 태그들을 실제로 삭제
+            const keysToRemove = Array.from(keys);
+            const deletedTagIds: string[] = [];
+
+            // 1. 먼저 모든 태그를 데이터베이스에서 삭제
+            for (const key of keysToRemove) {
+              let tagId = key;
+              if (typeof key === 'string' && key.startsWith('react-aria-')) {
+                const index = parseInt(key.replace('react-aria-', '')) - 1;
+                const tagToRemove = tagChildren[index];
+                if (tagToRemove) {
+                  tagId = tagToRemove.id;
+                }
+              }
+
+              try {
+                await elementsApi.deleteElement(tagId);
+                deletedTagIds.push(tagId);
+                console.log(`Tag ${tagId} deleted successfully`);
+              } catch (err) {
+                console.error(`Error deleting tag ${tagId}:`, err);
+              }
+            }
+
+            // 2. 최신 elements 상태를 가져와서 삭제된 태그들을 제거
+            const currentElements = useStore.getState().elements;
+            const updatedElements = currentElements.filter(el => !deletedTagIds.includes(el.id));
+
+            // 3. TagGroup의 selectedKeys 업데이트
+            const currentSelectedKeys = Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys : [];
+            const updatedSelectedKeys = currentSelectedKeys.filter(key => !keysToRemove.includes(key));
+
+            const updatedProps = {
+              ...el.props,
+              selectedKeys: updatedSelectedKeys
+            };
+
+            // 4. 모든 상태를 한 번에 업데이트
+            setElements(updatedElements);
+            updateElementProps(el.id, updatedProps);
+
+            // 5. 데이터베이스에 TagGroup props 저장
+            try {
+              await elementsApi.updateElementProps(el.id, updatedProps);
+              console.log('TagGroup selectedKeys updated after removal');
+            } catch (err) {
+              console.error('Error updating TagGroup selectedKeys after removal:', err);
+            }
+
+            // 6. 부모 창에 업데이트 알림 (한 번만, 지연 없이)
+            setTimeout(() => {
+              window.parent.postMessage({
+                type: "UPDATE_ELEMENTS",
+                elements: updatedElements
+              }, window.location.origin);
+            }, 0);
           }}
           items={tagChildren.map(tag => ({
             id: tag.id,

@@ -1464,27 +1464,29 @@
         cursor: pointer;
     }
 
+    /* TagGroup 컴포넌트 스타일 시작 */
     .react-aria-TagGroup {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        font-size: small;
+        gap: 0px;
+        font-size: var(--text-sm);
         color: var(--text-color);
     }
 
     .react-aria-TagList {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
+        gap: var(--spacing-sm);
     }
 
     .react-aria-Tag {
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
+        color: var(--color-primary-500);
+        border: 1px solid var(--color-primary-500);
         forced-color-adjust: none;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 0.929rem;
+        border-radius: var(--radius-md);
+        padding: var(--spacing) var(--spacing-md);
+        font-size: var(--text-sm);
+        line-height: calc(var(--spacing) * 6);
         outline: none;
         cursor: default;
         display: flex;
@@ -1492,7 +1494,7 @@
         transition: border-color 200ms;
 
         &[data-hovered] {
-            border-color: var(--border-color-hover);
+            border-color: var(--color-primary-600);
         }
 
         &[data-focus-visible] {
@@ -1501,26 +1503,31 @@
         }
 
         &[data-selected] {
-            border-color: var(--highlight-background);
-            background: var(--highlight-background);
-            color: var(--highlight-foreground);
+            border-color: var(--color-primary-600);
+            background: var(--color-black);
+            color: var(--color-white);
         }
 
         [slot=remove] {
             background: none;
             border: none;
             padding: 0;
-            margin-left: 2px;
-            color: var(--text-color-base);
+            margin-left: var(--spacing-2xs);
+            color: var(--color-white);
             transition: color 200ms;
             outline: none;
-            font-size: 0.95em;
+            font-size: var(--text-sm);
             border-radius: 100%;
             aspect-ratio: 1/1;
             height: 100%;
 
+            background: #f00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
             &[data-hovered] {
-                color: var(--text-color-hover);
+                color: var(--color-white);
             }
 
             &[data-focus-visible] {
@@ -1560,6 +1567,8 @@
             color: var(--invalid-color);
         }
     }
+
+    /* TagGroup 컴포넌트 스타일 종료 */
 
     @media (forced-colors: active) {
         .react-aria-Select {
