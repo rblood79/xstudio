@@ -5,7 +5,6 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
-import { supabase } from '../../../../env/supabase.client';
 import { iconProps } from '../../../../utils/uiConstants'; // 추가
 
 // 상수 정의
@@ -86,8 +85,6 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tree Properties</legend>
-
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps['aria-label'] || '')}

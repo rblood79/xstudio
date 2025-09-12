@@ -760,11 +760,11 @@
     .react-aria-Tree {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: var(--spacing);
         overflow: auto;
-        padding: 4px;
+        padding: var(--spacing);
         border: 1px solid var(--border-color);
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         background: var(--overlay-background);
         forced-color-adjust: none;
         outline: none;
@@ -781,15 +781,15 @@
         .react-aria-TreeItem {
             display: flex;
             align-items: center;
-            gap: 0.571rem;
+            gap: var(--spacing);
             min-height: 28px;
-            padding: 0.286rem 0.286rem 0.286rem 0.571rem;
-            --padding: 16px;
-            border-radius: 6px;
+            padding: var(--spacing);
+            --padding: var(--spacing);
+            border-radius: var(--radius-md);
             outline: none;
             cursor: default;
             color: var(--text-color);
-            font-size: 1.072rem;
+            font-size: var(--text-sm);
             position: relative;
             transform: translateZ(0);
 
@@ -799,11 +799,11 @@
                 visibility: hidden;
                 align-items: center;
                 justify-content: center;
-                width: 1.3rem;
-                height: 100%;
+                width: var(--spacing-lg);
+                height: var(--spacing-lg);
                 padding-left: calc((var(--tree-item-level) - 1) * var(--padding));
 
-                svg {
+                /*svg {
                     rotate: 0deg;
                     transition: rotate 200ms;
                     width: 12px;
@@ -811,7 +811,7 @@
                     fill: none;
                     stroke: currentColor;
                     stroke-width: 3px;
-                }
+                }*/
             }
 
             &[data-has-child-items] .react-aria-Button[slot=chevron] {

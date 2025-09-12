@@ -49,10 +49,8 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 tag: 'TreeItem',
                 props: {
                     title: `Child Item ${newTreeItemIndex + 1}`,
-                    textValue: `Child Item ${newTreeItemIndex + 1}`,
+                    value: `Child Item ${newTreeItemIndex + 1}`,
                     isDisabled: false,
-                    style: {},
-                    className: '',
                 },
                 parent_id: elementId,
                 order_num: newTreeItemIndex,
@@ -71,8 +69,6 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>TreeItem Properties</legend>
-
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.title || '')}
@@ -81,8 +77,8 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.TEXT_VALUE}
-                    value={String(currentProps.textValue || '')}
+                    label={PROPERTY_LABELS.VALUE}
+                    value={String(currentProps.value || '')}
                     onChange={(value) => updateProp('textValue', value)}
                     icon={Workflow}
                 />

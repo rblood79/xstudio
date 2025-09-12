@@ -1020,22 +1020,29 @@ function Preview() {
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // 재귀적으로 TreeItem들을 렌더링하는 헬퍼 함수
+      // Tree 컴포넌트 내부의 재귀 렌더링 함수 수정
       const renderTreeItemsRecursively = (items: PreviewElement[]): React.ReactNode => {
         return items.map((item) => {
-          // 각 TreeItem의 직접 자식 TreeItem들 찾기
           const childTreeItems = elements
             .filter((child) => child.parent_id === item.id && child.tag === 'TreeItem')
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          // 표준화된 속성 우선순위 적용
+          const displayTitle = String(
+            item.props.title ||
+            item.props.label ||
+            item.props.value ||
+            item.props.children ||
+            ''
+          );
 
           return (
             <TreeItem
               key={item.id}
               id={item.id}
-              title={String(item.props.title || item.props.label || item.props.children || '')}
-              showInfoButton={false} // Preview에서는 info 버튼 숨김
+              title={displayTitle}
+              showInfoButton={false}
             >
-              {/* 자식 TreeItem들이 있으면 재귀적으로 렌더링 */}
               {childTreeItems.length > 0 && renderTreeItemsRecursively(childTreeItems)}
             </TreeItem>
           );
@@ -1078,20 +1085,28 @@ function Preview() {
 
     // TreeItem 컴포넌트는 Tree 내부에서만 렌더링되므로 별도 처리 불필요
     // 하지만 독립적으로 렌더링될 수 있는 경우를 위해 유지
+    // TreeItem 컴포넌트 렌더링 개선
     if (el.tag === 'TreeItem') {
-      // TreeItem의 직접 자식 TreeItem들을 찾기
       const directChildTreeItems = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      // XStudio 표준 패턴: title > label > value > children 우선순위
+      const displayTitle = String(
+        el.props.title ||
+        el.props.label ||
+        el.props.value ||
+        el.props.children ||
+        ''
+      );
 
       return (
         <TreeItem
           key={el.id}
           id={el.id}
-          title={String(el.props.title || el.props.label || el.props.children || '')}
-          showInfoButton={false}
+          title={displayTitle}
+          showInfoButton={false} // Preview에서는 info 버튼 비활성화
         >
-          {/* 자식 TreeItem들을 직접 renderElement로 렌더링 */}
           {directChildTreeItems.map((childItem) => renderElement(childItem))}
         </TreeItem>
       );
