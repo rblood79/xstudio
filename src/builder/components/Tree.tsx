@@ -46,20 +46,39 @@ export function TreeItemContent(
 
 export interface TreeItemProps extends Partial<AriaTreeItemProps> {
   title: string;
+  children?: React.ReactNode;
+  showInfoButton?: boolean;
+  onInfoClick?: () => void;
 }
 
 export function TreeItem(props: TreeItemProps) {
+  const {
+    title,
+    children,
+    showInfoButton = true,
+    onInfoClick,
+    ...restProps
+  } = props;
+
   return (
-    (
-      <AriaTreeItem textValue={props.title} {...props} className='react-aria-TreeItem'>
-        <TreeItemContent>
-          {props.title}
-          <Button aria-label="Info">
-            <InfoIcon size={20} />
+    <AriaTreeItem
+      textValue={title}
+      {...restProps}
+      className='react-aria-TreeItem'
+    >
+      <TreeItemContent>
+        <span className="tree-item-title">{title}</span>
+        {showInfoButton && (
+          <Button
+            aria-label={`${title} 정보`}
+            onPress={onInfoClick}
+            className="tree-item-info-button"
+          >
+            <InfoIcon size={16} />
           </Button>
-        </TreeItemContent>
-        {props.children}
-      </AriaTreeItem>
-    )
+        )}
+      </TreeItemContent>
+      {children}
+    </AriaTreeItem>
   );
 }
