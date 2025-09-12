@@ -62,7 +62,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 tag: 'TreeItem',
                 props: {
                     title: `Item ${newTreeItemIndex + 1}`,
-                    textValue: `Item ${newTreeItemIndex + 1}`,
+                    value: `Item ${newTreeItemIndex + 1}`,
                     children: `Item ${newTreeItemIndex + 1}`,
                     isDisabled: false,
                     style: {},
