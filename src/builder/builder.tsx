@@ -209,6 +209,7 @@ function Builder() {
                         return {
                             title: 'Tree Item',
                             value: 'Tree Item',
+                            children: '', // children 속성 추가
                             isDisabled: false
                         } as ElementProps;
                     case 'Table':
