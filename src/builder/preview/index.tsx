@@ -1036,11 +1036,15 @@ function Preview() {
             ''
           );
 
+          // 하위 TreeItem 존재 여부 확인
+          const hasChildren = childTreeItems.length > 0;
+
           return (
             <TreeItem
               key={item.id}
               id={item.id}
               title={displayTitle}
+              hasChildren={hasChildren} // 하위 항목 존재 여부 전달
               showInfoButton={false}
             >
               {childTreeItems.length > 0 && renderTreeItemsRecursively(childTreeItems)}
@@ -1100,11 +1104,15 @@ function Preview() {
         ''
       );
 
+      // 하위 TreeItem이 있는지 확인
+      const hasChildren = directChildTreeItems.length > 0;
+
       return (
         <TreeItem
           key={el.id}
           id={el.id}
           title={displayTitle}
+          hasChildren={hasChildren} // 하위 항목 존재 여부 전달
           showInfoButton={false} // Preview에서는 info 버튼 비활성화
         >
           {directChildTreeItems.map((childItem) => renderElement(childItem))}
