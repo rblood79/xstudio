@@ -1011,12 +1011,36 @@ function Preview() {
       );
     }
 
+    // Tree 컴포넌트와 TreeItem 컴포넌트 렌더링 통합 개선
+
     // Tree 컴포넌트 특별 처리
     if (el.tag === 'Tree') {
       // Tree의 실제 TreeItem 자식 요소들을 찾기
       const treeItemChildren = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      // 재귀적으로 TreeItem들을 렌더링하는 헬퍼 함수
+      const renderTreeItemsRecursively = (items: PreviewElement[]): React.ReactNode => {
+        return items.map((item) => {
+          // 각 TreeItem의 직접 자식 TreeItem들 찾기
+          const childTreeItems = elements
+            .filter((child) => child.parent_id === item.id && child.tag === 'TreeItem')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+          return (
+            <TreeItem
+              key={item.id}
+              id={item.id}
+              title={String(item.props.title || item.props.label || item.props.children || '')}
+              showInfoButton={false} // Preview에서는 info 버튼 숨김
+            >
+              {/* 자식 TreeItem들이 있으면 재귀적으로 렌더링 */}
+              {childTreeItems.length > 0 && renderTreeItemsRecursively(childTreeItems)}
+            </TreeItem>
+          );
+        });
+      };
 
       return (
         <Tree
@@ -1047,14 +1071,15 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {treeItemChildren.map((item) => renderElement(item))}
+          {renderTreeItemsRecursively(treeItemChildren)}
         </Tree>
       );
     }
 
-    // TreeItem 컴포넌트 특별 처리
+    // TreeItem 컴포넌트는 Tree 내부에서만 렌더링되므로 별도 처리 불필요
+    // 하지만 독립적으로 렌더링될 수 있는 경우를 위해 유지
     if (el.tag === 'TreeItem') {
-      // TreeItem의 직접 자식 TreeItem들을 찾기 (한 단계만)
+      // TreeItem의 직접 자식 TreeItem들을 찾기
       const directChildTreeItems = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -1063,17 +1088,11 @@ function Preview() {
         <TreeItem
           key={el.id}
           id={el.id}
-          data-element-id={el.id}
-          textValue={String(el.props.textValue || el.props.title || el.props.children || '')}
-          title={String(el.props.title || el.props.children || '')}
-          isDisabled={Boolean(el.props.isDisabled)}
-          style={el.props.style}
-          className={el.props.className}
+          title={String(el.props.title || el.props.label || el.props.children || '')}
+          showInfoButton={false}
         >
-          <TreeItemContent>
-            {String(el.props.children || el.props.title || '')}
-          </TreeItemContent>
-          {directChildTreeItems.length > 0 && directChildTreeItems.map((child) => renderElement(child))}
+          {/* 자식 TreeItem들을 직접 renderElement로 렌더링 */}
+          {directChildTreeItems.map((childItem) => renderElement(childItem))}
         </TreeItem>
       );
     }
