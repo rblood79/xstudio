@@ -208,7 +208,7 @@ function Builder() {
                     case 'TreeItem':
                         return {
                             title: 'Tree Item',
-                            textValue: 'Tree Item',
+                            value: 'Tree Item',
                             isDisabled: false
                         } as ElementProps;
                     case 'Table':
@@ -680,7 +680,7 @@ function Builder() {
                         tag: 'TreeItem',
                         props: {
                             title: 'Documents',
-                            textValue: 'Documents'
+                            value: 'Documents'
                         } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
@@ -691,7 +691,7 @@ function Builder() {
                         tag: 'TreeItem',
                         props: {
                             title: 'Photos',
-                            textValue: 'Photos'
+                            value: 'Photos'
                         } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
