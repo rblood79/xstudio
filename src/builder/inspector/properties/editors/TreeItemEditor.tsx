@@ -79,7 +79,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
-                    onChange={(value) => updateProp('textValue', value)}
+                    onChange={(value) => updateProp('value', value)}
                     icon={Workflow}
                 />
 
