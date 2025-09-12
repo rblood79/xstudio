@@ -8,7 +8,7 @@ import {
   TreeItemProps as AriaTreeItemProps,
   TreeProps
 } from 'react-aria-components';
-import { InfoIcon, ChevronRightIcon } from 'lucide-react';
+import { InfoIcon, ChevronRightIcon, Minus } from 'lucide-react';
 import { MyCheckbox } from './Checkbox';
 
 import './components.css';
@@ -18,7 +18,10 @@ export function Tree<T extends object>(props: TreeProps<T>) {
 }
 
 export function TreeItemContent(
-  props: Omit<TreeItemContentProps, 'children'> & { children?: React.ReactNode }
+  props: Omit<TreeItemContentProps, 'children'> & {
+    children?: React.ReactNode;
+    hasChildren?: boolean; // 하위 항목 존재 여부
+  }
 ) {
   return (
     <AriaTreeItemContent {...props}>
@@ -31,7 +34,12 @@ export function TreeItemContent(
             <MyCheckbox slot="selection" />
           )}
           <Button slot="chevron">
-            <ChevronRightIcon size={16} />
+            {/* 하위 항목이 있으면 ChevronRightIcon, 없으면 Minus */}
+            {props.hasChildren ? (
+              <ChevronRightIcon size={16} data-chevron="true" />
+            ) : (
+              <Minus size={16} data-minus="true" />
+            )}
           </Button>
           {props.children}
         </>
@@ -42,11 +50,12 @@ export function TreeItemContent(
 
 export interface TreeItemProps extends Omit<Partial<AriaTreeItemProps>, 'value'> {
   title?: string;
-  value?: string;        // 표준 value 속성
-  label?: string;        // 대안 라벨 (다른 컴포넌트와 일관성 유지)
+  value?: string;
+  label?: string;
   children?: React.ReactNode;
   showInfoButton?: boolean;
   onInfoClick?: () => void;
+  hasChildren?: boolean; // 하위 항목 존재 여부 prop 추가
 }
 
 export function TreeItem(props: TreeItemProps) {
@@ -57,11 +66,16 @@ export function TreeItem(props: TreeItemProps) {
     children,
     showInfoButton = true,
     onInfoClick,
+    hasChildren,
     ...restProps
   } = props;
 
   // XStudio 표준 패턴: title > label > value 우선순위
   const displayTitle = String(title || label || value || '');
+
+  // children prop을 기반으로 hasChildren 자동 감지
+  const actualHasChildren = hasChildren ?? (children != null &&
+    (Array.isArray(children) ? children.length > 0 : true));
 
   return (
     <AriaTreeItem
@@ -69,7 +83,7 @@ export function TreeItem(props: TreeItemProps) {
       {...restProps}
       className='react-aria-TreeItem'
     >
-      <TreeItemContent>
+      <TreeItemContent hasChildren={actualHasChildren}>
         <span className="tree-item-title">{displayTitle}</span>
         {showInfoButton && (
           <Button

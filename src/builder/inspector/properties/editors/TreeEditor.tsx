@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ListTree, FolderTree, Workflow, Plus } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -20,7 +20,7 @@ const SELECTION_BEHAVIORS: Array<{ id: string; label: string }> = [
 ];
 
 export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const { addElement, elements: storeElements } = useStore();
+    const { addElement } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 
     const updateProp = (key: string, value: unknown) => {

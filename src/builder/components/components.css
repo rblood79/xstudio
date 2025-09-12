@@ -796,30 +796,27 @@
             .react-aria-Button[slot=chevron] {
                 all: unset;
                 display: flex;
-                visibility: hidden;
+                /*visibility: hidden;*/
                 align-items: center;
                 justify-content: center;
                 width: var(--spacing-lg);
                 height: var(--spacing-lg);
-                padding-left: calc((var(--tree-item-level) - 1) * var(--padding));
+                padding-left: calc((var(--tree-item-level) - 1) * var(--spacing-lg));
 
-                /*svg {
+                svg {
                     rotate: 0deg;
-                    transition: rotate 200ms;
-                    width: 12px;
-                    height: 12px;
-                    fill: none;
-                    stroke: currentColor;
-                    stroke-width: 3px;
-                }*/
+                    transition: rotate 0.2s ease-in-out;
+                }
             }
 
             &[data-has-child-items] .react-aria-Button[slot=chevron] {
                 visibility: visible;
             }
 
-            &[data-expanded] .react-aria-Button[slot=chevron] svg {
-                rotate: 90deg;
+            &[data-expanded] .react-aria-Button[slot=chevron] {
+                svg {
+                    rotate: 90deg;
+                }
             }
 
             &[data-focus-visible] {
