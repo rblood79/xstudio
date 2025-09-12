@@ -32,7 +32,6 @@ import {
   Radio,
   Tree,
   TreeItem,
-  TreeItemContent, // 추가
   Panel,
   Calendar,
   DatePicker,
@@ -1013,30 +1012,34 @@ function Preview() {
 
     // Tree 컴포넌트와 TreeItem 컴포넌트 렌더링 통합 개선
 
-    // Tree 컴포넌트 특별 처리
+    // Tree 컴포넌트 특별 처리 (1017-1095 라인 완전 교체)
     if (el.tag === 'Tree') {
       // Tree의 실제 TreeItem 자식 요소들을 찾기
       const treeItemChildren = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // Tree 컴포넌트 내부의 재귀 렌더링 함수 수정
+      // Tree 컴포넌트 내부의 재귀 렌더링 함수 - React Aria 컬렉션 시스템 사용
       const renderTreeItemsRecursively = (items: PreviewElement[]): React.ReactNode => {
         return items.map((item) => {
+          // 하위 TreeItem들 찾기
           const childTreeItems = elements
             .filter((child) => child.parent_id === item.id && child.tag === 'TreeItem')
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-          // 표준화된 속성 우선순위 적용
+          // TreeItem이 아닌 다른 컴포넌트들 찾기 (Button, Text 등)
+          const otherChildren = elements
+            .filter((child) => child.parent_id === item.id && child.tag !== 'TreeItem')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
           const displayTitle = String(
             item.props.title ||
             item.props.label ||
             item.props.value ||
             item.props.children ||
-            ''
+            `Item ${item.id}`
           );
 
-          // 하위 TreeItem 존재 여부 확인
           const hasChildren = childTreeItems.length > 0;
 
           return (
@@ -1044,11 +1047,13 @@ function Preview() {
               key={item.id}
               id={item.id}
               title={displayTitle}
-              hasChildren={hasChildren} // 하위 항목 존재 여부 전달
+              hasChildren={hasChildren}
               showInfoButton={false}
-            >
-              {childTreeItems.length > 0 && renderTreeItemsRecursively(childTreeItems)}
-            </TreeItem>
+              // 다른 컴포넌트들 (Button, Text 등)
+              children={otherChildren.map((child) => renderElement(child))}
+              // 하위 TreeItem들
+              childItems={hasChildren ? renderTreeItemsRecursively(childTreeItems) : undefined}
+            />
           );
         });
       };
@@ -1064,9 +1069,6 @@ function Preview() {
           selectionBehavior={(el.props.selectionBehavior as 'replace' | 'toggle') || 'replace'}
           expandedKeys={Array.isArray(el.props.expandedKeys) ? el.props.expandedKeys as unknown as string[] : []}
           selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
-          defaultExpandedKeys={Array.isArray(el.props.defaultExpandedKeys) ? el.props.defaultExpandedKeys as unknown as string[] : []}
-          defaultSelectedKeys={Array.isArray(el.props.defaultSelectedKeys) ? el.props.defaultSelectedKeys as unknown as string[] : []}
-          disallowEmptySelection={Boolean(el.props.disallowEmptySelection)}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1087,36 +1089,39 @@ function Preview() {
       );
     }
 
-    // TreeItem 컴포넌트는 Tree 내부에서만 렌더링되므로 별도 처리 불필요
-    // 하지만 독립적으로 렌더링될 수 있는 경우를 위해 유지
-    // TreeItem 컴포넌트 렌더링 개선
+    // TreeItem 개별 렌더링 처리 수정
     if (el.tag === 'TreeItem') {
-      const directChildTreeItems = elements
+      // 하위 TreeItem들 찾기
+      const childTreeItems = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'TreeItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // XStudio 표준 패턴: title > label > value > children 우선순위
+      // TreeItem이 아닌 다른 컴포넌트들 찾기
+      const otherChildren = elements
+        .filter((child) => child.parent_id === el.id && child.tag !== 'TreeItem')
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
       const displayTitle = String(
         el.props.title ||
         el.props.label ||
         el.props.value ||
         el.props.children ||
-        ''
+        `Item ${el.id}`
       );
 
-      // 하위 TreeItem이 있는지 확인
-      const hasChildren = directChildTreeItems.length > 0;
+      const hasChildren = childTreeItems.length > 0;
 
+      // TreeItem이 독립적으로 렌더링되는 경우 (Tree 외부)
       return (
         <TreeItem
           key={el.id}
           id={el.id}
           title={displayTitle}
-          hasChildren={hasChildren} // 하위 항목 존재 여부 전달
-          showInfoButton={false} // Preview에서는 info 버튼 비활성화
-        >
-          {directChildTreeItems.map((childItem) => renderElement(childItem))}
-        </TreeItem>
+          hasChildren={hasChildren}
+          showInfoButton={true}
+          children={otherChildren.map((child) => renderElement(child))}
+          childItems={hasChildren ? childTreeItems.map((childItem) => renderElement(childItem)) : undefined}
+        />
       );
     }
 

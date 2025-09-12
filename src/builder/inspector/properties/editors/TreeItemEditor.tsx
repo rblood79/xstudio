@@ -50,6 +50,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 props: {
                     title: `Child Item ${newTreeItemIndex + 1}`,
                     value: `Child Item ${newTreeItemIndex + 1}`,
+                    children: ``, // children 속성 추가
                     isDisabled: false,
                 },
                 parent_id: elementId,
