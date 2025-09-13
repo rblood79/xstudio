@@ -1698,20 +1698,24 @@ function Preview() {
   };
 
   const renderElementsTree = (): React.ReactNode => {
-    const rootElement = elements.length > 0 ? elements[0] : null;
-
-    if (rootElement && rootElement.tag === 'body') {
-      // body가 루트인 경우, body의 직접 자식 요소들만 렌더링
+    // body 태그 확인
+    const bodyElement = elements.find(el => el.tag === 'body');
+    
+    if (bodyElement) {
+      // body가 있는 경우, body의 직접 자식 요소들만 렌더링
       const bodyChildren = elements
-        .filter((el) => el.parent_id === rootElement.id)
+        .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      
+      // body의 자식들을 렌더링 (body 자체는 Preview 컴포넌트의 루트에서 처리)
       return bodyChildren.map((el) => renderElement(el));
     } else {
-      // body가 아닌 경우 기존 로직 사용
-      const sortedRootElements = elements
+      // body가 없는 경우 루트 요소들 렌더링
+      const rootElements = elements
         .filter((el) => !el.parent_id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      return sortedRootElements.map((el) => renderElement(el));
+      
+      return rootElements.map((el) => renderElement(el));
     }
   };
 
