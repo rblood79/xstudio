@@ -79,8 +79,10 @@ function Builder() {
                 return {
                     ...baseProps,
                     label: 'Text Field',
-                    placeholder: 'Enter text...',
+                    placeholder: 'Enter text...', // placeholder 추가
+                    description: 'Description text',
                     value: '',
+                    type: 'text',
                     isDisabled: false,
                     isRequired: false
                 };
@@ -95,7 +97,8 @@ function Builder() {
                 return {
                     ...baseProps,
                     type: 'text',
-                    placeholder: 'Enter text...'
+                    placeholder: 'Enter text...', // Input 요소에도 placeholder 추가
+                    value: ''
                 };
 
             case 'Description':
@@ -315,15 +318,18 @@ function Builder() {
                         props: { children: 'Label' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 1, // 1부터 시작
+                        order_num: 1,
                     },
                     {
                         id: crypto.randomUUID(),
                         tag: 'Input',
-                        props: {} as ElementProps,
+                        props: { 
+                            type: 'text',
+                            placeholder: newElement.props.placeholder || 'Enter text...' // placeholder 전달
+                        } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 2, // 순차적 증가
+                        order_num: 2,
                     },
                     {
                         id: crypto.randomUUID(),

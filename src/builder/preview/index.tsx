@@ -424,6 +424,8 @@ function Preview() {
       );
     }
 
+    // Input 컴포넌트 렌더링 수정
+
     if (el.tag === 'Input') {
       return (
         <Input
@@ -431,6 +433,19 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
+          type={el.props.type as 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' || 'text'}
+          placeholder={String(el.props.placeholder || '')} // placeholder 추가
+          value={String(el.props.value || '')}
+          defaultValue={String(el.props.defaultValue || '')}
+          isDisabled={Boolean(el.props.isDisabled || false)}
+          isReadOnly={Boolean(el.props.isReadOnly || false)}
+          onChange={(value) => {
+            const updatedProps = {
+              ...el.props,
+              value: String(value)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
         />
       );
     }
@@ -570,6 +585,21 @@ function Preview() {
 
     // TextField 컴포넌트 특별 처리
     if (el.tag === 'TextField') {
+      // 개발 환경에서 받은 props 확인
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Preview TextField props:', {
+          id: el.id,
+          label: el.props.label,
+          placeholder: el.props.placeholder,
+          description: el.props.description,
+          type: el.props.type,
+          value: el.props.value,
+          isRequired: el.props.isRequired,
+          isDisabled: el.props.isDisabled,
+          isReadOnly: el.props.isReadOnly
+        });
+      }
+
       return (
         <TextField
           key={el.id}
@@ -579,9 +609,20 @@ function Preview() {
           label={String(el.props.label || '')}
           description={String(el.props.description || '')}
           errorMessage={String(el.props.errorMessage || '')}
+          placeholder={String(el.props.placeholder || '')} // placeholder 추가
+          type={el.props.type as 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' || 'text'}
+          value={String(el.props.value || '')}
+          defaultValue={String(el.props.defaultValue || '')}
           isDisabled={Boolean(el.props.isDisabled || false)}
           isRequired={Boolean(el.props.isRequired || false)}
           isReadOnly={Boolean(el.props.isReadOnly || false)}
+          onChange={(value) => {
+            const updatedProps = {
+              ...el.props,
+              value: String(value)
+            };
+            updateElementProps(el.id, updatedProps);
+          }}
         />
       );
     }
