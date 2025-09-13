@@ -673,7 +673,7 @@ function Preview() {
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // 디버깅을 위한 로그
-      console.log('Select 렌더링:', {
+      /*console.log('Select 렌더링:', {
         id: el.id,
         label: el.props.label,
         selectedKey: el.props.selectedKey,
@@ -683,7 +683,7 @@ function Preview() {
           value: item.props.value,
           label: item.props.label
         }))
-      });
+      });*/
 
       return (
         <Select
