@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, PointerOff, AlertTriangle, Hash, FileText, SpellCheck2, Trash, Binary, SquareMousePointer, Menu, SquareX, CheckSquare, PenOff, Focus } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
+import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus } from 'lucide-react';
+import { PropertyInput, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -17,13 +17,13 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     const { addElement, removeElement, elements: storeElements, currentPageId, updateElementProps } = useStore();
 
     // 디버깅을 위한 로그 추가
-    useEffect(() => {
+    /*useEffect(() => {
         console.log('ComboBoxEditor currentProps 업데이트:', {
             elementId,
             selectedKey: currentProps.selectedKey,
             currentProps
         });
-    }, [currentProps, elementId]);
+    }, [currentProps, elementId]);*/
 
     useEffect(() => {
         // 옵션 선택 상태 초기화

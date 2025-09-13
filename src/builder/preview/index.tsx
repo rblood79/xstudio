@@ -196,13 +196,15 @@ function Preview() {
     };
   };
 
+  // renderElement 함수 수정
+
   const renderElement = (el: PreviewElement): React.ReactNode => {
     const children = elements
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-    // body 태그인 경우 특별 처리 - 실제 body는 이미 존재하므로 div로 렌더링
-    const tag = el.tag === 'body' ? 'div' : el.tag;
+    // body 태그는 특별 처리 - 다른 컴포넌트 내부에서는 div로 렌더링
+    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
 
     const newProps = {
       ...el.props,
@@ -210,31 +212,25 @@ function Preview() {
       "data-element-id": el.id,
     };
 
-    // body 태그인 경우 tag 속성 제거하지 않음 (초기 렌더링 시에도 표시되도록)
-    // if (el.tag === 'body' && newProps.tag) {
-    //   delete newProps.tag;
-    // }
+    // body 태그였다면 data 속성으로 원래 태그 기록
+    if (el.tag === 'body') {
+      newProps['data-original-tag'] = 'body';
+    }
 
     // 이벤트 핸들러 추가
     const eventHandlers: Record<string, (e: Event) => void> = {};
 
     if (el.props.events && Array.isArray(el.props.events)) {
       const events = el.props.events as ElementEvent[];
-
-      // 활성화된 이벤트 타입들만 추출
       const enabledEventTypes = events
         .filter(event => event.enabled !== false)
         .map(event => event.event_type);
 
-      // 중복 제거 후 핸들러 생성
       [...new Set(enabledEventTypes)].forEach(eventType => {
         eventHandlers[eventType] = createEventHandler(el, eventType);
       });
     }
 
-    // 기존 props와 이벤트 핸들러 결합
-
-    // 기존 props와 이벤트 핸들러 결합
     const finalProps = {
       ...newProps,
       ...eventHandlers
@@ -702,7 +698,7 @@ function Preview() {
           key={el.id}
           data-element-id={el.id}
           style={elementProps.style}
-          className={elementProps.className}
+          className={el.props.className}
           label={processedLabel}
           description={elementProps.description ? String(elementProps.description).trim() : undefined}
           errorMessage={elementProps.errorMessage ? String(elementProps.errorMessage).trim() : undefined}
@@ -1615,17 +1611,11 @@ function Preview() {
       'legend', 'datalist', 'output', 'progress', 'meter'
     ];
 
-    // 일반 요소 처리 부분 수정
-    const content = [
-      el.props.text && String(el.props.text),
-      ...children.map((child) => renderElement(child))
-    ].filter(Boolean);
-
-    // React 컴포넌트인지 확인
-    const ReactComponent = reactComponentMap[el.tag as keyof typeof reactComponentMap];
+    // React 컴포넌트인지 확인 (대소문자 구분)
+    const ReactComponent = reactComponentMap[effectiveTag];
     
     if (ReactComponent) {
-      // React 컴포넌트인 경우 - 모든 props 전달 가능
+      // React 컴포넌트인 경우 - JSX.Element 반환
       return React.createElement(
         ReactComponent,
         {
@@ -1637,15 +1627,16 @@ function Preview() {
       );
     }
 
-    // HTML 요소인지 확인
-    const isHTMLElement = htmlElements.includes(el.tag.toLowerCase()) || 
-                          (el.tag && typeof el.tag === 'string' && el.tag[0] === el.tag[0].toLowerCase());
+    // HTML 요소인지 확인 (소문자 변환 후 체크)
+    const isHTMLElement = htmlElements.includes(effectiveTag.toLowerCase()) || 
+                          (effectiveTag && typeof effectiveTag === 'string' && 
+                           effectiveTag[0] === effectiveTag[0].toLowerCase());
 
     if (isHTMLElement) {
       // HTML 요소인 경우 - React Aria 전용 props 제거
       const cleanProps = { ...finalProps };
 
-      // React Aria 전용 props 및 사용자 정의 props 제거
+      // React Aria 전용 props 제거
       const propsToRemove = [
         'isDisabled', 'isSelected', 'isIndeterminate', 'isRequired',
         'isReadOnly', 'isInvalid', 'onPress', 'onHoverStart', 'onHoverEnd',
@@ -1677,7 +1668,7 @@ function Preview() {
       }
 
       return React.createElement(
-        el.tag.toLowerCase(),
+        effectiveTag.toLowerCase(),
         {
           ...cleanProps,
           key: el.id,
@@ -1687,13 +1678,14 @@ function Preview() {
       );
     }
 
-    // 알 수 없는 태그인 경우 div로 렌더링하되 경고 표시
-    console.warn(`Unknown component/element type: ${el.tag}. Rendering as div.`);
+    // 알 수 없는 태그인 경우 div로 렌더링
+    console.warn(`Unknown component/element type: ${effectiveTag}. Rendering as div.`);
     
     const fallbackProps = {
       key: el.id,
       "data-element-id": el.id,
-      "data-unknown-component": el.tag,
+      "data-unknown-component": effectiveTag,
+      "data-original-tag": el.tag,
       style: finalProps.style,
       className: finalProps.className,
     };
@@ -1701,7 +1693,7 @@ function Preview() {
     return React.createElement(
       'div',
       fallbackProps,
-      content.length > 0 ? content : `Unknown: ${el.tag}`
+      content.length > 0 ? content : `Unknown: ${effectiveTag}`
     );
   };
 
