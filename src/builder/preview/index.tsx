@@ -1564,45 +1564,145 @@ function Preview() {
       );
     }
 
+    // React 컴포넌트와 HTML 요소 구분을 위한 매핑
+    const reactComponentMap = {
+      'Button': Button,
+      'TextField': TextField,
+      'Label': Label,
+      'Input': Input,
+      'Description': Description,
+      'FieldError': FieldError,
+      'Checkbox': Checkbox,
+      'CheckboxGroup': CheckboxGroup,
+      'Radio': Radio,
+      'RadioGroup': RadioGroup,
+      'ListBox': ListBox,
+      'ListBoxItem': ListBoxItem,
+      'GridList': GridList,
+      'GridListItem': GridListItem,
+      'Select': Select,
+      'SelectItem': SelectItem,
+      'ComboBox': ComboBox,
+      'ComboBoxItem': ComboBoxItem,
+      'Slider': Slider,
+      'Tabs': Tabs,
+      'TabList': TabList,
+      'Tab': Tab,
+      'TabPanel': TabPanel,
+      'Tree': Tree,
+      'TreeItem': TreeItem,
+      'Panel': Panel,
+      'Calendar': Calendar,
+      'DatePicker': DatePicker,
+      'DateRangePicker': DateRangePicker,
+      'Switch': Switch,
+      'Table': Table,
+      'Card': Card,
+      'TagGroup': TagGroup,
+      'Tag': Tag,
+      'ToggleButton': ToggleButton,
+      'ToggleButtonGroup': ToggleButtonGroup,
+      // ... 다른 React Aria 컴포넌트들
+    } as const;
+
+    // HTML 요소 목록
+    const htmlElements = [
+      'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'section', 'article', 'header', 'footer', 'nav', 'main', 'aside',
+      'ul', 'ol', 'li', 'a', 'img', 'video', 'audio', 'canvas',
+      'table', 'thead', 'tbody', 'tr', 'td', 'th', 'form', 'input',
+      'textarea', 'button', 'select', 'option', 'label', 'fieldset',
+      'legend', 'datalist', 'output', 'progress', 'meter'
+    ];
+
     // 일반 요소 처리 부분 수정
     const content = [
       el.props.text && String(el.props.text),
       ...children.map((child) => renderElement(child))
     ].filter(Boolean);
 
-    // HTML 요소에 대해서는 React Aria 전용 props 제거
-    const cleanProps = { ...finalProps };
+    // React 컴포넌트인지 확인
+    const ReactComponent = reactComponentMap[el.tag as keyof typeof reactComponentMap];
+    
+    if (ReactComponent) {
+      // React 컴포넌트인 경우 - 모든 props 전달 가능
+      return React.createElement(
+        ReactComponent,
+        {
+          ...finalProps,
+          key: el.id,
+          "data-element-id": el.id,
+        },
+        content.length > 0 ? content : undefined
+      );
+    }
 
-    // React Aria 전용 props 및 사용자 정의 props 제거 (더 포괄적으로)
-    const propsToRemove = [
-      'isDisabled', 'isSelected', 'isIndeterminate', 'isRequired',
-      'isReadOnly', 'isInvalid', 'onPress', 'onHoverStart', 'onHoverEnd',
-      'selectionMode', 'selectionBehavior', 'orientation', 'variant',
-      'size', 'isQuiet', 'isFocused', 'allowsRemoving', 'textValue',
-      'selectedKeys', 'defaultSelectedKey', 'allowsCustomValue',
-      'granularity', 'firstDayOfWeek', 'calendarIconPosition',
-      'showCalendarIcon', 'showWeekNumbers', 'highlightToday',
-      'allowClear', 'shouldForceLeadingZeros', 'shouldCloseOnSelect',
-      'includeTime', 'timeFormat', 'timeLabel', 'startTimeLabel', 'endTimeLabel',
-      'allowsNonContiguousRanges', 'visibleDuration', 'pageBehavior',
-      'disallowEmptySelection', 'text', 'children', 'events'
-    ];
-
-    propsToRemove.forEach(prop => {
-      if (prop in cleanProps) {
-        delete (cleanProps as Record<string, unknown>)[prop];
-      }
-    });
-
-    // tag가 소문자로 시작하는 HTML 요소인지 확인
-    const isHTMLElement = tag && typeof tag === 'string' && tag[0] === tag[0].toLowerCase();
+    // HTML 요소인지 확인
+    const isHTMLElement = htmlElements.includes(el.tag.toLowerCase()) || 
+                          (el.tag && typeof el.tag === 'string' && el.tag[0] === el.tag[0].toLowerCase());
 
     if (isHTMLElement) {
-      return React.createElement(tag, cleanProps, content.length > 0 ? content : undefined);
-    } else {
-      // React 컴포넌트인 경우 원본 props 사용
-      return React.createElement(tag, finalProps, content.length > 0 ? content : undefined);
+      // HTML 요소인 경우 - React Aria 전용 props 제거
+      const cleanProps = { ...finalProps };
+
+      // React Aria 전용 props 및 사용자 정의 props 제거
+      const propsToRemove = [
+        'isDisabled', 'isSelected', 'isIndeterminate', 'isRequired',
+        'isReadOnly', 'isInvalid', 'onPress', 'onHoverStart', 'onHoverEnd',
+        'selectionMode', 'selectionBehavior', 'orientation', 'variant',
+        'size', 'isQuiet', 'isFocused', 'allowsRemoving', 'textValue',
+        'selectedKeys', 'defaultSelectedKey', 'allowsCustomValue',
+        'granularity', 'firstDayOfWeek', 'calendarIconPosition',
+        'showCalendarIcon', 'showWeekNumbers', 'highlightToday',
+        'allowClear', 'shouldForceLeadingZeros', 'shouldCloseOnSelect',
+        'includeTime', 'timeFormat', 'timeLabel', 'startTimeLabel', 'endTimeLabel',
+        'allowsNonContiguousRanges', 'visibleDuration', 'pageBehavior',
+        'disallowEmptySelection', 'text', 'children', 'events', 'label',
+        'description', 'errorMessage', 'placeholder', 'value', 'defaultValue',
+        'minValue', 'maxValue', 'step', 'expandedKeys', 'defaultSelectedKeys',
+        'disabledKeys', 'autoFocus', 'onSelectionChange', 'onChange', 'onInputChange',
+        'onExpandedChange', 'onRemove', 'items', 'hasChildren', 'showInfoButton',
+        'childItems', 'title', 'as'
+      ];
+
+      propsToRemove.forEach(prop => {
+        if (prop in cleanProps) {
+          delete (cleanProps as Record<string, unknown>)[prop];
+        }
+      });
+
+      // HTML disabled 속성 처리
+      if (finalProps.isDisabled) {
+        cleanProps.disabled = true;
+      }
+
+      return React.createElement(
+        el.tag.toLowerCase(),
+        {
+          ...cleanProps,
+          key: el.id,
+          "data-element-id": el.id,
+        },
+        content.length > 0 ? content : undefined
+      );
     }
+
+    // 알 수 없는 태그인 경우 div로 렌더링하되 경고 표시
+    console.warn(`Unknown component/element type: ${el.tag}. Rendering as div.`);
+    
+    const fallbackProps = {
+      key: el.id,
+      "data-element-id": el.id,
+      "data-unknown-component": el.tag,
+      style: finalProps.style,
+      className: finalProps.className,
+    };
+
+    return React.createElement(
+      'div',
+      fallbackProps,
+      content.length > 0 ? content : `Unknown: ${el.tag}`
+    );
   };
 
   const renderElementsTree = (): React.ReactNode => {
