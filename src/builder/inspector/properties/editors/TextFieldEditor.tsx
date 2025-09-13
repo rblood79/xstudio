@@ -30,13 +30,6 @@ export function TextFieldEditor({ currentProps, onUpdate }: PropertyEditorProps)
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_VALUE}
-                    value={String(currentProps.defaultValue || '')}
-                    onChange={(value) => updateProp('defaultValue', value)}
-                    icon={Binary}
-                />
-
-                <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
                     onChange={(value) => updateProp('placeholder', value)}

@@ -436,7 +436,6 @@ function Preview() {
           type={el.props.type as 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' || 'text'}
           placeholder={String(el.props.placeholder || '')} // placeholder 추가
           value={String(el.props.value || '')}
-          defaultValue={String(el.props.defaultValue || '')}
           isDisabled={Boolean(el.props.isDisabled || false)}
           isReadOnly={Boolean(el.props.isReadOnly || false)}
           onChange={(value) => {
@@ -586,7 +585,7 @@ function Preview() {
     // TextField 컴포넌트 특별 처리
     if (el.tag === 'TextField') {
       // 개발 환경에서 받은 props 확인
-      if (process.env.NODE_ENV === 'development') {
+      /*if (process.env.NODE_ENV === 'development') {
         console.log('Preview TextField props:', {
           id: el.id,
           label: el.props.label,
@@ -598,7 +597,7 @@ function Preview() {
           isDisabled: el.props.isDisabled,
           isReadOnly: el.props.isReadOnly
         });
-      }
+      }*/
 
       return (
         <TextField
@@ -609,10 +608,10 @@ function Preview() {
           label={String(el.props.label || '')}
           description={String(el.props.description || '')}
           errorMessage={String(el.props.errorMessage || '')}
-          placeholder={String(el.props.placeholder || '')} // placeholder 추가
+          placeholder={String(el.props.placeholder || '')}
           type={el.props.type as 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' || 'text'}
-          value={String(el.props.value || '')}
-          defaultValue={String(el.props.defaultValue || '')}
+          value={String(el.props.value || '')} // value만 사용
+          // defaultValue 제거
           isDisabled={Boolean(el.props.isDisabled || false)}
           isRequired={Boolean(el.props.isRequired || false)}
           isReadOnly={Boolean(el.props.isReadOnly || false)}
