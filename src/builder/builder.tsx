@@ -75,6 +75,23 @@ function Builder() {
                     isDisabled: false
                 };
 
+            case 'ToggleButton':
+            return {
+                ...baseProps,
+                children: 'Toggle',
+                isSelected: false,
+                isDisabled: false
+            };
+
+            case 'ToggleButtonGroup':
+            return {
+                ...baseProps,
+                label: 'Toggle Group',
+                orientation: 'horizontal',
+                selectionMode: 'single',
+                isDisabled: false
+            };
+
             case 'TextField':
                 return {
                     ...baseProps,
@@ -365,18 +382,26 @@ function Builder() {
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { children: 'Button 1' } as ElementProps,
+                        props: { 
+                            children: 'Option 1', // 더 명확한 라벨
+                            isSelected: false,
+                            isDisabled: false
+                        } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 1, // 1부터 시작
+                        order_num: 1,
                     },
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { children: 'Button 2' } as ElementProps,
+                        props: { 
+                            children: 'Option 2', // 더 명확한 라벨
+                            isSelected: false,
+                            isDisabled: false
+                        } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 2, // 순차적 증가
+                        order_num: 2,
                     }
                 ];
 
