@@ -538,7 +538,6 @@
     .react-aria-ListBox {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-sm);
         max-height: inherit;
         overflow: auto;
         padding: var(--spacing-sm);
