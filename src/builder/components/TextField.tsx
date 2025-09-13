@@ -18,16 +18,22 @@ export interface TextFieldProps extends AriaTextFieldProps {
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
   type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+  value?: string; // value만 유지
+  // defaultValue 제거
+  onChange?: (value: string) => void;
+  isRequired?: boolean;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
 }
 
 export function TextField({
   label,
   description,
   errorMessage,
-  placeholder,
+  placeholder = "Enter text...",
   type = 'text',
-  value,
-  defaultValue,
+  value, // value만 사용
+  // defaultValue 제거
   onChange,
   isRequired,
   isDisabled,
@@ -35,16 +41,16 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   // 개발 환경에서 placeholder 값 로깅
-  if (process.env.NODE_ENV === 'development') {
+  /*if (process.env.NODE_ENV === 'development') {
     console.log('TextField placeholder:', placeholder);
-  }
+  }*/
 
   return (
     <AriaTextField
       {...props}
       className='react-aria-TextField'
-      value={value}
-      defaultValue={defaultValue}
+      value={value} // value만 전달
+      // defaultValue 제거
       onChange={onChange}
       isRequired={isRequired}
       isDisabled={isDisabled}

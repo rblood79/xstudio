@@ -115,13 +115,14 @@
     /* Input 컴포넌트 스타일 시작 */
     .react-aria-Input,
     .react-aria-TextArea {
-        padding: 0.286rem;
+        padding: var(--spacing) var(--spacing-md);
         margin: 0;
         border: 1px solid var(--border-color);
-        border-radius: 6px;
-        background: var(--field-background);
-        font-size: 1.143rem;
+        border-radius: var(--radius-md);
+        background: var(--color-white);
+        font-size: var(--text-sm);
         color: var(--field-text-color);
+        line-height: calc(var(--spacing) * 6);
 
         &[data-focused] {
             outline: 2px solid var(--focus-ring-color);
@@ -1865,7 +1866,7 @@
             width: fit-content;
         }
 
-        .react-aria-Input,
+        /*.react-aria-Input,
         .react-aria-TextArea {
             padding: var(--spacing-2xs);
             margin: 0;
@@ -1887,7 +1888,7 @@
             &[data-invalid] {
                 border-color: var(--invalid-color);
             }
-        }
+        }*/
 
         .react-aria-FieldError {
             font-size: var(--text-xs);
