@@ -1720,7 +1720,6 @@ function Preview() {
   };
 
   const handleGlobalClick = (e: React.MouseEvent) => {
-    // Find the closest element with data-element-id attribute
     const target = e.target as HTMLElement;
     const elementWithId = target.closest('[data-element-id]');
 
@@ -1729,7 +1728,6 @@ function Preview() {
     const elementId = elementWithId.getAttribute('data-element-id');
     if (!elementId) return;
 
-    // Find the element in our elements array
     const element = elements.find(el => el.id === elementId);
     if (!element) return;
 
@@ -1750,23 +1748,25 @@ function Preview() {
     }, window.location.origin);
   };
 
-  const rootElement = elements.length > 0 ? elements[0] : { tag: 'div', props: {} as ElementProps };
+  // body 요소 확인
+  const bodyElement = elements.find(el => el.tag === 'body');
+  const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
 
-  // body 태그인 경우 실제 HTML body를 사용
-  //const RootTag = rootElement.tag === 'body' ? 'body' : rootElement.tag;
-  const RootTag = rootElement.tag === 'body' ? 'div' : rootElement.tag;
+  // 루트 컨테이너는 항상 div로 렌더링 (실제 body는 HTML 문서의 body)
+  const containerProps = {
+    className: styles.main,
+    id: projectId || 'preview-container',
+    "data-element-id": bodyElement?.id,
+    onMouseUp: handleGlobalClick,
+    // body 요소의 스타일만 적용 (다른 props는 제외)
+    style: bodyElement?.props?.style || {},
+    // body였다면 원래 태그 정보 기록
+    ...(bodyElement ? { 'data-original-tag': 'body' } : {}),
+  };
 
   return React.createElement(
-    RootTag,
-    {
-      className: styles.main,
-      id: rootElement.tag === 'body' ? (rootElement as PreviewElement).id : (projectId || undefined),
-      "data-element-id": rootElement.tag === 'body' ? (rootElement as PreviewElement).id : undefined,
-      onMouseUp: handleGlobalClick,
-      ...rootElement.props,
-      // body 태그인 경우 명시적으로 tag 속성 추가
-      //...(rootElement.tag === 'body' ? { tag: 'body' } : {}),
-    },
+    'div',
+    containerProps,
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );
 }
