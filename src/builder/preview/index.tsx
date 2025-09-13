@@ -681,21 +681,21 @@ function Preview() {
       
       // selectedKey 상태 확인
       const currentSelectedKey = elementProps.selectedKey;
-      const hasSelection = currentSelectedKey && currentSelectedKey !== '' && currentSelectedKey !== 'undefined';
+      //const hasSelection = currentSelectedKey && currentSelectedKey !== '' && currentSelectedKey !== 'undefined';
       
       // 접근성을 위한 aria-label 설정
       const ariaLabel = processedLabel 
         ? undefined 
         : (elementProps['aria-label'] || processedPlaceholder || `Select ${el.id}`);
 
-      console.log('Select 렌더링 (개선된):', {
+      /*console.log('Select 렌더링 (개선된):', {
         id: el.id,
         label: processedLabel,
         placeholder: processedPlaceholder,
         selectedKey: currentSelectedKey,
         hasSelection,
         shouldShowPlaceholder: !hasSelection
-      });
+      });*/
 
       return (
         <Select
