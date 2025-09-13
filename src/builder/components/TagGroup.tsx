@@ -67,7 +67,8 @@ export function TagGroup<T extends object>(
       onRemove={allowsRemoving ? onRemove : undefined}
       className='react-aria-TagGroup'
     >
-      <Label>{label}</Label>
+
+      {label && <Label>{label}</Label>}
       <TagList
         items={items}
         renderEmptyState={renderEmptyState}

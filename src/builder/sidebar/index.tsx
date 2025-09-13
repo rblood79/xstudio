@@ -711,6 +711,32 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         return contents.length > 0 ? contents : <div className="sidebar-empty-state"></div>;
     };
 
+    // 드롭 위치나 추가 위치에 따라 position 계산
+    const handleComponentAdd = (componentType: string, parentId?: string) => {
+        // 현재 부모의 자식 요소 개수 확인
+        const siblings = elements.filter(el => el.parent_id === parentId);
+        const nextPosition = siblings.length + 1; // 마지막 위치에 추가
+
+        // position을 명시적으로 전달
+        handleAddElement(componentType, parentId, nextPosition);
+    };
+
+    // 드래그 앤 드롭 처리 부분
+
+    const handleDrop = (event: DragEvent, targetParentId?: string, insertIndex?: number) => {
+        event.preventDefault();
+        const componentType = event.dataTransfer?.getData('text/plain');
+
+        if (componentType) {
+            // insertIndex가 있으면 사용, 없으면 자동 계산
+            const position = insertIndex !== undefined
+                ? insertIndex + 1 // 0-based index를 1-based order_num으로 변환
+                : undefined; // 자동 계산하도록 undefined 전달
+
+            handleAddElement(componentType, targetParentId, position);
+        }
+    };
+
     return (
         <aside className="sidebar">
             <SidebarNav activeTabs={activeTabs} onTabChange={toggleTab} />

@@ -747,10 +747,10 @@ function Preview() {
           isRequired={Boolean(elementProps.isRequired)}
           autoFocus={Boolean(elementProps.autoFocus)}
           onSelectionChange={async (selectedKey) => {
-            console.log('Select 선택 변경 (개선된):', {
+            /*console.log('Select 선택 변경 (개선된):', {
               selectedKey,
               placeholderPreserved: processedPlaceholder
-            });
+            });*/
 
             // React Aria의 내부 ID를 실제 값으로 변환
             let actualValue = selectedKey;

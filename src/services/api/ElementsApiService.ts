@@ -75,6 +75,9 @@ export class ElementsApiService extends BaseApiService {
                 .in("id", elementIds);
         });
     }
+
+    // 별칭으로 getElementsByPageId 추가 (코드 중복 방지)
+    getElementsByPageId = this.fetchElements;
 }
 
 // 싱글톤 인스턴스

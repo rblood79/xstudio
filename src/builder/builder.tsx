@@ -14,16 +14,21 @@ import type { ElementProps } from '../types/supabase';
 import { ColorValue } from '../types/theme';
 import { Page } from './stores/elements'; // 추가
 
-// 서비스 레이어 import
-import { elementsApi, pagesApi } from '../services/api';
+// 서비스 레이어 import - 올바른 경로로 수정
+import { elementsApi } from '../services/api/ElementsApiService';
+import { pagesApi } from '../services/api/PagesApiService';
+
+// 또는 index 파일이 있다면
+// import { elementsApi, pagesApi } from '../services/api';
 
 import "./builder.css";
 
+// getDefaultProps 함수를 Builder 컴포넌트 상단으로 이동
 function Builder() {
     const { projectId } = useParams<{ projectId: string }>();
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // 새로운 통합된 스토어 사용
+    // 기존 스토어 및 상태 정의들...
     const rawTokens = useStore(state => state.rawTokens);
     const semanticTokens = useStore(state => state.semanticTokens);
     const loadTheme = useStore(state => state.loadTheme);
@@ -32,13 +37,16 @@ function Builder() {
     const currentPageId = useStore((state) => state.currentPageId);
     const pageHistories = useStore((state) => state.pageHistories);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
-    const { addElement, updateElementProps, undo, redo, loadPageElements } = useStore();
-    const [pages, setPages] = React.useState<Page[]>([]); // 타입 변경
+    const { addElement, updateElementProps, undo, redo } = useStore();
+    
+    const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
 
-    const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
+    // 누락된 상태 변수들 추가
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
 
-    // Breakpoints structure aligned with future Supabase table
+    const [breakpoint, setBreakpoint] = React.useState(new Set<Key>(['screen']));
     const [breakpoints] = React.useState([
         { id: 'screen', label: 'Screen', max_width: '100%', max_height: '100%' },
         { id: 'desktop', label: 'Desktop', max_width: 1280, max_height: 1080 },
@@ -46,265 +54,260 @@ function Builder() {
         { id: 'mobile', label: 'Mobile', max_width: 390, max_height: 844 }
     ]);
 
-    // 진행 중 여부를 추적하는 플래그
     const isProcessingRef = useRef(false);
 
-    useEffect(() => {
-        const fetchPages = async () => {
-            if (!projectId) return;
-
-            try {
-                const pagesData = await pagesApi.fetchPages(projectId);
-                setPages(pagesData);
-            } catch (error) {
-                console.error("페이지 조회 에러:", error);
-            }
+    // getDefaultProps 함수 정의 (누락된 함수)
+    const getDefaultProps = useCallback((tag: string): ElementProps => {
+        const baseProps: ElementProps = {
+            style: {},
+            className: "",
+            children: "",
+            events: []
         };
 
-        fetchPages();
-    }, [projectId]);
+        switch (tag) {
+            case 'Button':
+                return {
+                    ...baseProps,
+                    children: 'Button',
+                    variant: 'default',
+                    size: 'medium',
+                    isDisabled: false
+                };
 
-    const fetchElements = useCallback(async (pageId: string) => {
-        window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
-        setSelectedPageId(pageId);
-        setSelectedElement(null);
+            case 'TextField':
+                return {
+                    ...baseProps,
+                    label: 'Text Field',
+                    placeholder: 'Enter text...',
+                    value: '',
+                    isDisabled: false,
+                    isRequired: false
+                };
+
+            case 'Label':
+                return {
+                    ...baseProps,
+                    children: 'Label'
+                };
+
+            case 'Input':
+                return {
+                    ...baseProps,
+                    type: 'text',
+                    placeholder: 'Enter text...'
+                };
+
+            case 'Description':
+                return {
+                    ...baseProps,
+                    text: 'Description text',
+                    children: 'Description text'
+                };
+
+            case 'FieldError':
+                return {
+                    ...baseProps,
+                    text: 'Error message',
+                    children: 'Error message'
+                };
+
+            case 'div':
+                return {
+                    ...baseProps,
+                    children: 'Div Content',
+                    style: {
+                        padding: '16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        minHeight: '50px',
+                        backgroundColor: '#ffffff'
+                    }
+                };
+
+            case 'Select':
+                return {
+                    ...baseProps,
+                    label: 'Select',
+                    placeholder: 'Choose an option...',
+                    selectedKey: '',
+                    isDisabled: false,
+                    isRequired: false
+                };
+
+            case 'SelectItem':
+                return {
+                    ...baseProps,
+                    label: 'Option',
+                    value: 'option1',
+                    isDisabled: false
+                };
+
+            case 'ComboBox':
+                return {
+                    ...baseProps,
+                    label: 'ComboBox',
+                    placeholder: 'type write an option...',
+                    selectedKey: '',
+                    isDisabled: false,
+                    isRequired: false
+                };
+
+            case 'TagGroup':
+                return {
+                    ...baseProps,
+                    label: 'Tag Group'
+                };
+
+            case 'Slider':
+                return {
+                    ...baseProps,
+                    label: 'Slider'
+                };
+
+            case 'CheckboxGroup':
+                return {
+                    ...baseProps,
+                    label: 'Checkbox Group',
+                    isDisabled: false
+                };
+                
+            case 'RadioGroup':
+                return {
+                    ...baseProps,
+                    label: 'Radio Group',
+                    isDisabled: false
+                };
+
+            case 'Card':
+                return {
+                    ...baseProps,
+                    title: 'Card Title',
+                    description: 'This is a card description. You can edit this content.'
+                };
+
+            case 'Panel':
+                return {
+                    ...baseProps,
+                    title: 'Panel Title'
+                };
+
+            // 다른 컴포넌트들도 동일하게 추가...
+            default:
+                return {
+                    ...baseProps,
+                    children: tag === 'Text' ? 'Sample text' : `${tag} Content`
+                };
+        }
+    }, []);
+
+    // fetchElements 함수 정의 (누락된 함수)
+    const fetchElements = useCallback(async () => {
+        if (!currentPageId) {
+            console.warn('fetchElements: No current page ID available');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
 
         try {
-            const elementsData = await elementsApi.fetchElements(pageId);
-            loadPageElements(elementsData, pageId);
-
-            const iframe = iframeRef.current;
-            if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage(
-                    { type: "UPDATE_ELEMENTS", elements: elementsData || [] },
-                    window.location.origin
-                );
+            //console.log('Fetching elements for page:', currentPageId);
+            
+            const pageElements = await elementsApi.getElementsByPageId(currentPageId);
+            
+            if (pageElements && pageElements.length > 0) {
+                const { setElements } = useStore.getState();
+                setElements(pageElements);
+                //console.log('Elements fetched successfully:', pageElements.length);
+                
+                // iframe에 요소 업데이트 전송
+                const iframe = iframeRef.current;
+                if (iframe?.contentWindow) {
+                    iframe.contentWindow.postMessage(
+                        { type: "UPDATE_ELEMENTS", elements: pageElements },
+                        window.location.origin
+                    );
+                }
+            } else {
+                console.log('No elements found for page:', currentPageId);
+                const { setElements } = useStore.getState();
+                setElements([]);
             }
         } catch (error) {
-            console.error("요소 조회 에러:", error);
+            console.error('Error fetching elements:', error);
+            setError('요소를 가져오는 중 오류가 발생했습니다.');
+            
+            // 에러 발생 시에도 빈 배열로 설정하여 UI가 깨지지 않도록 함
+            const { setElements } = useStore.getState();
+            setElements([]);
+        } finally {
+            setIsLoading(false);
         }
-    }, [setSelectedPageId, setSelectedElement, loadPageElements]);
+    }, [currentPageId]);
 
+    // 페이지 변경 시 요소들 자동 fetch
     useEffect(() => {
-        if (!selectedPageId && pages.length > 0) {
-            fetchElements(pages[0].id);
+        if (currentPageId) {
+            fetchElements();
         }
-    }, [pages, selectedPageId, fetchElements]);
+    }, [currentPageId, fetchElements]);
 
+    // handleAddElement 함수의 에러 처리 개선
     const handleAddElement = useCallback(async (...args: [string, string?, number?]) => {
         if (isProcessingRef.current) return;
         if (!currentPageId) {
             console.error('No current page ID available');
+            setError('현재 페이지가 선택되지 않았습니다.');
             return;
         }
+        
         isProcessingRef.current = true;
+        setError(null);
 
         try {
             const [componentType, parentId, position] = args;
-
+            //console.log('handleAddElement called with:', { componentType, parentId, position });
+            
             // body 요소를 찾아서 parent_id로 설정
             const bodyElement = elements.find(el => el.tag === 'body' && el.page_id === currentPageId);
             const actualParentId = parentId || bodyElement?.id || null;
 
+            // order_num 계산 로직
+            let calculatedOrderNum: number;
+            
+            if (position !== undefined && position >= 0) {
+                calculatedOrderNum = position;
+            } else {
+                const siblings = elements.filter(el => 
+                    el.parent_id === actualParentId && el.page_id === currentPageId
+                );
+                calculatedOrderNum = siblings.length > 0 
+                    ? Math.max(...siblings.map(el => el.order_num || 0)) + 1
+                    : 1;
+            }
 
-            // 컴포넌트 타입별 기본 props 설정
-            const getDefaultProps = (tag: string): ElementProps => {
-                switch (tag) {
-                    case 'Button':
-                        return {
-                            children: 'Button',
-                            variant: 'default',
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'TextField':
-                        return {
-                            label: 'Label',
-                            placeholder: 'Enter text...',
-                            isRequired: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Checkbox':
-                        return {
-                            children: 'Checkbox',
-                            isSelected: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Radio':
-                        return {
-                            children: 'Radio',
-                            value: 'radio-value',
-                            isSelected: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Select':
-                        return {
-                            label: 'Select',
-                            placeholder: 'Choose an option...',
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'ComboBox':
-                        return {
-                            label: 'ComboBox',
-                            placeholder: 'Type or select...',
-                            allowsCustomValue: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Switch':
-                        return {
-                            children: 'Switch',
-                            isSelected: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Slider':
-                        return {
-                            label: 'Slider',
-                            value: 50,
-                            minValue: 0,
-                            maxValue: 100,
-                            step: 1
-                        } as ElementProps;
-                    case 'Calendar':
-                        return {
-                            'aria-label': 'Calendar',
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'DatePicker':
-                        return {
-                            label: 'Date Picker',
-                            placeholder: 'Select date...',
-                            isDisabled: false,
-                            granularity: 'day'
-                        } as ElementProps;
-                    case 'DateRangePicker':
-                        return {
-                            label: 'Date Range',
-                            placeholder: 'Select date range...',
-                            isDisabled: false,
-                            granularity: 'day'
-                        } as ElementProps;
-                    case 'ListBox':
-                        return {
-                            label: 'List Box',
-                            selectionMode: 'single',
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'GridList':
-                        return {
-                            label: 'Grid List',
-                            selectionMode: 'none',
-                            orientation: 'vertical'
-                        } as ElementProps;
-                    case 'Tree':
-                        return {
-                            'aria-label': 'Tree',
-                            selectionMode: 'single',
-                            selectionBehavior: 'replace',
-                            expandedKeys: [],
-                            selectedKeys: [],
-                            defaultExpandedKeys: [],
-                            defaultSelectedKeys: [],
-                            disallowEmptySelection: false
-                        } as ElementProps;
-                    case 'TreeItem':
-                        return {
-                            title: 'Tree Item',
-                            value: 'Tree Item',
-                            children: '', // children 속성 추가
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'Table':
-                        return {
-                            selectionMode: 'none',
-                            selectionBehavior: 'toggle'
-                        } as ElementProps;
-                    case 'Tabs':
-                        return {
-                            defaultSelectedKey: 'tab1',
-                            orientation: 'horizontal'
-                        } as ElementProps;
-                    case 'ToggleButton':
-                        return {
-                            children: 'Toggle',
-                            isSelected: false,
-                            isDisabled: false
-                        } as ElementProps;
-                    case 'ToggleButtonGroup':
-                        return {
-                            selectionMode: 'single',
-                            orientation: 'horizontal',
-                            value: []
-                        } as ElementProps;
-                    case 'CheckboxGroup':
-                        return {
-                            label: 'Checkbox Group',
-                            orientation: 'vertical',
-                            value: []
-                        } as ElementProps;
-                    case 'RadioGroup':
-                        return {
-                            label: 'Radio Group',
-                            orientation: 'vertical',
-                            value: ''
-                        } as ElementProps;
-                    case 'TagGroup':
-                        return {
-                            label: 'Tag Group',
-                            items: [],
-                            allowsRemoving: true,
-                            allowsCustomValue: false
-                        } as ElementProps;
-                    case 'Card':
-                        return {
-                            title: 'Card Title',
-                            description: 'Card description',
-                            variant: 'default',
-                            size: 'medium'
-                        } as ElementProps;
-                    case 'Panel':
-                        return {
-                            title: 'Panel Title',
-                            variant: 'default'
-                        } as ElementProps;
-                    case 'Text':
-                        return {
-                            children: 'Text content',
-                            as: 'p'
-                        } as ElementProps;
-                    case 'Label':
-                        return {
-                            children: 'Label'
-                        } as ElementProps;
-                    case 'Input':
-                        return {
-                            placeholder: 'Enter text...'
-                        } as ElementProps;
-                    case 'Description':
-                        return {
-                            text: 'Description text'
-                        } as ElementProps;
-                    case 'FieldError':
-                        return {
-                            text: 'Error message'
-                        } as ElementProps;
-                    default:
-                        return {} as ElementProps;
-                }
-            };
+            /*console.log('Order number calculation:', {
+                componentType,
+                parentId: actualParentId,
+                position,
+                calculatedOrderNum,
+                existingSiblings: elements.filter(el => el.parent_id === actualParentId).length
+            });*/
 
+            // 새 요소 객체 생성
             const newElement = {
                 id: crypto.randomUUID(),
                 tag: componentType,
                 props: getDefaultProps(componentType),
                 parent_id: actualParentId,
                 page_id: currentPageId!,
-                order_num: position || 0,
+                order_num: calculatedOrderNum,
             };
 
 
-            if (componentType === 'Button') {
-                const data = await elementsApi.createElement(newElement);
-                addElement(data);
-            } else if (componentType === 'TextField') {
+            // TextField 처리 부분
+            if (componentType === 'TextField') {
                 const childElements = [
                     {
                         id: crypto.randomUUID(),
@@ -312,7 +315,7 @@ function Builder() {
                         props: { children: 'Label' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 0,
+                        order_num: 1, // 1부터 시작
                     },
                     {
                         id: crypto.randomUUID(),
@@ -320,7 +323,7 @@ function Builder() {
                         props: {} as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 1,
+                        order_num: 2, // 순차적 증가
                     },
                     {
                         id: crypto.randomUUID(),
@@ -328,7 +331,7 @@ function Builder() {
                         props: { text: 'Description' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 2,
+                        order_num: 3,
                     },
                     {
                         id: crypto.randomUUID(),
@@ -336,51 +339,50 @@ function Builder() {
                         props: { text: 'Error message' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 3,
+                        order_num: 4,
                     }
                 ];
 
-                // 모든 요소를 한 번에 삽입
+                // 부모 요소 먼저 생성
                 const data = await elementsApi.createElement(newElement);
+                addElement(data);
 
-                // 자식 요소들도 개별적으로 생성
+                // 자식 요소들 순차적으로 생성
                 for (const child of childElements) {
                     const childData = await elementsApi.createElement(child);
                     addElement(childData);
                 }
-
-                addElement(data);
-            } else if (componentType === 'ToggleButtonGroup') {
+            } 
+            // ToggleButtonGroup 처리 부분
+            else if (componentType === 'ToggleButtonGroup') {
                 const defaultToggleButtons = [
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { children: 'Option 1' } as ElementProps,
+                        props: { children: 'Button 1' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 0,
+                        order_num: 1, // 1부터 시작
                     },
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { children: 'Option 2' } as ElementProps,
+                        props: { children: 'Button 2' } as ElementProps,
                         parent_id: newElement.id,
                         page_id: currentPageId!,
-                        order_num: 1,
+                        order_num: 2, // 순차적 증가
                     }
                 ];
 
-                // ToggleButtonGroup과 기본 ToggleButton들을 함께 삽입
+                // 부모 요소 먼저 생성
                 const data = await elementsApi.createElement(newElement);
-                // Remove the error check since the service layer handles errors internally
-                // if (error) throw error;
+                addElement(data);
 
+                // 자식 요소들 순차적으로 생성
                 for (const toggleButton of defaultToggleButtons) {
                     const toggleData = await elementsApi.createElement(toggleButton);
                     addElement(toggleData);
                 }
-
-                addElement(data);
             } else if (componentType === 'CheckboxGroup') {
                 const defaultCheckboxes = [
                     {
@@ -727,10 +729,11 @@ function Builder() {
             }
         } catch (error) {
             console.error('요소 생성 에러:', error);
+            setError(`요소 생성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
         } finally {
             isProcessingRef.current = false;
         }
-    }, [currentPageId, addElement, elements]);
+    }, [currentPageId, addElement, elements, getDefaultProps]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -894,7 +897,12 @@ function Builder() {
     }, [setSelectedElement, updateElementProps]);
 
     const handleAddPage = useCallback(async () => {
-        if (!currentPageId) return;
+        if (!currentPageId) {
+            setError('현재 페이지가 선택되지 않았습니다.');
+            return;
+        }
+
+        setError(null);
 
         const newOrderNum = pages.length;
         const newPage = {
@@ -922,8 +930,55 @@ function Builder() {
             addElement(elementData);
         } catch (error) {
             console.error('페이지 생성 에러:', error);
+            setError('페이지 생성 중 오류가 발생했습니다.');
         }
     }, [currentPageId, projectId, pages.length, addElement]);
+
+    // 페이지 초기화 로직 개선
+
+    // 프로젝트 로딩 시 페이지들 fetch
+    const fetchPages = useCallback(async () => {
+        if (!projectId) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            console.log('Fetching pages for project:', projectId);
+            
+            const projectPages = await pagesApi.getPagesByProjectId(projectId);
+            
+            if (projectPages && projectPages.length > 0) {
+                setPages(projectPages);
+                
+                // 첫 번째 페이지를 선택된 페이지로 설정
+                if (!selectedPageId) {
+                    const firstPage = projectPages[0];
+                    setSelectedPageId(firstPage.id);
+                    
+                    // Zustand 스토어에도 현재 페이지 설정
+                    const { setCurrentPageId } = useStore.getState();
+                    setCurrentPageId(firstPage.id);
+                }
+            } else {
+                console.log('No pages found for project:', projectId);
+                setPages([]);
+            }
+        } catch (error) {
+            console.error('Error fetching pages:', error);
+            setError('페이지를 가져오는 중 오류가 발생했습니다.');
+            setPages([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [projectId, selectedPageId]);
+
+    // 프로젝트 변경 시 페이지들 자동 fetch
+    useEffect(() => {
+        if (projectId) {
+            fetchPages();
+        }
+    }, [projectId, fetchPages]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -1063,8 +1118,69 @@ function Builder() {
         applyThemeTokens();
     }, [applyThemeTokens]);
 
+    // 디버깅을 위한 order_num 검증 함수
+
+    const validateOrderNumbers = () => {
+        if (process.env.NODE_ENV !== 'development') return;
+        
+        //console.group('Order Numbers Validation');
+        
+        // 페이지별, 부모별로 그룹화
+        const groups = elements.reduce((acc, element) => {
+            const key = `${element.page_id}_${element.parent_id || 'root'}`;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(element);
+            return acc;
+        }, {} as Record<string, typeof elements>);
+
+        Object.entries(groups).forEach(([, children]) => {
+            
+            // order_num으로 정렬
+            const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+            
+            sorted.forEach((child, index) => {
+                const expectedOrder = index + 1;
+                const actualOrder = child.order_num || 0;
+                const isValid = actualOrder === expectedOrder;
+
+                /*console.log(
+                    `  ${child.tag} (${child.id.slice(0, 8)}...): order_num=${actualOrder}, expected=${expectedOrder}`,
+                    isValid ? '✅' : '❌'
+                );*/
+
+                if (!isValid) {
+                    console.warn(`    ⚠️ Order mismatch detected!`);
+                }
+            });
+        });
+        
+        console.groupEnd();
+    };
+
+    // useEffect에서 검증 함수 호출
+    useEffect(() => {
+        if (elements.length > 0) {
+            validateOrderNumbers();
+        }
+    }, [elements]);
+
     return (
         <div className="app">
+            {/* 에러 표시 */}
+            {error && (
+                <div className="error-banner">
+                    <span>⚠️ {error}</span>
+                    <button onClick={() => setError(null)}>×</button>
+                </div>
+            )}
+            
+            {/* 로딩 표시 */}
+            {isLoading && (
+                <div className="loading-overlay">
+                    <div className="loading-spinner">Loading...</div>
+                </div>
+            )}
+            
             <div className="contents">
                 <main>
                     <div className="bg"
