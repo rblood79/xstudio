@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
 import { elementsApi } from '../../services/api';
+import { supabase } from '../../env/supabase.client'; // 추가된 import
 import styles from "./index.module.css";
 import {
   ToggleButton,
@@ -667,15 +668,25 @@ function Preview() {
 
     // Select 컴포넌트 특별 처리
     if (el.tag === 'Select') {
-      // 실제 SelectItem 자식 요소들을 찾기
       const selectItemChildren = elements
         .filter((child) => child.parent_id === el.id && child.tag === 'SelectItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // 디버깅을 위한 로그
+      // label 값 안전하게 처리
+      const labelValue = el.props.label;
+      const processedLabel = labelValue ? String(labelValue).trim() : undefined;
+      const placeholder = el.props.placeholder ? String(el.props.placeholder) : undefined;
+      
+      // 접근성을 위한 aria-label 설정
+      const ariaLabel = processedLabel 
+        ? undefined 
+        : (el.props['aria-label'] || placeholder || `Select ${el.id}`);
+
       /*console.log('Select 렌더링:', {
         id: el.id,
-        label: el.props.label,
+        label: processedLabel,
+        placeholder,
+        ariaLabel,
         selectedKey: el.props.selectedKey,
         children: selectItemChildren.map((item, index) => ({
           index,
@@ -691,22 +702,22 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label ? String(el.props.label) : undefined}
-          description={el.props.description ? String(el.props.description) : undefined}
-          errorMessage={el.props.errorMessage ? String(el.props.errorMessage) : undefined}
-          placeholder={el.props.placeholder}
+          label={processedLabel}
+          description={el.props.description ? String(el.props.description).trim() : undefined}
+          errorMessage={el.props.errorMessage ? String(el.props.errorMessage).trim() : undefined}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
           selectedKey={String(el.props.selectedKey || '')}
           defaultSelectedKey={String(el.props.defaultSelectedKey || '')}
           isDisabled={Boolean(el.props.isDisabled)}
           isRequired={Boolean(el.props.isRequired)}
           autoFocus={Boolean(el.props.autoFocus)}
           onSelectionChange={async (selectedKey) => {
-            console.log('Select 선택 변경:', selectedKey);
+            //console.log('Select 선택 변경:', selectedKey);
 
-            // React Aria의 내부 ID를 실제 값으로 변환 (데이터베이스 저장용)
+            // React Aria의 내부 ID를 실제 값으로 변환
             let actualValue = selectedKey;
             if (selectedKey && typeof selectedKey === 'string' && selectedKey.startsWith('react-aria-')) {
-              // react-aria-1, react-aria-2 등을 실제 인덱스로 변환
               const index = parseInt(selectedKey.replace('react-aria-', '')) - 1;
               const selectedItem = selectItemChildren[index];
               if (selectedItem) {
@@ -714,23 +725,16 @@ function Preview() {
               }
             }
 
-            // React Aria는 내부 ID를 그대로 사용, 데이터베이스에는 실제 값 저장
             const updatedProps = {
               ...el.props,
-              selectedKey, // React Aria 내부 ID 그대로 사용 (프리뷰용)
-              selectedValue: actualValue // 실제 값 별도 저장 (데이터베이스용)
+              selectedKey,
+              selectedValue: actualValue
             };
 
-            console.log('Select 상태 업데이트 전:', {
-              elementId: el.id,
-              selectedKey,
-              actualValue,
-              updatedProps
-            });
-
+            // 1. 먼저 로컬 상태 업데이트
             updateElementProps(el.id, updatedProps);
 
-            // 데이터베이스에도 저장
+            // 2. 데이터베이스 업데이트 (올바른 방법으로)
             try {
               await elementsApi.updateElementProps(el.id, updatedProps);
               console.log('Element props updated successfully');
@@ -738,33 +742,25 @@ function Preview() {
               console.error('Error updating element props:', err);
             }
 
-            // SelectEditor에 즉시 상태 변경 알림
+            // 3. 부모 창에 업데이트 알림
             window.parent.postMessage({
               type: 'UPDATE_ELEMENT_PROPS',
               elementId: el.id,
               props: {
-                selectedKey, // 내부 ID (프리뷰용)
-                selectedValue: actualValue // 실제 값 (SelectEditor용)
+                selectedKey,
+                selectedValue: actualValue
               },
               merge: true
             }, window.location.origin);
-
-            console.log('Select 상태 업데이트 후:', {
-              elementId: el.id,
-              selectedKey,
-              actualValue,
-              updatedProps
-            });
           }}
         >
           {selectItemChildren.map((item, index) => {
-            // 실제 value를 명시적으로 설정
             const actualValue = item.props.value || item.props.label || `option-${index + 1}`;
 
             return (
               <SelectItem
                 key={item.id}
-                value={String(actualValue) as unknown as object} // 실제 값 사용
+                value={String(actualValue) as unknown as object}
                 isDisabled={Boolean(item.props.isDisabled)}
               >
                 {String(item.props.label || item.id)}
