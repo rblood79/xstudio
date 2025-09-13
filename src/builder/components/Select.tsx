@@ -60,10 +60,7 @@ export function Select<T extends object>(
       )}
 
       <Button className="react-aria-Button">
-        {/* ComboBox와 동일한 방식으로 SelectValue 처리 */}
-        <SelectValue 
-          placeholder={stableProps.placeholder || "Select an option"}
-        />
+        <SelectValue />
         <span aria-hidden="true" className="select-chevron">
           <ChevronDown size={16} />
         </span>
