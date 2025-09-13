@@ -18,7 +18,7 @@ export interface CardProps {
 
 export function Card({
     children,
-    title = 'Card Title',
+    title = 'Title',
     description = 'This is a card description. You can edit this content.',
     className = '',
     style,

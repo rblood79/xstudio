@@ -5,6 +5,7 @@ export interface Page {
     project_id: string;
     title: string;
     slug: string;
+    order_num: number;
     created_at: string;
     updated_at: string;
 }
@@ -16,6 +17,38 @@ export interface CreatePageData {
 }
 
 export class PagesApiService extends BaseApiService {
+    /**
+     * 프로젝트 ID로 페이지들을 가져옵니다
+     */
+    async getPagesByProjectId(projectId: string): Promise<Page[]> {
+        this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'getPagesByProjectId');
+
+        return this.handleApiCall('getPagesByProjectId', async () => {
+            return await this.supabase
+                .from("pages")
+                .select("*")
+                .eq("project_id", projectId)
+                .order('order_num', { ascending: true });
+        });
+    }
+
+    /**
+     * 새 페이지를 생성합니다
+     */
+    async createPage(pageData: Partial<Page>): Promise<Page> {
+        this.validateInput(pageData, (data) => typeof data === 'object' && data !== null, 'createPage');
+
+        return this.handleApiCall('createPage', async () => {
+            const result = await this.supabase
+                .from("pages")
+                .insert([pageData])
+                .select()
+                .single();
+            
+            return result;
+        });
+    }
+
     async fetchPages(projectId: string): Promise<Page[]> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'fetchPages');
 
@@ -25,25 +58,6 @@ export class PagesApiService extends BaseApiService {
                 .select("*")
                 .eq("project_id", projectId)
                 .order('created_at', { ascending: true });
-        });
-    }
-
-    async createPage(pageData: CreatePageData): Promise<Page> {
-        this.validateInput(pageData, (data) =>
-            data &&
-            typeof data.project_id === 'string' &&
-            typeof data.title === 'string' &&
-            data.title.trim().length > 0 &&
-            typeof data.slug === 'string' &&
-            data.slug.trim().length > 0
-            , 'createPage');
-
-        return this.handleApiCall('createPage', async () => {
-            return await this.supabase
-                .from("pages")
-                .insert([pageData])
-                .select('*')
-                .single();
         });
     }
 
@@ -73,5 +87,5 @@ export class PagesApiService extends BaseApiService {
     }
 }
 
-// 싱글톤 인스턴스
+// PagesApiService 싱글톤 인스턴스
 export const pagesApi = new PagesApiService();
