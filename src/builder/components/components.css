@@ -1244,6 +1244,7 @@
             "track track";
         grid-template-columns: 1fr auto;
         /* max-width: 300px; */
+        width: 100%;
         color: var(--text-color);
 
         .react-aria-Label {
