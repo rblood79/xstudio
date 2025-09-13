@@ -640,6 +640,7 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
+          label={el.props.label ? String(el.props.label).trim() : undefined}
           orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
