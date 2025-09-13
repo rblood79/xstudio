@@ -69,6 +69,43 @@ function Preview() {
   const { setElements, updateElementProps } = useStore();
   const eventEngine = EventEngine.getInstance();
 
+  // Console error/warning suppression for development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      console.error = (...args) => {
+        const message = String(args[0] || '');
+        if (
+          message.includes('cannot be a child of') ||
+          message.includes('using incorrect casing') ||
+          message.includes('is unrecognized in this browser') ||
+          message.includes('validateDOMNesting')
+        ) {
+          return; // DOM 중첩 관련 경고 무시
+        }
+        originalError.apply(console, args);
+      };
+
+      console.warn = (...args) => {
+        const message = String(args[0] || '');
+        if (
+          message.includes('using incorrect casing') ||
+          message.includes('is unrecognized in this browser')
+        ) {
+          return; // 컴포넌트 케이싱 관련 경고 무시
+        }
+        originalWarn.apply(console, args);
+      };
+
+      return () => {
+        console.error = originalError;
+        console.warn = originalWarn;
+      };
+    }
+  }, []);
+
   const handleMessage = useCallback(
     (event: MessageEvent) => {
       const data = event.data;
@@ -1750,7 +1787,7 @@ function Preview() {
 
   // body 요소 확인
   const bodyElement = elements.find(el => el.tag === 'body');
-  const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
+  //const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
 
   // 루트 컨테이너는 항상 div로 렌더링 (실제 body는 HTML 문서의 body)
   const containerProps = {
@@ -1770,5 +1807,6 @@ function Preview() {
     elements.length === 0 ? "No elements available" : renderElementsTree()
   );
 }
+
 
 export default Preview;
