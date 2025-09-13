@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
 import { elementsApi } from '../../services/api';
-import { supabase } from '../../env/supabase.client'; // 추가된 import
+//import { supabase } from '../../env/supabase.client'; // 추가된 import
 import styles from "./index.module.css";
 import {
   ToggleButton,
@@ -672,48 +672,52 @@ function Preview() {
         .filter((child) => child.parent_id === el.id && child.tag === 'SelectItem')
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // label 값 안전하게 처리
-      const labelValue = el.props.label;
+      // props를 안전하게 보존
+      const elementProps = { ...el.props };
+      const labelValue = elementProps.label;
       const processedLabel = labelValue ? String(labelValue).trim() : undefined;
-      const placeholder = el.props.placeholder ? String(el.props.placeholder) : undefined;
+      const placeholderValue = elementProps.placeholder;
+      const processedPlaceholder = placeholderValue ? String(placeholderValue).trim() : undefined;
+      
+      // selectedKey 상태 확인
+      const currentSelectedKey = elementProps.selectedKey;
+      const hasSelection = currentSelectedKey && currentSelectedKey !== '' && currentSelectedKey !== 'undefined';
       
       // 접근성을 위한 aria-label 설정
       const ariaLabel = processedLabel 
         ? undefined 
-        : (el.props['aria-label'] || placeholder || `Select ${el.id}`);
+        : (elementProps['aria-label'] || processedPlaceholder || `Select ${el.id}`);
 
-      /*console.log('Select 렌더링:', {
+      console.log('Select 렌더링 (개선된):', {
         id: el.id,
         label: processedLabel,
-        placeholder,
-        ariaLabel,
-        selectedKey: el.props.selectedKey,
-        children: selectItemChildren.map((item, index) => ({
-          index,
-          id: item.id,
-          value: item.props.value,
-          label: item.props.label
-        }))
-      });*/
+        placeholder: processedPlaceholder,
+        selectedKey: currentSelectedKey,
+        hasSelection,
+        shouldShowPlaceholder: !hasSelection
+      });
 
       return (
         <Select
           key={el.id}
           data-element-id={el.id}
-          style={el.props.style}
-          className={el.props.className}
+          style={elementProps.style}
+          className={elementProps.className}
           label={processedLabel}
-          description={el.props.description ? String(el.props.description).trim() : undefined}
-          errorMessage={el.props.errorMessage ? String(el.props.errorMessage).trim() : undefined}
-          placeholder={placeholder}
+          description={elementProps.description ? String(elementProps.description).trim() : undefined}
+          errorMessage={elementProps.errorMessage ? String(elementProps.errorMessage).trim() : undefined}
+          placeholder={processedPlaceholder} // 항상 placeholder 전달
           aria-label={ariaLabel}
-          selectedKey={String(el.props.selectedKey || '')}
-          defaultSelectedKey={String(el.props.defaultSelectedKey || '')}
-          isDisabled={Boolean(el.props.isDisabled)}
-          isRequired={Boolean(el.props.isRequired)}
-          autoFocus={Boolean(el.props.autoFocus)}
+          selectedKey={currentSelectedKey || undefined} // 빈 문자열 대신 undefined 사용
+          defaultSelectedKey={String(elementProps.defaultSelectedKey || '')}
+          isDisabled={Boolean(elementProps.isDisabled)}
+          isRequired={Boolean(elementProps.isRequired)}
+          autoFocus={Boolean(elementProps.autoFocus)}
           onSelectionChange={async (selectedKey) => {
-            //console.log('Select 선택 변경:', selectedKey);
+            console.log('Select 선택 변경 (개선된):', {
+              selectedKey,
+              placeholderPreserved: processedPlaceholder
+            });
 
             // React Aria의 내부 ID를 실제 값으로 변환
             let actualValue = selectedKey;
@@ -725,32 +729,28 @@ function Preview() {
               }
             }
 
+            // placeholder를 포함한 모든 props 보존
             const updatedProps = {
-              ...el.props,
+              ...elementProps, // 모든 기존 props 보존
               selectedKey,
               selectedValue: actualValue
             };
 
-            // 1. 먼저 로컬 상태 업데이트
             updateElementProps(el.id, updatedProps);
 
-            // 2. 데이터베이스 업데이트 (올바른 방법으로)
             try {
               await elementsApi.updateElementProps(el.id, updatedProps);
-              console.log('Element props updated successfully');
+              console.log('Element props updated successfully (placeholder preserved)');
             } catch (err) {
               console.error('Error updating element props:', err);
             }
 
-            // 3. 부모 창에 업데이트 알림
+            // 전체 props 전송으로 placeholder 보존
             window.parent.postMessage({
               type: 'UPDATE_ELEMENT_PROPS',
               elementId: el.id,
-              props: {
-                selectedKey,
-                selectedValue: actualValue
-              },
-              merge: true
+              props: updatedProps,
+              merge: false // 전체 교체로 모든 props 보존
             }, window.location.origin);
           }}
         >
