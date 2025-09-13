@@ -674,6 +674,7 @@ function Preview() {
       // 디버깅을 위한 로그
       console.log('Select 렌더링:', {
         id: el.id,
+        label: el.props.label,
         selectedKey: el.props.selectedKey,
         children: selectItemChildren.map((item, index) => ({
           index,
@@ -689,9 +690,9 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={String(el.props.label || '')}
-          description={String(el.props.description || '')}
-          errorMessage={String(el.props.errorMessage || '')}
+          label={el.props.label ? String(el.props.label) : undefined}
+          description={el.props.description ? String(el.props.description) : undefined}
+          errorMessage={el.props.errorMessage ? String(el.props.errorMessage) : undefined}
           placeholder={el.props.placeholder}
           selectedKey={String(el.props.selectedKey || '')}
           defaultSelectedKey={String(el.props.defaultSelectedKey || '')}

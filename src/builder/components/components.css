@@ -320,6 +320,7 @@
         forced-color-adjust: none;
         padding: var(--spacing);
         padding-left: var(--spacing);
+        width: fit-content;
 
         &:before {
             content: '';
@@ -409,6 +410,7 @@
         forced-color-adjust: none;
         padding: var(--spacing);
         padding-left: var(--spacing);
+        width: fit-content;
 
         .checkbox {
             background: var(--color-white);
@@ -423,7 +425,7 @@
             flex-shrink: 0;
         }
 
-        svg {
+        /*svg {
             width: var(--spacing-lg);
             height: var(--spacing-lg);
             fill: none;
@@ -432,7 +434,7 @@
             stroke-dasharray: 22px;
             stroke-dashoffset: 66;
             transition: all 200ms;
-        }
+        }*/
 
         &[data-pressed] .checkbox {
             border-color: var(--color-primary-600);
@@ -447,12 +449,10 @@
         &[data-indeterminate] {
             .checkbox {
                 border-color: var(--color-primary-600);
-                background: var(--color-primary-600);
             }
 
             &[data-pressed] .checkbox {
                 border-color: var(--color-primary-700);
-                background: var(--color-primary-700);
             }
 
             svg {
@@ -461,9 +461,13 @@
         }
 
         &[data-indeterminate] {
-            & svg {
-                stroke: none;
-                fill: var(--checkmark-color);
+            .checkbox {
+                background-color: var(--color-gray-200);
+                border-color: var(--color-gray-300);
+
+                svg {
+                    stroke: var(--color-white);
+                }
             }
         }
 
@@ -480,7 +484,8 @@
             &[data-selected],
             &[data-indeterminate] {
                 .checkbox {
-                    background: var(--color-red-500);
+                    border-color: var(--color-gray-300);
+
                 }
 
                 &[data-pressed] .checkbox {
@@ -490,7 +495,7 @@
         }
 
         &[data-disabled] {
-            color: var(--color-gray-400);
+            color: var(--color-gray-300);
 
             .checkbox {
                 border-color: var(--color-gray-200);
@@ -956,6 +961,8 @@
 
     /* Select 컴포넌트 스타일 시작 */
     .react-aria-Select {
+        display: flex;
+        flex-direction: column;
         width: fit-content;
         color: var(--text-color);
 

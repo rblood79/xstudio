@@ -28,7 +28,7 @@ export function RadioGroup(
   return (
     (
       <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
-        <Label>{label}</Label>
+        {label && <Label>{label}</Label>}
         {children}
         {description && <Text slot="description">{description}</Text>}
         <FieldError>{errorMessage}</FieldError>
