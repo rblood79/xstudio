@@ -32,7 +32,7 @@ export function Select<T extends object>(
   return (
     (
       <AriaSelect {...props} className='react-aria-Select'>
-        <Label>{label}</Label>
+        {label && <Label>{label}</Label>}
         <Button>
           <SelectValue />
           <span aria-hidden="true">

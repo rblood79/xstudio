@@ -1,30 +1,38 @@
-import { Checkbox as AriaCheckbox, CheckboxProps } from 'react-aria-components';
-
+import {
+  Checkbox as AriaCheckbox,
+  CheckboxProps as AriaCheckboxProps
+} from 'react-aria-components';
+import { CheckIcon, Minus} from 'lucide-react';
 import './components.css';
 
-export function Checkbox(
-  { children, ...props }: Omit<CheckboxProps, 'children'> & {
-    children?: React.ReactNode;
-  }
-) {
+export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
+  children?: React.ReactNode;
+  isTreeItemChild?: boolean; // TreeItem 내부에서 사용될 때를 위한 prop
+}
+
+export function MyCheckbox(props: CheckboxProps) {
+  const { children, isTreeItemChild = false, ...restProps } = props;
+
+  // TreeItem 내부에서 사용될 때는 slot을 설정하지 않음
+  const checkboxProps = isTreeItemChild 
+    ? restProps 
+    : { slot: "selection", ...restProps };
+
   return (
-    (
-      <AriaCheckbox {...props} className='react-aria-Checkbox'>
-        {({ isIndeterminate }) => (
-          <>
-            <div className="checkbox">
-              <svg viewBox="0 0 18 18" aria-hidden="true">
-                {isIndeterminate
-                  ? <rect x={1} y={7.5} width={15} height={3} />
-                  : <polyline points="1 9 7 14 15 4" />}
-              </svg>
-            </div>
-            {children}
-          </>
-        )}
-      </AriaCheckbox>
-    )
+    <AriaCheckbox {...checkboxProps} className='react-aria-Checkbox'>
+      {({ isSelected, isIndeterminate }) => (
+        <>
+          <div className="checkbox">
+            {isIndeterminate ? <Minus size={16} strokeWidth={2}/> : isSelected && <CheckIcon size={16} strokeWidth={2}/>}
+          </div>
+          {children}
+        </>
+      )}
+    </AriaCheckbox>
   );
 }
 
-export { Checkbox as MyCheckbox };
+// 기존 Checkbox export도 유지
+export function Checkbox(props: CheckboxProps) {
+  return <MyCheckbox {...props} />;
+}

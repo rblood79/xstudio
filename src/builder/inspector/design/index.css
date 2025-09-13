@@ -443,9 +443,5 @@
         display: flex;
     }
 
-    .react-aria-Select {
-        .react-aria-Label {
-            display: none;
-        }
-    }
+
 }
