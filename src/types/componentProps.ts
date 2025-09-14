@@ -564,7 +564,7 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
     return {
 
         label: 'Tag Group',
-        allowsRemoving: true,
+        allowsRemoving: false,
         selectionMode: 'multiple',
         value: [],
         children: [

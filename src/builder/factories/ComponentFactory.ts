@@ -1,5 +1,4 @@
-import { Element } from '../../types/store';
-import { ComponentElementProps } from '../../types/componentProps';
+import { Element, ComponentElementProps } from '../../types/store'; // 통합된 타입 사용
 import { elementsApi } from '../../services/api';
 import { HierarchyManager } from '../utils/HierarchyManager';
 
@@ -644,7 +643,7 @@ export class ComponentFactory {
             tag: 'TagGroup',
             props: {
                 label: 'Tag Group',
-                allowsRemoving: true,
+                allowsRemoving: false,
                 selectionMode: 'multiple'
             } as ComponentElementProps,
             page_id: pageId,
