@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedTagState {
     parentId: string;
@@ -217,7 +218,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         onClick={async () => {
                             try {
                                 const newTag = {
-                                    id: crypto.randomUUID(),
+                                    id: ElementUtils.generateId(),
                                     page_id: currentPageId || '1',
                                     tag: 'Tag',
                                     props: {

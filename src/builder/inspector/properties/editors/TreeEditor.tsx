@@ -6,6 +6,7 @@ import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
 import { iconProps } from '../../../../utils/uiConstants'; // 추가
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
 const SELECTION_MODES: Array<{ id: string; label: string }> = [
@@ -57,7 +58,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
             const newTreeItemIndex = treeItemChildren.length || 0;
             const newTreeItemElement = {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 page_id: localPageId,
                 tag: 'TreeItem',
                 props: {

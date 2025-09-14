@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedOptionState {
     parentId: string;
@@ -276,7 +277,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         className='control-button add'
                         onClick={async () => {
                             try {
-                                const newItemId = crypto.randomUUID();
+                                const newItemId = ElementUtils.generateId();
                                 const newItem = {
                                     id: newItemId,
                                     page_id: currentPageId || '1',

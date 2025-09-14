@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedRadioState {
     parentId: string;
@@ -260,7 +261,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                             try {
                                 // 새로운 Radio 요소를 Supabase에 직접 삽입
                                 const newRadio = {
-                                    id: crypto.randomUUID(),
+                                    id: ElementUtils.generateId(),
                                     page_id: currentPageId || '1',
                                     tag: 'Radio',
                                     props: {
