@@ -76,6 +76,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
     const isProcessingRef = useRef(false);
     const elementsRef = useRef<Element[]>([]);
     const lastOperationRef = useRef<(() => Promise<void>) | null>(null);
+    const isConfiguredRef = useRef(false);
 
     const {
         handleError,
@@ -86,15 +87,18 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         getErrorStats
     } = useErrorHandler();
 
-    // 성능 최적화 설정 초기화
+    // HierarchyManager 설정 최적화
     useEffect(() => {
-        HierarchyManager.updateConfig({
-            maxCacheSize: 500,
-            enableIncrementalUpdate: true,
-            enableBatchProcessing: true,
-            batchSize: 50
-        });
-    }, []);
+        if (!isConfiguredRef.current) {
+            HierarchyManager.updateConfig({
+                maxCacheSize: 500,
+                enableIncrementalUpdate: true,
+                enableBatchProcessing: true,
+                batchSize: 50
+            });
+            isConfiguredRef.current = true;
+        }
+    }, []); // 빈 의존성 배열로 한 번만 실행
 
     const getDefaultProps = useCallback((tag: string): ComponentElementProps => {
         switch (tag) {

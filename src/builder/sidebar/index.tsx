@@ -1,5 +1,5 @@
 import "./index.css";
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
@@ -25,8 +25,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
-    const elements = useStore((state) => state.elements) as Element[];
-    const selectedElementId = useStore((state) => state.selectedElementId);
+    // 메모이제이션 추가
+    const elements = useStore(useCallback(state => state.elements, []));
+    const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
     // 활성 탭을 단일 값에서 Set으로 변경
@@ -35,26 +36,28 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     // 펼쳐진 항목의 ID를 추적하는 상태 추가
     const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
 
-    // selectedElementId가 변경될 때 해당 요소의 부모 요소들을 펼치는 효과
-    React.useEffect(() => {
-        if (selectedElementId && elements.length > 0) {
-            // 선택된 요소의 모든 상위 요소 찾기
-            const parentIds = new Set<string>();
-            let currentElement = elements.find(el => el.id === selectedElementId);
+    // useEffect를 useCallback으로 최적화
+    const updateExpandedItems = useCallback(() => {
+        if (!selectedElementId || elements.length === 0) return;
 
-            while (currentElement?.parent_id) {
-                parentIds.add(currentElement.parent_id);
-                currentElement = elements.find(el => el.id === currentElement?.parent_id);
-            }
+        const parentIds = new Set<string>();
+        let currentElement = elements.find(el => el.id === selectedElementId);
 
-            // 확장된 항목 집합에 상위 요소 추가
-            setExpandedItems(prev => {
-                const newSet = new Set(prev);
-                parentIds.forEach(id => newSet.add(id));
-                return newSet;
-            });
+        while (currentElement?.parent_id) {
+            parentIds.add(currentElement.parent_id);
+            currentElement = elements.find(el => el.id === currentElement?.parent_id);
         }
+
+        setExpandedItems(prev => {
+            const newSet = new Set(prev);
+            parentIds.forEach(id => newSet.add(id));
+            return newSet;
+        });
     }, [selectedElementId, elements]);
+
+    useEffect(() => {
+        updateExpandedItems();
+    }, [updateExpandedItems]);
 
     const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
         if (typeof elementsOrFn === 'function') {
@@ -64,8 +67,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         }
     };
 
-    // 탭 토글 함수 추가
-    const toggleTab = (tab: Tab) => {
+    // Set 객체 메모이제이션
+    const toggleTab = useCallback((tab: Tab) => {
         setActiveTabs(prev => {
             const newSet = new Set(prev);
             if (newSet.has(tab)) {
@@ -75,7 +78,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             }
             return newSet;
         });
-    };
+    }, []);
 
     const hasChildren = <T extends { id: string; parent_id?: string | null }>(
         items: T[],
