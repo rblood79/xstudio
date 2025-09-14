@@ -1,11 +1,11 @@
 // 통합된 스토어 타입 정의
-import { ElementProps } from './supabase';
+import { ComponentElementProps } from './componentProps';
 import { DesignToken as ThemeDesignToken } from './theme';
 
 export interface Element {
     id: string;
     tag: string;
-    props: ElementProps;
+    props: ComponentElementProps;
     parent_id?: string | null;
     order_num?: number;
     page_id: string;

@@ -1,13 +1,27 @@
 import { useCallback, useRef, useEffect } from 'react';
-import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
+import {
+    ComponentElementProps,
+    createDefaultButtonProps,
+    createDefaultTextFieldProps,
+    createDefaultToggleButtonGroupProps,
+    createDefaultCheckboxGroupProps,
+    createDefaultRadioGroupProps,
+    createDefaultSelectProps,
+    createDefaultComboBoxProps,
+    createDefaultTabsProps,
+    createDefaultTreeProps,
+    createDefaultTagGroupProps,
+    createDefaultListBoxProps,
+    createDefaultGridListProps
+} from '../../types/componentProps';
 
 export interface UseElementCreatorReturn {
-    getDefaultProps: (tag: string) => ElementProps;
+    getDefaultProps: (tag: string) => ComponentElementProps;
     handleAddElement: (
         tag: string,
         currentPageId: string,
@@ -63,316 +77,38 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         });
     }, []);
 
-    const getDefaultProps = useCallback((tag: string): ElementProps => {
-        const baseProps: ElementProps = {
-            style: {},
-            className: '',
-            children: '',
-            events: []
-        };
-
+    const getDefaultProps = useCallback((tag: string): ComponentElementProps => {
         switch (tag) {
             case 'Button':
-                return {
-                    ...baseProps,
-                    children: 'Button',
-                    variant: 'default',
-                    size: 'medium',
-                    isDisabled: false
-                };
-
+                return createDefaultButtonProps();
             case 'TextField':
-                return {
-                    ...baseProps,
-                    label: 'Text Field',
-                    placeholder: 'Enter text...',
-                    value: '',
-                    type: 'text',
-                    isRequired: false,
-                    isDisabled: false,
-                    isReadOnly: false
-                };
-
-            case 'Input':
-                return {
-                    ...baseProps,
-                    type: 'text',
-                    placeholder: 'Enter text...',
-                    value: '',
-                    isDisabled: false,
-                    isReadOnly: false
-                };
-
-            case 'Checkbox':
-                return {
-                    ...baseProps,
-                    children: 'Checkbox',
-                    isSelected: false,
-                    isIndeterminate: false,
-                    isDisabled: false
-                };
-
-            case 'Radio':
-                return {
-                    ...baseProps,
-                    children: 'Radio',
-                    value: '',
-                    isDisabled: false
-                };
-
-            case 'Label':
-                return {
-                    ...baseProps,
-                    children: 'Label'
-                };
-
-            case 'Description':
-                return {
-                    ...baseProps,
-                    text: 'Description'
-                };
-
-            case 'FieldError':
-                return {
-                    ...baseProps,
-                    text: 'Error message'
-                };
-
-            case 'ToggleButton':
-                return {
-                    ...baseProps,
-                    children: 'Toggle Button',
-                    isSelected: false,
-                    isDisabled: false
-                };
-
+                return createDefaultTextFieldProps();
             case 'ToggleButtonGroup':
-                return {
-                    ...baseProps,
-                    orientation: 'horizontal',
-                    selectionMode: 'single',
-                    value: []
-                };
-
+                return createDefaultToggleButtonGroupProps();
             case 'CheckboxGroup':
-                return {
-                    ...baseProps,
-                    label: 'Checkbox Group',
-                    orientation: 'vertical',
-                    value: []
-                };
-
+                return createDefaultCheckboxGroupProps();
             case 'RadioGroup':
-                return {
-                    ...baseProps,
-                    label: 'Radio Group',
-                    orientation: 'vertical',
-                    value: ''
-                };
-
+                return createDefaultRadioGroupProps();
             case 'Select':
-                return {
-                    ...baseProps,
-                    label: 'Select',
-                    placeholder: 'Choose an option...',
-                    selectedKey: undefined
-                };
-
-            case 'SelectItem':
-                return {
-                    ...baseProps,
-                    label: 'Option',
-                    value: 'option',
-                    isDisabled: false
-                };
-
+                return createDefaultSelectProps();
             case 'ComboBox':
-                return {
-                    ...baseProps,
-                    label: 'Combo Box',
-                    placeholder: 'Type or select...',
-                    inputValue: '',
-                    allowsCustomValue: true,
-                    selectedKey: undefined
-                };
-
-            case 'ComboBoxItem':
-                return {
-                    ...baseProps,
-                    label: 'Option',
-                    value: 'option',
-                    isDisabled: false
-                };
-
-            case 'Slider':
-                return {
-                    ...baseProps,
-                    label: 'Slider',
-                    value: '[50]',
-                    minValue: '0',
-                    maxValue: '100',
-                    step: '1',
-                    orientation: 'horizontal'
-                };
-
+                return createDefaultComboBoxProps();
             case 'Tabs':
-                return {
-                    ...baseProps,
-                    defaultSelectedKey: 'tab1',
-                    orientation: 'horizontal'
-                };
-
-            case 'Tab':
-                return {
-                    ...baseProps,
-                    title: 'Tab',
-                    tabId: 'tab1'
-                };
-
-            case 'Panel':
-                return {
-                    ...baseProps,
-                    title: 'Panel',
-                    variant: 'default'
-                };
-
+                return createDefaultTabsProps();
             case 'Tree':
-                return {
-                    ...baseProps,
-                    'aria-label': 'Tree',
-                    selectionMode: 'single',
-                    selectionBehavior: 'replace'
-                };
-
-            case 'TreeItem':
-                return {
-                    ...baseProps,
-                    title: 'Tree Item',
-                    hasChildren: false
-                };
-
-            case 'Calendar':
-                return {
-                    ...baseProps,
-                    'aria-label': 'Calendar',
-                    isDisabled: false,
-                    visibleDuration: 1,
-                    pageBehavior: 'visible'
-                };
-
-            case 'DatePicker':
-                return {
-                    ...baseProps,
-                    label: 'Date Picker',
-                    placeholder: 'Select date',
-                    isDisabled: false,
-                    isRequired: false,
-                    isReadOnly: false,
-                    granularity: 'day',
-                    firstDayOfWeek: 0
-                };
-
-            case 'DateRangePicker':
-                return {
-                    ...baseProps,
-                    label: 'Date Range Picker',
-                    placeholder: 'Select date range',
-                    isDisabled: false,
-                    isRequired: false,
-                    isReadOnly: false,
-                    granularity: 'day',
-                    firstDayOfWeek: 0
-                };
-
-            case 'Switch':
-                return {
-                    ...baseProps,
-                    children: 'Switch',
-                    isSelected: false,
-                    isDisabled: false
-                };
-
-            case 'Table':
-                return {
-                    ...baseProps,
-                    selectionMode: 'none',
-                    selectionBehavior: 'toggle'
-                };
-
-            case 'Card':
-                return {
-                    ...baseProps,
-                    title: 'Card',
-                    description: 'Card description',
-                    variant: 'default',
-                    size: 'medium',
-                    isQuiet: false,
-                    isSelected: false,
-                    isDisabled: false,
-                    isFocused: false
-                };
-
+                return createDefaultTreeProps();
             case 'TagGroup':
-                return {
-                    ...baseProps,
-                    label: 'Tag Group',
-                    allowsRemoving: true,
-                    selectionMode: 'multiple'
-                };
-
-            case 'Tag':
-                return {
-                    ...baseProps,
-                    children: 'Tag',
-                    isDisabled: false
-                };
-
+                return createDefaultTagGroupProps();
             case 'ListBox':
-                return {
-                    ...baseProps,
-                    orientation: 'vertical',
-                    selectionMode: 'single'
-                };
-
-            case 'ListBoxItem':
-                return {
-                    ...baseProps,
-                    label: 'List Item',
-                    value: 'item',
-                    isDisabled: false
-                };
-
+                return createDefaultListBoxProps();
             case 'GridList':
-                return {
-                    ...baseProps,
-                    selectionMode: 'none'
-                };
-
-            case 'GridListItem':
-                return {
-                    ...baseProps,
-                    label: 'Grid Item',
-                    value: 'item',
-                    isDisabled: false
-                };
-
-            case 'Text':
-                return {
-                    ...baseProps,
-                    children: 'Text',
-                    as: 'p'
-                };
-
-            case 'Div':
-            case 'section':
-            case 'Nav':
-                return {
-                    ...baseProps,
-                    children: ''
-                };
-
+                return createDefaultGridListProps();
             default:
-                return baseProps;
+                // 기본 HTML 요소들 - any 타입 제거
+                return {
+                    //tag: tag as ComponentElementProps['tag'],
+                    children: tag === 'Text' ? 'Text' : ''
+                } as ComponentElementProps;
         }
     }, []);
 

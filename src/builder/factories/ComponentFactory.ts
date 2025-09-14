@@ -1,5 +1,5 @@
-import { Element } from '../stores/elements';
-import { ElementProps } from '../../types/supabase';
+import { Element } from '../../types/store';
+import { ComponentElementProps } from '../../types/componentProps';
 import { elementsApi } from '../../services/api';
 import { HierarchyManager } from '../utils/HierarchyManager';
 
@@ -62,7 +62,7 @@ export class ComponentFactory {
                 isRequired: false,
                 isDisabled: false,
                 isReadOnly: false
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -76,7 +76,7 @@ export class ComponentFactory {
             {
                 id: crypto.randomUUID(),
                 tag: 'Label',
-                props: { children: 'Label' } as ElementProps,
+                props: { children: 'Label' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -87,7 +87,7 @@ export class ComponentFactory {
                 props: {
                     type: 'text',
                     placeholder: 'Enter text...'
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -95,7 +95,7 @@ export class ComponentFactory {
             {
                 id: crypto.randomUUID(),
                 tag: 'Description',
-                props: { text: 'Description' } as ElementProps,
+                props: { children: 'Description' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 3,
@@ -103,7 +103,7 @@ export class ComponentFactory {
             {
                 id: crypto.randomUUID(),
                 tag: 'FieldError',
-                props: { text: 'Error message' } as ElementProps,
+                props: { children: 'Error message' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 4,
@@ -139,10 +139,11 @@ export class ComponentFactory {
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ToggleButtonGroup',
             props: {
+                tag: 'ToggleButtonGroup',
                 orientation: 'horizontal',
                 selectionMode: 'single',
                 value: []
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -159,7 +160,7 @@ export class ComponentFactory {
                     children: 'Option 1',
                     isSelected: false,
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -171,7 +172,7 @@ export class ComponentFactory {
                     children: 'Option 2',
                     isSelected: false,
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -206,10 +207,11 @@ export class ComponentFactory {
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'CheckboxGroup',
             props: {
+                tag: 'CheckboxGroup',
                 label: 'Checkbox Group',
                 orientation: 'vertical',
                 value: []
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -226,7 +228,7 @@ export class ComponentFactory {
                     children: 'Option 1',
                     isSelected: false,
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -238,7 +240,7 @@ export class ComponentFactory {
                     children: 'Option 2',
                     isSelected: false,
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -276,7 +278,7 @@ export class ComponentFactory {
                 label: 'Radio Group',
                 orientation: 'vertical',
                 value: ''
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -293,7 +295,7 @@ export class ComponentFactory {
                     children: 'Option 1',
                     value: 'option1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -305,7 +307,7 @@ export class ComponentFactory {
                     children: 'Option 2',
                     value: 'option2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -343,7 +345,7 @@ export class ComponentFactory {
                 label: 'Select',
                 placeholder: 'Choose an option...',
                 selectedKey: undefined
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -360,7 +362,7 @@ export class ComponentFactory {
                     label: 'Option 1',
                     value: 'option1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -372,7 +374,7 @@ export class ComponentFactory {
                     label: 'Option 2',
                     value: 'option2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -384,7 +386,7 @@ export class ComponentFactory {
                     label: 'Option 3',
                     value: 'option3',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 3,
@@ -424,7 +426,7 @@ export class ComponentFactory {
                 inputValue: '',
                 allowsCustomValue: true,
                 selectedKey: undefined
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -441,7 +443,7 @@ export class ComponentFactory {
                     label: 'Option 1',
                     value: 'option1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -453,7 +455,7 @@ export class ComponentFactory {
                     label: 'Option 2',
                     value: 'option2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -490,7 +492,7 @@ export class ComponentFactory {
             props: {
                 defaultSelectedKey: 'tab1',
                 orientation: 'horizontal'
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -506,7 +508,7 @@ export class ComponentFactory {
                 props: {
                     title: 'Tab 1',
                     tabId: 'tab1'
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -515,10 +517,10 @@ export class ComponentFactory {
                 id: crypto.randomUUID(),
                 tag: 'Panel',
                 props: {
+                    //tag: 'Panel',
                     title: 'Panel 1',
-                    tabId: 'tab1',
                     variant: 'tab'
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -529,7 +531,7 @@ export class ComponentFactory {
                 props: {
                     title: 'Tab 2',
                     tabId: 'tab2'
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 3,
@@ -538,10 +540,10 @@ export class ComponentFactory {
                 id: crypto.randomUUID(),
                 tag: 'Panel',
                 props: {
+                    //tag: 'Panel',
                     title: 'Panel 2',
-                    tabId: 'tab2',
                     variant: 'tab'
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 4,
@@ -579,7 +581,7 @@ export class ComponentFactory {
                 'aria-label': 'Tree',
                 selectionMode: 'single',
                 selectionBehavior: 'replace'
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -595,7 +597,7 @@ export class ComponentFactory {
                 props: {
                     title: 'Node 1',
                     hasChildren: true
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -606,7 +608,7 @@ export class ComponentFactory {
                 props: {
                     title: 'Node 2',
                     hasChildren: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -644,7 +646,7 @@ export class ComponentFactory {
                 label: 'Tag Group',
                 allowsRemoving: true,
                 selectionMode: 'multiple'
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -660,7 +662,7 @@ export class ComponentFactory {
                 props: {
                     children: 'Tag 1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -671,7 +673,7 @@ export class ComponentFactory {
                 props: {
                     children: 'Tag 2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -708,7 +710,7 @@ export class ComponentFactory {
             props: {
                 orientation: 'vertical',
                 selectionMode: 'single'
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -725,7 +727,7 @@ export class ComponentFactory {
                     label: 'Item 1',
                     value: 'item1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -737,7 +739,7 @@ export class ComponentFactory {
                     label: 'Item 2',
                     value: 'item2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
@@ -773,7 +775,7 @@ export class ComponentFactory {
             tag: 'GridList',
             props: {
                 selectionMode: 'none'
-            } as ElementProps,
+            } as ComponentElementProps,
             page_id: pageId,
             parent_id: parentId,
             order_num: orderNum
@@ -790,7 +792,7 @@ export class ComponentFactory {
                     label: 'Grid Item 1',
                     value: 'item1',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 1,
@@ -802,7 +804,7 @@ export class ComponentFactory {
                     label: 'Grid Item 2',
                     value: 'item2',
                     isDisabled: false
-                } as ElementProps,
+                } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
                 order_num: 2,
