@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedItemState {
     parentId: string;
@@ -299,7 +300,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             try {
                                 // 새로운 GridListItem 요소를 Supabase에 직접 삽입
                                 const newItem = {
-                                    id: crypto.randomUUID(),
+                                    id: ElementUtils.generateId(),
                                     page_id: currentPageId || '1',
                                     tag: 'GridListItem',
                                     props: {

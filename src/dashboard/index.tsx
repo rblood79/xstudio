@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
+import { projectsApi, pagesApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
 import "./index.css";
 import { ElementUtils } from '../utils/elementUtils';
@@ -68,7 +68,7 @@ function Dashboard() {
         order_num: 0,
       };
 
-      await elementsApi.createElement(bodyElement);
+      await ElementUtils.createElement(bodyElement);
 
       // 프로젝트 목록 업데이트
       setProjects(prev => [newProject, ...prev]);
