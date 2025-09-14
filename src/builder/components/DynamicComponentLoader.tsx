@@ -1,7 +1,7 @@
 // src/builder/components/DynamicComponentLoader.tsx
 import React, { lazy, Suspense } from 'react';
 
-// 컴포넌트 맵 정의 (코드 스플리팅)
+// Component map definition (code splitting)
 const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<unknown>>> = {
     'Button': lazy(() => import('./Button').then(module => ({ default: module.Button }))),
     'TextField': lazy(() => import('./TextField').then(module => ({ default: module.TextField }))),
@@ -23,7 +23,9 @@ const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType
     'ToggleButtonGroup': lazy(() => import('./ToggleButtonGroup').then(module => ({ default: module.ToggleButtonGroup }))),
     'TagGroup': lazy(() => import('./TagGroup').then(module => ({ default: module.TagGroup }))),
     'Form': lazy(() => import('./Form').then(module => ({ default: module.Form }))),
-    'Field': lazy(() => import('./Field').then(module => ({ default: module.Field }))),
+    'FieldGroup': lazy(() => import('./Field').then(module => ({ default: module.FieldGroup }))),
+    'Label': lazy(() => import('./Field').then(module => ({ default: module.Label }))),
+    'Input': lazy(() => import('./Field').then(module => ({ default: module.Input }))),
     'DateField': lazy(() => import('./DateField').then(module => ({ default: module.DateField }))),
     'DatePicker': lazy(() => import('./DatePicker').then(module => ({ default: module.DatePicker }))),
     'DateRangePicker': lazy(() => import('./DateRangePicker').then(module => ({ default: module.DateRangePicker }))),
