@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { Element, ComponentElementProps } from '../../types/unified';
-import { elementsApi } from '../../services/api/ElementsApiService';
+//import { elementsApi } from '../../services/api/ElementsApiService';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
@@ -38,6 +38,7 @@ import {
     createDefaultSectionProps,
     createDefaultNavProps
 } from '../../types/unified';
+import { ElementUtils } from '../../utils/elementUtils';
 
 export interface UseElementCreatorReturn {
     getDefaultProps: (tag: string) => ComponentElementProps;
@@ -248,7 +249,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                             order_num: orderNum
                         };
 
-                        const data = await elementsApi.createElement(newElement);
+                        const data = await ElementUtils.createElement(newElement);
                         addElement(data);
 
                         // 증분 업데이트로 캐시 최적화

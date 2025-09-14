@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
-import { elementsApi } from '../../../../services/api';
+//import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/elementUtils';
 
 export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
@@ -58,7 +58,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 order_num: newTreeItemIndex,
             };
 
-            const data = await elementsApi.createElement(newTreeItemElement);
+            const data = await ElementUtils.createElement(newTreeItemElement);
             addElement(data);
 
             console.log('새 하위 TreeItem이 추가됨:', data);

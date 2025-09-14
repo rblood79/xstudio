@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
-import { elementsApi } from '../../services/api/ElementsApiService';
+//import { elementsApi } from '../../services/api/ElementsApiService';
 import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
 import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
+import { MessageService } from '../../utils/messaging';
 
 export interface UseIframeMessengerReturn {
     iframeReady: boolean;
@@ -22,29 +23,31 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isProcessingRef = useRef(false);
 
     const elements = useStore((state) => state.elements);
-    const selectedElementId = useStore((state) => state.selectedElementId);
+    //const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const updateElementProps = useStore((state) => state.updateElementProps);
     const { undo, redo } = useStore();
 
     // 요소들을 iframe에 전송
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
-        const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+        const iframe = MessageService.getIframe();
         if (!iframe?.contentWindow) {
             console.warn('iframe not ready');
             return;
         }
 
         //console.log('Sending elements to iframe:', elementsToSend.length);
-        iframe.contentWindow.postMessage(
-            { type: "UPDATE_ELEMENTS", elements: elementsToSend },
-            window.location.origin
-        );
+        //console.log('Elements being sent:', elementsToSend);
+
+        const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
+        iframe.contentWindow.postMessage(message, window.location.origin);
+
+        //console.log('Message sent to iframe:', message);
     }, []);
 
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
-        const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+        const iframe = MessageService.getIframe();
         if (!iframe?.contentWindow) return;
 
         const element = elements.find(el => el.id === elementId);
@@ -63,20 +66,31 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         //console.log('Sending element selected message:', message);
         iframe.contentWindow.postMessage(message, window.location.origin);
-        window.postMessage(message, window.location.origin);
     }, [elements]);
 
     const handleIframeLoad = useCallback(() => {
         //console.log('iframe loaded');
-        setIframeReady(true);
 
-        // iframe 로드 후 현재 요소들을 전송
-        if (elements.length > 0) {
-            setTimeout(() => {
-                console.log('Sending initial elements after iframe load:', elements.length);
-                sendElementsToIframe(elements);
-            }, 1000); // iframe이 완전히 로드될 때까지 충분한 대기
-        }
+        // iframe이 완전히 준비될 때까지 기다리는 함수
+        const waitForIframeReady = () => {
+            const iframe = MessageService.getIframe();
+            if (iframe?.contentDocument && iframe.contentDocument.readyState === 'complete') {
+                setIframeReady(true);
+
+                // iframe 로드 후 현재 요소들을 전송
+                if (elements.length > 0) {
+                    setTimeout(() => {
+                        //console.log('Sending initial elements after iframe load:', elements.length);
+                        sendElementsToIframe(elements);
+                    }, 500);
+                }
+            } else {
+                // 아직 준비되지 않았으면 다시 시도
+                setTimeout(waitForIframeReady, 100);
+            }
+        };
+
+        waitForIframeReady();
     }, [elements, sendElementsToIframe]);
 
     const handleMessage = useCallback((event: MessageEvent) => {
@@ -90,7 +104,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         //console.log('Processing message type:', event.data.type, event.data);
 
         if (event.data.type === "UPDATE_THEME_TOKENS") {
-            const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+            const iframe = MessageService.getIframe();
             if (!iframe?.contentDocument) return;
 
             let parentStyleElement = document.getElementById('theme-tokens');
@@ -137,7 +151,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             updateElementProps(event.data.elementId, event.data.props);
 
             // 업데이트된 요소 정보를 프리뷰에 다시 전송
-            const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+            const iframe = MessageService.getIframe();
             if (iframe?.contentWindow) {
                 const updatedElements = useStore.getState().elements;
                 iframe.contentWindow.postMessage(
@@ -155,7 +169,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
             const element = elements.find(el => el.id === event.data.elementId);
             if (element) {
-                sendElementSelectedMessage(event.data.elementId, element.props as any);
+                sendElementSelectedMessage(event.data.elementId, element.props as ElementProps);
             }
         }
 
@@ -208,27 +222,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
     }, 300);
 
-    // 선택된 요소가 변경될 때마다 iframe에 알림
-    useEffect(() => {
-        if (selectedElementId && iframeReady) {
-            const element = elements.find(el => el.id === selectedElementId);
-            if (element) {
-                const timer = setTimeout(() => {
-                    sendElementSelectedMessage(selectedElementId, element.props as any);
-                }, 100);
+    // useEffect 제거하고 Layer 트리에서 직접 호출
+    // Layer 트리에서 선택할 때:
+    // sendElementSelectedMessage(selectedElementId, element.props);
 
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [selectedElementId, elements, sendElementSelectedMessage, iframeReady]);
-
-    // elements가 변경될 때마다 iframe에 전송
+    // elements가 변경될 때마다 iframe에 전송 (iframeReady 체크 제거)
     useEffect(() => {
-        if (elements.length > 0 && iframeReady) {
-            console.log('Elements changed, sending to iframe:', elements.length);
+        if (elements.length > 0) {
+            //console.log('Elements changed, sending to iframe:', elements.length);
+            // iframeReady 체크 없이 바로 전송
             sendElementsToIframe(elements);
         }
-    }, [elements, sendElementsToIframe, iframeReady]);
+    }, [elements, sendElementsToIframe]);
 
     return {
         iframeReady,

@@ -13,7 +13,8 @@ import AI from '../ai';
 import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
-import { MessageService } from '../../utils/messaging';
+//import { MessageService } from '../../utils/messaging';
+import { useIframeMessenger } from '../hooks/useIframeMessenger';
 
 interface SidebarProps {
     pages: Page[];
@@ -596,33 +597,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         );
     };
 
-    const sendElementSelectedMessage = (elementId: string, props: ElementProps) => {
-        const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-        if (iframe?.contentDocument) {
-            const element = iframe.contentDocument.querySelector(`[data-element-id="${elementId}"]`) as HTMLElement;
-            if (element) {
-                const selectedElement = elements.find((el) => el.id === elementId);
-                const rect = element.getBoundingClientRect();
-                const computedStyle = window.getComputedStyle(element);
-                const adjustedRect = {
-                    top: rect.top + window.scrollY,
-                    left: rect.left + window.scrollX,
-                    width: parseFloat(computedStyle.width) || rect.width,
-                    height: parseFloat(computedStyle.height) || rect.height,
-                };
-                const message = {
-                    type: "ELEMENT_SELECTED",
-                    elementId,
-                    payload: { rect: adjustedRect, tag: selectedElement?.tag || "Unknown", props },
-                    source: "builder",
-                };
-                MessageService.sendToWindow("ELEMENT_SELECTED", message.payload);
-                if (iframe.contentWindow) {
-                    MessageService.sendToIframe("ELEMENT_SELECTED", message.payload);
-                }
-            }
-        }
-    };
+    // sendElementSelectedMessage 함수를 useIframeMessenger에서 가져와서 사용
+    const { sendElementSelectedMessage } = useIframeMessenger();
 
     // 모든 트리 아이템 접기 함수 추가
     const collapseAllTreeItems = () => {

@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedCheckboxState {
     parentId: string;
@@ -274,7 +275,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                             try {
                                 // 새로운 Checkbox 요소를 Supabase에 직접 삽입
                                 const newCheckbox = {
-                                    id: crypto.randomUUID(),
+                                    id: ElementUtils.generateId(),
                                     page_id: currentPageId || '1',
                                     tag: 'Checkbox',
                                     props: {
