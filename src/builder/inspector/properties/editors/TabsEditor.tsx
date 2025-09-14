@@ -7,6 +7,7 @@ import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import type { Element } from '../../../../types/store'; // 통합된 타입 사용
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
 const ORIENTATIONS: Array<{ id: string; label: string }> = [
@@ -186,11 +187,11 @@ async function createNewTab(
     addElement: (element: Element) => void
 ) {
     const newTabIndex = tabChildren.length || 0;
-    const tabId = crypto.randomUUID(); // 공통 tabId 생성
+    const tabId = ElementUtils.generateId();
 
     // 새로운 Tab 요소 생성
     const newTabElement = {
-        id: crypto.randomUUID(),
+        id: ElementUtils.generateId(),
         page_id: pageId,
         tag: 'Tab',
         props: {
@@ -207,7 +208,7 @@ async function createNewTab(
 
     // 새로운 Panel 요소 생성
     const newPanelElement = {
-        id: crypto.randomUUID(),
+        id: ElementUtils.generateId(),
         page_id: pageId,
         tag: 'Panel',
         props: {
