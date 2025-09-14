@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { Element, Page, ComponentElementProps } from '../../types/unified';
 import { elementsApi } from '../../services/api';
 import { useStore } from './';
+import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
 
 export interface ElementsState {
     elements: Element[];
@@ -72,10 +73,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
                 // postMessage로 iframe에 전달
                 try {
-                    window.postMessage({
-                        type: "UPDATE_ELEMENTS",
+                    MessageService.sendToWindow("UPDATE_ELEMENTS", {
                         elements: newElements.map(sanitizeElement)
-                    }, window.location.origin);
+                    });
                 } catch (error) {
                     console.error("Failed to send message:", error);
                 }
@@ -266,10 +266,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
             // iframe에 업데이트된 요소 목록 전송
             const updatedElements = useStore.getState().elements;
             try {
-                window.postMessage({
-                    type: "UPDATE_ELEMENTS",
+                MessageService.sendToWindow("UPDATE_ELEMENTS", {
                     elements: updatedElements.map(sanitizeElement)
-                }, window.location.origin);
+                });
             } catch (error) {
                 console.error("Failed to send message:", error);
             }
@@ -310,10 +309,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                 el.id !== elementId && el.parent_id !== elementId
             );
             try {
-                window.postMessage({
-                    type: "UPDATE_ELEMENTS",
+                MessageService.sendToWindow("UPDATE_ELEMENTS", {
                     elements: updatedElements.map(sanitizeElement)
-                }, window.location.origin);
+                });
             } catch (error) {
                 console.error("Failed to send message:", error);
             }

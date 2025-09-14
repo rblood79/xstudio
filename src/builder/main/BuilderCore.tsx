@@ -21,6 +21,7 @@ import { useThemeManager } from '../hooks/useThemeManager';
 import { useValidation } from '../hooks/useValidation';
 
 import './index.css';
+import { MessageService } from '../../utils/messaging';
 
 export const BuilderCore: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -156,7 +157,7 @@ export const BuilderCore: React.FC = () => {
             const isWorkspaceBackground = target.classList.contains('workspace') || target.classList.contains('bg');
             if (isWorkspaceBackground) {
                 setSelectedElement(null);
-                window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
+                MessageService.clearOverlay();
             }
         };
 

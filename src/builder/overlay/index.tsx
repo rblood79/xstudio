@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useStore } from "../stores";
 import { ChevronUp } from 'lucide-react';
+import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
 
 import "./index.css";
 interface Rect {
@@ -67,8 +68,8 @@ export default function SelectionOverlay() {
     }, [selectedElementId]);
 
     useEffect(() => {
-        iframeRef.current = document.getElementById("previewFrame") as HTMLIFrameElement;
-        const iframe = iframeRef.current;
+        const iframe = MessageService.getIframe();
+        iframeRef.current = iframe;
 
         if (!iframe?.contentDocument) {
             setOverlayRect(null);
