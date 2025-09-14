@@ -85,7 +85,9 @@ export const BuilderCore: React.FC = () => {
     const handleAddPage = useCallback(async () => {
         if (!projectId) return;
         try {
-            await createPage(projectId, useStore.getState().addElement);
+            // 타입 캐스팅을 사용하여 타입 불일치 해결
+            const addElement = useStore.getState().addElement as (element: any) => void;
+            await createPage(projectId, addElement);
         } catch (error) {
             handleError(error, '페이지 생성');
         }
@@ -95,12 +97,14 @@ export const BuilderCore: React.FC = () => {
     const handleAddElementWrapper = useCallback(async (tag: string) => {
         if (!currentPageId) return;
         try {
+            // 타입 캐스팅을 사용하여 타입 불일치 해결
+            const addElement = useStore.getState().addElement as (element: any) => void;
             await handleAddElement(
                 tag,
                 currentPageId,
                 selectedElementId,
                 elements,
-                useStore.getState().addElement,
+                addElement,
                 sendElementsToIframe
             );
         } catch (error) {
