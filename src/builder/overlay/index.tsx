@@ -92,13 +92,13 @@ export default function SelectionOverlay() {
             }
         };
 
-        window.addEventListener("message", handleMessage);
-
         const handleScrollResize = () => updatePosition();
 
-        if (selectedElementId) {
+        window.addEventListener("message", handleMessage);
+
+        if (selectedElementId && iframe?.contentWindow) {
             updatePosition();
-            iframe.contentWindow?.addEventListener("scroll", handleScrollResize);
+            iframe.contentWindow.addEventListener("scroll", handleScrollResize);
             window.addEventListener("resize", handleScrollResize);
             window.addEventListener("scroll", handleScrollResize);
         }
@@ -111,7 +111,7 @@ export default function SelectionOverlay() {
             window.removeEventListener("resize", handleScrollResize);
             window.removeEventListener("scroll", handleScrollResize);
         };
-    }, [selectedElementId, updatePosition]);
+    }, [selectedElementId, updatePosition]); // iframe 의존성 제거
 
     /*useEffect(() => {
         console.log("overlayRect updated:", overlayRect);
