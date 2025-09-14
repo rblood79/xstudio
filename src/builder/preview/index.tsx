@@ -243,7 +243,7 @@ function Preview() {
     // body 태그는 특별 처리 - 다른 컴포넌트 내부에서는 div로 렌더링
     const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
 
-    const newProps = {
+    const newProps: Record<string, unknown> = {
       ...el.props,
       "data-element-id": el.id,
     };
@@ -435,8 +435,8 @@ function Preview() {
           type={el.props.type as 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number' || 'text'}
           placeholder={String(el.props.placeholder || '')} // placeholder 추가
           value={String(el.props.value || '')}
-          isDisabled={Boolean(el.props.isDisabled || false)}
-          isReadOnly={Boolean(el.props.isReadOnly || false)}
+          disabled={Boolean(el.props.isDisabled || false)}
+          readOnly={Boolean(el.props.isReadOnly || false)}
           onChange={(value) => {
             const updatedProps = {
               ...el.props,
@@ -641,20 +641,6 @@ function Preview() {
           onBlur={eventHandlers.onBlur as unknown as (e: unknown) => void}
           onKeyDown={eventHandlers.onKeyDown as unknown as (e: unknown) => void}
           onKeyUp={eventHandlers.onKeyUp as unknown as (e: unknown) => void}
-          // DOM 이벤트를 직접 연결 (더블클릭)
-          ref={(buttonElement: HTMLElement) => {
-            if (buttonElement && eventHandlers.onDoubleClick) {
-              const handleDoubleClick = (e: MouseEvent) => {
-                eventHandlers.onDoubleClick(e);
-              };
-
-              buttonElement.addEventListener('dblclick', handleDoubleClick);
-
-              return () => {
-                buttonElement.removeEventListener('dblclick', handleDoubleClick);
-              };
-            }
-          }}
         >
           {typeof el.props.children === 'string' ? el.props.children : (children.length === 0 ? 'Button' : null)}
           {children.map((child) => renderElement(child))}
@@ -713,7 +699,6 @@ function Preview() {
           data-element-id={el.id}
           style={el.props.style}
           className={el.props.className}
-          label={el.props.label ? String(el.props.label).trim() : undefined}
           orientation={(el.props.orientation as 'horizontal' | 'vertical') || 'vertical'}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as unknown as string[] : []}
@@ -780,7 +765,7 @@ function Preview() {
           errorMessage={elementProps.errorMessage ? String(elementProps.errorMessage).trim() : undefined}
           placeholder={processedPlaceholder} // 항상 placeholder 전달
           aria-label={ariaLabel}
-          selectedKey={currentSelectedKey || undefined} // 빈 문자열 대신 undefined 사용
+          selectedKey={currentSelectedKey ? String(currentSelectedKey) : undefined} // 빈 문자열 대신 undefined 사용
           defaultSelectedKey={String(elementProps.defaultSelectedKey || '')}
           isDisabled={Boolean(elementProps.isDisabled)}
           isRequired={Boolean(elementProps.isRequired)}
@@ -1197,17 +1182,17 @@ function Preview() {
 
     // Text 컴포넌트 특별 처리
     if (el.tag === 'Text') {
-      const Tag = el.props.as || 'p';
-      return (
-        <Tag
-          key={el.id}
-          data-element-id={el.id}
-          style={el.props.style}
-          className={el.props.className}
-        >
-          {el.props.children}
-          {children.map((child) => renderElement(child))}
-        </Tag>
+      const TextTag = (el.props.as || 'p') as string;
+      return React.createElement(
+        TextTag,
+        {
+          key: el.id,
+          'data-element-id': el.id,
+          style: el.props.style,
+          className: el.props.className,
+        },
+        el.props.children,
+        ...children.map((child) => renderElement(child))
       );
     }
 
@@ -1434,7 +1419,7 @@ function Preview() {
       const Tag = tagMapping[el.tag as keyof typeof tagMapping];
 
       // HTML 요소에는 isDisabled 대신 disabled 사용
-      const htmlProps: any = {
+      const htmlProps: Record<string, unknown> = {
         'data-element-id': el.id,
         style: el.props.style,
         className: el.props.className,
@@ -1445,10 +1430,13 @@ function Preview() {
         htmlProps.disabled = true;
       }
 
-      return (
-        <Tag key={el.id} {...htmlProps}>
-          {String(el.props.children || '')}
-        </Tag>
+      return React.createElement(
+        Tag,
+        {
+          key: el.id,
+          ...htmlProps,
+          textValue: String(el.props.children || '')
+        }
       );
     }
 
@@ -1643,7 +1631,8 @@ function Preview() {
     }
 
     // React 컴포넌트와 HTML 요소 구분을 위한 매핑
-    const reactComponentMap = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reactComponentMap: Record<string, React.ComponentType<any>> = {
       'Button': Button,
       'TextField': TextField,
       'Label': Label,
@@ -1681,7 +1670,7 @@ function Preview() {
       'ToggleButton': ToggleButton,
       'ToggleButtonGroup': ToggleButtonGroup,
       // ... 다른 React Aria 컴포넌트들
-    } as const;
+    };
 
     // HTML 요소 목록
     const htmlElements = [
@@ -1763,6 +1752,7 @@ function Preview() {
     // 알 수 없는 태그인 경우 div로 렌더링
     console.warn(`Unknown component/element type: ${effectiveTag}. Rendering as div.`);
 
+    const content = children.map((child) => renderElement(child));
     const fallbackProps = {
       "data-element-id": el.id,
       "data-unknown-component": effectiveTag,
