@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
 import "./index.css";
+import { ElementUtils } from '../utils/elementUtils';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ function Dashboard() {
 
       // 기본 body 요소 생성
       const bodyElement = {
-        id: crypto.randomUUID(),
+        id: ElementUtils.generateId(),
         tag: 'body',
         props: {} as ElementProps,
         parent_id: null,

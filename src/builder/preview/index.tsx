@@ -50,6 +50,7 @@ import {
 import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
 //import { useBatchUpdate } from '../stores';
+import { ElementUtils } from '../../utils/elementUtils';
 
 
 interface PreviewElement {
@@ -796,7 +797,7 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
 
             try {
-              await elementsApi.updateElementProps(el.id, updatedProps);
+              await ElementUtils.updateElementProps(el.id, updatedProps);
               console.log('Element props updated successfully (placeholder preserved)');
             } catch (err) {
               console.error('Error updating element props:', err);
@@ -902,7 +903,7 @@ function Preview() {
 
             // 데이터베이스에도 저장
             try {
-              await elementsApi.updateElementProps(el.id, updatedProps);
+              await ElementUtils.updateElementProps(el.id, updatedProps);
               console.log('ComboBox element props updated successfully');
             } catch (err) {
               console.error('Error updating ComboBox element props:', err);
@@ -1517,7 +1518,7 @@ function Preview() {
 
             // 데이터베이스에도 저장
             try {
-              await elementsApi.updateElementProps(el.id, updatedProps);
+              await ElementUtils.updateElementProps(el.id, updatedProps);
               console.log('TagGroup selectedKeys updated successfully');
             } catch (err) {
               console.error('Error updating TagGroup selectedKeys:', err);
@@ -1552,7 +1553,7 @@ function Preview() {
               }
 
               try {
-                await elementsApi.deleteElement(String(tagId));
+                await ElementUtils.deleteElement(String(tagId));
                 deletedTagIds.push(String(tagId));
                 console.log(`Tag ${tagId} deleted successfully`);
               } catch (err) {
@@ -1579,7 +1580,7 @@ function Preview() {
 
             // 5. 데이터베이스에 TagGroup props 저장
             try {
-              await elementsApi.updateElementProps(el.id, updatedProps);
+              await ElementUtils.updateElementProps(el.id, updatedProps);
               console.log('TagGroup selectedKeys updated after removal');
             } catch (err) {
               console.error('Error updating TagGroup selectedKeys after removal:', err);

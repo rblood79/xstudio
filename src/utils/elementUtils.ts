@@ -1,5 +1,6 @@
 import { Element } from '../types/store';
 import { elementsApi } from '../services/api';
+import { ComponentElementProps } from '../types/unified';
 
 // 통합 요소 관리 유틸리티
 export class ElementUtils {
@@ -21,5 +22,13 @@ export class ElementUtils {
 
     static async delay(ms: number = 0): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    static async getElementsByPageId(pageId: string): Promise<Element[]> {
+        return await elementsApi.getElementsByPageId(pageId);
+    }
+
+    static async updateElementProps(elementId: string, props: Record<string, unknown>): Promise<Element> {
+        return await elementsApi.updateElementProps(elementId, props);
     }
 }

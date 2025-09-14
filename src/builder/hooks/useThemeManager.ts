@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useStore } from '../stores';
 import { ColorValue } from '../../types/theme';
+import { MessageService } from '../../utils/messaging';
 
 export interface UseThemeManagerReturn {
     applyThemeTokens: () => void;
@@ -13,7 +14,7 @@ export const useThemeManager = (): UseThemeManagerReturn => {
     const loadTheme = useStore(state => state.loadTheme);
 
     const applyThemeTokens = useCallback(() => {
-        const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+        const iframe = MessageService.getIframe();
         if (!iframe?.contentDocument) return;
 
         // 모든 토큰을 하나의 배열로 합치기

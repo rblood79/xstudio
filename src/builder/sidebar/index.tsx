@@ -13,6 +13,7 @@ import AI from '../ai';
 import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
+import { MessageService } from '../../utils/messaging';
 
 interface SidebarProps {
     pages: Page[];
@@ -615,9 +616,9 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                     payload: { rect: adjustedRect, tag: selectedElement?.tag || "Unknown", props },
                     source: "builder",
                 };
-                window.postMessage(message, window.location.origin);
+                MessageService.sendToWindow("ELEMENT_SELECTED", message.payload);
                 if (iframe.contentWindow) {
-                    iframe.contentWindow.postMessage(message, window.location.origin);
+                    MessageService.sendToIframe("ELEMENT_SELECTED", message.payload);
                 }
             }
         }

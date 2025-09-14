@@ -176,7 +176,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const updatedElements = useStore.getState().elements;
 
             for (const element of updatedElements) {
-                await elementsApi.updateElement(element.id, element);
+                await ElementUtils.updateElement(element.id, element);
             }
 
             sendElementsToIframe(updatedElements);
@@ -197,7 +197,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const updatedElements = useStore.getState().elements;
 
             for (const element of updatedElements) {
-                await elementsApi.updateElement(element.id, element);
+                await ElementUtils.updateElement(element.id, element);
             }
 
             sendElementsToIframe(updatedElements);
