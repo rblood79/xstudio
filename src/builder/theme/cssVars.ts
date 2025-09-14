@@ -1,6 +1,7 @@
 
 import type { DesignToken, TokenValue } from '../../types/theme';
 import type { TokenType } from '../../types/theme';
+import { MessageService } from '../../utils/messaging';
 
 const IFRAME_ID = 'previewFrame';
 
@@ -75,12 +76,9 @@ export function injectCss(vars: CssPair[]) {
     lastSig = s;
 
     // iframe 전송
-    const iframe = document.getElementById(IFRAME_ID) as HTMLIFrameElement | null;
+    const iframe = MessageService.getIframe();
     if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(
-            { type: 'THEME_VARS', vars },
-            window.location.origin
-        );
+        MessageService.sendToIframe('THEME_VARS', { vars });
     } else {
         pendingVars = vars;
     }
@@ -92,12 +90,9 @@ if (typeof window !== 'undefined') {
         const d = ev.data;
         if (!d || typeof d !== 'object' || d.type !== 'PREVIEW_READY') return;
         if (pendingVars) {
-            const iframe = document.getElementById(IFRAME_ID) as HTMLIFrameElement | null;
+            const iframe = MessageService.getIframe();
             if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage(
-                    { type: 'THEME_VARS', vars: pendingVars },
-                    window.location.origin
-                );
+                MessageService.sendToIframe('THEME_VARS', { vars: pendingVars });
                 pendingVars = null;
             }
         }

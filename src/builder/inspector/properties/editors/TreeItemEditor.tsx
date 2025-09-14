@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, elements: storeElements } = useStore();
@@ -44,7 +45,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
             const newTreeItemIndex = childTreeItems.length || 0;
             const newTreeItemElement = {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 page_id: localPageId,
                 tag: 'TreeItem',
                 props: {

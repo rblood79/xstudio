@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Element } from '../../types/store';
+import { ElementUtils } from '../../utils/elementUtils';
 
 export interface ErrorInfo {
     id: string;
@@ -68,7 +69,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
             recoverable?: boolean;
         }
     ) => {
-        const errorId = crypto.randomUUID();
+        const errorId = ElementUtils.generateId();
         const timestamp = new Date();
 
         // 에러 메시지 추출
@@ -218,7 +219,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
         operation: () => Promise<void>,
         maxRetries: number = 3
     ): Promise<void> => {
-        const operationId = crypto.randomUUID();
+        const operationId = ElementUtils.generateId();
         let retryCount = retryCountRef.current.get(operationId) || 0;
 
         while (retryCount < maxRetries) {
@@ -241,7 +242,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
                 } else {
                     // 재시도 전 대기 (지수 백오프)
                     const delay = Math.pow(2, retryCount) * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await ElementUtils.delay(delay);
 
                     handleError(error, `작업 재시도 중 (${retryCount}/${maxRetries})`, {
                         type: 'network',

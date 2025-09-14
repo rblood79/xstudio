@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedButtonState {
     parentId: string;
@@ -204,7 +205,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                             }
 
                             const newToggleButton = {
-                                id: crypto.randomUUID(),
+                                id: ElementUtils.generateId(),
                                 page_id: currentPageId,
                                 tag: 'ToggleButton',
                                 props: {

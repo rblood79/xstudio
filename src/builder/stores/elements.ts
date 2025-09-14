@@ -4,6 +4,7 @@ import { Element, Page, ComponentElementProps } from '../../types/unified';
 import { elementsApi } from '../../services/api';
 import { useStore } from './';
 import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
+import { ElementUtils } from '../../utils/elementUtils';
 
 export interface ElementsState {
     elements: Element[];
@@ -166,7 +167,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
                 if (!parentId) {
                     // 부모가 없으면 단일 삭제
-                    await elementsApi.deleteElement(elementId);
+                    await ElementUtils.deleteElement(elementId);
                     deletedIds.push(elementId);
                 } else {
                     // 같은 부모를 가진 Tab과 Panel들을 찾기
@@ -194,12 +195,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         //console.log('Corresponding Panel:', correspondingPanel);
 
                         // Tab 삭제
-                        await elementsApi.deleteElement(elementId);
+                        await ElementUtils.deleteElement(elementId);
                         deletedIds.push(elementId);
 
                         // 해당 Panel 삭제
                         if (correspondingPanel) {
-                            await elementsApi.deleteElement(correspondingPanel.id);
+                            await ElementUtils.deleteElement(correspondingPanel.id);
                             deletedIds.push(correspondingPanel.id);
                             //console.log('Deleted Tab and Panel pair');
                         } else {
@@ -228,12 +229,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         //console.log('Corresponding Tab:', correspondingTab);
 
                         // Panel 삭제
-                        await elementsApi.deleteElement(elementId);
+                        await ElementUtils.deleteElement(elementId);
                         deletedIds.push(elementId);
 
                         // 해당 Tab 삭제
                         if (correspondingTab) {
-                            await elementsApi.deleteElement(correspondingTab.id);
+                            await ElementUtils.deleteElement(correspondingTab.id);
                             deletedIds.push(correspondingTab.id);
                             //console.log('Deleted Panel and Tab pair');
                         } else {
@@ -243,7 +244,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                 }
             } else {
                 // 일반 요소는 단일 삭제
-                await elementsApi.deleteElement(elementId);
+                await ElementUtils.deleteElement(elementId);
                 deletedIds.push(elementId);
             }
 
