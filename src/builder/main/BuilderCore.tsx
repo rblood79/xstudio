@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Key } from 'react-aria-components';
 
 import { useStore } from '../stores';
+//import { Element as StoreElement } from '../stores/elements'; // 스토어 Element 타입
+import { Element } from '../../types/store'; // 훅들이 기대하는 Element 타입
 
 import { BuilderHeader, Breakpoint } from './BuilderHeader';
 import { BuilderWorkspace } from './BuilderWorkspace';
@@ -85,8 +87,8 @@ export const BuilderCore: React.FC = () => {
     const handleAddPage = useCallback(async () => {
         if (!projectId) return;
         try {
-            // 타입 캐스팅을 사용하여 타입 불일치 해결
-            const addElement = useStore.getState().addElement as (element: any) => void;
+            // 타입 변환을 통해 호환성 확보
+            const addElement = useStore.getState().addElement as (element: Element) => void;
             await createPage(projectId, addElement);
         } catch (error) {
             handleError(error, '페이지 생성');
@@ -97,8 +99,8 @@ export const BuilderCore: React.FC = () => {
     const handleAddElementWrapper = useCallback(async (tag: string) => {
         if (!currentPageId) return;
         try {
-            // 타입 캐스팅을 사용하여 타입 불일치 해결
-            const addElement = useStore.getState().addElement as (element: any) => void;
+            // 타입 변환을 통해 호환성 확보
+            const addElement = useStore.getState().addElement as (element: Element) => void;
             await handleAddElement(
                 tag,
                 currentPageId,
