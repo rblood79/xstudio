@@ -155,7 +155,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
             const element = elements.find(el => el.id === event.data.elementId);
             if (element) {
-                sendElementSelectedMessage(event.data.elementId, element.props);
+                sendElementSelectedMessage(event.data.elementId, element.props as any);
             }
         }
 
@@ -214,7 +214,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const element = elements.find(el => el.id === selectedElementId);
             if (element) {
                 const timer = setTimeout(() => {
-                    sendElementSelectedMessage(selectedElementId, element.props);
+                    sendElementSelectedMessage(selectedElementId, element.props as any);
                 }, 100);
 
                 return () => clearTimeout(timer);
