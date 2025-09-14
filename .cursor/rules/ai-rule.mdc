@@ -75,39 +75,37 @@ alwaysApply: false
 
 
 ### React 프로젝트 구조
-xstudio\src\
-├── App.tsx                # 메인 애플리케이션 컴포넌트
-├── main.tsx               # 애플리케이션 진입점
-├── auth/                  # 인증 관련 컴포넌트
-├── assets/                # 이미지 및 정적 자산
-├── builder/               # 빌더 핵심 기능 (프로젝트의 주요 부분)
-├── dashboard/             # 프로젝트 대시보드 UI
-├── hooks/                 # 커스텀 React 훅
-├── lib/                   # 유틸리티 및 라이브러리
-├── stories/               # Storybook 컴포넌트 문서화
+1. **빌더 (Builder)**: 메인 편집 환경
+   - **BuilderCore**: 메인 빌더 컴포넌트 (`src/builder/main/BuilderCore.tsx`)
+   - **BuilderHeader**: 상단 툴바 및 네비게이션 (`src/builder/main/BuilderHeader.tsx`)
+   - **BuilderWorkspace**: 작업 영역 관리 (`src/builder/main/BuilderWorkspace.tsx`)
+   - **BuilderViewport**: 레이아웃 컨테이너 (`src/builder/main/BuilderViewport.tsx`)
+
+2. **사이드바 (Sidebar)**: 페이지와 요소 계층 구조 관리 (`src/builder/sidebar/`)
+3. **인스펙터 (Inspector)**: 선택된 요소의 속성 편집 (`src/builder/inspector/`)
+4. **프리뷰 (Preview)**: 실시간 변경사항을 보여주는 iframe (`src/builder/preview/`)
+5. **오버레이 (Overlay)**: 선택된 요소 시각화 (`src/builder/overlay/`)
+
+### 디렉토리 구조
+
+```
+src/
+├── builder/
+│   ├── main/              # 메인 빌더 컴포넌트들
+│   ├── components/        # React Aria 기반 컴포넌트
+│   ├── inspector/         # 속성 편집 패널
+│   │   └── properties/    # 컴포넌트별 속성 에디터
+│   ├── preview/           # iframe 프리뷰
+│   ├── sidebar/           # 사이드바 컴포넌트
+│   ├── overlay/           # 선택 오버레이
+│   ├── stores/            # Zustand 상태 관리
+│   ├── hooks/             # 커스텀 React hooks
+│   └── utils/             # 유틸리티 함수
+├── services/
+│   └── api/               # API 서비스 레이어
 ├── types/                 # TypeScript 타입 정의
-└── utils/                 # 유틸리티 함수
-
-
-### builder 폴더 (핵심 기능)
-builder/
-├── builder.tsx            # 빌더 메인 컴포넌트
-├── index.tsx              # 빌더 진입점
-├── ai/                    # AI 관련 기능
-├── components/            # 재사용 가능한 UI 컴포넌트
-├── dataset/               # 데이터셋 관리
-├── hooks/                 # 빌더 전용 커스텀 훅
-├── inspector/             # 요소 속성 검사/편집 UI
-├── library/               # 컴포넌트 라이브러리
-├── nodes/                 # 페이지와 요소 트리 구조 관리
-├── overlay/               # 선택된 요소 오버레이
-├── preview/               # 프리뷰 렌더링
-├── setting/               # 설정 UI
-├── sidebar/               # 사이드바 UI (페이지 및 요소 트리)
-├── stores/                # 상태 관리 (Zustand)
-├── theme/                 # 테마 관리
-├── ui/                    # UI 컴포넌트
-└── user/                  # 사용자 관련 기능
+└── env/                   # 환경 설정
+    └── supabase.client.ts # Supabase 클라이언트
 
 
 ### supabase table 구조
