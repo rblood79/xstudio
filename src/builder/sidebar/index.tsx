@@ -690,7 +690,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     };
 
     // 드롭 위치나 추가 위치에 따라 position 계산
-    const handleComponentAdd = (componentType: string, parentId?: string) => {
+    /*const handleComponentAdd = (componentType: string, parentId?: string) => {
         // 현재 부모의 자식 요소 개수 확인
         const siblings = elements.filter(el => el.parent_id === parentId);
         const nextPosition = siblings.length + 1; // 마지막 위치에 추가
@@ -713,7 +713,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
 
             handleAddElement(componentType, targetParentId, position);
         }
-    };
+    };*/
 
     return (
         <aside className="sidebar">
