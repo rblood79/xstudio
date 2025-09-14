@@ -34,7 +34,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        console.log('Sending elements to iframe:', elementsToSend.length);
+        //console.log('Sending elements to iframe:', elementsToSend.length);
         iframe.contentWindow.postMessage(
             { type: "UPDATE_ELEMENTS", elements: elementsToSend },
             window.location.origin
@@ -60,13 +60,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             source: "builder"
         };
 
-        console.log('Sending element selected message:', message);
+        //console.log('Sending element selected message:', message);
         iframe.contentWindow.postMessage(message, window.location.origin);
         window.postMessage(message, window.location.origin);
     }, [elements]);
 
     const handleIframeLoad = useCallback(() => {
-        console.log('iframe loaded');
+        //console.log('iframe loaded');
         setIframeReady(true);
 
         // iframe 로드 후 현재 요소들을 전송
@@ -79,14 +79,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     }, [elements, sendElementsToIframe]);
 
     const handleMessage = useCallback((event: MessageEvent) => {
-        console.log('Message received:', event.origin, event.data);
+        //console.log('Message received:', event.origin, event.data);
 
         if (event.origin !== window.location.origin) {
             console.warn("Received message from untrusted origin:", event.origin);
             return;
         }
 
-        console.log('Processing message type:', event.data.type, event.data);
+        //console.log('Processing message type:', event.data.type, event.data);
 
         if (event.data.type === "UPDATE_THEME_TOKENS") {
             const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
@@ -116,13 +116,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
-            console.log("Received UPDATE_ELEMENTS from preview:", event.data.elements.length);
+            //console.log("Received UPDATE_ELEMENTS from preview:", event.data.elements.length);
             const { setElements } = useStore.getState();
             setElements(event.data.elements as Element[]);
         }
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
-            console.log('Element selected from preview:', event.data.elementId);
+            //console.log('Element selected from preview:', event.data.elementId);
             setSelectedElement(event.data.elementId, event.data.payload?.props);
         }
 
@@ -148,7 +148,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 프리뷰에서 보내는 element-click 메시지 처리
         if (event.data.type === "element-click" && event.data.elementId) {
-            console.log('Element clicked in preview:', event.data.elementId);
+            //console.log('Element clicked in preview:', event.data.elementId);
             setSelectedElement(event.data.elementId, event.data.payload?.props);
 
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
@@ -160,7 +160,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 추가: element-hover 메시지 처리 (선택사항)
         if (event.data.type === "element-hover" && event.data.elementId) {
-            console.log('Element hovered in preview:', event.data.elementId);
+            //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
     }, [setSelectedElement, updateElementProps, elements, sendElementSelectedMessage]);

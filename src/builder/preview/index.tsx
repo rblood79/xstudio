@@ -74,7 +74,7 @@ function Preview() {
     if (process.env.NODE_ENV === 'development') {
       const originalError = console.error;
       const originalWarn = console.warn;
-      
+
       console.error = (...args) => {
         const message = String(args[0] || '');
         if (
@@ -245,7 +245,6 @@ function Preview() {
 
     const newProps = {
       ...el.props,
-      key: el.id,
       "data-element-id": el.id,
     };
 
@@ -751,14 +750,14 @@ function Preview() {
       const processedLabel = labelValue ? String(labelValue).trim() : undefined;
       const placeholderValue = elementProps.placeholder;
       const processedPlaceholder = placeholderValue ? String(placeholderValue).trim() : undefined;
-      
+
       // selectedKey 상태 확인
       const currentSelectedKey = elementProps.selectedKey;
       //const hasSelection = currentSelectedKey && currentSelectedKey !== '' && currentSelectedKey !== 'undefined';
-      
+
       // 접근성을 위한 aria-label 설정
-      const ariaLabel = processedLabel 
-        ? undefined 
+      const ariaLabel = processedLabel
+        ? undefined
         : (elementProps['aria-label'] || processedPlaceholder || `Select ${el.id}`);
 
       /*console.log('Select 렌더링 (개선된):', {
@@ -1434,14 +1433,20 @@ function Preview() {
       const tagMapping = { 'section': 'section', 'Card': 'div', 'Div': 'div', 'Nav': 'nav' };
       const Tag = tagMapping[el.tag as keyof typeof tagMapping];
 
+      // HTML 요소에는 isDisabled 대신 disabled 사용
+      const htmlProps: any = {
+        'data-element-id': el.id,
+        style: el.props.style,
+        className: el.props.className,
+      };
+
+      // isDisabled가 true인 경우에만 disabled 속성 추가
+      if (el.props.isDisabled) {
+        htmlProps.disabled = true;
+      }
+
       return (
-        <Tag
-          key={el.id}
-          data-element-id={el.id}
-          isDisabled={Boolean(el.props.isDisabled)}
-          style={el.props.style}
-          className={el.props.className}
-        >
+        <Tag key={el.id} {...htmlProps}>
           {String(el.props.children || '')}
         </Tag>
       );
@@ -1690,14 +1695,14 @@ function Preview() {
 
     // React 컴포넌트인지 확인 (대소문자 구분)
     const ReactComponent = reactComponentMap[effectiveTag];
-    
+
     if (ReactComponent) {
       // React 컴포넌트인 경우 - JSX.Element 반환
+      const content = children.map((child) => renderElement(child));
       return React.createElement(
         ReactComponent,
         {
           ...finalProps,
-          key: el.id,
           "data-element-id": el.id,
         },
         content.length > 0 ? content : undefined
@@ -1705,13 +1710,14 @@ function Preview() {
     }
 
     // HTML 요소인지 확인 (소문자 변환 후 체크)
-    const isHTMLElement = htmlElements.includes(effectiveTag.toLowerCase()) || 
-                          (effectiveTag && typeof effectiveTag === 'string' && 
-                           effectiveTag[0] === effectiveTag[0].toLowerCase());
+    const isHTMLElement = htmlElements.includes(effectiveTag.toLowerCase()) ||
+      (effectiveTag && typeof effectiveTag === 'string' &&
+        effectiveTag[0] === effectiveTag[0].toLowerCase());
 
     if (isHTMLElement) {
       // HTML 요소인 경우 - React Aria 전용 props 제거
       const cleanProps = { ...finalProps };
+      const content = children.map((child) => renderElement(child));
 
       // React Aria 전용 props 제거
       const propsToRemove = [
@@ -1748,7 +1754,6 @@ function Preview() {
         effectiveTag.toLowerCase(),
         {
           ...cleanProps,
-          key: el.id,
           "data-element-id": el.id,
         },
         content.length > 0 ? content : undefined
@@ -1757,9 +1762,8 @@ function Preview() {
 
     // 알 수 없는 태그인 경우 div로 렌더링
     console.warn(`Unknown component/element type: ${effectiveTag}. Rendering as div.`);
-    
+
     const fallbackProps = {
-      key: el.id,
       "data-element-id": el.id,
       "data-unknown-component": effectiveTag,
       "data-original-tag": el.tag,
@@ -1777,13 +1781,13 @@ function Preview() {
   const renderElementsTree = (): React.ReactNode => {
     // body 태그 확인
     const bodyElement = elements.find(el => el.tag === 'body');
-    
+
     if (bodyElement) {
       // body가 있는 경우, body의 직접 자식 요소들만 렌더링
       const bodyChildren = elements
         .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      
+
       // body의 자식들을 렌더링 (body 자체는 Preview 컴포넌트의 루트에서 처리)
       return bodyChildren.map((el) => renderElement(el));
     } else {
@@ -1791,7 +1795,7 @@ function Preview() {
       const rootElements = elements
         .filter((el) => !el.parent_id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      
+
       return rootElements.map((el) => renderElement(el));
     }
   };
