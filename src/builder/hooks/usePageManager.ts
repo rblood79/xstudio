@@ -4,6 +4,7 @@ import { pagesApi } from '../../services/api/PagesApiService';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/supabase';
+import { ElementUtils } from '../../utils/elementUtils';
 
 export interface UsePageManagerReturn {
     pages: Page[];
@@ -25,7 +26,7 @@ export const usePageManager = (): UsePageManagerReturn => {
         if (!pageId) return;
 
         try {
-            const elementsData = await elementsApi.getElementsByPageId(pageId);
+            const elementsData = await ElementUtils.getElementsByPageId(pageId);
             const { setElements } = useStore.getState();
             setElements(elementsData);
 
@@ -53,7 +54,7 @@ export const usePageManager = (): UsePageManagerReturn => {
 
             // 새 페이지에 기본 body 요소 생성
             const bodyElement = {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'body',
                 props: {} as ElementProps,
                 parent_id: null,
@@ -61,7 +62,7 @@ export const usePageManager = (): UsePageManagerReturn => {
                 order_num: 0,
             };
 
-            const elementData = await elementsApi.createElement(bodyElement);
+            const elementData = await ElementUtils.createElement(bodyElement);
             addElement(elementData);
         } catch (error) {
             console.error('페이지 생성 에러:', error);

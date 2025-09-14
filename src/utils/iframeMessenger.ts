@@ -1,5 +1,6 @@
 import { Element } from '../types/store';
 import { DesignToken } from '../types/store';
+import { ElementUtils } from './elementUtils';
 
 // 메시지 데이터 타입 정의
 export interface MessageData {
@@ -98,7 +99,7 @@ export class IframeMessenger {
         timeout = 5000
     ): Promise<MessageResponse> {
         return new Promise((resolve, reject) => {
-            const messageId = crypto.randomUUID();
+            const messageId = ElementUtils.generateId();
             const message: MessageData = {
                 type,
                 id: messageId,
