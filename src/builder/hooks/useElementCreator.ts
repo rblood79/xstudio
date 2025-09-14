@@ -1,24 +1,43 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { Element } from '../../types/store';
+import { Element, ComponentElementProps } from '../../types/unified';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
 import {
-    ComponentElementProps,
     createDefaultButtonProps,
     createDefaultTextFieldProps,
+    createDefaultCheckboxProps,
+    createDefaultRadioProps,
+    createDefaultToggleButtonProps,
     createDefaultToggleButtonGroupProps,
     createDefaultCheckboxGroupProps,
     createDefaultRadioGroupProps,
     createDefaultSelectProps,
     createDefaultComboBoxProps,
+    createDefaultSliderProps,
+    createDefaultSwitchProps,
     createDefaultTabsProps,
+    createDefaultTabProps,
+    createDefaultPanelProps,
     createDefaultTreeProps,
+    createDefaultTreeItemProps,
+    createDefaultCalendarProps,
+    createDefaultDatePickerProps,
+    createDefaultDateRangePickerProps,
+    createDefaultTableProps,
+    createDefaultCardProps,
     createDefaultTagGroupProps,
+    createDefaultTagProps,
     createDefaultListBoxProps,
-    createDefaultGridListProps
-} from '../../types/componentProps';
+    createDefaultListBoxItemProps,
+    createDefaultGridListProps,
+    createDefaultGridListItemProps,
+    createDefaultTextProps,
+    createDefaultDivProps,
+    createDefaultSectionProps,
+    createDefaultNavProps
+} from '../../types/unified';
 
 export interface UseElementCreatorReturn {
     getDefaultProps: (tag: string) => ComponentElementProps;
@@ -83,6 +102,12 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 return createDefaultButtonProps();
             case 'TextField':
                 return createDefaultTextFieldProps();
+            case 'Checkbox':
+                return createDefaultCheckboxProps();
+            case 'Radio':
+                return createDefaultRadioProps();
+            case 'ToggleButton':
+                return createDefaultToggleButtonProps();
             case 'ToggleButtonGroup':
                 return createDefaultToggleButtonGroupProps();
             case 'CheckboxGroup':
@@ -93,20 +118,53 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 return createDefaultSelectProps();
             case 'ComboBox':
                 return createDefaultComboBoxProps();
+            case 'Slider':
+                return createDefaultSliderProps();
+            case 'Switch':
+                return createDefaultSwitchProps();
             case 'Tabs':
                 return createDefaultTabsProps();
+            case 'Tab':
+                return createDefaultTabProps();
+            case 'Panel':
+                return createDefaultPanelProps();
             case 'Tree':
                 return createDefaultTreeProps();
+            case 'TreeItem':
+                return createDefaultTreeItemProps();
+            case 'Calendar':
+                return createDefaultCalendarProps();
+            case 'DatePicker':
+                return createDefaultDatePickerProps();
+            case 'DateRangePicker':
+                return createDefaultDateRangePickerProps();
+            case 'Table':
+                return createDefaultTableProps();
+            case 'Card':
+                return createDefaultCardProps();
             case 'TagGroup':
                 return createDefaultTagGroupProps();
+            case 'Tag':
+                return createDefaultTagProps();
             case 'ListBox':
                 return createDefaultListBoxProps();
+            case 'ListBoxItem':
+                return createDefaultListBoxItemProps();
             case 'GridList':
                 return createDefaultGridListProps();
+            case 'GridListItem':
+                return createDefaultGridListItemProps();
+            case 'Text':
+                return createDefaultTextProps();
+            case 'Div':
+                return createDefaultDivProps();
+            case 'Section':
+                return createDefaultSectionProps();
+            case 'Nav':
+                return createDefaultNavProps();
             default:
                 // 기본 HTML 요소들 - any 타입 제거
                 return {
-                    //tag: tag as ComponentElementProps['tag'],
                     children: tag === 'Text' ? 'Text' : ''
                 } as ComponentElementProps;
         }

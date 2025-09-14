@@ -1,35 +1,13 @@
 import { StateCreator } from 'zustand';
 import { produce } from 'immer';
-import { ElementProps } from '../../types/supabase';
+import { Element, Page, ComponentElementProps } from '../../types/unified';
 import { elementsApi } from '../../services/api';
 import { useStore } from './';
-
-// Element 인터페이스를 직접 정의
-export interface Element {
-    id: string;
-    tag: string;
-    props: ElementProps;
-    parent_id?: string | null;
-    order_num?: number;
-    page_id: string;
-}
-
-// Page 인터페이스도 정의
-export interface Page {
-    id: string;
-    title: string;
-    project_id: string;
-    slug: string;
-    parent_id?: string | null;
-    order_num?: number;
-    created_at?: string;
-    updated_at?: string;
-}
 
 export interface ElementsState {
     elements: Element[];
     selectedElementId: string | null;
-    selectedElementProps: ElementProps;
+    selectedElementProps: ComponentElementProps;
     selectedTab: { parentId: string, tabIndex: number } | null;
     pages: Page[];
     currentPageId: string | null;
@@ -38,9 +16,9 @@ export interface ElementsState {
     setElements: (elements: Element[]) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;
     addElement: (element: Element) => void;
-    updateElementProps: (elementId: string, props: ElementProps) => void;
-    setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
-    selectTabElement: (elementId: string, props: ElementProps, tabIndex: number) => void;
+    updateElementProps: (elementId: string, props: ComponentElementProps) => void;
+    setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
+    selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) => void;
     setPages: (pages: Page[]) => void;
     setCurrentPageId: (pageId: string) => void;
     removeElement: (elementId: string) => Promise<void>;
@@ -57,11 +35,16 @@ const sanitizeElement = (el: Element) => ({
 });
 
 // Helper function for element selection logic
-const createCompleteProps = (element: Element, props?: ElementProps) => ({
+const createCompleteProps = (element: Element, props?: ComponentElementProps) => ({
     ...element.props,
     ...props,
     tag: element.tag
 });
+
+// 타입 가드 함수 추가
+const hasTabId = (props: ComponentElementProps): props is ComponentElementProps & { tabId: string } => {
+    return 'tabId' in props && typeof props.tabId === 'string';
+};
 
 export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
     elements: [],
@@ -192,15 +175,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
 
                     if (elementToDelete.tag === 'Tab') {
                         // Tab을 삭제하는 경우, 같은 tabId를 가진 Panel 찾기
-                        const tabId = elementToDelete.props.tabId || elementId;
+                        const tabId = hasTabId(elementToDelete.props) ? elementToDelete.props.tabId : elementId;
                         //console.log('Tab ID to match:', tabId);
 
                         let correspondingPanel = siblings.find(el =>
-                            el.tag === 'Panel' && el.props.tabId === tabId
+                            el.tag === 'Panel' && (el.props as any).tabId === tabId
                         );
 
                         // tabId가 없는 경우 order_num으로 매칭 시도
-                        if (!correspondingPanel && !elementToDelete.props.tabId) {
+                        if (!correspondingPanel && !(elementToDelete.props as any).tabId) {
                             const tabOrderNum = elementToDelete.order_num || 0;
                             correspondingPanel = siblings.find(el =>
                                 el.tag === 'Panel' && el.order_num === tabOrderNum + 1
@@ -224,14 +207,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         }
                     } else if (elementToDelete.tag === 'Panel') {
                         // Panel을 삭제하는 경우, 같은 tabId를 가진 Tab 찾기
-                        const tabId = elementToDelete.props.tabId;
+                        const tabId = (elementToDelete.props as any).tabId;
                         //console.log('Panel tabId:', tabId);
 
                         let correspondingTab = null;
 
                         if (tabId) {
                             correspondingTab = siblings.find(el =>
-                                el.tag === 'Tab' && el.props.tabId === tabId
+                                el.tag === 'Tab' && (el.props as any).tabId === tabId
                             );
                         } else {
                             // tabId가 없는 경우 order_num으로 매칭 시도
