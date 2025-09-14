@@ -1,9 +1,11 @@
-import { CopyMinus } from 'lucide-react';
-import { iconProps } from '../../utils/uiConstants';
-import { Database, ElementProps } from '../../types/supabase';
-import { useStore } from '../stores'; // useStore 추가
+import React from 'react';
+import { CopyMinus } from 'lucide-react'; // CopyMinus 추가
+import { ElementProps } from '../../types/supabase';
+import { Element } from '../../types/store'; // 통합된 타입 사용
+import { useStore } from '../stores'; // useStore import 추가
+import './index.css';
 
-type Element = Database['public']['Tables']['elements']['Row'];
+// type Element = Database['public']['Tables']['elements']['Row']; // 제거
 
 interface LayersProps {
     elements: Element[];
@@ -22,7 +24,6 @@ interface LayersProps {
 
 export function Layers({
     elements,
-    setElements,
     selectedElementId,
     setSelectedElement,
     renderTree,
@@ -46,7 +47,7 @@ export function Layers({
                             }
                         }}
                     >
-                        <CopyMinus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <CopyMinus color="#666" strokeWidth={1.5} size={16} />
                     </button>
                 </div>
             </div>
