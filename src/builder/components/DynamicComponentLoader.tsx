@@ -2,7 +2,8 @@
 import React, { lazy, Suspense } from 'react';
 
 // Component map definition (code splitting)
-const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<unknown>>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
     'Button': lazy(() => import('./Button').then(module => ({ default: module.Button }))),
     'TextField': lazy(() => import('./TextField').then(module => ({ default: module.TextField }))),
     'Checkbox': lazy(() => import('./Checkbox').then(module => ({ default: module.Checkbox }))),
@@ -48,26 +49,21 @@ const LoadingComponent = ({ componentType }: { componentType: string }) => (
 // 에러 컴포넌트
 const ErrorComponent = ({
     componentType,
-    error,
-    retry
+    error
 }: {
     componentType: string;
     error: Error;
-    retry: () => void;
 }) => (
-    <div className="react-aria-Error" role="alert">
+    <div className="react-aria-Error" role="alert" aria-label={`Error loading ${componentType}`}>
         <div className="error-icon">⚠️</div>
         <div className="error-content">
-            <h4>Failed to load {componentType}</h4>
+            <h3>Failed to load {componentType}</h3>
             <p>{error.message}</p>
-            <button onClick={retry} className="retry-button">
-                Retry
-            </button>
         </div>
     </div>
 );
 
-// 에러 바운더리
+// Error Boundary for component loading
 class ComponentErrorBoundary extends React.Component<
     { children: React.ReactNode; componentType: string },
     { hasError: boolean; error: Error | null }
@@ -82,50 +78,33 @@ class ComponentErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error(`Component ${this.props.componentType} failed to load:`, error, errorInfo);
+        console.error(`Error loading component ${this.props.componentType}:`, error, errorInfo);
     }
 
     render() {
-        if (this.state.hasError) {
-            return (
-                <ErrorComponent
-                    componentType={this.props.componentType}
-                    error={this.state.error!}
-                    retry={() => this.setState({ hasError: false, error: null })}
-                />
-            );
+        if (this.state.hasError && this.state.error) {
+            return <ErrorComponent componentType={this.props.componentType} error={this.state.error} />;
         }
 
         return this.props.children;
     }
 }
 
-interface DynamicComponentProps {
+// Dynamic Component Loader
+export const DynamicComponentLoader: React.FC<{
     componentType: string;
-    [key: string]: unknown;
-}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    props?: any;
+}> = ({ componentType, props = {} }) => {
+    const LazyComponent = componentMap[componentType];
 
-export function DynamicComponent({ componentType, ...props }: DynamicComponentProps) {
-    //const [retryCount, setRetryCount] = React.useState(0);
-
-    const Component = React.useMemo(() => {
-        const loader = componentMap[componentType];
-
-        if (!loader) {
-            console.warn(`Component type "${componentType}" not found in component map`);
-            return null;
-        }
-
-        return loader;
-    }, [componentType]);
-
-    if (!Component) {
+    if (!LazyComponent) {
         return (
-            <div className="react-aria-Error">
+            <div className="react-aria-Error" role="alert">
                 <div className="error-icon">❌</div>
                 <div className="error-content">
-                    <h4>Component not found</h4>
-                    <p>Component type "{componentType}" is not available.</p>
+                    <h3>Component not found</h3>
+                    <p>Component type "{componentType}" is not supported.</p>
                 </div>
             </div>
         );
@@ -134,23 +113,20 @@ export function DynamicComponent({ componentType, ...props }: DynamicComponentPr
     return (
         <ComponentErrorBoundary componentType={componentType}>
             <Suspense fallback={<LoadingComponent componentType={componentType} />}>
-                <Component {...props} />
+                <LazyComponent {...props} />
             </Suspense>
         </ComponentErrorBoundary>
     );
-}
+};
 
-// 컴포넌트 프리로딩 유틸리티를 별도 파일로 분리하거나 제거
-// export const preloadComponent = (componentType: string) => {
-//     const loader = componentMap[componentType];
-//     if (loader) {
-//         loader().catch(error => {
-//             console.warn(`Failed to preload component ${componentType}:`, error);
-//         });
-//     }
-// };
+// Component type checker
+export const isComponentSupported = (componentType: string): boolean => {
+    return componentType in componentMap;
+};
 
-// export const preloadCommonComponents = () => {
-//     const commonComponents = ['Button', 'TextField', 'Checkbox', 'Select'];
-//     commonComponents.forEach(preloadComponent);
-// };
+// Get all supported component types
+export const getSupportedComponentTypes = (): string[] => {
+    return Object.keys(componentMap);
+};
+
+export default DynamicComponentLoader;

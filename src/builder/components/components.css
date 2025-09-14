@@ -854,7 +854,7 @@
                 color: var(--text-color-disabled);
             }
 
-            .react-aria-Button:not([slot]) {
+            /*.react-aria-Button:not([slot]) {
                 margin-left: auto;
                 background: transparent;
                 border: none;
@@ -871,7 +871,7 @@
                     background: var(--highlight-pressed);
                     box-shadow: none;
                 }
-            }
+            }*/
         }
 
         /* join selected items if :has selector is supported */

@@ -28,6 +28,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         };
 
         switch (tag) {
+            case 'Text':
+                return { ...baseProps, children: 'Text', variant: 'default', size: 'medium', isDisabled: false };
             case 'Button':
                 return { ...baseProps, children: 'Button', variant: 'default', size: 'medium', isDisabled: false };
             case 'ToggleButton':
