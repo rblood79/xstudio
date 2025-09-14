@@ -5,8 +5,6 @@ import { Element } from '../../types/store'; // 통합된 타입 사용
 import { useStore } from '../stores'; // useStore import 추가
 import './index.css';
 
-// type Element = Database['public']['Tables']['elements']['Row']; // 제거
-
 interface LayersProps {
     elements: Element[];
     setElements: React.Dispatch<React.SetStateAction<Element[]>>;

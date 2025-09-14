@@ -1,16 +1,8 @@
 import { StateCreator } from 'zustand';
 import { produce, Patch } from 'immer';
-import { ElementProps } from '../../types/supabase';
+import { Element } from '../../types/store'; // Page 타입도 추가
 
-// Element 인터페이스를 직접 정의
-interface Element {
-    id: string;
-    tag: string;
-    props: ElementProps;
-    parent_id?: string | null;
-    order_num?: number;
-    page_id: string;
-}
+// interface Element { ... } // 제거 - 중복 정의
 
 interface HistoryEntry {
     id: string;

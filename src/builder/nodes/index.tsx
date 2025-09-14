@@ -5,9 +5,6 @@ import { ElementProps } from '../../types/supabase';
 import { Page, Element } from '../../types/store'; // 통합된 타입 사용
 import './index.css';
 
-// type Page = Database['public']['Tables']['pages']['Row']; // 제거
-// type Element = Database['public']['Tables']['elements']['Row']; // 제거
-
 interface NodesProps {
     pages: Page[];
     setPages: React.Dispatch<React.SetStateAction<Page[]>>;
