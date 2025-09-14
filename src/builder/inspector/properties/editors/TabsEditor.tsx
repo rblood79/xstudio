@@ -6,7 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
-import type { Element } from '../../../stores/elements';
+import type { Element } from '../../../../types/store'; // 통합된 타입 사용
 
 // 상수 정의
 const ORIENTATIONS: Array<{ id: string; label: string }> = [
@@ -128,7 +128,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                     options={tabChildren.map(tab => ({
                         id: tab.id,
-                        label: tab.props.title || 'Untitled Tab'
+                        label: ('title' in tab.props ? tab.props.title : 'Untitled Tab') as string
                     }))}
                     icon={AppWindow}
                 />
@@ -178,7 +178,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
 // 유틸리티 함수들
 async function createNewTab(
-    tabChildren: Array<{ id: string; props: Record<string, unknown>; order_num?: number }>,
+    tabChildren: Element[], // Element[] 타입으로 변경
     currentProps: Record<string, unknown>,
     elementId: string,
     pageId: string,
