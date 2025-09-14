@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { useStore } from '../builder/stores'; // useThemeStore 대신 useStore 사용
+import { useShallow } from 'zustand/react/shallow';
+import { useStore } from '../builder/stores';
 import type { TokenValue, NewTokenInput } from '../types/theme';
 
 export function useTheme() {
@@ -17,7 +18,7 @@ export function useTheme() {
         saveAll,
         snapshotVersion,
         clearError
-    } = useStore(state => ({
+    } = useStore(useShallow(state => ({
         activeTheme: state.activeTheme,
         rawTokens: state.rawTokens,
         semanticTokens: state.semanticTokens,
@@ -31,7 +32,7 @@ export function useTheme() {
         saveAll: state.saveAll,
         snapshotVersion: state.snapshotVersion,
         clearError: state.clearError
-    }));
+    })));
 
     const handleUpdateToken = useCallback((name: string, scope: 'raw' | 'semantic', value: TokenValue) => {
         updateTokenValue(name, scope, value);

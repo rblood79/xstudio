@@ -38,7 +38,7 @@ function Builder() {
     const pageHistories = useStore((state) => state.pageHistories);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const { addElement, updateElementProps, undo, redo } = useStore();
-    
+
     const [pages, setPages] = React.useState<Page[]>([]);
     const [selectedPageId, setSelectedPageId] = React.useState<string | null>(null);
 
@@ -76,21 +76,21 @@ function Builder() {
                 };
 
             case 'ToggleButton':
-            return {
-                ...baseProps,
-                children: 'Toggle',
-                isSelected: false,
-                isDisabled: false
-            };
+                return {
+                    ...baseProps,
+                    children: 'Toggle',
+                    isSelected: false,
+                    isDisabled: false
+                };
 
             case 'ToggleButtonGroup':
-            return {
-                ...baseProps,
-                label: 'Toggle Group',
-                orientation: 'horizontal',
-                selectionMode: 'single',
-                isDisabled: false
-            };
+                return {
+                    ...baseProps,
+                    label: 'Toggle Group',
+                    orientation: 'horizontal',
+                    selectionMode: 'single',
+                    isDisabled: false
+                };
 
             case 'TextField':
                 return {
@@ -191,7 +191,7 @@ function Builder() {
                     label: 'Checkbox Group',
                     isDisabled: false
                 };
-                
+
             case 'RadioGroup':
                 return {
                     ...baseProps,
@@ -233,14 +233,14 @@ function Builder() {
 
         try {
             //console.log('Fetching elements for page:', currentPageId);
-            
+
             const pageElements = await elementsApi.getElementsByPageId(currentPageId);
-            
+
             if (pageElements && pageElements.length > 0) {
                 const { setElements } = useStore.getState();
                 setElements(pageElements);
                 //console.log('Elements fetched successfully:', pageElements.length);
-                
+
                 // iframe에 요소 업데이트 전송
                 const iframe = iframeRef.current;
                 if (iframe?.contentWindow) {
@@ -257,7 +257,7 @@ function Builder() {
         } catch (error) {
             console.error('Error fetching elements:', error);
             setError('요소를 가져오는 중 오류가 발생했습니다.');
-            
+
             // 에러 발생 시에도 빈 배열로 설정하여 UI가 깨지지 않도록 함
             const { setElements } = useStore.getState();
             setElements([]);
@@ -281,28 +281,28 @@ function Builder() {
             setError('현재 페이지가 선택되지 않았습니다.');
             return;
         }
-        
+
         isProcessingRef.current = true;
         setError(null);
 
         try {
             const [componentType, parentId, position] = args;
             //console.log('handleAddElement called with:', { componentType, parentId, position });
-            
+
             // body 요소를 찾아서 parent_id로 설정
             const bodyElement = elements.find(el => el.tag === 'body' && el.page_id === currentPageId);
             const actualParentId = parentId || bodyElement?.id || null;
 
             // order_num 계산 로직
             let calculatedOrderNum: number;
-            
+
             if (position !== undefined && position >= 0) {
                 calculatedOrderNum = position;
             } else {
-                const siblings = elements.filter(el => 
+                const siblings = elements.filter(el =>
                     el.parent_id === actualParentId && el.page_id === currentPageId
                 );
-                calculatedOrderNum = siblings.length > 0 
+                calculatedOrderNum = siblings.length > 0
                     ? Math.max(...siblings.map(el => el.order_num || 0)) + 1
                     : 1;
             }
@@ -340,7 +340,7 @@ function Builder() {
                     {
                         id: crypto.randomUUID(),
                         tag: 'Input',
-                        props: { 
+                        props: {
                             type: 'text',
                             placeholder: newElement.props.placeholder || 'Enter text...' // placeholder 전달
                         } as ElementProps,
@@ -375,14 +375,14 @@ function Builder() {
                     const childData = await elementsApi.createElement(child);
                     addElement(childData);
                 }
-            } 
+            }
             // ToggleButtonGroup 처리 부분
             else if (componentType === 'ToggleButtonGroup') {
                 const defaultToggleButtons = [
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { 
+                        props: {
                             children: 'Option 1', // 더 명확한 라벨
                             isSelected: false,
                             isDisabled: false
@@ -394,7 +394,7 @@ function Builder() {
                     {
                         id: crypto.randomUUID(),
                         tag: 'ToggleButton',
-                        props: { 
+                        props: {
                             children: 'Option 2', // 더 명확한 라벨
                             isSelected: false,
                             isDisabled: false
@@ -976,17 +976,17 @@ function Builder() {
 
         try {
             console.log('Fetching pages for project:', projectId);
-            
+
             const projectPages = await pagesApi.getPagesByProjectId(projectId);
-            
+
             if (projectPages && projectPages.length > 0) {
                 setPages(projectPages);
-                
+
                 // 첫 번째 페이지를 선택된 페이지로 설정
                 if (!selectedPageId) {
                     const firstPage = projectPages[0];
                     setSelectedPageId(firstPage.id);
-                    
+
                     // Zustand 스토어에도 현재 페이지 설정
                     const { setCurrentPageId } = useStore.getState();
                     setCurrentPageId(firstPage.id);
@@ -1153,9 +1153,9 @@ function Builder() {
 
     const validateOrderNumbers = () => {
         if (process.env.NODE_ENV !== 'development') return;
-        
+
         //console.group('Order Numbers Validation');
-        
+
         // 페이지별, 부모별로 그룹화
         const groups = elements.reduce((acc, element) => {
             const key = `${element.page_id}_${element.parent_id || 'root'}`;
@@ -1165,10 +1165,10 @@ function Builder() {
         }, {} as Record<string, typeof elements>);
 
         Object.entries(groups).forEach(([, children]) => {
-            
+
             // order_num으로 정렬
             const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-            
+
             sorted.forEach((child, index) => {
                 const expectedOrder = index + 1;
                 const actualOrder = child.order_num || 0;
@@ -1184,7 +1184,7 @@ function Builder() {
                 }
             });
         });
-        
+
         console.groupEnd();
     };
 
@@ -1204,14 +1204,14 @@ function Builder() {
                     <button onClick={() => setError(null)}>×</button>
                 </div>
             )}
-            
+
             {/* 로딩 표시 */}
             {isLoading && (
                 <div className="loading-overlay">
                     <div className="loading-spinner">Loading...</div>
                 </div>
             )}
-            
+
             <div className="contents">
                 <main>
                     <div className="bg"
