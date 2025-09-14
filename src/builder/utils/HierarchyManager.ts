@@ -133,7 +133,7 @@ export class HierarchyManager {
         const orderNumMap: { [elementId: string]: number } = {};
 
         // 기존 부모의 자식들에서 제거
-        const oldSiblings = this.getOrderedChildren(element.parent_id, elements);
+        const oldSiblings = this.getOrderedChildren(element.parent_id ?? null, elements);
         const oldIndex = oldSiblings.findIndex(sibling => sibling.id === elementId);
 
         if (oldIndex !== -1) {
@@ -144,7 +144,7 @@ export class HierarchyManager {
         }
 
         // 새 부모의 자식들에 삽입
-        const newSiblings = this.getOrderedChildren(newParentId, elements);
+        const newSiblings = this.getOrderedChildren(newParentId ?? null, elements);
         newSiblings.slice(newIndex).forEach(sibling => {
             orderNumMap[sibling.id] = (sibling.order_num || 0) + 1;
         });
@@ -167,7 +167,7 @@ export class HierarchyManager {
         if (!parent || parent.tag !== componentType) return [];
 
         switch (componentType) {
-            case 'Tabs':
+            case 'Tabs': {
                 // Tab과 Panel을 쌍으로 그룹화
                 const tabs = elements
                     .filter(el => el.parent_id === parentId && el.tag === 'Tab')
@@ -184,6 +184,7 @@ export class HierarchyManager {
                     if (panels[i]) pairedItems.push(panels[i]);
                 }
                 return pairedItems;
+            }
 
             case 'Tree':
                 // TreeItem만 반환
@@ -298,7 +299,7 @@ export class HierarchyManager {
         // order_num 검증
         const parentGroups = new Map<string | null, Element[]>();
         elements.forEach(element => {
-            const parentId = element.parent_id;
+            const parentId = element.parent_id ?? null;
             if (!parentGroups.has(parentId)) {
                 parentGroups.set(parentId, []);
             }
