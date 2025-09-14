@@ -1,8 +1,7 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
 import { elementsApi } from '../../services/api/ElementsApiService';
-//import { useStore } from '../stores';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 
@@ -16,10 +15,34 @@ export interface UseElementCreatorReturn {
         addElement: (element: Element) => void,
         sendElementsToIframe: (elements: Element[]) => void
     ) => Promise<void>;
+    getPerformanceStats: () => {
+        cacheSize: number;
+        childrenCacheSize: number;
+        orderNumCacheSize: number;
+        hitRate: number;
+    };
+    clearCache: () => void;
+    updateCacheConfig: (config: Partial<{
+        maxCacheSize: number;
+        enableIncrementalUpdate: boolean;
+        enableBatchProcessing: boolean;
+        batchSize: number;
+    }>) => void;
 }
 
 export const useElementCreator = (): UseElementCreatorReturn => {
     const isProcessingRef = useRef(false);
+    const elementsRef = useRef<Element[]>([]);
+
+    // 성능 최적화 설정 초기화
+    useEffect(() => {
+        HierarchyManager.updateConfig({
+            maxCacheSize: 500,
+            enableIncrementalUpdate: true,
+            enableBatchProcessing: true,
+            batchSize: 50
+        });
+    }, []);
 
     const getDefaultProps = useCallback((tag: string): ElementProps => {
         const baseProps: ElementProps = {
@@ -166,10 +189,10 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 return {
                     ...baseProps,
                     label: 'Slider',
-                    value: '[50]', // 문자열로 변경
-                    minValue: '0', // 문자열로 변경
-                    maxValue: '100', // 문자열로 변경
-                    step: '1', // 문자열로 변경
+                    value: '[50]',
+                    minValue: '0',
+                    maxValue: '100',
+                    step: '1',
                     orientation: 'horizontal'
                 };
 
@@ -347,6 +370,9 @@ export const useElementCreator = (): UseElementCreatorReturn => {
 
         try {
             if (currentPageId) {
+                // 요소 배열 참조 업데이트
+                elementsRef.current = elements;
+
                 const selectedElement = selectedElementId
                     ? elements.find(el => el.id === selectedElementId)
                     : null;
@@ -366,11 +392,14 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                         addElement
                     );
 
-                    // iframe에 업데이트된 요소들 전송
+                    // 증분 업데이트로 캐시 최적화
                     const updatedElements = [...elements, ...result.allElements];
+                    HierarchyManager.incrementalUpdate(updatedElements, result.parent.id);
+
+                    // iframe에 업데이트된 요소들 전송
                     sendElementsToIframe(updatedElements);
                 } else {
-                    // 단순 컴포넌트 생성
+                    // 단순 컴포넌트 생성 (캐시 활용)
                     const parentId = selectedElementId || null;
                     const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
@@ -385,8 +414,11 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                     const data = await elementsApi.createElement(newElement);
                     addElement(data);
 
-                    // iframe에 업데이트된 요소들 전송
+                    // 증분 업데이트로 캐시 최적화
                     const updatedElements = [...elements, data];
+                    HierarchyManager.incrementalUpdate(updatedElements, data.id);
+
+                    // iframe에 업데이트된 요소들 전송
                     sendElementsToIframe(updatedElements);
                 }
             }
@@ -397,8 +429,28 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         }
     }, [getDefaultProps]);
 
+    const getPerformanceStats = useCallback(() => {
+        return HierarchyManager.getPerformanceStats();
+    }, []);
+
+    const clearCache = useCallback(() => {
+        HierarchyManager.clearCache();
+    }, []);
+
+    const updateCacheConfig = useCallback((config: Partial<{
+        maxCacheSize: number;
+        enableIncrementalUpdate: boolean;
+        enableBatchProcessing: boolean;
+        batchSize: number;
+    }>) => {
+        HierarchyManager.updateConfig(config);
+    }, []);
+
     return {
         getDefaultProps,
-        handleAddElement
+        handleAddElement,
+        getPerformanceStats,
+        clearCache,
+        updateCacheConfig
     };
 };
