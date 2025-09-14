@@ -59,8 +59,8 @@ export function Layers({
                         elements,
                         (el) => el.tag,
                         (el) => {
-                            setSelectedElement(el.id, { ...el.props, tag: el.tag });
-                            requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props));
+                            setSelectedElement(el.id, el.props as any);
+                            requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props as any));
                         },
                         async (el) => {
                             // removeElement 함수 사용 (Tab/Panel 쌍 삭제 로직 포함)
