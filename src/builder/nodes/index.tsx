@@ -1,11 +1,12 @@
 import React from 'react';
 import { Pages } from './Pages';
 import { Layers } from './Layers';
-import { Database, ElementProps } from '../../types/supabase';
+import { ElementProps } from '../../types/supabase';
+import { Page, Element } from '../../types/store'; // 통합된 타입 사용
 import './index.css';
 
-type Page = Database['public']['Tables']['pages']['Row'];
-type Element = Database['public']['Tables']['elements']['Row'];
+// type Page = Database['public']['Tables']['pages']['Row']; // 제거
+// type Element = Database['public']['Tables']['elements']['Row']; // 제거
 
 interface NodesProps {
     pages: Page[];

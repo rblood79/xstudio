@@ -2,8 +2,8 @@ import "./index.css";
 import React from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores';
-import { Database, ElementProps } from '../../types/supabase';
-import { Page } from '../stores/elements';
+import { ElementProps } from '../../types/supabase';
+import { Page, Element } from '../../types/store'; // 통합된 타입 사용
 import { Nodes } from '../nodes';
 import Components from '../components';
 import Library from '../library';
@@ -14,13 +14,13 @@ import User from '../user';
 import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
 
-type Element = Database['public']['Tables']['elements']['Row'];
+// type Element = Database['public']['Tables']['elements']['Row']; // 제거
 
 interface SidebarProps {
     pages: Page[];
     setPages: React.Dispatch<React.SetStateAction<Page[]>>;
     handleAddPage: () => Promise<void>;
-    handleAddElement: (tag: string) => Promise<void>;
+    handleAddElement: (tag: string, parentId?: string, position?: number) => Promise<void>; // 시그니처 수정
     fetchElements: (pageId: string) => Promise<void>;
     selectedPageId: string | null;
     children?: React.ReactNode;
