@@ -4,6 +4,7 @@ import { useStore } from '../stores';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
+import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
 
 export interface UseIframeMessengerReturn {
     iframeReady: boolean;
@@ -171,7 +172,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         try {
             undo();
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            await ElementUtils.delay(0);
             const updatedElements = useStore.getState().elements;
 
             for (const element of updatedElements) {
@@ -192,7 +193,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         try {
             redo();
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            await ElementUtils.delay(0);
             const updatedElements = useStore.getState().elements;
 
             for (const element of updatedElements) {

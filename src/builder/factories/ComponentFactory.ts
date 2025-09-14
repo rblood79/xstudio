@@ -1,6 +1,7 @@
 import { Element, ComponentElementProps } from '../../types/store'; // 통합된 타입 사용
-import { elementsApi } from '../../services/api';
+//import { elementsApi } from '../../services/api';
 import { HierarchyManager } from '../utils/HierarchyManager';
+import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
 
 export interface ComponentCreationResult {
     parent: Element;
@@ -68,12 +69,12 @@ export class ComponentFactory {
         };
 
         // 부모 요소 생성
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Label',
                 props: { children: 'Label' } as ComponentElementProps,
                 parent_id: parentData.id,
@@ -81,7 +82,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Input',
                 props: {
                     type: 'text',
@@ -92,7 +93,7 @@ export class ComponentFactory {
                 order_num: 2,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Description',
                 props: { children: 'Description' } as ComponentElementProps,
                 parent_id: parentData.id,
@@ -100,7 +101,7 @@ export class ComponentFactory {
                 order_num: 3,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'FieldError',
                 props: { children: 'Error message' } as ComponentElementProps,
                 parent_id: parentData.id,
@@ -112,7 +113,7 @@ export class ComponentFactory {
         // 자식 요소들 생성
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -148,12 +149,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ToggleButton',
                 props: {
                     children: 'Option 1',
@@ -165,7 +166,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ToggleButton',
                 props: {
                     children: 'Option 2',
@@ -180,7 +181,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -216,12 +217,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Checkbox',
                 props: {
                     children: 'Option 1',
@@ -233,7 +234,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Checkbox',
                 props: {
                     children: 'Option 2',
@@ -248,7 +249,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -283,12 +284,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Radio',
                 props: {
                     children: 'Option 1',
@@ -300,7 +301,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Radio',
                 props: {
                     children: 'Option 2',
@@ -315,7 +316,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -350,12 +351,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'SelectItem',
                 props: {
                     label: 'Option 1',
@@ -367,7 +368,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'SelectItem',
                 props: {
                     label: 'Option 2',
@@ -379,7 +380,7 @@ export class ComponentFactory {
                 order_num: 2,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'SelectItem',
                 props: {
                     label: 'Option 3',
@@ -394,7 +395,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -431,12 +432,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ComboBoxItem',
                 props: {
                     label: 'Option 1',
@@ -448,7 +449,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ComboBoxItem',
                 props: {
                     label: 'Option 2',
@@ -463,7 +464,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -497,12 +498,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Tab',
                 props: {
                     title: 'Tab 1',
@@ -513,7 +514,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Panel',
                 props: {
                     //tag: 'Panel',
@@ -525,7 +526,7 @@ export class ComponentFactory {
                 order_num: 2,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Tab',
                 props: {
                     title: 'Tab 2',
@@ -536,7 +537,7 @@ export class ComponentFactory {
                 order_num: 3,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Panel',
                 props: {
                     //tag: 'Panel',
@@ -551,7 +552,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -586,12 +587,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'TreeItem',
                 props: {
                     title: 'Node 1',
@@ -602,7 +603,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'TreeItem',
                 props: {
                     title: 'Node 2',
@@ -616,7 +617,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -651,12 +652,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Tag',
                 props: {
                     children: 'Tag 1',
@@ -667,7 +668,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'Tag',
                 props: {
                     children: 'Tag 2',
@@ -681,7 +682,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -715,12 +716,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ListBoxItem',
                 props: {
                     label: 'Item 1',
@@ -732,7 +733,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'ListBoxItem',
                 props: {
                     label: 'Item 2',
@@ -747,7 +748,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }
@@ -780,12 +781,12 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await elementsApi.createElement(parent);
+        const parentData = await ElementUtils.createElement(parent);
         addElement(parentData);
 
         const children = [
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'GridListItem',
                 props: {
                     label: 'Grid Item 1',
@@ -797,7 +798,7 @@ export class ComponentFactory {
                 order_num: 1,
             },
             {
-                id: crypto.randomUUID(),
+                id: ElementUtils.generateId(),
                 tag: 'GridListItem',
                 props: {
                     label: 'Grid Item 2',
@@ -812,7 +813,7 @@ export class ComponentFactory {
 
         const childrenData: Element[] = [];
         for (const child of children) {
-            const childData = await elementsApi.createElement(child);
+            const childData = await ElementUtils.createElement(child);
             addElement(childData);
             childrenData.push(childData);
         }

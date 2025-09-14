@@ -3,6 +3,7 @@ import { CopyMinus } from 'lucide-react'; // CopyMinus 추가
 import { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store'; // 통합된 타입 사용
 import { useStore } from '../stores'; // useStore import 추가
+import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
 import './index.css';
 
 interface LayersProps {
@@ -67,7 +68,7 @@ export function Layers({
                             // 선택된 요소가 삭제된 경우 선택 해제
                             if (el.id === selectedElementId) {
                                 setSelectedElement(null);
-                                window.postMessage({ type: "CLEAR_OVERLAY" }, window.location.origin);
+                                MessageService.clearOverlay();
                             }
                         }
                     )
