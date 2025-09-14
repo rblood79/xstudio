@@ -22,7 +22,7 @@ export interface ButtonElementProps extends BaseElementProps {
 
 // TextField 컴포넌트 타입
 export interface TextFieldElementProps extends BaseElementProps {
-    tag: 'TextField';
+    //tag: 'TextField';
     label?: string;
     description?: string;
     errorMessage?: string;
@@ -38,7 +38,7 @@ export interface TextFieldElementProps extends BaseElementProps {
 
 // Checkbox 컴포넌트 타입
 export interface CheckboxElementProps extends BaseElementProps {
-    tag: 'Checkbox';
+    //tag: 'Checkbox';
     children?: React.ReactNode;
     isSelected?: boolean;
     defaultSelected?: boolean;
@@ -49,7 +49,7 @@ export interface CheckboxElementProps extends BaseElementProps {
 
 // Radio 컴포넌트 타입
 export interface RadioElementProps extends BaseElementProps {
-    tag: 'Radio';
+    //tag: 'Radio';
     children?: React.ReactNode;
     value?: string;
     isDisabled?: boolean;
@@ -58,7 +58,7 @@ export interface RadioElementProps extends BaseElementProps {
 
 // ToggleButton 컴포넌트 타입
 export interface ToggleButtonElementProps extends BaseElementProps {
-    tag: 'ToggleButton';
+    //tag: 'ToggleButton';
     children?: React.ReactNode;
     isSelected?: boolean;
     defaultSelected?: boolean;
@@ -68,7 +68,7 @@ export interface ToggleButtonElementProps extends BaseElementProps {
 
 // ToggleButtonGroup 컴포넌트 타입
 export interface ToggleButtonGroupElementProps extends BaseElementProps {
-    tag: 'ToggleButtonGroup';
+    //tag: 'ToggleButtonGroup';
     orientation?: 'horizontal' | 'vertical';
     selectionMode?: 'single' | 'multiple';
     value?: string[];
@@ -84,7 +84,7 @@ export interface ToggleButtonGroupElementProps extends BaseElementProps {
 
 // CheckboxGroup 컴포넌트 타입
 export interface CheckboxGroupElementProps extends BaseElementProps {
-    tag: 'CheckboxGroup';
+    //tag: 'CheckboxGroup';
     label?: string;
     orientation?: 'horizontal' | 'vertical';
     value?: string[];
@@ -100,7 +100,7 @@ export interface CheckboxGroupElementProps extends BaseElementProps {
 
 // RadioGroup 컴포넌트 타입
 export interface RadioGroupElementProps extends BaseElementProps {
-    tag: 'RadioGroup';
+    //tag: 'RadioGroup';
     label?: string;
     orientation?: 'horizontal' | 'vertical';
     value?: string;
@@ -116,7 +116,7 @@ export interface RadioGroupElementProps extends BaseElementProps {
 
 // Select 컴포넌트 타입
 export interface SelectElementProps extends BaseElementProps {
-    tag: 'Select';
+    //tag: 'Select';
     label?: string;
     placeholder?: string;
     selectedKey?: string;
@@ -133,7 +133,7 @@ export interface SelectElementProps extends BaseElementProps {
 
 // ComboBox 컴포넌트 타입
 export interface ComboBoxElementProps extends BaseElementProps {
-    tag: 'ComboBox';
+    //tag: 'ComboBox';
     label?: string;
     placeholder?: string;
     inputValue?: string;
@@ -153,7 +153,7 @@ export interface ComboBoxElementProps extends BaseElementProps {
 
 // Slider 컴포넌트 타입
 export interface SliderElementProps extends BaseElementProps {
-    tag: 'Slider';
+    //tag: 'Slider';
     label?: string;
     value?: number[];
     defaultValue?: number[];
@@ -167,7 +167,7 @@ export interface SliderElementProps extends BaseElementProps {
 
 // Tabs 컴포넌트 타입
 export interface TabsElementProps extends BaseElementProps {
-    tag: 'Tabs';
+    //tag: 'Tabs';
     defaultSelectedKey?: string;
     selectedKey?: string;
     orientation?: 'horizontal' | 'vertical';
@@ -181,7 +181,7 @@ export interface TabsElementProps extends BaseElementProps {
 
 // Tab 컴포넌트 타입
 export interface TabElementProps extends BaseElementProps {
-    tag: 'Tab';
+    //tag: 'Tab';
     title?: string;
     tabId?: string;
     isDisabled?: boolean;
@@ -189,14 +189,14 @@ export interface TabElementProps extends BaseElementProps {
 
 // Panel 컴포넌트 타입
 export interface PanelElementProps extends BaseElementProps {
-    tag: 'Panel';
+    //tag: 'Panel';
     title?: string;
     variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
 }
 
 // Tree 컴포넌트 타입
 export interface TreeElementProps extends BaseElementProps {
-    tag: 'Tree';
+    //tag: 'Tree';
     'aria-label'?: string;
     selectionMode?: 'single' | 'multiple' | 'none';
     selectionBehavior?: 'replace' | 'toggle';
@@ -217,7 +217,7 @@ export interface TreeElementProps extends BaseElementProps {
 
 // TreeItem 컴포넌트 타입
 export interface TreeItemElementProps extends BaseElementProps {
-    tag: 'TreeItem';
+    //tag: 'TreeItem';
     title?: string;
     hasChildren?: boolean;
     isExpanded?: boolean;
@@ -227,7 +227,7 @@ export interface TreeItemElementProps extends BaseElementProps {
 
 // Calendar 컴포넌트 타입
 export interface CalendarElementProps extends BaseElementProps {
-    tag: 'Calendar';
+    //tag: 'Calendar';
     'aria-label'?: string;
     isDisabled?: boolean;
     visibleDuration?: number;
@@ -241,7 +241,7 @@ export interface CalendarElementProps extends BaseElementProps {
 
 // DatePicker 컴포넌트 타입
 export interface DatePickerElementProps extends BaseElementProps {
-    tag: 'DatePicker';
+    //tag: 'DatePicker';
     label?: string;
     placeholder?: string;
     value?: Date;
@@ -258,7 +258,7 @@ export interface DatePickerElementProps extends BaseElementProps {
 
 // DateRangePicker 컴포넌트 타입
 export interface DateRangePickerElementProps extends BaseElementProps {
-    tag: 'DateRangePicker';
+    //tag: 'DateRangePicker';
     label?: string;
     placeholder?: string;
     value?: { start: Date; end: Date };
@@ -275,7 +275,7 @@ export interface DateRangePickerElementProps extends BaseElementProps {
 
 // Switch 컴포넌트 타입
 export interface SwitchElementProps extends BaseElementProps {
-    tag: 'Switch';
+    //tag: 'Switch';
     children?: React.ReactNode;
     isSelected?: boolean;
     defaultSelected?: boolean;
@@ -285,7 +285,7 @@ export interface SwitchElementProps extends BaseElementProps {
 
 // Table 컴포넌트 타입
 export interface TableElementProps extends BaseElementProps {
-    tag: 'Table';
+    //tag: 'Table';
     selectionMode?: 'none' | 'single' | 'multiple';
     selectionBehavior?: 'toggle' | 'replace';
     isDisabled?: boolean;
@@ -298,7 +298,7 @@ export interface TableElementProps extends BaseElementProps {
 
 // Card 컴포넌트 타입
 export interface CardElementProps extends BaseElementProps {
-    tag: 'Card';
+    //tag: 'Card';
     title?: string;
     description?: string;
     variant?: 'default' | 'outlined' | 'elevated';
@@ -312,7 +312,7 @@ export interface CardElementProps extends BaseElementProps {
 
 // TagGroup 컴포넌트 타입
 export interface TagGroupElementProps extends BaseElementProps {
-    tag: 'TagGroup';
+    //tag: 'TagGroup';
     label?: string;
     allowsRemoving?: boolean;
     selectionMode?: 'single' | 'multiple' | 'none';
@@ -328,7 +328,7 @@ export interface TagGroupElementProps extends BaseElementProps {
 
 // Tag 컴포넌트 타입
 export interface TagElementProps extends BaseElementProps {
-    tag: 'Tag';
+    //tag: 'Tag';
     children?: string;
     isDisabled?: boolean;
     onRemove?: () => void;
@@ -336,7 +336,7 @@ export interface TagElementProps extends BaseElementProps {
 
 // ListBox 컴포넌트 타입
 export interface ListBoxElementProps extends BaseElementProps {
-    tag: 'ListBox';
+    //tag: 'ListBox';
     orientation?: 'horizontal' | 'vertical';
     selectionMode?: 'single' | 'multiple' | 'none';
     isDisabled?: boolean;
@@ -350,7 +350,7 @@ export interface ListBoxElementProps extends BaseElementProps {
 
 // ListBoxItem 컴포넌트 타입
 export interface ListBoxItemElementProps extends BaseElementProps {
-    tag: 'ListBoxItem';
+    //tag: 'ListBoxItem';
     label?: string;
     value?: string;
     isDisabled?: boolean;
@@ -359,7 +359,7 @@ export interface ListBoxItemElementProps extends BaseElementProps {
 
 // GridList 컴포넌트 타입
 export interface GridListElementProps extends BaseElementProps {
-    tag: 'GridList';
+    //tag: 'GridList';
     selectionMode?: 'single' | 'multiple' | 'none';
     isDisabled?: boolean;
     children?: Array<{
@@ -372,7 +372,7 @@ export interface GridListElementProps extends BaseElementProps {
 
 // GridListItem 컴포넌트 타입
 export interface GridListItemElementProps extends BaseElementProps {
-    tag: 'GridListItem';
+    //tag: 'GridListItem';
     label?: string;
     value?: string;
     isDisabled?: boolean;
@@ -381,24 +381,24 @@ export interface GridListItemElementProps extends BaseElementProps {
 
 // Text 컴포넌트 타입
 export interface TextElementProps extends BaseElementProps {
-    tag: 'Text';
+    //tag: 'Text';
     children?: string;
     as?: 'p' | 'span' | 'div' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 }
 
 // HTML 기본 요소 타입들
 export interface DivElementProps extends BaseElementProps {
-    tag: 'Div';
+    //tag: 'Div';
     children?: React.ReactNode;
 }
 
 export interface SectionElementProps extends BaseElementProps {
-    tag: 'section';
+    //tag: 'section';
     children?: React.ReactNode;
 }
 
 export interface NavElementProps extends BaseElementProps {
-    tag: 'Nav';
+    //tag: 'Nav';
     children?: React.ReactNode;
 }
 
@@ -453,7 +453,6 @@ export function createDefaultButtonProps(): ButtonElementProps {
 
 export function createDefaultTextFieldProps(): TextFieldElementProps {
     return {
-        tag: 'TextField',
         label: 'Text Field',
         placeholder: 'Enter text...',
         value: '',
@@ -466,7 +465,6 @@ export function createDefaultTextFieldProps(): TextFieldElementProps {
 
 export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementProps {
     return {
-        tag: 'ToggleButtonGroup',
         orientation: 'horizontal',
         selectionMode: 'single',
         value: [],
@@ -480,7 +478,6 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
 // 기타 기본 props 생성 함수들...
 export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
     return {
-        tag: 'CheckboxGroup',
         label: 'Checkbox Group',
         orientation: 'vertical',
         value: [],
@@ -493,7 +490,6 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
 
 export function createDefaultRadioGroupProps(): RadioGroupElementProps {
     return {
-        tag: 'RadioGroup',
         label: 'Radio Group',
         orientation: 'vertical',
         value: '',
@@ -506,7 +502,7 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
 
 export function createDefaultSelectProps(): SelectElementProps {
     return {
-        tag: 'Select',
+
         label: 'Select',
         placeholder: 'Choose an option...',
         children: [
@@ -518,7 +514,7 @@ export function createDefaultSelectProps(): SelectElementProps {
 
 export function createDefaultComboBoxProps(): ComboBoxElementProps {
     return {
-        tag: 'ComboBox',
+
         label: 'Combo Box',
         placeholder: 'Type or select...',
         inputValue: '',
@@ -532,7 +528,7 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
 
 export function createDefaultTabsProps(): TabsElementProps {
     return {
-        tag: 'Tabs',
+
         defaultSelectedKey: 'tab1',
         orientation: 'horizontal',
         children: [
@@ -544,7 +540,7 @@ export function createDefaultTabsProps(): TabsElementProps {
 
 export function createDefaultTreeProps(): TreeElementProps {
     return {
-        tag: 'Tree',
+
         'aria-label': 'Tree',
         selectionMode: 'single',
         selectionBehavior: 'replace',
@@ -566,7 +562,7 @@ export function createDefaultTreeProps(): TreeElementProps {
 
 export function createDefaultTagGroupProps(): TagGroupElementProps {
     return {
-        tag: 'TagGroup',
+
         label: 'Tag Group',
         allowsRemoving: true,
         selectionMode: 'multiple',
@@ -580,7 +576,7 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
 
 export function createDefaultListBoxProps(): ListBoxElementProps {
     return {
-        tag: 'ListBox',
+
         orientation: 'vertical',
         selectionMode: 'single',
         children: [
@@ -592,7 +588,7 @@ export function createDefaultListBoxProps(): ListBoxElementProps {
 
 export function createDefaultGridListProps(): GridListElementProps {
     return {
-        tag: 'GridList',
+
         selectionMode: 'none',
         children: [
             { id: '1', label: 'Item 1', value: 'item1' },
