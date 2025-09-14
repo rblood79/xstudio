@@ -644,7 +644,9 @@ export function createDefaultGridListItemProps(): GridListItemElementProps {
 }
 
 export function createDefaultTextProps(): TextElementProps {
-    return {};
+    return {
+        children: 'Text' // 기본 텍스트 내용 추가
+    };
 }
 
 export function createDefaultDivProps(): DivElementProps {
