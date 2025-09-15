@@ -50,7 +50,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 라벨 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.LABEL}
-                        value={String(currentRadio.props.children || '')}
+                        value={String((currentRadio.props as Record<string, unknown>).children || '')}
                         onChange={(value) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -65,7 +65,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 값 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.VALUE}
-                        value={String(currentRadio.props.value || '')}
+                        value={String((currentRadio.props as Record<string, unknown>).value || '')}
                         onChange={(value) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -80,7 +80,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     {/* 라디오 버튼 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentRadio.props.isDisabled)}
+                        checked={Boolean((currentRadio.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -239,8 +239,8 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                         {radioChildren.map((radio, index) => (
                             <div key={radio.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {radio.props.children || `Option ${index + 1}`}
-                                    {currentProps.value === radio.props.value && ' ✓'}
+                                    {String((radio.props as Record<string, unknown>).children) || `Option ${index + 1}`}
+                                    {currentProps.value === (radio.props as Record<string, unknown>).value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'

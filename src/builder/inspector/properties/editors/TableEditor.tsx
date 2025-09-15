@@ -1,5 +1,5 @@
-import { Table, Settings, CheckSquare, Square } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
+import { Settings, CheckSquare, Square } from 'lucide-react';
+import { PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 
 // 상수 정의
@@ -7,12 +7,12 @@ const SELECTION_MODES = [
     { id: 'none', label: 'None' },
     { id: 'single', label: 'Single' },
     { id: 'multiple', label: 'Multiple' }
-] as const;
+];
 
 const SELECTION_BEHAVIORS = [
     { id: 'toggle', label: 'Toggle' },
     { id: 'replace', label: 'Replace' }
-] as const;
+];
 
 export function TableEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateProp = (key: string, value: unknown) => {

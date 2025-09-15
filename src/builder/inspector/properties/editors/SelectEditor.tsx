@@ -45,7 +45,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.LABEL}
-                        value={String(currentOption.props.label || '')}
+                        value={String((currentOption.props as Record<string, unknown>).label || '')}
                         onChange={(value) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -60,7 +60,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     {/* 옵션 값 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.VALUE}
-                        value={String(currentOption.props.value || '')}
+                        value={String((currentOption.props as Record<string, unknown>).value || '')}
                         onChange={(value) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -75,7 +75,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentOption.props.isDisabled)}
+                        checked={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -257,8 +257,8 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         {selectItemChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {String(item.props.label) || `Item ${index + 1}`}
-                                    {currentProps.selectedValue === item.props.value && ' ✓'}
+                                    {String((item.props as Record<string, unknown>).label) || `Item ${index + 1}`}
+                                    {currentProps.selectedValue === (item.props as Record<string, unknown>).value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'

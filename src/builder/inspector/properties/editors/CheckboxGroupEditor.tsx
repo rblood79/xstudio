@@ -50,7 +50,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 라벨 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.LABEL}
-                        value={String(currentCheckbox.props.children || '')}
+                        value={String((currentCheckbox.props as Record<string, unknown>).children || '')}
                         onChange={(value) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -65,7 +65,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 값 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.VALUE}
-                        value={String(currentCheckbox.props.value || '')}
+                        value={String((currentCheckbox.props as Record<string, unknown>).value || '')}
                         onChange={(value) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -80,7 +80,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 선택 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.SELECTED}
-                        checked={Boolean(currentCheckbox.props.isSelected)}
+                        checked={Boolean((currentCheckbox.props as Record<string, unknown>).isSelected)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -95,7 +95,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentCheckbox.props.isDisabled)}
+                        checked={Boolean((currentCheckbox.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -110,7 +110,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     {/* 체크박스 불확실 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.INDETERMINATE}
-                        checked={Boolean(currentCheckbox.props.isIndeterminate)}
+                        checked={Boolean((currentCheckbox.props as Record<string, unknown>).isIndeterminate)}
                         onChange={(checked) => {
                             // 실제 Checkbox 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -253,8 +253,8 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         {checkboxChildren.map((checkbox, index) => (
                             <div key={checkbox.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {checkbox.props.children || `Option ${index + 1}`}
-                                    {checkbox.props.isSelected && ' ✓'}
+                                    {String((checkbox.props as Record<string, unknown>).children) || `Option ${index + 1}`}
+                                    {Boolean((checkbox.props as Record<string, unknown>).isSelected) && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'
