@@ -148,7 +148,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
 };
 
 export function PropertyPanel() {
-    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+    const { selectedElementId, selectedElementProps, updateElementProps, elements } = useStore();
 
     if (!selectedElementId) {
         return <div>요소를 선택해주세요</div>;
@@ -156,7 +156,7 @@ export function PropertyPanel() {
 
     const handleUpdate = async (updatedProps: Record<string, unknown>) => {
         // Store 업데이트 - 타입 단언으로 처리
-        updateElementProps(selectedElementId, updatedProps as Record<string, string | number | boolean | undefined>);
+        updateElementProps(selectedElementId, updatedProps as Record<string, unknown>);
 
         // Supabase 업데이트
         try {
@@ -169,7 +169,7 @@ export function PropertyPanel() {
         }
     };
 
-    const componentTag = selectedElementProps?.tag;
+    const componentTag = elements.find(el => el.id === selectedElementId)?.tag;
     const EditorComponent = componentTag ? COMPONENT_EDITORS[componentTag] : undefined;
 
     if (!EditorComponent || !componentTag) {
@@ -197,7 +197,7 @@ export function PropertyPanel() {
                 <EditorComponent
                     key={selectedElementId} // 이 줄을 추가
                     elementId={selectedElementId}
-                    currentProps={selectedElementProps}
+                    currentProps={selectedElementProps as Record<string, unknown>}
                     onUpdate={handleUpdate}
                 />
             </div>
