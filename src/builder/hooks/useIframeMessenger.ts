@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
-//import { elementsApi } from '../../services/api/ElementsApiService';
 import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
-import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
+import { ElementUtils } from '../../utils/elementUtils';
 import { MessageService } from '../../utils/messaging';
 
 export interface UseIframeMessengerReturn {
@@ -169,7 +168,20 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
             const element = elements.find(el => el.id === event.data.elementId);
             if (element) {
-                sendElementSelectedMessage(event.data.elementId, element.props as ElementProps);
+                const iframe = MessageService.getIframe();
+                if (iframe?.contentWindow) {
+                    const message = {
+                        type: "ELEMENT_SELECTED",
+                        elementId: event.data.elementId,
+                        payload: {
+                            tag: element.tag,
+                            props: element.props,
+                            source: "builder"
+                        },
+                        source: "builder"
+                    };
+                    iframe.contentWindow.postMessage(message, window.location.origin);
+                }
             }
         }
 
@@ -178,7 +190,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, updateElementProps, elements, sendElementSelectedMessage]);
+    }, [setSelectedElement, updateElementProps, elements]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
