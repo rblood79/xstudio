@@ -9,14 +9,14 @@ export class MessageService {
         return this.iframe;
     }
 
-    static sendToIframe(type: string, payload: any) {
+    static sendToIframe(type: string, payload: Record<string, unknown>) {
         const iframe = this.getIframe();
         if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage({ type, payload }, window.location.origin);
         }
     }
 
-    static sendToWindow(type: string, payload: any) {
+    static sendToWindow(type: string, payload: Record<string, unknown>) {
         window.postMessage({ type, payload }, window.location.origin);
     }
 

@@ -8,7 +8,7 @@ import './index.css';
 
 
 function Design() {
-    const { selectedElementId, selectedElementProps, updateElementProps } = useStore();
+    const { selectedElementId, selectedElementProps, updateElementProps, elements } = useStore();
 
     // 선택된 요소가 없을 때의 처리
     if (!selectedElementId) {
@@ -18,7 +18,7 @@ function Design() {
     return (
         <div className='design-container'>
             <div className="inspect_page">
-                <div className='testID'>{selectedElementProps.tag || 'No tag'} : {selectedElementId}</div>
+                <div className='testID'>{elements.find(el => el.id === selectedElementId)?.tag || 'No tag'} : {selectedElementId}</div>
                 <div className="panel-header">
                     <h3 className='panel-title'>Transform</h3>
                     <div className="header-actions">

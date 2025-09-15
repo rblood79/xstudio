@@ -232,11 +232,11 @@ export interface SwitchElementProps extends BaseElementProps {
 
 export interface TableElementProps extends BaseElementProps {
     children?: React.ReactNode;
-    items?: Array<Record<string, any>>;
+    items?: Array<Record<string, unknown>>;
     columns?: Array<{
         key: string;
         label: string;
-        render?: (item: any) => React.ReactNode;
+        render?: (item: Record<string, unknown>) => React.ReactNode;
     }>;
     selectionMode?: 'none' | 'single' | 'multiple';
     selectedKeys?: string[];
@@ -389,7 +389,7 @@ export interface ElementsState {
 }
 
 export interface ThemeState {
-    activeTheme: any | null;
+    activeTheme: Record<string, unknown> | null;
     rawTokens: DesignToken[];
     semanticTokens: DesignToken[];
     loading: boolean;

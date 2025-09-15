@@ -349,7 +349,7 @@ function Preview() {
               updateElementProps(parentGroup.id, {
                 ...parentGroup.props,
                 value: newValue
-              });
+              } as Record<string, unknown>);
             } else {
               // 단독 토글버튼인 경우
               const updatedProps = {
@@ -509,10 +509,11 @@ function Preview() {
             for (const checkbox of checkboxChildren) {
               const isSelected = newSelectedValues.includes(checkbox.id);
               if (checkbox.props.isSelected !== isSelected) {
+                // 512-515번째 줄 수정
                 updateElementProps(checkbox.id, {
                   ...checkbox.props,
                   isSelected
-                });
+                } as Record<string, unknown>);
               }
             }
           }}
@@ -568,10 +569,11 @@ function Preview() {
             for (const radio of radioChildren) {
               const isSelected = radio.props.value === selectedValue;
               if (radio.props.isSelected !== isSelected) {
+                // 571-574번째 줄 수정
                 updateElementProps(radio.id, {
                   ...radio.props,
                   isSelected
-                });
+                } as Record<string, unknown>);
               }
             }
           }}
