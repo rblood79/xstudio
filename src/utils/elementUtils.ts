@@ -1,6 +1,6 @@
 import { Element } from '../types/store';
 import { elementsApi } from '../services/api';
-import { ComponentElementProps } from '../types/unified';
+//import { ComponentElementProps } from '../types/unified';
 
 // 통합 요소 관리 유틸리티
 export class ElementUtils {

@@ -180,11 +180,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         //console.log('Tab ID to match:', tabId);
 
                         let correspondingPanel = siblings.find(el =>
-                            el.tag === 'Panel' && (el.props as any).tabId === tabId
+                            el.tag === 'Panel' && (el.props as Record<string, unknown>).tabId === tabId
                         );
 
                         // tabId가 없는 경우 order_num으로 매칭 시도
-                        if (!correspondingPanel && !(elementToDelete.props as any).tabId) {
+                        if (!correspondingPanel && !(elementToDelete.props as Record<string, unknown>).tabId) {
                             const tabOrderNum = elementToDelete.order_num || 0;
                             correspondingPanel = siblings.find(el =>
                                 el.tag === 'Panel' && el.order_num === tabOrderNum + 1
@@ -208,14 +208,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set) => ({
                         }
                     } else if (elementToDelete.tag === 'Panel') {
                         // Panel을 삭제하는 경우, 같은 tabId를 가진 Tab 찾기
-                        const tabId = (elementToDelete.props as any).tabId;
+                        const tabId = (elementToDelete.props as Record<string, unknown>).tabId;
                         //console.log('Panel tabId:', tabId);
 
                         let correspondingTab = null;
 
                         if (tabId) {
                             correspondingTab = siblings.find(el =>
-                                el.tag === 'Tab' && (el.props as any).tabId === tabId
+                                el.tag === 'Tab' && (el.props as Record<string, unknown>).tabId === tabId
                             );
                         } else {
                             // tabId가 없는 경우 order_num으로 매칭 시도
