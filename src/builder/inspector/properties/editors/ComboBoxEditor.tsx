@@ -58,17 +58,17 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     {/* 옵션 라벨 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.LABEL}
-                        value={String(currentOption.props.label || '')}
+                        value={String((currentOption.props as Record<string, unknown>).label || '')}
                         onChange={(value) => {
                             const updatedProps = {
                                 ...currentOption.props,
                                 label: value
-                            };
+                            } as typeof currentOption.props & { label: string };
                             updateElementProps(currentOption.id, updatedProps);
 
                             // 부모 ComboBox의 defaultSelectedKey가 현재 옵션의 value와 같다면 업데이트
-                            if (currentProps.defaultSelectedKey === currentOption.props.value) {
-                                updateProp('defaultSelectedKey', currentOption.props.value);
+                            if (currentProps.defaultSelectedKey === (currentOption.props as Record<string, unknown>).value) {
+                                updateProp('defaultSelectedKey', (currentOption.props as Record<string, unknown>).value);
                             }
                         }}
                         icon={Tag}
@@ -77,9 +77,9 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     {/* 옵션 값 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.VALUE}
-                        value={String(currentOption.props.value || '')}
+                        value={String((currentOption.props as Record<string, unknown>).value || '')}
                         onChange={(value) => {
-                            const oldValue = currentOption.props.value;
+                            const oldValue = (currentOption.props as Record<string, unknown>).value;
                             const updatedProps = {
                                 ...currentOption.props,
                                 value: value
@@ -97,7 +97,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     {/* 옵션 설명 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.DESCRIPTION}
-                        value={String(currentOption.props.description || '')}
+                        value={String((currentOption.props as Record<string, unknown>).description || '')}
                         onChange={(value) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -111,7 +111,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     {/* 옵션 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentOption.props.isDisabled)}
+                        checked={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -254,8 +254,8 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         {comboBoxItemChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {String(item.props.label) || `Item ${index + 1}`}
-                                    {currentProps.selectedValue === item.props.value && ' ✓'}
+                                    {String((item.props as Record<string, unknown>).label) || `Item ${index + 1}`}
+                                    {currentProps.selectedValue === (item.props as Record<string, unknown>).value && ' ✓'}
                                 </span>
                                 <button
                                     className='tab-edit-button'
