@@ -227,7 +227,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                             tag,
                             selectedElement ?? null,
                             currentPageId,
-                            addElement
+                            addElement,
+                            elements // elements 매개변수 추가
                         );
 
                         // 증분 업데이트로 캐시 최적화

@@ -2,6 +2,7 @@ import { Element, ComponentElementProps } from '../../types/store'; // 통합된
 //import { elementsApi } from '../../services/api';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
+//import { useStore } from '../../store/store'; // useStore 추가
 
 export interface ComponentCreationResult {
     parent: Element;
@@ -17,7 +18,8 @@ export class ComponentFactory {
         tag: string,
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const creators = {
             TextField: this.createTextField,
@@ -38,7 +40,7 @@ export class ComponentFactory {
             throw new Error(`No creator found for component type: ${tag}`);
         }
 
-        return await creator(parentElement, pageId, addElement);
+        return await creator(parentElement, pageId, addElement, elements);
     }
 
     /**
@@ -47,10 +49,11 @@ export class ComponentFactory {
     private static async createTextField(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TextField',
@@ -131,10 +134,11 @@ export class ComponentFactory {
     private static async createToggleButtonGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ToggleButtonGroup',
@@ -199,10 +203,11 @@ export class ComponentFactory {
     private static async createCheckboxGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'CheckboxGroup',
@@ -267,10 +272,11 @@ export class ComponentFactory {
     private static async createRadioGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'RadioGroup',
@@ -334,10 +340,11 @@ export class ComponentFactory {
     private static async createSelect(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Select',
@@ -413,10 +420,11 @@ export class ComponentFactory {
     private static async createComboBox(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ComboBox',
@@ -482,10 +490,11 @@ export class ComponentFactory {
     private static async createTabs(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tabs',
@@ -570,10 +579,11 @@ export class ComponentFactory {
     private static async createTree(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tree',
@@ -635,10 +645,11 @@ export class ComponentFactory {
     private static async createTagGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TagGroup',
@@ -700,10 +711,11 @@ export class ComponentFactory {
     private static async createListBox(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ListBox',
@@ -766,10 +778,11 @@ export class ComponentFactory {
     private static async createGridList(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void
+        addElement: (element: Element) => void,
+        elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'GridList',
