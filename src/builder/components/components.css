@@ -1254,6 +1254,9 @@
 
         .react-aria-SliderOutput {
             grid-area: output;
+            font-size: var(--text-sm);
+            line-height: var(--text-lg);
+            padding: var(--spacing-sm) 0;
         }
 
         .react-aria-SliderTrack {
@@ -1265,20 +1268,21 @@
                 content: '';
                 display: block;
                 position: absolute;
-                background: var(--border-color);
+                background: linear-gradient(90deg, var(--color-gray-200), var(--color-primary-500), var(--color-gray-200));
             }
         }
 
         .react-aria-SliderThumb {
-            width: var(--spacing-lg);
-            height: var(--spacing-lg);
+            width: calc(var(--spacing-lg) * 1.25);
+            height: calc(var(--spacing-lg) * 1.25);
             border-radius: 50%;
             background: var(--color-primary-50);
             border: var(--spacing-2xs) solid var(--color-primary-500);
             forced-color-adjust: none;
 
             &[data-dragging] {
-                background: var(--color-primary-600);
+                border-width: calc(var(--spacing) * 1.25);
+                border-color: var(--color-primary-600);
             }
 
             &[data-focus-visible] {
@@ -1296,7 +1300,7 @@
                 left: var(--spacing-md);
 
                 &:before {
-                    height: 3px;
+                    height: 1px;
                     width: 100%;
                     top: 50%;
                     transform: translateY(-50%);
@@ -2540,6 +2544,7 @@
 
 /* Switch 컴포넌트 스타일 */
 .react-aria-Switch {
+    width: fit-content;
     display: flex;
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
@@ -2552,7 +2557,7 @@
     .indicator {
         width: calc(var(--spacing-2xl) * 1.25);
         height: var(--spacing-xl);
-        border: var(--spacing-2xs) solid var(--color-gray-500);
+        border: var(--spacing-2xs) solid var(--color-gray-200);
         background: var(--background-color);
         border-radius: var(--radius-xl);
         transition: all 200ms;
@@ -2563,7 +2568,7 @@
             margin: var(--spacing-2xs);
             width: var(--spacing-lg);
             height: var(--spacing-lg);
-            background: var(--color-primary-600);
+            background: var(--color-primary-500);
             border-radius: var(--radius-lg);
             transition: all 200ms;
         }
@@ -2573,7 +2578,7 @@
         border-color: var(--border-color-pressed);
 
         &:before {
-            background: var(--highlight-background-pressed);
+            background: var(--color-primary-600);
         }
     }
 
@@ -2583,7 +2588,7 @@
             background: var(--color-primary-600);
 
             &:before {
-                background: var(--color-gray-50);
+                background: var(--color-white);
                 transform: translateX(100%);
             }
         }
@@ -2592,6 +2597,10 @@
             .indicator {
                 border-color: var(--highlight-background-pressed);
                 background: var(--highlight-background-pressed);
+
+                &:before {
+                    background: var(--color-primary-500);
+                }
             }
         }
     }

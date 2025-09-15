@@ -79,7 +79,7 @@ export class ComponentFactory {
                 props: { children: 'Label' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 1,
+                order_num: 1, // 첫 번째 자식
             },
             {
                 id: ElementUtils.generateId(),
@@ -90,7 +90,7 @@ export class ComponentFactory {
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 2,
+                order_num: 2, // 두 번째 자식
             },
             {
                 id: ElementUtils.generateId(),
@@ -98,7 +98,7 @@ export class ComponentFactory {
                 props: { children: 'Description' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 3,
+                order_num: 3, // 세 번째 자식
             },
             {
                 id: ElementUtils.generateId(),
@@ -106,7 +106,7 @@ export class ComponentFactory {
                 props: { children: 'Error message' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 4,
+                order_num: 4, // 네 번째 자식
             }
         ];
 

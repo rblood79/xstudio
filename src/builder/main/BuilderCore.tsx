@@ -97,7 +97,7 @@ export const BuilderCore: React.FC = () => {
     }, [projectId, createPage, handleError]);
 
     // 요소 추가 핸들러
-    const handleAddElementWrapper = useCallback(async (tag: string) => {
+    const handleAddElementWrapper = useCallback(async (tag: string, parentId?: string) => {
         if (!currentPageId) return;
         try {
             // 타입 변환을 통해 호환성 확보
@@ -105,7 +105,7 @@ export const BuilderCore: React.FC = () => {
             await handleAddElement(
                 tag,
                 currentPageId,
-                selectedElementId,
+                parentId || selectedElementId, // parentId가 있으면 사용, 없으면 selectedElementId 사용
                 elements,
                 addElement,
                 sendElementsToIframe
