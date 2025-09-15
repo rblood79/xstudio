@@ -44,7 +44,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <fieldset className="properties-aria">
                     <PropertyInput
                         label={PROPERTY_LABELS.TEXT}
-                        value={String(currentTag.props.children || '')}
+                        value={String((currentTag.props as Record<string, unknown>).children || '')}
                         onChange={(value) => {
                             const updatedProps = {
                                 ...currentTag.props,
@@ -57,7 +57,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentTag.props.isDisabled)}
+                        checked={Boolean((currentTag.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentTag.props,
@@ -199,7 +199,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         {tagChildren.map((tag, index) => (
                             <div key={tag.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {tag.props.children || `Tag ${index + 1}`}
+                                    {String((tag.props as Record<string, unknown>).children) || `Tag ${index + 1}`}
                                 </span>
                                 <button
                                     className='tab-edit-button'

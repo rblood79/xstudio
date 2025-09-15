@@ -50,7 +50,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.LABEL}
-                        value={String(currentItem.props.label || '')}
+                        value={String((currentItem.props as Record<string, unknown>).label || '')}
                         onChange={(value) => {
                             // 실제 ListBoxItem 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -65,7 +65,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 값 편집 */}
                     <PropertyInput
                         label={PROPERTY_LABELS.VALUE}
-                        value={String(currentItem.props.value || '')}
+                        value={String((currentItem.props as Record<string, unknown>).value || '')}
                         onChange={(value) => {
                             // 실제 ListBoxItem 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -80,7 +80,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentItem.props.isDisabled)}
+                        checked={Boolean((currentItem.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 ListBoxItem 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -223,7 +223,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         {listBoxChildren.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {String(item.props.label || `Item ${index + 1}`)}
+                                    {String((item.props as Record<string, unknown>).label || `Item ${index + 1}`)}
                                 </span>
                                 <button
                                     className='tab-edit-button'
