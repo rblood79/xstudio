@@ -1,7 +1,7 @@
 .overlay {}
 
 .overlay-element {
-    transition: 0.16s ease-out;
+    transition: var(--default-transition-duration) var(--default-transition-timing-function);
     position: absolute;
     pointer-events: none;
     z-index: 1;

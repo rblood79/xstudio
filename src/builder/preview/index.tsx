@@ -2,7 +2,6 @@ import React, { useCallback, useEffect } from 'react';
 import { useParams } from "react-router";
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';
-import { elementsApi } from '../../services/api';
 //import { supabase } from '../../env/supabase.client'; // 추가된 import
 import styles from "./index.module.css";
 import {
@@ -1830,6 +1829,7 @@ function Preview() {
     id: projectId || 'preview-container',
     "data-element-id": bodyElement?.id,
     onMouseUp: handleGlobalClick,
+    //onMouseDown: handleGlobalClick,
     // body 요소의 스타일만 적용 (다른 props는 제외)
     style: bodyElement?.props?.style || {},
     // body였다면 원래 태그 정보 기록
