@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Type, Ratio, SquarePlus, Trash, PointerOff, ToggleLeft, SquareX, SquareMousePointer } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
-import { PropertyEditorProps, ToggleButtonItem } from '../types/editorTypes';
+import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 //import { supabase } from '../../../../env/supabase.client';
@@ -15,7 +15,10 @@ interface SelectedButtonState {
 
 export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedButton, setSelectedButton] = useState<SelectedButtonState | null>(null);
-    const { addElement, currentPageId } = useStore();
+    const { addElement, currentPageId, updateElementProps, setElements } = useStore();
+
+    // 스토어에서 elements를 직접 구독하여 실시간 업데이트
+    const storeElements = useStore(state => state.elements);
 
     useEffect(() => {
         // 버튼 선택 상태 초기화
@@ -30,86 +33,82 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
         onUpdate(updatedProps);
     };
 
-    // 토글 버튼 배열 가져오기
-    const buttonItems = Array.isArray(currentProps.children) ? currentProps.children as ToggleButtonItem[] : [];
+    // 실제 ToggleButton 자식 요소들을 찾기 (useMemo로 최적화)
+    const toggleButtonChildren = useMemo(() => {
+        return storeElements
+            .filter((child) => child.parent_id === elementId && child.tag === 'ToggleButton')
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }, [storeElements, elementId]);
 
     // 선택된 토글 버튼이 있고, 현재 ToggleButtonGroup 컴포넌트의 버튼인 경우 개별 버튼 편집 UI 표시
     if (selectedButton && selectedButton.parentId === elementId) {
-        const currentButton = buttonItems[selectedButton.buttonIndex];
+        const currentButton = toggleButtonChildren[selectedButton.buttonIndex];
         if (!currentButton) return null;
 
         return (
             <div className="component-props">
                 <fieldset className="properties-aria">
-                    {/* 토글 버튼 제목 편집 */}
+                    {/* 버튼 텍스트 편집 */}
                     <PropertyInput
-                        label={PROPERTY_LABELS.TITLE}
-                        value={String(currentButton.title || '')}
+                        label={PROPERTY_LABELS.CHILDREN}
+                        value={String((currentButton.props as Record<string, unknown>).children || '')}
                         onChange={(value) => {
-                            const updatedButtons = [...buttonItems];
-                            updatedButtons[selectedButton.buttonIndex] = {
-                                ...updatedButtons[selectedButton.buttonIndex],
-                                title: value
+                            // 실제 ToggleButton 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentButton.props,
+                                children: value
                             };
-                            updateProp('children', updatedButtons);
+                            updateElementProps(currentButton.id, updatedProps);
                         }}
-                        icon={Type}
+                        icon={Tag}
                     />
 
-                    {/* 토글 버튼 선택 상태 편집 */}
-                    <PropertyCheckbox
-                        label={PROPERTY_LABELS.SELECTED}
-                        checked={Boolean(currentButton.isSelected)}
-                        onChange={(checked) => {
-                            const updatedButtons = [...buttonItems];
-                            updatedButtons[selectedButton.buttonIndex] = {
-                                ...updatedButtons[selectedButton.buttonIndex],
-                                isSelected: checked
-                            };
-                            updateProp('children', updatedButtons);
-                        }}
-                        icon={ToggleLeft}
-                    />
-
-                    {/* 토글 버튼 비활성화 상태 편집 */}
+                    {/* 버튼 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean(currentButton.isDisabled)}
+                        checked={Boolean((currentButton.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
-                            const updatedButtons = [...buttonItems];
-                            updatedButtons[selectedButton.buttonIndex] = {
-                                ...updatedButtons[selectedButton.buttonIndex],
+                            // 실제 ToggleButton 컴포넌트의 props 업데이트
+                            const updatedProps = {
+                                ...currentButton.props,
                                 isDisabled: checked
                             };
-                            updateProp('children', updatedButtons);
+                            updateElementProps(currentButton.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
 
-                    {/* 토글 버튼 삭제 버튼 */}
+                    {/* 버튼 삭제 버튼 */}
                     <div className='tab-actions'>
                         <button
                             className='control-button delete'
-                            onClick={() => {
-                                const updatedButtons = [...buttonItems];
-                                updatedButtons.splice(selectedButton.buttonIndex, 1);
-                                updateProp('children', updatedButtons);
-                                setSelectedButton(null);
+                            onClick={async () => {
+                                try {
+                                    // 실제 ToggleButton 컴포넌트를 데이터베이스에서 삭제
+                                    await ElementUtils.deleteElement(currentButton.id);
+
+                                    // 스토어에서도 제거
+                                    const updatedElements = storeElements.filter(el => el.id !== currentButton.id);
+                                    setElements(updatedElements);
+                                    setSelectedButton(null);
+                                } catch (error) {
+                                    console.error('ToggleButton 삭제 중 오류:', error);
+                                }
                             }}
                         >
                             <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            {PROPERTY_LABELS.DELETE_THIS_BUTTON}
+                            Delete This Button
                         </button>
                     </div>
                 </fieldset>
 
-                {/* 토글 버튼 편집 모드 종료 버튼 */}
+                {/* 버튼 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
                     <button
                         className='control-button secondary'
                         onClick={() => setSelectedButton(null)}
                     >
-                        {PROPERTY_LABELS.BACK_TO_TOGGLE_BUTTON_GROUP_SETTINGS}
+                        Back to ToggleButtonGroup Settings
                     </button>
                 </div>
             </div>
@@ -120,6 +119,30 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
+                {/* 라벨 설정 */}
+                <PropertyInput
+                    label={PROPERTY_LABELS.LABEL}
+                    value={String(currentProps.label || '')}
+                    onChange={(value) => updateProp('label', value)}
+                    icon={Tag}
+                />
+
+                {/* 설명 설정 */}
+                <PropertyInput
+                    label={PROPERTY_LABELS.DESCRIPTION}
+                    value={String(currentProps.description || '')}
+                    onChange={(value) => updateProp('description', value)}
+                    icon={FileText}
+                />
+
+                {/* 오류 메시지 설정 */}
+                <PropertyInput
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
+                    value={String(currentProps.errorMessage || '')}
+                    onChange={(value) => updateProp('errorMessage', value)}
+                    icon={AlertTriangle}
+                />
+
                 {/* 방향 설정 */}
                 <PropertySelect
                     label={PROPERTY_LABELS.ORIENTATION}
@@ -129,7 +152,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                         { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
-                    icon={Ratio}
+                    icon={ToggleLeft}
                 />
 
                 {/* 선택 모드 설정 */}
@@ -141,15 +164,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
                         { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
-                    icon={SquareMousePointer}
-                />
-
-                {/* 빈 선택 허용 안함 설정 */}
-                <PropertyCheckbox
-                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
-                    onChange={(checked) => updateProp('disallowEmptySelection', checked)}
-                    icon={SquareX}
+                    icon={Binary}
                 />
 
                 {/* 비활성화 설정 */}
@@ -159,29 +174,36 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
+
+                {/* 자동 포커스 설정 */}
+                <PropertyCheckbox
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
+                    checked={Boolean(currentProps.autoFocus)}
+                    onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
+                />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.BUTTON_MANAGEMENT}</legend>
+                <legend className='fieldset-legend'>Button Management</legend>
 
-                {/* 토글 버튼 개수 표시 */}
+                {/* 버튼 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total buttons: {buttonItems.length || 0}
+                        Total buttons: {toggleButtonChildren.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Select individual buttons from list to edit title and state
+                        💡 Select individual buttons from list to edit text and state
                     </p>
                 </div>
 
-                {/* 토글 버튼 목록 */}
-                {buttonItems.length > 0 && (
+                {/* 버튼 목록 */}
+                {toggleButtonChildren.length > 0 && (
                     <div className='tabs-list'>
-                        {buttonItems.map((button, index) => (
+                        {toggleButtonChildren.map((button, index) => (
                             <div key={button.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {button.title || `Button ${index + 1}`}
-                                    {button.isSelected && ' ✓'}
+                                    {String((button.props as Record<string, unknown>).children || `Button ${index + 1}`)}
                                 </span>
                                 <button
                                     className='tab-edit-button'
@@ -208,12 +230,12 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                                     props: {
                                         isSelected: false,
                                         defaultSelected: false,
-                                        children: `Toggle ${(buttonItems.length || 0) + 1}`,
+                                        children: `Toggle ${(toggleButtonChildren.length || 0) + 1}`,
                                         style: {},
                                         className: '',
                                     },
                                     parent_id: elementId,
-                                    order_num: (buttonItems.length || 0) + 1,
+                                    order_num: (toggleButtonChildren.length || 0) + 1,
                                 };
 
                                 const data = await ElementUtils.createChildElementWithParentCheck(newToggleButton, currentPageId || '1', elementId);
