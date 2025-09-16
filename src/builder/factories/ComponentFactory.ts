@@ -133,30 +133,32 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // 백그라운드에서 DB에 순차 저장 (단순화)
-        try {
-            // 부모 먼저 저장 (DB에서 최신 elements 가져와서 order_num 재계산)
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
-            const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
-            };
-            const savedParent = await ElementUtils.createElement(parentToSave);
-
-            // 자식들 순차 저장 (부모 ID 업데이트)
-            for (let i = 0; i < children.length; i++) {
-                const childToSave = {
-                    ...children[i],
-                    parent_id: savedParent.id
+        // 백그라운드에서 DB에 순차 저장 (setTimeout으로 비동기 처리)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장 (DB에서 최신 elements 가져와서 order_num 재계산)
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
                 };
-                await ElementUtils.createElement(childToSave);
+                const savedParent = await ElementUtils.createElement(parentToSave);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
             }
-
-            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-        } catch (error) {
-            console.error('Background save failed:', error);
-        }
+        }, 0);
 
         return {
             parent: parentData,

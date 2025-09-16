@@ -258,22 +258,11 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                                     order_num: (listBoxChildren.length || 0) + 1,
                                 };
 
-                                const { data, error } = await supabase
-                                    .from('elements')
-                                    .insert(newItem)
-                                    .select()
-                                    .single();
+                                const data = await ElementUtils.createChildElementWithParentCheck(newItem, currentPageId || '1', elementId); // currentPageId 전달
 
-                                if (error) {
-                                    console.error('ListBoxItem 추가 에러:', error);
-                                    return;
-                                }
-
-                                if (data) {
-                                    // 스토어에 새 요소 추가
-                                    addElement(data);
-                                    console.log('새 ListBoxItem 추가됨:', data);
-                                }
+                                // 스토어에 새 요소 추가
+                                addElement(data);
+                                console.log('새 ListBoxItem 추가됨:', data);
                             } catch (error) {
                                 console.error('ListBoxItem 추가 중 오류:', error);
                             }
