@@ -67,6 +67,16 @@ export default function SelectionOverlay() {
         }
     }, [selectedElementId]);
 
+    // elements가 변경될 때도 overlay 업데이트
+    useEffect(() => {
+        if (selectedElementId) {
+            // DOM 업데이트 후 overlay 크기 재계산
+            setTimeout(() => {
+                updatePosition();
+            }, 10);
+        }
+    }, [elements, selectedElementId, updatePosition]);
+
     useEffect(() => {
         const iframe = MessageService.getIframe();
         iframeRef.current = iframe;
