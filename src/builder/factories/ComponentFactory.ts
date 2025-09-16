@@ -77,7 +77,7 @@ export class ComponentFactory {
             updated_at: new Date().toISOString()
         } as Element;
 
-        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
+        // 자식 요소들 생성 - order_num을 동적으로 계산
         const children = [
             {
                 id: ElementUtils.generateId(),
@@ -85,7 +85,7 @@ export class ComponentFactory {
                 props: { children: 'Label' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 1, // 첫 번째 자식
+                order_num: 1,
             },
             {
                 id: ElementUtils.generateId(),
@@ -96,7 +96,7 @@ export class ComponentFactory {
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 2, // 두 번째 자식
+                order_num: 2,
             },
             {
                 id: ElementUtils.generateId(),
@@ -104,7 +104,7 @@ export class ComponentFactory {
                 props: { children: 'Description' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 3, // 세 번째 자식
+                order_num: 3,
             },
             {
                 id: ElementUtils.generateId(),
@@ -112,9 +112,16 @@ export class ComponentFactory {
                 props: { children: 'Error message' } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
-                order_num: 4, // 네 번째 자식
+                order_num: 4,
             }
         ];
+
+        // 자식 요소들의 order_num을 동적으로 계산 (기존 elements에 추가하여 계산)
+        const allElements = [...(Array.isArray(elements) ? elements : []), parentData];
+        children.forEach((child) => {
+            child.order_num = HierarchyManager.calculateNextOrderNum(parentData.id, allElements);
+            allElements.push(child);
+        });
 
         // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
@@ -133,11 +140,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // 부모 먼저 저장 (현재 elements 상태를 기준으로 order_num 재계산)
+                const currentElements = useStore.getState().elements;
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, currentElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -238,11 +253,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -343,11 +366,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -447,11 +478,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -563,11 +602,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -669,11 +716,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -794,11 +849,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -896,11 +959,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -998,11 +1069,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -1101,11 +1180,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {
@@ -1203,11 +1290,19 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
+        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
+        HierarchyManager.clearSpecificCache('orderNum');
+
         // 백그라운드에서 DB에 순차 저장 (단순화)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장
-                const savedParent = await ElementUtils.createElement(parent);
+                // DB에서 최신 elements 가져와서 order_num 계산
+                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                const parentToSave = {
+                    ...parent,
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                };
+                const savedParent = await ElementUtils.createElement(parentToSave);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
                 for (let i = 0; i < children.length; i++) {

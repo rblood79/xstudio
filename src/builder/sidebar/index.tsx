@@ -28,7 +28,7 @@ interface SidebarProps {
 
 export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
     // 메모이제이션 추가
-    const elements = useStore(useCallback(state => state.elements, []));
+    const elements = useStore((state) => state.elements);
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
