@@ -69,13 +69,23 @@ export default function SelectionOverlay() {
 
     // elements가 변경될 때도 overlay 업데이트
     useEffect(() => {
-        if (selectedElementId) {
-            // DOM 업데이트 후 overlay 크기 재계산
-            setTimeout(() => {
+        if (!selectedElementId || !iframeRef.current?.contentDocument) return;
+
+        const observer = new MutationObserver(() => {
+            if (selectedElementId) {
                 updatePosition();
-            }, 10);
-        }
-    }, [elements, selectedElementId, updatePosition]);
+            }
+        });
+
+        observer.observe(iframeRef.current.contentDocument.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['data-element-id']
+        });
+
+        return () => observer.disconnect();
+    }, [selectedElementId, updatePosition]);
 
     useEffect(() => {
         const iframe = MessageService.getIframe();
