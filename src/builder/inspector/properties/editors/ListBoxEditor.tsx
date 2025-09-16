@@ -15,7 +15,10 @@ interface SelectedItemState {
 
 export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(null);
-    const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
+    const { addElement, currentPageId, updateElementProps, setElements } = useStore();
+
+    // 스토어에서 elements를 직접 구독하여 실시간 업데이트
+    const storeElements = useStore(state => state.elements);
 
     useEffect(() => {
         // 아이템 선택 상태 초기화
@@ -242,6 +245,9 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                         className='control-button add'
                         onClick={async () => {
                             try {
+                                console.log(' ListBoxEditor - elementId:', elementId);
+                                console.log('🔍 ListBoxEditor - storeElements:', storeElements.map(el => ({ id: el.id, tag: el.tag })));
+
                                 // 새로운 ListBoxItem 요소를 Supabase에 직접 삽입
                                 const newItem = {
                                     id: ElementUtils.generateId(),
@@ -258,7 +264,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                                     order_num: (listBoxChildren.length || 0) + 1,
                                 };
 
-                                const data = await ElementUtils.createChildElementWithParentCheck(newItem, currentPageId || '1', elementId); // currentPageId 전달
+                                const data = await ElementUtils.createChildElementWithParentCheck(newItem, currentPageId || '1', elementId);
 
                                 // 스토어에 새 요소 추가
                                 addElement(data);
