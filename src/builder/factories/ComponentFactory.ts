@@ -116,13 +116,6 @@ export class ComponentFactory {
             }
         ];
 
-        // 자식 요소들의 order_num을 동적으로 계산 (기존 elements에 추가하여 계산)
-        const allElements = [...(Array.isArray(elements) ? elements : []), parentData];
-        children.forEach((child) => {
-            child.order_num = HierarchyManager.calculateNextOrderNum(parentData.id, allElements);
-            allElements.push(child);
-        });
-
         // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
         for (let i = 0; i < children.length; i++) {
@@ -140,35 +133,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // 부모 먼저 저장 (현재 elements 상태를 기준으로 order_num 재계산)
-                const currentElements = useStore.getState().elements;
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, currentElements)
+        try {
+            // 부모 먼저 저장 (DB에서 최신 elements 가져와서 order_num 재계산)
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -253,35 +241,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -366,35 +349,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -478,35 +456,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -602,35 +575,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -716,35 +684,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -849,35 +812,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -959,35 +917,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -1069,35 +1022,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -1180,35 +1128,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
@@ -1290,35 +1233,30 @@ export class ComponentFactory {
         const currentElements = store.elements;
         store.setElements([...currentElements, parentData, ...childrenData]);
 
-        // HierarchyManager 캐시 클리어 (order_num 재계산을 위해)
-        HierarchyManager.clearSpecificCache('orderNum');
-
         // 백그라운드에서 DB에 순차 저장 (단순화)
-        setTimeout(async () => {
-            try {
-                // DB에서 최신 elements 가져와서 order_num 계산
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
-                const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+        try {
+            // DB에서 최신 elements 가져와서 order_num 계산
+            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            const parentToSave = {
+                ...parent,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            // 자식들 순차 저장 (부모 ID 업데이트)
+            for (let i = 0; i < children.length; i++) {
+                const childToSave = {
+                    ...children[i],
+                    parent_id: savedParent.id
                 };
-                const savedParent = await ElementUtils.createElement(parentToSave);
-
-                // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
-                    const childToSave = {
-                        ...children[i],
-                        parent_id: savedParent.id
-                    };
-                    await ElementUtils.createElement(childToSave);
-                }
-
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-
-            } catch (error) {
-                console.error('Background save failed:', error);
+                await ElementUtils.createElement(childToSave);
             }
-        }, 0);
+
+            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
 
         return {
             parent: parentData,
