@@ -2,7 +2,7 @@ import { Element, ComponentElementProps } from '../../types/store'; // 통합된
 //import { elementsApi } from '../../services/api';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ElementUtils } from '../../utils/elementUtils'; // ElementUtils 추가
-//import { useStore } from '../../store/store'; // useStore 추가
+import { useStore } from '../stores'; // useStore import 추가
 
 export interface ComponentCreationResult {
     parent: Element;
@@ -18,8 +18,7 @@ export class ComponentFactory {
         tag: string,
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
-        elements: Element[] // 현재 요소들을 받아서 전달
+        elements: Element[] // addElement 매개변수 제거
     ): Promise<ComponentCreationResult> {
         const creators = {
             TextField: this.createTextField,
@@ -40,7 +39,7 @@ export class ComponentFactory {
             throw new Error(`No creator found for component type: ${tag}`);
         }
 
-        return await creator(parentElement, pageId, addElement, elements);
+        return await creator(parentElement, pageId, elements);
     }
 
     /**
@@ -49,11 +48,10 @@ export class ComponentFactory {
     private static async createTextField(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TextField',
@@ -71,10 +69,15 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        // 부모 요소 생성
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (DB 저장하지 않고 로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const children = [
             {
                 id: ElementUtils.generateId(),
@@ -113,13 +116,44 @@ export class ComponentFactory {
             }
         ];
 
-        // 자식 요소들 생성
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -134,11 +168,10 @@ export class ComponentFactory {
     private static async createToggleButtonGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ToggleButtonGroup',
@@ -153,8 +186,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -183,12 +221,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -203,11 +273,10 @@ export class ComponentFactory {
     private static async createCheckboxGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'CheckboxGroup',
@@ -222,8 +291,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -252,12 +326,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -272,11 +378,10 @@ export class ComponentFactory {
     private static async createRadioGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'RadioGroup',
@@ -290,8 +395,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -320,12 +430,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -340,11 +482,10 @@ export class ComponentFactory {
     private static async createSelect(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Select',
@@ -358,8 +499,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -400,12 +546,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -420,11 +598,10 @@ export class ComponentFactory {
     private static async createComboBox(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ComboBox',
@@ -440,8 +617,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -470,12 +652,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -490,11 +704,10 @@ export class ComponentFactory {
     private static async createTabs(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tabs',
@@ -507,8 +720,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -559,12 +777,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -579,11 +829,10 @@ export class ComponentFactory {
     private static async createTree(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tree',
@@ -597,8 +846,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -625,12 +879,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -645,11 +931,10 @@ export class ComponentFactory {
     private static async createTagGroup(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TagGroup',
@@ -663,8 +948,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -691,12 +981,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -711,11 +1033,10 @@ export class ComponentFactory {
     private static async createListBox(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ListBox',
@@ -728,8 +1049,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -758,12 +1084,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -778,11 +1136,10 @@ export class ComponentFactory {
     private static async createGridList(
         parentElement: Element | null,
         pageId: string,
-        addElement: (element: Element) => void,
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'GridList',
@@ -794,8 +1151,13 @@ export class ComponentFactory {
             order_num: orderNum
         };
 
-        const parentData = await ElementUtils.createElement(parent);
-        addElement(parentData);
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
 
         const children = [
             {
@@ -824,12 +1186,44 @@ export class ComponentFactory {
             }
         ];
 
+        // 자식 요소들 생성 - 모든 데이터를 먼저 준비
         const childrenData: Element[] = [];
-        for (const child of children) {
-            const childData = await ElementUtils.createElement(child);
-            addElement(childData);
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childData = {
+                ...child,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as Element;
             childrenData.push(childData);
         }
+
+        // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        store.setElements([...currentElements, parentData, ...childrenData]);
+
+        // 백그라운드에서 DB에 순차 저장 (단순화)
+        setTimeout(async () => {
+            try {
+                // 부모 먼저 저장
+                const savedParent = await ElementUtils.createElement(parent);
+
+                // 자식들 순차 저장 (부모 ID 업데이트)
+                for (let i = 0; i < children.length; i++) {
+                    const childToSave = {
+                        ...children[i],
+                        parent_id: savedParent.id
+                    };
+                    await ElementUtils.createElement(childToSave);
+                }
+
+                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+
+            } catch (error) {
+                console.error('Background save failed:', error);
+            }
+        }, 0);
 
         return {
             parent: parentData,
@@ -838,3 +1232,4 @@ export class ComponentFactory {
         };
     }
 }
+
