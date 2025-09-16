@@ -6,48 +6,59 @@ import { Element } from '../../types/store';
 import { ElementUtils } from '../../utils/elementUtils';
 import { MessageService } from '../../utils/messaging';
 
+export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
+
 export interface UseIframeMessengerReturn {
-    iframeReady: boolean;
-    setIframeReady: React.Dispatch<React.SetStateAction<boolean>>;
+    iframeReadyState: IframeReadyState;
     handleIframeLoad: () => void;
     handleMessage: (event: MessageEvent) => void;
     handleUndo: DebouncedFunc<() => Promise<void>>;
     handleRedo: DebouncedFunc<() => Promise<void>>;
     sendElementsToIframe: (elements: Element[]) => void;
     sendElementSelectedMessage: (elementId: string, props?: ElementProps) => void;
+    isIframeReady: boolean;
 }
 
 export const useIframeMessenger = (): UseIframeMessengerReturn => {
-    const [iframeReady, setIframeReady] = useState(false);
+    const [iframeReadyState, setIframeReadyState] = useState<IframeReadyState>('not_initialized');
     const isProcessingRef = useRef(false);
+    const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
 
     const elements = useStore((state) => state.elements);
-    //const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const updateElementProps = useStore((state) => state.updateElementProps);
     const { undo, redo } = useStore();
 
-    // 요소들을 iframe에 전송
+    // iframe이 준비되었는지 계산된 값
+    const isIframeReady = iframeReadyState === 'ready';
+
+    // 요소들을 iframe에 전송 (상태에 따라 큐잉)
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
         const iframe = MessageService.getIframe();
-        if (!iframe?.contentWindow) {
-            console.warn('iframe not ready');
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('🔄 Queue elements update, iframe not ready:', iframeReadyState);
+            }
+            messageQueueRef.current.push({
+                type: "UPDATE_ELEMENTS",
+                payload: elementsToSend
+            });
             return;
         }
-
-        //console.log('Sending elements to iframe:', elementsToSend.length);
-        //console.log('Elements being sent:', elementsToSend);
 
         const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
         iframe.contentWindow.postMessage(message, window.location.origin);
 
-        //console.log('Message sent to iframe:', message);
-    }, []);
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`📤 Sent ${elementsToSend.length} elements to iframe`);
+        }
+    }, [iframeReadyState]);
 
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
-        if (!iframe?.contentWindow) return;
 
         const element = elements.find(el => el.id === elementId);
         if (!element) return;
@@ -63,26 +74,70 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             source: "builder"
         };
 
-        //console.log('Sending element selected message:', message);
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "ELEMENT_SELECTED",
+                payload: message
+            });
+            return;
+        }
+
         iframe.contentWindow.postMessage(message, window.location.origin);
-    }, [elements]);
+    }, [elements, iframeReadyState]);
+
+    // 큐에 있는 메시지들 처리
+    const processMessageQueue = useCallback(() => {
+        if (iframeReadyState !== 'ready') return;
+
+        const iframe = MessageService.getIframe();
+        if (!iframe?.contentWindow) return;
+
+        const queue = [...messageQueueRef.current];
+        messageQueueRef.current = [];
+
+        if (queue.length > 0 && process.env.NODE_ENV === 'development') {
+            console.log(`🔄 Processing ${queue.length} queued messages`);
+        }
+
+        queue.forEach(item => {
+            if (item.type === "UPDATE_ELEMENTS") {
+                iframe.contentWindow!.postMessage({
+                    type: "UPDATE_ELEMENTS",
+                    elements: item.payload
+                }, window.location.origin);
+            } else if (item.type === "ELEMENT_SELECTED") {
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+            }
+        });
+    }, [iframeReadyState]);
 
     const handleIframeLoad = useCallback(() => {
-        //console.log('iframe loaded');
+        setIframeReadyState('loading');
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🖼️ iframe loading started');
+        }
 
         // iframe이 완전히 준비될 때까지 기다리는 함수
         const waitForIframeReady = () => {
             const iframe = MessageService.getIframe();
             if (iframe?.contentDocument && iframe.contentDocument.readyState === 'complete') {
-                setIframeReady(true);
+                setIframeReadyState('ready');
 
-                // iframe 로드 후 현재 요소들을 전송
-                if (elements.length > 0) {
-                    setTimeout(() => {
-                        //console.log('Sending initial elements after iframe load:', elements.length);
-                        sendElementsToIframe(elements);
-                    }, 500);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('✅ iframe ready, processing queued messages');
                 }
+
+                // 대기 중인 메시지 처리
+                setTimeout(() => {
+                    processMessageQueue();
+
+                    // iframe 로드 후 현재 요소들을 전송
+                    if (elements.length > 0) {
+                        sendElementsToIframe(elements);
+                    }
+                }, 100);
             } else {
                 // 아직 준비되지 않았으면 다시 시도
                 setTimeout(waitForIframeReady, 100);
@@ -90,7 +145,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         };
 
         waitForIframeReady();
-    }, [elements, sendElementsToIframe]);
+    }, [elements, sendElementsToIframe, processMessageQueue]);
 
     const handleMessage = useCallback((event: MessageEvent) => {
         //console.log('Message received:', event.origin, event.data);
@@ -238,7 +293,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // Layer 트리에서 선택할 때:
     // sendElementSelectedMessage(selectedElementId, element.props);
 
-    // elements가 변경될 때마다 iframe에 전송 (iframeReady 체크 제거)
+    // elements가 변경될 때마다 iframe에 전송 (iframeReadyState 체크 제거)
     useEffect(() => {
         if (elements.length > 0) {
             //console.log('Elements changed, sending to iframe:', elements.length);
@@ -247,14 +302,21 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
     }, [elements, sendElementsToIframe]);
 
+    // useEffect - iframeReadyState가 변경될 때 큐 처리
+    useEffect(() => {
+        if (iframeReadyState === 'ready') {
+            processMessageQueue();
+        }
+    }, [iframeReadyState, processMessageQueue]);
+
     return {
-        iframeReady,
-        setIframeReady,
+        iframeReadyState,
         handleIframeLoad,
         handleMessage,
         handleUndo,
         handleRedo,
         sendElementsToIframe,
-        sendElementSelectedMessage
+        sendElementSelectedMessage,
+        isIframeReady
     };
 };
