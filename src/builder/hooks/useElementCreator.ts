@@ -39,6 +39,7 @@ import {
     createDefaultNavProps
 } from '../../types/unified';
 import { ElementUtils } from '../../utils/elementUtils';
+import { useStore } from '../stores';
 
 export interface UseElementCreatorReturn {
     getDefaultProps: (tag: string) => ComponentElementProps;
@@ -227,8 +228,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                             tag,
                             selectedElement ?? null,
                             currentPageId,
-                            addElement,
-                            elements // elements 매개변수 추가
+                            elements // addElement 매개변수 제거
                         );
 
                         // 증분 업데이트로 캐시 최적화
@@ -240,7 +240,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                     } else {
                         // 단순 컴포넌트 생성 (캐시 활용)
                         const parentId = selectedElementId || null;
-                        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+                        const currentElements = useStore.getState().elements; // 최신 elements 사용
+                        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, currentElements);
 
                         const newElement: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
                             tag,
@@ -254,7 +255,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                         addElement(data);
 
                         // 증분 업데이트로 캐시 최적화
-                        const updatedElements = [...elements, data];
+                        const updatedElements = [...currentElements, data];
                         HierarchyManager.incrementalUpdate(updatedElements, data.id);
 
                         // iframe에 업데이트된 요소들 전송
