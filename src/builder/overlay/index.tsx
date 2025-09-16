@@ -71,20 +71,37 @@ export default function SelectionOverlay() {
     useEffect(() => {
         if (!selectedElementId || !iframeRef.current?.contentDocument) return;
 
-        const observer = new MutationObserver(() => {
+        const mutationObserver = new MutationObserver(() => {
             if (selectedElementId) {
                 updatePosition();
             }
         });
 
-        observer.observe(iframeRef.current.contentDocument.body, {
+        const resizeObserver = new ResizeObserver(() => {
+            if (selectedElementId) {
+                updatePosition();
+            }
+        });
+
+        mutationObserver.observe(iframeRef.current.contentDocument.body, {
             childList: true,
             subtree: true,
             attributes: true,
-            attributeFilter: ['data-element-id']
+            attributeFilter: ['data-element-id', 'style', 'class']
         });
 
-        return () => observer.disconnect();
+        // 선택된 요소의 크기 변경 감지
+        const selectedElement = iframeRef.current.contentDocument.querySelector(
+            `[data-element-id="${selectedElementId}"]`
+        );
+        if (selectedElement) {
+            resizeObserver.observe(selectedElement);
+        }
+
+        return () => {
+            mutationObserver.disconnect();
+            resizeObserver.disconnect();
+        };
     }, [selectedElementId, updatePosition]);
 
     useEffect(() => {
