@@ -39,7 +39,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // iframe이 준비되지 않았으면 큐에 넣기
         if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
             if (process.env.NODE_ENV === 'development') {
-                console.log('🔄 Queue elements update, iframe not ready:', iframeReadyState);
+                //console.log('🔄 Queue elements update, iframe not ready:', iframeReadyState);
             }
             messageQueueRef.current.push({
                 type: "UPDATE_ELEMENTS",
@@ -97,7 +97,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         messageQueueRef.current = [];
 
         if (queue.length > 0 && process.env.NODE_ENV === 'development') {
-            console.log(`🔄 Processing ${queue.length} queued messages`);
+            //console.log(`🔄 Processing ${queue.length} queued messages`);
         }
 
         queue.forEach(item => {
@@ -116,7 +116,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         setIframeReadyState('loading');
 
         if (process.env.NODE_ENV === 'development') {
-            console.log('🖼️ iframe loading started');
+            //console.log('🖼️ iframe loading started');
         }
 
         // iframe이 완전히 준비될 때까지 기다리는 함수
@@ -126,7 +126,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 setIframeReadyState('ready');
 
                 if (process.env.NODE_ENV === 'development') {
-                    console.log('✅ iframe ready, processing queued messages');
+                    //console.log('✅ iframe ready, processing queued messages');
                 }
 
                 // 대기 중인 메시지 처리

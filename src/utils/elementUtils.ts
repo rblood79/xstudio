@@ -9,10 +9,10 @@ export class ElementUtils {
     }
 
     static async createElement(element: Partial<Element>): Promise<Element> {
-        console.log('🔍 ElementUtils.createElement 호출 - 전체 element:', element);
-        console.log('🔍 ElementUtils.createElement 호출 - 전달된 ID:', element.id);
+        //console.log('🔍 ElementUtils.createElement 호출 - 전체 element:', element);
+        //console.log('🔍 ElementUtils.createElement 호출 - 전달된 ID:', element.id);
         const result = await elementsApi.createElement(element);
-        console.log('✅ ElementUtils.createElement 완료 - 반환된 ID:', result.id);
+        //console.log('✅ ElementUtils.createElement 완료 - 반환된 ID:', result.id);
         return result;
     }
 
