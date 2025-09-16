@@ -4,7 +4,7 @@ import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps, ToggleButtonItem } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
-import { supabase } from '../../../../env/supabase.client';
+//import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import { ElementUtils } from '../../../../utils/elementUtils';
 
@@ -199,42 +199,30 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     <button
                         className='control-button add'
                         onClick={async () => {
-                            if (!currentPageId) {
-                                console.error("페이지 ID를 찾을 수 없습니다.");
-                                return;
-                            }
+                            try {
+                                // 새로운 ToggleButton 요소를 Supabase에 직접 삽입
+                                const newToggleButton = {
+                                    id: ElementUtils.generateId(),
+                                    page_id: currentPageId || '1',
+                                    tag: 'ToggleButton',
+                                    props: {
+                                        isSelected: false,
+                                        defaultSelected: false,
+                                        children: `Toggle ${(buttonItems.length || 0) + 1}`,
+                                        style: {},
+                                        className: '',
+                                    },
+                                    parent_id: elementId,
+                                    order_num: (buttonItems.length || 0) + 1,
+                                };
 
-                            const newToggleButton = {
-                                id: ElementUtils.generateId(),
-                                page_id: currentPageId,
-                                tag: 'ToggleButton',
-                                props: {
-                                    isSelected: false,
-                                    defaultSelected: false,
-                                    children: `Button ${(buttonItems.length || 0) + 1}`,
-                                    style: {},
-                                    className: '',
-                                },
-                                parent_id: elementId,
-                                order_num: (buttonItems.length || 0) + 1,
-                            };
+                                const data = await ElementUtils.createChildElementWithParentCheck(newToggleButton, currentPageId || '1', elementId);
 
-                            console.log("새 ToggleButton 추가 시도:", {
-                                newToggleButton,
-                                currentPageId,
-                                elementId
-                            });
-
-                            const { data, error } = await supabase
-                                .from("elements")
-                                .insert([newToggleButton])
-                                .select();
-
-                            if (error) {
-                                console.error("ToggleButton 추가 에러:", error);
-                            } else if (data) {
-                                console.log("ToggleButton 추가 성공:", data[0]);
-                                addElement(data[0]);
+                                // 스토어에 새 요소 추가
+                                addElement(data);
+                                console.log('새 ToggleButton 추가됨:', data);
+                            } catch (error) {
+                                console.error('ToggleButton 추가 중 오류:', error);
                             }
                         }}
                     >

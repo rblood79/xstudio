@@ -226,7 +226,7 @@ export class ComponentFactory {
                 id: ElementUtils.generateId(),
                 tag: 'ToggleButton',
                 props: {
-                    children: 'Option 1',
+                    children: 'Toggle 1',
                     isSelected: false,
                     isDisabled: false
                 } as ComponentElementProps,
@@ -238,7 +238,7 @@ export class ComponentFactory {
                 id: ElementUtils.generateId(),
                 tag: 'ToggleButton',
                 props: {
-                    children: 'Option 2',
+                    children: 'Toggle 2',
                     isSelected: false,
                     isDisabled: false
                 } as ComponentElementProps,
