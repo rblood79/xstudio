@@ -8,8 +8,12 @@ export class ElementUtils {
         return crypto.randomUUID();
     }
 
-    static async createElement(element: Omit<Element, 'id' | 'created_at' | 'updated_at'>): Promise<Element> {
-        return await elementsApi.createElement(element);
+    static async createElement(element: Partial<Element>): Promise<Element> {
+        console.log('🔍 ElementUtils.createElement 호출 - 전체 element:', element);
+        console.log('🔍 ElementUtils.createElement 호출 - 전달된 ID:', element.id);
+        const result = await elementsApi.createElement(element);
+        console.log('✅ ElementUtils.createElement 완료 - 반환된 ID:', result.id);
+        return result;
     }
 
     static async deleteElement(elementId: string): Promise<void> {
@@ -32,7 +36,7 @@ export class ElementUtils {
         return await elementsApi.updateElementProps(elementId, props);
     }
 
-    static async waitForParentElement(pageId: string, parentId: string, maxRetries: number = 30, delay: number = 300): Promise<boolean> {
+    static async waitForParentElement(pageId: string, parentId: string, maxRetries: number = 100, delay: number = 500): Promise<boolean> {
         for (let i = 0; i < maxRetries; i++) {
             try {
                 // 모든 요소를 가져와서 부모 요소 찾기
@@ -44,8 +48,7 @@ export class ElementUtils {
                 }
             } catch (error) {
                 // 부모 요소가 아직 DB에 없음
-                console.log(`⏳ 부모 요소 대기 중... (${i + 1}/${maxRetries})`);
-                console.error(`❌ 부모 요소 찾기 실패: ${parentId} (${maxRetries}번 시도 후)`, error);
+                console.log(`⏳ 부모 요소 대기 중... (${i + 1}/${maxRetries})`, error);
             }
 
             // 잠시 대기 후 재시도

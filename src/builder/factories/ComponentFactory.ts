@@ -136,24 +136,46 @@ export class ComponentFactory {
         // 백그라운드에서 DB에 순차 저장 (setTimeout으로 비동기 처리)
         setTimeout(async () => {
             try {
-                // 부모 먼저 저장 (DB에서 최신 elements 가져와서 order_num 재계산)
-                const dbElements = await ElementUtils.getElementsByPageId(pageId);
+                console.log(' 부모 저장 시작 - parentData:', parentData);
+                console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+                // 부모 먼저 저장 (parentData를 직접 사용)
                 const parentToSave = {
-                    ...parent,
-                    order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                    ...parentData, // parentData 사용 (id 포함)
+                    order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
                 };
+
+                console.log('🔍 parentToSave:', parentToSave);
+                console.log('🔍 parentToSave.id:', parentToSave.id);
+
                 const savedParent = await ElementUtils.createElement(parentToSave);
 
+                console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+                // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+                const store = useStore.getState();
+                const updatedElements = store.elements.map(el =>
+                    el.id === parentData.id ? { ...el, id: savedParent.id } : el
+                );
+                store.setElements(updatedElements);
+                console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
+
                 // 자식들 순차 저장 (부모 ID 업데이트)
-                for (let i = 0; i < children.length; i++) {
+                for (let i = 0; i < childrenData.length; i++) {
                     const childToSave = {
-                        ...children[i],
+                        ...childrenData[i], // childrenData 사용 (임시 ID 포함)
                         parent_id: savedParent.id
                     };
-                    await ElementUtils.createElement(childToSave);
+                    const savedChild = await ElementUtils.createElement(childToSave);
+
+                    // 스토어에서 자식 요소 ID 업데이트
+                    const updatedElements2 = store.elements.map(el =>
+                        el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
+                    );
+                    store.setElements(updatedElements2);
                 }
 
-                console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+                console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
 
             } catch (error) {
                 console.error('Background save failed:', error);
@@ -245,13 +267,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -353,13 +391,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -460,13 +514,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -579,13 +649,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -688,13 +774,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -816,13 +918,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -921,13 +1039,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -1026,13 +1160,29 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
+
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
             for (let i = 0; i < children.length; i++) {
@@ -1132,24 +1282,46 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
 
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
+
             // 자식들 순차 저장 (부모 ID 업데이트)
-            for (let i = 0; i < children.length; i++) {
+            for (let i = 0; i < childrenData.length; i++) {
                 const childToSave = {
-                    ...children[i],
+                    ...childrenData[i], // childrenData 사용 (임시 ID 포함)
                     parent_id: savedParent.id
                 };
-                await ElementUtils.createElement(childToSave);
+                const savedChild = await ElementUtils.createElement(childToSave);
+
+                // 스토어에서 자식 요소 ID 업데이트
+                const updatedElements2 = store.elements.map(el =>
+                    el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
+                );
+                store.setElements(updatedElements2);
             }
 
-            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+            console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
 
         } catch (error) {
             console.error('Background save failed:', error);
@@ -1237,24 +1409,46 @@ export class ComponentFactory {
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
-            // DB에서 최신 elements 가져와서 order_num 계산
-            const dbElements = await ElementUtils.getElementsByPageId(pageId);
+            console.log(' 부모 저장 시작 - parentData:', parentData);
+            console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
+
+            // 부모 먼저 저장 (parentData를 직접 사용)
             const parentToSave = {
-                ...parent,
-                order_num: HierarchyManager.calculateNextOrderNum(parentId, dbElements)
+                ...parentData, // parentData 사용 (id 포함)
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
             };
+
+            console.log('🔍 parentToSave:', parentToSave);
+            console.log('🔍 parentToSave.id:', parentToSave.id);
+
             const savedParent = await ElementUtils.createElement(parentToSave);
 
+            console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
+
+            // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
+            const store = useStore.getState();
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+            console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
+
             // 자식들 순차 저장 (부모 ID 업데이트)
-            for (let i = 0; i < children.length; i++) {
+            for (let i = 0; i < childrenData.length; i++) {
                 const childToSave = {
-                    ...children[i],
+                    ...childrenData[i], // childrenData 사용 (임시 ID 포함)
                     parent_id: savedParent.id
                 };
-                await ElementUtils.createElement(childToSave);
+                const savedChild = await ElementUtils.createElement(childToSave);
+
+                // 스토어에서 자식 요소 ID 업데이트
+                const updatedElements2 = store.elements.map(el =>
+                    el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
+                );
+                store.setElements(updatedElements2);
             }
 
-            console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
+            console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
 
         } catch (error) {
             console.error('Background save failed:', error);
