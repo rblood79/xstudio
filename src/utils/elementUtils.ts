@@ -43,7 +43,7 @@ export class ElementUtils {
                 const elements = await elementsApi.getElementsByPageId(pageId);
                 const parent = elements.find(el => el.id === parentId);
                 if (parent) {
-                    console.log(`✅ 부모 요소 찾음: ${parentId} (${i + 1}번째 시도)`);
+                    //console.log(`✅ 부모 요소 찾음: ${parentId} (${i + 1}번째 시도)`);
                     return true;
                 }
             } catch (error) {

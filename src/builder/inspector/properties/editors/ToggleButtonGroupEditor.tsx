@@ -242,7 +242,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                                 // 스토어에 새 요소 추가
                                 addElement(data);
-                                console.log('새 ToggleButton 추가됨:', data);
+                                //console.log('새 ToggleButton 추가됨:', data);
                             } catch (error) {
                                 console.error('ToggleButton 추가 중 오류:', error);
                             }
