@@ -2,7 +2,7 @@ import {
   Checkbox as AriaCheckbox,
   CheckboxProps as AriaCheckboxProps
 } from 'react-aria-components';
-import { CheckIcon, Minus} from 'lucide-react';
+import { CheckIcon, Minus } from 'lucide-react';
 import './components.css';
 
 export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
@@ -14,8 +14,8 @@ export function MyCheckbox(props: CheckboxProps) {
   const { children, isTreeItemChild = false, ...restProps } = props;
 
   // TreeItem 내부에서 사용될 때는 slot을 설정하지 않음
-  const checkboxProps = isTreeItemChild 
-    ? restProps 
+  const checkboxProps = isTreeItemChild
+    ? restProps
     : { slot: "selection", ...restProps };
 
   return (
@@ -23,7 +23,7 @@ export function MyCheckbox(props: CheckboxProps) {
       {({ isSelected, isIndeterminate }) => (
         <>
           <div className="checkbox">
-            {isIndeterminate ? <Minus size={16} strokeWidth={2}/> : isSelected && <CheckIcon size={16} strokeWidth={2}/>}
+            {isIndeterminate ? <Minus size={16} strokeWidth={4} /> : isSelected && <CheckIcon size={16} strokeWidth={4} />}
           </div>
           {children}
         </>
