@@ -1368,10 +1368,13 @@
     .react-aria-TabList {
         &[data-orientation=vertical] {
             flex-direction: column;
-            border-inline-end: 1px solid gray;
+            border-inline-end: 1px solid var(--border-color);
+            padding-right: 0px;
+            align-items: flex-end;
 
             .react-aria-Tab {
-                border-inline-end: 3px solid var(--border-color, transparent);
+                border-inline-end: var(--spacing-2xs) solid var(--border-color, transparent);
+                padding-right: var(--spacing-sm);
             }
         }
     }
@@ -1385,8 +1388,8 @@
     /* TabList 컴포넌트 스타일 시작 */
     .react-aria-TabList {
         display: flex;
-        background-color: var(--color-gray-50);
-        border-bottom: 1px solid var(--color-gray-200);
+        background-color: var(--color-white);
+        border-bottom: 1px solid var(--border-color);
         align-items: center;
         padding: var(--spacing) var(--spacing-md) 0 var(--spacing-md);
         gap: var(--spacing-lg);
@@ -1427,6 +1430,7 @@
         &[data-selected] {
             color: var(--color-gray-900);
             border-bottom-color: var(--color-primary-600) !important;
+            border-right-color: var(--color-primary-600) !important;
         }
 
         &[data-disabled] {
