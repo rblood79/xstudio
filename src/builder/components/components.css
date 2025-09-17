@@ -1349,6 +1349,7 @@
         }
     }
 
+
     /* Tabs 컴포넌트 스타일 시작 */
     .react-aria-Tabs {
         display: flex;
@@ -1357,89 +1358,7 @@
         &[data-orientation=horizontal] {
             flex-direction: column;
         }
-    }
 
-
-    /* TabList 컴포넌트 스타일 시작 */
-    .react-aria-TabList {
-        display: flex;
-        background-color: var(--color-gray-50);
-        border-bottom: 1px solid var(--color-gray-200);
-        min-height: var(--spacing-3xl);
-        align-items: center;
-        padding: 0 calc(var(--spacing-sm));
-        gap: var(--spacing-lg);
-
-        &[data-orientation=horizontal] {
-            border-bottom: 1px solid var(--border-color);
-
-            .react-aria-Tab {
-                border-bottom: 3px solid var(--border-color);
-            }
-        }
-    }
-
-    /* Tab 컴포넌트 스타일 시작 */
-    .react-aria-Tab {
-        font-size: var(--text-sm);
-        cursor: default;
-        outline: none;
-        position: relative;
-        color: var(--color-gray-400);
-        font-weight: var(--font-weight-bold);
-        border-radius: 4px;
-
-        padding: calc(var(--spacing) * 1.125) 0;
-
-        align-items: center;
-        justify-content: center;
-        display: flex;
-
-        transition: color 200ms;
-        --border-color: transparent;
-        forced-color-adjust: none;
-
-        &[data-hovered],
-        &[data-focused] {
-            color: var(--text-color-hover);
-        }
-
-        &[data-selected] {
-            color: var(--color-gray-900);
-        }
-
-        &[data-disabled] {
-            color: var(--text-color-disabled);
-
-            &[data-selected] {
-                --border-color: var(--text-color-disabled);
-            }
-        }
-
-        &[data-focus-visible]:after {
-            content: '';
-            position: absolute;
-            inset: 4px;
-            border-radius: 4px;
-            border: 2px solid var(--focus-ring-color);
-        }
-    }
-
-    /* TabPanel 컴포넌트 스타일 시작 */
-    .react-aria-TabPanel {
-        font-size: var(--text-sm);
-        padding: 10px;
-        border-radius: 4px;
-        outline: none;
-
-        &[data-focus-visible] {
-            outline: 2px solid var(--focus-ring-color);
-        }
-    }
-
-
-    /* Tabs 컴포넌트 스타일 종료 */
-    .react-aria-Tabs {
         &[data-orientation=vertical] {
             flex-direction: row;
         }
@@ -1457,8 +1376,75 @@
         }
     }
 
+    .react-aria-Tab[href] {
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+
+    /* TabList 컴포넌트 스타일 시작 */
+    .react-aria-TabList {
+        display: flex;
+        background-color: var(--color-gray-50);
+        border-bottom: 1px solid var(--color-gray-200);
+        align-items: center;
+        padding: var(--spacing) var(--spacing-md) 0 var(--spacing-md);
+        gap: var(--spacing-lg);
+
+        &[data-orientation=horizontal] {
+            border-bottom: 1px solid var(--border-color);
+
+            .react-aria-Tab {
+                border-bottom: var(--spacing-2xs) solid var(--border-color);
+            }
+        }
+    }
+
     /* Tab 컴포넌트 스타일 시작 */
     .react-aria-Tab {
+        font-size: var(--text-sm);
+        cursor: default;
+        outline: none;
+        position: relative;
+        color: var(--color-gray-400);
+        border-radius: 0;
+
+        padding: var(--spacing) 0;
+
+        align-items: center;
+        justify-content: center;
+        display: flex;
+
+        transition: color 200ms;
+        --border-color: transparent;
+        forced-color-adjust: none;
+
+        &[data-hovered],
+        &[data-focused] {
+            color: var(--text-color-hover);
+        }
+
+        &[data-selected] {
+            color: var(--color-gray-900);
+            border-bottom-color: var(--color-primary-600) !important;
+        }
+
+        &[data-disabled] {
+            color: var(--text-color-disabled);
+
+            &[data-selected] {
+                --border-color: var(--text-color-disabled);
+            }
+        }
+
+        &[data-focus-visible]:after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 4px;
+            border: 2px solid var(--focus-ring-color);
+        }
+
         &[data-disabled] {
             color: var(--text-color-disabled);
 
@@ -1468,10 +1454,24 @@
         }
     }
 
-    .react-aria-Tab[href] {
-        text-decoration: none;
-        cursor: pointer;
+    /* TabPanel 컴포넌트 스타일 시작 */
+    .react-aria-TabPanel {
+        font-size: var(--text-sm);
+        padding: 10px;
+        border-radius: 4px;
+        outline: none;
+
+        &[data-focus-visible] {
+            outline: 2px solid var(--focus-ring-color);
+        }
     }
+
+
+    /* Tabs 컴포넌트 스타일 종료 */
+
+
+    /* Tab 컴포넌트 스타일 시작 */
+
 
     /* TagGroup 컴포넌트 스타일 시작 */
     .react-aria-TagGroup {
