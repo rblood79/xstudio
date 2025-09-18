@@ -89,7 +89,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentButton.id);
-                                    setElements(updatedElements);
+                                    setElements(updatedElements, { skipHistory: true });
                                     setSelectedButton(null);
                                 } catch (error) {
                                     console.error('ToggleButton 삭제 중 오류:', error);

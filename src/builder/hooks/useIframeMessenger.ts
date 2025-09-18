@@ -266,13 +266,52 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            const { undo } = useStore.getState();
+            // 현재 선택된 요소 ID와 props 저장
+            const currentState = useStore.getState();
+            const currentSelectedId = currentState.selectedElementId;
+            const currentSelectedProps = currentState.selectedElementProps;
+
+            console.log('🔄 Undo 시작 - 현재 선택된 요소:', {
+                selectedId: currentSelectedId,
+                selectedProps: currentSelectedProps
+            });
+
+            // Zundo 패턴: 히스토리 추적 일시정지
+            const { pause, undo } = useStore.getState();
+            pause();
+
             const restoredElements = undo(); // 새로운 히스토리 시스템의 undo 호출
 
-            if (restoredElements) {
+            if (restoredElements !== null) {
                 // 복원된 요소들로 상태 업데이트 (히스토리 기록 방지)
                 const { setElements } = useStore.getState();
                 setElements(restoredElements, { skipHistory: true });
+
+                // Zundo 패턴: 히스토리 추적 재개
+                const { resume } = useStore.getState();
+                resume();
+
+                // 선택된 요소 강제 복원 (Undo/Redo 중에는 항상 유지)
+                if (currentSelectedId) {
+                    if (restoredElements.length > 0 && restoredElements.some(el => el.id === currentSelectedId)) {
+                        const restoredElement = restoredElements.find(el => el.id === currentSelectedId);
+                        if (restoredElement) {
+                            console.log('✅ 선택된 요소 복원:', {
+                                elementId: currentSelectedId,
+                                elementProps: restoredElement.props
+                            });
+                            setSelectedElement(currentSelectedId, restoredElement.props);
+                        }
+                    } else {
+                        // 선택된 요소가 복원되지 않았거나 초기 상태인 경우에도 선택 유지
+                        console.log('🔄 선택된 요소 강제 유지:', {
+                            currentSelectedId,
+                            currentSelectedProps,
+                            restoredElementsLength: restoredElements.length
+                        });
+                        setSelectedElement(currentSelectedId, currentSelectedProps);
+                    }
+                }
 
                 // API 호출 제거 - 로컬 상태만 복원
                 console.log('✅ Undo 완료 - 로컬 상태 복원만 수행');
@@ -290,13 +329,52 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            const { redo } = useStore.getState();
+            // 현재 선택된 요소 ID와 props 저장
+            const currentState = useStore.getState();
+            const currentSelectedId = currentState.selectedElementId;
+            const currentSelectedProps = currentState.selectedElementProps;
+
+            console.log('🔄 Redo 시작 - 현재 선택된 요소:', {
+                selectedId: currentSelectedId,
+                selectedProps: currentSelectedProps
+            });
+
+            // Zundo 패턴: 히스토리 추적 일시정지
+            const { pause, redo } = useStore.getState();
+            pause();
+
             const restoredElements = redo(); // 새로운 히스토리 시스템의 redo 호출
 
-            if (restoredElements) {
+            if (restoredElements !== null) {
                 // 복원된 요소들로 상태 업데이트 (히스토리 기록 방지)
                 const { setElements } = useStore.getState();
                 setElements(restoredElements, { skipHistory: true });
+
+                // Zundo 패턴: 히스토리 추적 재개
+                const { resume } = useStore.getState();
+                resume();
+
+                // 선택된 요소 강제 복원 (Undo/Redo 중에는 항상 유지)
+                if (currentSelectedId) {
+                    if (restoredElements.length > 0 && restoredElements.some(el => el.id === currentSelectedId)) {
+                        const restoredElement = restoredElements.find(el => el.id === currentSelectedId);
+                        if (restoredElement) {
+                            console.log('✅ 선택된 요소 복원:', {
+                                elementId: currentSelectedId,
+                                elementProps: restoredElement.props
+                            });
+                            setSelectedElement(currentSelectedId, restoredElement.props);
+                        }
+                    } else {
+                        // 선택된 요소가 복원되지 않았거나 초기 상태인 경우에도 선택 유지
+                        console.log('🔄 선택된 요소 강제 유지:', {
+                            currentSelectedId,
+                            currentSelectedProps,
+                            restoredElementsLength: restoredElements.length
+                        });
+                        setSelectedElement(currentSelectedId, currentSelectedProps);
+                    }
+                }
 
                 // API 호출 제거 - 로컬 상태만 복원
                 console.log('✅ Redo 완료 - 로컬 상태 복원만 수행');
@@ -343,7 +421,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 마지막 전송된 요소들 업데이트
         lastSentElementsRef.current = [...elements];
 
-        // 무한 루프 방지를 위해 직접 sendElementsToIframe 호출
+        // iframe에 요소 전송만 수행 (setElements 호출하지 않음)
         sendElementsToIframe(elements);
 
         // 전송 완료 후 플래그 해제

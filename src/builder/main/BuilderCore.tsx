@@ -34,8 +34,9 @@ export const BuilderCore: React.FC = () => {
 
     // 새로운 히스토리 시스템 - 직접 상태 접근으로 무한 루프 방지
     const snapshots = useStore((state) => state.snapshots || []);
-    const currentIndex = useStore((state) => state.currentIndex || -1);
+    const currentIndex = useStore((state) => state.currentIndex ?? -1);
 
+    // Zundo 패턴: 히스토리 정보 계산 개선
     const historyInfo = {
         current: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
         total: snapshots.length
@@ -45,11 +46,14 @@ export const BuilderCore: React.FC = () => {
     console.log('🔍 히스토리 정보 계산:', {
         snapshotsLength: snapshots.length,
         currentIndex,
-        calculatedCurrent: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
+        calculatedCurrent: snapshots.length > 0 ? currentIndex + 1 : 0,
         calculatedTotal: snapshots.length,
-        historyInfo
+        historyInfo,
+        rawCurrentIndex: useStore.getState().currentIndex
     });
-    const canUndo = snapshots.length > 0 && currentIndex >= 0;
+
+    // Zundo 패턴: Undo/Redo 조건 개선
+    const canUndo = snapshots.length > 0;
     const canRedo = currentIndex < snapshots.length - 1;
 
     // 훅 사용

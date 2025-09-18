@@ -84,7 +84,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     }
 
                                     const updatedElements = storeElements.filter(el => el.id !== currentTag.id);
-                                    setElements(updatedElements);
+                                    setElements(updatedElements, { skipHistory: true });
                                     setSelectedTag(null);
                                 } catch (error) {
                                     console.error('Tag 삭제 중 오류:', error);

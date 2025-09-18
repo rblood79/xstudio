@@ -27,8 +27,18 @@ export const usePageManager = (): UsePageManagerReturn => {
 
         try {
             const elementsData = await ElementUtils.getElementsByPageId(pageId);
-            const { setElements } = useStore.getState();
-            // 페이지 로드 시에는 히스토리 기록하지 않음
+            const { setElements, isTracking } = useStore.getState() as unknown as {
+                setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
+                isTracking: boolean;
+            };
+
+            // 히스토리 추적이 일시정지된 경우에는 로드 생략 (Undo/Redo 중 방지)
+            if (!isTracking) {
+                console.log('🚫 히스토리 추적 일시정지됨 - 페이지 요소 로드 생략');
+                return;
+            }
+
+            // 항상 히스토리 기록하지 않음 (페이지 로드는 히스토리에 포함하지 않음)
             setElements(elementsData, { skipHistory: true });
 
             // 페이지 변경 시 현재 페이지 ID 업데이트

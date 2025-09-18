@@ -114,7 +114,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentItem.id);
-                                    setElements(updatedElements);
+                                    setElements(updatedElements, { skipHistory: true });
                                     setSelectedItem(null);
                                 } catch (error) {
                                     console.error('ListBoxItem 삭제 중 오류:', error);

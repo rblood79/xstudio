@@ -67,35 +67,74 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     setElements: (elements, options = {}) => {
         // produce 함수 외부에서 이전 요소들 가져오기
         const prevElements = get().elements;
+        const currentSelectedId = get().selectedElementId;
+        const currentSelectedProps = get().selectedElementProps;
 
         set(
             produce((state) => {
                 state.elements = elements;
+
+                // Undo/Redo 중에는 선택된 요소를 절대 해제하지 않음
+                const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
+                if (!isTracking && currentSelectedId) {
+                    console.log('🔄 Undo/Redo 중 - 선택된 요소 보호:', {
+                        currentSelectedId,
+                        currentSelectedProps,
+                        elementsLength: elements.length,
+                        isTracking
+                    });
+
+                    // 선택된 요소를 절대 해제하지 않고 유지
+                    state.selectedElementId = currentSelectedId;
+                    state.selectedElementProps = currentSelectedProps;
+
+                    // 복원된 요소들 중에 선택된 요소가 있다면 props 업데이트
+                    if (elements.length > 0) {
+                        const selectedElement = elements.find(el => el.id === currentSelectedId);
+                        if (selectedElement) {
+                            state.selectedElementProps = selectedElement.props;
+                            console.log('✅ 선택된 요소 props 업데이트:', selectedElement.props);
+                        }
+                    }
+                }
             })
         );
 
-        // skipHistory 옵션이 없을 때만 히스토리 기록
-        // 단, 초기 로드나 동일한 요소들인 경우 히스토리 기록하지 않음
-        if (!options.skipHistory) {
-            // 동일한 요소들이면 히스토리 기록하지 않음
-            const currentIds = elements.map(el => el.id).sort().join(',');
-            const prevIds = prevElements.map(el => el.id).sort().join(',');
+        // options가 undefined인 경우 빈 객체로 초기화
+        const safeOptions = options || {};
 
-            console.log('🔍 setElements 히스토리 체크:', {
-                currentIds,
-                prevIds,
-                isDifferent: currentIds !== prevIds,
-                skipHistory: options.skipHistory
-            });
+        // skipHistory 옵션이 명시적으로 true인 경우 히스토리 기록 생략
+        if (safeOptions.skipHistory === true) {
+            console.log('🚫 skipHistory: true - 히스토리 기록 생략');
+            return;
+        }
 
-            if (currentIds !== prevIds) {
-                const { saveSnapshot } = get() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
-                if (saveSnapshot) {
-                    saveSnapshot(elements, '요소 전체 설정');
-                }
-            } else {
-                console.log('🚫 동일한 요소들 - 히스토리 기록 생략');
+        // skipHistory 옵션이 없거나 false인 경우 히스토리 기록
+        // 동일한 요소들이면 히스토리 기록하지 않음
+        const currentIds = elements.map(el => el.id).sort().join(',');
+        const prevIds = prevElements.map(el => el.id).sort().join(',');
+
+        console.log('🔍 setElements 히스토리 체크:', {
+            currentIds,
+            prevIds,
+            isDifferent: currentIds !== prevIds,
+            skipHistory: safeOptions.skipHistory,
+            options: safeOptions
+        });
+
+        if (currentIds !== prevIds) {
+            // Zundo 패턴: 히스토리 추적이 활성화된 경우에만 저장
+            const { saveSnapshot, isTracking } = get() as unknown as {
+                saveSnapshot: (elements: Element[], description: string) => void;
+                isTracking: boolean;
+            };
+            if (saveSnapshot && isTracking) {
+                saveSnapshot(elements, '요소 전체 설정');
+            } else if (!isTracking) {
+                console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
             }
+        } else {
+            console.log('🚫 동일한 요소들 - 히스토리 기록 생략');
         }
     },
 
@@ -160,12 +199,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             })
         );
 
-        // 히스토리 기록 - produce 함수 외부에서 호출
+        // Zundo 패턴: 히스토리 기록 - produce 함수 외부에서 호출
         console.log('히스토리 기록 시도');
-        const { saveSnapshot } = get() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
-        if (saveSnapshot) {
+        const { saveSnapshot, isTracking } = get() as unknown as {
+            saveSnapshot: (elements: Element[], description: string) => void;
+            isTracking: boolean;
+        };
+        if (saveSnapshot && isTracking) {
             const currentElements = get().elements;
             saveSnapshot(currentElements, '요소 추가');
+        } else if (!isTracking) {
+            console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
         } else {
             console.warn('saveSnapshot 메서드 없음');
         }
@@ -190,11 +234,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             })
         );
 
-        // 히스토리 기록 (속성 변경 시) - produce 함수 외부에서 호출
-        const { saveSnapshot } = get() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
-        if (saveSnapshot) {
+        // Zundo 패턴: 히스토리 기록 (속성 변경 시) - produce 함수 외부에서 호출
+        const { saveSnapshot, isTracking } = get() as unknown as {
+            saveSnapshot: (elements: Element[], description: string) => void;
+            isTracking: boolean;
+        };
+        if (saveSnapshot && isTracking) {
             const currentElements = get().elements;
             saveSnapshot(currentElements, '속성 업데이트');
+        } else if (!isTracking) {
+            console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
         }
 
         // iframe 전송은 useIframeMessenger의 useEffect에서 처리
@@ -254,12 +303,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 return;
             }
 
-            // 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
-            const { saveSnapshot } = useStore.getState() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
-            if (saveSnapshot) {
-                // 삭제 전 요소들을 저장
+            // Zundo 패턴: 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
+            const { saveSnapshot, isTracking } = useStore.getState() as unknown as {
+                saveSnapshot: (elements: Element[], description: string) => void;
+                isTracking: boolean;
+            };
+            if (saveSnapshot && isTracking) {
+                // 삭제 전 요소들을 저장 (각 삭제 작업마다 별도의 히스토리 엔트리)
                 const currentElements = useStore.getState().elements;
-                saveSnapshot(currentElements, '요소 삭제');
+                saveSnapshot(currentElements, `요소 삭제: ${elementToDelete.tag || 'Unknown'}`);
+            } else if (!isTracking) {
+                console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
             }
 
             const deletedIds: string[] = [];
@@ -341,8 +395,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 produce((state) => {
                     state.elements = state.elements.filter((el: Element) => !deletedIds.includes(el.id));
 
-                    // 선택된 요소가 삭제된 경우 선택 해제
-                    if (deletedIds.includes(state.selectedElementId)) {
+                    // 히스토리 추적이 일시정지된 경우(Undo/Redo 중)에는 선택 해제하지 않음
+                    const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
+                    if (isTracking && deletedIds.includes(state.selectedElementId)) {
+                        // 선택된 요소가 삭제된 경우 선택 해제
                         state.selectedElementId = null;
                         state.selectedElementProps = {};
                         state.selectedTab = null;

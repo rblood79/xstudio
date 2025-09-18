@@ -302,7 +302,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -433,7 +433,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -563,7 +563,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -705,7 +705,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -837,7 +837,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -988,7 +988,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1116,7 +1116,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             // console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1244,7 +1244,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1373,7 +1373,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1388,7 +1388,7 @@ export class ComponentFactory {
                 const updatedElements2 = store.elements.map(el =>
                     el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                 );
-                store.setElements(updatedElements2);
+                store.setElements(updatedElements2, { skipHistory: true });
             }
 
             //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
@@ -1507,7 +1507,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements);
+            store.setElements(updatedElements, { skipHistory: true });
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1522,7 +1522,7 @@ export class ComponentFactory {
                 const updatedElements2 = store.elements.map(el =>
                     el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                 );
-                store.setElements(updatedElements2);
+                store.setElements(updatedElements2, { skipHistory: true });
             }
 
             //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
