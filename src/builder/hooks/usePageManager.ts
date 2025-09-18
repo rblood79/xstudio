@@ -28,11 +28,18 @@ export const usePageManager = (): UsePageManagerReturn => {
         try {
             const elementsData = await ElementUtils.getElementsByPageId(pageId);
             const { setElements } = useStore.getState();
-            setElements(elementsData);
+            // 페이지 로드 시에는 히스토리 기록하지 않음
+            setElements(elementsData, { skipHistory: true });
 
             // 페이지 변경 시 현재 페이지 ID 업데이트
             setCurrentPageId(pageId);
             setSelectedPageId(pageId);
+
+            console.log('📄 페이지 요소 로드 완료:', {
+                pageId,
+                elementCount: elementsData.length,
+                elementIds: elementsData.map(el => el.id)
+            });
         } catch (error) {
             console.error('요소 로드 에러:', error);
             throw error; // 에러를 상위로 전달

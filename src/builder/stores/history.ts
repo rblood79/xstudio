@@ -1,138 +1,177 @@
 import { StateCreator } from 'zustand';
-import { produce, Patch } from 'immer';
-import { Element } from '../../types/store'; // Page 타입도 추가
+import { produce } from 'immer';
+import { Element } from '../../types/store';
 
-// interface Element { ... } // 제거 - 중복 정의
-
-interface HistoryEntry {
+interface HistorySnapshot {
     id: string;
     timestamp: number;
-    patches: Patch[];
-    inversePatches: Patch[];
-    snapshot?: { prev: Element[]; current: Element[] };
-    description?: string;
+    elements: Element[];
+    description: string;
 }
 
 export interface HistoryState {
-    history: HistoryEntry[];
-    historyIndex: number;
-    pageHistories: Record<string, { history: HistoryEntry[]; historyIndex: number }>;
-    maxHistorySize: number;
+    snapshots: HistorySnapshot[];
+    currentIndex: number;
+    maxSnapshots: number;
 
-    addToHistory: (prevState: Element[], currentState: Element[], description?: string) => void;
-    undo: () => void;
-    redo: () => void;
-    clearHistory: () => void;
+    // 히스토리 관리
+    saveSnapshot: (elements: Element[], description: string) => void;
+    undo: () => Element[] | null;
+    redo: () => Element[] | null;
     canUndo: () => boolean;
     canRedo: () => boolean;
+    clearHistory: () => void;
 }
 
 export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
-    history: [],
-    historyIndex: -1,
-    pageHistories: {},
-    maxHistorySize: 50, // 히스토리 크기 제한
+    snapshots: [],
+    currentIndex: -1,
+    maxSnapshots: 50,
 
-    addToHistory: (prevState: Element[], currentState: Element[], description?: string) => {
+    saveSnapshot: (elements: Element[], description: string) => {
+        console.group('📸 히스토리 스냅샷 저장');
+        console.log('저장할 요소:', {
+            count: elements.length,
+            description,
+            elementIds: elements.map(el => el.id)
+        });
+        console.log('현재 히스토리 상태:', {
+            currentSnapshots: get().snapshots.length,
+            currentIndex: get().currentIndex
+        });
+
         set(produce((state: HistoryState) => {
-            const newEntry: HistoryEntry = {
+            // 현재 인덱스 이후의 스냅샷들 제거 (새로운 액션으로 인해 미래 히스토리 삭제)
+            // 첫 번째 스냅샷이 아닌 경우에만 기존 히스토리 제거
+            if (state.snapshots.length > 0 && state.currentIndex >= 0 && state.currentIndex < state.snapshots.length - 1) {
+                state.snapshots = state.snapshots.slice(0, state.currentIndex + 1);
+            }
+
+            // 새로운 스냅샷 생성
+            const newSnapshot: HistorySnapshot = {
                 id: crypto.randomUUID(),
                 timestamp: Date.now(),
-                patches: [],
-                inversePatches: [],
-                snapshot: { prev: [...prevState], current: [...currentState] },
+                elements: elements.map(el => ({
+                    ...el,
+                    props: { ...el.props }
+                })),
                 description
             };
 
-            // 현재 인덱스 이후의 히스토리 제거
-            state.history = state.history.slice(0, state.historyIndex + 1);
+            // 스냅샷 추가
+            state.snapshots.push(newSnapshot);
+            state.currentIndex = state.snapshots.length - 1;
 
-            // 새 엔트리 추가
-            state.history.push(newEntry);
-            state.historyIndex = state.history.length - 1;
-
-            // 히스토리 크기 제한
-            if (state.history.length > state.maxHistorySize) {
-                const removed = state.history.shift();
-                state.historyIndex = Math.max(0, state.historyIndex - 1);
-
-                // 메모리 정리
-                if (removed?.snapshot) {
-                    removed.snapshot = undefined;
-                }
+            // 최대 스냅샷 수 제한
+            if (state.snapshots.length > state.maxSnapshots) {
+                state.snapshots.shift();
+                state.currentIndex = Math.max(0, state.currentIndex - 1);
             }
 
-            // 페이지별 히스토리도 업데이트
-            const currentPageId = (get() as unknown as { currentPageId: string | null }).currentPageId;
-            if (currentPageId) {
-                if (!state.pageHistories[currentPageId]) {
-                    state.pageHistories[currentPageId] = { history: [], historyIndex: -1 };
-                }
-                state.pageHistories[currentPageId].history.push(newEntry);
-                state.pageHistories[currentPageId].historyIndex = state.pageHistories[currentPageId].history.length - 1;
-
-                // 페이지별 히스토리도 크기 제한
-                if (state.pageHistories[currentPageId].history.length > state.maxHistorySize) {
-                    state.pageHistories[currentPageId].history.shift();
-                    state.pageHistories[currentPageId].historyIndex = Math.max(0, state.pageHistories[currentPageId].historyIndex - 1);
-                }
-            }
+            console.log('✅ 스냅샷 저장 완료:', {
+                totalSnapshots: state.snapshots.length,
+                currentIndex: state.currentIndex,
+                description
+            });
         }));
+
+        console.groupEnd();
     },
 
     undo: () => {
-        const state = get();
-        if (!state.canUndo()) return;
+        console.group('⏪ Undo 실행');
 
-        set(produce((draft: HistoryState) => {
-            const currentEntry = draft.history[draft.historyIndex];
-            if (currentEntry?.snapshot) {
-                // 이전 상태로 복원
-                const prevElements = currentEntry.snapshot.prev;
-                (get() as unknown as { setElements: (elements: Element[]) => void }).setElements(prevElements);
-                draft.historyIndex = Math.max(0, draft.historyIndex - 1);
-            }
-        }));
+        const state = get();
+        console.log('현재 상태:', {
+            currentIndex: state.currentIndex,
+            totalSnapshots: state.snapshots.length,
+            canUndo: state.currentIndex >= 0
+        });
+
+        // currentIndex가 -1일 때는 빈 상태로 돌아감
+        if (state.currentIndex < 0) {
+            console.log('🚫 Undo 불가: 이미 초기 상태');
+            console.groupEnd();
+            return null;
+        }
+
+        // currentIndex가 0일 때는 첫 번째 스냅샷을 사용
+        const prevIndex = state.currentIndex === 0 ? 0 : state.currentIndex - 1;
+        const prevSnapshot = state.snapshots[prevIndex];
+
+        if (!prevSnapshot) {
+            console.log('🚫 이전 스냅샷 없음');
+            console.groupEnd();
+            return null;
+        }
+
+        // 인덱스 업데이트 (currentIndex가 0일 때는 -1로 설정)
+        const newIndex = state.currentIndex === 0 ? -1 : prevIndex;
+        set({ currentIndex: newIndex });
+
+        console.log('✅ Undo 성공:', {
+            newIndex: newIndex,
+            elementsRestored: prevSnapshot.elements.length,
+            description: prevSnapshot.description
+        });
+
+        console.groupEnd();
+        return prevSnapshot.elements;
     },
 
     redo: () => {
+        console.group('⏩ Redo 실행');
+
         const state = get();
-        if (!state.canRedo()) return;
+        console.log('현재 상태:', {
+            currentIndex: state.currentIndex,
+            totalSnapshots: state.snapshots.length,
+            canRedo: state.currentIndex < state.snapshots.length - 1
+        });
 
-        set(produce((draft: HistoryState) => {
-            const nextIndex = draft.historyIndex + 1;
-            const nextEntry = draft.history[nextIndex];
-            if (nextEntry?.snapshot) {
-                // 다음 상태로 복원
-                const nextElements = nextEntry.snapshot.current;
-                (get() as unknown as { setElements: (elements: Element[]) => void }).setElements(nextElements);
-                draft.historyIndex = nextIndex;
-            }
-        }));
-    },
+        if (state.currentIndex >= state.snapshots.length - 1) {
+            console.log('🚫 Redo 불가: 히스토리 끝점');
+            console.groupEnd();
+            return null;
+        }
 
-    clearHistory: () => {
-        set(produce((state: HistoryState) => {
-            // 메모리 정리
-            state.history.forEach(entry => {
-                if (entry.snapshot) {
-                    entry.snapshot = undefined;
-                }
-            });
+        const nextIndex = state.currentIndex + 1;
+        const nextSnapshot = state.snapshots[nextIndex];
 
-            state.history = [];
-            state.historyIndex = -1;
-            state.pageHistories = {};
-        }));
+        if (!nextSnapshot) {
+            console.log('🚫 다음 스냅샷 없음');
+            console.groupEnd();
+            return null;
+        }
+
+        // 인덱스 업데이트
+        set({ currentIndex: nextIndex });
+
+        console.log('✅ Redo 성공:', {
+            newIndex: nextIndex,
+            elementsRestored: nextSnapshot.elements.length,
+            description: nextSnapshot.description
+        });
+
+        console.groupEnd();
+        return nextSnapshot.elements;
     },
 
     canUndo: () => {
         const state = get();
-        return state.historyIndex > 0;
+        return state.snapshots.length > 0 && state.currentIndex >= 0;
     },
 
     canRedo: () => {
         const state = get();
-        return state.historyIndex < state.history.length - 1;
+        return state.currentIndex < state.snapshots.length - 1;
+    },
+
+    clearHistory: () => {
+        console.log('🗑️ 히스토리 초기화');
+        set({
+            snapshots: [],
+            currentIndex: -1
+        });
     }
 });
