@@ -413,7 +413,7 @@ export interface SelectionState {
 // === 통합 스토어 타입 ===
 export interface Store extends ElementsState, ThemeState, HistoryState, SelectionState {
     // 액션들
-    setElements: (elements: Element[]) => void;
+    setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;
     addElement: (element: Element) => void;
     updateElementProps: (elementId: string, props: ComponentElementProps) => void;

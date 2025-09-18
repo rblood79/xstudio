@@ -29,9 +29,28 @@ export const BuilderCore: React.FC = () => {
     // Store 상태
     const elements = useStore((state) => state.elements);
     const currentPageId = useStore((state) => state.currentPageId);
-    const pageHistories = useStore((state) => state.pageHistories);
     const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
+
+    // 새로운 히스토리 시스템 - 직접 상태 접근으로 무한 루프 방지
+    const snapshots = useStore((state) => state.snapshots || []);
+    const currentIndex = useStore((state) => state.currentIndex || -1);
+
+    const historyInfo = {
+        current: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
+        total: snapshots.length
+    };
+
+    // 디버깅을 위한 로그 추가
+    console.log('🔍 히스토리 정보 계산:', {
+        snapshotsLength: snapshots.length,
+        currentIndex,
+        calculatedCurrent: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
+        calculatedTotal: snapshots.length,
+        historyInfo
+    });
+    const canUndo = snapshots.length > 0 && currentIndex >= 0;
+    const canRedo = currentIndex < snapshots.length - 1;
 
     // 훅 사용
     const { error, isLoading, setError, setIsLoading, handleError, clearError } = useErrorHandler();
@@ -49,7 +68,9 @@ export const BuilderCore: React.FC = () => {
         handleMessage,
         handleUndo,
         handleRedo,
-        sendElementsToIframe
+        sendElementsToIframe,
+        updateElementProps,
+        iframeReadyState
     } = useIframeMessenger();
     const { applyThemeTokens, loadProjectTheme } = useThemeManager();
     const { validateOrderNumbers } = useValidation();
@@ -71,6 +92,18 @@ export const BuilderCore: React.FC = () => {
             loadProjectTheme(projectId);
         }
     }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
+
+    // 프로젝트 초기화 후 프리뷰에 요소 전송
+    useEffect(() => {
+        if (projectId && elements.length > 0 && iframeReadyState === 'ready') {
+            console.log('🚀 프로젝트 초기화 후 프리뷰 전송:', {
+                projectId,
+                elementCount: elements.length,
+                elementIds: elements.map(el => el.id)
+            });
+            sendElementsToIframe(elements);
+        }
+    }, [projectId, elements, iframeReadyState, sendElementsToIframe]);
 
     // 테마 토큰 적용
     useEffect(() => {
@@ -191,7 +224,9 @@ export const BuilderCore: React.FC = () => {
                     breakpoints={breakpoints}
                     onBreakpointChange={(value) => setBreakpoint(new Set<Key>([value]))}
                     currentPageId={currentPageId}
-                    pageHistories={pageHistories}
+                    historyInfo={historyInfo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
                     onPreview={handlePreview}

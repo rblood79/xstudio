@@ -155,6 +155,8 @@ export function PropertyPanel() {
     }
 
     const handleUpdate = async (updatedProps: Record<string, unknown>) => {
+        console.log('🔄 프로퍼티 업데이트:', { selectedElementId, updatedProps });
+
         // Store 업데이트 - 타입 단언으로 처리
         updateElementProps(selectedElementId, updatedProps as Record<string, unknown>);
 
@@ -164,8 +166,9 @@ export function PropertyPanel() {
                 .from('elements')
                 .update({ props: updatedProps })
                 .eq('id', selectedElementId);
+            console.log('✅ Supabase 업데이트 완료');
         } catch (err) {
-            console.error('Update error:', err);
+            console.error('❌ Supabase 업데이트 오류:', err);
         }
     };
 

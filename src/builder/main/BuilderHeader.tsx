@@ -12,17 +12,10 @@ export interface Breakpoint {
     max_height: string | number;
 }
 
-// 정확한 타입으로 수정
-export interface PageHistory {
-    history: Array<{
-        id: string;
-        timestamp: number;
-        patches: Patch[];
-        inversePatches: Patch[];
-        snapshot?: { prev: Element[]; current: Element[] };
-        description?: string;
-    }>;
-    historyIndex: number;
+// 새로운 히스토리 시스템 타입
+export interface HistoryInfo {
+    current: number;
+    total: number;
 }
 
 export interface BuilderHeaderProps {
@@ -31,7 +24,9 @@ export interface BuilderHeaderProps {
     breakpoints: Breakpoint[];
     onBreakpointChange: (value: Key) => void;
     currentPageId: string | null;
-    pageHistories: Record<string, PageHistory>;
+    historyInfo: HistoryInfo;
+    canUndo: boolean;
+    canRedo: boolean;
     onUndo: () => void;
     onRedo: () => void;
     onPreview: () => void;
@@ -45,15 +40,15 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     breakpoints,
     onBreakpointChange,
     currentPageId,
-    pageHistories,
+    historyInfo,
+    canUndo,
+    canRedo,
     onUndo,
     onRedo,
     onPreview,
     onPlay,
     onPublish
 }) => {
-    const canUndo = currentPageId && pageHistories[currentPageId] && pageHistories[currentPageId].historyIndex >= 0;
-    const canRedo = currentPageId && pageHistories[currentPageId] && pageHistories[currentPageId].historyIndex < pageHistories[currentPageId].history.length - 1;
 
     return (
         <nav className="header">
@@ -93,10 +88,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
 
             <div className="header_contents header_right">
                 <span>
-                    {currentPageId && pageHistories[currentPageId]
-                        ? `${pageHistories[currentPageId].historyIndex + 1}/${pageHistories[currentPageId].history.length}`
-                        : '0/0'
-                    }
+                    {historyInfo ? `${historyInfo.current}/${historyInfo.total}` : '0/0'}
                 </span>
                 <button
                     aria-label="Undo"

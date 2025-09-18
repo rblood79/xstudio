@@ -394,6 +394,8 @@ function Design() {
                                         }
                                     };
 
+                                    console.log('🔄 디자인 프로퍼티 업데이트:', { selectedElementId, updatedProps });
+
                                     // Store 업데이트
                                     updateElementProps(selectedElementId, updatedProps);
 
@@ -404,7 +406,9 @@ function Design() {
                                         .eq("id", selectedElementId)
                                         .then(({ error }) => {
                                             if (error) {
-                                                console.error("Supabase update error:", error);
+                                                console.error("❌ Supabase 업데이트 오류:", error);
+                                            } else {
+                                                console.log('✅ Supabase 업데이트 완료');
                                             }
                                         });
                                 }}

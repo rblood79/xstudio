@@ -133,9 +133,27 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 setTimeout(() => {
                     processMessageQueue();
 
-                    // iframe 로드 후 현재 요소들을 전송
-                    if (elements.length > 0) {
-                        sendElementsToIframe(elements);
+                    // iframe 로드 후 현재 요소들을 전송 (초기 로드 시에도 전송)
+                    const currentElements = useStore.getState().elements;
+                    if (!isSendingRef.current) {
+                        // 마지막 전송된 요소들과 다를 때만 전송 (ID와 프로퍼티 모두 비교)
+                        const currentElementsHash = currentElements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+                        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+
+                        if (currentElementsHash !== lastSentElementsHash) {
+                            console.log('🖼️ 초기 iframe 로드 - 요소 전송:', {
+                                elementCount: currentElements.length,
+                                elementIds: currentElements.map(el => el.id)
+                            });
+
+                            isSendingRef.current = true;
+                            lastSentElementsRef.current = [...currentElements];
+                            sendElementsToIframe(currentElements);
+
+                            setTimeout(() => {
+                                isSendingRef.current = false;
+                            }, 100);
+                        }
                     }
                 }, 100);
             } else {
@@ -145,17 +163,19 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         };
 
         waitForIframeReady();
-    }, [elements, sendElementsToIframe, processMessageQueue]);
+    }, [sendElementsToIframe, processMessageQueue]);
 
     const handleMessage = useCallback((event: MessageEvent) => {
-        //console.log('Message received:', event.origin, event.data);
-
         if (event.origin !== window.location.origin) {
             console.warn("Received message from untrusted origin:", event.origin);
             return;
         }
 
-        //console.log('Processing message type:', event.data.type, event.data);
+        if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
+            const { setElements } = useStore.getState();
+            // 히스토리 기록을 방지하기 위해 skipHistory 옵션 사용
+            setElements(event.data.elements as Element[], { skipHistory: true });
+        }
 
         if (event.data.type === "UPDATE_THEME_TOKENS") {
             const iframe = MessageService.getIframe();
@@ -182,12 +202,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             }
 
             styleElement.textContent = cssString;
-        }
-
-        if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
-            //console.log("Received UPDATE_ELEMENTS from preview:", event.data.elements.length);
-            const { setElements } = useStore.getState();
-            setElements(event.data.elements as Element[]);
         }
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
@@ -252,15 +266,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            undo();
-            await ElementUtils.delay(0);
-            const updatedElements = useStore.getState().elements;
+            const { undo } = useStore.getState();
+            const restoredElements = undo(); // 새로운 히스토리 시스템의 undo 호출
 
-            for (const element of updatedElements) {
-                await ElementUtils.updateElement(element.id, element);
+            if (restoredElements) {
+                // 복원된 요소들로 상태 업데이트 (히스토리 기록 방지)
+                const { setElements } = useStore.getState();
+                setElements(restoredElements, { skipHistory: true });
+
+                // API 호출 제거 - 로컬 상태만 복원
+                console.log('✅ Undo 완료 - 로컬 상태 복원만 수행');
+                // sendElementsToIframe은 useEffect에서 처리됨
             }
-
-            sendElementsToIframe(updatedElements);
         } catch (error) {
             console.error("Undo error:", error);
         } finally {
@@ -273,15 +290,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            redo();
-            await ElementUtils.delay(0);
-            const updatedElements = useStore.getState().elements;
+            const { redo } = useStore.getState();
+            const restoredElements = redo(); // 새로운 히스토리 시스템의 redo 호출
 
-            for (const element of updatedElements) {
-                await ElementUtils.updateElement(element.id, element);
+            if (restoredElements) {
+                // 복원된 요소들로 상태 업데이트 (히스토리 기록 방지)
+                const { setElements } = useStore.getState();
+                setElements(restoredElements, { skipHistory: true });
+
+                // API 호출 제거 - 로컬 상태만 복원
+                console.log('✅ Redo 완료 - 로컬 상태 복원만 수행');
+                // sendElementsToIframe은 useEffect에서 처리됨
             }
-
-            sendElementsToIframe(updatedElements);
         } catch (error) {
             console.error("Redo error:", error);
         } finally {
@@ -293,14 +313,44 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // Layer 트리에서 선택할 때:
     // sendElementSelectedMessage(selectedElementId, element.props);
 
-    // elements가 변경될 때마다 iframe에 전송 (iframeReadyState 체크 제거)
+    // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
+    const lastSentElementsRef = useRef<Element[]>([]);
+    const isSendingRef = useRef(false);
+
     useEffect(() => {
-        if (elements.length > 0) {
-            //console.log('Elements changed, sending to iframe:', elements.length);
-            // iframeReady 체크 없이 바로 전송
-            sendElementsToIframe(elements);
+        // Undo/Redo 처리 중이거나 iframe이 준비되지 않았으면 스킵
+        if (isProcessingRef.current || isSendingRef.current || iframeReadyState !== 'ready') {
+            return;
         }
-    }, [elements, sendElementsToIframe]);
+
+        // 요소 ID와 프로퍼티 모두 비교하여 변경 감지
+        const currentElementsHash = elements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+
+        if (currentElementsHash === lastSentElementsHash) {
+            return;
+        }
+
+        console.log('🔄 요소 변경 감지 - iframe 전송:', {
+            elementCount: elements.length,
+            elementIds: elements.map(el => el.id),
+            iframeReadyState
+        });
+
+        // 전송 중 플래그 설정
+        isSendingRef.current = true;
+
+        // 마지막 전송된 요소들 업데이트
+        lastSentElementsRef.current = [...elements];
+
+        // 무한 루프 방지를 위해 직접 sendElementsToIframe 호출
+        sendElementsToIframe(elements);
+
+        // 전송 완료 후 플래그 해제
+        setTimeout(() => {
+            isSendingRef.current = false;
+        }, 100);
+    }, [elements, iframeReadyState, sendElementsToIframe]);
 
     // useEffect - iframeReadyState가 변경될 때 큐 처리
     useEffect(() => {
@@ -317,6 +367,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         handleRedo,
         sendElementsToIframe,
         sendElementSelectedMessage,
+        updateElementProps,
         isIframeReady
     };
 };

@@ -131,7 +131,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (setTimeout으로 비동기 처리)
         setTimeout(async () => {
@@ -157,7 +164,7 @@ export class ComponentFactory {
                 const updatedElements = store.elements.map(el =>
                     el.id === parentData.id ? { ...el, id: savedParent.id } : el
                 );
-                store.setElements(updatedElements);
+                store.setElements(updatedElements, { skipHistory: true });
                 //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
@@ -172,7 +179,7 @@ export class ComponentFactory {
                     const updatedElements2 = store.elements.map(el =>
                         el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                     );
-                    store.setElements(updatedElements2);
+                    store.setElements(updatedElements2, { skipHistory: true });
                 }
 
                 //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
@@ -263,7 +270,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -387,7 +401,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -510,7 +531,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -645,7 +673,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -770,7 +805,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -914,7 +956,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -1035,7 +1084,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -1156,7 +1212,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -1278,7 +1341,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {
@@ -1405,7 +1475,14 @@ export class ComponentFactory {
         // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
         const store = useStore.getState();
         const currentElements = store.elements;
-        store.setElements([...currentElements, parentData, ...childrenData]);
+        const newElements = [...currentElements, parentData, ...childrenData];
+        store.setElements(newElements, { skipHistory: true });
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, '복합 컴포넌트 생성');
+        }
 
         // 백그라운드에서 DB에 순차 저장 (단순화)
         try {

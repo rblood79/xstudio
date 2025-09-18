@@ -1,7 +1,7 @@
 .overlay {}
 
 .overlay-element {
-    transition: var(--default-transition-duration) var(--default-transition-timing-function);
+    /*transition: var(--default-transition-duration) var(--default-transition-timing-function);*/
     position: absolute;
     pointer-events: none;
     z-index: 1;
