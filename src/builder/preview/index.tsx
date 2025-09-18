@@ -112,7 +112,7 @@ function Preview() {
       if (!data || typeof data !== 'object' || !data.type) return;
 
       if (data.type === 'UPDATE_ELEMENTS') {
-        setElements(data.elements || []);
+        setElements(data.elements || [], { skipHistory: true });
       }
 
       // 개별 요소 속성 업데이트 처리
@@ -140,7 +140,7 @@ function Preview() {
         const updatedElements = elements.filter(element =>
           !data.elementIds.includes(element.id)
         );
-        setElements(updatedElements);
+        setElements(updatedElements, { skipHistory: true });
         return;
       }
 
@@ -149,7 +149,7 @@ function Preview() {
         const updatedElements = elements.filter(element =>
           element.id !== data.elementId
         );
-        setElements(updatedElements);
+        setElements(updatedElements, { skipHistory: true });
         return;
       }
 
@@ -1576,7 +1576,7 @@ function Preview() {
             };
 
             // 4. 모든 상태를 한 번에 업데이트
-            setElements(updatedElements);
+            setElements(updatedElements, { skipHistory: true });
             updateElementProps(el.id, updatedProps);
 
             // 5. 데이터베이스에 TagGroup props 저장
