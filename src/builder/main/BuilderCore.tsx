@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Key } from 'react-aria-components';
 
 import { useStore } from '../stores';
+// useZundoActions는 제거됨 - 기존 시스템 사용
 //import { Element as StoreElement } from '../stores/elements'; // 스토어 Element 타입
 import { Element } from '../../types/store'; // 훅들이 기대하는 Element 타입
 
@@ -33,28 +34,68 @@ export const BuilderCore: React.FC = () => {
     const setSelectedElement = useStore((state) => state.setSelectedElement);
 
     // 새로운 히스토리 시스템 - 직접 상태 접근으로 무한 루프 방지
+    // 기존 히스토리 시스템 사용
     const snapshots = useStore((state) => state.snapshots || []);
     const currentIndex = useStore((state) => state.currentIndex ?? -1);
 
-    // Zundo 패턴: 히스토리 정보 계산 개선
+    // 히스토리 정보 계산
     const historyInfo = {
         current: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
         total: snapshots.length
     };
 
-    // 디버깅을 위한 로그 추가
-    console.log('🔍 히스토리 정보 계산:', {
-        snapshotsLength: snapshots.length,
-        currentIndex,
-        calculatedCurrent: snapshots.length > 0 ? currentIndex + 1 : 0,
-        calculatedTotal: snapshots.length,
-        historyInfo,
-        rawCurrentIndex: useStore.getState().currentIndex
-    });
-
-    // Zundo 패턴: Undo/Redo 조건 개선
+    // Undo/Redo 조건
     const canUndo = snapshots.length > 0;
     const canRedo = currentIndex < snapshots.length - 1;
+
+    // 개선된 Undo/Redo 핸들러
+    const handleUndo = useCallback(() => {
+        console.log('🔄 BuilderCore 개선된 Undo 실행');
+        const { undo, pause, resume } = useStore.getState();
+
+        // 히스토리 추적 일시정지
+        pause();
+
+        const restoredElements = undo();
+
+        if (restoredElements !== null) {
+            console.log('✅ BuilderCore 개선된 Undo 완료 - 복원된 요소:', {
+                count: restoredElements.length,
+                elementIds: restoredElements.map(el => el.id)
+            });
+            const { setElements } = useStore.getState();
+            setElements(restoredElements);
+        }
+
+        // 히스토리 추적 재개
+        resume();
+    }, []);
+
+    const handleRedo = useCallback(() => {
+        console.log('🔄 BuilderCore 개선된 Redo 실행');
+        const { redo, pause, resume } = useStore.getState();
+
+        // 히스토리 추적 일시정지
+        pause();
+
+        const restoredElements = redo();
+
+        if (restoredElements !== null) {
+            const { setElements } = useStore.getState();
+            setElements(restoredElements);
+            console.log('✅ BuilderCore 개선된 Redo 완료');
+        }
+
+        // 히스토리 추적 재개
+        resume();
+    }, []);
+
+    // 디버깅을 위한 로그 추가
+    console.log('🔍 개선된 히스토리 정보:', {
+        historyInfo,
+        canUndo,
+        canRedo
+    });
 
     // 훅 사용
     const { error, isLoading, setError, setIsLoading, handleError, clearError } = useErrorHandler();
@@ -70,10 +111,9 @@ export const BuilderCore: React.FC = () => {
     const {
         handleIframeLoad,
         handleMessage,
-        handleUndo,
-        handleRedo,
+        // iframeUndo, iframeRedo는 사용하지 않음
         sendElementsToIframe,
-        updateElementProps,
+        // updateElementProps는 제거됨
         iframeReadyState
     } = useIframeMessenger();
     const { applyThemeTokens, loadProjectTheme } = useThemeManager();
