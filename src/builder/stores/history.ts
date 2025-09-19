@@ -27,8 +27,13 @@ export interface HistoryState {
 }
 
 export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
-    snapshots: [],
-    currentIndex: -1, // 초기 상태: -1 (스냅샷 없음)
+    snapshots: [{
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        elements: [], // 빈 요소 목록
+        description: '초기 상태'
+    }],
+    currentIndex: 0, // 초기 상태 스냅샷을 가리킴
     maxSnapshots: 50,
     isTracking: true,
 
@@ -41,7 +46,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
             return;
         }
 
-        console.group('📸 히스토리 스냅샷 저장');
+        console.group('📸 개선된 히스토리 스냅샷 저장');
         console.log('저장할 요소:', {
             count: elements.length,
             description,
@@ -55,7 +60,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
 
         set(produce((state: HistoryState) => {
             // Zundo 패턴: 현재 인덱스 이후의 미래 상태들 제거
-            if (state.currentIndex >= 0 && state.currentIndex < state.snapshots.length - 1) {
+            if (state.currentIndex > 0 && state.currentIndex < state.snapshots.length - 1) {
                 state.snapshots = state.snapshots.slice(0, state.currentIndex + 1);
             }
 
@@ -80,7 +85,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
                 state.currentIndex = Math.max(0, state.currentIndex - 1);
             }
 
-            console.log('✅ 스냅샷 저장 완료:', {
+            console.log('✅ 개선된 스냅샷 저장 완료:', {
                 totalSnapshots: state.snapshots.length,
                 currentIndex: state.currentIndex,
                 description
@@ -91,55 +96,47 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
     },
 
     undo: () => {
-        console.group('⏪ Undo 실행');
+        console.group('⏪ 개선된 Undo 실행');
 
         const state = get();
         console.log('현재 상태:', {
             currentIndex: state.currentIndex,
             totalSnapshots: state.snapshots.length,
-            canUndo: state.currentIndex >= 0
+            canUndo: state.currentIndex > 1 // currentIndex가 1보다 클 때만 Undo 가능
         });
 
-        // Zundo 패턴: Undo 불가능한 경우
-        if (state.currentIndex < 0) {
-            console.log('🚫 Undo 불가: 이미 초기 상태');
+        // Zundo 패턴: Undo 불가능한 경우 (currentIndex가 1 이하)
+        if (state.currentIndex <= 1) {
+            console.log('🚫 Undo 불가: 이미 초기 상태이거나 더 이상 되돌릴 수 없음');
             console.groupEnd();
-            return null;
+            return null; // Undo 불가능
         }
 
         // Zundo 패턴: 현재 인덱스에서 이전 상태로 이동
         const newIndex = state.currentIndex - 1;
-
-        if (newIndex < 0) {
-            // 초기 상태로 돌아감 (빈 배열)
-            set({ currentIndex: -1 });
-            console.log('✅ Undo 성공: 초기 상태로 복원');
-            console.groupEnd();
-            return [];
-        }
-
         const targetSnapshot = state.snapshots[newIndex];
+
         if (!targetSnapshot) {
             console.log('🚫 대상 스냅샷 없음');
-            set({ currentIndex: -1 });
             console.groupEnd();
-            return [];
+            return null;
         }
 
         set({ currentIndex: newIndex });
 
-        console.log('✅ Undo 성공:', {
+        console.log('✅ 개선된 Undo 성공:', {
             previousIndex: state.currentIndex,
             newIndex: newIndex,
             elementsRestored: targetSnapshot.elements.length,
-            description: targetSnapshot.description
+            description: targetSnapshot.description,
+            restoredElementIds: targetSnapshot.elements.map(el => el.id) // 복원될 요소 ID 로그 추가
         });
         console.groupEnd();
         return targetSnapshot.elements;
     },
 
     redo: () => {
-        console.group('⏩ Redo 실행');
+        console.group('⏩ 개선된 Redo 실행');
 
         const state = get();
         console.log('현재 상태:', {
@@ -166,7 +163,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
         // 인덱스 업데이트
         set({ currentIndex: nextIndex });
 
-        console.log('✅ Redo 성공:', {
+        console.log('✅ 개선된 Redo 성공:', {
             newIndex: nextIndex,
             elementsRestored: nextSnapshot.elements.length,
             description: nextSnapshot.description
@@ -178,7 +175,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
 
     canUndo: () => {
         const state = get();
-        return state.snapshots.length > 0 && state.currentIndex >= 0;
+        return state.snapshots.length > 0 && state.currentIndex > 1;
     },
 
     canRedo: () => {
@@ -187,7 +184,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
     },
 
     clearHistory: () => {
-        console.log('🗑️ 히스토리 초기화');
+        console.log('🗑️ 개선된 히스토리 초기화');
         set({
             snapshots: [],
             currentIndex: -1
@@ -196,13 +193,13 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
 
     // Zundo 패턴: 히스토리 추적 일시정지
     pause: () => {
-        console.log('⏸️ 히스토리 추적 일시정지');
+        console.log('⏸️ 개선된 히스토리 추적 일시정지');
         set({ isTracking: false });
     },
 
     // Zundo 패턴: 히스토리 추적 재개
     resume: () => {
-        console.log('▶️ 히스토리 추적 재개');
+        console.log('▶️ 개선된 히스토리 추적 재개');
         set({ isTracking: true });
     }
 });

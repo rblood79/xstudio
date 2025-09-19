@@ -6,28 +6,32 @@ import { useStore } from './';
 import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
 import { ElementUtils } from '../../utils/elementUtils';
 
+export interface SetElementsOptions {
+    skipHistory?: boolean;
+}
+
 export interface ElementsState {
     elements: Element[];
     selectedElementId: string | null;
     selectedElementProps: ComponentElementProps;
-    selectedTab: { parentId: string, tabIndex: number } | null;
+    selectedTab: string | null; // 현재 선택된 탭 ID
     pages: Page[];
     currentPageId: string | null;
 
     // 액션들
-    setElements: (elements: Element[]) => void;
-    loadPageElements: (elements: Element[], pageId: string) => void;
     addElement: (element: Element) => void;
     updateElementProps: (elementId: string, props: ComponentElementProps) => void;
-    setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
-    selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) => void;
-    setPages: (pages: Page[]) => void;
-    setCurrentPageId: (pageId: string) => void;
     removeElement: (elementId: string) => Promise<void>;
-    removeTabPair: (elementId: string) => void;
-
-    // 히스토리 기록을 위한 내부 메서드 추가
-    _saveHistorySnapshot?: (elements: Element[], description: string) => void;
+    removeTabPair: (elementId: string) => Promise<void>;
+    setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
+    setElements: (elements: Element[], options?: SetElementsOptions) => void;
+    loadPageElements: (elements: Element[], pageId: string) => void;
+    addPage: (page: Page) => void;
+    updatePage: (pageId: string, updates: Partial<Page>) => void;
+    removePage: (pageId: string) => void;
+    setCurrentPageId: (pageId: string | null) => void;
+    clearElements: () => void;
+    cloneElement: (elementId: string) => void;
 }
 
 const sanitizeElement = (el: Element) => ({
@@ -46,11 +50,7 @@ const createCompleteProps = (element: Element, props?: ComponentElementProps) =>
     tag: element.tag
 });
 
-// 타입 가드 함수 추가
-const isElementWithId = (el: Element, id: string): el is Element => {
-    return el.id === id;
-};
-
+// props에 tabId가 있는지 확인하는 타입 가드 함수
 const hasTabId = (props: ComponentElementProps): props is ComponentElementProps & { tabId: string } => {
     return 'tabId' in props && typeof props.tabId === 'string';
 };
@@ -63,9 +63,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     pages: [],
     currentPageId: null,
 
-
-    setElements: (elements, options = {}) => {
+    setElements: (elements, options?: SetElementsOptions) => {
         // produce 함수 외부에서 이전 요소들 가져오기
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const prevElements = get().elements;
         const currentSelectedId = get().selectedElementId;
         const currentSelectedProps = get().selectedElementProps;
@@ -76,7 +76,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
                 // Undo/Redo 중에는 선택된 요소를 절대 해제하지 않음
                 const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
-                if (!isTracking && currentSelectedId) {
+                if (!isTracking) {
                     console.log('🔄 Undo/Redo 중 - 선택된 요소 보호:', {
                         currentSelectedId,
                         currentSelectedProps,
@@ -84,17 +84,26 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                         isTracking
                     });
 
-                    // 선택된 요소를 절대 해제하지 않고 유지
-                    state.selectedElementId = currentSelectedId;
-                    state.selectedElementProps = currentSelectedProps;
-
-                    // 복원된 요소들 중에 선택된 요소가 있다면 props 업데이트
-                    if (elements.length > 0) {
-                        const selectedElement = elements.find(el => el.id === currentSelectedId);
-                        if (selectedElement) {
-                            state.selectedElementProps = selectedElement.props;
-                            console.log('✅ 선택된 요소 props 업데이트:', selectedElement.props);
+                    if (currentSelectedId) {
+                        const restoredElement = elements.find((el: Element) => el.id === currentSelectedId);
+                        if (restoredElement) {
+                            state.selectedElementId = currentSelectedId;
+                            state.selectedElementProps = restoredElement.props;
+                            console.log('✅ 선택된 요소 props 업데이트 (Undo/Redo): ', restoredElement.props);
+                        } else {
+                            // 복원된 요소에 선택된 요소가 없더라도, Undo/Redo 중에는 선택을 해제하지 않음 (선택 상태 유지 시도)
+                            // 대신, 해당 요소가 없으므로 selectedElementId는 유지하되 props는 초기화
+                            state.selectedElementId = currentSelectedId; // 선택 ID는 유지
+                            state.selectedElementProps = {}; // props는 초기화
+                            state.selectedTab = null; // 탭 선택도 초기화 (요소가 없으므로)
+                            console.log('🔄 선택된 요소 복원 실패 - ID 유지, props 초기화:', currentSelectedId);
                         }
+                    } else {
+                        // 초기 상태로 복원 시 선택된 요소가 없었으면 계속 유지
+                        state.selectedElementId = null;
+                        state.selectedElementProps = {};
+                        state.selectedTab = null;
+                        console.log('🔄 선택된 요소 없음 - 초기 상태 복원 시 선택 해제');
                     }
                 }
             })
@@ -109,7 +118,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             return;
         }
 
-        // skipHistory 옵션이 없거나 false인 경우 히스토리 기록
+        // 히스토리 추적이 일시정지된 경우 히스토리 기록 생략
+        const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
+        if (!isTracking) {
+            console.log('🚫 히스토리 추적 일시정지됨 - 히스토리 기록 생략');
+            return;
+        }
+
         // 동일한 요소들이면 히스토리 기록하지 않음
         const currentIds = elements.map(el => el.id).sort().join(',');
         const prevIds = prevElements.map(el => el.id).sort().join(',');
@@ -119,19 +134,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             prevIds,
             isDifferent: currentIds !== prevIds,
             skipHistory: safeOptions.skipHistory,
-            options: safeOptions
+            isTracking
         });
 
         if (currentIds !== prevIds) {
             // Zundo 패턴: 히스토리 추적이 활성화된 경우에만 저장
-            const { saveSnapshot, isTracking } = get() as unknown as {
+            const { saveSnapshot } = get() as unknown as {
                 saveSnapshot: (elements: Element[], description: string) => void;
-                isTracking: boolean;
             };
-            if (saveSnapshot && isTracking) {
+            if (saveSnapshot) {
                 saveSnapshot(elements, '요소 전체 설정');
-            } else if (!isTracking) {
-                console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
             }
         } else {
             console.log('🚫 동일한 요소들 - 히스토리 기록 생략');
@@ -142,7 +154,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         set(
             produce((state) => {
                 const newElements = Array.isArray(elements) ? [...elements] : [];
-                const prevElements = [...state.elements];
+                // prevElements는 사용되지 않으므로 제거
 
                 state.elements = newElements;
                 state.selectedElementId = null;
@@ -194,7 +206,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
                 console.log('추가 후 요소 상태:', {
                     currentElementsCount: state.elements.length,
-                    currentElementIds: state.elements.map(el => el.id)
+                    currentElementIds: state.elements.map((el: Element) => el.id)
                 });
             })
         );
@@ -221,8 +233,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     updateElementProps: (elementId: string, props: ComponentElementProps) => {
         set(
             produce((state: ElementsState) => {
-                const prevElements: Element[] = [...state.elements];
-                const element: Element | undefined = state.elements.find<Element>((el): boolean => el.id === elementId);
+                // prevElements는 사용되지 않으므로 제거
+                const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
 
                 if (element) {
                     element.props = { ...element.props, ...props };
@@ -268,7 +280,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             })
         ),
 
-    selectTabElement: (elementId, props, tabIndex) =>
+    selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) =>
         set(
             produce((state: ElementsState) => {
                 const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
@@ -278,12 +290,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
                     state.selectedElementId = elementId;
                     state.selectedElementProps = createCompleteProps(element, props);
-                    state.selectedTab = { parentId: actualParentId, tabIndex };
+                    state.selectedTab = `${actualParentId}-${tabIndex}`;
                 }
-            })
+            }),
         ),
 
-    setPages: (pages) =>
+    setPages: (pages: Page[]) =>
         set(
             produce((state) => {
                 state.pages = pages;
@@ -295,8 +307,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     removeElement: async (elementId) => {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const prevElements = useStore.getState().elements;
-            const elementToDelete = prevElements.find((el): el is Element => el.id === elementId);
+            const elementToDelete = prevElements.find((el: Element): el is Element => el.id === elementId);
 
             if (!elementToDelete) {
                 console.log('🚫 삭제할 요소를 찾을 수 없음:', elementId);
@@ -304,14 +317,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             }
 
             // Zundo 패턴: 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
-            const { saveSnapshot, isTracking } = useStore.getState() as unknown as {
-                saveSnapshot: (elements: Element[], description: string) => void;
-                isTracking: boolean;
-            };
+            const { saveSnapshot, isTracking } = useStore.getState();
             if (saveSnapshot && isTracking) {
                 // 삭제 전 요소들을 저장 (각 삭제 작업마다 별도의 히스토리 엔트리)
-                const currentElements = useStore.getState().elements;
-                saveSnapshot(currentElements, `요소 삭제: ${elementToDelete.tag || 'Unknown'}`);
+                const currentElementsBeforeDelete = useStore.getState().elements;
+                console.log('📸 saveSnapshot 호출 직전 (삭제 전):', {
+                    count: currentElementsBeforeDelete.length,
+                    description: `요소 삭제 전 스냅샷: ${elementToDelete.tag || 'Unknown'} (ID: ${elementToDelete.id})`,
+                    elementIds: currentElementsBeforeDelete.map(el => el.id)
+                });
+                saveSnapshot(currentElementsBeforeDelete, `요소 삭제 전 스냅샷: ${elementToDelete.tag || 'Unknown'}`);
             } else if (!isTracking) {
                 console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
             }
@@ -328,20 +343,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                     deletedIds.push(elementId);
                 } else {
                     // 같은 부모를 가진 Tab과 Panel들을 찾기
-                    const siblings = useStore.getState().elements.filter(el => el.parent_id === parentId);
+                    const siblings = useStore.getState().elements.filter((el: Element) => el.parent_id === parentId);
 
                     if (elementToDelete.tag === 'Tab') {
                         // Tab을 삭제하는 경우, 같은 tabId를 가진 Panel 찾기
                         const tabId = hasTabId(elementToDelete.props) ? elementToDelete.props.tabId : elementId;
 
-                        let correspondingPanel = siblings.find(el =>
-                            el.tag === 'Panel' && (el.props as Record<string, unknown>).tabId === tabId
+                        let correspondingPanel = siblings.find((el: Element) =>
+                            el.tag === 'Panel' && (el.props && typeof el.props === 'object' && 'tabId' in el.props ? (el.props as { tabId: string }).tabId : undefined) === tabId
                         );
 
                         // tabId가 없는 경우 order_num으로 매칭 시도
-                        if (!correspondingPanel && !(elementToDelete.props as Record<string, unknown>).tabId) {
+                        if (!correspondingPanel && !(elementToDelete.props && typeof elementToDelete.props === 'object' && 'tabId' in elementToDelete.props ? (elementToDelete.props as { tabId: string }).tabId : undefined)) {
                             const tabOrderNum = elementToDelete.order_num || 0;
-                            correspondingPanel = siblings.find(el =>
+                            correspondingPanel = siblings.find((el: Element) =>
                                 el.tag === 'Panel' && el.order_num === tabOrderNum + 1
                             );
                         }
@@ -357,18 +372,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                         }
                     } else if (elementToDelete.tag === 'Panel') {
                         // Panel을 삭제하는 경우, 같은 tabId를 가진 Tab 찾기
-                        const tabId = (elementToDelete.props as Record<string, unknown>).tabId;
+                        const tabId = (elementToDelete.props && typeof elementToDelete.props === 'object' && 'tabId' in elementToDelete.props ? (elementToDelete.props as { tabId: string }).tabId : undefined);
 
                         let correspondingTab = null;
 
                         if (tabId) {
-                            correspondingTab = siblings.find(el =>
-                                el.tag === 'Tab' && (el.props as Record<string, unknown>).tabId === tabId
+                            correspondingTab = siblings.find((el: Element) =>
+                                el.tag === 'Tab' && (el.props && typeof el.props === 'object' && 'tabId' in el.props ? (el.props as { tabId: string }).tabId : undefined) === tabId
                             );
                         } else {
                             // tabId가 없는 경우 order_num으로 매칭 시도
                             const panelOrderNum = elementToDelete.order_num || 0;
-                            correspondingTab = siblings.find(el =>
+                            correspondingTab = siblings.find((el: Element) =>
                                 el.tag === 'Tab' && el.order_num === panelOrderNum - 1
                             );
                         }
@@ -430,7 +445,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         try {
             // Tab과 Panel 쌍을 모두 서비스 레이어를 통해 삭제
             const prevElements = useStore.getState().elements;
-            const panelElements = prevElements.filter(el => el.parent_id === elementId);
+            const panelElements = prevElements.filter((el: Element) => el.parent_id === elementId);
 
             // 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
             const { saveSnapshot } = useStore.getState() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -478,5 +493,55 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         } catch (error) {
             console.error('Tab/Panel 쌍 삭제 중 오류:', error);
         }
+    },
+
+    addPage: (page: Page) => {
+        set(produce((state) => {
+            state.pages.push(page);
+        }));
+    },
+
+    updatePage: (pageId: string, updates: Partial<Page>) => {
+        set(produce((state) => {
+            const page = state.pages.find((p: Page) => p.id === pageId);
+            if (page) {
+                Object.assign(page, updates);
+            }
+        }));
+    },
+
+    removePage: (pageId: string) => {
+        set(produce((state) => {
+            state.pages = state.pages.filter((p: Page) => p.id !== pageId);
+            if (state.currentPageId === pageId) {
+                state.currentPageId = null;
+            }
+        }));
+    },
+
+    clearElements: () => {
+        set(produce((state) => {
+            state.elements = [];
+            state.selectedElementId = null;
+            state.selectedElementProps = {};
+            state.selectedTab = null;
+        }));
+    },
+
+    cloneElement: (elementId: string) => {
+        set(produce((state) => {
+            const elementToClone = state.elements.find((el: Element) => el.id === elementId);
+            if (elementToClone) {
+                const newElement: Element = {
+                    ...elementToClone,
+                    id: crypto.randomUUID(),
+                    order_num: elementToClone.order_num + 1
+                };
+                state.elements.push(newElement);
+                // 클론된 요소 선택
+                state.selectedElementId = newElement.id;
+                state.selectedElementProps = newElement.props;
+            }
+        }));
     }
 });
