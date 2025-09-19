@@ -271,27 +271,15 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            console.log('🔄 개선된 Undo 시작');
+            console.log('🔄 백업 시스템 Undo 시작');
 
-            // 기존 히스토리 시스템 사용
-            const { undo, pause, resume } = useStore.getState();
+            // 백업 시스템의 히스토리 사용
+            const { undo } = useStore.getState();
+            undo();
 
-            // 히스토리 추적 일시정지
-            pause();
-
-            const restoredElements = undo();
-
-            if (restoredElements !== null) {
-                const { setElements } = useStore.getState();
-                setElements(restoredElements);
-            }
-
-            // 히스토리 추적 재개
-            resume();
-
-            console.log('✅ 개선된 Undo 완료');
+            console.log('✅ 백업 시스템 Undo 완료');
         } catch (error) {
-            console.error("개선된 Undo error:", error);
+            console.error("백업 시스템 Undo error:", error);
         } finally {
             isProcessingRef.current = false;
         }
@@ -302,27 +290,15 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         isProcessingRef.current = true;
 
         try {
-            console.log('🔄 개선된 Redo 시작');
+            console.log('🔄 백업 시스템 Redo 시작');
 
-            // 기존 히스토리 시스템 사용
-            const { redo, pause, resume } = useStore.getState();
+            // 백업 시스템의 히스토리 사용
+            const { redo } = useStore.getState();
+            redo();
 
-            // 히스토리 추적 일시정지
-            pause();
-
-            const restoredElements = redo();
-
-            if (restoredElements !== null) {
-                const { setElements } = useStore.getState();
-                setElements(restoredElements);
-            }
-
-            // 히스토리 추적 재개
-            resume();
-
-            console.log('✅ 개선된 Redo 완료');
+            console.log('✅ 백업 시스템 Redo 완료');
         } catch (error) {
-            console.error("개선된 Redo error:", error);
+            console.error("백업 시스템 Redo error:", error);
         } finally {
             isProcessingRef.current = false;
         }
