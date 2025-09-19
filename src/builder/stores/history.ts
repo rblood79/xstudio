@@ -102,17 +102,18 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
         console.log('현재 상태:', {
             currentIndex: state.currentIndex,
             totalSnapshots: state.snapshots.length,
-            canUndo: state.currentIndex > 1 // currentIndex가 1보다 클 때만 Undo 가능
+            canUndo: state.currentIndex > 0 // currentIndex가 0보다 클 때만 Undo 가능
         });
 
-        // Zundo 패턴: Undo 불가능한 경우 (currentIndex가 1 이하)
-        if (state.currentIndex <= 1) {
+        // Zundo 패턴: Undo 불가능한 경우 (currentIndex가 0 이하)
+        if (state.currentIndex <= 0) {
             console.log('🚫 Undo 불가: 이미 초기 상태이거나 더 이상 되돌릴 수 없음');
             console.groupEnd();
             return null; // Undo 불가능
         }
 
         // Zundo 패턴: 현재 인덱스에서 이전 상태로 이동
+        // currentIndex는 현재 상태를 가리키므로, 이전 상태로 가려면 -1이 아니라 -2가 필요
         const newIndex = state.currentIndex - 1;
         const targetSnapshot = state.snapshots[newIndex];
 
@@ -175,7 +176,7 @@ export const createHistorySlice: StateCreator<HistoryState> = (set, get) => ({
 
     canUndo: () => {
         const state = get();
-        return state.snapshots.length > 0 && state.currentIndex > 1;
+        return state.snapshots.length > 0 && state.currentIndex > 0;
     },
 
     canRedo: () => {
