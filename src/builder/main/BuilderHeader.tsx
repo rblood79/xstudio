@@ -1,9 +1,7 @@
 import React from 'react';
 import { Menu, Eye, Undo, Redo, Play, Monitor, Tablet, Smartphone, Asterisk } from 'lucide-react';
 import { RadioGroup, Radio, Key, Label } from 'react-aria-components';
-import { Patch } from 'immer';
 import { iconProps } from '../../utils/uiConstants';
-import { Element } from '../../types/store';
 
 export interface Breakpoint {
     id: string;
@@ -23,7 +21,6 @@ export interface BuilderHeaderProps {
     breakpoint: Set<Key>;
     breakpoints: Breakpoint[];
     onBreakpointChange: (value: Key) => void;
-    currentPageId: string | null;
     historyInfo: HistoryInfo;
     canUndo: boolean;
     canRedo: boolean;
@@ -39,7 +36,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     breakpoint,
     breakpoints,
     onBreakpointChange,
-    currentPageId,
     historyInfo,
     canUndo,
     canRedo,

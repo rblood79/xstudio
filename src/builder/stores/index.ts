@@ -1,23 +1,20 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { createElementsSlice, ElementsState } from './elements';
-import { createHistorySlice, HistoryState } from './history';
 import { createSelectionSlice, SelectionState } from './selection';
 import { createThemeSlice, ThemeState } from './theme';
-// Zundo 패턴은 기존 히스토리 시스템에 통합됨
 
-// 통합 스토어 타입
-interface Store extends ElementsState, HistoryState, SelectionState, ThemeState { }
+// 통합 스토어 타입 (히스토리는 elements.ts에 통합됨)
+interface Store extends ElementsState, SelectionState, ThemeState { }
 
 // 기존 스토어 (하위 호환성)
 export const useStore = create<Store>()(
     devtools(
         subscribeWithSelector(
-            (...a) => ({
-                ...createElementsSlice(...a),
-                ...createHistorySlice(...a),
-                ...createSelectionSlice(...a),
-                ...createThemeSlice(...a),
+            (set, get, api) => ({
+                ...createElementsSlice(set, get),
+                ...createSelectionSlice(set, get, api),
+                ...createThemeSlice(set, get, api),
             })
         ),
         {
@@ -49,11 +46,6 @@ export const useElementActions = () => useStore(state => ({
 export const useHistoryActions = () => useStore(state => ({
     undo: state.undo,
     redo: state.redo,
-    canUndo: state.canUndo,
-    canRedo: state.canRedo,
-    pause: state.pause,
-    resume: state.resume,
-    clearHistory: state.clearHistory,
 }));
 
 export const useThemeActions = () => useStore(state => ({

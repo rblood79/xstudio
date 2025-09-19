@@ -3,8 +3,6 @@ import { useParams } from 'react-router-dom';
 import { Key } from 'react-aria-components';
 
 import { useStore } from '../stores';
-// useZundoActions는 제거됨 - 기존 시스템 사용
-//import { Element as StoreElement } from '../stores/elements'; // 스토어 Element 타입
 import { Element } from '../../types/store'; // 훅들이 기대하는 Element 타입
 
 import { BuilderHeader, Breakpoint } from './BuilderHeader';
@@ -33,129 +31,44 @@ export const BuilderCore: React.FC = () => {
     const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
 
-    // 새로운 히스토리 시스템 - 직접 상태 접근으로 무한 루프 방지
-    // 기존 히스토리 시스템 사용
-    const snapshots = useStore((state) => state.snapshots || []);
-    const currentIndex = useStore((state) => state.currentIndex ?? -1);
+    // 백업 시스템의 히스토리 - elements.ts에 통합된 히스토리 시스템 사용
+    const history = useStore((state) => state.history || []);
+    const historyIndex = useStore((state) => state.historyIndex ?? -1);
 
     // 히스토리 정보 계산
     const historyInfo = {
-        current: snapshots.length > 0 ? (currentIndex >= 0 ? currentIndex + 1 : 0) : 0,
-        total: snapshots.length
+        current: history.length > 0 ? (historyIndex >= 0 ? historyIndex + 1 : 0) : 0,
+        total: history.length
     };
 
     // Undo/Redo 조건
-    const canUndo = snapshots.length > 0;
-    const canRedo = currentIndex < snapshots.length - 1;
+    const canUndo = historyIndex >= 0;
+    const canRedo = historyIndex < history.length - 1;
 
-    // 개선된 Undo/Redo 핸들러
+    // 백업 시스템의 Undo/Redo 핸들러
     const handleUndo = useCallback(() => {
         if (import.meta.env.DEV) {
             console.log('🔄 BuilderCore Undo 실행');
         }
-        const { undo, pause, resume } = useStore.getState();
+        const { undo } = useStore.getState();
+        undo();
 
-        // 현재 페이지 ID 보존
-        const currentPageIdBeforeUndo = currentPageId;
-
-        // 히스토리 추적 일시정지
-        pause();
-
-        const restoredElements = undo();
-
-        if (restoredElements !== null) {
-            if (import.meta.env.DEV) {
-                console.log('✅ BuilderCore Undo 완료 - 복원된 요소:', {
-                    count: restoredElements.length,
-                    elementIds: restoredElements.map(el => el.id)
-                });
-            }
-            const { setElements, setCurrentPageId } = useStore.getState();
-            setElements(restoredElements);
-
-            // 페이지 ID 복원 (Undo 시 페이지 상태 유지)
-            if (currentPageIdBeforeUndo) {
-                setCurrentPageId(currentPageIdBeforeUndo);
-
-                // 요소가 비어있고 페이지 ID가 있는 경우, 페이지 요소를 다시 로드
-                if (restoredElements.length === 0 && currentPageIdBeforeUndo) {
-                    if (import.meta.env.DEV) {
-                        console.log('🔄 페이지 요소 재로드 필요 - 페이지 ID:', currentPageIdBeforeUndo);
-                    }
-                    // 페이지 요소를 직접 로드
-                    import('../../utils/elementUtils').then(({ ElementUtils }) => {
-                        ElementUtils.getElementsByPageId(currentPageIdBeforeUndo).then((elementsData) => {
-                            setElements(elementsData, { skipHistory: true });
-                            if (import.meta.env.DEV) {
-                                console.log('📄 페이지 요소 재로드 완료:', {
-                                    pageId: currentPageIdBeforeUndo,
-                                    elementCount: elementsData.length
-                                });
-                            }
-                        }).catch((error) => {
-                            console.error('페이지 요소 재로드 실패:', error);
-                        });
-                    });
-                }
-            }
+        if (import.meta.env.DEV) {
+            console.log('✅ BuilderCore Undo 완료');
         }
-
-        // 히스토리 추적 재개
-        resume();
-    }, [currentPageId]);
+    }, []);
 
     const handleRedo = useCallback(() => {
         if (import.meta.env.DEV) {
             console.log('🔄 BuilderCore Redo 실행');
         }
-        const { redo, pause, resume } = useStore.getState();
+        const { redo } = useStore.getState();
+        redo();
 
-        // 현재 페이지 ID 보존
-        const currentPageIdBeforeRedo = currentPageId;
-
-        // 히스토리 추적 일시정지
-        pause();
-
-        const restoredElements = redo();
-
-        if (restoredElements !== null) {
-            const { setElements, setCurrentPageId } = useStore.getState();
-            setElements(restoredElements);
-
-            // 페이지 ID 복원 (Redo 시 페이지 상태 유지)
-            if (currentPageIdBeforeRedo) {
-                setCurrentPageId(currentPageIdBeforeRedo);
-
-                // 요소가 비어있고 페이지 ID가 있는 경우, 페이지 요소를 다시 로드
-                if (restoredElements.length === 0 && currentPageIdBeforeRedo) {
-                    if (import.meta.env.DEV) {
-                        console.log('🔄 페이지 요소 재로드 필요 (Redo) - 페이지 ID:', currentPageIdBeforeRedo);
-                    }
-                    // 페이지 요소를 직접 로드
-                    import('../../utils/elementUtils').then(({ ElementUtils }) => {
-                        ElementUtils.getElementsByPageId(currentPageIdBeforeRedo).then((elementsData) => {
-                            setElements(elementsData, { skipHistory: true });
-                            if (import.meta.env.DEV) {
-                                console.log('📄 페이지 요소 재로드 완료 (Redo):', {
-                                    pageId: currentPageIdBeforeRedo,
-                                    elementCount: elementsData.length
-                                });
-                            }
-                        }).catch((error) => {
-                            console.error('페이지 요소 재로드 실패 (Redo):', error);
-                        });
-                    });
-                }
-            }
-
-            if (import.meta.env.DEV) {
-                console.log('✅ BuilderCore Redo 완료');
-            }
+        if (import.meta.env.DEV) {
+            console.log('✅ BuilderCore Redo 완료');
         }
-
-        // 히스토리 추적 재개
-        resume();
-    }, [currentPageId]);
+    }, []);
 
     // 디버깅을 위한 로그 추가
     if (import.meta.env.DEV) {
@@ -342,7 +255,6 @@ export const BuilderCore: React.FC = () => {
                     breakpoint={breakpoint}
                     breakpoints={breakpoints}
                     onBreakpointChange={(value) => setBreakpoint(new Set<Key>([value]))}
-                    currentPageId={currentPageId}
                     historyInfo={historyInfo}
                     canUndo={canUndo}
                     canRedo={canRedo}

@@ -1,37 +1,56 @@
-import { StateCreator } from 'zustand';
-import { produce } from 'immer';
-import { Element, Page, ComponentElementProps } from '../../types/unified';
-import { elementsApi } from '../../services/api';
-import { useStore } from './';
-import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
-import { ElementUtils } from '../../utils/elementUtils';
+import { create } from 'zustand';
+import { produce, Patch, enablePatches } from 'immer';
+import { ElementProps } from '../../types/supabase';
+import { supabase } from '../../env/supabase.client'; // supabase import 추가
 
-export interface SetElementsOptions {
-    skipHistory?: boolean;
+enablePatches();
+
+export interface Element {
+    id: string;
+    tag: string;
+    props: ElementProps;
+    parent_id?: string | null;
+    page_id?: string;
+    order_num?: number;
 }
 
-export interface ElementsState {
+interface Page {
+    id: string;
+    title: string;
+    project_id: string;
+    slug: string;
+    parent_id?: string | null;
+    order_num?: number;
+}
+
+interface PageHistory {
+    elements: Element[];
+    history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[];
+    historyIndex: number;
+}
+
+interface Store {
     elements: Element[];
     selectedElementId: string | null;
-    selectedElementProps: ComponentElementProps;
-    selectedTab: string | null; // 현재 선택된 탭 ID
+    selectedElementProps: ElementProps;
+    selectedTab: { parentId: string, tabIndex: number } | null;
     pages: Page[];
+    history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[]; // 패치 히스토리
+    historyIndex: number;
+    pageHistories: Record<string, PageHistory>;  // 페이지별 히스토리 관리
     currentPageId: string | null;
-
-    // 액션들
-    addElement: (element: Element) => void;
-    updateElementProps: (elementId: string, props: ComponentElementProps) => void;
-    removeElement: (elementId: string) => Promise<void>;
-    removeTabPair: (elementId: string) => Promise<void>;
-    setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
-    setElements: (elements: Element[], options?: SetElementsOptions) => void;
+    setElements: (elements: Element[]) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;
-    addPage: (page: Page) => void;
-    updatePage: (pageId: string, updates: Partial<Page>) => void;
-    removePage: (pageId: string) => void;
-    setCurrentPageId: (pageId: string | null) => void;
-    clearElements: () => void;
-    cloneElement: (elementId: string) => void;
+    addElement: (element: Element) => void;
+    updateElementProps: (elementId: string, props: ElementProps) => void; // 동기 함수로 수정
+    setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
+    selectTabElement: (elementId: string, props: ElementProps, tabIndex: number) => void;
+    setPages: (pages: Page[]) => void;
+    setCurrentPageId: (pageId: string) => void;
+    undo: () => void;
+    redo: () => void;
+    removeElement: (elementId: string) => Promise<void>;
+    removeTabPair: (elementId: string) => void;
 }
 
 const sanitizeElement = (el: Element) => ({
@@ -44,515 +63,1061 @@ const sanitizeElement = (el: Element) => ({
 });
 
 // Helper function for element selection logic
-const createCompleteProps = (element: Element, props?: ComponentElementProps) => ({
+const createCompleteProps = (element: Element, props?: ElementProps) => ({
     ...element.props,
     ...props,
     tag: element.tag
 });
 
-// props에 tabId가 있는지 확인하는 타입 가드 함수
-const hasTabId = (props: ComponentElementProps): props is ComponentElementProps & { tabId: string } => {
-    return 'tabId' in props && typeof props.tabId === 'string';
+const findElementById = (elements: Element[], elementId: string) => {
+    return elements.find(el => el.id === elementId);
 };
 
-export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
+// ElementsState 타입 정의
+export interface ElementsState {
+    elements: Element[];
+    selectedElementId: string | null;
+    selectedElementProps: ElementProps;
+    selectedTab: { parentId: string, tabIndex: number } | null;
+    pages: Page[];
+    history: { patches: Patch[]; inversePatches: Patch[]; snapshot?: { prev: Element[]; current: Element[] } }[];
+    historyIndex: number;
+    pageHistories: Record<string, PageHistory>;
+    currentPageId: string | null;
+    setElements: (elements: Element[]) => void;
+    loadPageElements: (elements: Element[], pageId: string) => void;
+    addElement: (element: Element) => void;
+    updateElementProps: (elementId: string, props: ElementProps) => void;
+    setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
+    selectTabElement: (elementId: string, props: ElementProps, tabIndex: number) => void;
+    setPages: (pages: Page[]) => void;
+    setCurrentPageId: (pageId: string) => void;
+    undo: () => void;
+    redo: () => void;
+    removeElement: (elementId: string) => Promise<void>;
+    removeTabPair: (elementId: string) => void;
+}
+
+// Slice 생성 함수 (stores/index.ts에서 사용)
+export const createElementsSlice = (set: any, get: any): ElementsState => ({
     elements: [],
     selectedElementId: null,
     selectedElementProps: {},
     selectedTab: null,
     pages: [],
+    history: [], // 초기 상태
+    historyIndex: -1,
+    pageHistories: {},
     currentPageId: null,
-
-    setElements: (elements, options?: SetElementsOptions) => {
-        // produce 함수 외부에서 이전 요소들 가져오기
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const prevElements = get().elements;
-        const currentSelectedId = get().selectedElementId;
-        const currentSelectedProps = get().selectedElementProps;
-
+    setElements: (elements) =>
         set(
-            produce((state) => {
+            produce((state: ElementsState) => {
+                const prevState = [...state.elements];
                 state.elements = elements;
 
-                // Undo/Redo 중에는 선택된 요소를 절대 해제하지 않음
-                const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
-                if (!isTracking) {
-                    console.log('🔄 Undo/Redo 중 - 선택된 요소 보호:', {
-                        currentSelectedId,
-                        currentSelectedProps,
-                        elementsLength: elements.length,
-                        isTracking
-                    });
-
-                    if (currentSelectedId) {
-                        const restoredElement = elements.find((el: Element) => el.id === currentSelectedId);
-                        if (restoredElement) {
-                            state.selectedElementId = currentSelectedId;
-                            state.selectedElementProps = restoredElement.props;
-                            console.log('✅ 선택된 요소 props 업데이트 (Undo/Redo): ', restoredElement.props);
-                        } else {
-                            // 복원된 요소에 선택된 요소가 없는 경우, 선택을 해제
-                            state.selectedElementId = null;
-                            state.selectedElementProps = {};
-                            state.selectedTab = null;
-                            if (import.meta.env.DEV) {
-                                console.log('🔄 선택된 요소가 복원된 상태에 없음 - 선택 해제:', currentSelectedId);
-                            }
-                        }
-                    } else {
-                        // 초기 상태로 복원 시 선택된 요소가 없었으면 계속 유지
-                        state.selectedElementId = null;
-                        state.selectedElementProps = {};
-                        state.selectedTab = null;
-                        if (import.meta.env.DEV) {
-                            console.log('🔄 선택된 요소 없음 - 초기 상태 복원 시 선택 해제');
+                state.history = [
+                    ...state.history.slice(0, state.historyIndex + 1),
+                    {
+                        patches: [],
+                        inversePatches: [],
+                        snapshot: {
+                            prev: prevState,
+                            current: [...elements]
                         }
                     }
-                }
+                ];
+                state.historyIndex = state.history.length - 1;
             })
-        );
-
-        // options가 undefined인 경우 빈 객체로 초기화
-        const safeOptions = options || {};
-
-        // skipHistory 옵션이 명시적으로 true인 경우 히스토리 기록 생략
-        if (safeOptions.skipHistory === true) {
-            console.log('🚫 skipHistory: true - 히스토리 기록 생략');
-            return;
-        }
-
-        // 히스토리 추적이 일시정지된 경우 히스토리 기록 생략
-        const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
-        if (!isTracking) {
-            console.log('🚫 히스토리 추적 일시정지됨 - 히스토리 기록 생략');
-            return;
-        }
-
-        // 동일한 요소들이면 히스토리 기록하지 않음
-        const currentIds = elements.map(el => el.id).sort().join(',');
-        const prevIds = prevElements.map(el => el.id).sort().join(',');
-
-        console.log('🔍 setElements 히스토리 체크:', {
-            currentIds,
-            prevIds,
-            isDifferent: currentIds !== prevIds,
-            skipHistory: safeOptions.skipHistory,
-            isTracking
-        });
-
-        if (currentIds !== prevIds) {
-            // Zundo 패턴: 히스토리 추적이 활성화된 경우에만 저장
-            const { saveSnapshot } = get() as unknown as {
-                saveSnapshot: (elements: Element[], description: string) => void;
-            };
-            if (saveSnapshot) {
-                saveSnapshot(elements, '요소 전체 설정');
-            }
-        } else {
-            console.log('🚫 동일한 요소들 - 히스토리 기록 생략');
-        }
-    },
-
+        ),
     loadPageElements: (elements, pageId) =>
         set(
-            produce((state) => {
+            produce((state: ElementsState) => {
                 const newElements = Array.isArray(elements) ? [...elements] : [];
-                // prevElements는 사용되지 않으므로 제거
 
+                // 새 페이지의 히스토리 초기화 또는 기존 히스토리 사용
+                const pageHistory = state.pageHistories[pageId] || {
+                    elements: newElements,
+                    history: [], // 빈 배열로 시작
+                    historyIndex: -1
+                };
+
+                // 상태 업데이트
                 state.elements = newElements;
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
                 state.currentPageId = pageId;
+                state.history = pageHistory.history;
+                state.historyIndex = pageHistory.historyIndex;
+                state.pageHistories[pageId] = pageHistory;
 
-                // 히스토리 기록 (페이지 로드 시) - 직접 addToHistory 호출 (페이지 로드는 히스토리 기록 안함)
-                // const { addToHistory } = get() as unknown as { addToHistory: (prev: Element[], current: Element[], desc?: string) => void };
-                // if (addToHistory) {
-                //     addToHistory(prevElements, state.elements, '페이지 요소 로드');
-                //     console.log('✅ 히스토리 기록 성공 (페이지 요소 로드)', {
-                //         prevCount: prevElements.length,
-                //         currentCount: state.elements.length,
-                //         description: '페이지 요소 로드'
-                //     });
-                // }
-
-                // postMessage로 iframe에 전달
+                // 첫 로드 시에는 postMessage만 하고 히스토리는 생성하지 않음
                 try {
-                    MessageService.sendToWindow("UPDATE_ELEMENTS", {
+                    window.postMessage({
+                        type: "UPDATE_ELEMENTS",
                         elements: newElements.map(sanitizeElement)
-                    });
+                    }, window.location.origin);
                 } catch (error) {
                     console.error("Failed to send message:", error);
                 }
             })
         ),
-
-    addElement: (element) => {
-        console.group('🆕 요소 추가 상세 로그');
-        console.log('추가할 요소:', {
-            elementId: element.id,
-            elementTag: element.tag,
-            elementProps: element.props,
-            parentId: element.parent_id,
-            pageId: element.page_id,
-            orderNum: element.order_num
-        });
-
-        set(
-            produce((state) => {
-                const prevElements = [...state.elements];
-                console.log('추가 전 요소 상태:', {
-                    prevElementsCount: prevElements.length,
-                    prevElementIds: prevElements.map(el => el.id)
-                });
-
-                state.elements.push(element);
-
-                console.log('추가 후 요소 상태:', {
-                    currentElementsCount: state.elements.length,
-                    currentElementIds: state.elements.map((el: Element) => el.id)
-                });
-            })
-        );
-
-        // Zundo 패턴: 히스토리 기록 - produce 함수 외부에서 호출
-        console.log('히스토리 기록 시도');
-        const { saveSnapshot, isTracking } = get() as unknown as {
-            saveSnapshot: (elements: Element[], description: string) => void;
-            isTracking: boolean;
-        };
-        if (saveSnapshot && isTracking) {
-            const currentElements = get().elements;
-            saveSnapshot(currentElements, '요소 추가');
-        } else if (!isTracking) {
-            console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
-        } else {
-            console.warn('saveSnapshot 메서드 없음');
-        }
-
-        // iframe 전송은 useIframeMessenger의 useEffect에서 처리
-        console.groupEnd();
-    },
-
-    updateElementProps: (elementId: string, props: ComponentElementProps) => {
+    addElement: (element) =>
         set(
             produce((state: ElementsState) => {
-                // prevElements는 사용되지 않으므로 제거
-                const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
+                const prevState = [...state.elements];
+                state.elements.push(element);
+                updateHistory(state, prevState, [...state.elements]);
+            })
+        ),
+    updateElementProps: (elementId, props) => {
+        set(
+            produce((state: ElementsState) => {
+                const element = state.elements.find((el: Element) => el.id === elementId);
+                if (!element) return;
 
-                if (element) {
-                    element.props = { ...element.props, ...props };
+                let hasChanges = false;
+                const newProps = { ...element.props, ...props };
 
-                    if (state.selectedElementId === elementId) {
-                        state.selectedElementProps = { ...state.selectedElementProps, ...props };
+                // 이전 props와 새로운 props를 비교하여 실제 변경이 있는지 확인
+                if (Object.keys(element.props).length !== Object.keys(newProps).length) {
+                    hasChanges = true;
+                } else {
+                    for (const key in newProps) {
+                        if (JSON.stringify(element.props[key]) !== JSON.stringify(newProps[key])) {
+                            hasChanges = true;
+                            break;
+                        }
                     }
                 }
+
+                if (hasChanges) {
+                    const prevState = state.elements.map((el: Element) => ({
+                        ...el,
+                        props: { ...el.props }
+                    }));
+
+                    element.props = newProps;
+
+                    // selectedElementProps 업데이트
+                    if (state.selectedElementId === elementId) {
+                        state.selectedElementProps = newProps;
+                    }
+
+                    updateHistory(state, prevState, state.elements.map((el: Element) => ({
+                        ...el,
+                        props: { ...el.props }
+                    })));
+
+                    // 데이터베이스 업데이트 (비동기로 처리)
+                    (async () => {
+                        try {
+                            const { error } = await supabase
+                                .from('elements')
+                                .update({ props: newProps })
+                                .eq('id', elementId);
+
+                            if (error) {
+                                console.error('Element props 업데이트 에러:', error);
+                            }
+                        } catch (err) {
+                            console.error('Element props 업데이트 중 오류:', err);
+                        }
+                    })();
+                }
             })
         );
-
-        // Zundo 패턴: 히스토리 기록 (속성 변경 시) - produce 함수 외부에서 호출
-        const { saveSnapshot, isTracking } = get() as unknown as {
-            saveSnapshot: (elements: Element[], description: string) => void;
-            isTracking: boolean;
-        };
-        if (saveSnapshot && isTracking) {
-            const currentElements = get().elements;
-            saveSnapshot(currentElements, '속성 업데이트');
-        } else if (!isTracking) {
-            console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
-        }
-
-        // iframe 전송은 useIframeMessenger의 useEffect에서 처리
     },
-
     setSelectedElement: (elementId, props) =>
+        set((state) => {
+            if (!elementId) {
+                return {
+                    ...state,
+                    selectedElementId: null,
+                    selectedElementProps: {},
+                    selectedTab: null
+                };
+            }
+
+            const element = findElementById(state.elements, elementId);
+            if (!element) {
+                console.warn('Element not found in store:', elementId);
+                return state;
+            }
+
+            return {
+                ...state,
+                selectedElementId: elementId,
+                selectedElementProps: createCompleteProps(element, props),
+                selectedTab: null
+            };
+        }),
+    selectTabElement: (elementId, props, tabIndex) =>
+        set((state) => {
+            const element = findElementById(state.elements, elementId);
+            if (!element) {
+                console.warn('Element not found in store:', elementId);
+                return state;
+            }
+
+            // Tab 또는 Panel의 실제 부모 Tabs 컴포넌트 ID를 찾습니다
+            const actualParentId = element.parent_id || elementId;
+
+            return {
+                ...state,
+                selectedElementId: elementId,
+                selectedElementProps: createCompleteProps(element, props),
+                selectedTab: { parentId: actualParentId, tabIndex }
+            };
+        }),
+    setPages: (pages) =>
         set(
             produce((state: ElementsState) => {
-                if (!elementId) {
-                    state.selectedElementId = null;
-                    state.selectedElementProps = {};
-                    state.selectedTab = null;
-                    return;
-                }
-
-                const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
-                if (element) {
-                    state.selectedElementId = elementId;
-                    state.selectedElementProps = createCompleteProps(element, props);
-                    state.selectedTab = null;
-                }
-            })
-        ),
-
-    selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) =>
-        set(
-            produce((state: ElementsState) => {
-                const element: Element | undefined = state.elements.find((el: Element) => el.id === elementId);
-                if (element) {
-                    // Tab 또는 Panel의 실제 부모 Tabs 컴포넌트 ID를 찾습니다
-                    const actualParentId = element.parent_id || elementId;
-
-                    state.selectedElementId = elementId;
-                    state.selectedElementProps = createCompleteProps(element, props);
-                    state.selectedTab = `${actualParentId}-${tabIndex}`;
-                }
-            }),
-        ),
-
-    setPages: (pages: Page[]) =>
-        set(
-            produce((state) => {
                 state.pages = pages;
             })
         ),
-
     setCurrentPageId: (pageId) =>
         set(() => ({ currentPageId: pageId })),
+    undo: () => {
+        const state = get();
+        if (!state.currentPageId) return;
 
-    removeElement: async (elementId) => {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const prevElements = useStore.getState().elements;
-            const elementToDelete = prevElements.find((el: Element): el is Element => el.id === elementId);
+        set(
+            produce((state: ElementsState) => {
+                const pageHistory = state.pageHistories[state.currentPageId!];
+                if (!pageHistory || pageHistory.historyIndex < 0) return;
 
-            if (!elementToDelete) {
-                console.log('🚫 삭제할 요소를 찾을 수 없음:', elementId);
+                const currentHistory = pageHistory.history[pageHistory.historyIndex];
+                if (currentHistory?.snapshot) {
+                    const elements = currentHistory.snapshot.prev.map((el: Element) => ({
+                        id: el.id,
+                        tag: el.tag,
+                        props: { ...el.props },
+                        parent_id: el.parent_id,
+                        page_id: el.page_id,
+                        order_num: el.order_num
+                    }));
+
+                    state.elements = elements;
+                    pageHistory.historyIndex -= 1;
+
+                    try {
+                        window.postMessage({
+                            type: "UPDATE_ELEMENTS",
+                            elements: elements.map(sanitizeElement)
+                        }, window.location.origin);
+                    } catch (error) {
+                        console.error("Failed to send message:", error);
+                    }
+                }
+            })
+        );
+    },
+    redo: () => {
+        const state = get();
+        if (!state.currentPageId) return;
+
+        set(
+            produce((state: ElementsState) => {
+                const pageHistory = state.pageHistories[state.currentPageId!];
+                if (!pageHistory || pageHistory.historyIndex >= pageHistory.history.length - 1) return;
+
+                const nextHistory = pageHistory.history[pageHistory.historyIndex + 1];
+                if (nextHistory?.snapshot) {
+                    const elements = nextHistory.snapshot.current.map((el: Element) => ({
+                        id: el.id,
+                        tag: el.tag,
+                        props: { ...el.props },
+                        parent_id: el.parent_id,
+                        page_id: el.page_id,
+                        order_num: el.order_num
+                    }));
+
+                    state.elements = elements;
+                    pageHistory.historyIndex += 1;
+
+                    try {
+                        window.postMessage({
+                            type: "UPDATE_ELEMENTS",
+                            elements: elements.map(sanitizeElement)
+                        }, window.location.origin);
+                    } catch (error) {
+                        console.error("Failed to send message:", error);
+                    }
+                }
+            })
+        );
+    },
+    removeElement: async (elementId: string) => {
+        const state = get();
+        const elementToRemove = state.elements.find(el => el.id === elementId);
+
+        if (!elementToRemove) return;
+
+        // Tab 또는 Panel인 경우 쌍으로 삭제
+        if (elementToRemove.tag === 'Tab' || elementToRemove.tag === 'Panel') {
+            const parentId = elementToRemove.parent_id;
+            const tabIndex = elementToRemove.props.tabIndex;
+
+            // 쌍 요소 찾기 - 더 정확한 매칭 로직
+            const pairedElement = state.elements.find((el: Element) => {
+                if (el.parent_id !== parentId || el.tag === elementToRemove.tag) return false;
+
+                // tabIndex가 있는 경우 tabIndex로 매칭
+                if (tabIndex !== undefined && el.props.tabIndex !== undefined) {
+                    return el.props.tabIndex === tabIndex;
+                }
+
+                // tabIndex가 없는 경우 order_num으로 매칭
+                return el.order_num === elementToRemove.order_num;
+            });
+
+            // 쌍을 찾지 못한 경우 경고 로그
+            if (!pairedElement) {
+                console.warn(`Tab/Panel 쌍을 찾을 수 없습니다. elementId: ${elementId}, tabIndex: ${tabIndex}, order_num: ${elementToRemove.order_num}`);
+            }
+
+            // Supabase에서 삭제
+            try {
+                const idsToDelete = [elementId];
+                if (pairedElement) {
+                    idsToDelete.push(pairedElement.id);
+                }
+
+                const { error } = await supabase
+                    .from('elements')
+                    .delete()
+                    .in('id', idsToDelete);
+
+                if (error) {
+                    console.error('Tab/Panel 쌍 삭제 에러:', error);
+                    return;
+                }
+            } catch (err) {
+                console.error('Tab/Panel 쌍 삭제 중 오류:', err);
                 return;
             }
 
-            // 히스토리 기록을 삭제 후에 수행 (Zundo 패턴)
-            // 삭제 전 상태를 저장하면 Undo 시 삭제 전 상태로 돌아가므로, 삭제 후 상태를 저장해야 함
+            // 로컬 상태 업데이트
+            set(
+                produce((state: ElementsState) => {
+                    const prevState = [...state.elements];
 
-            const deletedIds: string[] = [];
+                    // 두 요소 모두 제거
+                    state.elements = state.elements.filter((el: Element) =>
+                        el.id !== elementId &&
+                        (pairedElement ? el.id !== pairedElement.id : true)
+                    );
 
-            // Tab이나 Panel인 경우 쌍으로 삭제
-            if (elementToDelete.tag === 'Tab' || elementToDelete.tag === 'Panel') {
-                const parentId = elementToDelete.parent_id;
+                    // 남은 Tab/Panel 재정렬
+                    if (parentId) {
+                        const remainingTabs = state.elements
+                            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+                            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
 
-                if (!parentId) {
-                    // 부모가 없으면 단일 삭제
-                    await ElementUtils.deleteElement(elementId);
-                    deletedIds.push(elementId);
+                        const remainingPanels = state.elements
+                            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+                            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                        // 재정렬
+                        remainingTabs.forEach((tab: Element, index: number) => {
+                            tab.order_num = index + 1;
+                            tab.props.tabIndex = index;
+                        });
+
+                        remainingPanels.forEach((panel: Element, index: number) => {
+                            panel.order_num = index + 1;
+                            panel.props.tabIndex = index;
+                        });
+                    }
+
+                    // 히스토리 업데이트
+                    if (state.history.length > 0) {
+                        state.history = [
+                            ...state.history.slice(0, state.historyIndex + 1),
+                            {
+                                patches: [],
+                                inversePatches: [],
+                                snapshot: {
+                                    prev: prevState,
+                                    current: [...state.elements]
+                                }
+                            }
+                        ];
+                        state.historyIndex = state.history.length - 1;
+                    }
+                })
+            );
+
+            // 재정렬된 데이터를 Supabase에 업데이트
+            if (parentId) {
+                try {
+                    const currentState = get();
+                    const remainingElements = currentState.elements
+                        .filter((el: Element) => el.parent_id === parentId && (el.tag === 'Tab' || el.tag === 'Panel'))
+                        .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                    for (const element of remainingElements) {
+                        try {
+                            await supabase
+                                .from('elements')
+                                .update({
+                                    order_num: element.order_num,
+                                    props: element.props
+                                })
+                                .eq('id', element.id);
+                        } catch (err) {
+                            console.error('요소 재정렬 업데이트 에러:', err);
+                        }
+                    }
+                } catch (err) {
+                    console.error('재정렬 업데이트 중 오류:', err);
+                }
+            }
+        } else {
+            // 일반 요소 삭제
+            try {
+                const { error } = await supabase
+                    .from('elements')
+                    .delete()
+                    .eq('id', elementId);
+
+                if (error) {
+                    console.error('요소 삭제 에러:', error);
+                    return;
+                }
+            } catch (err) {
+                console.error('요소 삭제 중 오류:', err);
+                return;
+            }
+
+            // 로컬 상태 업데이트
+            set(
+                produce((state: ElementsState) => {
+                    const prevState = [...state.elements];
+                    state.elements = state.elements.filter((el: Element) => el.id !== elementId);
+
+                    // 히스토리 업데이트
+                    if (state.history.length > 0) {
+                        state.history = [
+                            ...state.history.slice(0, state.historyIndex + 1),
+                            {
+                                patches: [],
+                                inversePatches: [],
+                                snapshot: {
+                                    prev: prevState,
+                                    current: [...state.elements]
+                                }
+                            }
+                        ];
+                        state.historyIndex = state.history.length - 1;
+                    }
+                })
+            );
+        }
+    },
+    removeTabPair: (elementId: string) =>
+        set(
+            produce(async (state: ElementsState) => {
+                const elementToRemove = state.elements.find((el: Element) => el.id === elementId);
+
+                if (!elementToRemove || (elementToRemove.tag !== 'Tab' && elementToRemove.tag !== 'Panel')) {
+                    return;
+                }
+
+                const parentId = elementToRemove.parent_id;
+                const tabIndex = elementToRemove.props.tabIndex;
+
+                // 같은 parent_id와 tabIndex를 가진 반대편 요소 찾기
+                const pairedElement = state.elements.find((el: Element) =>
+                    el.parent_id === parentId &&
+                    el.props.tabIndex === tabIndex &&
+                    el.tag !== elementToRemove.tag
+                );
+
+                // Supabase에서 두 요소 모두 삭제
+                try {
+                    const idsToDelete = [elementId];
+                    if (pairedElement) {
+                        idsToDelete.push(pairedElement.id);
+                    }
+
+                    const { error } = await supabase
+                        .from('elements')
+                        .delete()
+                        .in('id', idsToDelete);
+
+                    if (error) {
+                        console.error('Tab/Panel 쌍 삭제 에러:', error);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Tab/Panel 쌍 삭제 중 오류:', err);
+                    return;
+                }
+
+                // 로컬 상태에서 두 요소 모두 제거
+                state.elements = state.elements.filter((el: Element) =>
+                    el.id !== elementId &&
+                    (pairedElement ? el.id !== pairedElement.id : true)
+                );
+
+                // 남은 Tab들의 order_num과 tabIndex 재정렬
+                if (parentId) {
+                    const remainingTabs = state.elements
+                        .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+                        .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                    const remainingPanels = state.elements
+                        .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+                        .sort((a: Element, b: Element) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+
+                    // Tab 재정렬
+                    remainingTabs.forEach((tab: Element, index: number) => {
+                        tab.order_num = index + 1;
+                        tab.props.tabIndex = index;
+                    });
+
+                    // Panel 재정렬
+                    remainingPanels.forEach((panel: Element, index: number) => {
+                        panel.order_num = index + 1;
+                        panel.props.tabIndex = index;
+                    });
+                }
+            })
+        ),
+});
+
+// 기존 useStore도 유지 (하위 호환성)
+export const useStore = create<Store>((set, get) => ({
+    elements: [],
+    selectedElementId: null,
+    selectedElementProps: {},
+    selectedTab: null,
+    pages: [],
+    history: [], // 초기 상태
+    historyIndex: -1,
+    pageHistories: {},
+    currentPageId: null,
+    setElements: (elements) =>
+        set(
+            produce((state: ElementsState) => {
+                const prevState = [...state.elements];
+                state.elements = elements;
+
+                state.history = [
+                    ...state.history.slice(0, state.historyIndex + 1),
+                    {
+                        patches: [],
+                        inversePatches: [],
+                        snapshot: {
+                            prev: prevState,
+                            current: [...elements]
+                        }
+                    }
+                ];
+                state.historyIndex = state.history.length - 1;
+            })
+        ),
+    loadPageElements: (elements, pageId) =>
+        set(
+            produce((state: ElementsState) => {
+                const newElements = Array.isArray(elements) ? [...elements] : [];
+
+                // 새 페이지의 히스토리 초기화 또는 기존 히스토리 사용
+                const pageHistory = state.pageHistories[pageId] || {
+                    elements: newElements,
+                    history: [], // 빈 배열로 시작
+                    historyIndex: -1
+                };
+
+                // 상태 업데이트
+                state.elements = newElements;
+                state.selectedElementId = null;
+                state.selectedElementProps = {};
+                state.currentPageId = pageId;
+                state.history = pageHistory.history;
+                state.historyIndex = pageHistory.historyIndex;
+                state.pageHistories[pageId] = pageHistory;
+
+                // 첫 로드 시에는 postMessage만 하고 히스토리는 생성하지 않음
+                try {
+                    window.postMessage({
+                        type: "UPDATE_ELEMENTS",
+                        elements: newElements.map(sanitizeElement)
+                    }, window.location.origin);
+                } catch (error) {
+                    console.error("Failed to send message:", error);
+                }
+            })
+        ),
+    addElement: (element) =>
+        set(
+            produce((state: ElementsState) => {
+                const prevState = [...state.elements];
+                state.elements.push(element);
+                updateHistory(state, prevState, [...state.elements]);
+            })
+        ),
+    updateElementProps: (elementId, props) => {
+        set(
+            produce((state: ElementsState) => {
+                const element = state.elements.find((el: Element) => el.id === elementId);
+                if (!element) return;
+
+                let hasChanges = false;
+                const newProps = { ...element.props, ...props };
+
+                // 이전 props와 새로운 props를 비교하여 실제 변경이 있는지 확인
+                if (Object.keys(element.props).length !== Object.keys(newProps).length) {
+                    hasChanges = true;
                 } else {
-                    // 같은 부모를 가진 Tab과 Panel들을 찾기
-                    const siblings = useStore.getState().elements.filter((el: Element) => el.parent_id === parentId);
-
-                    if (elementToDelete.tag === 'Tab') {
-                        // Tab을 삭제하는 경우, 같은 tabId를 가진 Panel 찾기
-                        const tabId = hasTabId(elementToDelete.props) ? elementToDelete.props.tabId : elementId;
-
-                        let correspondingPanel = siblings.find((el: Element) =>
-                            el.tag === 'Panel' && (el.props && typeof el.props === 'object' && 'tabId' in el.props ? (el.props as { tabId: string }).tabId : undefined) === tabId
-                        );
-
-                        // tabId가 없는 경우 order_num으로 매칭 시도
-                        if (!correspondingPanel && !(elementToDelete.props && typeof elementToDelete.props === 'object' && 'tabId' in elementToDelete.props ? (elementToDelete.props as { tabId: string }).tabId : undefined)) {
-                            const tabOrderNum = elementToDelete.order_num || 0;
-                            correspondingPanel = siblings.find((el: Element) =>
-                                el.tag === 'Panel' && el.order_num === tabOrderNum + 1
-                            );
-                        }
-
-                        // Tab 삭제
-                        await ElementUtils.deleteElement(elementId);
-                        deletedIds.push(elementId);
-
-                        // 해당 Panel 삭제
-                        if (correspondingPanel) {
-                            await ElementUtils.deleteElement(correspondingPanel.id);
-                            deletedIds.push(correspondingPanel.id);
-                        }
-                    } else if (elementToDelete.tag === 'Panel') {
-                        // Panel을 삭제하는 경우, 같은 tabId를 가진 Tab 찾기
-                        const tabId = (elementToDelete.props && typeof elementToDelete.props === 'object' && 'tabId' in elementToDelete.props ? (elementToDelete.props as { tabId: string }).tabId : undefined);
-
-                        let correspondingTab = null;
-
-                        if (tabId) {
-                            correspondingTab = siblings.find((el: Element) =>
-                                el.tag === 'Tab' && (el.props && typeof el.props === 'object' && 'tabId' in el.props ? (el.props as { tabId: string }).tabId : undefined) === tabId
-                            );
-                        } else {
-                            // tabId가 없는 경우 order_num으로 매칭 시도
-                            const panelOrderNum = elementToDelete.order_num || 0;
-                            correspondingTab = siblings.find((el: Element) =>
-                                el.tag === 'Tab' && el.order_num === panelOrderNum - 1
-                            );
-                        }
-
-                        // Panel 삭제
-                        await ElementUtils.deleteElement(elementId);
-                        deletedIds.push(elementId);
-
-                        // 해당 Tab 삭제
-                        if (correspondingTab) {
-                            await ElementUtils.deleteElement(correspondingTab.id);
-                            deletedIds.push(correspondingTab.id);
+                    for (const key in newProps) {
+                        if (JSON.stringify(element.props[key]) !== JSON.stringify(newProps[key])) {
+                            hasChanges = true;
+                            break;
                         }
                     }
                 }
-            } else {
-                // 일반 요소는 단일 삭제
-                await ElementUtils.deleteElement(elementId);
-                deletedIds.push(elementId);
-            }
 
-            // 로컬 상태에서도 제거
-            set(
-                produce((state) => {
-                    state.elements = state.elements.filter((el: Element) => !deletedIds.includes(el.id));
+                if (hasChanges) {
+                    const prevState = state.elements.map((el: Element) => ({
+                        ...el,
+                        props: { ...el.props }
+                    }));
 
-                    // 히스토리 추적이 일시정지된 경우(Undo/Redo 중)에는 선택 해제하지 않음
-                    const { isTracking } = useStore.getState() as unknown as { isTracking: boolean };
-                    if (isTracking && deletedIds.includes(state.selectedElementId)) {
-                        // 선택된 요소가 삭제된 경우 선택 해제
-                        state.selectedElementId = null;
-                        state.selectedElementProps = {};
-                        state.selectedTab = null;
+                    element.props = newProps;
+
+                    // selectedElementProps 업데이트
+                    if (state.selectedElementId === elementId) {
+                        state.selectedElementProps = newProps;
                     }
-                })
-            );
 
-            // iframe에 업데이트된 요소 목록 전송
-            const updatedElements = useStore.getState().elements;
-            try {
-                MessageService.sendToWindow("UPDATE_ELEMENTS", {
-                    elements: updatedElements.map(sanitizeElement)
-                });
-            } catch (error) {
-                console.error("Failed to send message:", error);
+                    updateHistory(state, prevState, state.elements.map((el: Element) => ({
+                        ...el,
+                        props: { ...el.props }
+                    })));
+
+                    // 데이터베이스 업데이트 (비동기로 처리)
+                    (async () => {
+                        try {
+                            const { error } = await supabase
+                                .from('elements')
+                                .update({ props: newProps })
+                                .eq('id', elementId);
+
+                            if (error) {
+                                console.error('Element props 업데이트 에러:', error);
+                            }
+                        } catch (err) {
+                            console.error('Element props 업데이트 중 오류:', err);
+                        }
+                    })();
+                }
+            })
+        );
+    },
+    setSelectedElement: (elementId, props) =>
+        set((state) => {
+            if (!elementId) {
+                return {
+                    ...state,
+                    selectedElementId: null,
+                    selectedElementProps: {},
+                    selectedTab: null
+                };
             }
 
-            // 삭제 후 히스토리 기록 (Zundo 패턴)
-            const { saveSnapshot, isTracking } = useStore.getState();
-            if (saveSnapshot && isTracking) {
-                const currentElementsAfterDelete = useStore.getState().elements;
-                saveSnapshot(currentElementsAfterDelete, `요소 삭제: ${elementToDelete.tag || 'Unknown'}`);
-                console.log('📸 삭제 후 히스토리 기록:', {
-                    count: currentElementsAfterDelete.length,
-                    description: `요소 삭제: ${elementToDelete.tag || 'Unknown'}`,
-                    elementIds: currentElementsAfterDelete.map(el => el.id)
-                });
+            const element = findElementById(state.elements, elementId);
+            if (!element) {
+                console.warn('Element not found in store:', elementId);
+                return state;
             }
 
-            console.log('✅ 요소 삭제 및 히스토리 기록 완료:', {
-                deletedElementId: elementId,
-                remainingElements: useStore.getState().elements.length
+            return {
+                ...state,
+                selectedElementId: elementId,
+                selectedElementProps: createCompleteProps(element, props),
+                selectedTab: null
+            };
+        }),
+    selectTabElement: (elementId, props, tabIndex) =>
+        set((state) => {
+            const element = findElementById(state.elements, elementId);
+            if (!element) {
+                console.warn('Element not found in store:', elementId);
+                return state;
+            }
+
+            // Tab 또는 Panel의 실제 부모 Tabs 컴포넌트 ID를 찾습니다
+            const actualParentId = element.parent_id || elementId;
+
+            return {
+                ...state,
+                selectedElementId: elementId,
+                selectedElementProps: createCompleteProps(element, props),
+                selectedTab: { parentId: actualParentId, tabIndex }
+            };
+        }),
+    setPages: (pages) =>
+        set(
+            produce((state: ElementsState) => {
+                state.pages = pages;
+            })
+        ),
+    setCurrentPageId: (pageId) =>
+        set(() => ({ currentPageId: pageId })),
+    undo: () => {
+        const state = get();
+        if (!state.currentPageId) return;
+
+        set(
+            produce((state: ElementsState) => {
+                const pageHistory = state.pageHistories[state.currentPageId!];
+                if (!pageHistory || pageHistory.historyIndex < 0) return;
+
+                const currentHistory = pageHistory.history[pageHistory.historyIndex];
+                if (currentHistory?.snapshot) {
+                    const elements = currentHistory.snapshot.prev.map((el: Element) => ({
+                        id: el.id,
+                        tag: el.tag,
+                        props: { ...el.props },
+                        parent_id: el.parent_id,
+                        page_id: el.page_id,
+                        order_num: el.order_num
+                    }));
+
+                    state.elements = elements;
+                    pageHistory.historyIndex -= 1;
+
+                    try {
+                        window.postMessage({
+                            type: "UPDATE_ELEMENTS",
+                            elements: elements.map(sanitizeElement)
+                        }, window.location.origin);
+                    } catch (error) {
+                        console.error("Failed to send message:", error);
+                    }
+                }
+            })
+        );
+    },
+    redo: () => {
+        const state = get();
+        if (!state.currentPageId) return;
+
+        set(
+            produce((state: ElementsState) => {
+                const pageHistory = state.pageHistories[state.currentPageId!];
+                if (!pageHistory || pageHistory.historyIndex >= pageHistory.history.length - 1) return;
+
+                const nextHistory = pageHistory.history[pageHistory.historyIndex + 1];
+                if (nextHistory?.snapshot) {
+                    const elements = nextHistory.snapshot.current.map((el: Element) => ({
+                        id: el.id,
+                        tag: el.tag,
+                        props: { ...el.props },
+                        parent_id: el.parent_id,
+                        page_id: el.page_id,
+                        order_num: el.order_num
+                    }));
+
+                    state.elements = elements;
+                    pageHistory.historyIndex += 1;
+
+                    try {
+                        window.postMessage({
+                            type: "UPDATE_ELEMENTS",
+                            elements: elements.map(sanitizeElement)
+                        }, window.location.origin);
+                    } catch (error) {
+                        console.error("Failed to send message:", error);
+                    }
+                }
+            })
+        );
+    },
+    removeElement: async (elementId: string) => {
+        const state = get();
+        const elementToRemove = state.elements.find(el => el.id === elementId);
+
+        if (!elementToRemove) return;
+
+        // Tab 또는 Panel인 경우 쌍으로 삭제
+        if (elementToRemove.tag === 'Tab' || elementToRemove.tag === 'Panel') {
+            const parentId = elementToRemove.parent_id;
+            const tabIndex = elementToRemove.props.tabIndex;
+
+            // 쌍 요소 찾기 - 더 정확한 매칭 로직
+            const pairedElement = state.elements.find((el: Element) => {
+                if (el.parent_id !== parentId || el.tag === elementToRemove.tag) return false;
+
+                // tabIndex가 있는 경우 tabIndex로 매칭
+                if (tabIndex !== undefined && el.props.tabIndex !== undefined) {
+                    return el.props.tabIndex === tabIndex;
+                }
+
+                // tabIndex가 없는 경우 order_num으로 매칭
+                return el.order_num === elementToRemove.order_num;
             });
 
-        } catch (error) {
-            console.error('Element 삭제 중 오류:', error);
-        }
-    },
+            // 쌍을 찾지 못한 경우 경고 로그
+            if (!pairedElement) {
+                console.warn(`Tab/Panel 쌍을 찾을 수 없습니다. elementId: ${elementId}, tabIndex: ${tabIndex}, order_num: ${elementToRemove.order_num}`);
+            }
 
-    removeTabPair: async (elementId) => {
-        try {
-            // Tab과 Panel 쌍을 모두 서비스 레이어를 통해 삭제
-            const prevElements = useStore.getState().elements;
-            const panelElements = prevElements.filter((el: Element) => el.parent_id === elementId);
+            // Supabase에서 삭제
+            try {
+                const idsToDelete = [elementId];
+                if (pairedElement) {
+                    idsToDelete.push(pairedElement.id);
+                }
 
-            // 히스토리 기록을 삭제 후에 수행 (Zundo 패턴)
+                const { error } = await supabase
+                    .from('elements')
+                    .delete()
+                    .in('id', idsToDelete);
 
-            const elementIdsToDelete = [elementId, ...panelElements.map(el => el.id)];
-            await elementsApi.deleteMultipleElements(elementIdsToDelete);
+                if (error) {
+                    console.error('Tab/Panel 쌍 삭제 에러:', error);
+                    return;
+                }
+            } catch (err) {
+                console.error('Tab/Panel 쌍 삭제 중 오류:', err);
+                return;
+            }
 
-            // 로컬 상태에서도 제거
+            // 로컬 상태 업데이트
             set(
-                produce((state) => {
-                    // Tab과 Panel 쌍을 모두 제거
+                produce((state: ElementsState) => {
+                    const prevState = [...state.elements];
+
+                    // 두 요소 모두 제거
                     state.elements = state.elements.filter((el: Element) =>
-                        el.id !== elementId && el.parent_id !== elementId
+                        el.id !== elementId &&
+                        (pairedElement ? el.id !== pairedElement.id : true)
                     );
 
-                    // 선택된 요소가 삭제된 경우 선택 해제
-                    if (state.selectedElementId === elementId) {
-                        state.selectedElementId = null;
-                        state.selectedElementProps = {};
-                        state.selectedTab = null;
+                    // 남은 Tab/Panel 재정렬
+                    if (parentId) {
+                        const remainingTabs = state.elements
+                            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+                            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                        const remainingPanels = state.elements
+                            .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+                            .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                        // 재정렬
+                        remainingTabs.forEach((tab: Element, index: number) => {
+                            tab.order_num = index + 1;
+                            tab.props.tabIndex = index;
+                        });
+
+                        remainingPanels.forEach((panel: Element, index: number) => {
+                            panel.order_num = index + 1;
+                            panel.props.tabIndex = index;
+                        });
+                    }
+
+                    // 히스토리 업데이트
+                    if (state.history.length > 0) {
+                        state.history = [
+                            ...state.history.slice(0, state.historyIndex + 1),
+                            {
+                                patches: [],
+                                inversePatches: [],
+                                snapshot: {
+                                    prev: prevState,
+                                    current: [...state.elements]
+                                }
+                            }
+                        ];
+                        state.historyIndex = state.history.length - 1;
                     }
                 })
             );
 
-            // iframe에 업데이트된 요소 목록 전송
-            const updatedElements = useStore.getState().elements.filter((el: Element) =>
-                el.id !== elementId && el.parent_id !== elementId
-            );
+            // 재정렬된 데이터를 Supabase에 업데이트
+            if (parentId) {
+                try {
+                    const currentState = get();
+                    const remainingElements = currentState.elements
+                        .filter((el: Element) => el.parent_id === parentId && (el.tag === 'Tab' || el.tag === 'Panel'))
+                        .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                    for (const element of remainingElements) {
+                        try {
+                            await supabase
+                                .from('elements')
+                                .update({
+                                    order_num: element.order_num,
+                                    props: element.props
+                                })
+                                .eq('id', element.id);
+                        } catch (err) {
+                            console.error('요소 재정렬 업데이트 에러:', err);
+                        }
+                    }
+                } catch (err) {
+                    console.error('재정렬 업데이트 중 오류:', err);
+                }
+            }
+        } else {
+            // 일반 요소 삭제
             try {
-                MessageService.sendToWindow("UPDATE_ELEMENTS", {
-                    elements: updatedElements.map(sanitizeElement)
-                });
-            } catch (error) {
-                console.error("Failed to send message:", error);
+                const { error } = await supabase
+                    .from('elements')
+                    .delete()
+                    .eq('id', elementId);
+
+                if (error) {
+                    console.error('요소 삭제 에러:', error);
+                    return;
+                }
+            } catch (err) {
+                console.error('요소 삭제 중 오류:', err);
+                return;
             }
 
-            // 삭제 후 히스토리 기록 (Zundo 패턴)
-            const { saveSnapshot, isTracking } = useStore.getState();
-            if (saveSnapshot && isTracking) {
-                const currentElementsAfterDelete = useStore.getState().elements;
-                saveSnapshot(currentElementsAfterDelete, '탭/패널 쌍 삭제');
-                console.log('📸 삭제 후 히스토리 기록 (탭/패널):', {
-                    count: currentElementsAfterDelete.length,
-                    description: '탭/패널 쌍 삭제',
-                    elementIds: currentElementsAfterDelete.map(el => el.id)
-                });
-            }
+            // 로컬 상태 업데이트
+            set(
+                produce((state: ElementsState) => {
+                    const prevState = [...state.elements];
+                    state.elements = state.elements.filter((el: Element) => el.id !== elementId);
 
-            console.log('✅ 탭/패널 쌍 삭제 및 히스토리 기록 완료:', {
-                deletedElementId: elementId,
-                remainingElements: useStore.getState().elements.length
-            });
-
-        } catch (error) {
-            console.error('Tab/Panel 쌍 삭제 중 오류:', error);
+                    // 히스토리 업데이트
+                    if (state.history.length > 0) {
+                        state.history = [
+                            ...state.history.slice(0, state.historyIndex + 1),
+                            {
+                                patches: [],
+                                inversePatches: [],
+                                snapshot: {
+                                    prev: prevState,
+                                    current: [...state.elements]
+                                }
+                            }
+                        ];
+                        state.historyIndex = state.history.length - 1;
+                    }
+                })
+            );
         }
     },
+    removeTabPair: (elementId: string) =>
+        set(
+            produce(async (state: ElementsState) => {
+                const elementToRemove = state.elements.find((el: Element) => el.id === elementId);
 
-    addPage: (page: Page) => {
-        set(produce((state) => {
-            state.pages.push(page);
-        }));
-    },
+                if (!elementToRemove || (elementToRemove.tag !== 'Tab' && elementToRemove.tag !== 'Panel')) {
+                    return;
+                }
 
-    updatePage: (pageId: string, updates: Partial<Page>) => {
-        set(produce((state) => {
-            const page = state.pages.find((p: Page) => p.id === pageId);
-            if (page) {
-                Object.assign(page, updates);
-            }
-        }));
-    },
+                const parentId = elementToRemove.parent_id;
+                const tabIndex = elementToRemove.props.tabIndex;
 
-    removePage: (pageId: string) => {
-        set(produce((state) => {
-            state.pages = state.pages.filter((p: Page) => p.id !== pageId);
-            if (state.currentPageId === pageId) {
-                state.currentPageId = null;
-            }
-        }));
-    },
+                // 같은 parent_id와 tabIndex를 가진 반대편 요소 찾기
+                const pairedElement = state.elements.find((el: Element) =>
+                    el.parent_id === parentId &&
+                    el.props.tabIndex === tabIndex &&
+                    el.tag !== elementToRemove.tag
+                );
 
-    clearElements: () => {
-        set(produce((state) => {
-            state.elements = [];
-            state.selectedElementId = null;
-            state.selectedElementProps = {};
-            state.selectedTab = null;
-        }));
-    },
+                // Supabase에서 두 요소 모두 삭제
+                try {
+                    const idsToDelete = [elementId];
+                    if (pairedElement) {
+                        idsToDelete.push(pairedElement.id);
+                    }
 
-    cloneElement: (elementId: string) => {
-        set(produce((state) => {
-            const elementToClone = state.elements.find((el: Element) => el.id === elementId);
-            if (elementToClone) {
-                const newElement: Element = {
-                    ...elementToClone,
-                    id: crypto.randomUUID(),
-                    order_num: elementToClone.order_num + 1
-                };
-                state.elements.push(newElement);
-                // 클론된 요소 선택
-                state.selectedElementId = newElement.id;
-                state.selectedElementProps = newElement.props;
-            }
-        }));
-    }
-});
+                    const { error } = await supabase
+                        .from('elements')
+                        .delete()
+                        .in('id', idsToDelete);
+
+                    if (error) {
+                        console.error('Tab/Panel 쌍 삭제 에러:', error);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Tab/Panel 쌍 삭제 중 오류:', err);
+                    return;
+                }
+
+                // 로컬 상태에서 두 요소 모두 제거
+                state.elements = state.elements.filter((el: Element) =>
+                    el.id !== elementId &&
+                    (pairedElement ? el.id !== pairedElement.id : true)
+                );
+
+                // 남은 Tab들의 order_num과 tabIndex 재정렬
+                if (parentId) {
+                    const remainingTabs = state.elements
+                        .filter((el: Element) => el.parent_id === parentId && el.tag === 'Tab')
+                        .sort((a: Element, b: Element) => (a.order_num || 0) - (b.order_num || 0));
+
+                    const remainingPanels = state.elements
+                        .filter((el: Element) => el.parent_id === parentId && el.tag === 'Panel')
+                        .sort((a: Element, b: Element) => (a.props.tabIndex || 0) - (b.props.tabIndex || 0));
+
+                    // Tab 재정렬
+                    remainingTabs.forEach((tab: Element, index: number) => {
+                        tab.order_num = index + 1;
+                        tab.props.tabIndex = index;
+                    });
+
+                    // Panel 재정렬
+                    remainingPanels.forEach((panel: Element, index: number) => {
+                        panel.order_num = index + 1;
+                        panel.props.tabIndex = index;
+                    });
+                }
+            })
+        ),
+}));
+
+// addElement, updateElementProps 등의 상태 변경 함수들에서 공통으로 사용할 히스토리 업데이트 로직
+const updateHistory = (state: ElementsState, prevState: Element[], currentState: Element[]) => {
+    if (!state.currentPageId) return;
+
+    const newHistoryEntry = {
+        patches: [],
+        inversePatches: [],
+        snapshot: {
+            prev: prevState.map(el => ({
+                id: el.id,
+                tag: el.tag,
+                props: { ...el.props },
+                parent_id: el.parent_id,
+                page_id: el.page_id,
+                order_num: el.order_num
+            })),
+            current: currentState.map(el => ({
+                id: el.id,
+                tag: el.tag,
+                props: { ...el.props },
+                parent_id: el.parent_id,
+                page_id: el.page_id,
+                order_num: el.order_num
+            }))
+        }
+    };
+
+    // 현재 페이지의 히스토리 업데이트
+    const pageHistory = state.pageHistories[state.currentPageId] || {
+        elements: [],
+        history: [],
+        historyIndex: -1
+    };
+
+    pageHistory.history = [
+        ...pageHistory.history.slice(0, pageHistory.historyIndex + 1),
+        newHistoryEntry
+    ];
+    pageHistory.historyIndex = pageHistory.history.length - 1;
+    pageHistory.elements = currentState;
+
+    state.history = pageHistory.history;
+    state.historyIndex = pageHistory.historyIndex;
+    state.pageHistories[state.currentPageId] = pageHistory;
+};
