@@ -91,19 +91,22 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                             state.selectedElementProps = restoredElement.props;
                             console.log('✅ 선택된 요소 props 업데이트 (Undo/Redo): ', restoredElement.props);
                         } else {
-                            // 복원된 요소에 선택된 요소가 없더라도, Undo/Redo 중에는 선택을 해제하지 않음 (선택 상태 유지 시도)
-                            // 대신, 해당 요소가 없으므로 selectedElementId는 유지하되 props는 초기화
-                            state.selectedElementId = currentSelectedId; // 선택 ID는 유지
-                            state.selectedElementProps = {}; // props는 초기화
-                            state.selectedTab = null; // 탭 선택도 초기화 (요소가 없으므로)
-                            console.log('🔄 선택된 요소 복원 실패 - ID 유지, props 초기화:', currentSelectedId);
+                            // 복원된 요소에 선택된 요소가 없는 경우, 선택을 해제
+                            state.selectedElementId = null;
+                            state.selectedElementProps = {};
+                            state.selectedTab = null;
+                            if (import.meta.env.DEV) {
+                                console.log('🔄 선택된 요소가 복원된 상태에 없음 - 선택 해제:', currentSelectedId);
+                            }
                         }
                     } else {
                         // 초기 상태로 복원 시 선택된 요소가 없었으면 계속 유지
                         state.selectedElementId = null;
                         state.selectedElementProps = {};
                         state.selectedTab = null;
-                        console.log('🔄 선택된 요소 없음 - 초기 상태 복원 시 선택 해제');
+                        if (import.meta.env.DEV) {
+                            console.log('🔄 선택된 요소 없음 - 초기 상태 복원 시 선택 해제');
+                        }
                     }
                 }
             })
@@ -316,20 +319,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 return;
             }
 
-            // Zundo 패턴: 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
-            const { saveSnapshot, isTracking } = useStore.getState();
-            if (saveSnapshot && isTracking) {
-                // 삭제 전 요소들을 저장 (각 삭제 작업마다 별도의 히스토리 엔트리)
-                const currentElementsBeforeDelete = useStore.getState().elements;
-                console.log('📸 saveSnapshot 호출 직전 (삭제 전):', {
-                    count: currentElementsBeforeDelete.length,
-                    description: `요소 삭제 전 스냅샷: ${elementToDelete.tag || 'Unknown'} (ID: ${elementToDelete.id})`,
-                    elementIds: currentElementsBeforeDelete.map(el => el.id)
-                });
-                saveSnapshot(currentElementsBeforeDelete, `요소 삭제 전 스냅샷: ${elementToDelete.tag || 'Unknown'}`);
-            } else if (!isTracking) {
-                console.log('🚫 히스토리 추적 일시정지됨 - 스냅샷 저장 생략');
-            }
+            // 히스토리 기록을 삭제 후에 수행 (Zundo 패턴)
+            // 삭제 전 상태를 저장하면 Undo 시 삭제 전 상태로 돌아가므로, 삭제 후 상태를 저장해야 함
 
             const deletedIds: string[] = [];
 
@@ -431,6 +422,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 console.error("Failed to send message:", error);
             }
 
+            // 삭제 후 히스토리 기록 (Zundo 패턴)
+            const { saveSnapshot, isTracking } = useStore.getState();
+            if (saveSnapshot && isTracking) {
+                const currentElementsAfterDelete = useStore.getState().elements;
+                saveSnapshot(currentElementsAfterDelete, `요소 삭제: ${elementToDelete.tag || 'Unknown'}`);
+                console.log('📸 삭제 후 히스토리 기록:', {
+                    count: currentElementsAfterDelete.length,
+                    description: `요소 삭제: ${elementToDelete.tag || 'Unknown'}`,
+                    elementIds: currentElementsAfterDelete.map(el => el.id)
+                });
+            }
+
             console.log('✅ 요소 삭제 및 히스토리 기록 완료:', {
                 deletedElementId: elementId,
                 remainingElements: useStore.getState().elements.length
@@ -447,11 +450,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             const prevElements = useStore.getState().elements;
             const panelElements = prevElements.filter((el: Element) => el.parent_id === elementId);
 
-            // 히스토리 기록을 삭제 전에 수행 - 새로운 스냅샷 시스템 사용
-            const { saveSnapshot } = useStore.getState() as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
-            if (saveSnapshot) {
-                saveSnapshot(useStore.getState().elements, '탭/패널 쌍 삭제');
-            }
+            // 히스토리 기록을 삭제 후에 수행 (Zundo 패턴)
 
             const elementIdsToDelete = [elementId, ...panelElements.map(el => el.id)];
             await elementsApi.deleteMultipleElements(elementIdsToDelete);
@@ -483,6 +482,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 });
             } catch (error) {
                 console.error("Failed to send message:", error);
+            }
+
+            // 삭제 후 히스토리 기록 (Zundo 패턴)
+            const { saveSnapshot, isTracking } = useStore.getState();
+            if (saveSnapshot && isTracking) {
+                const currentElementsAfterDelete = useStore.getState().elements;
+                saveSnapshot(currentElementsAfterDelete, '탭/패널 쌍 삭제');
+                console.log('📸 삭제 후 히스토리 기록 (탭/패널):', {
+                    count: currentElementsAfterDelete.length,
+                    description: '탭/패널 쌍 삭제',
+                    elementIds: currentElementsAfterDelete.map(el => el.id)
+                });
             }
 
             console.log('✅ 탭/패널 쌍 삭제 및 히스토리 기록 완료:', {

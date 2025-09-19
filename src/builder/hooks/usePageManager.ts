@@ -32,10 +32,9 @@ export const usePageManager = (): UsePageManagerReturn => {
                 isTracking: boolean;
             };
 
-            // 히스토리 추적이 일시정지된 경우에는 로드 생략 (Undo/Redo 중 방지)
+            // 히스토리 추적이 일시정지된 경우에도 페이지 로드는 허용 (Undo/Redo 시 페이지 상태 유지)
             if (!isTracking) {
-                console.log('🚫 히스토리 추적 일시정지됨 - 페이지 요소 로드 생략');
-                return;
+                console.log('⚠️ 히스토리 추적 일시정지됨 - 페이지 요소 로드 계속 진행');
             }
 
             // 항상 히스토리 기록하지 않음 (페이지 로드는 히스토리에 포함하지 않음)

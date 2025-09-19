@@ -50,8 +50,13 @@ export const BuilderCore: React.FC = () => {
 
     // 개선된 Undo/Redo 핸들러
     const handleUndo = useCallback(() => {
-        console.log('🔄 BuilderCore 개선된 Undo 실행');
+        if (import.meta.env.DEV) {
+            console.log('🔄 BuilderCore Undo 실행');
+        }
         const { undo, pause, resume } = useStore.getState();
+
+        // 현재 페이지 ID 보존
+        const currentPageIdBeforeUndo = currentPageId;
 
         // 히스토리 추적 일시정지
         pause();
@@ -59,21 +64,54 @@ export const BuilderCore: React.FC = () => {
         const restoredElements = undo();
 
         if (restoredElements !== null) {
-            console.log('✅ BuilderCore 개선된 Undo 완료 - 복원된 요소:', {
-                count: restoredElements.length,
-                elementIds: restoredElements.map(el => el.id)
-            });
-            const { setElements } = useStore.getState();
+            if (import.meta.env.DEV) {
+                console.log('✅ BuilderCore Undo 완료 - 복원된 요소:', {
+                    count: restoredElements.length,
+                    elementIds: restoredElements.map(el => el.id)
+                });
+            }
+            const { setElements, setCurrentPageId } = useStore.getState();
             setElements(restoredElements);
+
+            // 페이지 ID 복원 (Undo 시 페이지 상태 유지)
+            if (currentPageIdBeforeUndo) {
+                setCurrentPageId(currentPageIdBeforeUndo);
+
+                // 요소가 비어있고 페이지 ID가 있는 경우, 페이지 요소를 다시 로드
+                if (restoredElements.length === 0 && currentPageIdBeforeUndo) {
+                    if (import.meta.env.DEV) {
+                        console.log('🔄 페이지 요소 재로드 필요 - 페이지 ID:', currentPageIdBeforeUndo);
+                    }
+                    // 페이지 요소를 직접 로드
+                    import('../../utils/elementUtils').then(({ ElementUtils }) => {
+                        ElementUtils.getElementsByPageId(currentPageIdBeforeUndo).then((elementsData) => {
+                            setElements(elementsData, { skipHistory: true });
+                            if (import.meta.env.DEV) {
+                                console.log('📄 페이지 요소 재로드 완료:', {
+                                    pageId: currentPageIdBeforeUndo,
+                                    elementCount: elementsData.length
+                                });
+                            }
+                        }).catch((error) => {
+                            console.error('페이지 요소 재로드 실패:', error);
+                        });
+                    });
+                }
+            }
         }
 
         // 히스토리 추적 재개
         resume();
-    }, []);
+    }, [currentPageId]);
 
     const handleRedo = useCallback(() => {
-        console.log('🔄 BuilderCore 개선된 Redo 실행');
+        if (import.meta.env.DEV) {
+            console.log('🔄 BuilderCore Redo 실행');
+        }
         const { redo, pause, resume } = useStore.getState();
+
+        // 현재 페이지 ID 보존
+        const currentPageIdBeforeRedo = currentPageId;
 
         // 히스토리 추적 일시정지
         pause();
@@ -81,21 +119,53 @@ export const BuilderCore: React.FC = () => {
         const restoredElements = redo();
 
         if (restoredElements !== null) {
-            const { setElements } = useStore.getState();
+            const { setElements, setCurrentPageId } = useStore.getState();
             setElements(restoredElements);
-            console.log('✅ BuilderCore 개선된 Redo 완료');
+
+            // 페이지 ID 복원 (Redo 시 페이지 상태 유지)
+            if (currentPageIdBeforeRedo) {
+                setCurrentPageId(currentPageIdBeforeRedo);
+
+                // 요소가 비어있고 페이지 ID가 있는 경우, 페이지 요소를 다시 로드
+                if (restoredElements.length === 0 && currentPageIdBeforeRedo) {
+                    if (import.meta.env.DEV) {
+                        console.log('🔄 페이지 요소 재로드 필요 (Redo) - 페이지 ID:', currentPageIdBeforeRedo);
+                    }
+                    // 페이지 요소를 직접 로드
+                    import('../../utils/elementUtils').then(({ ElementUtils }) => {
+                        ElementUtils.getElementsByPageId(currentPageIdBeforeRedo).then((elementsData) => {
+                            setElements(elementsData, { skipHistory: true });
+                            if (import.meta.env.DEV) {
+                                console.log('📄 페이지 요소 재로드 완료 (Redo):', {
+                                    pageId: currentPageIdBeforeRedo,
+                                    elementCount: elementsData.length
+                                });
+                            }
+                        }).catch((error) => {
+                            console.error('페이지 요소 재로드 실패 (Redo):', error);
+                        });
+                    });
+                }
+            }
+
+            if (import.meta.env.DEV) {
+                console.log('✅ BuilderCore Redo 완료');
+            }
         }
 
         // 히스토리 추적 재개
         resume();
-    }, []);
+    }, [currentPageId]);
 
     // 디버깅을 위한 로그 추가
-    console.log('🔍 개선된 히스토리 정보:', {
-        historyInfo,
-        canUndo,
-        canRedo
-    });
+    if (import.meta.env.DEV) {
+        console.log('🔍 히스토리 정보:', {
+            historyInfo,
+            canUndo,
+            canRedo,
+            currentPageId
+        });
+    }
 
     // 훅 사용
     const { error, isLoading, setError, setIsLoading, handleError, clearError } = useErrorHandler();
@@ -137,15 +207,20 @@ export const BuilderCore: React.FC = () => {
         }
     }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
 
-    // 프로젝트 초기화 후 프리뷰에 요소 전송
+    // 프로젝트 초기화 후 프리뷰에 요소 전송 (중복 전송 방지)
     useEffect(() => {
         if (projectId && elements.length > 0 && iframeReadyState === 'ready') {
-            console.log('🚀 프로젝트 초기화 후 프리뷰 전송:', {
-                projectId,
-                elementCount: elements.length,
-                elementIds: elements.map(el => el.id)
-            });
-            sendElementsToIframe(elements);
+            // 중복 전송 방지를 위한 디바운싱
+            const timeoutId = setTimeout(() => {
+                console.log('🚀 프로젝트 초기화 후 프리뷰 전송:', {
+                    projectId,
+                    elementCount: elements.length,
+                    elementIds: elements.map(el => el.id)
+                });
+                sendElementsToIframe(elements);
+            }, 100); // 100ms 디바운싱
+
+            return () => clearTimeout(timeoutId);
         }
     }, [projectId, elements, iframeReadyState, sendElementsToIframe]);
 
