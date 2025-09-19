@@ -37,7 +37,7 @@ export const BuilderCore: React.FC = () => {
 
     // 히스토리 정보 계산
     const historyInfo = {
-        current: history.length > 0 ? (historyIndex >= 0 ? historyIndex + 1 : 0) : 0,
+        current: historyIndex >= 0 ? historyIndex + 1 : 0,
         total: history.length
     };
 
@@ -76,7 +76,10 @@ export const BuilderCore: React.FC = () => {
             historyInfo,
             canUndo,
             canRedo,
-            currentPageId
+            currentPageId,
+            historyIndex,
+            historyLength: history.length,
+            canRedoCondition: `${historyIndex} < ${history.length - 1} = ${historyIndex < history.length - 1}`
         });
     }
 
