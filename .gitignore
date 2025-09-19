@@ -15,10 +15,9 @@ node_modules
 /api/_assets
 /public/s/uploads
 /public/cgi/asset
-
-/src_bak
 *storybook.log
 
+/src_bak
 # Added by Claude Task Master
 # Logs
 logs
