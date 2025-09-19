@@ -39,7 +39,7 @@ interface Store {
     historyIndex: number;
     pageHistories: Record<string, PageHistory>;  // 페이지별 히스토리 관리
     currentPageId: string | null;
-    setElements: (elements: Element[]) => void;
+    setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;
     addElement: (element: Element) => void;
     updateElementProps: (elementId: string, props: ElementProps) => void; // 동기 함수로 수정
@@ -70,7 +70,7 @@ const createCompleteProps = (element: Element, props?: ElementProps) => ({
 });
 
 const findElementById = (elements: Element[], elementId: string) => {
-    return elements.find(el => el.id === elementId);
+    return elements.find((el: Element) => el.id === elementId);
 };
 
 // ElementsState 타입 정의
@@ -84,7 +84,7 @@ export interface ElementsState {
     historyIndex: number;
     pageHistories: Record<string, PageHistory>;
     currentPageId: string | null;
-    setElements: (elements: Element[]) => void;
+    setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;
     addElement: (element: Element) => void;
     updateElementProps: (elementId: string, props: ElementProps) => void;
@@ -109,24 +109,27 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
     historyIndex: -1,
     pageHistories: {},
     currentPageId: null,
-    setElements: (elements) =>
+    setElements: (elements, options = {}) =>
         set(
             produce((state: ElementsState) => {
                 const prevState = [...state.elements];
                 state.elements = elements;
 
-                state.history = [
-                    ...state.history.slice(0, state.historyIndex + 1),
-                    {
-                        patches: [],
-                        inversePatches: [],
-                        snapshot: {
-                            prev: prevState,
-                            current: [...elements]
+                // skipHistory 옵션이 true가 아닌 경우에만 히스토리 생성
+                if (!options.skipHistory) {
+                    state.history = [
+                        ...state.history.slice(0, state.historyIndex + 1),
+                        {
+                            patches: [],
+                            inversePatches: [],
+                            snapshot: {
+                                prev: prevState,
+                                current: [...elements]
+                            }
                         }
-                    }
-                ];
-                state.historyIndex = state.history.length - 1;
+                    ];
+                    state.historyIndex = state.history.length - 1;
+                }
             })
         ),
     loadPageElements: (elements, pageId) =>
@@ -228,7 +231,7 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
         );
     },
     setSelectedElement: (elementId, props) =>
-        set((state) => {
+        set((state: ElementsState) => {
             if (!elementId) {
                 return {
                     ...state,
@@ -252,7 +255,7 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
             };
         }),
     selectTabElement: (elementId, props, tabIndex) =>
-        set((state) => {
+        set((state: ElementsState) => {
             const element = findElementById(state.elements, elementId);
             if (!element) {
                 console.warn('Element not found in store:', elementId);
@@ -300,6 +303,11 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
                     state.elements = elements;
                     pageHistory.historyIndex -= 1;
 
+                    // 전역 히스토리 상태 업데이트
+                    state.history = pageHistory.history.slice(); // 새로운 배열로 할당
+                    state.historyIndex = pageHistory.historyIndex;
+                    state.pageHistories[state.currentPageId!] = pageHistory;
+
                     try {
                         window.postMessage({
                             type: "UPDATE_ELEMENTS",
@@ -335,6 +343,11 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
                     state.elements = elements;
                     pageHistory.historyIndex += 1;
 
+                    // 전역 히스토리 상태 업데이트
+                    state.history = pageHistory.history.slice(); // 새로운 배열로 할당
+                    state.historyIndex = pageHistory.historyIndex;
+                    state.pageHistories[state.currentPageId!] = pageHistory;
+
                     try {
                         window.postMessage({
                             type: "UPDATE_ELEMENTS",
@@ -349,7 +362,7 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
     },
     removeElement: async (elementId: string) => {
         const state = get();
-        const elementToRemove = state.elements.find(el => el.id === elementId);
+        const elementToRemove = state.elements.find((el: Element) => el.id === elementId);
 
         if (!elementToRemove) return;
 
@@ -430,21 +443,7 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
                         });
                     }
 
-                    // 히스토리 업데이트
-                    if (state.history.length > 0) {
-                        state.history = [
-                            ...state.history.slice(0, state.historyIndex + 1),
-                            {
-                                patches: [],
-                                inversePatches: [],
-                                snapshot: {
-                                    prev: prevState,
-                                    current: [...state.elements]
-                                }
-                            }
-                        ];
-                        state.historyIndex = state.history.length - 1;
-                    }
+                    updateHistory(state, prevState, [...state.elements]);
                 })
             );
 
@@ -496,21 +495,7 @@ export const createElementsSlice = (set: any, get: any): ElementsState => ({
                     const prevState = [...state.elements];
                     state.elements = state.elements.filter((el: Element) => el.id !== elementId);
 
-                    // 히스토리 업데이트
-                    if (state.history.length > 0) {
-                        state.history = [
-                            ...state.history.slice(0, state.historyIndex + 1),
-                            {
-                                patches: [],
-                                inversePatches: [],
-                                snapshot: {
-                                    prev: prevState,
-                                    current: [...state.elements]
-                                }
-                            }
-                        ];
-                        state.historyIndex = state.history.length - 1;
-                    }
+                    updateHistory(state, prevState, [...state.elements]);
                 })
             );
         }
@@ -598,24 +583,27 @@ export const useStore = create<Store>((set, get) => ({
     historyIndex: -1,
     pageHistories: {},
     currentPageId: null,
-    setElements: (elements) =>
+    setElements: (elements, options = {}) =>
         set(
             produce((state: ElementsState) => {
                 const prevState = [...state.elements];
                 state.elements = elements;
 
-                state.history = [
-                    ...state.history.slice(0, state.historyIndex + 1),
-                    {
-                        patches: [],
-                        inversePatches: [],
-                        snapshot: {
-                            prev: prevState,
-                            current: [...elements]
+                // skipHistory 옵션이 true가 아닌 경우에만 히스토리 생성
+                if (!options.skipHistory) {
+                    state.history = [
+                        ...state.history.slice(0, state.historyIndex + 1),
+                        {
+                            patches: [],
+                            inversePatches: [],
+                            snapshot: {
+                                prev: prevState,
+                                current: [...elements]
+                            }
                         }
-                    }
-                ];
-                state.historyIndex = state.history.length - 1;
+                    ];
+                    state.historyIndex = state.history.length - 1;
+                }
             })
         ),
     loadPageElements: (elements, pageId) =>
@@ -717,7 +705,7 @@ export const useStore = create<Store>((set, get) => ({
         );
     },
     setSelectedElement: (elementId, props) =>
-        set((state) => {
+        set((state: ElementsState) => {
             if (!elementId) {
                 return {
                     ...state,
@@ -741,7 +729,7 @@ export const useStore = create<Store>((set, get) => ({
             };
         }),
     selectTabElement: (elementId, props, tabIndex) =>
-        set((state) => {
+        set((state: ElementsState) => {
             const element = findElementById(state.elements, elementId);
             if (!element) {
                 console.warn('Element not found in store:', elementId);
@@ -789,6 +777,11 @@ export const useStore = create<Store>((set, get) => ({
                     state.elements = elements;
                     pageHistory.historyIndex -= 1;
 
+                    // 전역 히스토리 상태 업데이트
+                    state.history = pageHistory.history.slice(); // 새로운 배열로 할당
+                    state.historyIndex = pageHistory.historyIndex;
+                    state.pageHistories[state.currentPageId!] = pageHistory;
+
                     try {
                         window.postMessage({
                             type: "UPDATE_ELEMENTS",
@@ -824,6 +817,11 @@ export const useStore = create<Store>((set, get) => ({
                     state.elements = elements;
                     pageHistory.historyIndex += 1;
 
+                    // 전역 히스토리 상태 업데이트
+                    state.history = pageHistory.history.slice(); // 새로운 배열로 할당
+                    state.historyIndex = pageHistory.historyIndex;
+                    state.pageHistories[state.currentPageId!] = pageHistory;
+
                     try {
                         window.postMessage({
                             type: "UPDATE_ELEMENTS",
@@ -838,7 +836,7 @@ export const useStore = create<Store>((set, get) => ({
     },
     removeElement: async (elementId: string) => {
         const state = get();
-        const elementToRemove = state.elements.find(el => el.id === elementId);
+        const elementToRemove = state.elements.find((el: Element) => el.id === elementId);
 
         if (!elementToRemove) return;
 
@@ -919,21 +917,7 @@ export const useStore = create<Store>((set, get) => ({
                         });
                     }
 
-                    // 히스토리 업데이트
-                    if (state.history.length > 0) {
-                        state.history = [
-                            ...state.history.slice(0, state.historyIndex + 1),
-                            {
-                                patches: [],
-                                inversePatches: [],
-                                snapshot: {
-                                    prev: prevState,
-                                    current: [...state.elements]
-                                }
-                            }
-                        ];
-                        state.historyIndex = state.history.length - 1;
-                    }
+                    updateHistory(state, prevState, [...state.elements]);
                 })
             );
 
@@ -985,21 +969,7 @@ export const useStore = create<Store>((set, get) => ({
                     const prevState = [...state.elements];
                     state.elements = state.elements.filter((el: Element) => el.id !== elementId);
 
-                    // 히스토리 업데이트
-                    if (state.history.length > 0) {
-                        state.history = [
-                            ...state.history.slice(0, state.historyIndex + 1),
-                            {
-                                patches: [],
-                                inversePatches: [],
-                                snapshot: {
-                                    prev: prevState,
-                                    current: [...state.elements]
-                                }
-                            }
-                        ];
-                        state.historyIndex = state.history.length - 1;
-                    }
+                    updateHistory(state, prevState, [...state.elements]);
                 })
             );
         }
