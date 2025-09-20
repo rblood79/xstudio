@@ -391,21 +391,42 @@ function Preview() {
       );
     }
 
-    // Radio 컴포넌트 특별 처리
+    // Radio 컴포넌트 특별 처리 - RadioGroup 컨텍스트 필요
     if (el.tag === 'Radio') {
-      return (
-        <Radio
-          key={el.id}
-          data-element-id={el.id}
-          value={String(el.props.value || '')}
-          isDisabled={Boolean(el.props.isDisabled || false)}
-          style={el.props.style}
-          className={el.props.className}
-        >
-          {typeof el.props.children === 'string' ? el.props.children : null}
-          {children.map((child) => renderElement(child))}
-        </Radio>
-      );
+      // 부모가 RadioGroup인지 확인
+      const parentElement = elements.find(parent => parent.id === el.parent_id);
+      if (parentElement && parentElement.tag === 'RadioGroup') {
+        return (
+          <Radio
+            key={el.id}
+            data-element-id={el.id}
+            value={String(el.props.value || '')}
+            isDisabled={Boolean(el.props.isDisabled || false)}
+            style={el.props.style}
+            className={el.props.className}
+          >
+            {typeof el.props.children === 'string' ? el.props.children : null}
+            {children.map((child) => renderElement(child))}
+          </Radio>
+        );
+      } else {
+        // RadioGroup이 없으면 기본 RadioGroup으로 감싸기
+        return (
+          <RadioGroup key={`group-${el.id}`} data-element-id={`group-${el.id}`}>
+            <Radio
+              key={el.id}
+              data-element-id={el.id}
+              value={String(el.props.value || '')}
+              isDisabled={Boolean(el.props.isDisabled || false)}
+              style={el.props.style}
+              className={el.props.className}
+            >
+              {typeof el.props.children === 'string' ? el.props.children : null}
+              {children.map((child) => renderElement(child))}
+            </Radio>
+          </RadioGroup>
+        );
+      }
     }
 
     // Label 컴포넌트 특별 처리

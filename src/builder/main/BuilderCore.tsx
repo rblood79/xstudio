@@ -4,6 +4,7 @@ import { Key } from 'react-aria-components';
 
 import { useStore } from '../stores';
 import { Element } from '../../types/store'; // 훅들이 기대하는 Element 타입
+import { historyManager } from '../stores/history';
 
 import { BuilderHeader, Breakpoint } from './BuilderHeader';
 import { BuilderWorkspace } from './BuilderWorkspace';
@@ -31,21 +32,27 @@ export const BuilderCore: React.FC = () => {
     const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
 
-    // 백업 시스템의 히스토리 - elements.ts에 통합된 히스토리 시스템 사용
-    const history = useStore((state) => state.history || []);
-    const historyIndex = useStore((state) => state.historyIndex ?? -1);
+    // 새로운 히스토리 시스템 사용
+    const [historyInfo, setHistoryInfo] = useState({
+        canUndo: false,
+        canRedo: false,
+        totalEntries: 0,
+        currentIndex: -1
+    });
 
-    // 히스토리 정보 계산
-    const historyInfo = {
-        current: historyIndex >= 0 ? historyIndex + 1 : 0,
-        total: history.length
-    };
+    // 히스토리 정보 업데이트
+    useEffect(() => {
+        if (currentPageId) {
+            const info = historyManager.getCurrentPageHistory();
+            setHistoryInfo(info);
+        }
+    }, [currentPageId, elements]);
 
     // Undo/Redo 조건
-    const canUndo = historyIndex >= 0;
-    const canRedo = historyIndex < history.length - 1;
+    const canUndo = historyInfo.canUndo;
+    const canRedo = historyInfo.canRedo;
 
-    // 백업 시스템의 Undo/Redo 핸들러
+    // 새로운 히스토리 시스템의 Undo/Redo 핸들러
     const handleUndo = useCallback(() => {
         if (import.meta.env.DEV) {
             console.log('🔄 BuilderCore Undo 실행');
@@ -53,8 +60,12 @@ export const BuilderCore: React.FC = () => {
         const { undo } = useStore.getState();
         undo();
 
+        // 히스토리 정보 업데이트
+        const info = historyManager.getCurrentPageHistory();
+        setHistoryInfo(info);
+
         if (import.meta.env.DEV) {
-            console.log('✅ BuilderCore Undo 완료');
+            console.log('✅ BuilderCore Undo 완료', info);
         }
     }, []);
 
@@ -65,8 +76,12 @@ export const BuilderCore: React.FC = () => {
         const { redo } = useStore.getState();
         redo();
 
+        // 히스토리 정보 업데이트
+        const info = historyManager.getCurrentPageHistory();
+        setHistoryInfo(info);
+
         if (import.meta.env.DEV) {
-            console.log('✅ BuilderCore Redo 완료');
+            console.log('✅ BuilderCore Redo 완료', info);
         }
     }, []);
 
@@ -77,9 +92,8 @@ export const BuilderCore: React.FC = () => {
             canUndo,
             canRedo,
             currentPageId,
-            historyIndex,
-            historyLength: history.length,
-            canRedoCondition: `${historyIndex} < ${history.length - 1} = ${historyIndex < history.length - 1}`
+            currentIndex: historyInfo.currentIndex,
+            totalEntries: historyInfo.totalEntries
         });
     }
 
@@ -258,7 +272,10 @@ export const BuilderCore: React.FC = () => {
                     breakpoint={breakpoint}
                     breakpoints={breakpoints}
                     onBreakpointChange={(value) => setBreakpoint(new Set<Key>([value]))}
-                    historyInfo={historyInfo}
+                    historyInfo={{
+                        current: historyInfo.currentIndex + 1,
+                        total: historyInfo.totalEntries
+                    }}
                     canUndo={canUndo}
                     canRedo={canRedo}
                     onUndo={handleUndo}

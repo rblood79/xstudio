@@ -8,6 +8,7 @@ function App() {
     <main className="grid justify-center items-center h-screen ">
       <div className="main-container">
         <button onClick={() => navigate("/signin")} className='btn btn-primary'>sign in</button>
+        <button onClick={() => navigate("/history")} className='btn btn-primary'>history</button>
       </div>
     </main>
   )
