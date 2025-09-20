@@ -30,8 +30,9 @@ export const HistoryDemo: React.FC = () => {
 
     // 페이지 초기화
     useEffect(() => {
-        setCurrentPageId('demo-page');
-        historyManager.setCurrentPage('demo-page');
+        const demoPageId = '550e8400-e29b-41d4-a716-446655440000';
+        setCurrentPageId(demoPageId);
+        historyManager.setCurrentPage(demoPageId);
     }, [setCurrentPageId]);
 
     // 히스토리 정보 업데이트
@@ -41,15 +42,28 @@ export const HistoryDemo: React.FC = () => {
     }, [elements]);
 
     const handleAddElement = () => {
+        // UUID 생성 (crypto.randomUUID() 사용 가능하면 사용, 아니면 fallback)
+        const generateUUID = () => {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            // Fallback UUID 생성
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        };
+
         const newElement = {
-            id: `element_${Date.now()}`,
+            id: generateUUID(),
             tag: 'div',
             props: {
                 className: 'p-4 bg-blue-100 border rounded',
                 children: `요소 ${elements.length + 1}`
             },
             parent_id: null,
-            page_id: 'demo-page',
+            page_id: '550e8400-e29b-41d4-a716-446655440000', // UUID 형식으로 변경
             order_num: elements.length
         };
         addElement(newElement);
@@ -84,9 +98,10 @@ export const HistoryDemo: React.FC = () => {
     };
 
     const handleClearHistory = () => {
-        historyManager.clearPageHistory('demo-page');
+        const demoPageId = '550e8400-e29b-41d4-a716-446655440000';
+        historyManager.clearPageHistory(demoPageId);
         // 히스토리 초기화 후 현재 페이지 재설정
-        historyManager.setCurrentPage('demo-page');
+        historyManager.setCurrentPage(demoPageId);
         const info = historyManager.getCurrentPageHistory();
         setHistoryInfo(info);
 
@@ -136,13 +151,14 @@ export const HistoryDemo: React.FC = () => {
         try {
             setDbStatus('저장 중...');
 
+            const demoPageId = '550e8400-e29b-41d4-a716-446655440000';
             const pageHistory = historyManager.getCurrentPageHistory();
 
             // 기존 히스토리 데이터 삭제
             await supabase
                 .from('elements')
                 .delete()
-                .eq('page_id', 'demo-page')
+                .eq('page_id', demoPageId)
                 .eq('tag', 'history');
 
             // 새로운 히스토리 데이터 저장
@@ -156,7 +172,7 @@ export const HistoryDemo: React.FC = () => {
                         created_at: new Date().toISOString()
                     }),
                     parent_id: null,
-                    page_id: 'demo-page',
+                    page_id: demoPageId,
                     order_num: -1
                 });
 
@@ -175,10 +191,11 @@ export const HistoryDemo: React.FC = () => {
         try {
             setDbStatus('로드 중...');
 
+            const demoPageId = '550e8400-e29b-41d4-a716-446655440000';
             const { data, error } = await supabase
                 .from('elements')
                 .select('*')
-                .eq('page_id', 'demo-page')
+                .eq('page_id', demoPageId)
                 .eq('tag', 'history')
                 .order('created_at', { ascending: false })
                 .limit(1);
@@ -231,7 +248,7 @@ export const HistoryDemo: React.FC = () => {
 
                 {/* 히스토리 정보 */}
                 <div className="text-sm text-gray-600">
-                    <div>현재 인덱스: {historyInfo.currentIndex + 1} / 총 엔트리: {historyInfo.totalEntries}</div>
+                    <div>현재 인덱스: {historyInfo.currentIndex} / 총 엔트리: {historyInfo.totalEntries}</div>
                     <div>Undo 가능: {historyInfo.canUndo ? 'true' : 'false'}</div>
                     <div>Redo 가능: {historyInfo.canRedo ? 'true' : 'false'}</div>
                 </div>

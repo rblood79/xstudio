@@ -22,8 +22,8 @@ export interface ElementsState {
   currentPageId: string | null;
   setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
-  addElement: (element: Element) => void;
-  updateElementProps: (elementId: string, props: ComponentElementProps) => void;
+  addElement: (element: Element) => Promise<void>;
+  updateElementProps: (elementId: string, props: ComponentElementProps) => Promise<void>;
   setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
   selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) => void;
   setPages: (pages: Page[]) => void;
@@ -96,7 +96,36 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     ),
 
-  addElement: (element) =>
+  addElement: async (element) => {
+    try {
+      // 데이터베이스에 저장
+      const { error } = await supabase
+        .from('elements')
+        .insert({
+          id: element.id,
+          tag: element.tag,
+          props: element.props,
+          parent_id: element.parent_id,
+          page_id: element.page_id,
+          order_num: element.order_num
+        });
+
+      if (error) {
+        console.error('데이터베이스 저장 실패:', error);
+        // 외래키 제약조건 오류인 경우 경고만 출력하고 계속 진행
+        if (error.code === '23503') {
+          console.warn('외래키 제약조건으로 인한 저장 실패, 메모리에서만 관리:', error.message);
+        } else {
+          throw error;
+        }
+      } else {
+        console.log('데이터베이스에 요소 저장 완료:', element.id);
+      }
+    } catch (error) {
+      console.error('요소 저장 중 오류:', error);
+      // 데이터베이스 저장 실패해도 메모리에는 추가 진행
+    }
+
     set(
       produce((state: ElementsState) => {
         // 히스토리 추가
@@ -121,9 +150,37 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           );
         }
       })
-    ),
+    );
+  },
 
-  updateElementProps: (elementId, props) =>
+  updateElementProps: async (elementId, props) => {
+    const state = get();
+    const element = findElementById(state.elements, elementId);
+    if (!element) return;
+
+    try {
+      // 데이터베이스 업데이트
+      const { error } = await supabase
+        .from('elements')
+        .update({ props: { ...element.props, ...props } })
+        .eq('id', elementId);
+
+      if (error) {
+        console.error('데이터베이스 업데이트 실패:', error);
+        // 외래키 제약조건 오류인 경우 경고만 출력하고 계속 진행
+        if (error.code === '23503') {
+          console.warn('외래키 제약조건으로 인한 업데이트 실패, 메모리에서만 관리:', error.message);
+        } else {
+          throw error;
+        }
+      } else {
+        console.log('데이터베이스에서 요소 업데이트 완료:', elementId);
+      }
+    } catch (error) {
+      console.error('요소 업데이트 중 오류:', error);
+      // 데이터베이스 업데이트 실패해도 메모리에서는 업데이트 진행
+    }
+
     set(
       produce((state: ElementsState) => {
         const element = findElementById(state.elements, elementId);
@@ -161,7 +218,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           );
         }
       })
-    ),
+    );
+  },
 
   setSelectedElement: (elementId, props) =>
     set(
@@ -319,10 +377,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
       if (error) {
         console.error('데이터베이스 삭제 실패:', error);
-        throw error;
+        // 외래키 제약조건 오류인 경우 경고만 출력하고 계속 진행
+        if (error.code === '23503') {
+          console.warn('외래키 제약조건으로 인한 삭제 실패, 메모리에서만 관리:', error.message);
+        } else {
+          throw error;
+        }
+      } else {
+        console.log('데이터베이스에서 요소 삭제 완료:', elementId);
       }
-
-      console.log('데이터베이스에서 요소 삭제 완료:', elementId);
     } catch (error) {
       console.error('요소 삭제 중 오류:', error);
       // 데이터베이스 삭제 실패해도 메모리에서는 삭제 진행
