@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../builder/stores/elements';
 import { historyManager } from '../builder/stores/history';
+import { Button } from '../builder/components/list';
 
 /**
  * 새로운 History 시스템 데모 컴포넌트
@@ -96,38 +97,24 @@ export const HistoryDemo: React.FC = () => {
             <div className="bg-gray-100 p-4 rounded-lg mb-6">
                 <h2 className="text-lg font-semibold mb-4">컨트롤</h2>
                 <div className="flex flex-wrap gap-2 mb-4">
-                    <button
-                        onClick={handleAddElement}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                        요소 추가
-                    </button>
-                    <button
-                        onClick={handleUndo}
-                        disabled={!historyInfo.canUndo}
-                        className={`px-4 py-2 rounded ${historyInfo.canUndo
-                            ? 'bg-gray-500 text-white hover:bg-gray-600'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
-                    >
-                        Undo
-                    </button>
-                    <button
-                        onClick={handleRedo}
-                        disabled={!historyInfo.canRedo}
-                        className={`px-4 py-2 rounded ${historyInfo.canRedo
-                            ? 'bg-gray-500 text-white hover:bg-gray-600'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            }`}
-                    >
-                        Redo
-                    </button>
-                    <button
-                        onClick={handleClearHistory}
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                        히스토리 초기화
-                    </button>
+                    <Button
+                        onPress={handleAddElement}
+                        children="요소 추가"
+                    />
+                    <Button
+                        onPress={handleUndo}
+                        children="Undo"
+                        isDisabled={!historyInfo.canUndo}
+                    />
+                    <Button
+                        onPress={handleRedo}
+                        isDisabled={!historyInfo.canRedo}
+                        children="Redo"
+                    />
+                    <Button
+                        onPress={handleClearHistory}
+                        children="히스토리 초기화"
+                    />
                 </div>
 
                 {/* 히스토리 정보 */}
@@ -164,18 +151,14 @@ export const HistoryDemo: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleUpdateElement(element.id)}
-                                        className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600"
-                                    >
-                                        업데이트
-                                    </button>
-                                    <button
-                                        onClick={() => handleRemoveElement(element.id)}
-                                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                                    >
-                                        삭제
-                                    </button>
+                                    <Button
+                                        onPress={() => handleUpdateElement(element.id)}
+                                        children="업데이트"
+                                    />
+                                    <Button
+                                        onPress={() => handleRemoveElement(element.id)}
+                                        children="삭제"
+                                    />
                                 </div>
                             </div>
                         ))}
