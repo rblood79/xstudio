@@ -397,11 +397,7 @@ export interface ThemeState {
     lastError?: string | null;
 }
 
-export interface HistoryState {
-    history: Element[][];
-    currentIndex: number;
-    maxHistorySize: number;
-}
+// HistoryState는 새로운 history 시스템으로 대체됨
 
 export interface SelectionState {
     selectedElementId: string | null;
@@ -411,7 +407,7 @@ export interface SelectionState {
 }
 
 // === 통합 스토어 타입 ===
-export interface Store extends ElementsState, ThemeState, HistoryState, SelectionState {
+export interface Store extends ElementsState, ThemeState, SelectionState {
     // 액션들
     setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
     loadPageElements: (elements: Element[], pageId: string) => void;

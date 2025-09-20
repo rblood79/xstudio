@@ -7,6 +7,7 @@ import Dashboard from './dashboard';
 import Builder from './builder';
 import Preview from './builder/preview/index.tsx';
 import Signin from './auth/Signin';
+import { HistoryDemo } from './demo/HistoryDemo';
 import { supabase } from './env/supabase.client';
 import { Session } from '@supabase/supabase-js';
 
@@ -34,10 +35,12 @@ ReactDOM.createRoot(root!).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/history" element={<HistoryDemo />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/builder/:projectId" element={<ProtectedRoute><Builder /></ProtectedRoute>} />
       <Route path="/preview/:projectId" element={<ProtectedRoute><Preview /></ProtectedRoute>} />
+
     </Routes>
   </BrowserRouter>
 )

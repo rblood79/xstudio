@@ -1,28 +1,17 @@
 import { create } from 'zustand';
-import { devtools, subscribeWithSelector } from 'zustand/middleware';
-import { createElementsSlice, ElementsState } from './elements';
 import { createSelectionSlice, SelectionState } from './selection';
 import { createThemeSlice, ThemeState } from './theme';
+import { createElementsSlice, ElementsState } from './elements';
 
-// 통합 스토어 타입 (히스토리는 elements.ts에 통합됨)
+// 통합 스토어 타입
 interface Store extends ElementsState, SelectionState, ThemeState { }
 
-// 기존 스토어 (하위 호환성)
-export const useStore = create<Store>()(
-    devtools(
-        subscribeWithSelector(
-            (set, get, api) => ({
-                ...createElementsSlice(set, get),
-                ...createSelectionSlice(set, get, api),
-                ...createThemeSlice(set, get, api),
-            })
-        ),
-        {
-            name: 'XStudio Store',
-            enabled: import.meta.env.DEV
-        }
-    )
-);
+// 통합 스토어 생성
+export const useStore = create<Store>((...args) => ({
+    ...createElementsSlice(...args),
+    ...createSelectionSlice(...args),
+    ...createThemeSlice(...args),
+}));
 
 // Zundo 패턴은 기존 히스토리 시스템에 통합됨
 // useStore가 개선된 히스토리 시스템을 포함함
