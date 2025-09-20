@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { projectsApi, pagesApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
-import "./index.css";
 import { ElementUtils } from '../utils/elementUtils';
+import { Button, TextField } from '../builder/components/list';
+import "./index.css";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -124,16 +125,19 @@ function Dashboard() {
       )}
 
       <form onSubmit={handleAddProject} className="add-project-form">
-        <input
+        <TextField
+          label="새 프로젝트 이름"
           type="text"
           value={newProjectName}
-          onChange={(e) => setNewProjectName(e.target.value)}
+          onChange={(value) => setNewProjectName(value)}
           placeholder="새 프로젝트 이름"
-          disabled={loading}
+          isDisabled={loading}
         />
-        <button type="submit" disabled={loading || !newProjectName.trim()}>
-          {loading ? '생성 중...' : '프로젝트 추가'}
-        </button>
+        <Button
+          type="submit"
+          isDisabled={loading || !newProjectName.trim()}
+          children={loading ? '생성 중...' : '프로젝트 추가'}
+        />
       </form>
 
       <div className="projects-grid">
@@ -142,19 +146,16 @@ function Dashboard() {
             <h3>{project.name}</h3>
             <p>생성일: {new Date(project.created_at).toLocaleDateString()}</p>
             <div className="project-actions">
-              <button
-                onClick={() => navigate(`/builder/${project.id}`)}
-                disabled={loading}
-              >
-                편집
-              </button>
-              <button
-                onClick={() => handleDeleteProject(project.id)}
-                disabled={loading}
-                className="delete-btn"
-              >
-                삭제
-              </button>
+              <Button
+                onPress={() => navigate(`/builder/${project.id}`)}
+                isDisabled={loading}
+                children="편집"
+              />
+              <Button
+                onPress={() => handleDeleteProject(project.id)}
+                isDisabled={loading}
+                children="삭제"
+              />
             </div>
           </div>
         ))}
