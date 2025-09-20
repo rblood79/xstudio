@@ -135,11 +135,20 @@ export class ElementsApiService extends BaseApiService {
         this.validateInput(element, (el) => el && typeof el === 'object', 'createElement');
 
         return this.handleApiCall('createElement', async () => {
-            return await this.supabase
+            // upsert를 사용하여 중복 삽입 방지
+            const { data, error } = await this.supabase
                 .from("elements")
-                .insert([element])
+                .upsert([element], {
+                    onConflict: 'id'
+                })
                 .select()
                 .single();
+
+            if (error) {
+                throw error;
+            }
+
+            return data;
         });
     }
 
