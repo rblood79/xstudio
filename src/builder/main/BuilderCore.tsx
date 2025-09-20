@@ -19,6 +19,7 @@ import { usePageManager } from '../hooks/usePageManager';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useThemeManager } from '../hooks/useThemeManager';
 import { useValidation } from '../hooks/useValidation';
+import { memoryMonitor } from '../utils/memoryMonitor';
 
 import './index.css';
 import { MessageService } from '../../utils/messaging';
@@ -95,6 +96,18 @@ export const BuilderCore: React.FC = () => {
             currentIndex: historyInfo.currentIndex,
             totalEntries: historyInfo.totalEntries
         });
+
+        // 메모리 통계 로그 (5초마다)
+        if (Math.random() < 0.1) { // 10% 확률로 로그
+            const memoryStats = memoryMonitor.getCurrentStats();
+            if (memoryStats) {
+                console.log('🧠 메모리 통계:', memoryStats);
+                const recommendations = memoryMonitor.getOptimizationRecommendations();
+                if (recommendations.length > 0) {
+                    console.log('💡 최적화 권장사항:', recommendations);
+                }
+            }
+        }
     }
 
     // 훅 사용
@@ -134,7 +147,19 @@ export const BuilderCore: React.FC = () => {
         if (projectId) {
             initializeProject(projectId, setIsLoading, setError);
             loadProjectTheme(projectId);
+
+            // 메모리 모니터링 시작 (개발 모드에서만)
+            if (import.meta.env.DEV) {
+                memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
+            }
         }
+
+        // 컴포넌트 언마운트 시 메모리 모니터링 중지
+        return () => {
+            if (import.meta.env.DEV) {
+                memoryMonitor.stopMonitoring();
+            }
+        };
     }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
 
     // 프로젝트 초기화 후 프리뷰에 요소 전송 (중복 전송 방지)
