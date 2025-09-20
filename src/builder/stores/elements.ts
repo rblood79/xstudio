@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { StateCreator } from 'zustand';
 import { Element, ComponentElementProps } from '../../types/store';
 import { historyManager } from './history';
+import { supabase } from '../../env/supabase.client';
 
 interface Page {
   id: string;
@@ -49,31 +50,13 @@ const createCompleteProps = (element: Element, props?: ComponentElementProps) =>
   tag: element.tag
 });
 
-const findElementById = (elements: Element[], elementId: string) => {
-  return elements.find((el: Element) => el.id === elementId);
+// Helper function to find element by ID
+const findElementById = (elements: Element[], id: string): Element | null => {
+  for (const element of elements) {
+    if (element.id === id) return element;
+  }
+  return null;
 };
-
-// ElementsState 타입 정의
-export interface ElementsState {
-  elements: Element[];
-  selectedElementId: string | null;
-  selectedElementProps: ComponentElementProps;
-  selectedTab: { parentId: string, tabIndex: number } | null;
-  pages: Page[];
-  currentPageId: string | null;
-  setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
-  loadPageElements: (elements: Element[], pageId: string) => void;
-  addElement: (element: Element) => void;
-  updateElementProps: (elementId: string, props: ComponentElementProps) => void;
-  setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
-  selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) => void;
-  setPages: (pages: Page[]) => void;
-  setCurrentPageId: (pageId: string) => void;
-  undo: () => void;
-  redo: () => void;
-  removeElement: (elementId: string) => Promise<void>;
-  removeTabPair: (elementId: string) => void;
-}
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   elements: [],
@@ -83,20 +66,19 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   pages: [],
   currentPageId: null,
 
-  setElements: (elements, options = {}) =>
+  setElements: (elements, options) =>
     set(
       produce((state: ElementsState) => {
-        const prevElements = state.elements;
-        state.elements = elements.map(sanitizeElement);
+        state.elements = elements;
 
-        // skipHistory 옵션이 true가 아닌 경우에만 히스토리 생성
-        if (!options.skipHistory && state.currentPageId) {
+        // 히스토리 추가 (skipHistory가 false인 경우)
+        if (state.currentPageId && !options?.skipHistory) {
           historyManager.addEntry({
             type: 'update',
-            elementId: 'all',
+            elementId: 'bulk_update',
             data: {
-              element: { id: 'all', tag: 'root', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 } as Element,
-              prevElement: { id: 'all', tag: 'root', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 } as Element
+              element: { id: 'bulk_update', tag: 'bulk', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 },
+              prevElement: { id: 'bulk_update', tag: 'bulk', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 }
             }
           });
         }
@@ -106,54 +88,34 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   loadPageElements: (elements, pageId) =>
     set(
       produce((state: ElementsState) => {
-        const newElements = elements.map(sanitizeElement);
-
-        // 새 페이지의 히스토리 초기화
-        historyManager.setCurrentPage(pageId);
-
-        // 상태 업데이트
-        state.elements = newElements;
-        state.selectedElementId = null;
-        state.selectedElementProps = {};
+        state.elements = elements;
         state.currentPageId = pageId;
 
-        // 첫 로드 시에는 postMessage만 하고 히스토리는 생성하지 않음
-        if (typeof window !== 'undefined' && window.parent) {
-          window.parent.postMessage(
-            {
-              type: 'ELEMENTS_LOADED',
-              payload: {
-                elements: newElements.map(sanitizeElement),
-                pageId: pageId
-              }
-            },
-            '*'
-          );
-        }
+        // 페이지 변경 시 히스토리 초기화
+        historyManager.setCurrentPage(pageId);
       })
     ),
 
   addElement: (element) =>
     set(
       produce((state: ElementsState) => {
-        const sanitizedElement = sanitizeElement(element);
-        state.elements.push(sanitizedElement);
-
         // 히스토리 추가
         if (state.currentPageId) {
           historyManager.addEntry({
             type: 'add',
             elementId: element.id,
-            data: { element: sanitizedElement }
+            data: { element: { ...element } }
           });
         }
+
+        state.elements.push(element);
 
         // postMessage로 iframe에 전달
         if (typeof window !== 'undefined' && window.parent) {
           window.parent.postMessage(
             {
               type: 'ELEMENT_ADDED',
-              payload: { element: sanitizeElement(sanitizedElement) }
+              payload: { element: sanitizeElement(element) }
             },
             '*'
           );
@@ -167,22 +129,21 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         const element = findElementById(state.elements, elementId);
         if (!element) return;
 
-        const prevProps = { ...element.props };
-        element.props = { ...element.props, ...props };
-
         // 히스토리 추가
         if (state.currentPageId) {
           historyManager.addEntry({
             type: 'update',
             elementId: elementId,
             data: {
-              element: { ...element },
-              prevElement: { ...element, props: prevProps },
               props: props,
-              prevProps: prevProps
+              prevProps: { ...element.props },
+              prevElement: { ...element }
             }
           });
         }
+
+        // 요소 업데이트
+        element.props = { ...element.props, ...props };
 
         // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
         if (state.selectedElementId === elementId) {
@@ -194,7 +155,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           window.parent.postMessage(
             {
               type: 'ELEMENT_UPDATED',
-              payload: { elementId, props }
+              payload: { element: sanitizeElement(element) }
             },
             '*'
           );
@@ -230,10 +191,19 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     ),
 
   setPages: (pages) =>
-    set(() => ({ pages })),
+    set(
+      produce((state: ElementsState) => {
+        state.pages = pages;
+      })
+    ),
 
   setCurrentPageId: (pageId) =>
-    set(() => ({ currentPageId: pageId })),
+    set(
+      produce((state: ElementsState) => {
+        state.currentPageId = pageId;
+        historyManager.setCurrentPage(pageId);
+      })
+    ),
 
   undo: () => {
     const state = get();
@@ -297,24 +267,22 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       produce((state: ElementsState) => {
         switch (entry.type) {
           case 'add':
-            // 요소 다시 추가
+            // 요소 추가
             if (entry.data.element) {
               state.elements.push(entry.data.element);
             }
             break;
 
           case 'update':
-            // 업데이트된 상태로 복원
-            if (entry.data.element) {
-              const index = state.elements.findIndex(el => el.id === entry.elementId);
-              if (index !== -1) {
-                state.elements[index] = entry.data.element;
-              }
+            // 업데이트 적용
+            const element = findElementById(state.elements, entry.elementId);
+            if (element && entry.data.props) {
+              element.props = { ...element.props, ...entry.data.props };
             }
             break;
 
           case 'remove':
-            // 요소 다시 제거
+            // 요소 제거
             state.elements = state.elements.filter(el => el.id !== entry.elementId);
             if (state.selectedElementId === entry.elementId) {
               state.selectedElementId = null;
@@ -341,6 +309,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     const state = get();
     const element = findElementById(state.elements, elementId);
     if (!element) return;
+
+    try {
+      // 데이터베이스에서 삭제
+      const { error } = await supabase
+        .from('elements')
+        .delete()
+        .eq('id', elementId);
+
+      if (error) {
+        console.error('데이터베이스 삭제 실패:', error);
+        throw error;
+      }
+
+      console.log('데이터베이스에서 요소 삭제 완료:', elementId);
+    } catch (error) {
+      console.error('요소 삭제 중 오류:', error);
+      // 데이터베이스 삭제 실패해도 메모리에서는 삭제 진행
+    }
 
     set(
       produce((state: ElementsState) => {
@@ -379,32 +365,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   removeTabPair: (elementId) =>
     set(
       produce((state: ElementsState) => {
-        // 탭 페어 제거 로직
-        const element = findElementById(state.elements, elementId);
-        if (element && element.tag === 'TabList') {
-          // 탭 리스트와 관련된 탭 패널들도 함께 제거
-          const relatedElements = state.elements.filter(
-            el => el.parent_id === elementId || el.id === elementId
-          );
+        // Tab과 Panel 쌍 제거
+        state.elements = state.elements.filter(
+          el => el.parent_id !== elementId && el.id !== elementId
+        );
 
-          relatedElements.forEach(relatedElement => {
-            if (state.currentPageId) {
-              historyManager.addEntry({
-                type: 'remove',
-                elementId: relatedElement.id,
-                data: { element: { ...relatedElement } }
-              });
-            }
-          });
-
-          state.elements = state.elements.filter(
-            el => el.parent_id !== elementId && el.id !== elementId
-          );
-
-          if (state.selectedElementId === elementId) {
-            state.selectedElementId = null;
-            state.selectedElementProps = {};
-          }
+        if (state.selectedElementId === elementId) {
+          state.selectedElementId = null;
+          state.selectedElementProps = {};
         }
       })
     ),
