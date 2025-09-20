@@ -20,6 +20,9 @@ export interface ElementsState {
   selectedTab: { parentId: string, tabIndex: number } | null;
   pages: Page[];
   currentPageId: string | null;
+  pageHistories: Record<string, { history: Element[][]; historyIndex: number }>;
+  historyOperationInProgress: boolean;
+
   setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => Promise<void>;
@@ -34,14 +37,30 @@ export interface ElementsState {
   removeTabPair: (elementId: string) => void;
 }
 
-const sanitizeElement = (el: Element) => ({
-  id: el.id,
-  tag: el.tag,
-  props: JSON.parse(JSON.stringify(el.props)), // Deep clone to remove non-serializable values
-  parent_id: el.parent_id,
-  page_id: el.page_id,
-  order_num: el.order_num
-});
+export const sanitizeElement = (element: Element): Element => {
+  try {
+    // 깊은 복사를 통해 프록시 객체에서 일반 객체로 변환
+    return {
+      id: element.id,
+      tag: element.tag,
+      props: JSON.parse(JSON.stringify(element.props || {})),
+      parent_id: element.parent_id,
+      page_id: element.page_id,
+      order_num: element.order_num
+    };
+  } catch (error) {
+    console.error("Element sanitization error:", error);
+    // 기본 값으로 대체
+    return {
+      id: element.id || "",
+      tag: element.tag || "",
+      props: {},
+      parent_id: element.parent_id,
+      page_id: element.page_id || "",
+      order_num: element.order_num || 0
+    };
+  }
+};
 
 // Helper function for element selection logic
 const createCompleteProps = (element: Element, props?: ComponentElementProps) => ({
@@ -65,6 +84,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   selectedTab: null,
   pages: [],
   currentPageId: null,
+  pageHistories: {},
+  historyOperationInProgress: false,
 
   setElements: (elements, options) =>
     set(
@@ -93,6 +114,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
         // 페이지 변경 시 히스토리 초기화
         historyManager.setCurrentPage(pageId);
+
+        // pageHistories 초기화 확인
+        if (!state.pageHistories) {
+          state.pageHistories = {};
+        }
+
+        // 현재 페이지의 히스토리가 없으면 초기화
+        if (!state.pageHistories[pageId]) {
+          state.pageHistories[pageId] = { history: [], historyIndex: -1 };
+        }
       })
     ),
 
@@ -264,115 +295,111 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     ),
 
   undo: async () => {
-    const state = get();
-    if (!state.currentPageId) return;
+    try {
+      const state = get();
+      const { currentPageId } = state;
+      if (!currentPageId) return;
 
-    const entry = historyManager.undo();
-    if (!entry) return;
+      // 히스토리 작업 시작 표시
+      set({ historyOperationInProgress: true });
 
-    // 데이터베이스 작업 처리
-    if (entry.type === 'add') {
-      try {
-        // 추가된 요소를 데이터베이스에서 삭제
-        const { error } = await supabase
-          .from('elements')
-          .delete()
-          .eq('id', entry.elementId);
+      console.log("🔄 Undo 시작");
 
-        if (error) {
-          console.error('Undo 시 데이터베이스 삭제 실패:', error);
-        } else {
-          console.log('Undo 시 데이터베이스에서 요소 삭제 완료:', entry.elementId);
-        }
-      } catch (error) {
-        console.error('Undo 시 요소 삭제 중 오류:', error);
+      // historyManager에서 항목 가져오기
+      const entry = historyManager.undo();
+      if (!entry) {
+        console.log("⚠️ Undo 불가능: 히스토리 항목 없음");
+        set({ historyOperationInProgress: false });
+        return;
       }
-    } else if (entry.type === 'update' && entry.data.prevElement) {
+
+      set(
+        produce((state: ElementsState) => {
+          switch (entry.type) {
+            case 'add':
+              // 추가된 요소 제거 (역작업)
+              state.elements = state.elements.filter(el => el.id !== entry.elementId);
+              if (state.selectedElementId === entry.elementId) {
+                state.selectedElementId = null;
+                state.selectedElementProps = {};
+              }
+              break;
+
+            case 'update': {
+              // 이전 상태로 복원
+              const element = findElementById(state.elements, entry.elementId);
+              if (element && entry.data.prevProps) {
+                element.props = { ...entry.data.prevProps };
+              } else if (element && entry.data.prevElement) {
+                // 전체 요소가 저장된 경우
+                Object.assign(element, entry.data.prevElement);
+              }
+              break;
+            }
+
+            case 'remove':
+              // 삭제된 요소 복원
+              if (entry.data.element) {
+                state.elements.push(entry.data.element);
+              }
+              break;
+          }
+
+          // iframe 업데이트
+          if (typeof window !== 'undefined' && window.parent) {
+            window.parent.postMessage(
+              {
+                type: 'ELEMENTS_UPDATED',
+                payload: { elements: state.elements.map(sanitizeElement) }
+              },
+              '*'
+            );
+          }
+        })
+      );
+
+      // Supabase 업데이트
       try {
-        // 이전 상태로 데이터베이스 업데이트
-        const { error } = await supabase
-          .from('elements')
-          .update({
-            props: entry.data.prevElement.props,
-            parent_id: entry.data.prevElement.parent_id,
-            order_num: entry.data.prevElement.order_num
-          })
-          .eq('id', entry.elementId);
-
-        if (error) {
-          console.error('Undo 시 데이터베이스 업데이트 실패:', error);
-        } else {
-          console.log('Undo 시 데이터베이스에서 요소 업데이트 완료:', entry.elementId);
-        }
-      } catch (error) {
-        console.error('Undo 시 요소 업데이트 중 오류:', error);
-      }
-    } else if (entry.type === 'remove' && entry.data.element) {
-      try {
-        // 제거된 요소를 데이터베이스에 복원
-        const { error } = await supabase
-          .from('elements')
-          .insert({
-            id: entry.data.element.id,
-            tag: entry.data.element.tag,
-            props: entry.data.element.props,
-            parent_id: entry.data.element.parent_id,
-            page_id: entry.data.element.page_id,
-            order_num: entry.data.element.order_num
-          });
-
-        if (error) {
-          console.error('Undo 시 데이터베이스 복원 실패:', error);
-        } else {
-          console.log('Undo 시 데이터베이스에서 요소 복원 완료:', entry.data.element.id);
-        }
-      } catch (error) {
-        console.error('Undo 시 요소 복원 중 오류:', error);
-      }
-    }
-
-    set(
-      produce((state: ElementsState) => {
+        // 작업 유형에 따라 다른 DB 작업 수행
         switch (entry.type) {
           case 'add':
             // 추가된 요소 제거
-            state.elements = state.elements.filter(el => el.id !== entry.elementId);
-            if (state.selectedElementId === entry.elementId) {
-              state.selectedElementId = null;
-              state.selectedElementProps = {};
-            }
+            await supabase
+              .from('elements')
+              .delete()
+              .eq('id', entry.elementId);
             break;
 
           case 'update':
             // 이전 상태로 복원
             if (entry.data.prevElement) {
-              const index = state.elements.findIndex(el => el.id === entry.elementId);
-              if (index !== -1) {
-                state.elements[index] = entry.data.prevElement;
-              }
+              await supabase
+                .from('elements')
+                .update({ props: entry.data.prevProps || entry.data.prevElement.props })
+                .eq('id', entry.elementId);
             }
             break;
 
           case 'remove':
-            // 제거된 요소 복원
+            // 삭제된 요소 복원
             if (entry.data.element) {
-              state.elements.push(entry.data.element);
+              await supabase
+                .from('elements')
+                .insert(sanitizeElement(entry.data.element));
             }
             break;
         }
+      } catch (dbError) {
+        console.error("Database update error:", dbError);
+      }
 
-        // postMessage로 iframe에 전달
-        if (typeof window !== 'undefined' && window.parent) {
-          window.parent.postMessage(
-            {
-              type: 'ELEMENTS_UPDATED',
-              payload: { elements: state.elements.map(sanitizeElement) }
-            },
-            '*'
-          );
-        }
-      })
-    );
+      console.log("✅ Undo 완료");
+    } catch (error) {
+      console.error("Undo 시 오류:", error);
+    } finally {
+      // 히스토리 작업 종료 표시
+      set({ historyOperationInProgress: false });
+    }
   },
 
   redo: async () => {
