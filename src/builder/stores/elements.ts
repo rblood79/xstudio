@@ -28,8 +28,8 @@ export interface ElementsState {
   selectTabElement: (elementId: string, props: ComponentElementProps, tabIndex: number) => void;
   setPages: (pages: Page[]) => void;
   setCurrentPageId: (pageId: string) => void;
-  undo: () => void;
-  redo: () => void;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
   removeElement: (elementId: string) => Promise<void>;
   removeTabPair: (elementId: string) => void;
 }
@@ -263,12 +263,73 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     ),
 
-  undo: () => {
+  undo: async () => {
     const state = get();
     if (!state.currentPageId) return;
 
     const entry = historyManager.undo();
     if (!entry) return;
+
+    // 데이터베이스 작업 처리
+    if (entry.type === 'add') {
+      try {
+        // 추가된 요소를 데이터베이스에서 삭제
+        const { error } = await supabase
+          .from('elements')
+          .delete()
+          .eq('id', entry.elementId);
+
+        if (error) {
+          console.error('Undo 시 데이터베이스 삭제 실패:', error);
+        } else {
+          console.log('Undo 시 데이터베이스에서 요소 삭제 완료:', entry.elementId);
+        }
+      } catch (error) {
+        console.error('Undo 시 요소 삭제 중 오류:', error);
+      }
+    } else if (entry.type === 'update' && entry.data.prevElement) {
+      try {
+        // 이전 상태로 데이터베이스 업데이트
+        const { error } = await supabase
+          .from('elements')
+          .update({
+            props: entry.data.prevElement.props,
+            parent_id: entry.data.prevElement.parent_id,
+            order_num: entry.data.prevElement.order_num
+          })
+          .eq('id', entry.elementId);
+
+        if (error) {
+          console.error('Undo 시 데이터베이스 업데이트 실패:', error);
+        } else {
+          console.log('Undo 시 데이터베이스에서 요소 업데이트 완료:', entry.elementId);
+        }
+      } catch (error) {
+        console.error('Undo 시 요소 업데이트 중 오류:', error);
+      }
+    } else if (entry.type === 'remove' && entry.data.element) {
+      try {
+        // 제거된 요소를 데이터베이스에 복원
+        const { error } = await supabase
+          .from('elements')
+          .insert({
+            id: entry.data.element.id,
+            tag: entry.data.element.tag,
+            props: entry.data.element.props,
+            parent_id: entry.data.element.parent_id,
+            page_id: entry.data.element.page_id,
+            order_num: entry.data.element.order_num
+          });
+
+        if (error) {
+          console.error('Undo 시 데이터베이스 복원 실패:', error);
+        } else {
+          console.log('Undo 시 데이터베이스에서 요소 복원 완료:', entry.data.element.id);
+        }
+      } catch (error) {
+        console.error('Undo 시 요소 복원 중 오류:', error);
+      }
+    }
 
     set(
       produce((state: ElementsState) => {
@@ -314,12 +375,72 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     );
   },
 
-  redo: () => {
+  redo: async () => {
     const state = get();
     if (!state.currentPageId) return;
 
     const entry = historyManager.redo();
     if (!entry) return;
+
+    // 데이터베이스 작업 처리
+    if (entry.type === 'add' && entry.data.element) {
+      try {
+        // 요소를 데이터베이스에 추가
+        const { error } = await supabase
+          .from('elements')
+          .insert({
+            id: entry.data.element.id,
+            tag: entry.data.element.tag,
+            props: entry.data.element.props,
+            parent_id: entry.data.element.parent_id,
+            page_id: entry.data.element.page_id,
+            order_num: entry.data.element.order_num
+          });
+
+        if (error) {
+          console.error('Redo 시 데이터베이스 추가 실패:', error);
+        } else {
+          console.log('Redo 시 데이터베이스에서 요소 추가 완료:', entry.data.element.id);
+        }
+      } catch (error) {
+        console.error('Redo 시 요소 추가 중 오류:', error);
+      }
+    } else if (entry.type === 'update' && entry.data.props) {
+      try {
+        // 데이터베이스 업데이트
+        const element = findElementById(state.elements, entry.elementId);
+        if (element) {
+          const { error } = await supabase
+            .from('elements')
+            .update({ props: { ...element.props, ...entry.data.props } })
+            .eq('id', entry.elementId);
+
+          if (error) {
+            console.error('Redo 시 데이터베이스 업데이트 실패:', error);
+          } else {
+            console.log('Redo 시 데이터베이스에서 요소 업데이트 완료:', entry.elementId);
+          }
+        }
+      } catch (error) {
+        console.error('Redo 시 요소 업데이트 중 오류:', error);
+      }
+    } else if (entry.type === 'remove') {
+      try {
+        // 요소를 데이터베이스에서 삭제
+        const { error } = await supabase
+          .from('elements')
+          .delete()
+          .eq('id', entry.elementId);
+
+        if (error) {
+          console.error('Redo 시 데이터베이스 삭제 실패:', error);
+        } else {
+          console.log('Redo 시 데이터베이스에서 요소 삭제 완료:', entry.elementId);
+        }
+      } catch (error) {
+        console.error('Redo 시 요소 삭제 중 오류:', error);
+      }
+    }
 
     set(
       produce((state: ElementsState) => {
@@ -331,13 +452,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             }
             break;
 
-          case 'update':
+          case 'update': {
             // 업데이트 적용
             const element = findElementById(state.elements, entry.elementId);
             if (element && entry.data.props) {
               element.props = { ...element.props, ...entry.data.props };
             }
             break;
+          }
 
           case 'remove':
             // 요소 제거
