@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../builder/stores/elements';
 import { historyManager } from '../builder/stores/history';
 import { Button } from '../builder/components/list';
+import { supabase } from '../env/supabase.client';
 
 /**
  * 새로운 History 시스템 데모 컴포넌트
@@ -22,6 +23,10 @@ export const HistoryDemo: React.FC = () => {
         totalEntries: 0,
         currentIndex: -1
     });
+
+    // 데이터베이스 관련 상태
+    const [useDatabase, setUseDatabase] = useState(false);
+    const [dbStatus, setDbStatus] = useState('');
 
     // 페이지 초기화
     useEffect(() => {
@@ -89,6 +94,113 @@ export const HistoryDemo: React.FC = () => {
         alert('히스토리가 초기화되었습니다. 이제 새로운 작업을 시작할 수 있습니다.');
     };
 
+    // 로컬 스토리지에 히스토리 저장 (임시 해결책)
+    const saveHistoryToLocalStorage = () => {
+        try {
+            setDbStatus('로컬 저장 중...');
+
+            const pageHistory = historyManager.getCurrentPageHistory();
+            localStorage.setItem('demo-page-history', JSON.stringify(pageHistory));
+
+            setDbStatus('로컬 저장 완료!');
+            setTimeout(() => setDbStatus(''), 3000);
+        } catch (error) {
+            setDbStatus(`로컬 저장 실패: ${error}`);
+            setTimeout(() => setDbStatus(''), 5000);
+        }
+    };
+
+    // 로컬 스토리지에서 히스토리 로드
+    const loadHistoryFromLocalStorage = () => {
+        try {
+            setDbStatus('로컬 로드 중...');
+
+            const savedHistory = localStorage.getItem('demo-page-history');
+            if (savedHistory) {
+                const historyData = JSON.parse(savedHistory);
+                console.log('로드된 히스토리 데이터:', historyData);
+                setDbStatus('로컬 로드 완료!');
+                setTimeout(() => setDbStatus(''), 3000);
+            } else {
+                setDbStatus('저장된 히스토리 없음');
+                setTimeout(() => setDbStatus(''), 3000);
+            }
+        } catch (error) {
+            setDbStatus(`로컬 로드 실패: ${error}`);
+            setTimeout(() => setDbStatus(''), 5000);
+        }
+    };
+
+    // elements 테이블에 히스토리 저장 (간단한 방법)
+    const saveHistoryToDatabase = async () => {
+        try {
+            setDbStatus('저장 중...');
+
+            const pageHistory = historyManager.getCurrentPageHistory();
+
+            // 기존 히스토리 데이터 삭제
+            await supabase
+                .from('elements')
+                .delete()
+                .eq('page_id', 'demo-page')
+                .eq('tag', 'history');
+
+            // 새로운 히스토리 데이터 저장
+            const { error } = await supabase
+                .from('elements')
+                .insert({
+                    id: `history_${Date.now()}`,
+                    tag: 'history',
+                    props: JSON.stringify({
+                        history_data: pageHistory,
+                        created_at: new Date().toISOString()
+                    }),
+                    parent_id: null,
+                    page_id: 'demo-page',
+                    order_num: -1
+                });
+
+            if (error) throw error;
+
+            setDbStatus('저장 완료!');
+            setTimeout(() => setDbStatus(''), 3000);
+        } catch (error) {
+            setDbStatus(`저장 실패: ${error}`);
+            setTimeout(() => setDbStatus(''), 5000);
+        }
+    };
+
+    // elements 테이블에서 히스토리 로드
+    const loadHistoryFromDatabase = async () => {
+        try {
+            setDbStatus('로드 중...');
+
+            const { data, error } = await supabase
+                .from('elements')
+                .select('*')
+                .eq('page_id', 'demo-page')
+                .eq('tag', 'history')
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                const props = JSON.parse(data[0].props);
+                const historyData = props.history_data;
+                console.log('로드된 히스토리 데이터:', historyData);
+                setDbStatus('로드 완료!');
+                setTimeout(() => setDbStatus(''), 3000);
+            } else {
+                setDbStatus('저장된 히스토리 없음');
+                setTimeout(() => setDbStatus(''), 3000);
+            }
+        } catch (error) {
+            setDbStatus(`로드 실패: ${error}`);
+            setTimeout(() => setDbStatus(''), 5000);
+        }
+    };
+
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold mb-6">새로운 History 시스템 데모</h1>
@@ -122,6 +234,53 @@ export const HistoryDemo: React.FC = () => {
                     <div>현재 인덱스: {historyInfo.currentIndex + 1} / 총 엔트리: {historyInfo.totalEntries}</div>
                     <div>Undo 가능: {historyInfo.canUndo ? 'true' : 'false'}</div>
                     <div>Redo 가능: {historyInfo.canRedo ? 'true' : 'false'}</div>
+                </div>
+            </div>
+
+            {/* 로컬 스토리지 테스트 패널 */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h2 className="text-lg font-semibold mb-4">로컬 스토리지 테스트 (권장)</h2>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <Button
+                        onPress={saveHistoryToLocalStorage}
+                        children="히스토리 로컬 저장"
+                    />
+                    <Button
+                        onPress={loadHistoryFromLocalStorage}
+                        children="히스토리 로컬 로드"
+                    />
+                </div>
+                <div className="text-sm text-gray-600">
+                    <div>상태: {dbStatus || '대기 중'}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                        로컬 스토리지는 브라우저에 저장되며 새로고침 후에도 유지됩니다
+                    </div>
+                </div>
+            </div>
+
+            {/* 데이터베이스 테스트 패널 */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h2 className="text-lg font-semibold mb-4">데이터베이스 테스트 (elements 테이블 사용)</h2>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <Button
+                        onPress={saveHistoryToDatabase}
+                        children="히스토리 DB 저장"
+                    />
+                    <Button
+                        onPress={loadHistoryFromDatabase}
+                        children="히스토리 DB 로드"
+                    />
+                    <Button
+                        onPress={() => setUseDatabase(!useDatabase)}
+                        children={useDatabase ? "DB 모드 해제" : "DB 모드 활성화"}
+                    />
+                </div>
+                <div className="text-sm text-gray-600">
+                    <div>DB 모드: {useDatabase ? '활성화' : '비활성화'}</div>
+                    <div>상태: {dbStatus || '대기 중'}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                        히스토리는 elements 테이블에 tag='history'로 저장됩니다
+                    </div>
                 </div>
             </div>
 
@@ -175,6 +334,7 @@ export const HistoryDemo: React.FC = () => {
                     <li>키보드 단축키: Ctrl+Z (Undo), Ctrl+Y (Redo)</li>
                     <li>각 페이지별로 독립적인 히스토리가 관리됩니다</li>
                     <li>최대 50개의 히스토리 엔트리가 유지됩니다</li>
+                    <li><strong>새로운 기능:</strong> 로컬 스토리지 또는 elements 테이블에 히스토리를 저장할 수 있습니다</li>
                 </ul>
             </div>
         </div>
