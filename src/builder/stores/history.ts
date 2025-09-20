@@ -1,4 +1,5 @@
 import { Element } from '../../types/unified';
+import { commandDataStore, CommandData } from './commandDataStore';
 
 /**
  * 간단하고 효율적인 History 시스템
@@ -34,6 +35,7 @@ export class HistoryManager {
     private pageHistories: Map<string, PageHistory> = new Map();
     private currentPageId: string | null = null;
     private readonly defaultMaxSize = 50;
+    private commandDataStore = commandDataStore;
 
     constructor() {
         // 페이지 히스토리 초기화
@@ -56,7 +58,7 @@ export class HistoryManager {
     }
 
     /**
-     * 히스토리 엔트리 추가
+     * 히스토리 엔트리 추가 (CommandDataStore 통합)
      */
     addEntry(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): void {
         if (!this.currentPageId) return;
@@ -64,9 +66,28 @@ export class HistoryManager {
         const pageHistory = this.pageHistories.get(this.currentPageId);
         if (!pageHistory) return;
 
+        // CommandDataStore에 명령어 저장 (메모리 최적화)
+        const commandId = this.commandDataStore.addCommand({
+            type: entry.type,
+            elementId: entry.elementId,
+            changes: this.convertToCommandChanges(entry),
+            metadata: {
+                pageId: this.currentPageId,
+                sessionId: this.getSessionId(),
+            }
+        });
+
+        // 요소 캐시에 저장 (압축된 형태)
+        if (entry.data.element) {
+            this.commandDataStore.cacheElement(entry.data.element);
+        }
+        if (entry.data.prevElement) {
+            this.commandDataStore.cacheElement(entry.data.prevElement);
+        }
+
         const newEntry: HistoryEntry = {
             ...entry,
-            id: `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: commandId, // CommandDataStore ID 사용
             timestamp: Date.now()
         };
 
@@ -79,7 +100,11 @@ export class HistoryManager {
 
         // 최대 크기 초과 시 오래된 엔트리 제거
         if (pageHistory.entries.length > pageHistory.maxSize) {
-            pageHistory.entries.shift();
+            const removedEntry = pageHistory.entries.shift();
+            if (removedEntry) {
+                // CommandDataStore에서도 제거
+                this.commandDataStore.removeCommand(removedEntry.id);
+            }
             pageHistory.currentIndex--;
         }
     }
@@ -167,6 +192,83 @@ export class HistoryManager {
      */
     clearAllHistory(): void {
         this.pageHistories.clear();
+        this.commandDataStore.clear();
+    }
+
+    /**
+     * CommandDataStore 변경사항 변환
+     */
+    private convertToCommandChanges(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): any {
+        switch (entry.type) {
+            case 'add':
+                return {
+                    added: entry.data.element
+                };
+            case 'remove':
+                return {
+                    removed: entry.data.element
+                };
+            case 'update':
+                return {
+                    updated: {
+                        prevProps: entry.data.prevProps || {},
+                        newProps: entry.data.props || {}
+                    }
+                };
+            case 'move':
+                return {
+                    moved: {
+                        prevParentId: entry.data.prevParentId || null,
+                        newParentId: entry.data.parentId || null,
+                        prevOrderNum: entry.data.prevOrderNum || 0,
+                        newOrderNum: entry.data.orderNum || 0
+                    }
+                };
+            default:
+                return {};
+        }
+    }
+
+    /**
+     * 세션 ID 생성
+     */
+    private getSessionId(): string {
+        return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    /**
+     * 메모리 사용량 통계
+     */
+    getMemoryStats(): {
+        pageCount: number;
+        totalEntries: number;
+        commandStoreStats: any;
+    } {
+        const pageCount = this.pageHistories.size;
+        const totalEntries = Array.from(this.pageHistories.values())
+            .reduce((sum, page) => sum + page.entries.length, 0);
+
+        return {
+            pageCount,
+            totalEntries,
+            commandStoreStats: this.commandDataStore.getMemoryStats()
+        };
+    }
+
+    /**
+     * 메모리 최적화
+     */
+    optimizeMemory(): void {
+        this.commandDataStore.optimizeMemory();
+
+        // 오래된 페이지 히스토리 정리
+        const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7일 전
+        for (const [pageId, pageHistory] of this.pageHistories.entries()) {
+            const hasRecentEntries = pageHistory.entries.some(entry => entry.timestamp > cutoffTime);
+            if (!hasRecentEntries && pageHistory.entries.length === 0) {
+                this.pageHistories.delete(pageId);
+            }
+        }
     }
 }
 
