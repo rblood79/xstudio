@@ -291,10 +291,12 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     order_num: (comboBoxItemChildren.length || 0) + 1,
                                 };
 
-                                // Supabase에 삽입
+                                // Supabase에 upsert (중복 방지)
                                 const { data, error } = await supabase
                                     .from("elements")
-                                    .insert(newItem)
+                                    .upsert(newItem, {
+                                        onConflict: 'id'
+                                    })
                                     .select();
 
                                 if (error) {
