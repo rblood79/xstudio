@@ -62,7 +62,7 @@ src/
 │   │   └── index.tsx
 │   ├── factories
 │   │   └── ComponentFactory.ts
-│   ├── footer
+│   ├── monitor
 │   │   ├── index.css
 │   │   └── index.tsx
 │   ├── hooks
