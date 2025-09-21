@@ -4,8 +4,8 @@ import { Checkbox } from '../../../components/list';
 
 interface PropertyCheckboxProps {
     label: string;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
+    isSelected: boolean; // checked -> isSelected
+    onChange: (isSelected: boolean) => void;
     icon?: React.ComponentType<{
         color?: string;
         size?: number;
@@ -16,7 +16,7 @@ interface PropertyCheckboxProps {
 
 export function PropertyCheckbox({
     label,
-    checked,
+    isSelected,
     onChange,
     icon,
     className
@@ -24,10 +24,10 @@ export function PropertyCheckbox({
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
             <Checkbox
-                isSelected={checked}
-                onChange={(checked) => onChange(checked)}
+                isSelected={isSelected}
+                onChange={(val) => onChange(val)}
             >
-
+                {label}
             </Checkbox>
         </PropertyFieldset>
     );

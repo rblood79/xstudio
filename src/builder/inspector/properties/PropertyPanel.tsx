@@ -24,6 +24,11 @@ import {
     SliderEditor,
     SwitchEditor,
     TableEditor,
+    TableHeaderEditor,
+    TableBodyEditor,
+    ColumnEditor,
+    RowEditor,
+    CellEditor,
     CardEditor,
     TagGroupEditor, // TagGroupEditor 추가
     TagEditor, // TagEditor 추가
@@ -53,6 +58,11 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     Slider: SliderEditor,
     Switch: SwitchEditor,
     Table: TableEditor,
+    TableHeader: TableHeaderEditor,
+    TableBody: TableBodyEditor,
+    Column: ColumnEditor,
+    Row: RowEditor,
+    Cell: CellEditor,
     Card: CardEditor,
     TagGroup: TagGroupEditor, // TagGroup 매핑 추가
     Tag: TagEditor, // Tag 매핑 추가
@@ -175,7 +185,7 @@ export function PropertyPanel() {
     const componentTag = elements.find(el => el.id === selectedElementId)?.tag;
     const EditorComponent = componentTag ? COMPONENT_EDITORS[componentTag] : undefined;
 
-    if (!EditorComponent || !componentTag) {
+    if (!EditorComponent || !componentTag || !selectedElementProps) {
         return (
             <div className="property-container">
                 <div>지원되지 않는 컴포넌트입니다: {componentTag || 'unknown'}</div>

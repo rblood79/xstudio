@@ -41,4 +41,6 @@
 
 .footer .memory-stats {
     padding: var(--spacing-sm);
+    display: flex;
+    gap: var(--spacing-lg);
 }

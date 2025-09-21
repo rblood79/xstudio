@@ -23,7 +23,7 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
 
             <PropertyCheckbox
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(currentProps.isDisabled)}
+                isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
@@ -33,9 +33,9 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.type || 'button')}
                 onChange={(value) => updateProp('type', value)}
                 options={[
-                    { id: 'button', label: PROPERTY_LABELS.BUTTON },
-                    { id: 'submit', label: PROPERTY_LABELS.SUBMIT },
-                    { id: 'reset', label: PROPERTY_LABELS.RESET }
+                    { value: 'button', label: PROPERTY_LABELS.BUTTON },
+                    { value: 'submit', label: PROPERTY_LABELS.SUBMIT },
+                    { value: 'reset', label: PROPERTY_LABELS.RESET }
                 ]}
                 icon={Parentheses}
             />

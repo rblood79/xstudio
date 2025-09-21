@@ -618,13 +618,90 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       return allChildren;
     };
 
-    const childElements = findChildren(elementId);
-    const allElementsToRemove = [element, ...childElements];
-    const elementIdsToRemove = allElementsToRemove.map(el => el.id);
+    let childElements = findChildren(elementId);
 
-    console.log(`🗑️ 요소 삭제: ${elementId}와 자식 요소 ${childElements.length}개`, {
+    // Table Column 삭제 시 특별 처리: 연관된 Cell들도 함께 삭제
+    if (element.tag === 'Column') {
+      const tableElement = state.elements.find(el => {
+        const tableHeader = state.elements.find(header => header.id === element.parent_id);
+        return tableHeader && el.id === tableHeader.parent_id && el.tag === 'Table';
+      });
+
+      if (tableElement) {
+        // 같은 Table의 TableBody에서 해당 순서의 Cell들 찾기
+        const tableBody = state.elements.find(el => el.parent_id === tableElement.id && el.tag === 'TableBody');
+        if (tableBody) {
+          const rows = state.elements.filter(el => el.parent_id === tableBody.id && el.tag === 'Row');
+          const cellsToRemove = rows.flatMap(row =>
+            state.elements.filter(cell =>
+              cell.parent_id === row.id &&
+              cell.tag === 'Cell' &&
+              cell.order_num === element.order_num
+            )
+          );
+
+          childElements = [...childElements, ...cellsToRemove];
+          console.log(`🔗 Column 삭제로 인한 연관 Cell 삭제: ${cellsToRemove.length}개`, {
+            columnOrder: element.order_num,
+            cellIds: cellsToRemove.map(c => c.id)
+          });
+        }
+      }
+    }
+
+    // Table Cell 삭제 시 특별 처리: 대응하는 Column도 함께 삭제
+    if (element.tag === 'Cell') {
+      const row = state.elements.find(el => el.id === element.parent_id);
+      if (row && row.tag === 'Row') {
+        const tableBody = state.elements.find(el => el.id === row.parent_id);
+        if (tableBody && tableBody.tag === 'TableBody') {
+          const tableElement = state.elements.find(el => el.id === tableBody.parent_id && el.tag === 'Table');
+          if (tableElement) {
+            // 같은 Table의 TableHeader에서 해당 순서의 Column 찾기
+            const tableHeader = state.elements.find(el => el.parent_id === tableElement.id && el.tag === 'TableHeader');
+            if (tableHeader) {
+              const columnToRemove = state.elements.find(col =>
+                col.parent_id === tableHeader.id &&
+                col.tag === 'Column' &&
+                col.order_num === element.order_num
+              );
+
+              if (columnToRemove) {
+                // 같은 order_num을 가진 다른 Row들의 Cell들도 함께 삭제
+                const allRows = state.elements.filter(el => el.parent_id === tableBody.id && el.tag === 'Row');
+                const otherCellsToRemove = allRows.flatMap(r =>
+                  state.elements.filter(cell =>
+                    cell.parent_id === r.id &&
+                    cell.tag === 'Cell' &&
+                    cell.order_num === element.order_num &&
+                    cell.id !== element.id // 현재 삭제되는 Cell 제외
+                  )
+                );
+
+                childElements = [...childElements, columnToRemove, ...otherCellsToRemove];
+                console.log(`🔗 Cell 삭제로 인한 연관 Column 및 다른 Cell 삭제: Column 1개, Cell ${otherCellsToRemove.length}개`, {
+                  cellOrder: element.order_num,
+                  columnId: columnToRemove.id,
+                  otherCellIds: otherCellsToRemove.map(c => c.id)
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const allElementsToRemove = [element, ...childElements];
+
+    // 중복 제거 (같은 요소가 여러 번 포함될 수 있음)
+    const uniqueElementsToRemove = allElementsToRemove.filter((item, index, arr) =>
+      arr.findIndex(el => el.id === item.id) === index
+    );
+    const elementIdsToRemove = uniqueElementsToRemove.map(el => el.id);
+
+    console.log(`🗑️ 요소 삭제: ${elementId}와 연관 요소 ${uniqueElementsToRemove.length - 1}개`, {
       parent: element.tag,
-      children: childElements.map(child => ({ id: child.id, tag: child.tag }))
+      relatedElements: uniqueElementsToRemove.slice(1).map(child => ({ id: child.id, tag: child.tag }))
     });
 
     try {
@@ -659,7 +736,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             elementId: elementId,
             data: {
               element: { ...element },
-              childElements: childElements.map(child => ({ ...child }))
+              childElements: uniqueElementsToRemove.slice(1).map(child => ({ ...child })) // 첫 번째는 부모 요소이므로 제외
             }
           });
         }

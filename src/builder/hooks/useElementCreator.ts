@@ -218,11 +218,12 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 // 복합 컴포넌트인지 확인
                 const complexComponents = [
                     'TextField', 'ToggleButtonGroup', 'CheckboxGroup', 'RadioGroup',
-                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList'
+                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table'
                 ];
 
                 const operation = async () => {
                     if (complexComponents.includes(tag)) {
+                        console.log(`🏗️ 복합 컴포넌트 생성 시작: ${tag}`);
                         // ComponentFactory를 사용하여 복합 컴포넌트 생성
                         const result = await ComponentFactory.createComplexComponent(
                             tag,
@@ -230,6 +231,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                             currentPageId,
                             elements // addElement 매개변수 제거
                         );
+                        console.log(`✅ 복합 컴포넌트 생성 완료: ${tag}, 총 ${result.allElements.length}개 요소 생성`);
 
                         // 증분 업데이트로 캐시 최적화
                         const updatedElements = [...elements, ...result.allElements];
@@ -238,6 +240,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                         // iframe에 업데이트된 요소들 전송
                         sendElementsToIframe(updatedElements);
                     } else {
+                        console.log(`🔧 단순 컴포넌트 생성: ${tag}`);
                         // 단순 컴포넌트 생성 (캐시 활용)
                         const parentId = selectedElementId || null;
                         const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);

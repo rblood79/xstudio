@@ -6,7 +6,7 @@ interface PropertySelectProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
-    options: Array<{ id: string; label: string }>;
+    options: Array<{ value: string; label: string }>; // id -> value 변경
     icon?: React.ComponentType<{
         color?: string;
         size?: number;
@@ -23,14 +23,16 @@ export function PropertySelect({
     icon,
     className
 }: PropertySelectProps) {
+    const mappedOptions = options.map(option => ({ ...option, id: option.value })); // id 추가
+
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
             <Select
-                items={options}
+                items={mappedOptions} // mappedOptions 사용
                 selectedKey={value}
                 onSelectionChange={(key) => onChange(key as string)}
             >
-                {(item) => <SelectItem>{item.label}</SelectItem>}
+                {(item) => <SelectItem key={item.id}>{item.label}</SelectItem>}
             </Select>
         </PropertyFieldset>
     );
