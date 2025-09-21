@@ -1,5 +1,5 @@
 import { Element } from '../../types/unified';
-import { commandDataStore, CommandData } from './commandDataStore';
+import { commandDataStore } from './commandDataStore';
 
 /**
  * 간단하고 효율적인 History 시스템
