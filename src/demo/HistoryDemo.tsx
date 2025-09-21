@@ -60,7 +60,7 @@ export const HistoryDemo: React.FC = () => {
             tag: 'div',
             props: {
                 className: 'p-4 bg-blue-100 border rounded',
-                children: `요소 ${elements.length + 1}`
+                content: `요소 ${elements.length + 1}`
             },
             parent_id: null,
             page_id: '550e8400-e29b-41d4-a716-446655440000', // UUID 형식으로 변경
@@ -72,12 +72,11 @@ export const HistoryDemo: React.FC = () => {
     const handleUpdateElement = (elementId: string) => {
         const element = elements.find(el => el.id === elementId);
         if (element) {
-            const currentContent = (element.props as Record<string, unknown>).content || (element.props as Record<string, unknown>).children || '요소';
             updateElementProps(elementId, {
                 ...element.props,
                 className: `p-4 bg-${Math.random() > 0.5 ? 'green' : 'yellow'}-100 border rounded`,
-                children: `${currentContent} (업데이트됨)`
-            } as Record<string, unknown>);
+                content: `${element.props.content} (업데이트됨)`
+            });
         }
     };
 
@@ -323,7 +322,7 @@ export const HistoryDemo: React.FC = () => {
                                         클래스: {element.props.className || '없음'}
                                     </div>
                                     <div className="text-sm text-gray-600">
-                                        내용: {String((element.props as Record<string, unknown>).content || (element.props as Record<string, unknown>).children || '없음')}
+                                        내용: {element.props.content || '없음'}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
