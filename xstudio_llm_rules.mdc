@@ -16,7 +16,7 @@ src/
 │   ├── components/          # React Aria-based widget wrappers + CSS companions
 │   ├── dataset/             # Sample data and seeds for the builder
 │   ├── factories/           # ComponentFactory and related creation helpers
-│   ├── footer/, header/, overlay/, sidebar/, preview/ # Layout chrome around the builder workspace
+│   ├── monitor/, header/, overlay/, sidebar/, preview/ # Layout chrome around the builder workspace
 │   ├── hooks/               # Complex builder hooks (element creation, iframe messaging, validation, etc.)
 │   ├── inspector/           # Property inspectors and editors
 │   ├── library/             # Component library panels and metadata
