@@ -1,5 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Table, TableHeaderComponent, TableBodyComponent, TableColumn, TableRow, TableCell } from '../builder/components/Table';
+import { Table, TableHeader, TableBody, Column, Row, Cell } from '../builder/components/Table';
+
+interface Person {
+    id: string;
+    name: string;
+    role: string;
+    status: string;
+}
+
+const columns = [
+    { id: 'name', name: '이름' },
+    { id: 'role', name: '역할' },
+    { id: 'status', name: '상태' }
+] as const;
+
+const rows: Person[] = [
+    { id: '1', name: '홍길동', role: '디자이너', status: '활성' },
+    { id: '2', name: '김철수', role: '개발자', status: '자리비움' },
+    { id: '3', name: '이영희', role: '제품 매니저', status: '오프라인' }
+];
 
 const meta: Meta<typeof Table> = {
     title: 'Builder/Components/Table',
@@ -8,7 +27,7 @@ const meta: Meta<typeof Table> = {
         layout: 'centered',
         docs: {
             description: {
-                component: 'React Aria 기반의 접근 가능한 테이블 컴포넌트입니다. tHead와 tBody를 기본적으로 생성하며, 반복되는 데이터는 1줄만 기본 제공합니다.',
+                component: 'React Aria 기반의 접근 가능한 테이블 컴포넌트입니다. 다양한 변형과 크기를 지원합니다.',
             },
         },
     },
@@ -43,20 +62,18 @@ export const Default: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent>
-                    <TableRow>
-                        <TableCell>이름</TableCell>
-                        <TableCell>나이</TableCell>
-                        <TableCell>이메일</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>홍길동</TableCell>
-                        <TableCell>25</TableCell>
-                        <TableCell>hong@example.com</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>이름</Column>
+                    <Column>나이</Column>
+                    <Column>이메일</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>홍길동</Cell>
+                        <Cell>25</Cell>
+                        <Cell>hong@example.com</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'default',
@@ -70,20 +87,18 @@ export const Bordered: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent>
-                    <TableRow>
-                        <TableCell>제품명</TableCell>
-                        <TableCell>가격</TableCell>
-                        <TableCell>재고</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>노트북</TableCell>
-                        <TableCell>1,200,000원</TableCell>
-                        <TableCell>15개</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>제품명</Column>
+                    <Column>가격</Column>
+                    <Column>재고</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>노트북</Cell>
+                        <Cell>1,200,000원</Cell>
+                        <Cell>15개</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'bordered',
@@ -97,20 +112,18 @@ export const Striped: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent>
-                    <TableRow>
-                        <TableCell>학생명</TableCell>
-                        <TableCell>점수</TableCell>
-                        <TableCell>등급</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent variant="striped">
-                    <TableRow>
-                        <TableCell>김철수</TableCell>
-                        <TableCell>95</TableCell>
-                        <TableCell>A+</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>학생명</Column>
+                    <Column>점수</Column>
+                    <Column>등급</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>김철수</Cell>
+                        <Cell>95</Cell>
+                        <Cell>A+</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'striped',
@@ -124,20 +137,18 @@ export const DarkHeader: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent variant="dark">
-                    <TableRow>
-                        <TableCell>사원명</TableCell>
-                        <TableCell>부서</TableCell>
-                        <TableCell>직급</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>이영희</TableCell>
-                        <TableCell>개발팀</TableCell>
-                        <TableCell>시니어</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>사원명</Column>
+                    <Column>부서</Column>
+                    <Column>직급</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>이영희</Cell>
+                        <Cell>개발팀</Cell>
+                        <Cell>시니어</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'bordered',
@@ -151,20 +162,18 @@ export const PrimaryHeader: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent variant="primary">
-                    <TableRow>
-                        <TableCell>주문번호</TableCell>
-                        <TableCell>고객명</TableCell>
-                        <TableCell>주문일</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>#12345</TableCell>
-                        <TableCell>박민수</TableCell>
-                        <TableCell>2024-01-15</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>주문번호</Column>
+                    <Column>고객명</Column>
+                    <Column>주문일</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>#12345</Cell>
+                        <Cell>박민수</Cell>
+                        <Cell>2024-01-15</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'bordered',
@@ -178,20 +187,18 @@ export const SmallSize: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent>
-                    <TableRow>
-                        <TableCell>ID</TableCell>
-                        <TableCell>상태</TableCell>
-                        <TableCell>액션</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>001</TableCell>
-                        <TableCell>활성</TableCell>
-                        <TableCell>편집</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>ID</Column>
+                    <Column>상태</Column>
+                    <Column>액션</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>001</Cell>
+                        <Cell>활성</Cell>
+                        <Cell>편집</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'bordered',
@@ -205,20 +212,18 @@ export const LargeSize: Story = {
     args: {
         children: (
             <>
-                <TableHeaderComponent>
-                    <TableRow>
-                        <TableCell>프로젝트명</TableCell>
-                        <TableCell>진행률</TableCell>
-                        <TableCell>마감일</TableCell>
-                    </TableRow>
-                </TableHeaderComponent>
-                <TableBodyComponent>
-                    <TableRow>
-                        <TableCell>웹사이트 리뉴얼</TableCell>
-                        <TableCell>75%</TableCell>
-                        <TableCell>2024-03-15</TableCell>
-                    </TableRow>
-                </TableBodyComponent>
+                <TableHeader>
+                    <Column isRowHeader>프로젝트명</Column>
+                    <Column>진행률</Column>
+                    <Column>마감일</Column>
+                </TableHeader>
+                <TableBody>
+                    <Row>
+                        <Cell>웹사이트 리뉴얼</Cell>
+                        <Cell>75%</Cell>
+                        <Cell>2024-03-15</Cell>
+                    </Row>
+                </TableBody>
             </>
         ),
         variant: 'bordered',
@@ -234,54 +239,48 @@ export const AllVariants: Story = {
             <div>
                 <h3 className="text-lg font-semibold mb-4">Default Table</h3>
                 <Table variant="default" size="md">
-                    <TableHeaderComponent>
-                        <TableRow>
-                            <TableCell>이름</TableCell>
-                            <TableCell>나이</TableCell>
-                        </TableRow>
-                    </TableHeaderComponent>
-                    <TableBodyComponent>
-                        <TableRow>
-                            <TableCell>홍길동</TableCell>
-                            <TableCell>25</TableCell>
-                        </TableRow>
-                    </TableBodyComponent>
+                    <TableHeader>
+                        <Column isRowHeader>이름</Column>
+                        <Column>나이</Column>
+                    </TableHeader>
+                    <TableBody>
+                        <Row>
+                            <Cell>홍길동</Cell>
+                            <Cell>25</Cell>
+                        </Row>
+                    </TableBody>
                 </Table>
             </div>
 
             <div>
                 <h3 className="text-lg font-semibold mb-4">Bordered Table</h3>
                 <Table variant="bordered" size="md">
-                    <TableHeaderComponent>
-                        <TableRow>
-                            <TableCell>제품</TableCell>
-                            <TableCell>가격</TableCell>
-                        </TableRow>
-                    </TableHeaderComponent>
-                    <TableBodyComponent>
-                        <TableRow>
-                            <TableCell>노트북</TableCell>
-                            <TableCell>1,200,000원</TableCell>
-                        </TableRow>
-                    </TableBodyComponent>
+                    <TableHeader>
+                        <Column isRowHeader>제품</Column>
+                        <Column>가격</Column>
+                    </TableHeader>
+                    <TableBody>
+                        <Row>
+                            <Cell>노트북</Cell>
+                            <Cell>1,200,000원</Cell>
+                        </Row>
+                    </TableBody>
                 </Table>
             </div>
 
             <div>
                 <h3 className="text-lg font-semibold mb-4">Striped Table</h3>
                 <Table variant="striped" size="md">
-                    <TableHeaderComponent>
-                        <TableRow>
-                            <TableCell>학생</TableCell>
-                            <TableCell>점수</TableCell>
-                        </TableRow>
-                    </TableHeaderComponent>
-                    <TableBodyComponent variant="striped">
-                        <TableRow>
-                            <TableCell>김철수</TableCell>
-                            <TableCell>95</TableCell>
-                        </TableRow>
-                    </TableBodyComponent>
+                    <TableHeader>
+                        <Column isRowHeader>학생</Column>
+                        <Column>점수</Column>
+                    </TableHeader>
+                    <TableBody>
+                        <Row>
+                            <Cell>김철수</Cell>
+                            <Cell>95</Cell>
+                        </Row>
+                    </TableBody>
                 </Table>
             </div>
         </div>
