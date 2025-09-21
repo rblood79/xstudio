@@ -103,17 +103,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       produce((state: ElementsState) => {
         state.elements = elements;
 
-        // 히스토리 추가 (skipHistory가 false인 경우)
-        if (state.currentPageId && !options?.skipHistory) {
-          historyManager.addEntry({
-            type: 'update',
-            elementId: 'bulk_update',
-            data: {
-              element: { id: 'bulk_update', tag: 'bulk', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 },
-              prevElement: { id: 'bulk_update', tag: 'bulk', props: {}, parent_id: null, page_id: state.currentPageId, order_num: 0 }
-            }
-          });
-        }
+        // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
+        // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
       })
     ),
 
@@ -162,18 +153,43 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
     try {
-      const { error } = await supabase
+      // 먼저 기존 요소가 있는지 확인
+      const { data: existingElement } = await supabase
         .from('elements')
-        .insert(sanitizeElement(element));
+        .select('id')
+        .eq('id', element.id)
+        .single();
 
-      if (error) {
-        if (error.code === '23503') {
-          console.warn('⚠️ 외래키 제약조건으로 인한 저장 실패 (메모리는 정상):', error.message);
+      if (existingElement) {
+        console.log('🔄 요소가 이미 존재함, 업데이트 시도:', element.id);
+        // 기존 요소가 있으면 업데이트
+        const { error: updateError } = await supabase
+          .from('elements')
+          .update(sanitizeElement(element))
+          .eq('id', element.id);
+
+        if (updateError) {
+          console.warn('⚠️ 요소 업데이트 실패 (메모리는 정상):', updateError);
         } else {
-          console.warn('⚠️ 데이터베이스 저장 실패 (메모리는 정상):', error);
+          console.log('✅ 데이터베이스에 요소 업데이트 완료:', element.id);
         }
       } else {
-        console.log('✅ 데이터베이스에 요소 저장 완료:', element.id);
+        // 새 요소 삽입
+        const { error } = await supabase
+          .from('elements')
+          .insert(sanitizeElement(element));
+
+        if (error) {
+          if (error.code === '23503') {
+            console.warn('⚠️ 외래키 제약조건으로 인한 저장 실패 (메모리는 정상):', error.message);
+          } else if (error.code === '23505') {
+            console.warn('⚠️ 중복 키 오류 - 요소가 이미 존재함 (메모리는 정상):', error.message);
+          } else {
+            console.warn('⚠️ 데이터베이스 저장 실패 (메모리는 정상):', error);
+          }
+        } else {
+          console.log('✅ 데이터베이스에 요소 저장 완료:', element.id);
+        }
       }
     } catch (error) {
       console.warn('⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):', error);
@@ -396,6 +412,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             break;
 
           case 'update':
+            // bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기
+            if (entry.elementId === 'bulk_update') {
+              console.log('⏭️ bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기');
+              break;
+            }
+
             if (entry.data.prevElement) {
               await supabase
                 .from('elements')
@@ -533,6 +555,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             break;
 
           case 'update':
+            // bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기
+            if (entry.elementId === 'bulk_update') {
+              console.log('⏭️ bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기');
+              break;
+            }
+
             if (entry.data.props) {
               const element = findElementById(get().elements, entry.elementId);
               if (element) {
