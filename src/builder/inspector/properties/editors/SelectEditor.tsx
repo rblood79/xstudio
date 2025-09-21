@@ -295,12 +295,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                     order_num: (selectItemChildren.length || 0) + 1,
                                 };
 
-                                // Supabase에 upsert (중복 방지)
+                                // Supabase에 삽입
                                 const { data, error } = await supabase
                                     .from("elements")
-                                    .upsert(newItem, {
-                                        onConflict: 'id'
-                                    })
+                                    .insert(newItem)
                                     .select();
 
                                 if (error) {

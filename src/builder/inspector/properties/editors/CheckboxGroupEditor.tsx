@@ -293,9 +293,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                                 const { data, error } = await supabase
                                     .from('elements')
-                                    .upsert(newCheckbox, {
-                                        onConflict: 'id'
-                                    })
+                                    .insert(newCheckbox)
                                     .select()
                                     .single();
 

@@ -161,43 +161,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
     try {
-      // 먼저 기존 요소가 있는지 확인
-      const { data: existingElement } = await supabase
+      const { error } = await supabase
         .from('elements')
-        .select('id')
-        .eq('id', element.id)
-        .single();
+        .insert(sanitizeElement(element));
 
-      if (existingElement) {
-        console.log('🔄 요소가 이미 존재함, 업데이트 시도:', element.id);
-        // 기존 요소가 있으면 업데이트
-        const { error: updateError } = await supabase
-          .from('elements')
-          .update(sanitizeElement(element))
-          .eq('id', element.id);
-
-        if (updateError) {
-          console.warn('⚠️ 요소 업데이트 실패 (메모리는 정상):', updateError);
+      if (error) {
+        if (error.code === '23503') {
+          console.warn('⚠️ 외래키 제약조건으로 인한 저장 실패 (메모리는 정상):', error.message);
         } else {
-          console.log('✅ 데이터베이스에 요소 업데이트 완료:', element.id);
+          console.warn('⚠️ 데이터베이스 저장 실패 (메모리는 정상):', error);
         }
       } else {
-        // 새 요소 삽입
-        const { error } = await supabase
-          .from('elements')
-          .insert(sanitizeElement(element));
-
-        if (error) {
-          if (error.code === '23503') {
-            console.warn('⚠️ 외래키 제약조건으로 인한 저장 실패 (메모리는 정상):', error.message);
-          } else if (error.code === '23505') {
-            console.warn('⚠️ 중복 키 오류 - 요소가 이미 존재함 (메모리는 정상):', error.message);
-          } else {
-            console.warn('⚠️ 데이터베이스 저장 실패 (메모리는 정상):', error);
-          }
-        } else {
-          console.log('✅ 데이터베이스에 요소 저장 완료:', element.id);
-        }
+        console.log('✅ 데이터베이스에 요소 저장 완료:', element.id);
       }
     } catch (error) {
       console.warn('⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):', error);

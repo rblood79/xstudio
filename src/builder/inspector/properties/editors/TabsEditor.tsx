@@ -224,12 +224,10 @@ async function createNewTab(
     };
 
     try {
-        // Tab과 Panel을 함께 upsert (중복 방지)
+        // Tab과 Panel을 함께 삽입
         const { data, error } = await supabase
             .from('elements')
-            .upsert([newTabElement, newPanelElement], {
-                onConflict: 'id'
-            })
+            .insert([newTabElement, newPanelElement])
             .select();
 
         if (error) {
