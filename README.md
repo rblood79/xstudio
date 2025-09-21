@@ -372,21 +372,9 @@ test: Button 컴포넌트 테스트 추가
 
 ## 👨‍💻 개발팀
 
-- **메인 개발자**: [@your-username](https://github.com/your-username)
-- **기여자들**: [Contributors](https://github.com/your-username/xstudio/graphs/contributors)
-
+- **메인 개발자**: [rblood79](https://github.com/rblood79)
 ## 📞 지원
 
 - 💬 [GitHub Discussions](https://github.com/your-username/xstudio/discussions)
 - 📧 이메일: support@xstudio.dev
 - 📚 [문서](https://docs.xstudio.dev)
-
------
-
-<div align="center">
-
-**XStudio로 누구나 쉽게 웹을 만드는 세상을 만들어가고 있습니다! 🚀**
-
-[⭐ Star](https://github.com/your-username/xstudio) | [🐛 Report Bug](https://github.com/your-username/xstudio/issues) | [💡 Request Feature](https://github.com/your-username/xstudio/issues)
-
-</div>
