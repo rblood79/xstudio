@@ -132,7 +132,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -164,7 +164,7 @@ export class ComponentFactory {
                 const updatedElements = store.elements.map(el =>
                     el.id === parentData.id ? { ...el, id: savedParent.id } : el
                 );
-                store.setElements(updatedElements, { skipHistory: true });
+                store.setElements(updatedElements);
                 //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
                 // 자식들 순차 저장 (부모 ID 업데이트)
@@ -179,7 +179,7 @@ export class ComponentFactory {
                     const updatedElements2 = store.elements.map(el =>
                         el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                     );
-                    store.setElements(updatedElements2, { skipHistory: true });
+                    store.setElements(updatedElements2);
                 }
 
                 //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
@@ -271,7 +271,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -402,7 +402,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -532,7 +532,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -674,7 +674,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -806,7 +806,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -957,7 +957,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -1085,7 +1085,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -1213,7 +1213,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -1342,7 +1342,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
@@ -1476,7 +1476,7 @@ export class ComponentFactory {
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
-        store.setElements(newElements, { skipHistory: true });
+        store.setElements(newElements);
 
         // 히스토리 기록 - 복합 컴포넌트 생성
         const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };

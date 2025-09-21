@@ -34,6 +34,7 @@ export interface ElementsState {
   redo: () => Promise<void>;
   removeElement: (elementId: string) => Promise<void>;
   removeTabPair: (elementId: string) => void;
+  addComplexElement: (parentElement: Element, childElements: Element[]) => Promise<void>;
 }
 
 export const sanitizeElement = (element: Element): Element => {
@@ -319,8 +320,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           switch (entry.type) {
             case 'add':
               // 추가된 요소 제거 (역작업)
-              state.elements = state.elements.filter(el => el.id !== entry.elementId);
-              if (state.selectedElementId === entry.elementId) {
+              const elementIdsToRemove = [entry.elementId];
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                elementIdsToRemove.push(...entry.data.childElements.map(child => child.id));
+              }
+
+              state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
+              if (elementIdsToRemove.includes(state.selectedElementId || '')) {
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
               }
@@ -339,9 +345,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             }
 
             case 'remove':
-              // 삭제된 요소 복원
+              // 삭제된 요소와 자식 요소들 복원
               if (entry.data.element) {
                 state.elements.push(entry.data.element);
+              }
+              // 자식 요소들도 함께 복원
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                state.elements.push(...entry.data.childElements);
+                console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`, {
+                  parent: entry.data.element?.tag,
+                  children: entry.data.childElements.map(child => ({ id: child.id, tag: child.tag }))
+                });
               }
               break;
           }
@@ -368,11 +382,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       try {
         switch (entry.type) {
           case 'add':
+            // 부모 요소와 자식 요소들을 모두 데이터베이스에서 삭제
+            const elementIdsToDelete = [entry.elementId];
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementIdsToDelete.push(...entry.data.childElements.map(child => child.id));
+            }
+
             await supabase
               .from('elements')
               .delete()
-              .eq('id', entry.elementId);
-            console.log('✅ Undo: 데이터베이스에서 요소 삭제 완료');
+              .in('id', elementIdsToDelete);
+            console.log(`✅ Undo: 데이터베이스에서 요소 삭제 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             break;
 
           case 'update':
@@ -391,10 +411,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
           case 'remove':
             if (entry.data.element) {
+              // 부모 요소와 자식 요소들을 모두 데이터베이스에 복원
+              const elementsToRestore = [entry.data.element];
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                elementsToRestore.push(...entry.data.childElements);
+              }
+
               await supabase
                 .from('elements')
-                .insert(sanitizeElement(entry.data.element));
-              console.log('✅ Undo: 데이터베이스에서 요소 복원 완료');
+                .insert(elementsToRestore.map(el => sanitizeElement(el)));
+              console.log(`✅ Undo: 데이터베이스에서 요소 복원 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             }
             break;
         }
@@ -433,9 +459,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         produce((state: ElementsState) => {
           switch (entry.type) {
             case 'add':
-              // 요소 추가
+              // 요소와 자식 요소들 추가
               if (entry.data.element) {
                 state.elements.push(entry.data.element);
+              }
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                state.elements.push(...entry.data.childElements);
+                console.log(`🔄 Redo: 자식 요소 ${entry.data.childElements.length}개 추가`, {
+                  parent: entry.data.element?.tag,
+                  children: entry.data.childElements.map(child => ({ id: child.id, tag: child.tag }))
+                });
               }
               break;
 
@@ -449,9 +482,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             }
 
             case 'remove':
-              // 요소 제거
-              state.elements = state.elements.filter(el => el.id !== entry.elementId);
-              if (state.selectedElementId === entry.elementId) {
+              // 요소와 자식 요소들 제거
+              const elementIdsToRemove = [entry.elementId];
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                elementIdsToRemove.push(...entry.data.childElements.map(child => child.id));
+              }
+
+              state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
+              if (elementIdsToRemove.includes(state.selectedElementId || '')) {
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
               }
@@ -481,10 +519,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         switch (entry.type) {
           case 'add':
             if (entry.data.element) {
+              // 부모 요소와 자식 요소들을 모두 데이터베이스에 추가
+              const elementsToAdd = [entry.data.element];
+              if (entry.data.childElements && entry.data.childElements.length > 0) {
+                elementsToAdd.push(...entry.data.childElements);
+              }
+
               await supabase
                 .from('elements')
-                .insert(sanitizeElement(entry.data.element));
-              console.log('✅ Redo: 데이터베이스에서 요소 추가 완료');
+                .insert(elementsToAdd.map(el => sanitizeElement(el)));
+              console.log(`✅ Redo: 데이터베이스에서 요소 추가 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             }
             break;
 
@@ -502,11 +546,17 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             break;
 
           case 'remove':
+            // 부모 요소와 자식 요소들을 모두 데이터베이스에서 삭제
+            const elementIdsToDelete = [entry.elementId];
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementIdsToDelete.push(...entry.data.childElements.map(child => child.id));
+            }
+
             await supabase
               .from('elements')
               .delete()
-              .eq('id', entry.elementId);
-            console.log('✅ Redo: 데이터베이스에서 요소 삭제 완료');
+              .in('id', elementIdsToDelete);
+            console.log(`✅ Redo: 데이터베이스에서 요소 삭제 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             break;
         }
       } catch (dbError) {
@@ -527,12 +577,34 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     const element = findElementById(state.elements, elementId);
     if (!element) return;
 
+    // 자식 요소들 찾기 (재귀적으로)
+    const findChildren = (parentId: string): Element[] => {
+      const children = state.elements.filter(el => el.parent_id === parentId);
+      const allChildren: Element[] = [...children];
+
+      // 각 자식의 자식들도 재귀적으로 찾기
+      children.forEach(child => {
+        allChildren.push(...findChildren(child.id));
+      });
+
+      return allChildren;
+    };
+
+    const childElements = findChildren(elementId);
+    const allElementsToRemove = [element, ...childElements];
+    const elementIdsToRemove = allElementsToRemove.map(el => el.id);
+
+    console.log(`🗑️ 요소 삭제: ${elementId}와 자식 요소 ${childElements.length}개`, {
+      parent: element.tag,
+      children: childElements.map(child => ({ id: child.id, tag: child.tag }))
+    });
+
     try {
-      // 데이터베이스에서 삭제
+      // 데이터베이스에서 모든 요소 삭제 (자식 요소들 포함)
       const { error } = await supabase
         .from('elements')
         .delete()
-        .eq('id', elementId);
+        .in('id', elementIdsToRemove);
 
       if (error) {
         console.error('데이터베이스 삭제 실패:', error);
@@ -543,7 +615,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           throw error;
         }
       } else {
-        console.log('데이터베이스에서 요소 삭제 완료:', elementId);
+        console.log('데이터베이스에서 요소 삭제 완료:', elementIdsToRemove);
       }
     } catch (error) {
       console.error('요소 삭제 중 오류:', error);
@@ -552,20 +624,23 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     set(
       produce((state: ElementsState) => {
-        // 히스토리 추가
+        // 히스토리 추가 (부모 요소와 모든 자식 요소들 정보 저장)
         if (state.currentPageId) {
           historyManager.addEntry({
             type: 'remove',
             elementId: elementId,
-            data: { element: { ...element } }
+            data: {
+              element: { ...element },
+              childElements: childElements.map(child => ({ ...child }))
+            }
           });
         }
 
-        // 요소 제거
-        state.elements = state.elements.filter(el => el.id !== elementId);
+        // 모든 요소 제거 (부모 + 자식들)
+        state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
 
         // 선택된 요소가 제거된 경우 선택 해제
-        if (state.selectedElementId === elementId) {
+        if (elementIdsToRemove.includes(state.selectedElementId || '')) {
           state.selectedElementId = null;
           state.selectedElementProps = {};
         }
@@ -575,7 +650,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           window.parent.postMessage(
             {
               type: 'ELEMENT_REMOVED',
-              payload: { elementId }
+              payload: { elementId: elementIdsToRemove }
             },
             '*'
           );
@@ -598,6 +673,67 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         }
       })
     ),
+
+  addComplexElement: async (parentElement: Element, childElements: Element[]) => {
+    const allElements = [parentElement, ...childElements];
+
+    // 1. 메모리 상태 업데이트 (우선)
+    set(
+      produce((state: ElementsState) => {
+        // 복합 컴포넌트 생성 히스토리 추가
+        if (state.currentPageId) {
+          historyManager.addEntry({
+            type: 'add',
+            elementId: parentElement.id,
+            data: {
+              element: { ...parentElement },
+              childElements: childElements.map(child => ({ ...child }))
+            }
+          });
+        }
+
+        // 모든 요소 추가
+        state.elements.push(...allElements);
+      })
+    );
+
+    // 2. iframe 업데이트
+    if (typeof window !== 'undefined' && window.parent) {
+      try {
+        window.parent.postMessage(
+          {
+            type: 'COMPLEX_ELEMENT_ADDED',
+            payload: {
+              parentElement: sanitizeElement(parentElement),
+              childElements: childElements.map(child => sanitizeElement(child))
+            }
+          },
+          '*'
+        );
+      } catch (error) {
+        console.warn('postMessage 직렬화 실패:', error);
+      }
+    }
+
+    // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
+    try {
+      const { error } = await supabase
+        .from('elements')
+        .insert(allElements.map(el => sanitizeElement(el)));
+
+      if (error) {
+        if (error.code === '23503') {
+          console.warn('⚠️ 외래키 제약조건으로 인한 저장 실패 (메모리는 정상):', error.message);
+        } else {
+          console.warn('⚠️ 데이터베이스 저장 실패 (메모리는 정상):', error);
+        }
+      } else {
+        console.log(`✅ 복합 컴포넌트 데이터베이스 저장 완료: ${parentElement.tag} + 자식 ${childElements.length}개`);
+      }
+    } catch (error) {
+      console.warn('⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):', error);
+    }
+  },
 });
 
 // 기존 호환성을 위한 useStore export
