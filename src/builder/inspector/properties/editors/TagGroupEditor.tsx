@@ -233,9 +233,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                                 const { data, error } = await supabase
                                     .from('elements')
-                                    .upsert(newTag, {
-                                        onConflict: 'id'
-                                    })
+                                    .insert(newTag)
                                     .select()
                                     .single();
 

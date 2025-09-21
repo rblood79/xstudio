@@ -277,9 +277,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                                 const { data, error } = await supabase
                                     .from('elements')
-                                    .upsert(newRadio, {
-                                        onConflict: 'id'
-                                    })
+                                    .insert(newRadio)
                                     .select()
                                     .single();
 

@@ -318,9 +318,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                                 const { data, error } = await supabase
                                     .from('elements')
-                                    .upsert(newItem, {
-                                        onConflict: 'id'
-                                    })
+                                    .insert(newItem)
                                     .select()
                                     .single();
 
