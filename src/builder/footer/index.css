@@ -1,0 +1,44 @@
+/* src/builder/footer/index.css */
+.footer {
+    grid-area: footer;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--fill-color-panel);
+    border-top: 1px solid var(--border-color);
+}
+
+.footer .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--spacing-xl);
+    line-height: 1;
+    padding: var(--spacing) var(--spacing-sm);
+    color: var(--color-neutral-100);
+}
+
+.footer .header .title {
+    color: var(--text-color-primary);
+}
+
+.footer .header button {
+
+    color: var(--text-color-secondary);
+    cursor: pointer;
+}
+
+.footer .header button:hover {
+    background-color: var(--fill-color-hover);
+}
+
+.footer .contents {
+    flex-grow: 1;
+    overflow-y: auto;
+
+    background: var(--color-primary-700);
+    color: var(--color-neutral-100);
+}
+
+.footer .memory-stats {
+    padding: var(--spacing-sm);
+}

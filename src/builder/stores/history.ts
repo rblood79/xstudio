@@ -15,9 +15,8 @@ export interface HistoryEntry {
     data: {
         element?: Element;
         prevElement?: Element;
-        childElements?: Element[]; // 자식 요소들 정보 (remove 타입에서 사용)
-        props?: any;
-        prevProps?: any;
+        props?: Record<string, any>;
+        prevProps?: Record<string, any>;
         parentId?: string;
         prevParentId?: string;
         orderNum?: number;
@@ -84,12 +83,6 @@ export class HistoryManager {
         }
         if (entry.data.prevElement) {
             this.commandDataStore.cacheElement(entry.data.prevElement);
-        }
-        // 자식 요소들도 캐시
-        if (entry.data.childElements && entry.data.childElements.length > 0) {
-            entry.data.childElements.forEach(child => {
-                this.commandDataStore.cacheElement(child);
-            });
         }
 
         const newEntry: HistoryEntry = {
