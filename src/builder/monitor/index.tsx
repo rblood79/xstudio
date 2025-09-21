@@ -18,20 +18,20 @@ export const Monitor: React.FC = () => {
         <>
             <div className="header">
                 <span className="title">Memory Monitor</span>
-                <button onClick={optimizeMemory}>Memory Reset</button>
+                <button onClick={optimizeMemory}>memory optimization</button>
             </div>
             <div className="contents">
                 {stats ? (
-                    <div className="memory-stats">
-                        <p>Total Entries: {stats.totalEntries}</p>
-                        <p>Command Count: {stats.commandCount}</p>
-                        <p>Cache Size: {stats.cacheSize}</p>
-                        <p>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</p>
-                        <p>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</p>
-                        <p>Recommendation: {stats.recommendation}</p>
-                    </div>
+                    <ul className="memory-stats">
+                        <li>Total Entries: {stats.totalEntries}</li>
+                        <li>Command Count: {stats.commandCount}</li>
+                        <li>Cache Size: {stats.cacheSize}</li>
+                        <li>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</li>
+                        <li>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</li>
+                        <li>Recommendation: {stats.recommendation}</li>
+                    </ul>
                 ) : (
-                    <p>Loading memory stats...</p>
+                    <li>Loading memory stats...</li>
                 )}
             </div>
         </>

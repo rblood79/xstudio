@@ -21,6 +21,7 @@ export interface HistoryEntry {
         prevParentId?: string;
         orderNum?: number;
         prevOrderNum?: number;
+        childElements?: Element[];
     };
     timestamp: number;
 }

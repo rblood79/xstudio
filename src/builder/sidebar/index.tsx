@@ -138,7 +138,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 return true;
             });
 
-        // Tabs 하위의 Tab과 Panel을 쌍으로 그룹화
+        // Tabs 하위의 Tab과 Panel을 쌍으로 그룹화, Table 하위의 구조 정렬
         if (parentId) {
             const parentItem = items.find(p => p.id === parentId);
             if (parentItem && hasTag(parentItem) && parentItem.tag === 'Tabs') {
@@ -155,6 +155,24 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 }
 
                 filteredItems = pairedItems;
+            } else if (parentItem && hasTag(parentItem) && parentItem.tag === 'Table') {
+                // Table 하위의 TableHeader, TableBody, Column, Row, Cell 정렬
+                const tableHeaders = filteredItems.filter(item => hasTag(item) && item.tag === 'TableHeader');
+                const tableBodies = filteredItems.filter(item => hasTag(item) && item.tag === 'TableBody');
+                const columns = filteredItems.filter(item => hasTag(item) && item.tag === 'Column');
+                const rows = filteredItems.filter(item => hasTag(item) && item.tag === 'Row');
+                const cells = filteredItems.filter(item => hasTag(item) && item.tag === 'Cell');
+
+                // TableHeader → TableBody 순서로 정렬
+                const sortedItems: T[] = [
+                    ...tableHeaders.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
+                    ...tableBodies.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
+                    ...columns.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
+                    ...rows.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
+                    ...cells.sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+                ];
+
+                filteredItems = sortedItems;
             } else {
                 // 일반적인 정렬
                 filteredItems = filteredItems.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -164,14 +182,25 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             filteredItems = filteredItems.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
         }
 
-        // 디버깅 로그 추가
+        // 디버깅 로그 (필요시 주석 해제)
         /*if (parentId) {
             const parentItem = items.find(p => p.id === parentId);
-            if (parentItem && hasTag(parentItem) && parentItem.tag === 'Tabs') {
-                console.log(' Tabs 하위 아이템들:', {
+            if (parentItem && hasTag(parentItem) && (parentItem.tag === 'Tabs' || parentItem.tag === 'Table')) {
+                console.log(`🔍 ${parentItem.tag} 하위 아이템들:`, {
                     parentId,
-                    filteredItems: filteredItems.map(item => ({ id: item.id, tag: item.tag, title: hasProps(item) ? item.props.title : 'N/A' })),
-                    allItems: items.filter(item => item.parent_id === parentId).map(item => ({ id: item.id, tag: item.tag, title: hasProps(item) ? item.props.title : 'N/A' }))
+                    parentTag: parentItem.tag,
+                    filteredItems: filteredItems.map(item => ({ 
+                        id: item.id, 
+                        tag: hasTag(item) ? item.tag : 'unknown', 
+                        title: hasProps(item) ? item.props.title : 'N/A',
+                        parent_id: 'parent_id' in item ? item.parent_id : 'N/A'
+                    })),
+                    allItems: items.filter(item => item.parent_id === parentId).map(item => ({ 
+                        id: item.id, 
+                        tag: hasTag(item) ? item.tag : 'unknown', 
+                        title: hasProps(item) ? item.props.title : 'N/A',
+                        parent_id: 'parent_id' in item ? item.parent_id : 'N/A'
+                    }))
                 });
             }
         }*/
@@ -197,7 +226,24 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                     const hasComboBoxChildren = hasTag(item) && item.tag === 'ComboBox' && hasProps(item) && Array.isArray(item.props.children) && item.props.children.length > 0;
                     const hasTreeChildren = hasTag(item) && item.tag === 'Tree' && hasProps(item) && Array.isArray(item.props.children) && item.props.children.length > 0;
 
-                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren || hasCheckboxChildren || hasRadioChildren || hasListBoxChildren || hasGridListChildren || hasSelectChildren || hasComboBoxChildren || hasTreeChildren;
+                    // Table 컴포넌트의 실제 자식 노드 확인
+                    const hasTableChildren = hasTag(item) && item.tag === 'Table' && hasChildNodes;
+
+                    // Table 디버깅 (필요시 주석 해제)
+                    /*if (hasTag(item) && item.tag === 'Table') {
+                        console.log('🔍 Table 자식 노드 확인:', {
+                            tableId: item.id,
+                            hasChildNodes,
+                            hasTableChildren,
+                            allChildren: items.filter(child => child.parent_id === item.id).map(child => ({
+                                id: child.id,
+                                tag: hasTag(child) ? child.tag : 'unknown',
+                                parent_id: child.parent_id
+                            }))
+                        });
+                    }*/
+
+                    const hasAnyChildren = hasChildNodes || hasTabsChildren || hasToggleChildren || hasCheckboxChildren || hasRadioChildren || hasListBoxChildren || hasGridListChildren || hasSelectChildren || hasComboBoxChildren || hasTreeChildren || hasTableChildren;
 
                     return (
                         <div
@@ -245,12 +291,22 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     )}
                                 </div>
                                 <div className="elementItemLabel">
-                                    {/* Tab과 Panel의 경우 더 명확한 라벨 표시 */}
+                                    {/* Tab과 Panel, Table 관련 컴포넌트들의 경우 더 명확한 라벨 표시 */}
                                     {hasTag(item) && item.tag === 'Tab' && hasProps(item) ?
                                         `Tab: ${item.props.title || 'Untitled'}` :
                                         hasTag(item) && item.tag === 'Panel' && hasProps(item) ?
                                             `Panel: ${item.props.title || 'Untitled'}` :
-                                            getLabel(item)
+                                            hasTag(item) && item.tag === 'TableHeader' ?
+                                                'thead' :
+                                                hasTag(item) && item.tag === 'TableBody' ?
+                                                    'tbody' :
+                                                    hasTag(item) && item.tag === 'Column' && hasProps(item) ?
+                                                        `th: ${item.props.children || 'Column'}` :
+                                                        hasTag(item) && item.tag === 'Row' ?
+                                                            'tr' :
+                                                            hasTag(item) && item.tag === 'Cell' && hasProps(item) ?
+                                                                `td: ${item.props.children || 'Cell'}` :
+                                                                getLabel(item)
                                     }
                                 </div>
                                 <div className="elementItemActions">

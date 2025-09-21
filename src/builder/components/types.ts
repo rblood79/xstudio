@@ -20,7 +20,7 @@ export interface CollectionItemData {
     selected?: boolean;
     style?: React.CSSProperties;
     className?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>; // 'any'를 'unknown'으로 변경
     actions?: Array<{
         id: string;
         label: string;

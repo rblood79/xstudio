@@ -9,5 +9,8 @@ export type {
     HistoryState,
     SelectionState,
     Store,
-    getDefaultProps
+    getDefaultProps,
+    ColumnElementProps,
+    CellElementProps,
+    RowElementProps
 } from './unified';

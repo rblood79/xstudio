@@ -41,10 +41,11 @@ import {
   Card,
   TagGroup,
   Tag,
-  /*Column,
+  Column,
   TableHeader,
+  TableBody,
   Row,
-  Cell,*/
+  Cell,
 } from '../components/list';
 import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
@@ -1488,12 +1489,12 @@ function Preview() {
 
     // Table 컴포넌트 특별 처리
     if (el.tag === 'Table') {
+      console.log('🔍 Table rendering:', { id: el.id, childrenCount: children.length, props: el.props });
       return (
         <Table
           key={el.id}
           data-element-id={el.id}
-          style={el.props.style}
-          className={el.props.className}
+          {...el.props}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           selectionBehavior={(el.props.selectionBehavior as 'toggle' | 'replace') || 'toggle'}
           onSelectionChange={(selectedKeys) => {
@@ -1506,6 +1507,51 @@ function Preview() {
         >
           {children.map((child) => renderElement(child))}
         </Table>
+      );
+    }
+
+    // TableHeader 컴포넌트 처리
+    if (el.tag === 'TableHeader') {
+      return (
+        <TableHeader key={el.id} data-element-id={el.id} {...el.props}>
+          {children.map((child) => renderElement(child))}
+        </TableHeader>
+      );
+    }
+
+    // TableBody 컴포넌트 처리
+    if (el.tag === 'TableBody') {
+      return (
+        <TableBody key={el.id} data-element-id={el.id} {...el.props}>
+          {children.map((child) => renderElement(child))}
+        </TableBody>
+      );
+    }
+
+    // Column 컴포넌트 처리
+    if (el.tag === 'Column') {
+      return (
+        <Column key={el.id} data-element-id={el.id} {...el.props}>
+          {el.props.children || 'Column'}
+        </Column>
+      );
+    }
+
+    // Row 컴포넌트 처리
+    if (el.tag === 'Row') {
+      return (
+        <Row key={el.id} data-element-id={el.id} {...el.props}>
+          {children.map((child) => renderElement(child))}
+        </Row>
+      );
+    }
+
+    // Cell 컴포넌트 처리
+    if (el.tag === 'Cell') {
+      return (
+        <Cell key={el.id} data-element-id={el.id} {...el.props}>
+          {el.props.children || 'Cell'}
+        </Cell>
       );
     }
 

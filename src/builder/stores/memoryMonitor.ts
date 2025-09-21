@@ -42,7 +42,7 @@ export class MemoryMonitor {
 
         // 개발 모드에서만 로그 출력
         if (import.meta.env.DEV) {
-            console.log('📊 Memory Stats:', currentStats);
+            //console.log('📊 Memory Stats:', currentStats);
         }
     }
 

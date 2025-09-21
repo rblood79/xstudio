@@ -10,6 +10,7 @@ export interface BaseElementProps {
     style?: React.CSSProperties;
     'data-element-id'?: string;
     events?: ElementEvent[];
+    children?: React.ReactNode; // children 속성 추가
 }
 
 // === 통합된 Element 타입 ===
@@ -241,6 +242,45 @@ export interface TableElementProps extends BaseElementProps {
     selectionMode?: 'none' | 'single' | 'multiple';
     selectedKeys?: string[];
     onSelectionChange?: (keys: string[]) => void;
+    variant?: 'default' | 'striped' | 'bordered'; // Table variant 추가
+    size?: 'sm' | 'md' | 'lg'; // Table size 추가
+    headerVariant?: 'default' | 'dark' | 'primary'; // headerVariant 추가
+    cellVariant?: 'default' | 'striped'; // cellVariant 추가
+}
+
+export interface TableHeaderElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    variant?: 'default' | 'dark' | 'light' | 'bordered';
+    sticky?: boolean;
+}
+
+export interface TableBodyElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    variant?: 'default' | 'striped' | 'bordered' | 'hover';
+    selectable?: boolean;
+}
+
+export interface ColumnElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    isRowHeader?: boolean;
+    width?: string;
+    minWidth?: string;
+    maxWidth?: string;
+}
+
+export interface RowElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    variant?: 'default' | 'striped' | 'hover';
+    height?: string;
+    backgroundColor?: string;
+}
+
+export interface CellElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    textAlign?: 'left' | 'center' | 'right';
+    verticalAlign?: 'top' | 'middle' | 'bottom';
+    backgroundColor?: string;
+    color?: string;
 }
 
 export interface CardElementProps extends BaseElementProps {
@@ -351,6 +391,11 @@ export type ComponentElementProps =
     | DateRangePickerElementProps
     | SwitchElementProps
     | TableElementProps
+    | TableHeaderElementProps
+    | TableBodyElementProps
+    | ColumnElementProps
+    | RowElementProps
+    | CellElementProps
     | CardElementProps
     | TagGroupElementProps
     | TagElementProps
@@ -583,7 +628,49 @@ export function createDefaultTableProps(): TableElementProps {
         items: [],
         columns: [],
         selectionMode: 'none',
-        selectedKeys: []
+        selectedKeys: [],
+        variant: 'default', // 기본값 추가
+        size: 'md', // 기본값 추가
+        headerVariant: 'default', // 기본값 추가
+        cellVariant: 'default', // 기본값 추가
+    };
+}
+
+export function createDefaultTableHeaderProps(): TableHeaderElementProps {
+    return {
+        variant: 'default',
+        sticky: false,
+    };
+}
+
+export function createDefaultTableBodyProps(): TableBodyElementProps {
+    return {
+        variant: 'default',
+        selectable: false,
+    };
+}
+
+export function createDefaultColumnProps(): ColumnElementProps {
+    return {
+        children: 'Column',
+        isRowHeader: false,
+    };
+}
+
+export function createDefaultRowProps(): RowElementProps {
+    return {
+        variant: 'default',
+        backgroundColor: '#ffffff', // 기본값 추가
+    };
+}
+
+export function createDefaultCellProps(): CellElementProps {
+    return {
+        children: 'Cell',
+        textAlign: 'left',
+        verticalAlign: 'middle',
+        backgroundColor: '#ffffff', // 기본값 추가
+        color: '#000000', // 기본값 추가
     };
 }
 
@@ -681,6 +768,11 @@ export function getDefaultProps(tag: string): ComponentElementProps {
         DateRangePicker: createDefaultDateRangePickerProps,
         Switch: createDefaultSwitchProps,
         Table: createDefaultTableProps,
+        TableHeader: createDefaultTableHeaderProps,
+        TableBody: createDefaultTableBodyProps,
+        Column: createDefaultColumnProps,
+        Row: createDefaultRowProps,
+        Cell: createDefaultCellProps,
         Card: createDefaultCardProps,
         TagGroup: createDefaultTagGroupProps,
         Tag: createDefaultTagProps,
