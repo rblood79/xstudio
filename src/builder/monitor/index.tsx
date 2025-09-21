@@ -3,7 +3,7 @@ import React from 'react';
 import './index.css';
 import { useMemoryMonitor } from '../hooks/useMemoryMonitor';
 
-export const BuilderFooter: React.FC = () => {
+export const Monitor: React.FC = () => {
     const { stats, optimizeMemory } = useMemoryMonitor();
 
     const formatBytes = (bytes: number) => {
