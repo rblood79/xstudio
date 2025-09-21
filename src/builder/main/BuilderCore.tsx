@@ -20,6 +20,7 @@ import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useThemeManager } from '../hooks/useThemeManager';
 import { useValidation } from '../hooks/useValidation';
 import { memoryMonitor } from '../utils/memoryMonitor';
+import { BuilderFooter } from '../footer'; // BuilderFooter 컴포넌트 임포트
 
 import './index.css';
 import { MessageService } from '../../utils/messaging';
@@ -333,7 +334,10 @@ export const BuilderCore: React.FC = () => {
                     <Inspector />
                 </aside>
 
-                <footer className="footer">footer</footer>
+                {/* 기존 footer 태그를 BuilderFooter 컴포넌트로 대체 */}
+                <footer className="footer">
+                    <BuilderFooter />
+                </footer>
             </BuilderViewport>
         </div>
     );

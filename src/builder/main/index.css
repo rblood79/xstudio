@@ -264,8 +264,12 @@
         footer {
             isolation: isolate;
             grid-area: footer;
-            height: 40px;
-            @apply bg-[var(--color-gray-950)] text-[var(--color-neutral-100)] flex flex-row justify-between items-center;
+            background: var(--color-primary-900);
+
+
+            .contents {
+                height: fit-content;
+            }
         }
     }
 }
