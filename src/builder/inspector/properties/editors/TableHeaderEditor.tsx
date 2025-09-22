@@ -1,4 +1,4 @@
-import { Element, TableHeaderElementProps, ColumnElementProps } from '../../../../types/store';
+import { TableHeaderElementProps } from '../../../../types/store';
 import { useStore } from '../../../stores';
 import { PropertySelect } from '../components';
 import { Label } from 'react-aria-components';

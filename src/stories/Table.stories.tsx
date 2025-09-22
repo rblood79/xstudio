@@ -1,25 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Table, TableHeader, TableBody, Column, Row, Cell } from '../builder/components/Table';
 
-interface Person {
-    id: string;
-    name: string;
-    role: string;
-    status: string;
-}
-
-const columns = [
-    { id: 'name', name: '이름' },
-    { id: 'role', name: '역할' },
-    { id: 'status', name: '상태' }
-] as const;
-
-const rows: Person[] = [
-    { id: '1', name: '홍길동', role: '디자이너', status: '활성' },
-    { id: '2', name: '김철수', role: '개발자', status: '자리비움' },
-    { id: '3', name: '이영희', role: '제품 매니저', status: '오프라인' }
-];
-
 const meta: Meta<typeof Table> = {
     title: 'Builder/Components/Table',
     component: Table,

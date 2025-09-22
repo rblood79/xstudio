@@ -179,10 +179,20 @@ export class CommandDataStore {
         // 메모리 사용량 추정 (바이트)
         let estimatedMemoryUsage = 0;
         for (const command of this.commands.values()) {
-            estimatedMemoryUsage += JSON.stringify(command).length * 2; // UTF-16
+            try {
+                estimatedMemoryUsage += JSON.stringify(command).length * 2; // UTF-16
+            } catch (error) {
+                // revoked proxy나 순환 참조 등으로 직렬화 실패 시 기본값 사용
+                estimatedMemoryUsage += 1000; // 추정 크기
+            }
         }
         for (const element of this.elementCache.values()) {
-            estimatedMemoryUsage += JSON.stringify(element).length * 2;
+            try {
+                estimatedMemoryUsage += JSON.stringify(element).length * 2;
+            } catch (error) {
+                // revoked proxy나 순환 참조 등으로 직렬화 실패 시 기본값 사용
+                estimatedMemoryUsage += 500; // 추정 크기
+            }
         }
 
         // 압축률 계산

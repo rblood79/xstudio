@@ -22,7 +22,7 @@ export interface ElementsState {
   currentPageId: string | null;
   historyOperationInProgress: boolean;
 
-  setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
+  setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
   addElement: (element: Element) => Promise<void>;
   updateElementProps: (elementId: string, props: ComponentElementProps) => Promise<void>;
@@ -35,7 +35,67 @@ export interface ElementsState {
   removeElement: (elementId: string) => Promise<void>;
   removeTabPair: (elementId: string) => void;
   addComplexElement: (parentElement: Element, childElements: Element[]) => Promise<void>;
+  updateElementOrder: (elementId: string, orderNum: number) => void;
 }
+
+// order_num 재정렬 유틸리티 함수
+const reorderElements = async (
+  elements: Element[],
+  pageId: string,
+  updateElementOrder: (elementId: string, orderNum: number) => void
+): Promise<void> => {
+  // 페이지별, 부모별로 그룹화
+  const groups = elements
+    .filter(el => el.page_id === pageId)
+    .reduce((acc, element) => {
+      const key = element.parent_id || 'root';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(element);
+      return acc;
+    }, {} as Record<string, Element[]>);
+
+  const updates: Array<{ id: string; order_num: number }> = [];
+
+  // 각 그룹별로 order_num 재정렬
+  Object.entries(groups).forEach(([, children]) => {
+    // 현재 order_num으로 정렬
+    const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    sorted.forEach((child, index) => {
+      const newOrderNum = index + 1;
+      if (child.order_num !== newOrderNum) {
+        updates.push({ id: child.id, order_num: newOrderNum });
+        // 메모리에서도 업데이트 (스토어를 통해)
+        updateElementOrder(child.id, newOrderNum);
+      }
+    });
+  });
+
+  // 데이터베이스 일괄 업데이트
+  if (updates.length > 0) {
+    try {
+      // 각 요소를 개별적으로 업데이트 (일괄 업데이트 대신)
+      const updatePromises = updates.map(update =>
+        supabase
+          .from('elements')
+          .update({ order_num: update.order_num })
+          .eq('id', update.id)
+      );
+
+      const results = await Promise.all(updatePromises);
+
+      // 오류 확인
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        console.error('order_num 재정렬 실패:', errors.map(e => e.error));
+      } else {
+        console.log(`📊 order_num 재정렬 완료: ${updates.length}개 요소`);
+      }
+    } catch (error) {
+      console.error('order_num 재정렬 중 오류:', error);
+    }
+  }
+};
 
 export const sanitizeElement = (element: Element): Element => {
   try {
@@ -98,7 +158,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   currentPageId: null,
   historyOperationInProgress: false,
 
-  setElements: (elements, options) =>
+  setElements: (elements) =>
     set(
       produce((state: ElementsState) => {
         state.elements = elements;
@@ -108,7 +168,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     ),
 
-  loadPageElements: (elements, pageId) =>
+  loadPageElements: (elements, pageId) => {
     set(
       produce((state: ElementsState) => {
         state.elements = elements;
@@ -117,7 +177,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         // 페이지 변경 시 히스토리 초기화
         historyManager.setCurrentPage(pageId);
       })
-    ),
+    );
+
+    // 페이지 로드 직후 즉시 order_num 재정렬 (검증보다 먼저 실행)
+    setTimeout(() => {
+      const { updateElementOrder } = get();
+      reorderElements(elements, pageId, updateElementOrder);
+    }, 50); // 검증(300ms)보다 빠르게 실행
+  },
 
   addElement: async (element) => {
     // 1. 메모리 상태 업데이트 (우선)
@@ -193,6 +260,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       }
     } catch (error) {
       console.warn('⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):', error);
+    }
+
+    // order_num 재정렬 (추가 후)
+    const currentPageId = get().currentPageId;
+    if (currentPageId && element.page_id === currentPageId) {
+      setTimeout(() => {
+        const { elements, updateElementOrder } = get();
+        reorderElements(elements, currentPageId, updateElementOrder);
+      }, 100); // 상태 업데이트 후 재정렬
     }
   },
 
@@ -330,50 +406,83 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         return;
       }
 
-      // 1. 메모리 상태 업데이트 (우선)
+      // 1. 메모리 상태 업데이트 (우선) - 안전한 데이터 복사
+      let elementIdsToRemove: string[] = [];
+      const elementsToRestore: Element[] = [];
+      let prevProps: any = null;
+      let prevElement: any = null;
+
+      // produce 밖에서 안전하게 데이터 준비
+      try {
+        switch (entry.type) {
+          case 'add': {
+            elementIdsToRemove = [entry.elementId];
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementIdsToRemove.push(...entry.data.childElements.map((child: any) => child.id));
+            }
+            break;
+          }
+
+          case 'update': {
+            if (entry.data.prevProps) {
+              prevProps = JSON.parse(JSON.stringify(entry.data.prevProps));
+            }
+            if (entry.data.prevElement) {
+              prevElement = JSON.parse(JSON.stringify(entry.data.prevElement));
+            }
+            break;
+          }
+
+          case 'remove': {
+            if (entry.data.element) {
+              elementsToRestore.push(JSON.parse(JSON.stringify(entry.data.element)));
+            }
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementsToRestore.push(...entry.data.childElements.map((child: any) => JSON.parse(JSON.stringify(child))));
+              console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`, {
+                parent: entry.data.element?.tag,
+                children: entry.data.childElements.map((child: any) => ({ id: child.id, tag: child.tag }))
+              });
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ 히스토리 데이터 준비 중 오류:', error);
+        set({ historyOperationInProgress: false });
+        return;
+      }
+
       set(
         produce((state: ElementsState) => {
           switch (entry.type) {
-            case 'add':
+            case 'add': {
               // 추가된 요소 제거 (역작업)
-              const elementIdsToRemove = [entry.elementId];
-              if (entry.data.childElements && entry.data.childElements.length > 0) {
-                elementIdsToRemove.push(...entry.data.childElements.map(child => child.id));
-              }
-
               state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
               if (elementIdsToRemove.includes(state.selectedElementId || '')) {
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
               }
               break;
+            }
 
             case 'update': {
               // 이전 상태로 복원
               const element = findElementById(state.elements, entry.elementId);
-              if (element && entry.data.prevProps) {
-                element.props = { ...entry.data.prevProps };
-              } else if (element && entry.data.prevElement) {
+              if (element && prevProps) {
+                element.props = prevProps;
+              } else if (element && prevElement) {
                 // 전체 요소가 저장된 경우
-                Object.assign(element, entry.data.prevElement);
+                Object.assign(element, prevElement);
               }
               break;
             }
 
-            case 'remove':
+            case 'remove': {
               // 삭제된 요소와 자식 요소들 복원
-              if (entry.data.element) {
-                state.elements.push(entry.data.element);
-              }
-              // 자식 요소들도 함께 복원
-              if (entry.data.childElements && entry.data.childElements.length > 0) {
-                state.elements.push(...entry.data.childElements);
-                console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`, {
-                  parent: entry.data.element?.tag,
-                  children: entry.data.childElements.map(child => ({ id: child.id, tag: child.tag }))
-                });
-              }
+              state.elements.push(...elementsToRestore);
               break;
+            }
           }
         })
       );
@@ -397,7 +506,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       // 3. 데이터베이스 업데이트 (비동기, 실패해도 메모리는 유지)
       try {
         switch (entry.type) {
-          case 'add':
+          case 'add': {
             // 부모 요소와 자식 요소들을 모두 데이터베이스에서 삭제
             const elementIdsToDelete = [entry.elementId];
             if (entry.data.childElements && entry.data.childElements.length > 0) {
@@ -410,8 +519,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               .in('id', elementIdsToDelete);
             console.log(`✅ Undo: 데이터베이스에서 요소 삭제 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             break;
+          }
 
-          case 'update':
+          case 'update': {
             // bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기
             if (entry.elementId === 'bulk_update') {
               console.log('⏭️ bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기');
@@ -430,8 +540,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               console.log('✅ Undo: 데이터베이스에서 요소 복원 완료');
             }
             break;
+          }
 
-          case 'remove':
+          case 'remove': {
             if (entry.data.element) {
               // 부모 요소와 자식 요소들을 모두 데이터베이스에 복원
               const elementsToRestore = [entry.data.element];
@@ -445,6 +556,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               console.log(`✅ Undo: 데이터베이스에서 요소 복원 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             }
             break;
+          }
         }
       } catch (dbError) {
         console.warn("⚠️ 데이터베이스 업데이트 실패 (메모리는 정상):", dbError);
@@ -476,46 +588,76 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         return;
       }
 
-      // 1. 메모리 상태 업데이트 (우선)
+      // 1. 메모리 상태 업데이트 (우선) - 안전한 데이터 복사
+      const elementsToAdd: Element[] = [];
+      let elementIdsToRemove: string[] = [];
+      let propsToUpdate: any = null;
+
+      // produce 밖에서 안전하게 데이터 준비
+      try {
+        switch (entry.type) {
+          case 'add': {
+            if (entry.data.element) {
+              elementsToAdd.push(JSON.parse(JSON.stringify(entry.data.element)));
+            }
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementsToAdd.push(...entry.data.childElements.map((child: any) => JSON.parse(JSON.stringify(child))));
+              console.log(`🔄 Redo: 자식 요소 ${entry.data.childElements.length}개 추가`, {
+                parent: entry.data.element?.tag,
+                children: entry.data.childElements.map((child: any) => ({ id: child.id, tag: child.tag }))
+              });
+            }
+            break;
+          }
+
+          case 'update': {
+            if (entry.data.props) {
+              propsToUpdate = JSON.parse(JSON.stringify(entry.data.props));
+            }
+            break;
+          }
+
+          case 'remove': {
+            elementIdsToRemove = [entry.elementId];
+            if (entry.data.childElements && entry.data.childElements.length > 0) {
+              elementIdsToRemove.push(...entry.data.childElements.map((child: any) => child.id));
+            }
+            break;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ 히스토리 데이터 준비 중 오류:', error);
+        set({ historyOperationInProgress: false });
+        return;
+      }
+
       set(
         produce((state: ElementsState) => {
           switch (entry.type) {
-            case 'add':
+            case 'add': {
               // 요소와 자식 요소들 추가
-              if (entry.data.element) {
-                state.elements.push(entry.data.element);
-              }
-              if (entry.data.childElements && entry.data.childElements.length > 0) {
-                state.elements.push(...entry.data.childElements);
-                console.log(`🔄 Redo: 자식 요소 ${entry.data.childElements.length}개 추가`, {
-                  parent: entry.data.element?.tag,
-                  children: entry.data.childElements.map(child => ({ id: child.id, tag: child.tag }))
-                });
-              }
+              state.elements.push(...elementsToAdd);
               break;
+            }
 
             case 'update': {
               // 업데이트 적용
               const element = findElementById(state.elements, entry.elementId);
-              if (element && entry.data.props) {
-                element.props = { ...element.props, ...entry.data.props };
+              if (element && propsToUpdate) {
+                element.props = { ...element.props, ...propsToUpdate };
               }
               break;
             }
 
-            case 'remove':
+            case 'remove': {
               // 요소와 자식 요소들 제거
-              const elementIdsToRemove = [entry.elementId];
-              if (entry.data.childElements && entry.data.childElements.length > 0) {
-                elementIdsToRemove.push(...entry.data.childElements.map(child => child.id));
-              }
-
               state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
               if (elementIdsToRemove.includes(state.selectedElementId || '')) {
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
               }
               break;
+            }
           }
         })
       );
@@ -539,7 +681,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       // 3. 데이터베이스 업데이트 (비동기, 실패해도 메모리는 유지)
       try {
         switch (entry.type) {
-          case 'add':
+          case 'add': {
             if (entry.data.element) {
               // 부모 요소와 자식 요소들을 모두 데이터베이스에 추가
               const elementsToAdd = [entry.data.element];
@@ -553,8 +695,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               console.log(`✅ Redo: 데이터베이스에서 요소 추가 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             }
             break;
+          }
 
-          case 'update':
+          case 'update': {
             // bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기
             if (entry.elementId === 'bulk_update') {
               console.log('⏭️ bulk_update는 가짜 ID이므로 데이터베이스 업데이트 건너뛰기');
@@ -572,8 +715,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               }
             }
             break;
+          }
 
-          case 'remove':
+          case 'remove': {
             // 부모 요소와 자식 요소들을 모두 데이터베이스에서 삭제
             const elementIdsToDelete = [entry.elementId];
             if (entry.data.childElements && entry.data.childElements.length > 0) {
@@ -586,6 +730,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               .in('id', elementIdsToDelete);
             console.log(`✅ Redo: 데이터베이스에서 요소 삭제 완료 (부모 1개 + 자식 ${entry.data.childElements?.length || 0}개)`);
             break;
+          }
         }
       } catch (dbError) {
         console.warn("⚠️ 데이터베이스 업데이트 실패 (메모리는 정상):", dbError);
@@ -691,6 +836,94 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       }
     }
 
+    // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
+    if (element.tag === 'Tab' || element.tag === 'Panel') {
+      const tabId = (element.props as any).tabId;
+
+      console.log(`🔍 ${element.tag} 삭제 중 - tabId:`, tabId, 'element.props:', element.props);
+
+      if (tabId) {
+        // Tab을 삭제할 때는 연결된 Panel을 찾아서 삭제
+        // Panel을 삭제할 때는 연결된 Tab을 찾아서 삭제
+        const parentElement = state.elements.find(el => el.id === element.parent_id);
+
+        console.log(`🔍 부모 요소:`, parentElement?.tag, parentElement?.id);
+
+        if (parentElement && parentElement.tag === 'Tabs') {
+          // 같은 부모 아래의 모든 Tab/Panel 요소들 확인
+          const siblingElements = state.elements.filter(el => el.parent_id === parentElement.id);
+          console.log(`🔍 형제 요소들:`, siblingElements.map(el => ({
+            id: el.id,
+            tag: el.tag,
+            tabId: (el.props as any).tabId
+          })));
+
+          const relatedElement = state.elements.find(el =>
+            el.parent_id === parentElement.id &&
+            el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
+            (el.props as any).tabId === tabId // 같은 tabId를 가진 요소
+          );
+
+          console.log(`🔍 연관 요소 찾기 결과:`, relatedElement ? {
+            id: relatedElement.id,
+            tag: relatedElement.tag,
+            tabId: (relatedElement.props as any).tabId
+          } : 'null');
+
+          if (relatedElement) {
+            childElements = [...childElements, relatedElement];
+            console.log(`🔗 ${element.tag} 삭제로 인한 연관 ${relatedElement.tag} 삭제:`, {
+              tabId,
+              deletedElementId: element.id,
+              relatedElementId: relatedElement.id
+            });
+          } else {
+            // tabId가 없는 경우 order_num을 기반으로 연관 요소 찾기 (fallback)
+            console.log(`⚠️ tabId 기반 연관 요소를 찾을 수 없음. order_num 기반으로 fallback 시도`);
+
+            const fallbackRelatedElement = state.elements.find(el =>
+              el.parent_id === parentElement.id &&
+              el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
+              Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1 // 인접한 order_num
+            );
+
+            if (fallbackRelatedElement) {
+              childElements = [...childElements, fallbackRelatedElement];
+              console.log(`🔗 ${element.tag} 삭제로 인한 연관 ${fallbackRelatedElement.tag} 삭제 (order_num 기반):`, {
+                deletedElementOrder: element.order_num,
+                relatedElementOrder: fallbackRelatedElement.order_num,
+                deletedElementId: element.id,
+                relatedElementId: fallbackRelatedElement.id
+              });
+            }
+          }
+        }
+      } else {
+        // tabId가 없는 경우 order_num을 기반으로 연관 요소 찾기
+        console.log(`⚠️ ${element.tag}에 tabId가 없음. order_num 기반으로 연관 요소 찾기 시도`);
+
+        const parentElement = state.elements.find(el => el.id === element.parent_id);
+
+        if (parentElement && parentElement.tag === 'Tabs') {
+          const relatedElement = state.elements.find(el =>
+            el.parent_id === parentElement.id &&
+            el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
+            Math.abs((el.order_num || 0) - (element.order_num || 0)) === 1 // 인접한 order_num
+          );
+
+          if (relatedElement) {
+            childElements = [...childElements, relatedElement];
+            console.log(`🔗 ${element.tag} 삭제로 인한 연관 ${relatedElement.tag} 삭제 (order_num 기반, tabId 없음):`, {
+              deletedElementOrder: element.order_num,
+              relatedElementOrder: relatedElement.order_num,
+              deletedElementId: element.id,
+              relatedElementId: relatedElement.id
+            });
+          }
+        }
+      }
+    }
+
     const allElementsToRemove = [element, ...childElements];
 
     // 중복 제거 (같은 요소가 여러 번 포함될 수 있음)
@@ -762,6 +995,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         }
       })
     );
+
+    // order_num 재정렬 (삭제 후)
+    const currentPageId = get().currentPageId;
+    if (currentPageId) {
+      setTimeout(() => {
+        const { elements, updateElementOrder } = get();
+        reorderElements(elements, currentPageId, updateElementOrder);
+      }, 100); // 상태 업데이트 후 재정렬
+    }
   },
 
   removeTabPair: (elementId) =>
@@ -839,6 +1081,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       console.warn('⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):', error);
     }
   },
+
+  updateElementOrder: (elementId, orderNum) =>
+    set(
+      produce((state: ElementsState) => {
+        const element = findElementById(state.elements, elementId);
+        if (element) {
+          element.order_num = orderNum;
+        }
+      })
+    ),
 });
 
 // 기존 호환성을 위한 useStore export

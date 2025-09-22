@@ -53,7 +53,9 @@ export async function bulkUpsertTokens(tokens: Partial<DesignToken>[]) {
     }
 
     // css_variable 필드를 제거하고 기본 필드만 사용
-    const tokensToUpsert = tokens.map(({ css_variable: _, ...tokenWithoutCssVar }) => tokenWithoutCssVar);
+    const tokensToUpsert = tokens.map(({ ...tokenWithoutCssVar }) => {
+        return tokenWithoutCssVar;
+    });
 
     //console.log('[themeApi] Upserting tokens:', tokensToUpsert);
     const { data, error } = await supabase

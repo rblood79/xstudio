@@ -1,0 +1,38 @@
+import React, { lazy } from 'react';
+
+// Component map definition (code splitting)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+    'Button': lazy(() => import('../components/Button').then(module => ({ default: module.Button }))),
+    'TextField': lazy(() => import('../components/TextField').then(module => ({ default: module.TextField }))),
+    'Checkbox': lazy(() => import('../components/Checkbox').then(module => ({ default: module.Checkbox }))),
+    'CheckboxGroup': lazy(() => import('../components/CheckboxGroup').then(module => ({ default: module.CheckboxGroup }))),
+    'Radio': lazy(() => import('../components/Radio').then(module => ({ default: module.Radio }))),
+    'RadioGroup': lazy(() => import('../components/RadioGroup').then(module => ({ default: module.RadioGroup }))),
+    'Select': lazy(() => import('../components/Select').then(module => ({ default: module.Select }))),
+    'ComboBox': lazy(() => import('../components/ComboBox').then(module => ({ default: module.ComboBox }))),
+    'ListBox': lazy(() => import('../components/ListBox').then(module => ({ default: module.ListBox }))),
+    'GridList': lazy(() => import('../components/GridList').then(module => ({ default: module.GridList }))),
+    'Tree': lazy(() => import('../components/Tree').then(module => ({ default: module.Tree }))),
+    'Table': lazy(() => import('../components/Table').then(module => ({ default: module.Table }))),
+    'Tabs': lazy(() => import('../components/Tabs').then(module => ({ default: module.Tabs }))),
+    'Dialog': lazy(() => import('../components/Dialog').then(module => ({ default: module.Dialog }))),
+    'Modal': lazy(() => import('../components/Modal').then(module => ({ default: module.Modal }))),
+    'Popover': lazy(() => import('../components/Popover').then(module => ({ default: module.Popover }))),
+    'ToggleButton': lazy(() => import('../components/ToggleButton').then(module => ({ default: module.ToggleButton }))),
+    'ToggleButtonGroup': lazy(() => import('../components/ToggleButtonGroup').then(module => ({ default: module.ToggleButtonGroup }))),
+    'TagGroup': lazy(() => import('../components/TagGroup').then(module => ({ default: module.TagGroup }))),
+    'Form': lazy(() => import('../components/Form').then(module => ({ default: module.Form }))),
+    'FieldGroup': lazy(() => import('../components/Field').then(module => ({ default: module.FieldGroup }))),
+    'Label': lazy(() => import('../components/Field').then(module => ({ default: module.Label }))),
+    'Input': lazy(() => import('../components/Field').then(module => ({ default: module.Input }))),
+    'DateField': lazy(() => import('../components/DateField').then(module => ({ default: module.DateField }))),
+    'DatePicker': lazy(() => import('../components/DatePicker').then(module => ({ default: module.DatePicker }))),
+    'DateRangePicker': lazy(() => import('../components/DateRangePicker').then(module => ({ default: module.DateRangePicker }))),
+    'TimeField': lazy(() => import('../components/TimeField').then(module => ({ default: module.TimeField }))),
+    'Switch': lazy(() => import('../components/Switch').then(module => ({ default: module.Switch }))),
+    'Slider': lazy(() => import('../components/Slider').then(module => ({ default: module.Slider }))),
+    'Calendar': lazy(() => import('../components/Calendar').then(module => ({ default: module.Calendar }))),
+    'Card': lazy(() => import('../components/Card').then(module => ({ default: module.Card }))),
+    'Panel': lazy(() => import('../components/Panel').then(module => ({ default: module.Panel }))),
+};

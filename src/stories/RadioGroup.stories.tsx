@@ -2,6 +2,7 @@ import React from 'react';
 import { Form } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
 import { Radio, RadioGroup } from '../builder/components/RadioGroup';
+import { StoryObj } from '@storybook/react';
 
 export default {
   title: 'RadioGroup',
@@ -28,7 +29,9 @@ export const Default = {
   args: {},
 };
 
-export const Validation = (args: any) => (
+type Story = StoryObj<typeof RadioGroup>;
+
+export const Validation: Story = (args) => (
   <Form className="flex flex-col gap-2 items-start">
     <RadioGroup {...args} />
     <Button type="submit" variant="secondary">Submit</Button>

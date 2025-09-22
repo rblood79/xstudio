@@ -57,7 +57,8 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
                         id="previewFrame"
                         src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
                         style={{ width: "100%", height: "100%", border: "none" }}
-                        sandbox="allow-scripts allow-same-origin allow-forms"
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                        title="XStudio Preview"
                         onLoad={onIframeLoad}
                     />
                     {children}

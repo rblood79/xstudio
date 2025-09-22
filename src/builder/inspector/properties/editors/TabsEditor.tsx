@@ -10,9 +10,9 @@ import type { Element } from '../../../../types/store'; // 통합된 타입 사�
 import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
-const ORIENTATIONS: Array<{ id: string; label: string }> = [
-    { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-    { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+const ORIENTATIONS: Array<{ id: string; value: string; label: string }> = [
+    { id: 'horizontal', value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+    { id: 'vertical', value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
 ];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -129,6 +129,7 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('defaultSelectedKey', value)}
                     options={tabChildren.map(tab => ({
                         id: tab.id,
+                        value: tab.id, // value 속성 추가
                         label: ('title' in tab.props ? tab.props.title : 'Untitled Tab') as string
                     }))}
                     icon={AppWindow}

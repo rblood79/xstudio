@@ -1,3 +1,4 @@
+import { Element, ComponentElementProps } from '../types/store';
 // 통합 메시징 유틸리티
 export class MessageService {
     private static iframe: HTMLIFrameElement | null = null;
@@ -26,10 +27,10 @@ export class MessageService {
 
     static handleMessage(event: MessageEvent, handlers: {
         projectId: string;
-        setElements: (elements: any[]) => void;
-        setSelectedElement: (elementId: string | null, props?: any) => void;
-        addElement: (element: any) => void;
-        updateElementProps: (elementId: string, props: any) => void;
+        setElements: (elements: Element[]) => void;
+        setSelectedElement: (elementId: string | null, props?: ComponentElementProps) => void;
+        addElement: (element: Element) => void;
+        updateElementProps: (elementId: string, props: ComponentElementProps) => void;
         removeElement: (elementId: string) => void;
         setError: (error: string | null) => void;
         setIsLoading: (loading: boolean) => void;

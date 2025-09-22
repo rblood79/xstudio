@@ -3,8 +3,6 @@ import type { DesignToken, TokenValue } from '../../types/theme';
 import type { TokenType } from '../../types/theme';
 import { MessageService } from '../../utils/messaging';
 
-const IFRAME_ID = 'previewFrame';
-
 interface CssPair { cssVar: string; value: string; }
 
 let pendingVars: CssPair[] | null = null;

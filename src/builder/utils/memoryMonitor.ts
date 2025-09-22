@@ -68,7 +68,7 @@ export class MemoryMonitor {
         // 브라우저 메모리 정보 (가능한 경우)
         let browserMemory;
         if ('memory' in performance) {
-            const memory = (performance as any).memory;
+            const memory = performance.memory;
             browserMemory = {
                 usedJSHeapSize: memory.usedJSHeapSize,
                 totalJSHeapSize: memory.totalJSHeapSize,

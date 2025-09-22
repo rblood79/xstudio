@@ -1,4 +1,4 @@
-import { Element } from '../../types/unified';
+import { Element, ComponentElementProps } from '../../types/unified';
 import { commandDataStore } from './commandDataStore';
 
 /**
@@ -15,8 +15,8 @@ export interface HistoryEntry {
     data: {
         element?: Element;
         prevElement?: Element;
-        props?: Record<string, any>;
-        prevProps?: Record<string, any>;
+        props?: ComponentElementProps;
+        prevProps?: ComponentElementProps;
         parentId?: string;
         prevParentId?: string;
         orderNum?: number;
@@ -199,7 +199,7 @@ export class HistoryManager {
     /**
      * CommandDataStore 변경사항 변환
      */
-    private convertToCommandChanges(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): any {
+    private convertToCommandChanges(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): unknown {
         switch (entry.type) {
             case 'add':
                 return {
@@ -243,7 +243,12 @@ export class HistoryManager {
     getMemoryStats(): {
         pageCount: number;
         totalEntries: number;
-        commandStoreStats: any;
+        commandStoreStats: {
+            commandCount: number;
+            cacheSize: number;
+            estimatedMemoryUsage: number;
+            compressionRatio: number;
+        };
     } {
         const pageCount = this.pageHistories.size;
         const totalEntries = Array.from(this.pageHistories.values())

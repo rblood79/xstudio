@@ -191,8 +191,8 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     value={String(currentProps.menuTrigger || 'click')}
                     onChange={(value) => updateProp('menuTrigger', value)}
                     options={[
-                        { id: 'click', label: 'Click' },
-                        { id: 'hover', label: 'Hover' }
+                        { id: 'click', value: 'click', label: 'Click' },
+                        { id: 'hover', value: 'hover', label: 'Hover' }
                     ]}
                     icon={Menu}
                 />
