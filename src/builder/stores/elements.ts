@@ -285,6 +285,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
         // 히스토리 추가
         if (state.currentPageId) {
+          console.log('📝 Props 변경 히스토리 추가:', {
+            elementId,
+            elementTag: element.tag,
+            prevProps: { ...element.props },
+            newProps: props
+          });
           historyManager.addEntry({
             type: 'update',
             elementId: elementId,
@@ -389,9 +395,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
   undo: async () => {
     try {
+      console.log("🎯 Undo 함수 시작");
       const state = get();
       const { currentPageId } = state;
-      if (!currentPageId) return;
+      console.log("🎯 currentPageId:", currentPageId);
+      if (!currentPageId) {
+        console.log("🚫 currentPageId 없음, return");
+        return;
+      }
 
       // 히스토리 작업 시작 표시
       set({ historyOperationInProgress: true });
@@ -406,11 +417,18 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         return;
       }
 
+      console.log('🔍 Undo 항목 확인:', {
+        type: entry.type,
+        elementId: entry.elementId,
+        hasData: !!entry.data,
+        dataKeys: entry.data ? Object.keys(entry.data) : []
+      });
+
       // 1. 메모리 상태 업데이트 (우선) - 안전한 데이터 복사
       let elementIdsToRemove: string[] = [];
       const elementsToRestore: Element[] = [];
-      let prevProps: any = null;
-      let prevElement: any = null;
+      let prevProps: ComponentElementProps | null = null;
+      let prevElement: Element | null = null;
 
       // produce 밖에서 안전하게 데이터 준비
       try {
@@ -418,43 +436,87 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           case 'add': {
             elementIdsToRemove = [entry.elementId];
             if (entry.data.childElements && entry.data.childElements.length > 0) {
-              elementIdsToRemove.push(...entry.data.childElements.map((child: any) => child.id));
+              elementIdsToRemove.push(...entry.data.childElements.map((child: Element) => child.id));
             }
             break;
           }
 
           case 'update': {
+            console.log('🔍 Update 케이스 데이터 준비:', {
+              hasPrevProps: !!entry.data.prevProps,
+              hasPrevElement: !!entry.data.prevElement,
+              prevProps: entry.data.prevProps,
+              prevElement: entry.data.prevElement
+            });
+
             if (entry.data.prevProps) {
-              prevProps = JSON.parse(JSON.stringify(entry.data.prevProps));
+              try {
+                prevProps = JSON.parse(JSON.stringify(entry.data.prevProps));
+                console.log('✅ prevProps 준비 완료:', prevProps);
+              } catch (proxyError) {
+                console.warn('⚠️ prevProps proxy 오류, 원본 사용:', proxyError);
+                prevProps = entry.data.prevProps;
+              }
             }
             if (entry.data.prevElement) {
-              prevElement = JSON.parse(JSON.stringify(entry.data.prevElement));
+              try {
+                prevElement = JSON.parse(JSON.stringify(entry.data.prevElement));
+                console.log('✅ prevElement 준비 완료:', prevElement);
+              } catch (proxyError) {
+                console.warn('⚠️ prevElement proxy 오류, 원본 사용:', proxyError);
+                prevElement = entry.data.prevElement;
+              }
             }
             break;
           }
 
           case 'remove': {
             if (entry.data.element) {
-              elementsToRestore.push(JSON.parse(JSON.stringify(entry.data.element)));
+              try {
+                elementsToRestore.push(JSON.parse(JSON.stringify(entry.data.element)));
+              } catch (proxyError) {
+                console.warn('⚠️ element proxy 오류, 원본 사용:', proxyError);
+                elementsToRestore.push(entry.data.element);
+              }
             }
             if (entry.data.childElements && entry.data.childElements.length > 0) {
-              elementsToRestore.push(...entry.data.childElements.map((child: any) => JSON.parse(JSON.stringify(child))));
-              console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`, {
-                parent: entry.data.element?.tag,
-                children: entry.data.childElements.map((child: any) => ({ id: child.id, tag: child.tag }))
-              });
+              try {
+                elementsToRestore.push(...entry.data.childElements.map((child: Element) => JSON.parse(JSON.stringify(child))));
+                console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`, {
+                  parent: entry.data.element?.tag,
+                  children: entry.data.childElements.map((child: Element) => ({ id: child.id, tag: child.tag }))
+                });
+              } catch (proxyError) {
+                console.warn('⚠️ childElements proxy 오류, 원본 사용:', proxyError);
+                elementsToRestore.push(...entry.data.childElements);
+                console.log(`🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원 (원본)`, {
+                  parent: entry.data.element?.tag,
+                  children: entry.data.childElements.map((child: Element) => ({ id: child.id, tag: child.tag }))
+                });
+              }
             }
             break;
           }
         }
+
+        console.log('✅ 히스토리 데이터 준비 완료, try 블록 끝');
       } catch (error) {
-        console.warn('⚠️ 히스토리 데이터 준비 중 오류:', error);
+        console.error('⚠️ 히스토리 데이터 준비 중 오류:', error);
+        console.error('⚠️ 오류 상세:', {
+          message: error.message,
+          stack: error.stack,
+          entryType: entry.type,
+          elementId: entry.elementId
+        });
         set({ historyOperationInProgress: false });
         return;
       }
 
+      console.log('🚀 produce 함수 호출 직전, entry.type:', entry.type);
+
       set(
         produce((state: ElementsState) => {
+          console.log('🔧 Undo Produce 함수 실행됨, entry.type:', entry.type);
           switch (entry.type) {
             case 'add': {
               // 추가된 요소 제거 (역작업)
@@ -467,13 +529,42 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             }
 
             case 'update': {
+              console.log('📥 Update 케이스 실행됨:', {
+                elementId: entry.elementId,
+                hasPrevProps: !!prevProps,
+                hasPrevElement: !!prevElement
+              });
+
               // 이전 상태로 복원
               const element = findElementById(state.elements, entry.elementId);
               if (element && prevProps) {
+                console.log('🔄 Undo: Props 복원', {
+                  elementId: entry.elementId,
+                  elementTag: element.tag,
+                  currentProps: { ...element.props },
+                  restoringTo: prevProps
+                });
                 element.props = prevProps;
+
+                // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
+                if (state.selectedElementId === entry.elementId) {
+                  console.log('🔄 Undo: 선택된 요소 props도 업데이트');
+                  state.selectedElementProps = createCompleteProps(element, prevProps);
+                }
               } else if (element && prevElement) {
+                console.log('🔄 Undo: 전체 요소 복원', {
+                  elementId: entry.elementId,
+                  prevElement
+                });
                 // 전체 요소가 저장된 경우
                 Object.assign(element, prevElement);
+              } else {
+                console.warn('⚠️ Undo 실패: 요소 또는 이전 데이터를 찾을 수 없음', {
+                  elementId: entry.elementId,
+                  elementFound: !!element,
+                  prevPropsFound: !!prevProps,
+                  prevElementFound: !!prevElement
+                });
               }
               break;
             }
@@ -591,7 +682,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       // 1. 메모리 상태 업데이트 (우선) - 안전한 데이터 복사
       const elementsToAdd: Element[] = [];
       let elementIdsToRemove: string[] = [];
-      let propsToUpdate: any = null;
+      let propsToUpdate: ComponentElementProps | null = null;
 
       // produce 밖에서 안전하게 데이터 준비
       try {
@@ -601,10 +692,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
               elementsToAdd.push(JSON.parse(JSON.stringify(entry.data.element)));
             }
             if (entry.data.childElements && entry.data.childElements.length > 0) {
-              elementsToAdd.push(...entry.data.childElements.map((child: any) => JSON.parse(JSON.stringify(child))));
+              elementsToAdd.push(...entry.data.childElements.map((child: Element) => JSON.parse(JSON.stringify(child))));
               console.log(`🔄 Redo: 자식 요소 ${entry.data.childElements.length}개 추가`, {
                 parent: entry.data.element?.tag,
-                children: entry.data.childElements.map((child: any) => ({ id: child.id, tag: child.tag }))
+                children: entry.data.childElements.map((child: Element) => ({ id: child.id, tag: child.tag }))
               });
             }
             break;
@@ -620,7 +711,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           case 'remove': {
             elementIdsToRemove = [entry.elementId];
             if (entry.data.childElements && entry.data.childElements.length > 0) {
-              elementIdsToRemove.push(...entry.data.childElements.map((child: any) => child.id));
+              elementIdsToRemove.push(...entry.data.childElements.map((child: Element) => child.id));
             }
             break;
           }
@@ -838,7 +929,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
     if (element.tag === 'Tab' || element.tag === 'Panel') {
-      const tabId = (element.props as any).tabId;
+      const tabId = (element.props as ComponentElementProps & { tabId?: string }).tabId;
 
       console.log(`🔍 ${element.tag} 삭제 중 - tabId:`, tabId, 'element.props:', element.props);
 
@@ -855,19 +946,19 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           console.log(`🔍 형제 요소들:`, siblingElements.map(el => ({
             id: el.id,
             tag: el.tag,
-            tabId: (el.props as any).tabId
+            tabId: (el.props as ComponentElementProps & { tabId?: string }).tabId
           })));
 
           const relatedElement = state.elements.find(el =>
             el.parent_id === parentElement.id &&
             el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
-            (el.props as any).tabId === tabId // 같은 tabId를 가진 요소
+            (el.props as ComponentElementProps & { tabId?: string }).tabId === tabId // 같은 tabId를 가진 요소
           );
 
           console.log(`🔍 연관 요소 찾기 결과:`, relatedElement ? {
             id: relatedElement.id,
             tag: relatedElement.tag,
-            tabId: (relatedElement.props as any).tabId
+            tabId: (relatedElement.props as ComponentElementProps & { tabId?: string }).tabId
           } : 'null');
 
           if (relatedElement) {
