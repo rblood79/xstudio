@@ -60,7 +60,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TextField',
@@ -214,7 +214,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ToggleButtonGroup',
@@ -311,7 +311,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -345,7 +345,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'CheckboxGroup',
@@ -442,7 +442,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -476,7 +476,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'RadioGroup',
@@ -572,7 +572,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -606,7 +606,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Select',
@@ -714,7 +714,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -748,7 +748,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ComboBox',
@@ -846,7 +846,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -880,7 +880,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         // 초기 Tab들을 위한 UUID 생성
         const tab1Id = ElementUtils.generateId();
@@ -1003,7 +1003,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1037,7 +1037,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tree',
@@ -1131,7 +1131,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             // console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1165,7 +1165,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'TagGroup',
@@ -1259,7 +1259,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1293,7 +1293,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'ListBox',
@@ -1388,7 +1388,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1403,7 +1403,7 @@ export class ComponentFactory {
                 const updatedElements2 = store.elements.map(el =>
                     el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                 );
-                store.setElements(updatedElements2, { skipHistory: true });
+                store.setElements(updatedElements2);
             }
 
             //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
@@ -1428,7 +1428,7 @@ export class ComponentFactory {
         elements: Element[] // 현재 요소들을 받아서 전달
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'GridList',
@@ -1522,7 +1522,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
             //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
 
             // 자식들 순차 저장 (부모 ID 업데이트)
@@ -1537,7 +1537,7 @@ export class ComponentFactory {
                 const updatedElements2 = store.elements.map(el =>
                     el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
                 );
-                store.setElements(updatedElements2, { skipHistory: true });
+                store.setElements(updatedElements2);
             }
 
             //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
@@ -1562,7 +1562,7 @@ export class ComponentFactory {
         elements: Element[]
     ): Promise<ComponentCreationResult> {
         const parentId = parentElement?.id || null;
-        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Table',
@@ -1757,7 +1757,7 @@ export class ComponentFactory {
             const updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
-            store.setElements(updatedElements, { skipHistory: true });
+            store.setElements(updatedElements);
 
             // 자식들을 저장용 배열로 변환 (ID 매핑)
             const childrenToSave = childrenData.map(child => {
