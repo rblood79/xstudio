@@ -135,11 +135,11 @@ export class CommandDataStore {
             id: element.id,
             tag: element.tag,
             props: this.compressionEnabled
-                ? this.compressProps(element.props)
+                ? this.compressProps(element.props as Record<string, unknown>)
                 : JSON.stringify(element.props),
-            parent_id: element.parent_id,
-            page_id: element.page_id,
-            order_num: element.order_num,
+            parent_id: element.parent_id || null,
+            page_id: element.page_id || '',
+            order_num: element.order_num || 0,
         };
 
         this.elementCache.set(element.id, compressed);

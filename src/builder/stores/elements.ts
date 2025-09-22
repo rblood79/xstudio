@@ -500,11 +500,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
         }
 
         console.log('✅ 히스토리 데이터 준비 완료, try 블록 끝');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('⚠️ 히스토리 데이터 준비 중 오류:', error);
         console.error('⚠️ 오류 상세:', {
-          message: error.message,
-          stack: error.stack,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
           entryType: entry.type,
           elementId: entry.elementId
         });
