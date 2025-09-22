@@ -223,13 +223,13 @@
             border-color: var(--color-primary-500);
 
             &[data-hovered] {
-                background: var(--color-primary-600);
-                border-color: var(--color-primary-600);
+                background: var(--color-primary-700);
+                border-color: var(--color-primary-800);
             }
 
             &[data-pressed] {
-                background: var(--color-primary-700);
-                border-color: var(--color-primary-700);
+                background: var(--color-primary-800);
+                border-color: var(--color-primary-800);
             }
         }
 
@@ -239,29 +239,29 @@
             border-color: var(--color-red-500);
 
             &[data-hovered] {
-                background: var(--color-red-600);
-                border-color: var(--color-red-600);
+                background: var(--color-red-700);
+                border-color: var(--color-red-800);
             }
 
             &[data-pressed] {
-                background: var(--color-red-700);
-                border-color: var(--color-red-700);
+                background: var(--color-red-800);
+                border-color: var(--color-red-800);
             }
         }
 
         &.surface {
-            background: var(--color-gray-100);
+            background: var(--color-primary-100);
             color: var(--color-gray-800);
-            border-color: var(--color-gray-300);
+            border-color: var(--color-primary-200);
 
             &[data-hovered] {
-                background: var(--color-gray-200);
-                border-color: var(--color-gray-400);
+                background: var(--color-primary-300);
+                border-color: var(--color-primary-300);
             }
 
             &[data-pressed] {
-                background: var(--color-gray-300);
-                border-color: var(--color-gray-500);
+                background: var(--color-primary-300);
+                border-color: var(--color-primary-300);
             }
         }
 
