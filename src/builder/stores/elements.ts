@@ -72,9 +72,10 @@ const reorderElements = async (
     const isComboBoxChildren = parentTag === 'ComboBox';
     const isSelectChildren = parentTag === 'Select';
     const isTreeChildren = parentTag === 'Tree';
+    const isToggleButtonChildren = parentTag === 'ToggleButtonGroup';
 
     // 디버깅: 특별 정렬 대상 컴포넌트 확인
-    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren) {
+    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
         parentKey,
         parentElement: parentElement ? { id: parentElement.id, tag: parentElement.tag } : null,
@@ -145,14 +146,14 @@ const reorderElements = async (
       sorted.forEach((el, index) => {
         console.log(`  ${index + 1}. ${el.tag}: ${(el.props as any)?.title} (new order: ${index + 1})`);
       });
-    } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren) {
-      // 컬렉션 컴포넌트들의 아이템 정렬
+    } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+      // 컬렉션 컴포넌트들의 아이템 정렬 (ToggleButton 포함)
       console.log(`📋 ${parentTag} 하위 요소 재정렬: ${children.length}개 아이템`);
 
       sorted = children.sort((a, b) => {
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
-          // order_num이 같을 경우, children 텍스트나 title로 추가 정렬
+          // order_num이 같을 경우, children 텍스트나 title, label로 추가 정렬
           const textA = (a.props as any)?.children || (a.props as any)?.title || (a.props as any)?.label || '';
           const textB = (b.props as any)?.children || (b.props as any)?.title || (b.props as any)?.label || '';
           const comparison = String(textA).localeCompare(String(textB));
@@ -219,7 +220,7 @@ const reorderElements = async (
             el.tag === 'Tab' || el.tag === 'Panel' ||
             el.tag === 'ListBoxItem' || el.tag === 'GridListItem' ||
             el.tag === 'MenuItem' || el.tag === 'ComboBoxItem' ||
-            el.tag === 'SelectItem' || el.tag === 'TreeItem'
+            el.tag === 'SelectItem' || el.tag === 'TreeItem' || el.tag === 'ToggleButton'
           )
         );
 
@@ -1282,7 +1283,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       const isCollectionItem = element.tag === 'Tab' || element.tag === 'Panel' ||
         element.tag === 'ListBoxItem' || element.tag === 'GridListItem' ||
         element.tag === 'MenuItem' || element.tag === 'ComboBoxItem' ||
-        element.tag === 'SelectItem' || element.tag === 'TreeItem';
+        element.tag === 'SelectItem' || element.tag === 'TreeItem' || element.tag === 'ToggleButton';
 
       if (isCollectionItem) {
         console.log(`⏸️ ${element.tag} 삭제 - Undo 후까지 재정렬 지연`);

@@ -474,8 +474,9 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
 // === 기본 props 생성 함수들 ===
 export function createDefaultButtonProps(): ButtonElementProps {
     return {
+        children: 'Button',
         variant: 'primary',
-        size: 'md',
+        size: 'sm',
         isDisabled: false
     };
 }
