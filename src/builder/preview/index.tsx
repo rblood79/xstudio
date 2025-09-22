@@ -703,8 +703,11 @@ function Preview() {
           {gridListChildren.map((item) => (
             <GridListItem
               key={item.id}
+              data-element-id={item.id}
               value={item.props.value as object}
               isDisabled={Boolean(item.props.isDisabled)}
+              style={item.props.style}
+              className={item.props.className}
             >
               {String(item.props.label || '')}
             </GridListItem>
@@ -740,8 +743,11 @@ function Preview() {
           {listBoxChildren.map((item) => (
             <ListBoxItem
               key={item.id}
+              data-element-id={item.id}
               value={item.props.value as object}
               isDisabled={Boolean(item.props.isDisabled)}
+              style={item.props.style}
+              className={item.props.className}
             >
               {String(item.props.label || '')}
             </ListBoxItem>
@@ -844,8 +850,11 @@ function Preview() {
             return (
               <SelectItem
                 key={item.id}
+                data-element-id={item.id}
                 value={String(actualValue) as unknown as object}
                 isDisabled={Boolean(item.props.isDisabled)}
+                style={item.props.style}
+                className={item.props.className}
               >
                 {String(item.props.label || item.id)}
               </SelectItem>
@@ -964,8 +973,11 @@ function Preview() {
             return (
               <ComboBoxItem
                 key={item.id} // key는 item.id 유지
+                data-element-id={item.id}
                 value={reactAriaId as unknown as object} // React Aria 내부 ID 사용
                 isDisabled={Boolean(item.props.isDisabled)}
+                style={item.props.style}
+                className={item.props.className}
               >
                 {String(item.props.label || item.id)}
               </ComboBoxItem>
@@ -1127,11 +1139,14 @@ function Preview() {
           return (
             <TreeItem
               key={item.id}
+              data-element-id={item.id}
               id={item.id}
               title={displayTitle}
               hasChildren={hasChildren}
               showInfoButton={false}
-              // 다른 컴포넌트들 (Button, Text 등)
+              style={item.props.style}
+              className={item.props.className}
+              // ... existing code ...
               children={otherChildren.map((child) => renderElement(child))}
               // 하위 TreeItem들
               childItems={hasChildren ? renderTreeItemsRecursively(childTreeItems) : undefined}
@@ -1197,6 +1212,7 @@ function Preview() {
       return (
         <TreeItem
           key={el.id}
+          data-element-id={el.id}
           id={el.id}
           title={displayTitle}
           hasChildren={hasChildren}

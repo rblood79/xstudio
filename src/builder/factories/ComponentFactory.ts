@@ -1453,7 +1453,7 @@ export class ComponentFactory {
                 id: ElementUtils.generateId(),
                 tag: 'GridListItem',
                 props: {
-                    label: 'Grid Item 1',
+                    label: `Item 1`,
                     value: 'item1',
                     isDisabled: false
                 } as ComponentElementProps,
@@ -1465,7 +1465,7 @@ export class ComponentFactory {
                 id: ElementUtils.generateId(),
                 tag: 'GridListItem',
                 props: {
-                    label: 'Grid Item 2',
+                    label: `Item 2`,
                     value: 'item2',
                     isDisabled: false
                 } as ComponentElementProps,
