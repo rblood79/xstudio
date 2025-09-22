@@ -655,8 +655,9 @@ function Preview() {
         <Button
           key={el.id}
           data-element-id={el.id}
-          variant={el.props.variant as 'primary' | 'secondary' | 'surface'}
+          variant={el.props.variant as 'primary' | 'secondary' | 'surface' | 'outline' | 'ghost'}
           size={el.props.size as 'sm' | 'md' | 'lg'}
+          type={el.props.type as 'button' | 'submit' | 'reset' || 'button'}
           isDisabled={Boolean(el.props.isDisabled as boolean)}
           style={el.props.style}
           className={el.props.className}
@@ -1496,9 +1497,11 @@ function Preview() {
         <Table
           key={el.id}
           data-element-id={el.id}
-          {...el.props}
+          style={el.props.style}
+          className={el.props.className}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
           selectionBehavior={(el.props.selectionBehavior as 'toggle' | 'replace') || 'toggle'}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as string[] : []}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1542,7 +1545,7 @@ function Preview() {
     // Row 컴포넌트 처리
     if (el.tag === 'Row') {
       return (
-        <Row key={el.id} data-element-id={el.id} {...el.props}>
+        <Row key={el.id} data-element-id={el.id} style={el.props.style} className={el.props.className} value={el.props.value as object}>
           {children.map((child) => renderElement(child))}
         </Row>
       );
