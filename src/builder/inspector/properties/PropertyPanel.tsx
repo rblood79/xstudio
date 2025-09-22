@@ -170,6 +170,25 @@ export function PropertyPanel() {
         // Store 업데이트 - 타입 단언으로 처리
         updateElementProps(selectedElementId, updatedProps as Record<string, unknown>);
 
+        // iframe에 직접 메시지 전송 (무한 루프 방지)
+        try {
+            const updatedElement = elements.find(el => el.id === selectedElementId);
+            if (updatedElement && typeof window !== 'undefined') {
+                const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                if (iframe?.contentWindow) {
+                    iframe.contentWindow.postMessage(
+                        {
+                            type: 'ELEMENT_UPDATED',
+                            payload: { element: { ...updatedElement, props: { ...updatedElement.props, ...updatedProps } } }
+                        },
+                        '*'
+                    );
+                }
+            }
+        } catch (error) {
+            console.warn('iframe 메시지 전송 실패:', error);
+        }
+
         // Supabase 업데이트
         try {
             await supabase

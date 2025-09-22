@@ -33,9 +33,35 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.type || 'button')}
                 onChange={(value) => updateProp('type', value)}
                 options={[
-                    { id: 'button', value: 'button', label: PROPERTY_LABELS.BUTTON },
-                    { id: 'submit', value: 'submit', label: PROPERTY_LABELS.SUBMIT },
-                    { id: 'reset', value: 'reset', label: PROPERTY_LABELS.RESET }
+                    { value: 'button', label: PROPERTY_LABELS.BUTTON },
+                    { value: 'submit', label: PROPERTY_LABELS.SUBMIT },
+                    { value: 'reset', label: PROPERTY_LABELS.RESET }
+                ]}
+                icon={Parentheses}
+            />
+
+            <PropertySelect
+                label="Variant"
+                value={String(currentProps.variant || 'primary')}
+                onChange={(value) => updateProp('variant', value)}
+                options={[
+                    { value: 'primary', label: 'Primary' },
+                    { value: 'secondary', label: 'Secondary' },
+                    { value: 'surface', label: 'Surface' },
+                    { value: 'outline', label: 'Outline' },
+                    { value: 'ghost', label: 'Ghost' },
+                ]}
+                icon={Parentheses}
+            />
+
+            <PropertySelect
+                label="Size"
+                value={String(currentProps.size || 'sm')}
+                onChange={(value) => updateProp('size', value)}
+                options={[
+                    { value: 'sm', label: 'Small' },
+                    { value: 'md', label: 'Medium' },
+                    { value: 'lg', label: 'Large' },
                 ]}
                 icon={Parentheses}
             />

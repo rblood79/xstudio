@@ -649,12 +649,14 @@ function Preview() {
       );
     }
 
-    // Button 컴포넌트 특별 처리 (디버깅 코드 제거)
+    // Button 컴포넌트 특별 처리 (variant와 size props 추가)
     if (el.tag === 'Button') {
       return (
         <Button
           key={el.id}
           data-element-id={el.id}
+          variant={el.props.variant as 'primary' | 'secondary' | 'surface'}
+          size={el.props.size as 'sm' | 'md' | 'lg'}
           isDisabled={Boolean(el.props.isDisabled as boolean)}
           style={el.props.style}
           className={el.props.className}

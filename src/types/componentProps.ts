@@ -14,8 +14,8 @@ export interface BaseElementProps {
 export interface ButtonElementProps extends BaseElementProps {
     //tag: 'Button';
     children?: React.ReactNode;
-    variant?: 'default' | 'primary' | 'secondary' | 'danger';
-    size?: 'small' | 'medium' | 'large';
+    variant?: 'primary' | 'secondary' | 'surface';
+    size?: 'sm' | 'md' | 'lg';
     isDisabled?: boolean;
     onPress?: () => void;
 }
@@ -445,8 +445,8 @@ export function createDefaultButtonProps(): ButtonElementProps {
     return {
         //tag: 'Button',
         children: 'Button',
-        variant: 'default',
-        size: 'medium',
+        variant: 'primary',
+        size: 'md',
         isDisabled: false
     };
 }
