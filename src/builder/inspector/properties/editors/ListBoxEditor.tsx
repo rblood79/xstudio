@@ -83,7 +83,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     {/* 아이템 비활성화 상태 편집 */}
                     <PropertyCheckbox
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentItem.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentItem.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 ListBoxItem 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -114,7 +114,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentItem.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedItem(null);
                                 } catch (error) {
                                     console.error('ListBoxItem 삭제 중 오류:', error);
@@ -176,8 +176,8 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
-                        { id: 'multiple', value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
+                        { value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={List}
                 />
@@ -185,7 +185,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 {/* 빈 선택 허용 안함 설정 */}
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                     icon={SquareX}
                 />
@@ -193,7 +193,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 {/* 비활성화 설정 */}
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
@@ -201,7 +201,7 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                 {/* 자동 포커스 설정 */}
                 <PropertyCheckbox
                     label={PROPERTY_LABELS.AUTO_FOCUS}
-                    checked={Boolean(currentProps.autoFocus)}
+                    isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />

@@ -199,7 +199,12 @@ export class HistoryManager {
     /**
      * CommandDataStore 변경사항 변환
      */
-    private convertToCommandChanges(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): unknown {
+    private convertToCommandChanges(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): {
+        added?: Element;
+        removed?: Element;
+        updated?: { prevProps: Record<string, unknown>; newProps: Record<string, unknown> };
+        moved?: { prevParentId: string | null; newParentId: string | null; prevOrderNum: number; newOrderNum: number };
+    } {
         switch (entry.type) {
             case 'add':
                 return {
@@ -212,8 +217,8 @@ export class HistoryManager {
             case 'update':
                 return {
                     updated: {
-                        prevProps: entry.data.prevProps || {},
-                        newProps: entry.data.props || {}
+                        prevProps: (entry.data.prevProps || {}) as Record<string, unknown>,
+                        newProps: (entry.data.props || {}) as Record<string, unknown>
                     }
                 };
             case 'move':
