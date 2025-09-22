@@ -1,7 +1,8 @@
 import { PropertyInput, PropertyCheckbox } from '../components';
 import type { ColumnElementProps } from '../../../../types/store';
-import { PropertyEditorProps } from '../types/editorTypes'; // PropertyEditorProps import
-import { useStore } from '../../../stores'; // useStore import
+import { PropertyEditorProps } from '../types/editorTypes';
+import { useStore } from '../../../stores';
+import { Type, Crown, Ruler, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // interface ColumnEditorProps {
 //     // element: Element;
@@ -30,47 +31,58 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     };
 
     return (
-        <div className="space-y-4 p-4">
-            <h3 className="text-lg font-semibold">컬럼 속성</h3>
+        <div className="component-props">
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Column Content</legend>
 
-            {/* Column Title */}
-            <PropertyInput
-                label="컬럼 제목"
-                value={(currentProps as ColumnElementProps)?.children as string || ''}
-                onChange={(value) => updateProps({ children: value })}
-                placeholder="컬럼 제목을 입력하세요"
-            />
+                {/* Column Title */}
+                <PropertyInput
+                    label="컬럼 제목"
+                    value={(currentProps as ColumnElementProps)?.children as string || ''}
+                    onChange={(value) => updateProps({ children: value })}
+                    placeholder="컬럼 제목을 입력하세요"
+                    icon={Type}
+                />
 
-            {/* Is Row Header */}
-            <PropertyCheckbox
-                label="행 헤더로 사용"
-                isSelected={!!(currentProps as ColumnElementProps)?.isRowHeader}
-                onChange={(isSelected) => updateProps({ isRowHeader: isSelected })}
-            />
+                {/* Is Row Header */}
+                <PropertyCheckbox
+                    label="행 헤더로 사용"
+                    isSelected={!!(currentProps as ColumnElementProps)?.isRowHeader}
+                    onChange={(isSelected) => updateProps({ isRowHeader: isSelected })}
+                    icon={Crown}
+                />
+            </fieldset>
 
-            {/* Column Width */}
-            <PropertyInput
-                label="컬럼 너비"
-                value={(currentProps as ColumnElementProps)?.width || ''}
-                onChange={(value) => updateProps({ width: value })}
-                placeholder="예: 200px, auto, 1fr"
-            />
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Column Sizing</legend>
 
-            {/* Min Width */}
-            <PropertyInput
-                label="최소 너비"
-                value={(currentProps as ColumnElementProps)?.minWidth || ''}
-                onChange={(value) => updateProps({ minWidth: value })}
-                placeholder="예: 100px"
-            />
+                {/* Column Width */}
+                <PropertyInput
+                    label="컬럼 너비"
+                    value={(currentProps as ColumnElementProps)?.width || ''}
+                    onChange={(value) => updateProps({ width: value })}
+                    placeholder="예: 200px, auto, 1fr"
+                    icon={Ruler}
+                />
 
-            {/* Max Width */}
-            <PropertyInput
-                label="최대 너비"
-                value={(currentProps as ColumnElementProps)?.maxWidth || ''}
-                onChange={(value) => updateProps({ maxWidth: value })}
-                placeholder="예: 400px"
-            />
+                {/* Min Width */}
+                <PropertyInput
+                    label="최소 너비"
+                    value={(currentProps as ColumnElementProps)?.minWidth || ''}
+                    onChange={(value) => updateProps({ minWidth: value })}
+                    placeholder="예: 100px"
+                    icon={ArrowLeft}
+                />
+
+                {/* Max Width */}
+                <PropertyInput
+                    label="최대 너비"
+                    value={(currentProps as ColumnElementProps)?.maxWidth || ''}
+                    onChange={(value) => updateProps({ maxWidth: value })}
+                    placeholder="예: 400px"
+                    icon={ArrowRight}
+                />
+            </fieldset>
         </div>
     );
 }

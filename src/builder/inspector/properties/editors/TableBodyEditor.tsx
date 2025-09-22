@@ -1,8 +1,12 @@
-import { TableBodyElementProps } from '../../../../types/store';
 import { useStore } from '../../../stores';
 import { PropertySelect } from '../components';
-import { Label } from 'react-aria-components';
-import { PropertyEditorProps } from '../types/editorTypes'; // PropertyEditorProps import
+import { PropertyEditorProps } from '../types/editorTypes';
+import { Table, Grid } from 'lucide-react';
+
+interface TableBodyElementProps {
+    variant?: 'default' | 'striped' | 'bordered' | 'hover';
+    selectable?: boolean;
+}
 
 // interface TableBodyEditorProps {
 //     // element: Element;
@@ -44,72 +48,80 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
     }, 0);
 
     return (
-        <div className="space-y-4 p-4">
-            <h3 className="text-lg font-semibold">테이블 바디 속성</h3>
+        <div className="component-props">
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Table Body Properties</legend>
 
-            {/* Body Info */}
-            <div className="p-3 bg-gray-50 rounded">
-                <div className="text-sm text-gray-600">
-                    <div>행 개수: {rows.length}개</div>
-                    <div>총 셀 개수: {totalCells}개</div>
-                    <div>태그: &lt;tbody&gt;</div>
+                {/* Body Info */}
+                <div className='tab-overview'>
+                    <p className='tab-overview-text'>
+                        Total rows: {rows.length || 0} | Total cells: {totalCells || 0}
+                    </p>
+                    <p className='tab-overview-help'>
+                        💡 Configure table body appearance and row behavior
+                    </p>
                 </div>
-            </div>
 
-            {/* Body Variant */}
-            <PropertySelect
-                label="바디 스타일"
-                value={(currentProps as TableBodyElementProps)?.variant || 'default'}
-                options={[
-                    { value: 'default', label: '기본' },
-                    { value: 'striped', label: '줄무늬' },
-                    { value: 'bordered', label: '테두리' },
-                    { value: 'hover', label: '호버 효과' },
-                ]}
-                onChange={(key) => updateProps({ variant: key as 'default' | 'striped' | 'bordered' | 'hover' })}
-            />
+                {/* Body Variant */}
+                <PropertySelect
+                    label="바디 스타일"
+                    value={(currentProps as TableBodyElementProps)?.variant || 'default'}
+                    options={[
+                        { value: 'default', label: '기본' },
+                        { value: 'striped', label: '줄무늬' },
+                        { value: 'bordered', label: '테두리' },
+                        { value: 'hover', label: '호버 효과' },
+                    ]}
+                    onChange={(key) => updateProps({ variant: key as 'default' | 'striped' | 'bordered' | 'hover' })}
+                    icon={Table}
+                />
 
-            {/* Row Selection */}
-            <PropertySelect
-                label="행 선택"
-                value={(currentProps as TableBodyElementProps)?.selectable ? 'true' : 'false'}
-                options={[
-                    { value: 'false', label: '선택 불가' },
-                    { value: 'true', label: '선택 가능' },
-                ]}
-                onChange={(key) => updateProps({ selectable: key === 'true' })}
-            />
+                {/* Row Selection */}
+                <PropertySelect
+                    label="행 선택"
+                    value={(currentProps as TableBodyElementProps)?.selectable ? 'true' : 'false'}
+                    options={[
+                        { value: 'false', label: '선택 불가' },
+                        { value: 'true', label: '선택 가능' },
+                    ]}
+                    onChange={(key) => updateProps({ selectable: key === 'true' })}
+                    icon={Grid}
+                />
+            </fieldset>
 
-            {/* 행 목록 */}
-            <div className="space-y-2">
-                <Label className="text-sm font-medium">행 목록</Label>
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {rows.map((row, index) => {
-                        const rowCells = elements.filter(el =>
-                            el.parent_id === row.id && el.tag === 'Cell'
-                        );
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Row Overview</legend>
 
-                        return (
-                            <div key={row.id} className="flex items-center justify-between p-2 bg-white border rounded text-sm">
-                                <div>
-                                    <span className="font-medium">행 {index + 1}</span>
-                                    <span className="ml-2 text-gray-500">
-                                        ({rowCells.length}개 셀)
+                {/* 행 목록 */}
+                {rows.length > 0 && (
+                    <div className='tabs-list'>
+                        {rows.map((row, index) => {
+                            const rowCells = elements.filter(el =>
+                                el.parent_id === row.id && el.tag === 'Cell'
+                            );
+
+                            return (
+                                <div key={row.id} className='tab-list-item'>
+                                    <span className='tab-title'>
+                                        Row {index + 1} ({rowCells.length} cells)
+                                    </span>
+                                    <span className="text-gray-400 text-xs">
+                                        ID: {row.id.slice(0, 8)}...
                                     </span>
                                 </div>
-                                <span className="text-gray-400 text-xs">
-                                    {row.id.slice(0, 8)}...
-                                </span>
-                            </div>
-                        );
-                    })}
-                    {rows.length === 0 && (
-                        <div className="text-sm text-gray-500 text-center py-2">
-                            행이 없습니다
-                        </div>
-                    )}
-                </div>
-            </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {rows.length === 0 && (
+                    <div className='tab-overview'>
+                        <p className='tab-overview-help'>
+                            행이 없습니다. Table 편집기에서 행을 추가하세요.
+                        </p>
+                    </div>
+                )}
+            </fieldset>
         </div>
     );
 }
