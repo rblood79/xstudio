@@ -882,10 +882,14 @@ export class ComponentFactory {
         const parentId = parentElement?.id || null;
         const orderNum = HierarchyManager.calculateNextOrderNum(parentId, Array.isArray(elements) ? elements : []);
 
+        // 초기 Tab들을 위한 UUID 생성
+        const tab1Id = ElementUtils.generateId();
+        const tab2Id = ElementUtils.generateId();
+
         const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
             tag: 'Tabs',
             props: {
-                defaultSelectedKey: 'tab1',
+                defaultSelectedKey: tab1Id,
                 orientation: 'horizontal'
             } as ComponentElementProps,
             page_id: pageId,
@@ -907,7 +911,7 @@ export class ComponentFactory {
                 tag: 'Tab',
                 props: {
                     title: 'Tab 1',
-                    tabId: 'tab1'
+                    tabId: tab1Id
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
@@ -919,7 +923,8 @@ export class ComponentFactory {
                 props: {
                     //tag: 'Panel',
                     title: 'Panel 1',
-                    variant: 'tab'
+                    variant: 'tab',
+                    tabId: tab1Id
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
@@ -930,7 +935,7 @@ export class ComponentFactory {
                 tag: 'Tab',
                 props: {
                     title: 'Tab 2',
-                    tabId: 'tab2'
+                    tabId: tab2Id
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,
@@ -942,7 +947,8 @@ export class ComponentFactory {
                 props: {
                     //tag: 'Panel',
                     title: 'Panel 2',
-                    variant: 'tab'
+                    variant: 'tab',
+                    tabId: tab2Id
                 } as ComponentElementProps,
                 parent_id: parentData.id,
                 page_id: pageId,

@@ -156,9 +156,9 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     value={String(currentProps.selectionMode || 'none')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'none', label: 'None' },
-                        { id: 'single', label: 'Single' },
-                        { id: 'multiple', label: 'Multiple' }
+                        { value: 'none', label: 'None' },
+                        { value: 'single', label: 'Single' },
+                        { value: 'multiple', label: 'Multiple' }
                     ]}
                     icon={MousePointer}
                 />
@@ -168,8 +168,8 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     value={String(currentProps.selectionBehavior || 'toggle')}
                     onChange={(value) => updateProp('selectionBehavior', value)}
                     options={[
-                        { id: 'toggle', label: 'Toggle' },
-                        { id: 'replace', label: 'Replace' }
+                        { value: 'toggle', label: 'Toggle' },
+                        { value: 'replace', label: 'Replace' }
                     ]}
                     icon={ToggleLeft}
                 />

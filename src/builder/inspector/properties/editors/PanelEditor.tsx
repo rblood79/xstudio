@@ -31,10 +31,10 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.variant || 'card')}
                 onChange={(value) => updateProp('variant', value as 'tab' | 'card' | 'bordered' | 'shadow')}
                 options={[
-                    { id: 'tab', value: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
-                    { id: 'card', value: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
-                    { id: 'bordered', value: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
-                    { id: 'shadow', value: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
+                    { value: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
+                    { value: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
+                    { value: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
+                    { value: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
                 ]}
                 icon={Layout}
             />
