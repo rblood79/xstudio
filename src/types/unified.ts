@@ -40,8 +40,8 @@ export interface Page {
 // === 컴포넌트별 Props 타입 ===
 export interface ButtonElementProps extends BaseElementProps {
     children?: React.ReactNode;
-    variant?: 'default' | 'primary' | 'secondary' | 'danger';
-    size?: 'small' | 'medium' | 'large';
+    variant?: 'primary' | 'secondary' | 'surface';
+    size?: 'sm' | 'md' | 'lg';
     isDisabled?: boolean;
     onPress?: () => void;
 }
@@ -474,8 +474,8 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
 // === 기본 props 생성 함수들 ===
 export function createDefaultButtonProps(): ButtonElementProps {
     return {
-        variant: 'default',
-        size: 'medium',
+        variant: 'primary',
+        size: 'md',
         isDisabled: false
     };
 }

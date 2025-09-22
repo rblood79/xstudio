@@ -312,23 +312,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     );
 
-    // 2. iframe 업데이트
-    if (typeof window !== 'undefined' && window.parent) {
-      try {
-        const updatedElement = findElementById(get().elements, elementId);
-        if (updatedElement) {
-          window.parent.postMessage(
-            {
-              type: 'ELEMENT_UPDATED',
-              payload: { element: sanitizeElement(updatedElement) }
-            },
-            '*'
-          );
-        }
-      } catch (error) {
-        console.warn('postMessage 직렬화 실패:', error);
-      }
-    }
+    // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
     // 3. 데이터베이스 업데이트 (비동기, 실패해도 메모리는 유지)
     try {

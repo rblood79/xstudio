@@ -212,6 +212,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             setSelectedElement(event.data.elementId, event.data.payload?.props);
         }
 
+        // ELEMENT_UPDATED 메시지 처리는 제거 (무한 루프 방지)
+        // PropertyPanel에서 직접 iframe으로 메시지를 보내므로 여기서는 처리하지 않음
+
         // 누락된 메시지 핸들링 추가
         if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
             const { updateElementProps } = useStore.getState();

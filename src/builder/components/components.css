@@ -168,25 +168,39 @@
 
     /* Label 컴포넌트 스타일 종료 */
     .react-aria-Button {
-        color: var(--color-gray-800);
-        background: var(--color-gray-50);
-        border: 1px solid var(--color-gray-200);
-        border-radius: var(--radius-md);
-        appearance: none;
+        /* Base styles */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        text-align: center;
+        text-decoration: none;
         vertical-align: middle;
+        white-space: nowrap;
+        cursor: default;
+        outline: none;
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+        font-weight: var(--font-weight-normal);
+        padding: var(--spacing) var(--spacing-md);
         font-size: var(--text-sm);
         line-height: calc(var(--text-2xs) * 2.2);
-        text-align: center;
-        margin: 0;
-        outline: none;
-        padding: var(--spacing) var(--spacing-md);
-        text-decoration: none;
+        transition: all 0.2s ease;
+
+        /* Default variant styles */
+        color: var(--color-gray-800);
+        background: var(--color-gray-50);
+        border-color: var(--color-gray-200);
+
+        &[data-hovered] {
+            background: var(--color-gray-100);
+            border-color: var(--color-gray-300);
+        }
 
         &[data-pressed] {
-            box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.1);
-            background: var(--color-primary-600);
-            border-color: var(--color-primary-600);
-            color: var(--color-white);
+            background: var(--color-gray-200);
+            border-color: var(--color-gray-400);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         &[data-focus-visible] {
@@ -195,8 +209,106 @@
         }
 
         &[data-disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--color-gray-100);
             border-color: var(--color-gray-200);
             color: var(--color-gray-400);
+        }
+
+        /* Variant styles */
+        &.primary {
+            background: var(--color-primary-500);
+            color: var(--color-white);
+            border-color: var(--color-primary-500);
+
+            &[data-hovered] {
+                background: var(--color-primary-600);
+                border-color: var(--color-primary-600);
+            }
+
+            &[data-pressed] {
+                background: var(--color-primary-700);
+                border-color: var(--color-primary-700);
+            }
+        }
+
+        &.secondary {
+            background: var(--color-red-500);
+            color: var(--color-white);
+            border-color: var(--color-red-500);
+
+            &[data-hovered] {
+                background: var(--color-red-600);
+                border-color: var(--color-red-600);
+            }
+
+            &[data-pressed] {
+                background: var(--color-red-700);
+                border-color: var(--color-red-700);
+            }
+        }
+
+        &.surface {
+            background: var(--color-gray-100);
+            color: var(--color-gray-800);
+            border-color: var(--color-gray-300);
+
+            &[data-hovered] {
+                background: var(--color-gray-200);
+                border-color: var(--color-gray-400);
+            }
+
+            &[data-pressed] {
+                background: var(--color-gray-300);
+                border-color: var(--color-gray-500);
+            }
+        }
+
+        &.outline {
+            background: transparent;
+            color: var(--color-gray-800);
+            border-color: var(--color-gray-300);
+
+            &[data-hovered] {
+                background: var(--color-gray-100);
+                border-color: var(--color-gray-400);
+            }
+
+            &[data-pressed] {
+                background: var(--color-gray-200);
+                border-color: var(--color-gray-500);
+            }
+        }
+
+        &.ghost {
+            background: transparent;
+            color: var(--color-gray-800);
+            border-color: transparent;
+
+            &[data-hovered] {
+                background: var(--color-gray-100);
+            }
+
+            &[data-pressed] {
+                background: var(--color-gray-200);
+            }
+        }
+
+        /* Size styles */
+        &.sm {
+            padding: var(--spacing) var(--spacing-md);
+            font-size: var(--text-sm);
+        }
+
+        &.md {
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: var(--text-base);
+        }
+
+        &.lg {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            font-size: var(--text-lg);
         }
     }
 
