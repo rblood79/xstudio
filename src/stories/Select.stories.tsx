@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { Form } from 'react-aria-components';
+import { Form, SelectSection } from 'react-aria-components'; // SelectSection 추가
 import { Button } from '../builder/components/Button';
-import { Select, SelectItem, SelectSection } from '../builder/components/Select';
+import { Select, SelectItem } from '../builder/components/Select';
 
 const meta: Meta<typeof Select> = {
   title: 'Builder/Components/Select',
