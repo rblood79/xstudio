@@ -147,12 +147,49 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 const panels = filteredItems.filter(item => hasTag(item) && item.tag === 'Panel')
                     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-                // Tab과 Panel을 쌍으로 결합
+                // tabId 기반으로 Tab과 Panel 쌍을 정확하게 매칭
                 const pairedItems: T[] = [];
-                for (let i = 0; i < Math.max(tabs.length, panels.length); i++) {
-                    if (tabs[i]) pairedItems.push(tabs[i]);
-                    if (panels[i]) pairedItems.push(panels[i]);
-                }
+                const usedPanelIds = new Set<string>();
+
+                tabs.forEach(tab => {
+                    pairedItems.push(tab);
+
+                    // Tab의 tabId와 일치하는 Panel 찾기
+                    const tabProps = hasProps(tab) ? tab.props : {};
+                    const tabId = (tabProps as any)?.tabId;
+
+                    if (tabId) {
+                        const matchingPanel = panels.find(panel => {
+                            const panelProps = hasProps(panel) ? panel.props : {};
+                            return (panelProps as any)?.tabId === tabId;
+                        });
+
+                        if (matchingPanel && !usedPanelIds.has(matchingPanel.id)) {
+                            pairedItems.push(matchingPanel);
+                            usedPanelIds.add(matchingPanel.id);
+                        }
+                    } else {
+                        // tabId가 없는 경우 fallback: order_num 기반 매칭 (레거시)
+                        console.warn('⚠️ Tab에 tabId가 없음, order_num 기반 fallback 사용:', tab.id);
+                        const fallbackPanel = panels.find(panel =>
+                            !usedPanelIds.has(panel.id) &&
+                            Math.abs((panel.order_num || 0) - (tab.order_num || 0)) <= 1
+                        );
+
+                        if (fallbackPanel) {
+                            pairedItems.push(fallbackPanel);
+                            usedPanelIds.add(fallbackPanel.id);
+                        }
+                    }
+                });
+
+                // 매칭되지 않은 Panel들 추가 (orphaned panels)
+                panels.forEach(panel => {
+                    if (!usedPanelIds.has(panel.id)) {
+                        console.warn('⚠️ 매칭되지 않은 Panel:', panel.id);
+                        pairedItems.push(panel);
+                    }
+                });
 
                 filteredItems = pairedItems;
             } else if (parentItem && hasTag(parentItem) && parentItem.tag === 'Table') {
