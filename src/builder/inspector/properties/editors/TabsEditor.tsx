@@ -10,9 +10,9 @@ import type { Element } from '../../../../types/store'; // 통합된 타입 사�
 import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
-const ORIENTATIONS: Array<{ id: string; value: string; label: string }> = [
-    { id: 'horizontal', value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-    { id: 'vertical', value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+const ORIENTATIONS: Array<{ value: string; label: string }> = [
+    { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+    { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
 ];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -188,7 +188,14 @@ async function createNewTab(
     addElement: (element: Element) => void
 ) {
     const newTabIndex = tabChildren.length || 0;
+
+    // UUID 기반 tabId 사용 (안전하고 중복 없음)
     const tabId = ElementUtils.generateId();
+
+    // 현재 Tabs의 모든 자식 요소들(Tab + Panel)의 order_num 중 최대값 구하기
+    const { elements } = useStore.getState();
+    const allTabsChildren = elements.filter(el => el.parent_id === elementId);
+    const maxOrderNum = Math.max(0, ...allTabsChildren.map(el => el.order_num || 0));
 
     // 새로운 Tab 요소 생성
     const newTabElement = {
@@ -204,7 +211,7 @@ async function createNewTab(
             tabId: tabId,
         },
         parent_id: elementId,
-        order_num: newTabIndex * 2, // Tab은 짝수 인덱스
+        order_num: maxOrderNum + 1, // 다음 순서로 배치
     };
 
     // 새로운 Panel 요소 생성
@@ -221,7 +228,7 @@ async function createNewTab(
             tabId: tabId,
         },
         parent_id: elementId,
-        order_num: newTabIndex * 2 + 1, // Panel은 홀수 인덱스
+        order_num: maxOrderNum + 2, // Tab 다음 순서로 배치
     };
 
     try {

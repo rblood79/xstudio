@@ -5,17 +5,17 @@ import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 // 상수 정의
 const TAB_VARIANTS = [
-    { id: 'default', value: 'default', label: PROPERTY_LABELS.TAB_VARIANT_DEFAULT },
-    { id: 'bordered', value: 'bordered', label: PROPERTY_LABELS.TAB_VARIANT_BORDERED },
-    { id: 'underlined', value: 'underlined', label: PROPERTY_LABELS.TAB_VARIANT_UNDERLINED },
-    { id: 'pill', value: 'pill', label: PROPERTY_LABELS.TAB_VARIANT_PILL }
+    { value: 'default', label: PROPERTY_LABELS.TAB_VARIANT_DEFAULT },
+    { value: 'bordered', label: PROPERTY_LABELS.TAB_VARIANT_BORDERED },
+    { value: 'underlined', label: PROPERTY_LABELS.TAB_VARIANT_UNDERLINED },
+    { value: 'pill', label: PROPERTY_LABELS.TAB_VARIANT_PILL }
 ];
 
 const TAB_APPEARANCES = [
-    { id: 'light', value: 'light', label: PROPERTY_LABELS.TAB_APPEARANCE_LIGHT },
-    { id: 'dark', value: 'dark', label: PROPERTY_LABELS.TAB_APPEARANCE_DARK },
-    { id: 'solid', value: 'solid', label: PROPERTY_LABELS.TAB_APPEARANCE_SOLID },
-    { id: 'bordered', value: 'bordered', label: PROPERTY_LABELS.TAB_APPEARANCE_BORDERED }
+    { value: 'light', label: PROPERTY_LABELS.TAB_APPEARANCE_LIGHT },
+    { value: 'dark', label: PROPERTY_LABELS.TAB_APPEARANCE_DARK },
+    { value: 'solid', label: PROPERTY_LABELS.TAB_APPEARANCE_SOLID },
+    { value: 'bordered', label: PROPERTY_LABELS.TAB_APPEARANCE_BORDERED }
 ];
 
 export function TabEditor({ currentProps, onUpdate }: PropertyEditorProps) {

@@ -9,15 +9,15 @@ import { iconProps } from '../../../../utils/uiConstants'; // 추가
 import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
-const SELECTION_MODES: Array<{ id: string; label: string }> = [
-    { id: 'none', label: 'None' },
-    { id: 'single', label: 'Single' },
-    { id: 'multiple', label: 'Multiple' }
+const SELECTION_MODES: Array<{ value: string; label: string }> = [
+    { value: 'none', label: 'None' },
+    { value: 'single', label: 'Single' },
+    { value: 'multiple', label: 'Multiple' }
 ];
 
-const SELECTION_BEHAVIORS: Array<{ id: string; label: string }> = [
-    { id: 'replace', label: 'Replace' },
-    { id: 'toggle', label: 'Toggle' }
+const SELECTION_BEHAVIORS: Array<{ value: string; label: string }> = [
+    { value: 'replace', label: 'Replace' },
+    { value: 'toggle', label: 'Toggle' }
 ];
 
 export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

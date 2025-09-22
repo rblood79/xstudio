@@ -201,8 +201,8 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
-                        { id: 'multiple', value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
+                        { value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={Grid}
                 />
@@ -213,8 +213,8 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     value={String(currentProps.selectionBehavior || 'toggle')}
                     onChange={(value) => updateProp('selectionBehavior', value)}
                     options={[
-                        { id: 'toggle', value: 'toggle', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_TOGGLE },
-                        { id: 'replace', value: 'replace', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_REPLACE }
+                        { value: 'toggle', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_TOGGLE },
+                        { value: 'replace', label: PROPERTY_LABELS.SELECTION_BEHAVIOR_REPLACE }
                     ]}
                     icon={Menu}
                 />

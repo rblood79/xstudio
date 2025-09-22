@@ -172,8 +172,8 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'vertical')}
                     options={[
-                        { id: 'vertical', value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
-                        { id: 'horizontal', value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
+                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                     ]}
                     onChange={(value) => updateProp('orientation', value)}
                     icon={Ratio}

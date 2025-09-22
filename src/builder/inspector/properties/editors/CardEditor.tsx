@@ -33,9 +33,9 @@ export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.variant || 'default')}
                 onChange={(value) => updateProp('variant', value)}
                 options={[
-                    { id: 'default', label: PROPERTY_LABELS.CARD_VARIANT_DEFAULT },
-                    { id: 'elevated', label: PROPERTY_LABELS.CARD_VARIANT_ELEVATED },
-                    { id: 'outlined', label: PROPERTY_LABELS.CARD_VARIANT_OUTLINED }
+                    { value: 'default', label: PROPERTY_LABELS.CARD_VARIANT_DEFAULT },
+                    { value: 'elevated', label: PROPERTY_LABELS.CARD_VARIANT_ELEVATED },
+                    { value: 'outlined', label: PROPERTY_LABELS.CARD_VARIANT_OUTLINED }
                 ]}
                 icon={Layout}
             />
@@ -45,9 +45,9 @@ export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.size || 'medium')}
                 onChange={(value) => updateProp('size', value)}
                 options={[
-                    { id: 'small', label: PROPERTY_LABELS.CARD_SIZE_SMALL },
-                    { id: 'medium', label: PROPERTY_LABELS.CARD_SIZE_MEDIUM },
-                    { id: 'large', label: PROPERTY_LABELS.CARD_SIZE_LARGE }
+                    { value: 'small', label: PROPERTY_LABELS.CARD_SIZE_SMALL },
+                    { value: 'medium', label: PROPERTY_LABELS.CARD_SIZE_MEDIUM },
+                    { value: 'large', label: PROPERTY_LABELS.CARD_SIZE_LARGE }
                 ]}
                 icon={PencilRuler}
             />
