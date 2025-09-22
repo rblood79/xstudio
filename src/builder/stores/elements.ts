@@ -57,9 +57,131 @@ const reorderElements = async (
   const updates: Array<{ id: string; order_num: number }> = [];
 
   // 각 그룹별로 order_num 재정렬
-  Object.entries(groups).forEach(([, children]) => {
-    // 현재 order_num으로 정렬
-    const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  Object.entries(groups).forEach(([parentKey, children]) => {
+    let sorted: Element[];
+
+    // 부모 요소 확인
+    const parentElement = elements.find(el => el.id === (parentKey === 'root' ? null : parentKey));
+    const parentTag = parentElement?.tag;
+
+    // 특별 정렬이 필요한 컴포넌트들 확인
+    const isTabsChildren = parentTag === 'Tabs';
+    const isListBoxChildren = parentTag === 'ListBox';
+    const isGridListChildren = parentTag === 'GridList';
+    const isMenuChildren = parentTag === 'Menu';
+    const isComboBoxChildren = parentTag === 'ComboBox';
+    const isSelectChildren = parentTag === 'Select';
+    const isTreeChildren = parentTag === 'Tree';
+
+    // 디버깅: 특별 정렬 대상 컴포넌트 확인
+    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren) {
+      console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
+        parentKey,
+        parentElement: parentElement ? { id: parentElement.id, tag: parentElement.tag } : null,
+        parentTag,
+        childrenCount: children.length,
+        childTags: children.map(el => el.tag)
+      });
+    }
+
+    if (isTabsChildren) {
+      // Tabs 하위의 Tab과 Panel을 tabId 기반으로 쌍을 맞춰서 정렬
+      const tabs = children.filter(el => el.tag === 'Tab').sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff === 0) {
+          // order_num이 같을 경우, title로 추가 정렬 (Tab 1 < Tab 2 < Tab 3)
+          const titleA = (a.props as any)?.title || '';
+          const titleB = (b.props as any)?.title || '';
+          return titleA.localeCompare(titleB);
+        }
+        return orderDiff;
+      });
+
+      const panels = children.filter(el => el.tag === 'Panel').sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff === 0) {
+          // order_num이 같을 경우, title로 추가 정렬
+          const titleA = (a.props as any)?.title || '';
+          const titleB = (b.props as any)?.title || '';
+          return titleA.localeCompare(titleB);
+        }
+        return orderDiff;
+      });
+
+      sorted = [];
+      const usedPanelIds = new Set<string>();
+
+      tabs.forEach(tab => {
+        sorted.push(tab);
+
+        // Tab의 tabId와 일치하는 Panel 찾기
+        const tabId = (tab.props as any)?.tabId;
+        if (tabId) {
+          const matchingPanel = panels.find(panel => {
+            const panelTabId = (panel.props as any)?.tabId;
+            return panelTabId === tabId && !usedPanelIds.has(panel.id);
+          });
+
+          if (matchingPanel) {
+            sorted.push(matchingPanel);
+            usedPanelIds.add(matchingPanel.id);
+          }
+        }
+      });
+
+      // 매칭되지 않은 Panel들 추가 (orphaned)
+      panels.forEach(panel => {
+        if (!usedPanelIds.has(panel.id)) {
+          sorted.push(panel);
+        }
+      });
+
+      console.log(`📋 Tabs 하위 요소 재정렬: ${tabs.length}개 Tab, ${panels.length}개 Panel`);
+      console.log('📋 Tab 정렬 순서:');
+      tabs.forEach((tab, index) => {
+        console.log(`  ${index + 1}. ${(tab.props as any)?.title} (order: ${tab.order_num}, tabId: ${(tab.props as any)?.tabId?.slice(0, 8)}...)`);
+      });
+      console.log('📋 최종 정렬된 순서:');
+      sorted.forEach((el, index) => {
+        console.log(`  ${index + 1}. ${el.tag}: ${(el.props as any)?.title} (new order: ${index + 1})`);
+      });
+    } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren) {
+      // 컬렉션 컴포넌트들의 아이템 정렬
+      console.log(`📋 ${parentTag} 하위 요소 재정렬: ${children.length}개 아이템`);
+
+      sorted = children.sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff === 0) {
+          // order_num이 같을 경우, children 텍스트나 title로 추가 정렬
+          const textA = (a.props as any)?.children || (a.props as any)?.title || (a.props as any)?.label || '';
+          const textB = (b.props as any)?.children || (b.props as any)?.title || (b.props as any)?.label || '';
+          const comparison = String(textA).localeCompare(String(textB));
+
+          if (comparison === 0) {
+            // 텍스트도 같으면 ID로 정렬 (안정적인 순서 보장)
+            return a.id.localeCompare(b.id);
+          }
+          return comparison;
+        }
+        return orderDiff;
+      });
+
+      console.log(`📋 ${parentTag} 정렬된 순서:`);
+      sorted.forEach((item, index) => {
+        const text = (item.props as any)?.children || (item.props as any)?.title || (item.props as any)?.label || 'Untitled';
+        console.log(`  ${index + 1}. ${item.tag}: ${text} (order: ${item.order_num} → ${index + 1})`);
+      });
+    } else {
+      // 일반적인 정렬 (기존 로직)
+      sorted = children.sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff === 0) {
+          // order_num이 같을 경우 ID로 정렬 (안정적인 순서 보장)
+          return a.id.localeCompare(b.id);
+        }
+        return orderDiff;
+      });
+    }
 
     sorted.forEach((child, index) => {
       const newOrderNum = index + 1;
@@ -90,6 +212,27 @@ const reorderElements = async (
         console.error('order_num 재정렬 실패:', errors.map(e => e.error));
       } else {
         console.log(`📊 order_num 재정렬 완료: ${updates.length}개 요소`);
+
+        // 컬렉션 아이템 재정렬 결과 디버깅
+        const collectionItems = elements.filter(el =>
+          el.page_id === pageId && (
+            el.tag === 'Tab' || el.tag === 'Panel' ||
+            el.tag === 'ListBoxItem' || el.tag === 'GridListItem' ||
+            el.tag === 'MenuItem' || el.tag === 'ComboBoxItem' ||
+            el.tag === 'SelectItem' || el.tag === 'TreeItem'
+          )
+        );
+
+        if (collectionItems.length > 0) {
+          console.log("🏷️ 재정렬 후 컬렉션 아이템 상태:");
+          collectionItems
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+            .forEach(el => {
+              const text = (el.props as any)?.children || (el.props as any)?.title || (el.props as any)?.label || 'Untitled';
+              const extraInfo = el.tag === 'Tab' || el.tag === 'Panel' ? `, tabId: ${(el.props as any)?.tabId}` : '';
+              console.log(`  ${el.tag}: ${text} (order: ${el.order_num}${extraInfo})`);
+            });
+        }
       }
     } catch (error) {
       console.error('order_num 재정렬 중 오류:', error);
@@ -555,6 +698,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
             case 'remove': {
               // 삭제된 요소와 자식 요소들 복원
+              console.log("🔄 Undo: 요소 복원 중:", {
+                restoringCount: elementsToRestore.length
+              });
+
+              elementsToRestore.forEach((el, index) => {
+                console.log(`📥 복원 요소 ${index + 1}:`, {
+                  id: el.id,
+                  tag: el.tag,
+                  tabId: (el.props as any)?.tabId,
+                  title: (el.props as any)?.title,
+                  order_num: el.order_num
+                });
+              });
+
               state.elements.push(...elementsToRestore);
               break;
             }
@@ -638,6 +795,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       }
 
       console.log("✅ Undo 완료");
+
+      // Undo 완료 후 order_num 재정렬 (충돌 해결)
+      const { elements, updateElementOrder } = get();
+      if (currentPageId) {
+        setTimeout(() => {
+          reorderElements(elements, currentPageId, updateElementOrder);
+          console.log("📊 Undo 후 order_num 재정렬 완료");
+        }, 100); // 다른 업데이트 완료 후 실행
+      }
     } catch (error) {
       console.error("Undo 시 오류:", error);
     } finally {
@@ -812,6 +978,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       }
 
       console.log("✅ Redo 완료");
+
+      // Redo 완료 후 order_num 재정렬 (충돌 해결)
+      const { elements, updateElementOrder } = get();
+      const pageId = state.currentPageId;
+      if (pageId) {
+        setTimeout(() => {
+          reorderElements(elements, pageId, updateElementOrder);
+          console.log("📊 Redo 후 order_num 재정렬 완료");
+        }, 100); // 다른 업데이트 완료 후 실행
+      }
     } catch (error) {
       console.error("Redo 시 오류:", error);
     } finally {
@@ -821,9 +997,14 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
   },
 
   removeElement: async (elementId) => {
+    console.log("🗑️ removeElement 시작:", { elementId });
     const state = get();
     const element = findElementById(state.elements, elementId);
-    if (!element) return;
+    if (!element) {
+      console.log("❌ removeElement: 요소를 찾을 수 없음", { elementId });
+      return;
+    }
+    console.log("🔍 삭제할 요소:", { id: element.id, tag: element.tag, props: element.props });
 
     // 자식 요소들 찾기 (재귀적으로)
     const findChildren = (parentId: string): Element[] => {
@@ -1049,8 +1230,31 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           });
         }
 
+        // 삭제 전 요소 개수 확인
+        const beforeCount = state.elements.length;
+        console.log("🔢 삭제 전 요소 개수:", beforeCount);
+        console.log("🗑️ 삭제할 요소 ID들:", elementIdsToRemove);
+
+        // Tab/Panel 삭제 시 추가 디버깅 정보
+        elementIdsToRemove.forEach(id => {
+          const el = state.elements.find(e => e.id === id);
+          if (el && (el.tag === 'Tab' || el.tag === 'Panel')) {
+            console.log(`🏷️ 삭제될 ${el.tag}:`, {
+              id: el.id,
+              tag: el.tag,
+              tabId: (el.props as any)?.tabId,
+              title: (el.props as any)?.title,
+              order_num: el.order_num
+            });
+          }
+        });
+
         // 모든 요소 제거 (부모 + 자식들)
         state.elements = state.elements.filter(el => !elementIdsToRemove.includes(el.id));
+
+        // 삭제 후 요소 개수 확인
+        const afterCount = state.elements.length;
+        console.log("🔢 삭제 후 요소 개수:", afterCount, "(삭제된 개수:", beforeCount - afterCount, ")");
 
         // 선택된 요소가 제거된 경우 선택 해제
         if (elementIdsToRemove.includes(state.selectedElementId || '')) {
@@ -1071,13 +1275,25 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     );
 
-    // order_num 재정렬 (삭제 후)
+    // order_num 재정렬 (삭제 후) - 컬렉션 아이템 삭제의 경우 Undo 후에만 재정렬
     const currentPageId = get().currentPageId;
     if (currentPageId) {
-      setTimeout(() => {
-        const { elements, updateElementOrder } = get();
-        reorderElements(elements, currentPageId, updateElementOrder);
-      }, 100); // 상태 업데이트 후 재정렬
+      // 컬렉션 컴포넌트의 아이템들 확인
+      const isCollectionItem = element.tag === 'Tab' || element.tag === 'Panel' ||
+        element.tag === 'ListBoxItem' || element.tag === 'GridListItem' ||
+        element.tag === 'MenuItem' || element.tag === 'ComboBoxItem' ||
+        element.tag === 'SelectItem' || element.tag === 'TreeItem';
+
+      if (isCollectionItem) {
+        console.log(`⏸️ ${element.tag} 삭제 - Undo 후까지 재정렬 지연`);
+        // 컬렉션 아이템 삭제 시에는 즉시 재정렬하지 않음 (Undo 후에만 재정렬)
+        // 이렇게 하면 삭제 → Undo 과정에서 순서 변경이 한 번만 보임
+      } else {
+        setTimeout(() => {
+          const { elements, updateElementOrder } = get();
+          reorderElements(elements, currentPageId, updateElementOrder);
+        }, 100); // 일반 요소는 기존처럼 재정렬
+      }
     }
   },
 
