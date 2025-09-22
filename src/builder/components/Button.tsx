@@ -35,6 +35,7 @@ export function Button(props: ButtonProps) {
   return (
     <RACButton
       {...props}
+      type={props.type} // Add this line to pass the type prop
       className={composeRenderProps(
         props.className,
         (className, renderProps) => {
