@@ -1172,6 +1172,10 @@ export function MyNewComponentEditor({ element, onChange }: EditorProps) {
 }
 ```
 
+### Storybook 파일 관리
+- **새로운 컴포넌트 추가 시**: `src/builder/components/`에 새로운 컴포넌트를 추가할 경우, 해당 컴포넌트의 Storybook 스토리 파일(`src/stories/NewComponent.stories.tsx`와 같은 형식)을 **반드시** 생성해야 합니다.
+- **프로퍼티 에디터 수정 시**: 컴포넌트의 프로퍼티 에디터(`src/builder/inspector/properties/editors/`)가 수정될 경우, 해당 컴포넌트의 Storybook 스토리 파일도 변경된 프로퍼티를 반영하여 **반드시** 업데이트해야 합니다.
+
 ## 고급 상태 관리 패턴
 
 ### 히스토리 관리 (Undo/Redo) - 개선된 패턴
