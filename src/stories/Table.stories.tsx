@@ -13,34 +13,57 @@ const meta: Meta<typeof Table> = {
         },
     },
     argTypes: {
+        children: {
+            control: 'text',
+            description: '테이블 내부에 렌더링될 TableHeader 및 TableBody 컴포넌트',
+        },
         variant: {
             control: 'radio',
-            options: ['default', 'bordered', 'striped'],
-            description: '테이블의 시각적 스타일 변형',
+            options: ['default', 'bordered', 'striped', 'static'],
+            description: '테이블의 시각적 스타일 변형 (기본, 테두리, 줄무늬, 정적)',
         },
         size: {
             control: 'radio',
             options: ['sm', 'md', 'lg'],
-            description: '테이블의 크기',
+            description: '테이블의 크기 (작게, 중간, 크게)',
         },
         headerVariant: {
             control: 'radio',
             options: ['default', 'dark', 'primary'],
-            description: '헤더의 시각적 스타일',
+            description: '테이블 헤더의 시각적 스타일 (기본, 어둡게, 강조)',
         },
         cellVariant: {
             control: 'radio',
             options: ['default', 'striped'],
-            description: '셀의 시각적 스타일',
+            description: '테이블 셀의 시각적 스타일 (기본, 줄무늬)',
         },
+        'aria-label': {
+            control: 'text',
+            description: '테이블에 대한 접근성 레이블 (필수)',
+        },
+        selectionMode: {
+            control: 'radio',
+            options: ['none', 'single', 'multiple'],
+            description: '테이블 행 선택 모드',
+        },
+        selectedKeys: {
+            control: 'array',
+            description: '선택된 행의 키 배열 (제어용)',
+        },
+        disabledKeys: {
+            control: 'array',
+            description: '비활성화된 행의 키 배열',
+        },
+        onRowAction: { action: 'onRowAction', description: '행이 활성화될 때 호출되는 콜백' },
+        onSelectionChange: { action: 'onSelectionChange', description: '선택된 행이 변경될 때 호출되는 콜백' },
     },
-};
-
-export default meta;
-type Story = StoryObj<typeof Table>;
-
-export const Default: Story = {
     args: {
+        variant: 'default',
+        size: 'md',
+        headerVariant: 'default',
+        cellVariant: 'default',
+        'aria-label': '사용자 정보 테이블',
+        selectionMode: 'none',
         children: (
             <>
                 <TableHeader>
@@ -54,18 +77,25 @@ export const Default: Story = {
                         <Cell>25</Cell>
                         <Cell>hong@example.com</Cell>
                     </Row>
+                    <Row>
+                        <Cell>김영희</Cell>
+                        <Cell>30</Cell>
+                        <Cell>kim@example.com</Cell>
+                    </Row>
                 </TableBody>
             </>
         ),
-        variant: 'default',
-        size: 'md',
-        headerVariant: 'default',
-        cellVariant: 'default',
     },
 };
 
-export const Bordered: Story = {
+export default meta;
+type Story = StoryObj<typeof Table>;
+
+export const DefaultTable: Story = {};
+
+export const BorderedTable: Story = {
     args: {
+        variant: 'bordered',
         children: (
             <>
                 <TableHeader>
@@ -82,15 +112,13 @@ export const Bordered: Story = {
                 </TableBody>
             </>
         ),
-        variant: 'bordered',
-        size: 'md',
-        headerVariant: 'default',
-        cellVariant: 'default',
     },
 };
 
-export const Striped: Story = {
+export const StripedTable: Story = {
     args: {
+        variant: 'striped',
+        cellVariant: 'striped',
         children: (
             <>
                 <TableHeader>
@@ -104,18 +132,20 @@ export const Striped: Story = {
                         <Cell>95</Cell>
                         <Cell>A+</Cell>
                     </Row>
+                    <Row>
+                        <Cell>박영희</Cell>
+                        <Cell>88</Cell>
+                        <Cell>B+</Cell>
+                    </Row>
                 </TableBody>
             </>
         ),
-        variant: 'striped',
-        size: 'md',
-        headerVariant: 'default',
-        cellVariant: 'striped',
     },
 };
 
-export const DarkHeader: Story = {
+export const DarkHeaderTable: Story = {
     args: {
+        headerVariant: 'dark',
         children: (
             <>
                 <TableHeader>
@@ -132,15 +162,12 @@ export const DarkHeader: Story = {
                 </TableBody>
             </>
         ),
-        variant: 'bordered',
-        size: 'md',
-        headerVariant: 'dark',
-        cellVariant: 'default',
     },
 };
 
-export const PrimaryHeader: Story = {
+export const PrimaryHeaderTable: Story = {
     args: {
+        headerVariant: 'primary',
         children: (
             <>
                 <TableHeader>
@@ -157,15 +184,12 @@ export const PrimaryHeader: Story = {
                 </TableBody>
             </>
         ),
-        variant: 'bordered',
-        size: 'md',
-        headerVariant: 'primary',
-        cellVariant: 'default',
     },
 };
 
-export const SmallSize: Story = {
+export const SmallSizeTable: Story = {
     args: {
+        size: 'sm',
         children: (
             <>
                 <TableHeader>
@@ -182,15 +206,12 @@ export const SmallSize: Story = {
                 </TableBody>
             </>
         ),
-        variant: 'bordered',
-        size: 'sm',
-        headerVariant: 'default',
-        cellVariant: 'default',
     },
 };
 
-export const LargeSize: Story = {
+export const LargeSizeTable: Story = {
     args: {
+        size: 'lg',
         children: (
             <>
                 <TableHeader>
@@ -207,19 +228,15 @@ export const LargeSize: Story = {
                 </TableBody>
             </>
         ),
-        variant: 'bordered',
-        size: 'lg',
-        headerVariant: 'default',
-        cellVariant: 'default',
     },
 };
 
-export const AllVariants: Story = {
+export const AllTableVariants: Story = {
     render: () => (
         <div className="space-y-8">
             <div>
-                <h3 className="text-lg font-semibold mb-4">Default Table</h3>
-                <Table variant="default" size="md">
+                <h3 className="text-lg font-semibold mb-4">기본 테이블</h3>
+                <Table variant="default" size="md" aria-label="기본 테이블 예시">
                     <TableHeader>
                         <Column isRowHeader>이름</Column>
                         <Column>나이</Column>
@@ -234,8 +251,8 @@ export const AllVariants: Story = {
             </div>
 
             <div>
-                <h3 className="text-lg font-semibold mb-4">Bordered Table</h3>
-                <Table variant="bordered" size="md">
+                <h3 className="text-lg font-semibold mb-4">테두리 테이블</h3>
+                <Table variant="bordered" size="md" aria-label="테두리 테이블 예시">
                     <TableHeader>
                         <Column isRowHeader>제품</Column>
                         <Column>가격</Column>
@@ -250,8 +267,8 @@ export const AllVariants: Story = {
             </div>
 
             <div>
-                <h3 className="text-lg font-semibold mb-4">Striped Table</h3>
-                <Table variant="striped" size="md">
+                <h3 className="text-lg font-semibold mb-4">줄무늬 테이블</h3>
+                <Table variant="striped" size="md" aria-label="줄무늬 테이블 예시">
                     <TableHeader>
                         <Column isRowHeader>학생</Column>
                         <Column>점수</Column>

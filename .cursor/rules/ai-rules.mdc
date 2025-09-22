@@ -274,7 +274,7 @@ import type { ComponentElementProps } from '../types/componentProps';
 
 ## 컴포넌트 개발 패턴
 
-### React Aria Components 래핑
+### React Aria Components 래핑 - 개선된 패턴
 ```typescript
 // ✅ DO: React Aria 컴포넌트 래핑 패턴
 import { Button as AriaButton, ButtonProps } from 'react-aria-components';
@@ -318,6 +318,92 @@ export const Button = forwardRef<HTMLButtonElement, CustomButtonProps>(
 );
 
 Button.displayName = 'Button';
+```
+
+### React Aria Collection 키 처리 패턴
+```typescript
+// ✅ DO: PropertySelect에서 올바른 키 처리
+interface SelectOption {
+    id: string;      // React Aria에서 키로 사용
+    value: string;   // 실제 값
+    label: string;   // 표시 텍스트
+}
+
+// 옵션 배열 생성 시 필수 필드 포함
+const selectionModeOptions: SelectOption[] = [
+    { id: 'none', value: 'none', label: '선택 불가' },
+    { id: 'single', value: 'single', label: '단일 선택' },
+    { id: 'multiple', value: 'multiple', label: '다중 선택' }
+];
+
+// PropertySelect 사용 시 itemKey 명시
+<PropertySelect
+    label="선택 모드"
+    value={element.props.selectionMode}
+    options={selectionModeOptions}
+    itemKey="value"  // 키 결정 필드 명시
+    onChange={(selectionMode) => onChange({ selectionMode })}
+/>
+
+// ❌ DON'T: value 필드 누락으로 인한 키 에러
+const badOptions = [
+    { id: 'none', label: '선택 불가' }  // value 필드 없음
+];
+```
+
+### PropertyCheckbox 올바른 사용법
+```typescript
+// ✅ DO: PropertyCheckbox에서 올바른 prop 사용
+<PropertyCheckbox
+    icon={<Crown />}
+    label="소팅 가능"
+    isSelected={element.props.allowsSorting}  // checked 아님!
+    onChange={(allowsSorting) => onChange({ allowsSorting })}
+/>
+
+// ❌ DON'T: 잘못된 prop 사용
+<PropertyCheckbox
+    label="소팅 가능"
+    checked={element.props.allowsSorting}  // 에러: checked는 존재하지 않음
+    onChange={(allowsSorting) => onChange({ allowsSorting })}
+/>
+```
+
+### 연결된 요소 삭제 패턴 (Tab/Panel)
+```typescript
+// ✅ DO: 연결된 요소 자동 삭제
+const removeElement = useCallback(async (elementId: string) => {
+    const elementToRemove = elements.find(el => el.id === elementId);
+    if (!elementToRemove) return;
+
+    let elementsToDelete = [elementToRemove];
+
+    // Tab/Panel 연결 요소 찾기
+    if (elementToRemove.tag === 'Tab') {
+        const tabId = (elementToRemove.props as any).tabId || elementToRemove.props.order_num;
+        const linkedPanel = elements.find(el => 
+            el.tag === 'Panel' && 
+            el.parent_id === elementToRemove.parent_id &&
+            ((el.props as any).tabId === tabId || el.props.order_num === tabId)
+        );
+        if (linkedPanel) elementsToDelete.push(linkedPanel);
+    }
+    
+    if (elementToRemove.tag === 'Panel') {
+        const tabId = (elementToRemove.props as any).tabId || elementToRemove.props.order_num;
+        const linkedTab = elements.find(el => 
+            el.tag === 'Tab' && 
+            el.parent_id === elementToRemove.parent_id &&
+            ((el.props as any).tabId === tabId || el.props.order_num === tabId)
+        );
+        if (linkedTab) elementsToDelete.push(linkedTab);
+    }
+
+    // 일괄 삭제 처리
+    for (const element of elementsToDelete) {
+        await ElementsApiService.deleteElement(element.id);
+    }
+}, [elements]);
 ```
 
 ### Zustand 상태 관리 패턴
@@ -728,9 +814,9 @@ export async function createElementSafely(rawData: unknown) {
 
 ## 에러 처리 및 로깅
 
-### 통합 에러 처리
+### 통합 에러 처리 - 개선된 패턴
 ```typescript
-// ✅ DO: 일관된 에러 처리
+// ✅ DO: 타입 안전한 에러 처리
 export class AppError extends Error {
     constructor(
         message: string,
@@ -742,38 +828,45 @@ export class AppError extends Error {
     }
 }
 
-export function handleApiError(error: any, context: string): AppError {
+// 개선된 에러 처리 - unknown 타입 안전성
+export function handleApiError(error: unknown, context: string): AppError {
     console.error(`[${context}]`, error);
     
     if (error instanceof AppError) {
         return error;
     }
     
-    if (error?.code === 'PGRST116') {
-        return new AppError('요청한 리소스를 찾을 수 없습니다', 'NOT_FOUND', 404);
+    // 타입 가드를 통한 안전한 속성 접근
+    if (typeof error === 'object' && error !== null) {
+        const err = error as any;
+        
+        if (err?.code === 'PGRST116') {
+            return new AppError('요청한 리소스를 찾을 수 없습니다', 'NOT_FOUND', 404);
+        }
+        
+        if (err?.message?.includes('duplicate key')) {
+            return new AppError('이미 존재하는 데이터입니다', 'DUPLICATE', 409);
+        }
+        
+        return new AppError(
+            err?.message || '알 수 없는 오류가 발생했습니다',
+            'UNKNOWN_ERROR'
+        );
     }
     
-    if (error?.message?.includes('duplicate key')) {
-        return new AppError('이미 존재하는 데이터입니다', 'DUPLICATE', 409);
-    }
-    
-    return new AppError(
-        error?.message || '알 수 없는 오류가 발생했습니다',
-        'UNKNOWN_ERROR'
-    );
+    return new AppError(String(error), 'UNKNOWN_ERROR');
 }
 
-// 사용 예시
-export function useErrorHandler() {
-    const showError = useCallback((message: string, error?: any) => {
-        const appError = error ? handleApiError(error, message) : new AppError(message, 'USER_ERROR');
-        
-        // Toast 알림 또는 에러 상태 설정
-        console.error(appError);
-        // showToast(appError.message);
-    }, []);
-    
-    return { showError };
+// catch 블록에서의 안전한 에러 처리
+try {
+    // 일부 작업
+} catch (error: unknown) {
+    console.error('⚠️ 작업 중 오류:', error);
+    console.error('⚠️ 오류 상세:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        context: 'operation_context'
+    });
 }
 ```
 
@@ -811,6 +904,97 @@ misc: 기타 수정
 - [ ] 보안 검증 (입력 검증, XSS 방지)
 - [ ] 메모리 누수 방지
 
+### order_num 자동 정렬 시스템
+```typescript
+// ✅ DO: order_num 자동 정렬 및 검증
+function reorderElements(
+    elements: Element[], 
+    updateElementOrder: (id: string, orderNum: number) => void
+): void {
+    // 부모별로 그룹화
+    const elementsByParent = elements.reduce((acc, element) => {
+        const parentKey = element.parent_id || 'root';
+        if (!acc[parentKey]) acc[parentKey] = [];
+        acc[parentKey].push(element);
+        return acc;
+    }, {} as Record<string, Element[]>);
+
+    // 각 그룹의 order_num 재정렬
+    Object.values(elementsByParent).forEach(group => {
+        group
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+            .forEach((element, index) => {
+                const expectedOrderNum = index + 1;
+                if (element.order_num !== expectedOrderNum) {
+                    updateElementOrder(element.id, expectedOrderNum);
+                }
+            });
+    });
+}
+
+// 사용법: 페이지 로드 후 자동 정렬 (지연 실행)
+useEffect(() => {
+    if (elements.length > 0) {
+        setTimeout(() => {
+            reorderElements(elements, updateElementOrder);
+        }, 50); // 짧은 지연으로 다른 업데이트 후 실행
+    }
+}, [elements.length]);
+```
+
+### Table 에디터 레이아웃 패턴
+```typescript
+// ✅ DO: 통일된 Table 에디터 레이아웃
+export function TableHeaderEditor({ element, onChange }: EditorProps) {
+    return (
+        <div className="component-props">
+            {/* 첫 번째 그룹: 기본 속성 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <Table className="legend-icon" />
+                    Table Header Properties
+                </legend>
+                
+                <PropertyInput
+                    icon={<Type />}
+                    label="컬럼 헤더 텍스트"
+                    value={element.props.children}
+                    onChange={(children) => onChange({ children })}
+                />
+                
+                <PropertySelect
+                    icon={<Pin />}
+                    label="정렬 방향"
+                    value={element.props.sortDirection}
+                    options={sortDirectionOptions}
+                    onChange={(sortDirection) => onChange({ sortDirection })}
+                />
+            </fieldset>
+
+            {/* 두 번째 그룹: 컬럼 관리 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <Grid className="legend-icon" />
+                    Column Management
+                </legend>
+                
+                <div className="tab-overview">
+                    <span>Total columns: {columns.length}</span>
+                    <span className="help-text">관리 중인 테이블 컬럼</span>
+                </div>
+                
+                {/* 컬럼 추가/삭제 UI */}
+                <div className="column-actions">
+                    <Button onPress={() => addColumn()}>
+                        <SquarePlus /> Add Column
+                    </Button>
+                </div>
+            </fieldset>
+        </div>
+    );
+}
+```
+
 ## 알려진 주의사항 및 제한사항
 
 ### 개발 시 주의할 점
@@ -819,6 +1003,10 @@ misc: 기타 수정
 3. **iframe 메시지 처리**: 보안 및 성능을 위해 메시지 검증 필수
 4. **타입 안전성**: `any` 타입 사용 지양, 구체적인 타입 정의 권장
 5. **메모리 관리**: 이벤트 리스너와 타이머 정리 필수
+6. **React Aria 키 처리**: Collection 컴포넌트에서 항상 `value` 필드 포함하여 키 에러 방지
+7. **Proxy 에러 대응**: Immer와 히스토리에서 revoked proxy 에러 방지를 위해 try-catch 사용
+8. **order_num 일관성**: 요소 추가/삭제 후 자동 정렬 시스템으로 순서 보장
+9. **연결 요소 관리**: Tab/Panel 같은 연결된 요소는 일괄 삭제 처리
 
 ### 성능 고려사항
 ```typescript
@@ -986,66 +1174,77 @@ export function MyNewComponentEditor({ element, onChange }: EditorProps) {
 
 ## 고급 상태 관리 패턴
 
-### 히스토리 관리 (Undo/Redo)
+### 히스토리 관리 (Undo/Redo) - 개선된 패턴
 ```typescript
-// ✅ DO: 효율적인 히스토리 관리
-interface HistoryState {
-    past: ElementState[];
-    present: ElementState;
-    future: ElementState[];
+// ✅ DO: 개선된 Proxy 안전 히스토리 관리
+interface HistoryEntry {
+    id: string;
+    type: 'add' | 'update' | 'remove' | 'move';
+    elementId: string;
+    data: {
+        element?: Element;
+        prevElement?: Element;
+        props?: ComponentElementProps;
+        prevProps?: ComponentElementProps;
+        childElements?: Element[];
+    };
 }
 
-const useHistoryStore = create<HistoryState & {
-    undo: () => void;
-    redo: () => void;
-    pushHistory: (newState: ElementState) => void;
-    canUndo: boolean;
-    canRedo: boolean;
-}>()(
-    immer((set, get) => ({
-        past: [],
-        present: { elements: [], selectedElementId: null },
-        future: [],
+// Proxy 에러 안전 처리 패턴
+function safeDeepCopy<T>(data: T): T {
+    try {
+        return JSON.parse(JSON.stringify(data));
+    } catch (proxyError: any) {
+        console.warn('⚠️ Proxy 오류로 원본 객체 사용:', proxyError);
+        return data; // 원본 객체 반환 (fallback)
+    }
+}
+
+// Undo 함수 개선 패턴
+const undo = useCallback(() => {
+    const entry = historyManager.undo();
+    if (!entry) return;
+
+    try {
+        let prevProps, prevElement;
         
-        get canUndo() {
-            return get().past.length > 0;
-        },
-        
-        get canRedo() {
-            return get().future.length > 0;
-        },
-        
-        undo: () => set((state) => {
-            if (state.past.length === 0) return;
-            
-            const previous = state.past.pop()!;
-            state.future.unshift(state.present);
-            state.present = previous;
-        }),
-        
-        redo: () => set((state) => {
-            if (state.future.length === 0) return;
-            
-            const next = state.future.shift()!;
-            state.past.push(state.present);
-            state.present = next;
-        }),
-        
-        pushHistory: (newState) => set((state) => {
-            // 현재 상태를 과거로 이동
-            state.past.push(state.present);
-            state.present = newState;
-            
-            // 미래 기록 초기화
-            state.future = [];
-            
-            // 히스토리 크기 제한 (최대 50개)
-            if (state.past.length > 50) {
-                state.past.shift();
+        // 안전한 히스토리 데이터 준비
+        if (entry.data.prevProps) {
+            prevProps = safeDeepCopy(entry.data.prevProps);
+        }
+        if (entry.data.prevElement) {
+            prevElement = safeDeepCopy(entry.data.prevElement);
+        }
+
+        // Immer produce로 상태 업데이트
+        set(produce((state) => {
+            switch (entry.type) {
+                case 'update': {
+                    const element = state.elements.find(el => el.id === entry.elementId);
+                    if (element && prevProps) {
+                        element.props = prevProps;
+                    }
+                    break;
+                }
+                case 'remove': {
+                    // 삭제된 요소 복원
+                    if (entry.data.element) {
+                        const elementToRestore = safeDeepCopy(entry.data.element);
+                        state.elements.push(elementToRestore);
+                    }
+                    break;
+                }
+                case 'add': {
+                    // 추가된 요소 제거
+                    state.elements = state.elements.filter(el => el.id !== entry.elementId);
+                    break;
+                }
             }
-        })
-    }))
-);
+        }));
+    } catch (error: unknown) {
+        console.error('⚠️ Undo 실행 중 오류:', error);
+    }
+}, [set, historyManager]);
 ```
 
 ### 복잡한 폼 상태 관리

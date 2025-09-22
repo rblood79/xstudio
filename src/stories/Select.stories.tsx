@@ -1,72 +1,130 @@
-import type { Meta } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { Form } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
-import { Select, SelectItem, SelectSection, SelectProps } from '../builder/components/Select';
+import { Select, SelectItem, SelectSection } from '../builder/components/Select';
 
 const meta: Meta<typeof Select> = {
+  title: 'Builder/Components/Select',
   component: Select,
   parameters: {
-    layout: 'centered'
+    layout: 'centered',
+    docs: {
+      description: {
+        component: 'React Aria Select 컴포넌트를 래핑한 선택 상자 컴포넌트입니다. 드롭다운 목록에서 단일 항목을 선택할 수 있습니다.',
+      },
+    },
   },
   tags: ['autodocs'],
+  argTypes: {
+    label: {
+      control: 'text',
+      description: '선택 상자의 라벨',
+    },
+    description: {
+      control: 'text',
+      description: '선택 상자에 대한 추가 설명',
+    },
+    errorMessage: {
+      control: 'text',
+      description: '유효성 검사 실패 시 표시될 메시지',
+    },
+    isDisabled: {
+      control: 'boolean',
+      description: '선택 상자 비활성화 여부',
+    },
+    isReadOnly: {
+      control: 'boolean',
+      description: '선택 상자 읽기 전용 여부',
+    },
+    isInvalid: {
+      control: 'boolean',
+      description: '유효성 검사 실패 상태인지 여부',
+    },
+    isRequired: {
+      control: 'boolean',
+      description: '필수 입력 필드인지 여부',
+    },
+    selectedKey: {
+      control: 'text',
+      description: '제어되는 선택된 항목의 키',
+    },
+    defaultSelectedKey: {
+      control: 'text',
+      description: '초기 선택된 항목의 키 (비제어)',
+    },
+    onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 변경 시 호출되는 콜백' },
+    onOpenChange: { action: 'onOpenChange', description: '선택 상자 열림/닫힘 상태 변경 시 호출되는 콜백' },
+  },
   args: {
-    label: 'Ice cream flavor'
-  }
+    label: '아이스크림 맛',
+    isDisabled: false,
+    isReadOnly: false,
+    isInvalid: false,
+    isRequired: false,
+    children: (
+      <>
+        <SelectItem id="chocolate">초콜릿</SelectItem>
+        <SelectItem id="mint">민트</SelectItem>
+        <SelectItem id="strawberry">딸기</SelectItem>
+        <SelectItem id="vanilla">바닐라</SelectItem>
+      </>
+    ),
+  },
 };
 
 export default meta;
 
-export const Example = (args: SelectProps<object>) => (
-  <Select {...args}>
-    <SelectItem>Chocolate</SelectItem>
-    <SelectItem id="mint">Mint</SelectItem>
-    <SelectItem>Strawberry</SelectItem>
-    <SelectItem>Vanilla</SelectItem>
-  </Select>
-);
+type Story = StoryObj<typeof Select>;
 
-export const DisabledItems = (args: SelectProps<object>) => <Example {...args} />;
-DisabledItems.args = {
-  disabledKeys: ['mint']
+export const BasicSelect: Story = {
+  args: {
+    label: '기본 선택 상자',
+  },
 };
 
-export const Sections = (args: SelectProps<object>) => (
-  <Select {...args}>
-    <SelectSection title="Fruit">
-      <SelectItem id="Apple">Apple</SelectItem>
-      <SelectItem id="Banana">Banana</SelectItem>
-      <SelectItem id="Orange">Orange</SelectItem>
-      <SelectItem id="Honeydew">Honeydew</SelectItem>
-      <SelectItem id="Grapes">Grapes</SelectItem>
-      <SelectItem id="Watermelon">Watermelon</SelectItem>
-      <SelectItem id="Cantaloupe">Cantaloupe</SelectItem>
-      <SelectItem id="Pear">Pear</SelectItem>
-    </SelectSection>
-    <SelectSection title="Vegetable">
-      <SelectItem id="Cabbage">Cabbage</SelectItem>
-      <SelectItem id="Broccoli">Broccoli</SelectItem>
-      <SelectItem id="Carrots">Carrots</SelectItem>
-      <SelectItem id="Lettuce">Lettuce</SelectItem>
-      <SelectItem id="Spinach">Spinach</SelectItem>
-      <SelectItem id="Bok Choy">Bok Choy</SelectItem>
-      <SelectItem id="Cauliflower">Cauliflower</SelectItem>
-      <SelectItem id="Potatoes">Potatoes</SelectItem>
-    </SelectSection>
-  </Select>
-);
-
-Sections.args = {
-  label: 'Preferred fruit or vegetable'
+export const SelectWithDisabledItems: Story = {
+  args: {
+    label: '비활성화된 항목이 있는 선택 상자',
+    disabledKeys: ['mint'],
+  },
 };
 
-export const Validation = (args: SelectProps<object>) => (
-  <Form className="flex flex-col gap-2 items-start">
-    <Example {...args} />
-    <Button type="submit" variant="secondary">Submit</Button>
-  </Form>
-);
+export const SelectWithSections: Story = {
+  args: {
+    label: '섹션이 있는 선택 상자',
+    children: (
+      <>
+        <SelectSection title="과일">
+          <SelectItem id="apple">사과</SelectItem>
+          <SelectItem id="banana">바나나</SelectItem>
+          <SelectItem id="orange">오렌지</SelectItem>
+        </SelectSection>
+        <SelectSection title="채소">
+          <SelectItem id="carrot">당근</SelectItem>
+          <SelectItem id="broccoli">브로콜리</SelectItem>
+          <SelectItem id="spinach">시금치</SelectItem>
+        </SelectSection>
+      </>
+    ),
+  },
+};
 
-Validation.args = {
-  isRequired: true
+export const SelectWithValidation: Story = {
+  render: (args) => (
+    <Form className="flex flex-col gap-2 items-start p-4 border rounded-md shadow-sm bg-white">
+      <Select {...args} />
+      <Button type="submit" variant="secondary" className="mt-2">제출</Button>
+    </Form>
+  ),
+  args: {
+    label: '필수 선택 상자',
+    isRequired: true,
+    children: (
+      <>
+        <SelectItem id="option1">옵션 1</SelectItem>
+        <SelectItem id="option2">옵션 2</SelectItem>
+      </>
+    ),
+  },
 };

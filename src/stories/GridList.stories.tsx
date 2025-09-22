@@ -16,14 +16,50 @@ const files: FileItem[] = [
 ];
 
 const meta: Meta<typeof GridList> = {
-  title: 'GridList',
+  title: 'Builder/Components/GridList',
   component: GridList,
   parameters: {
-    layout: 'centered'
+    layout: 'centered',
+    docs: {
+      description: {
+        component: 'React Aria GridList 컴포넌트를 래핑한 그리드 목록 컴포넌트입니다. 항목을 그리드 형태로 표시하고 선택할 수 있습니다.',
+      },
+    },
   },
   tags: ['autodocs'],
+  argTypes: {
+    items: {
+      control: 'object',
+      description: '그리드 목록에 표시될 항목들의 배열',
+    },
+    children: {
+      control: 'text',
+      description: '각 항목을 렌더링할 함수 또는 React 노드',
+    },
+    selectionMode: {
+      control: 'radio',
+      options: ['none', 'single', 'multiple'],
+      description: '항목 선택 모드 (단일, 다중 또는 없음)',
+    },
+    selectedKeys: {
+      control: 'array',
+      description: '제어되는 선택된 항목들의 키 배열',
+    },
+    defaultSelectedKeys: {
+      control: 'array',
+      description: '초기 선택된 항목들의 키 배열 (비제어)',
+    },
+    disabledKeys: {
+      control: 'array',
+      description: '비활성화된 항목들의 키 배열',
+    },
+    onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 변경 시 호출되는 콜백' },
+    onAction: { action: 'onAction', description: '항목이 활성화될 때 (클릭/엔터) 호출되는 콜백' },
+  },
   args: {
-    selectionMode: 'multiple'
+    items: files,
+    selectionMode: 'multiple',
+    'aria-label': '프로젝트 파일',
   }
 };
 
@@ -31,9 +67,9 @@ export default meta;
 
 type Story = StoryObj<typeof GridList>;
 
-export const Basic: Story = {
+export const BasicGridList: Story = {
   render: (args) => (
-    <GridList {...args} items={files} aria-label="Project files" className="max-w-md w-full">
+    <GridList {...args} className="max-w-md w-full">
       {(item: FileItem) => (
         <GridListItem key={item.id}>
           <div className="flex flex-col gap-1">
@@ -46,13 +82,11 @@ export const Basic: Story = {
   )
 };
 
-export const WithSingleSelection: Story = {
+export const SingleSelection: Story = {
   render: (args) => (
     <GridList
       {...args}
       selectionMode="single"
-      items={files}
-      aria-label="Project files"
       className="max-w-md w-full"
     >
       {(item: FileItem) => (
