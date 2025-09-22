@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Button } from 'react-aria-components';
+import { SquarePlus, Trash, Table, Grid, Settings, Tag } from 'lucide-react';
+import { PropertyInput, PropertySelect } from '../components';
+import { PropertyEditorProps } from '../types/editorTypes';
+import { iconProps } from '../../../../utils/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import { Element } from '../../../../types/store';
 import { ElementUtils } from '../../../../utils/elementUtils';
-import { PropertyInput, PropertySelect } from '../components'; // 재사용 컴포넌트 import
-// import type { Selection } from 'react-aria-components'; // Selection type 제거
-import { TableElementProps, ColumnElementProps } from '../../../../types/unified'; // TableElementProps, ColumnElementProps import 경로 수정
-import { PropertyEditorProps } from '../types/editorTypes'; // PropertyEditorProps import
+import { TableElementProps, ColumnElementProps } from '../../../../types/unified';
 
 // interface TableEditorProps {
 //     // element: Element;
@@ -226,14 +227,13 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     };
 
     return (
-        <div className="space-y-4 p-4">
-            {/* Table 기본 속성 */}
-            <div className="space-y-3">
-                <h3 className="text-lg font-semibold">테이블 속성</h3>
+        <div className="component-props">
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Table Properties</legend>
 
                 {/* Selection Mode */}
                 <PropertySelect
-                    label="선택 모드"
+                    label={PROPERTY_LABELS.SELECTION_MODE}
                     value={(currentProps as TableElementProps)?.selectionMode || 'none'}
                     options={[
                         { value: 'none', label: '선택 없음' },
@@ -241,6 +241,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'multiple', label: '다중 선택' },
                     ]}
                     onChange={(key) => updateTableProps({ selectionMode: key as 'none' | 'single' | 'multiple' })}
+                    icon={Grid}
                 />
 
                 {/* Table Size */}
@@ -253,6 +254,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'lg', label: '크게' },
                     ]}
                     onChange={(key) => updateTableProps({ size: key as 'sm' | 'md' | 'lg' })}
+                    icon={Settings}
                 />
 
                 {/* Table Variant */}
@@ -265,6 +267,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'bordered', label: '테두리' },
                     ]}
                     onChange={(key) => updateTableProps({ variant: key as 'default' | 'striped' | 'bordered' })}
+                    icon={Table}
                 />
 
                 {/* Table Header Variant */}
@@ -277,6 +280,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'primary', label: '주요' },
                     ]}
                     onChange={(key) => updateTableProps({ headerVariant: key as 'default' | 'dark' | 'primary' })}
+                    icon={Settings}
                 />
 
                 {/* Table Cell Variant */}
@@ -288,122 +292,138 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'striped', label: '줄무늬' },
                     ]}
                     onChange={(key) => updateTableProps({ cellVariant: key as 'default' | 'striped' })}
+                    icon={Settings}
                 />
-            </div>
+            </fieldset>
 
-            <div className="border-t pt-4">
-                <h3 className="text-lg font-semibold mb-3">테이블 구조</h3>
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Column Management</legend>
 
-                {/* 컬럼 관리 */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h4 className="font-medium">컬럼 ({columns.length}개)</h4>
-                        <Button
-                            onPress={() => setIsAddingColumn(!isAddingColumn)}
-                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            {isAddingColumn ? '취소' : '컬럼 추가'}
-                        </Button>
-                    </div>
+                {/* 컬럼 개수 표시 */}
+                <div className='tab-overview'>
+                    <p className='tab-overview-text'>
+                        Total columns: {columns.length || 0}
+                    </p>
+                    <p className='tab-overview-help'>
+                        💡 Manage table columns and their properties
+                    </p>
+                </div>
 
-                    {isAddingColumn && (
-                        <div className="p-3 bg-gray-50 rounded space-y-2">
-                            <PropertyInput
-                                label="컬럼 이름"
-                                value={newColumnLabel}
-                                onChange={setNewColumnLabel}
-                                placeholder="컬럼 이름을 입력하세요"
-                            />
-                            <div className="flex gap-2">
-                                <Button
-                                    onPress={addColumn}
-                                    className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    추가
-                                </Button>
-                                <Button
-                                    onPress={() => {
-                                        setIsAddingColumn(false);
-                                        setNewColumnLabel('');
-                                    }}
-                                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-                                >
-                                    취소
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                {/* 컬럼 입력 필드 (항상 표시) */}
+                {isAddingColumn && (
+                    <PropertyInput
+                        label="컬럼 이름"
+                        value={newColumnLabel}
+                        onChange={setNewColumnLabel}
+                        placeholder="컬럼 이름을 입력하세요"
+                        icon={Tag}
+                    />
+                )}
 
-                    {/* 기존 컬럼들 */}
-                    <div className="space-y-1">
+                {/* 기존 컬럼들 */}
+                {columns.length > 0 && (
+                    <div className='tabs-list'>
                         {columns.map((column, index) => (
-                            <div key={column.id} className="flex items-center justify-between p-2 bg-white border rounded">
-                                <span className="text-sm">
-                                    {index + 1}. {column.props?.children || '제목 없음'}
+                            <div key={column.id} className='tab-list-item'>
+                                <span className='tab-title'>
+                                    {column.props?.children || `Column ${index + 1}`}
                                     {(column.props as ColumnElementProps)?.isRowHeader && (
                                         <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-600 rounded">헤더</span>
                                     )}
                                 </span>
-                                <Button
-                                    onPress={() => removeColumn(column.id)}
-                                    className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                <button
+                                    className='control-button delete'
+                                    onClick={() => removeColumn(column.id)}
                                 >
-                                    삭제
-                                </Button>
+                                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </button>
                             </div>
                         ))}
-                        {columns.length === 0 && (
-                            <div className="text-sm text-gray-500 text-center py-2">
-                                컬럼이 없습니다
-                            </div>
-                        )}
                     </div>
+                )}
+
+                {/* 컬럼 관리 버튼들 */}
+                <div className='tab-actions'>
+                    {isAddingColumn ? (
+                        <>
+                            <button
+                                className='control-button add'
+                                onClick={addColumn}
+                            >
+                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                Add Column
+                            </button>
+                            <button
+                                className='control-button secondary'
+                                onClick={() => {
+                                    setIsAddingColumn(false);
+                                    setNewColumnLabel('');
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            className='control-button add'
+                            onClick={() => setIsAddingColumn(true)}
+                        >
+                            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            Add Column
+                        </button>
+                    )}
+                </div>
+            </fieldset>
+
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Row Management</legend>
+
+                {/* 행 개수 표시 */}
+                <div className='tab-overview'>
+                    <p className='tab-overview-text'>
+                        Total rows: {rows.length || 0}
+                    </p>
+                    <p className='tab-overview-help'>
+                        💡 Manage table rows and their cells
+                    </p>
                 </div>
 
-                {/* 행 관리 */}
-                <div className="space-y-3 mt-4">
-                    <div className="flex items-center justify-between">
-                        <h4 className="font-medium">행 ({rows.length}개)</h4>
-                        <Button
-                            onPress={addRow}
-                            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                        >
-                            행 추가
-                        </Button>
-                    </div>
-
-                    {/* 기존 행들 */}
-                    <div className="space-y-1">
+                {/* 기존 행들 */}
+                {rows.length > 0 && (
+                    <div className='tabs-list'>
                         {rows.map((row, index) => {
                             const rowCells = elements.filter(el =>
                                 el.parent_id === row.id && el.tag === 'Cell'
                             ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
                             return (
-                                <div key={row.id} className="flex items-center justify-between p-2 bg-white border rounded">
-                                    <div className="text-sm">
-                                        <span className="font-medium">행 {index + 1}</span>
-                                        <span className="ml-2 text-gray-500">
-                                            ({rowCells.length}개 셀)
-                                        </span>
-                                    </div>
-                                    <Button
-                                        onPress={() => removeRow(row.id)}
-                                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                <div key={row.id} className='tab-list-item'>
+                                    <span className='tab-title'>
+                                        Row {index + 1} ({rowCells.length} cells)
+                                    </span>
+                                    <button
+                                        className='control-button delete'
+                                        onClick={() => removeRow(row.id)}
                                     >
-                                        삭제
-                                    </Button>
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    </button>
                                 </div>
                             );
                         })}
-                        {rows.length === 0 && (
-                            <div className="text-sm text-gray-500 text-center py-2">
-                                행이 없습니다
-                            </div>
-                        )}
                     </div>
+                )}
+
+                {/* 행 추가 버튼 */}
+                <div className='tab-actions'>
+                    <button
+                        className='control-button add'
+                        onClick={addRow}
+                    >
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        Add Row
+                    </button>
                 </div>
-            </div>
+            </fieldset>
         </div>
     );
 }

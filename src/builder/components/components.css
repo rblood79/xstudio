@@ -2698,14 +2698,15 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Table 컴포넌트 스타일 */
 .react-aria-Table {
-    padding: 0.286rem;
+    padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--spacing-sm);
     background: var(--overlay-background);
     outline: none;
     border-spacing: 0;
-    min-height: 100px;
+    min-height: var(--spacing-xl);
     align-self: start;
     max-width: 100%;
     word-break: break-word;
@@ -2717,12 +2718,14 @@
     }
 
     .react-aria-TableHeader {
-        color: var(--text-color);
+        font-size: var(--text-sm);
+        color: var(--color-primary-600);
+        background: var(--color-gray-50);
 
         &:after {
             content: '';
             display: table-row;
-            height: 2px;
+            height: var(--spacing-2xs);
         }
 
         & tr:last-child .react-aria-Column {
@@ -2732,8 +2735,8 @@
     }
 
     .react-aria-Row {
-        --radius-top: 6px;
-        --radius-bottom: 6px;
+        --radius-top: var(--spacing-sm);
+        --radius-bottom: var(--spacing-sm);
         --radius: var(--radius-top) var(--radius-top) var(--radius-bottom) var(--radius-bottom);
         border-radius: var(--radius);
         clip-path: inset(0 round var(--radius));
@@ -2741,7 +2744,7 @@
         outline: none;
         cursor: default;
         color: var(--text-color);
-        font-size: 1.072rem;
+        font-size: var(--text-sm);
         position: relative;
         transform: scale(1);
 
@@ -2751,7 +2754,7 @@
         }
 
         &[data-pressed] {
-            background: var(--gray-100);
+            background: var(--color-gray-100);
         }
 
         &[data-selected] {
@@ -2772,7 +2775,7 @@
 
     .react-aria-Cell,
     .react-aria-Column {
-        padding: 4px 8px;
+        padding: var(--spacing-sm) var(--spacing-lg);
         text-align: left;
         outline: none;
 
@@ -2822,7 +2825,7 @@
 
 .react-aria-Column {
     .sort-indicator {
-        padding: 0 2px;
+        padding: 0 var(--spacing-2xs);
     }
 
     &:not([data-sort-direction]) .sort-indicator {
@@ -2838,11 +2841,11 @@
 }
 
 .react-aria-ResizableTableContainer {
-    max-width: 400px;
+    max-width: var(--spacing-xl);
     overflow: auto;
     position: relative;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--spacing-sm);
     background: var(--background-color);
 
     .react-aria-Table {
@@ -2876,13 +2879,13 @@
     }
 
     .react-aria-ColumnResizer {
-        width: 15px;
+        width: var(--spacing-sm);
         background-color: grey;
-        height: 25px;
+        height: var(--spacing-lg);
         flex: 0 0 auto;
         touch-action: none;
         box-sizing: border-box;
-        border: 5px;
+        border: var(--spacing-sm);
         border-style: none solid;
         border-color: transparent;
         background-clip: content-box;
@@ -2925,11 +2928,11 @@
 
     [slot=drag] {
         all: unset;
-        width: 15px;
+        width: var(--spacing-sm);
         text-align: center;
 
         &[data-focus-visible] {
-            border-radius: 4px;
+            border-radius: var(--spacing-sm);
             outline: 2px solid var(--focus-ring-color);
         }
     }
@@ -2957,8 +2960,8 @@
 }
 
 .react-aria-Cell img {
-    height: 30px;
-    width: 30px;
+    height: var(--spacing-xl);
+    width: var(--spacing-xl);
     object-fit: cover;
     display: block;
 }
@@ -2966,7 +2969,7 @@
 /* Card 컴포넌트 스타일 */
 .react-aria-Card {
     display: block;
-    border-radius: 8px;
+    border-radius: var(--spacing-sm);
     background-color: var(--spectrum-global-color-gray-50);
     border: 1px solid var(--spectrum-global-color-gray-200);
     transition: all 0.2s ease-in-out;
