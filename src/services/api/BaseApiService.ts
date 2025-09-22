@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '../../env/supabase.client';
 import { Element } from '../../types/store';
 import { classifyError, logError, ApiError, ApiErrorType } from './ErrorHandler';
 
@@ -8,22 +9,8 @@ export abstract class BaseApiService {
     private readonly maxRequestsPerMinute = 60;
 
     constructor() {
-        this.supabase = createClient(
-            import.meta.env.VITE_SUPABASE_URL,
-            import.meta.env.VITE_SUPABASE_ANON_KEY,
-            {
-                auth: {
-                    persistSession: true,
-                    storageKey: import.meta.env.DEV ? 'xstudio-auth-dev' : 'xstudio-auth-prod'
-                },
-                global: {
-                    headers: {
-                        'X-Client-Version': '1.0.0',
-                        'X-Request-ID': crypto.randomUUID()
-                    }
-                }
-            }
-        );
+        // 전역 싱글톤 인스턴스 사용
+        this.supabase = supabase;
     }
 
     protected async rateLimitCheck(operation: string): Promise<boolean> {

@@ -185,10 +185,15 @@ export const BuilderCore: React.FC = () => {
         applyThemeTokens();
     }, [applyThemeTokens]);
 
-    // order_num 검증
+    // order_num 검증 (reorderElements 완료 후 실행하도록 지연)
     useEffect(() => {
         if (elements.length > 0) {
-            validateOrderNumbers(elements);
+            // reorderElements(50ms)가 완료될 시간을 주기 위해 충분히 지연
+            const timer = setTimeout(() => {
+                validateOrderNumbers(elements);
+            }, 300);
+
+            return () => clearTimeout(timer);
         }
     }, [elements, validateOrderNumbers]);
 

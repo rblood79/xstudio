@@ -64,8 +64,8 @@ export function SliderEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.orientation || 'horizontal')}
                 onChange={(value) => updateProp('orientation', value)}
                 options={[
-                    { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                    { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+                    { id: 'horizontal', value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                    { id: 'vertical', value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                 ]}
                 icon={Layout}
             />

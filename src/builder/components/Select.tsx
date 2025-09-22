@@ -24,10 +24,11 @@ export interface SelectProps<T extends object>
   items?: Iterable<T>;
   children: React.ReactNode | ((item: T) => React.ReactNode);
   placeholder?: string;
+  itemKey?: keyof T | ((item: T) => React.Key);
 }
 
 export function Select<T extends object>(
-  { label, description, errorMessage, children, items, placeholder, ...props }: SelectProps<T>
+  { label, description, errorMessage, children, items, placeholder, itemKey, ...props }: SelectProps<T>
 ) {
   // ComboBox와 동일한 방식으로 placeholder 처리
   const stableProps = useMemo(() => {
@@ -44,6 +45,16 @@ export function Select<T extends object>(
   const ariaLabel = hasVisibleLabel
     ? undefined
     : (props['aria-label'] || stableProps.placeholder || 'Select an option');
+
+  const getCollectionKey = useMemo(() => {
+    if (itemKey) {
+      if (typeof itemKey === 'function') {
+        return itemKey;
+      }
+      return (item: T) => item[itemKey] as React.Key;
+    }
+    return undefined; // 기본 동작 사용 (item.id)
+  }, [itemKey]);
 
   return (
     <AriaSelect
@@ -81,7 +92,7 @@ export function Select<T extends object>(
       )}
 
       <Popover className="react-aria-Popover">
-        <ListBox items={items} className='react-aria-ListBox'>
+        <ListBox items={items} className='react-aria-ListBox' selectionMode="single" getKey={getCollectionKey}>
           {children}
         </ListBox>
       </Popover>

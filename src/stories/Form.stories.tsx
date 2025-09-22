@@ -4,6 +4,7 @@ import { Button } from '../builder/components/Button';
 import { DateField } from '../builder/components/DateField';
 import { Form } from '../builder/components/Form';
 import { TextField } from '../builder/components/TextField';
+import { StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof Form> = {
   component: Form,
@@ -15,7 +16,9 @@ const meta: Meta<typeof Form> = {
 
 export default meta;
 
-export const Example = (args: any) => (
+type Story = StoryObj<typeof Form>;
+
+export const Example: Story = (args) => (
   <Form {...args}>
     <TextField label="Email" name="email" type="email" isRequired />
     <DateField label="Birth date" isRequired />

@@ -176,8 +176,8 @@ export function ListBoxEditor({ elementId, currentProps, onUpdate }: PropertyEdi
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
-                        { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
+                        { id: 'single', value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { id: 'multiple', value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={List}
                 />

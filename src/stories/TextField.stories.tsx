@@ -1,4 +1,4 @@
-import type { Meta } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { Form } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
@@ -17,9 +17,11 @@ const meta: Meta<typeof TextField> = {
 
 export default meta;
 
-export const Example = (args: any) => <TextField {...args} />;
+type Story = StoryObj<typeof TextField>;
 
-export const Validation = (args: any) => (
+export const Example: Story = (args) => <TextField {...args} />;
+
+export const Validation: Story = (args) => (
   <Form className="flex flex-col gap-2 items-start">
     <TextField {...args} />
     <Button type="submit" variant="secondary">Submit</Button>

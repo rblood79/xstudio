@@ -149,8 +149,8 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     value={String(currentProps.orientation || 'horizontal')}
                     onChange={(value) => updateProp('orientation', value)}
                     options={[
-                        { id: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                        { id: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+                        { id: 'horizontal', value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { id: 'vertical', value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                     ]}
                     icon={ToggleLeft}
                 />
@@ -161,8 +161,8 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     value={String(currentProps.selectionMode || 'single')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { id: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
-                        { id: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
+                        { id: 'single', value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { id: 'multiple', value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
                     ]}
                     icon={Binary}
                 />

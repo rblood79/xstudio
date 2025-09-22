@@ -33,9 +33,9 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.type || 'button')}
                 onChange={(value) => updateProp('type', value)}
                 options={[
-                    { value: 'button', label: PROPERTY_LABELS.BUTTON },
-                    { value: 'submit', label: PROPERTY_LABELS.SUBMIT },
-                    { value: 'reset', label: PROPERTY_LABELS.RESET }
+                    { id: 'button', value: 'button', label: PROPERTY_LABELS.BUTTON },
+                    { id: 'submit', value: 'submit', label: PROPERTY_LABELS.SUBMIT },
+                    { id: 'reset', value: 'reset', label: PROPERTY_LABELS.RESET }
                 ]}
                 icon={Parentheses}
             />
