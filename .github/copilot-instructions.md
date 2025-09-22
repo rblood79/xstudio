@@ -1,382 +1,1547 @@
-# XStudio AI Agent Instructions
+---
+description: XStudio 프로젝트의 통합 개발 규칙 및 가이드라인
+globs: **/*.{ts,tsx,js,jsx,css,md,mdx}
+alwaysApply: true
+---
+
+# XStudio 통합 개발 규칙
 
 ## 프로젝트 개요
 
-XStudio는 웹 기반 시각적 에디터로 인터랙티브한 인터페이스를 구축하기 위한 도구입니다. 이 프로젝트는 컴포넌트 기반 아키텍처를 사용하며, 빌더 인터페이스와 컴포넌트를 실시간으로 렌더링하는 프리뷰 iframe으로 분리되어 있습니다.
+**XStudio**는 React 19, TypeScript, Vite, Supabase를 기반으로 하는 웹 기반 UI 빌더/디자인 스튜디오입니다.
 
-## 아키텍처
+### 핵심 기술 스택
+- **Frontend**: React 19 + TypeScript + React Aria Components
+- **Build Tool**: Vite (React SWC 플러그인)
+- **상태 관리**: Zustand
+- **스타일링**: Tailwind CSS 4 + PostCSS
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **라우팅**: React Router 7
+- **개발 도구**: Storybook 8, Vitest, Playwright
 
-### 핵심 컴포넌트
+## AI 개발 가이드라인
 
-- **Builder**: 사용자가 레이아웃을 디자인하고 컴포넌트 속성을 수정하는 주요 편집 인터페이스
-- **Preview**: 컴포넌트를 실시간으로 렌더링하는 샌드박스 환경 (iframe 내부에서 실행)
-- **Stores**: 요소, 히스토리, 프로젝트를 위한 Zustand 기반 상태 관리
+### 응답 언어
+- **항상 한국어로 응답할 것**
+- 코드 주석과 문서화도 한국어 우선
 
-### 주요 데이터 흐름
+### 개발 프로세스
+1. **계획 수립**: 요구사항을 단계별로 분석하고 의사코드로 상세 계획 작성
+2. **확인**: 계획을 사용자와 확인 후 코드 작성 시작
+3. **구현**: 완전하고 버그 없는 기능적 코드 작성
+4. **검증**: 모든 기능이 완전히 구현되었는지 철저히 확인
 
-1. 빌더에서 사용자 편집 → 요소 스토어 업데이트 → iframe에 메시지 전송
-2. iframe이 업데이트 수신 → 컴포넌트 렌더링 → 준비 상태 전송
-3. 요소 변경 → 히스토리 항목 생성 → undo/redo 기능 활성화
+### 코드 품질 원칙
+- **가독성 우선**: 성능보다 코드 가독성을 우선시
+- **완전성**: TODO, 플레이스홀더, 미완성 부분 금지
+- **보안**: 사용자 입력 검증, SQL 인젝션 방지, XSS 방지
+- **테스트**: 모든 새로운 기능에 단위 테스트 작성 (커버리지 80% 이상)
 
-## 상태 관리
+## 프로젝트 구조 및 아키텍처
 
-XStudio는 다음과 같은 주요 스토어로 Zustand를 사용합니다:
+### 디렉토리 구조
+```
+src/
+├── App.tsx / App.css        # 루트 애플리케이션 셸
+├── assets/                  # 정적 자산
+├── auth/                    # 인증 관련 컴포넌트
+├── builder/                 # 핵심 빌더 시스템
+│   ├── ai/                  # AI 어시스턴트 UI
+│   ├── components/          # React Aria 기반 위젯 래퍼
+│   ├── dataset/             # 샘플 데이터
+│   ├── factories/           # 컴포넌트 팩토리
+│   ├── hooks/               # 빌더 전용 훅
+│   ├── inspector/           # 속성 편집기
+│   │   ├── design/          # 디자인 속성 편집
+│   │   ├── events/          # 이벤트 속성 편집
+│   │   └── properties/      # 컴포넌트별 속성 에디터
+│   ├── library/             # 컴포넌트 라이브러리
+│   ├── main/                # 메인 빌더 컴포넌트
+│   ├── monitor/             # 성능 모니터링
+│   ├── nodes/               # 노드 트리 관리
+│   ├── overlay/             # 선택 오버레이
+│   ├── preview/             # iframe 프리뷰
+│   ├── setting/             # 빌더 설정
+│   ├── sidebar/             # 사이드바 컴포넌트
+│   ├── stores/              # Zustand 상태 저장소
+│   ├── theme/               # 테마 편집기
+│   ├── user/                # 사용자 관련
+│   └── utils/               # 빌더 유틸리티
+├── dashboard/               # 프로젝트 대시보드
+├── demo/                    # 데모 컴포넌트
+├── env/                     # 환경 설정
+├── hooks/                   # 전역 훅
+├── services/api/            # API 서비스 레이어
+├── stories/                 # Storybook 스토리
+├── types/                   # TypeScript 타입 정의
+├── utils/                   # 전역 유틸리티
+└── main.tsx                 # 애플리케이션 진입점
+```
 
-- `elements.ts`: 컴포넌트 요소와 속성, 계층 구조 및 페이지 할당 관리
-- `history.ts`: 페이지별 히스토리 추적을 통한 undo/redo 기능 제공
-- `commandDataStore.ts`: 메모리 최적화된 명령어 및 요소 데이터 저장소
+### 주요 컴포넌트 아키텍처
 
-`elements.ts` 스토어는 향상된 히스토리 관리 기능을 갖추고 있습니다:
+#### 1. 빌더 핵심 컴포넌트
+- **BuilderCore**: 메인 빌더 컴포넌트 (`src/builder/main/BuilderCore.tsx`)
+- **BuilderHeader**: 상단 툴바 (`src/builder/main/BuilderHeader.tsx`)
+- **BuilderWorkspace**: 작업 영역 (`src/builder/main/BuilderWorkspace.tsx`)
+- **BuilderViewport**: 레이아웃 컨테이너 (`src/builder/main/BuilderViewport.tsx`)
+
+#### 2. 데이터 흐름
 ```typescript
-export interface ElementsState {
-  elements: Element[];
-  selectedElementId: string | null;
-  hoveredElementId: string | null;
-  currentPageId: string | null;
-  pageHistories: { [pageId: string]: { history: Element[][]; historyIndex: number } };
-  historyTrackingPaused: boolean;
-  historyOperationInProgress: boolean; // 히스토리 작업 중 재귀적 호출 방지 플래그
+// UI 액션 → Zustand 상태 업데이트 → Supabase API 호출
+const handleAddElement = async (tag: string) => {
+  const newElement = { 
+    id: crypto.randomUUID(),
+    tag,
+    props: getDefaultProps(tag),
+    parent_id: parentId,
+    page_id: currentPageId,
+    order_num: calculateNextOrderNum()
+  };
+  
+  // 1. Supabase에 저장
+  const { data, error } = await supabase
+    .from("elements")
+    .insert([newElement])
+    .select()
+    .single();
+    
+  if (!error && data) {
+    // 2. Zustand 상태 업데이트
+    addElement(data);
+    
+    // 3. iframe 프리뷰 동기화
+    sendElementsToIframe();
+  }
+};
+```
+
+## 데이터베이스 스키마 (Supabase)
+
+### 주요 테이블 구조
+
+#### 1. users 테이블
+```sql
+CREATE TABLE public.users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  display_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+```
+
+#### 2. projects 테이블
+```sql
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  created_by UUID NOT NULL,
+  domain TEXT UNIQUE,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_projects_user FOREIGN KEY (created_by)
+    REFERENCES public.users(id) ON DELETE CASCADE
+);
+```
+
+#### 3. pages 테이블
+```sql
+CREATE TABLE public.pages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  order_num INT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_pages_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE
+);
+```
+
+#### 4. elements 테이블 (핵심)
+```sql
+CREATE TABLE public.elements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  page_id UUID NOT NULL,
+  parent_id UUID,  -- 트리 구조용 (NULL = 루트)
+  tag TEXT NOT NULL,  -- 'div', 'button', 'text' 등
+  props JSONB DEFAULT '{}',  -- 컴포넌트 속성
+  order_num INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  CONSTRAINT fk_elements_page FOREIGN KEY (page_id)
+    REFERENCES public.pages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_elements_parent FOREIGN KEY (parent_id)
+    REFERENCES public.elements(id) ON DELETE CASCADE
+);
+```
+
+#### 5. design_tokens 테이블
+```sql
+CREATE TABLE public.design_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL,
+  theme_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,  -- 'color', 'font', 'spacing'
+  value JSONB NOT NULL,
+  scope TEXT NOT NULL DEFAULT 'raw' CHECK (scope IN ('raw', 'semantic')),
+  alias_of TEXT,
+  css_variable TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT fk_tokens_project FOREIGN KEY (project_id)
+    REFERENCES public.projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tokens_theme FOREIGN KEY (theme_id)
+    REFERENCES public.design_themes(id) ON DELETE CASCADE
+);
+```
+
+## 코딩 규칙 및 스타일
+
+### 명명 규칙
+
+#### 파일명
+- **React 컴포넌트**: PascalCase (`BuilderHeader.tsx`, `PropertyPanel.tsx`)
+- **훅**: camelCase + `use` 접두사 (`useElementCreator.ts`, `useTheme.ts`)
+- **유틸리티**: camelCase (`elementUtils.ts`, `themeUtils.ts`)
+- **타입 정의**: camelCase (`store.ts`, `componentProps.ts`)
+- **CSS**: 컴포넌트명 매칭 (`ComponentList.css`, `index.css`)
+
+#### 코드 내 명명
+```typescript
+// ✅ DO: 명확한 함수명
+export function createElementWithDefaults(tag: string, parentId?: string) { }
+
+// ✅ DO: 의미있는 변수명
+const selectedElementId = useStore(state => state.selectedElementId);
+const isElementBeingDragged = dragState.isDragging;
+
+// ❌ DON'T: 모호한 명명
+const el = getEl();
+const data = fetchData();
+```
+
+### 코드 스타일
+- **들여쓰기**: 공백 4칸 일관 사용
+- **따옴표**: TypeScript에서 단일 따옴표, JSX 속성에서 이중 따옴표
+- **세미콜론**: 모든 구문 끝에 명시적 세미콜론
+- **줄 길이**: 최대 80자 권장
+
+```typescript
+// ✅ DO: 일관된 스타일
+import { useState, useCallback } from 'react';
+import { Button } from '../components/Button';
+
+export function ExampleComponent({ title }: { title: string }) {
+    const [isVisible, setIsVisible] = useState(false);
+    
+    const handleToggle = useCallback(() => {
+        setIsVisible(prev => !prev);
+    }, []);
+    
+    return (
+        <div className="p-4 bg-white rounded-lg">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <Button onPress={handleToggle}>
+                {isVisible ? "숨기기" : "보이기"}
+            </Button>
+        </div>
+    );
 }
 ```
 
-## 주요 패턴
-
-### 히스토리 관리 시스템
-
-XStudio는 최근 개선된 안정성을 갖춘 이중 히스토리 시스템을 유지합니다:
-
-1. `historyManager` in `history.ts`: undo/redo 작업을 위한 추상화된 API 제공
-2. `pageHistories` in `elements.ts`: 페이지 ID별로 실제 요소 스냅샷 저장
-
+### Import/Export 패턴
 ```typescript
-// 히스토리 매니저 사용하기 (권장 방법)
-import { historyManager } from '../stores/history';
-historyManager.addEntry({
-  type: 'update',
-  elementId: element.id,
-  data: { prevProps, newProps }
-});
-```
-
-#### 히스토리 시스템 구현 세부사항
-
-**주요 히스토리 상태 변수**:
-- `historyOperationInProgress`: 히스토리 작업 중 재귀 호출 방지 플래그
-- `historyTrackingPaused`: 대량 작업 중 히스토리 추적 일시 중단 플래그
-- `pageHistories`: 페이지 ID로 색인된 페이지별 히스토리 스냅샷
-
-**히스토리 작업 흐름**:
-1. 요소 변경이 히스토리 스냅샷 생성 유발
-2. undo/redo 중에는 `historyOperationInProgress` 플래그가 새 히스토리 항목 생성 방지
-3. 안전한 요소 복제로 프록시 객체 오류 방지
-
-```typescript
-// 안전한 히스토리 작업 패턴
-export const undo = async () => {
-  try {
-    const state = get();
-    const { currentPageId } = state;
-    if (!currentPageId) return;
-
-    // 재귀적 히스토리 생성 방지 플래그 설정
-    set({ historyOperationInProgress: true });
-    
-    // 히스토리 작업 로직...
-    
-    // 히스토리용 안전한 요소 복제
-    const safeElements = elements.map(el => ({
-      ...el,
-      props: JSON.parse(JSON.stringify(el.props || {}))
-    }));
-    
-  } catch (error) {
-    console.error("Undo operation error:", error);
-  } finally {
-    // 작업이 완료되면 항상 플래그 재설정
-    set({ historyOperationInProgress: false });
-  }
-};
-```
-
-**히스토리 이슈의 근본 원인**:
-시스템에는 충돌을 일으키는 두 개의 병렬 히스토리 추적 구현이 있었습니다:
-1. `history.ts`의 `historyManager` - 작업을 추상적으로 추적 (add/update/remove)
-2. `elements.ts`의 `pageHistories` - 전체 요소 스냅샷 저장
-
-이 시스템 간의 충돌로 인해 다음과 같은 문제가 발생했습니다:
-- historyIndex가 한 시스템에서는 업데이트되었지만 다른 시스템에서는 업데이트되지 않아 발생하는 불일치 상태
-- 스냅샷에 Immer 프록시가 포함되어 있을 때 발생하는 프록시 객체 오류
-- iframe으로 복제할 수 없는 객체를 전송할 때 발생하는 DataCloneError
-
-### 요소 Sanitization
-
-iframe에 요소를 전송하거나 히스토리에 저장하기 전에 프록시 이슈를 방지하기 위해 항상 sanitize 처리:
-
-```typescript
-// elements.ts에서 가져옴
-export const sanitizeElement = (element: Element): Element => {
-  try {
-    // structuredClone 우선 사용 (최신 브라우저)
-    if (typeof structuredClone !== 'undefined') {
-      return {
-        id: element.id,
-        tag: element.tag,
-        props: structuredClone(element.props || {}),
-        parent_id: element.parent_id,
-        page_id: element.page_id,
-        order_num: element.order_num
-      };
-    }
-
-    // fallback: JSON 방식으로 깊은 복사
-    return {
-      id: element.id,
-      tag: element.tag,
-      props: JSON.parse(JSON.stringify(element.props || {})),
-      parent_id: element.parent_id,
-      page_id: element.page_id,
-      order_num: element.order_num
-    };
-  } catch (error) {
-    console.error("Element sanitization error:", error);
-    // 기본값으로 대체
-    return {
-      id: element.id || "",
-      tag: element.tag || "",
-      props: {},
-      parent_id: element.parent_id,
-      page_id: element.page_id || "",
-      order_num: element.order_num || 0
-    };
-  }
-};
-```
-
-### IFrame 통신
-
-빌더는 postMessage를 사용하여 iframe 렌더러와 통신합니다:
-
-```typescript
-// 요소를 iframe에 전송
-window.parent.postMessage(
-  {
-    type: 'ELEMENTS_UPDATED',
-    payload: { elements: safeElements }
-  },
-  '*'
-);
-
-// iframe에서 수신
-handleMessage = useCallback(
-  (event: MessageEvent) => {
-    const data = event.data;
-    if (!data || typeof data !== 'object' || !data.type) return;
-
-    if (data.type === 'UPDATE_ELEMENTS') {
-      setElements(data.elements || [], { skipHistory: true });
-    }
-    
-    // 다른 메시지 타입 처리...
-  },
-  [elements, setElements, updateElementProps]
-);
-```
-
-## 일반적인 워크플로우
-
-### 새 컴포넌트 타입 추가하기
-
-1. `src/components/` 디렉토리에 컴포넌트 정의
-2. 빌더와 iframe 컴포넌트 레지스트리에 모두 등록
-3. ElementsPanel에 기본 속성 추가
-
-### 디버깅 팁
-
-- 히스토리 작업과 iframe 통신에 대한 자세한 로그를 확인하려면 브라우저 콘솔 확인
-- 현재 히스토리 상태를 검사하려면 `historyManager.getInfo()` 사용
-- iframe 통신 문제의 경우 요소가 올바르게 sanitize 처리되었는지 확인
-- 히스토리 이슈 디버깅을 위해 플래그 확인:
-  ```typescript
-  console.log("History state:", {
-    historyOperationInProgress: get().historyOperationInProgress,
-    historyTrackingPaused: get().historyTrackingPaused,
-    pageHistory: get().pageHistories[currentPageId],
-    historyManager: historyManager.getInfo()
-  });
-  ```
-
-### 알려진 이슈와 버그 수정
-
-- 프록시 객체는 postMessage에서 `DataCloneError`를 일으킬 수 있음 - 항상 sanitizeElement 사용
-- 히스토리 관리는 때때로 historyIndex와 elementCount 간에 불일치 표시
-- 텍스트 요소 undo 작업은 적절히 sanitize 처리되지 않으면 "revoked proxy" 오류와 함께 실패할 수 있음
-- 히스토리 작업을 구현할 때 UI 상태와 데이터베이스 동기화를 모두 처리해야 함
-
-#### 최근 Undo 버그 수정
-
-undo 시스템은 다음과 같은 여러 중요한 이슈를 해결하기 위해 최근 수정되었습니다:
-
-1. **Revoked Proxy 오류**: 텍스트 요소 변경을 취소할 때 "Cannot perform 'get' on a proxy that has been revoked" 오류 발생
-2. **DataCloneError**: undo 후 iframe으로 요소를 보낼 때 복제할 수 없는 프록시 객체로 인한 오류
-3. **불일치 상태**: undo 작업 중 historyIndex와 elementCount가 동기화되지 않음
-
-**구현된 해결책:**
-```typescript
-// 1. sanitizeElement 함수에서 안전한 객체 복제
-export const sanitizeElement = (element: Element): Element => {
-  try {
-    // 프록시 객체 제거를 위한 깊은 복제
-    return {
-      id: element.id,
-      tag: element.tag,
-      props: JSON.parse(JSON.stringify(element.props || {})),
-      parent_id: element.parent_id,
-      page_id: element.page_id,
-      order_num: element.order_num
-    };
-  } catch (error) {
-    console.error("Element sanitization error:", error);
-    // 기본 속성으로 폴백
-    return { id: element.id || "", tag: element.tag || "", props: {}, /* ... */ };
-  }
-};
-
-// 2. 적절한 오류 처리가 있는 undo 작업
-export const undo = async () => {
-  try {
-    const state = get();
-    const { currentPageId } = state;
-    if (!currentPageId) return;
-
-    // 재귀적 히스토리 생성 방지
-    set({ historyOperationInProgress: true });
-
-    // null 확인과 함께 안전한 히스토리 탐색
-    if (!state.pageHistories?.[currentPageId]) {
-      console.log("⚠️ 페이지 히스토리를 찾을 수 없음");
-      return;
-    }
-    
-    // try-catch로 안전한 요소 처리
-    try {
-      // 안전한 복제로 요소 처리
-      const safeElements = elements.map(el => sanitizeElement(el));
-      
-      // 먼저 UI 상태 업데이트, 그 다음 데이터베이스
-      set({ elements: safeElements });
-      
-      // 오류 처리와 함께 안전한 postMessage
-      if (typeof window !== 'undefined' && window.parent) {
-        try {
-          window.parent.postMessage(
-            { type: 'ELEMENTS_UPDATED', payload: { elements: safeElements } },
-            '*'
-          );
-        } catch (postMessageError) {
-          console.error("iframe message error:", postMessageError);
-        }
-      }
-    } catch (elementError) {
-      console.error("Element processing error:", elementError);
-    }
-  } finally {
-    // 상태 손상을 방지하기 위해 항상 플래그 재설정
-    set({ historyOperationInProgress: false });
-  }
-};
-```
-
-## 로컬 개발 환경 설정
-
-### 사전 요구사항
-- Node.js (v16 이상)
-- npm (v7 이상)
-- 최신 웹 브라우저 (Chrome 또는 Firefox 권장)
-
-### 설정 단계
-
-```bash
-# 1. 저장소 복제
-git clone [저장소-URL]
-cd xstudio
-
-# 2. 의존성 설치
-npm install
-
-# 3. 환경 변수 설정
-# 다음 변수와 함께 .env 파일 생성:
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# 4. 개발 서버 시작
-npm run dev
-```
-
-### 개발 워크플로우
-
-1. 소스 코드 변경
-2. 개발 서버 자동 새로고침
-3. 오류 확인을 위한 콘솔 확인
-4. 브라우저에서 변경사항 테스트
-
-### 개발자 명령어
-```bash
-# 개발 서버 시작
-npm run dev
-
-# 프로덕션용 빌드
-npm run build
-
-# 프로덕션 빌드 미리보기
-npm run preview
-
-# 린팅 실행
-npm run lint
-```
-
-### 시작하기 위한 사용 사례
-
-#### 1. 새 컴포넌트 생성하기
-
-```typescript
-// 1. src/components/MyNewComponent.tsx에서 컴포넌트 생성
+// ✅ DO: 올바른 import 순서
+// 1. 외부 라이브러리
 import React from 'react';
+import { Button } from 'react-aria-components';
+import { create } from 'zustand';
 
-export interface MyNewComponentProps {
-  text: string;
-  color?: string;
+// 2. 빈 줄 후 내부 모듈
+import { ElementProps } from '../../types/store';
+import { useStore } from '../stores';
+import './ComponentName.css';
+
+// ✅ DO: 타입만 사용시 type import
+import type { ComponentElementProps } from '../types/componentProps';
+```
+
+## 컴포넌트 개발 패턴
+
+### React Aria Components 래핑 - 개선된 패턴
+```typescript
+// ✅ DO: React Aria 컴포넌트 래핑 패턴
+import { Button as AriaButton, ButtonProps } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+import { forwardRef } from 'react';
+
+const buttonVariants = tv({
+    base: 'px-4 py-2 rounded-md font-medium transition-colors',
+    variants: {
+        variant: {
+            primary: 'bg-blue-500 text-white hover:bg-blue-600',
+            secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
+        },
+        size: {
+            sm: 'px-3 py-1 text-sm',
+            md: 'px-4 py-2',
+            lg: 'px-6 py-3 text-lg',
+        },
+    },
+    defaultVariants: {
+        variant: 'primary',
+        size: 'md',
+    },
+});
+
+interface CustomButtonProps extends ButtonProps {
+    variant?: 'primary' | 'secondary';
+    size?: 'sm' | 'md' | 'lg';
 }
 
-export const MyNewComponent: React.FC<MyNewComponentProps> = ({ text, color = 'black' }) => {
-  return <div style={{ color }}>{text}</div>;
-};
+export const Button = forwardRef<HTMLButtonElement, CustomButtonProps>(
+    ({ className, variant, size, ...props }, ref) => {
+        return (
+            <AriaButton
+                ref={ref}
+                className={buttonVariants({ variant, size, className })}
+                {...props}
+            />
+        );
+    }
+);
 
-// 2. src/components/index.ts에 등록
-export { MyNewComponent } from './MyNewComponent';
-export type { MyNewComponentProps } from './MyNewComponent';
+Button.displayName = 'Button';
+```
 
-// 3. 빌더 인터페이스를 위해 ElementsPanel.tsx에 추가
-<ElementButton
-  tag="MyNewComponent"
-  label="My Component"
-  icon={<TextIcon />}
-  defaultProps={{ text: 'New Component', color: 'blue' }}
+### React Aria Collection 키 처리 패턴
+```typescript
+// ✅ DO: PropertySelect에서 올바른 키 처리
+interface SelectOption {
+    id: string;      // React Aria에서 키로 사용
+    value: string;   // 실제 값
+    label: string;   // 표시 텍스트
+}
+
+// 옵션 배열 생성 시 필수 필드 포함
+const selectionModeOptions: SelectOption[] = [
+    { id: 'none', value: 'none', label: '선택 불가' },
+    { id: 'single', value: 'single', label: '단일 선택' },
+    { id: 'multiple', value: 'multiple', label: '다중 선택' }
+];
+
+// PropertySelect 사용 시 itemKey 명시
+<PropertySelect
+    label="선택 모드"
+    value={element.props.selectionMode}
+    options={selectionModeOptions}
+    itemKey="value"  // 키 결정 필드 명시
+    onChange={(selectionMode) => onChange({ selectionMode })}
+/>
+
+// ❌ DON'T: value 필드 누락으로 인한 키 에러
+const badOptions = [
+    { id: 'none', label: '선택 불가' }  // value 필드 없음
+];
+```
+
+### PropertyCheckbox 올바른 사용법
+```typescript
+// ✅ DO: PropertyCheckbox에서 올바른 prop 사용
+<PropertyCheckbox
+    icon={<Crown />}
+    label="소팅 가능"
+    isSelected={element.props.allowsSorting}  // checked 아님!
+    onChange={(allowsSorting) => onChange({ allowsSorting })}
+/>
+
+// ❌ DON'T: 잘못된 prop 사용
+<PropertyCheckbox
+    label="소팅 가능"
+    checked={element.props.allowsSorting}  // 에러: checked는 존재하지 않음
+    onChange={(allowsSorting) => onChange({ allowsSorting })}
 />
 ```
 
-#### 2. 히스토리 기능 테스트하기
+### 연결된 요소 삭제 패턴 (Tab/Panel)
+```typescript
+// ✅ DO: 연결된 요소 자동 삭제
+const removeElement = useCallback(async (elementId: string) => {
+    const elementToRemove = elements.find(el => el.id === elementId);
+    if (!elementToRemove) return;
 
-1. http://localhost:5173에서 브라우저에서 XStudio 열기
-2. 새 프로젝트 생성 또는 기존 프로젝트 열기
-3. 캔버스에 여러 요소 추가
-4. 요소의 속성 수정
-5. 히스토리 기능을 테스트하기 위해 실행 취소/다시 실행 버튼 사용
-6. 히스토리 작업을 보려면 콘솔 로그 확인
+    let elementsToDelete = [elementToRemove];
 
-#### 3. 통신 문제 디버깅하기
+    // Tab/Panel 연결 요소 찾기
+    if (elementToRemove.tag === 'Tab') {
+        const tabId = (elementToRemove.props as any).tabId || elementToRemove.props.order_num;
+        const linkedPanel = elements.find(el => 
+            el.tag === 'Panel' && 
+            el.parent_id === elementToRemove.parent_id &&
+            ((el.props as any).tabId === tabId || el.props.order_num === tabId)
+        );
+        if (linkedPanel) elementsToDelete.push(linkedPanel);
+    }
+    
+    if (elementToRemove.tag === 'Panel') {
+        const tabId = (elementToRemove.props as any).tabId || elementToRemove.props.order_num;
+        const linkedTab = elements.find(el => 
+            el.tag === 'Tab' && 
+            el.parent_id === elementToRemove.parent_id &&
+            ((el.props as any).tabId === tabId || el.props.order_num === tabId)
+        );
+        if (linkedTab) elementsToDelete.push(linkedTab);
+    }
 
-1. 브라우저 개발자 도구 열기 (F12)
-2. "Console" 탭 선택
-3. "iframe" 또는 "history"를 입력하여 콘솔 메시지 필터링
-4. 빌더와 iframe 사이의 postMessage 작업 관찰
-5. 직렬화 또는 프록시 객체 관련 오류 확인
+    // 일괄 삭제 처리
+    for (const element of elementsToDelete) {
+        await ElementsApiService.deleteElement(element.id);
+    }
+}, [elements]);
+```
+
+### Zustand 상태 관리 패턴
+```typescript
+// ✅ DO: Zustand 스토어 슬라이스 패턴
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+
+interface ElementState {
+    elements: Element[];
+    selectedElementId: string | null;
+    
+    // Actions
+    addElement: (element: Element) => void;
+    updateElement: (id: string, props: Partial<Element>) => void;
+    selectElement: (id: string | null) => void;
+    deleteElement: (id: string) => void;
+}
+
+export const useElementStore = create<ElementState>()(
+    immer((set, get) => ({
+        elements: [],
+        selectedElementId: null,
+        
+        addElement: (element) => set((state) => {
+            state.elements.push(element);
+        }),
+        
+        updateElement: (id, props) => set((state) => {
+            const element = state.elements.find(el => el.id === id);
+            if (element) {
+                Object.assign(element, props);
+            }
+        }),
+        
+        selectElement: (id) => set((state) => {
+            state.selectedElementId = id;
+        }),
+        
+        deleteElement: (id) => set((state) => {
+            state.elements = state.elements.filter(el => el.id !== id);
+            if (state.selectedElementId === id) {
+                state.selectedElementId = null;
+            }
+        }),
+    }))
+);
+```
+
+### 커스텀 훅 패턴
+```typescript
+// ✅ DO: 복잡한 로직을 커스텀 훅으로 분리
+export function useElementCreator() {
+    const { addElement } = useElementStore();
+    const { currentPageId } = usePageStore();
+    const { showError } = useErrorHandler();
+    
+    const createElement = useCallback(async (
+        tag: string, 
+        parentId?: string,
+        initialProps?: Record<string, any>
+    ) => {
+        try {
+            const newElement = {
+                id: crypto.randomUUID(),
+                tag,
+                props: { ...getDefaultProps(tag), ...initialProps },
+                parent_id: parentId || null,
+                page_id: currentPageId,
+                order_num: await calculateNextOrderNum(parentId),
+            };
+            
+            // Supabase에 저장
+            const { data, error } = await supabase
+                .from('elements')
+                .insert([newElement])
+                .select()
+                .single();
+                
+            if (error) throw error;
+            
+            // 로컬 상태 업데이트
+            addElement(data);
+            
+            return data;
+        } catch (error) {
+            showError('요소 생성에 실패했습니다', error);
+            return null;
+        }
+    }, [addElement, currentPageId, showError]);
+    
+    return { createElement };
+}
+```
+
+## API 서비스 패턴
+
+### 서비스 클래스 구조
+```typescript
+// ✅ DO: API 서비스 클래스 패턴
+import { supabase } from '../../env/supabase.client';
+import { handleApiError } from './ErrorHandler';
+import type { Element, ElementInsert, ElementUpdate } from '../../types/store';
+
+export class ElementsApiService {
+    static async getPageElements(pageId: string): Promise<Element[]> {
+        try {
+            const { data, error } = await supabase
+                .from('elements')
+                .select('*')
+                .eq('page_id', pageId)
+                .order('order_num');
+                
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            throw handleApiError(error, '페이지 요소 조회 실패');
+        }
+    }
+    
+    static async createElement(element: ElementInsert): Promise<Element> {
+        try {
+            const { data, error } = await supabase
+                .from('elements')
+                .insert([element])
+                .select()
+                .single();
+                
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            throw handleApiError(error, '요소 생성 실패');
+        }
+    }
+    
+    static async updateElement(id: string, updates: ElementUpdate): Promise<Element> {
+        try {
+            const { data, error } = await supabase
+                .from('elements')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+                
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            throw handleApiError(error, '요소 업데이트 실패');
+        }
+    }
+    
+    static async deleteElement(id: string): Promise<void> {
+        try {
+            const { error } = await supabase
+                .from('elements')
+                .delete()
+                .eq('id', id);
+                
+            if (error) throw error;
+        } catch (error) {
+            throw handleApiError(error, '요소 삭제 실패');
+        }
+    }
+}
+```
+
+## 성능 최적화 규칙
+
+### React 최적화
+```typescript
+// ✅ DO: 메모이제이션과 선택적 구독
+import { memo, useMemo, useCallback } from 'react';
+import { shallow } from 'zustand/shallow';
+
+const ElementRenderer = memo(({ elementId }: { elementId: string }) => {
+    // 필요한 데이터만 선택적 구독
+    const element = useElementStore(
+        state => state.elements.find(el => el.id === elementId),
+        shallow
+    );
+    
+    // 복잡한 계산 메모이제이션
+    const computedStyles = useMemo(() => {
+        if (!element) return {};
+        return calculateElementStyles(element.props);
+    }, [element?.props]);
+    
+    // 콜백 메모이제이션
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        selectElement(elementId);
+    }, [elementId]);
+    
+    if (!element) return null;
+    
+    return (
+        <div
+            style={computedStyles}
+            onClick={handleClick}
+            className="element-wrapper"
+        >
+            {/* 요소 렌더링 */}
+        </div>
+    );
+});
+
+ElementRenderer.displayName = 'ElementRenderer';
+```
+
+### 디바운싱과 배치 처리
+```typescript
+// ✅ DO: 디바운스된 Supabase 업데이트
+import { debounce } from 'lodash';
+
+export function useDebounceSupabaseUpdate() {
+    const debouncedUpdate = useMemo(
+        () => debounce(async (elementId: string, updates: ElementUpdate) => {
+            try {
+                await ElementsApiService.updateElement(elementId, updates);
+            } catch (error) {
+                console.error('Supabase 업데이트 실패:', error);
+            }
+        }, 500),
+        []
+    );
+    
+    return debouncedUpdate;
+}
+```
+
+## iframe 통신 패턴
+
+### 안전한 메시지 패싱
+```typescript
+// ✅ DO: 타입 안전한 iframe 통신
+interface IframeMessage {
+    type: 'UPDATE_ELEMENTS' | 'SELECT_ELEMENT' | 'HOVER_ELEMENT';
+    data: any;
+}
+
+export class IframeMessenger {
+    private iframe: HTMLIFrameElement | null = null;
+    private origin: string;
+    
+    constructor(origin: string = window.location.origin) {
+        this.origin = origin;
+    }
+    
+    setIframe(iframe: HTMLIFrameElement) {
+        this.iframe = iframe;
+    }
+    
+    send(message: IframeMessage) {
+        if (!this.iframe?.contentWindow) return;
+        
+        this.iframe.contentWindow.postMessage(message, this.origin);
+    }
+    
+    listen(handler: (message: IframeMessage) => void) {
+        const messageHandler = (event: MessageEvent) => {
+            // 보안 검증
+            if (event.origin !== this.origin) return;
+            
+            try {
+                const message: IframeMessage = event.data;
+                handler(message);
+            } catch (error) {
+                console.error('iframe 메시지 처리 오류:', error);
+            }
+        };
+        
+        window.addEventListener('message', messageHandler);
+        
+        return () => window.removeEventListener('message', messageHandler);
+    }
+}
+```
+
+## 테스트 및 문서화
+
+### 테스트 패턴
+```typescript
+// ✅ DO: 컴포넌트 테스트
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
+describe('Button 컴포넌트', () => {
+    it('버튼 텍스트가 올바르게 렌더링된다', () => {
+        render(<Button>클릭하세요</Button>);
+        expect(screen.getByRole('button')).toHaveTextContent('클릭하세요');
+    });
+    
+    it('클릭 이벤트가 올바르게 처리된다', () => {
+        const handleClick = vi.fn();
+        render(<Button onPress={handleClick}>클릭</Button>);
+        
+        fireEvent.click(screen.getByRole('button'));
+        expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+    
+    it('variant prop에 따라 올바른 스타일이 적용된다', () => {
+        const { rerender } = render(<Button variant="primary">버튼</Button>);
+        expect(screen.getByRole('button')).toHaveClass('bg-blue-500');
+        
+        rerender(<Button variant="secondary">버튼</Button>);
+        expect(screen.getByRole('button')).toHaveClass('bg-gray-200');
+    });
+});
+```
+
+### Storybook 문서화
+```typescript
+// ✅ DO: 포괄적인 Storybook 스토리
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './Button';
+
+const meta: Meta<typeof Button> = {
+    title: 'Builder/Components/Button',
+    component: Button,
+    parameters: {
+        layout: 'centered',
+        docs: {
+            description: {
+                component: 'React Aria 기반의 접근 가능한 버튼 컴포넌트입니다.',
+            },
+        },
+    },
+    argTypes: {
+        variant: {
+            control: 'radio',
+            options: ['primary', 'secondary'],
+            description: '버튼의 시각적 스타일 변형',
+        },
+        size: {
+            control: 'radio',
+            options: ['sm', 'md', 'lg'],
+            description: '버튼의 크기',
+        },
+        isDisabled: {
+            control: 'boolean',
+            description: '버튼 비활성화 상태',
+        },
+    },
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
+
+export const Primary: Story = {
+    args: {
+        children: '기본 버튼',
+        variant: 'primary',
+    },
+};
+
+export const Secondary: Story = {
+    args: {
+        children: '보조 버튼',
+        variant: 'secondary',
+    },
+};
+
+export const AllSizes: Story = {
+    render: () => (
+        <div className="flex gap-4 items-center">
+            <Button size="sm">작은 버튼</Button>
+            <Button size="md">보통 버튼</Button>
+            <Button size="lg">큰 버튼</Button>
+        </div>
+    ),
+};
+```
+
+## 보안 및 검증
+
+### 입력 검증 패턴
+```typescript
+// ✅ DO: 철저한 입력 검증
+import { z } from 'zod';
+
+const ElementPropsSchema = z.object({
+    id: z.string().uuid(),
+    tag: z.string().min(1).max(50),
+    props: z.record(z.any()),
+    parent_id: z.string().uuid().nullable(),
+    page_id: z.string().uuid(),
+    order_num: z.number().int().min(0),
+});
+
+export function validateElementProps(data: unknown): ElementProps {
+    return ElementPropsSchema.parse(data);
+}
+
+// 사용 예시
+export async function createElementSafely(rawData: unknown) {
+    try {
+        const validatedData = validateElementProps(rawData);
+        return await ElementsApiService.createElement(validatedData);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            throw new Error(`입력 데이터 검증 실패: ${error.message}`);
+        }
+        throw error;
+    }
+}
+```
+
+## 에러 처리 및 로깅
+
+### 통합 에러 처리 - 개선된 패턴
+```typescript
+// ✅ DO: 타입 안전한 에러 처리
+export class AppError extends Error {
+    constructor(
+        message: string,
+        public code: string,
+        public statusCode: number = 500
+    ) {
+        super(message);
+        this.name = 'AppError';
+    }
+}
+
+// 개선된 에러 처리 - unknown 타입 안전성
+export function handleApiError(error: unknown, context: string): AppError {
+    console.error(`[${context}]`, error);
+    
+    if (error instanceof AppError) {
+        return error;
+    }
+    
+    // 타입 가드를 통한 안전한 속성 접근
+    if (typeof error === 'object' && error !== null) {
+        const err = error as any;
+        
+        if (err?.code === 'PGRST116') {
+            return new AppError('요청한 리소스를 찾을 수 없습니다', 'NOT_FOUND', 404);
+        }
+        
+        if (err?.message?.includes('duplicate key')) {
+            return new AppError('이미 존재하는 데이터입니다', 'DUPLICATE', 409);
+        }
+        
+        return new AppError(
+            err?.message || '알 수 없는 오류가 발생했습니다',
+            'UNKNOWN_ERROR'
+        );
+    }
+    
+    return new AppError(String(error), 'UNKNOWN_ERROR');
+}
+
+// catch 블록에서의 안전한 에러 처리
+try {
+    // 일부 작업
+} catch (error: unknown) {
+    console.error('⚠️ 작업 중 오류:', error);
+    console.error('⚠️ 오류 상세:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        context: 'operation_context'
+    });
+}
+```
+
+## 개발 워크플로우
+
+### 개발 서버 및 도구
+- **개발 서버**: `npm run dev` (Vite 개발 서버)
+- **Storybook**: `npm run storybook` (컴포넌트 문서)
+- **테스트**: `npm run test` (Vitest)
+- **빌드**: `npm run build` (프로덕션 빌드)
+
+### Git 커밋 규칙
+```bash
+# ✅ DO: 명확한 커밋 메시지
+feat: 새로운 Button 컴포넌트 추가
+fix: ElementStore의 선택 상태 초기화 버그 수정
+refactor: useElementCreator 훅 성능 최적화
+docs: API 서비스 클래스 문서 업데이트
+test: Button 컴포넌트 테스트 케이스 추가
+
+# ❌ DON'T: 모호한 커밋 메시지
+fix: 버그 수정
+update: 코드 변경
+misc: 기타 수정
+```
+
+### 코드 리뷰 체크리스트
+- [ ] TypeScript 타입 안전성 확인
+- [ ] React 훅 규칙 준수 (의존성 배열, 조건부 호출 금지)
+- [ ] 성능 최적화 (불필요한 리렌더링 방지)
+- [ ] 접근성 고려 (ARIA 속성, 키보드 네비게이션)
+- [ ] 에러 처리 및 검증
+- [ ] 테스트 코드 작성
+- [ ] Storybook 문서화
+- [ ] 보안 검증 (입력 검증, XSS 방지)
+- [ ] 메모리 누수 방지
+
+### order_num 자동 정렬 시스템
+```typescript
+// ✅ DO: order_num 자동 정렬 및 검증
+function reorderElements(
+    elements: Element[], 
+    updateElementOrder: (id: string, orderNum: number) => void
+): void {
+    // 부모별로 그룹화
+    const elementsByParent = elements.reduce((acc, element) => {
+        const parentKey = element.parent_id || 'root';
+        if (!acc[parentKey]) acc[parentKey] = [];
+        acc[parentKey].push(element);
+        return acc;
+    }, {} as Record<string, Element[]>);
+
+    // 각 그룹의 order_num 재정렬
+    Object.values(elementsByParent).forEach(group => {
+        group
+            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+            .forEach((element, index) => {
+                const expectedOrderNum = index + 1;
+                if (element.order_num !== expectedOrderNum) {
+                    updateElementOrder(element.id, expectedOrderNum);
+                }
+            });
+    });
+}
+
+// 사용법: 페이지 로드 후 자동 정렬 (지연 실행)
+useEffect(() => {
+    if (elements.length > 0) {
+        setTimeout(() => {
+            reorderElements(elements, updateElementOrder);
+        }, 50); // 짧은 지연으로 다른 업데이트 후 실행
+    }
+}, [elements.length]);
+```
+
+### Table 에디터 레이아웃 패턴
+```typescript
+// ✅ DO: 통일된 Table 에디터 레이아웃
+export function TableHeaderEditor({ element, onChange }: EditorProps) {
+    return (
+        <div className="component-props">
+            {/* 첫 번째 그룹: 기본 속성 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <Table className="legend-icon" />
+                    Table Header Properties
+                </legend>
+                
+                <PropertyInput
+                    icon={<Type />}
+                    label="컬럼 헤더 텍스트"
+                    value={element.props.children}
+                    onChange={(children) => onChange({ children })}
+                />
+                
+                <PropertySelect
+                    icon={<Pin />}
+                    label="정렬 방향"
+                    value={element.props.sortDirection}
+                    options={sortDirectionOptions}
+                    onChange={(sortDirection) => onChange({ sortDirection })}
+                />
+            </fieldset>
+
+            {/* 두 번째 그룹: 컬럼 관리 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <Grid className="legend-icon" />
+                    Column Management
+                </legend>
+                
+                <div className="tab-overview">
+                    <span>Total columns: {columns.length}</span>
+                    <span className="help-text">관리 중인 테이블 컬럼</span>
+                </div>
+                
+                {/* 컬럼 추가/삭제 UI */}
+                <div className="column-actions">
+                    <Button onPress={() => addColumn()}>
+                        <SquarePlus /> Add Column
+                    </Button>
+                </div>
+            </fieldset>
+        </div>
+    );
+}
+```
+
+## 알려진 주의사항 및 제한사항
+
+### 개발 시 주의할 점
+1. **BuilderCore.tsx 복잡성**: 큰 컴포넌트는 기능별로 분리된 커스텀 훅 사용 권장
+2. **Supabase 동기화**: 상태와 데이터베이스 간 일관성 유지에 주의
+3. **iframe 메시지 처리**: 보안 및 성능을 위해 메시지 검증 필수
+4. **타입 안전성**: `any` 타입 사용 지양, 구체적인 타입 정의 권장
+5. **메모리 관리**: 이벤트 리스너와 타이머 정리 필수
+6. **React Aria 키 처리**: Collection 컴포넌트에서 항상 `value` 필드 포함하여 키 에러 방지
+7. **Proxy 에러 대응**: Immer와 히스토리에서 revoked proxy 에러 방지를 위해 try-catch 사용
+8. **order_num 일관성**: 요소 추가/삭제 후 자동 정렬 시스템으로 순서 보장
+9. **연결 요소 관리**: Tab/Panel 같은 연결된 요소는 일괄 삭제 처리
+
+### 성능 고려사항
+```typescript
+// ✅ DO: 성능 모니터링
+import { PerformanceMonitor } from '../utils/performanceMonitor';
+
+export function useOptimizedElementUpdate() {
+    const updateElement = useCallback(async (elementId: string, props: any) => {
+        PerformanceMonitor.startMeasure('elementUpdate');
+        
+        try {
+            // 1. 즉시 UI 업데이트 (낙관적 업데이트)
+            updateElementLocal(elementId, props);
+            
+            // 2. 디바운스된 서버 동기화
+            debouncedSupabaseUpdate(elementId, props);
+        } finally {
+            PerformanceMonitor.endMeasure('elementUpdate');
+        }
+    }, []);
+    
+    return { updateElement };
+}
+```
+
+### 디버깅 도구
+```typescript
+// ✅ DO: 개발 모드 디버깅
+if (process.env.NODE_ENV === 'development') {
+    // 요소 생성 로그
+    console.log(`🧩 Element created: ${newElement.id} (${newElement.tag})`);
+    
+    // 상태 변경 추적
+    console.log('🔄 Store state changed:', {
+        selectedElementId,
+        elementsCount: elements.length
+    });
+    
+    // 성능 경고
+    if (renderTime > 16) {
+        console.warn(`⚠️ Slow render detected: ${renderTime}ms`);
+    }
+}
+```
+
+## 테마 및 디자인 토큰 시스템
+
+### 디자인 토큰 구조
+```typescript
+// ✅ DO: 체계적인 디자인 토큰 관리
+interface DesignToken {
+    id: string;
+    name: string;
+    type: 'color' | 'spacing' | 'typography' | 'shadow' | 'border';
+    value: any;
+    scope: 'raw' | 'semantic';
+    alias_of?: string;
+    css_variable: string;
+}
+
+// Raw 토큰 (기본값)
+const rawTokens: DesignToken[] = [
+    {
+        id: '1',
+        name: 'blue-500',
+        type: 'color',
+        value: { r: 59, g: 130, b: 246, a: 1 },
+        scope: 'raw',
+        css_variable: '--color-blue-500'
+    }
+];
+
+// Semantic 토큰 (의미 기반)
+const semanticTokens: DesignToken[] = [
+    {
+        id: '2',
+        name: 'primary',
+        type: 'color',
+        value: 'blue-500',
+        scope: 'semantic',
+        alias_of: 'blue-500',
+        css_variable: '--color-primary'
+    }
+];
+```
+
+### CSS 변수 생성
+```typescript
+// ✅ DO: 자동 CSS 변수 생성
+export function generateCSSVariables(tokens: DesignToken[]): string {
+    return tokens.map(token => {
+        const value = token.scope === 'semantic' && token.alias_of
+            ? `var(--${token.alias_of.replace(/\./g, '-')})`
+            : formatTokenValue(token.value, token.type);
+            
+        return `${token.css_variable}: ${value};`;
+    }).join('\n');
+}
+
+function formatTokenValue(value: any, type: string): string {
+    switch (type) {
+        case 'color':
+            if (typeof value === 'object') {
+                return `rgba(${value.r}, ${value.g}, ${value.b}, ${value.a})`;
+            }
+            return value;
+        case 'spacing':
+            return `${value}px`;
+        case 'typography':
+            return `${value.size}px/${value.lineHeight} ${value.family}`;
+        default:
+            return String(value);
+    }
+}
+```
+
+## 컴포넌트 라이브러리 확장
+
+### 새로운 컴포넌트 추가 절차
+1. **React Aria 컴포넌트 생성**: `src/builder/components/NewComponent.tsx`
+2. **속성 에디터 생성**: `src/builder/inspector/properties/editors/NewComponentEditor.tsx`
+3. **기본값 정의**: `getDefaultProps` 함수에 추가
+4. **컴포넌트 팩토리 등록**: `ComponentFactory.ts`에 등록
+5. **Storybook 스토리 작성**: `src/stories/NewComponent.stories.tsx`
+
+```typescript
+// ✅ DO: 새 컴포넌트 등록 예시
+// 1. ComponentFactory.ts에 등록
+export const ComponentFactory = {
+    // ... 기존 컴포넌트들
+    'my-new-component': {
+        create: (props: any) => <MyNewComponent {...props} />,
+        defaultProps: {
+            text: '새 컴포넌트',
+            variant: 'default',
+            size: 'md'
+        },
+        editableProps: ['text', 'variant', 'size'],
+        category: 'form' // 또는 'layout', 'content', 'media'
+    }
+};
+
+// 2. 속성 에디터 생성
+export function MyNewComponentEditor({ element, onChange }: EditorProps) {
+    return (
+        <div className="space-y-4">
+            <PropertyInput
+                label="텍스트"
+                value={element.props.text}
+                onChange={(text) => onChange({ text })}
+            />
+            <PropertySelect
+                label="변형"
+                value={element.props.variant}
+                options={[
+                    { value: 'default', label: '기본' },
+                    { value: 'outline', label: '아웃라인' }
+                ]}
+                onChange={(variant) => onChange({ variant })}
+            />
+        </div>
+    );
+}
+```
+
+## 고급 상태 관리 패턴
+
+### 히스토리 관리 (Undo/Redo) - 개선된 패턴
+```typescript
+// ✅ DO: 개선된 Proxy 안전 히스토리 관리
+interface HistoryEntry {
+    id: string;
+    type: 'add' | 'update' | 'remove' | 'move';
+    elementId: string;
+    data: {
+        element?: Element;
+        prevElement?: Element;
+        props?: ComponentElementProps;
+        prevProps?: ComponentElementProps;
+        childElements?: Element[];
+    };
+}
+
+// Proxy 에러 안전 처리 패턴
+function safeDeepCopy<T>(data: T): T {
+    try {
+        return JSON.parse(JSON.stringify(data));
+    } catch (proxyError: any) {
+        console.warn('⚠️ Proxy 오류로 원본 객체 사용:', proxyError);
+        return data; // 원본 객체 반환 (fallback)
+    }
+}
+
+// Undo 함수 개선 패턴
+const undo = useCallback(() => {
+    const entry = historyManager.undo();
+    if (!entry) return;
+
+    try {
+        let prevProps, prevElement;
+        
+        // 안전한 히스토리 데이터 준비
+        if (entry.data.prevProps) {
+            prevProps = safeDeepCopy(entry.data.prevProps);
+        }
+        if (entry.data.prevElement) {
+            prevElement = safeDeepCopy(entry.data.prevElement);
+        }
+
+        // Immer produce로 상태 업데이트
+        set(produce((state) => {
+            switch (entry.type) {
+                case 'update': {
+                    const element = state.elements.find(el => el.id === entry.elementId);
+                    if (element && prevProps) {
+                        element.props = prevProps;
+                    }
+                    break;
+                }
+                case 'remove': {
+                    // 삭제된 요소 복원
+                    if (entry.data.element) {
+                        const elementToRestore = safeDeepCopy(entry.data.element);
+                        state.elements.push(elementToRestore);
+                    }
+                    break;
+                }
+                case 'add': {
+                    // 추가된 요소 제거
+                    state.elements = state.elements.filter(el => el.id !== entry.elementId);
+                    break;
+                }
+            }
+        }));
+    } catch (error: unknown) {
+        console.error('⚠️ Undo 실행 중 오류:', error);
+    }
+}, [set, historyManager]);
+```
+
+### 복잡한 폼 상태 관리
+```typescript
+// ✅ DO: 폼 상태와 검증
+interface FormState<T> {
+    values: T;
+    errors: Partial<Record<keyof T, string>>;
+    touched: Partial<Record<keyof T, boolean>>;
+    isValid: boolean;
+    isDirty: boolean;
+}
+
+export function useFormState<T extends Record<string, any>>(
+    initialValues: T,
+    validationSchema?: z.ZodSchema<T>
+) {
+    const [state, setState] = useState<FormState<T>>({
+        values: initialValues,
+        errors: {},
+        touched: {},
+        isValid: true,
+        isDirty: false
+    });
+    
+    const setValue = useCallback(<K extends keyof T>(
+        field: K,
+        value: T[K]
+    ) => {
+        setState(prev => {
+            const newValues = { ...prev.values, [field]: value };
+            
+            // 검증 실행
+            let errors = {};
+            let isValid = true;
+            
+            if (validationSchema) {
+                try {
+                    validationSchema.parse(newValues);
+                } catch (error) {
+                    if (error instanceof z.ZodError) {
+                        errors = error.flatten().fieldErrors;
+                        isValid = false;
+                    }
+                }
+            }
+            
+            return {
+                values: newValues,
+                errors,
+                touched: { ...prev.touched, [field]: true },
+                isValid,
+                isDirty: true
+            };
+        });
+    }, [validationSchema]);
+    
+    const reset = useCallback(() => {
+        setState({
+            values: initialValues,
+            errors: {},
+            touched: {},
+            isValid: true,
+            isDirty: false
+        });
+    }, [initialValues]);
+    
+    return {
+        ...state,
+        setValue,
+        reset
+    };
+}
+```
+
+## 국제화 및 접근성
+
+### 접근성 고려사항
+```typescript
+// ✅ DO: 접근성을 고려한 컴포넌트
+import { useId } from 'react';
+import { VisuallyHidden } from 'react-aria-components';
+
+export function AccessibleFormField({ 
+    label, 
+    error, 
+    children,
+    isRequired = false 
+}: {
+    label: string;
+    error?: string;
+    children: React.ReactElement;
+    isRequired?: boolean;
+}) {
+    const id = useId();
+    const errorId = useId();
+    
+    return (
+        <div className="form-field">
+            <label 
+                htmlFor={id}
+                className="block text-sm font-medium text-gray-700"
+            >
+                {label}
+                {isRequired && (
+                    <span className="text-red-500 ml-1" aria-label="필수 항목">
+                        *
+                    </span>
+                )}
+            </label>
+            
+            {React.cloneElement(children, {
+                id,
+                'aria-describedby': error ? errorId : undefined,
+                'aria-invalid': !!error,
+                'aria-required': isRequired
+            })}
+            
+            {error && (
+                <div
+                    id={errorId}
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                >
+                    <VisuallyHidden>오류: </VisuallyHidden>
+                    {error}
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+### 키보드 네비게이션
+```typescript
+// ✅ DO: 키보드 단축키 지원
+export function useKeyboardShortcuts() {
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Ctrl/Cmd + Z: 실행 취소
+            if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+                event.preventDefault();
+                undo();
+            }
+            
+            // Ctrl/Cmd + Shift + Z: 다시 실행
+            if ((event.ctrlKey || event.metaKey) && event.key === 'z' && event.shiftKey) {
+                event.preventDefault();
+                redo();
+            }
+            
+            // Delete: 선택된 요소 삭제
+            if (event.key === 'Delete' && selectedElementId) {
+                event.preventDefault();
+                deleteElement(selectedElementId);
+            }
+            
+            // Escape: 선택 해제
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                selectElement(null);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [selectedElementId, undo, redo, deleteElement, selectElement]);
+}
+```
+
+## 배포 및 환경 관리
+
+### 환경별 설정
+```typescript
+// ✅ DO: 환경별 설정 관리
+interface AppConfig {
+    apiUrl: string;
+    supabaseUrl: string;
+    supabaseKey: string;
+    isDevelopment: boolean;
+    isProduction: boolean;
+    enableDebugLogs: boolean;
+}
+
+export const config: AppConfig = {
+    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL!,
+    supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY!,
+    isDevelopment: import.meta.env.DEV,
+    isProduction: import.meta.env.PROD,
+    enableDebugLogs: import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true'
+};
+
+// 환경 변수 검증
+function validateConfig() {
+    const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+    const missing = requiredVars.filter(key => !import.meta.env[key]);
+    
+    if (missing.length > 0) {
+        throw new Error(`필수 환경 변수가 누락되었습니다: ${missing.join(', ')}`);
+    }
+}
+
+validateConfig();
+```
+
+### 빌드 최적화
+```typescript
+// vite.config.ts 최적화 설정
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+
+export default defineConfig({
+    plugins: [react()],
+    build: {
+        // 청크 분할 최적화
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                    ui: ['react-aria-components'],
+                    utils: ['lodash', 'zustand']
+                }
+            }
+        },
+        // 번들 크기 분석
+        reportCompressedSize: true,
+        // 소스맵 생성 (프로덕션에서는 제거)
+        sourcemap: process.env.NODE_ENV !== 'production'
+    },
+    // 개발 서버 설정
+    server: {
+        port: 3000,
+        open: true,
+        cors: true
+    }
+});
+```
+
+## 마이그레이션 및 데이터 백업
+
+### 데이터베이스 마이그레이션
+```sql
+-- ✅ DO: 안전한 마이그레이션 스크립트 예시
+-- 2024-03-01: elements 테이블에 version 컬럼 추가
+ALTER TABLE public.elements 
+ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
+
+-- 인덱스 추가
+CREATE INDEX IF NOT EXISTS idx_elements_version 
+ON public.elements(version);
+
+-- 데이터 마이그레이션 (필요한 경우)
+UPDATE public.elements 
+SET version = 1 
+WHERE version IS NULL;
+
+-- NOT NULL 제약 조건 추가
+ALTER TABLE public.elements 
+ALTER COLUMN version SET NOT NULL;
+```
+
+### 백업 전략
+```typescript
+// ✅ DO: 자동 백업 유틸리티
+export class BackupService {
+    static async exportProject(projectId: string): Promise<ProjectBackup> {
+        try {
+            const [project, pages, elements, tokens] = await Promise.all([
+                ProjectsApiService.getProject(projectId),
+                PagesApiService.getProjectPages(projectId),
+                ElementsApiService.getProjectElements(projectId),
+                DesignTokensApiService.getProjectTokens(projectId)
+            ]);
+            
+            const backup: ProjectBackup = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                project,
+                pages,
+                elements,
+                designTokens: tokens
+            };
+            
+            return backup;
+        } catch (error) {
+            throw new Error(`프로젝트 백업 실패: ${error.message}`);
+        }
+    }
+    
+    static async importProject(backup: ProjectBackup): Promise<string> {
+        // 백업 데이터 검증 및 복원 로직
+        // 트랜잭션 처리로 원자성 보장
+    }
+}
+```
+
+---
+
+이 통합 규칙 문서는 XStudio 프로젝트의 개발, 유지보수, 확장을 위한 종합적인 가이드라인을 제공합니다. 새로운 기능 추가나 기존 코드 수정 시 이 규칙들을 참고하여 일관성 있고 안정적인 코드베이스를 유지하시기 바랍니다.
