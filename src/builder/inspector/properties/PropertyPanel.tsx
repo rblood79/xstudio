@@ -17,6 +17,7 @@ import {
     ListBoxItemEditor,
     GridListEditor,
     GridListItemEditor,
+    DataGridEditor, // DataGridEditor 추가
     SelectItemEditor,
     TabsEditor,
     TabEditor,
@@ -50,6 +51,7 @@ const COMPONENT_EDITORS: Record<string, React.ComponentType<PropertyEditorProps>
     ListBoxItem: ListBoxItemEditor,
     GridList: GridListEditor,
     GridListItem: GridListItemEditor,
+    DataGrid: DataGridEditor, // DataGrid 매핑 추가
     SelectItem: SelectItemEditor,
     ComboBoxItem: ComboBoxItemEditor,
     Tabs: TabsEditor,

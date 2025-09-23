@@ -352,6 +352,14 @@ export interface GridListItemElementProps extends BaseElementProps {
     isDisabled?: boolean;
 }
 
+export interface DataGridElementProps extends BaseElementProps {
+    data?: any[]; // DataGrid에 표시할 데이터
+    columns?: Array<{ key: string; label: string }>; // 컬럼 정의
+    itemTemplate?: string; // 각 셀의 내용 템플릿
+    maxRows?: number; // 가상화를 위한 최대 행 수
+    selectionMode?: 'none' | 'single' | 'multiple';
+}
+
 export interface TextElementProps extends BaseElementProps {
     children?: React.ReactNode;
 }
@@ -403,6 +411,7 @@ export type ComponentElementProps =
     | ListBoxItemElementProps
     | GridListElementProps
     | GridListItemElementProps
+    | DataGridElementProps // DataGridProps 추가
     | TextElementProps
     | DivElementProps
     | SectionElementProps
@@ -727,6 +736,19 @@ export function createDefaultGridListItemProps(): GridListItemElementProps {
     };
 }
 
+export function createDefaultDataGridProps(): DataGridElementProps {
+    return {
+        data: [],
+        columns: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: '이름' }
+        ],
+        itemTemplate: '{{name}}',
+        maxRows: 100,
+        selectionMode: 'none',
+    };
+}
+
 export function createDefaultTextProps(): TextElementProps {
     return {
         children: 'Text' // 기본 텍스트 내용 추가
@@ -781,6 +803,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
         ListBoxItem: createDefaultListBoxItemProps,
         GridList: createDefaultGridListProps,
         GridListItem: createDefaultGridListItemProps,
+        DataGrid: createDefaultDataGridProps,
         Text: createDefaultTextProps,
         Div: createDefaultDivProps,
         Section: createDefaultSectionProps,
