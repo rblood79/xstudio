@@ -67,6 +67,7 @@ const reorderElements = async (
     // 특별 정렬이 필요한 컴포넌트들 확인
     const isTabsChildren = parentTag === 'Tabs';
     const isListBoxChildren = parentTag === 'ListBox';
+    const isDataGridChildren = parentTag === 'DataGrid'; // DataGrid 추가
     const isGridListChildren = parentTag === 'GridList';
     const isMenuChildren = parentTag === 'Menu';
     const isComboBoxChildren = parentTag === 'ComboBox';
@@ -75,7 +76,7 @@ const reorderElements = async (
     const isToggleButtonChildren = parentTag === 'ToggleButtonGroup';
 
     // 디버깅: 특별 정렬 대상 컴포넌트 확인
-    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+    if (isTabsChildren || isListBoxChildren || isDataGridChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
         parentKey,
         parentElement: parentElement ? { id: parentElement.id, tag: parentElement.tag } : null,
@@ -91,8 +92,8 @@ const reorderElements = async (
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
           // order_num이 같을 경우, title로 추가 정렬 (Tab 1 < Tab 2 < Tab 3)
-          const titleA = (a.props as any)?.title || '';
-          const titleB = (b.props as any)?.title || '';
+          const titleA = (a.props as { title?: string }).title || '';
+          const titleB = (b.props as { title?: string }).title || '';
           return titleA.localeCompare(titleB);
         }
         return orderDiff;
@@ -102,8 +103,8 @@ const reorderElements = async (
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
           // order_num이 같을 경우, title로 추가 정렬
-          const titleA = (a.props as any)?.title || '';
-          const titleB = (b.props as any)?.title || '';
+          const titleA = (a.props as { title?: string }).title || '';
+          const titleB = (b.props as { title?: string }).title || '';
           return titleA.localeCompare(titleB);
         }
         return orderDiff;
@@ -116,10 +117,10 @@ const reorderElements = async (
         sorted.push(tab);
 
         // Tab의 tabId와 일치하는 Panel 찾기
-        const tabId = (tab.props as any)?.tabId;
+        const tabId = (tab.props as { tabId?: string }).tabId;
         if (tabId) {
           const matchingPanel = panels.find(panel => {
-            const panelTabId = (panel.props as any)?.tabId;
+            const panelTabId = (panel.props as { tabId?: string }).tabId;
             return panelTabId === tabId && !usedPanelIds.has(panel.id);
           });
 
@@ -140,13 +141,13 @@ const reorderElements = async (
       console.log(`📋 Tabs 하위 요소 재정렬: ${tabs.length}개 Tab, ${panels.length}개 Panel`);
       console.log('📋 Tab 정렬 순서:');
       tabs.forEach((tab, index) => {
-        console.log(`  ${index + 1}. ${(tab.props as any)?.title} (order: ${tab.order_num}, tabId: ${(tab.props as any)?.tabId?.slice(0, 8)}...)`);
+        console.log(`  ${index + 1}. ${(tab.props as { title?: string }).title} (order: ${tab.order_num}, tabId: ${(tab.props as { tabId?: string }).tabId?.slice(0, 8)}...)`);
       });
       console.log('📋 최종 정렬된 순서:');
       sorted.forEach((el, index) => {
-        console.log(`  ${index + 1}. ${el.tag}: ${(el.props as any)?.title} (new order: ${index + 1})`);
+        console.log(`  ${index + 1}. ${el.tag}: ${(el.props as { title?: string }).title} (new order: ${index + 1})`);
       });
-    } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+    } else if (isListBoxChildren || isDataGridChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       // 컬렉션 컴포넌트들의 아이템 정렬 (ToggleButton 포함)
       console.log(`📋 ${parentTag} 하위 요소 재정렬: ${children.length}개 아이템`);
 
@@ -154,8 +155,8 @@ const reorderElements = async (
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
           // order_num이 같을 경우, children 텍스트나 title, label로 추가 정렬
-          const textA = (a.props as any)?.children || (a.props as any)?.title || (a.props as any)?.label || '';
-          const textB = (b.props as any)?.children || (b.props as any)?.title || (b.props as any)?.label || '';
+          const textA = (a.props as { children?: React.ReactNode; title?: string; label?: string }).children || (a.props as { children?: React.ReactNode; title?: string; label?: string }).title || (a.props as { children?: React.ReactNode; title?: string; label?: string }).label || '';
+          const textB = (b.props as { children?: React.ReactNode; title?: string; label?: string }).children || (b.props as { children?: React.ReactNode; title?: string; label?: string }).title || (b.props as { children?: React.ReactNode; title?: string; label?: string }).label || '';
           const comparison = String(textA).localeCompare(String(textB));
 
           if (comparison === 0) {
@@ -169,7 +170,7 @@ const reorderElements = async (
 
       console.log(`📋 ${parentTag} 정렬된 순서:`);
       sorted.forEach((item, index) => {
-        const text = (item.props as any)?.children || (item.props as any)?.title || (item.props as any)?.label || 'Untitled';
+        const text = (item.props as { children?: React.ReactNode; title?: string; label?: string }).children || (item.props as { children?: React.ReactNode; title?: string; label?: string }).title || (item.props as { children?: React.ReactNode; title?: string; label?: string }).label || 'Untitled';
         console.log(`  ${index + 1}. ${item.tag}: ${text} (order: ${item.order_num} → ${index + 1})`);
       });
     } else {
@@ -229,8 +230,8 @@ const reorderElements = async (
           collectionItems
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
             .forEach(el => {
-              const text = (el.props as any)?.children || (el.props as any)?.title || (el.props as any)?.label || 'Untitled';
-              const extraInfo = el.tag === 'Tab' || el.tag === 'Panel' ? `, tabId: ${(el.props as any)?.tabId}` : '';
+              const text = (el.props as { children?: React.ReactNode; title?: string; label?: string }).children || (el.props as { children?: React.ReactNode; title?: string; label?: string }).title || (el.props as { children?: React.ReactNode; title?: string; label?: string }).label || 'Untitled';
+              const extraInfo = el.tag === 'Tab' || el.tag === 'Panel' ? `, tabId: ${(el.props as { tabId?: string }).tabId}` : '';
               console.log(`  ${el.tag}: ${text} (order: ${el.order_num}${extraInfo})`);
             });
         }
@@ -707,8 +708,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
                 console.log(`📥 복원 요소 ${index + 1}:`, {
                   id: el.id,
                   tag: el.tag,
-                  tabId: (el.props as any)?.tabId,
-                  title: (el.props as any)?.title,
+                  tabId: (el.props as { tabId?: string }).tabId,
+                  title: (el.props as { title?: string }).title,
                   order_num: el.order_num
                 });
               });
@@ -1095,7 +1096,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     // Tab 또는 Panel 삭제 시 특별 처리: 연결된 Panel 또는 Tab도 함께 삭제
     if (element.tag === 'Tab' || element.tag === 'Panel') {
-      const tabId = (element.props as ComponentElementProps & { tabId?: string }).tabId;
+      const tabId = (element.props as { tabId?: string }).tabId;
 
       console.log(`🔍 ${element.tag} 삭제 중 - tabId:`, tabId, 'element.props:', element.props);
 
@@ -1112,19 +1113,19 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           console.log(`🔍 형제 요소들:`, siblingElements.map(el => ({
             id: el.id,
             tag: el.tag,
-            tabId: (el.props as ComponentElementProps & { tabId?: string }).tabId
+            tabId: (el.props as { tabId?: string }).tabId
           })));
 
           const relatedElement = state.elements.find(el =>
             el.parent_id === parentElement.id &&
             el.tag !== element.tag && // 다른 타입(Tab <-> Panel)
-            (el.props as ComponentElementProps & { tabId?: string }).tabId === tabId // 같은 tabId를 가진 요소
+            (el.props as { tabId?: string }).tabId === tabId // 같은 tabId를 가진 요소
           );
 
           console.log(`🔍 연관 요소 찾기 결과:`, relatedElement ? {
             id: relatedElement.id,
             tag: relatedElement.tag,
-            tabId: (relatedElement.props as ComponentElementProps & { tabId?: string }).tabId
+            tabId: (relatedElement.props as { tabId?: string }).tabId
           } : 'null');
 
           if (relatedElement) {
@@ -1243,8 +1244,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
             console.log(`🏷️ 삭제될 ${el.tag}:`, {
               id: el.id,
               tag: el.tag,
-              tabId: (el.props as any)?.tabId,
-              title: (el.props as any)?.title,
+              tabId: (el.props as { tabId?: string }).tabId,
+              title: (el.props as { title?: string }).title,
               order_num: el.order_num
             });
           }
@@ -1281,7 +1282,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     if (currentPageId) {
       // 컬렉션 컴포넌트의 아이템들 확인
       const isCollectionItem = element.tag === 'Tab' || element.tag === 'Panel' ||
-        element.tag === 'ListBoxItem' || element.tag === 'GridListItem' ||
+        element.tag === 'ListBoxItem' || element.tag === 'GridListItem' || element.tag === 'DataGrid' || // DataGrid 추가
         element.tag === 'MenuItem' || element.tag === 'ComboBoxItem' ||
         element.tag === 'SelectItem' || element.tag === 'TreeItem' || element.tag === 'ToggleButton';
 

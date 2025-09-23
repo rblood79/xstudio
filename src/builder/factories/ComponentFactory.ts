@@ -41,6 +41,7 @@ export class ComponentFactory {
             ListBox: this.createListBox,
             GridList: this.createGridList,
             Table: this.createTable,
+            DataGrid: this.createDataGrid,
         };
 
         const creator = creators[tag as keyof typeof creators];
@@ -1846,6 +1847,80 @@ export class ComponentFactory {
             parent: parentData,
             children: childrenData,
             allElements: [parentData, ...childrenData]
+        };
+    }
+
+    /**
+     * DataGrid 컴포넌트 생성
+     */
+    private static async createDataGrid(
+        parentElement: Element | null,
+        pageId: string,
+        elements: Element[] // 현재 요소들을 받아서 전달
+    ): Promise<ComponentCreationResult> {
+        const parentId = parentElement?.id || null;
+        const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+        const parent: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
+            tag: 'DataGrid',
+            props: {
+                selectionMode: 'none',
+                itemTemplate: '{{name}} - {{email}}',
+                maxRows: 100,
+                columns: [
+                    { key: 'id', label: 'ID' },
+                    { key: 'name', label: '이름' },
+                    { key: 'email', label: '이메일' }
+                ]
+            } as ComponentElementProps,
+            page_id: pageId,
+            parent_id: parentId,
+            order_num: orderNum
+        };
+
+        // 부모 요소 생성 (로컬 데이터로만)
+        const parentData = {
+            ...parent,
+            id: ElementUtils.generateId(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        } as Element;
+
+        // 모든 요소(부모)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
+        const store = useStore.getState();
+        const currentElements = store.elements;
+        const newElements = [...currentElements, parentData];
+        store.setElements(newElements);
+
+        // 히스토리 기록 - 복합 컴포넌트 생성
+        const { saveSnapshot } = store as unknown as { saveSnapshot: (elements: Element[], description: string) => void };
+        if (saveSnapshot) {
+            saveSnapshot(newElements, 'DataGrid 컴포넌트 생성');
+        }
+
+        // 백그라운드에서 DB에 순차 저장
+        try {
+            const parentToSave = {
+                ...parentData,
+                order_num: HierarchyManager.calculateNextOrderNum(parentId, await ElementUtils.getElementsByPageId(pageId))
+            };
+            const savedParent = await ElementUtils.createElement(parentToSave);
+
+            const updatedElements = store.elements.map(el =>
+                el.id === parentData.id ? { ...el, id: savedParent.id } : el
+            );
+            store.setElements(updatedElements);
+
+            console.log(`🎯 DataGrid 요소 저장 완료: ${savedParent.id}`);
+
+        } catch (error) {
+            console.error('Background save failed:', error);
+        }
+
+        return {
+            parent: parentData,
+            children: [], // DataGrid는 자식 요소 없이 자체적으로 데이터 렌더링
+            allElements: [parentData]
         };
     }
 }

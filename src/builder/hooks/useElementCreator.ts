@@ -33,6 +33,7 @@ import {
     createDefaultListBoxItemProps,
     createDefaultGridListProps,
     createDefaultGridListItemProps,
+    createDefaultDataGridProps, // DataGrid props 추가
     createDefaultTextProps,
     createDefaultDivProps,
     createDefaultSectionProps,
@@ -160,6 +161,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 return createDefaultGridListProps();
             case 'GridListItem':
                 return createDefaultGridListItemProps();
+            case 'DataGrid': // DataGrid 추가
+                return createDefaultDataGridProps();
             case 'Text':
                 return createDefaultTextProps();
             case 'Div':
@@ -218,7 +221,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 // 복합 컴포넌트인지 확인
                 const complexComponents = [
                     'TextField', 'ToggleButtonGroup', 'CheckboxGroup', 'RadioGroup',
-                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table'
+                    'Select', 'ComboBox', 'Tabs', 'Tree', 'TagGroup', 'ListBox', 'GridList', 'Table', 'DataGrid'
                 ];
 
                 const operation = async () => {

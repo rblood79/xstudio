@@ -13,6 +13,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'ComboBox': lazy(() => import('../components/ComboBox').then(module => ({ default: module.ComboBox }))),
     'ListBox': lazy(() => import('../components/ListBox').then(module => ({ default: module.ListBox }))),
     'GridList': lazy(() => import('../components/GridList').then(module => ({ default: module.GridList }))),
+    'DataGrid': lazy(() => import('../components/DataGrid').then(module => ({ default: module.DataGrid }))), // DataGrid 추가
     'Tree': lazy(() => import('../components/Tree').then(module => ({ default: module.Tree }))),
     'Table': lazy(() => import('../components/Table').then(module => ({ default: module.Table }))),
     'Tabs': lazy(() => import('../components/Tabs').then(module => ({ default: module.Tabs }))),

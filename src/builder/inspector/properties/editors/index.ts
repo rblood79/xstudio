@@ -13,6 +13,7 @@ export { ListBoxEditor } from './ListBoxEditor';
 export { ListBoxItemEditor } from './ListBoxItemEditor';
 export { GridListEditor } from './GridListEditor';
 export { GridListItemEditor } from './GridListItemEditor';
+export { DataGridEditor } from './DataGridEditor';
 export { SelectItemEditor } from './SelectItemEditor';
 export { TabsEditor } from './TabsEditor';
 export { TabEditor } from './TabEditor';
