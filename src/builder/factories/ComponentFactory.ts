@@ -1647,7 +1647,7 @@ export class ComponentFactory {
             {
                 id: ElementUtils.generateId(),
                 tag: 'Cell',
-                props: { ...createDefaultCellProps(), children: '홍길동' } as ComponentElementProps,
+                props: { ...createDefaultCellProps(), children: '이현준' } as ComponentElementProps,
                 parent_id: rowId,
                 page_id: pageId,
                 order_num: 0,
@@ -1655,7 +1655,7 @@ export class ComponentFactory {
             {
                 id: ElementUtils.generateId(),
                 tag: 'Cell',
-                props: { ...createDefaultCellProps(), children: '25' } as ComponentElementProps,
+                props: { ...createDefaultCellProps(), children: '18' } as ComponentElementProps,
                 parent_id: rowId,
                 page_id: pageId,
                 order_num: 1,
@@ -1663,7 +1663,7 @@ export class ComponentFactory {
             {
                 id: ElementUtils.generateId(),
                 tag: 'Cell',
-                props: { ...createDefaultCellProps(), children: 'hong@example.com' } as ComponentElementProps,
+                props: { ...createDefaultCellProps(), children: 'hyunjunlee@gmail.com' } as ComponentElementProps,
                 parent_id: rowId,
                 page_id: pageId,
                 order_num: 2,
