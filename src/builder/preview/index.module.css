@@ -1,37 +1,6 @@
-/*.root {
-    font-family: system-ui, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-size: 14px;
-    font-weight: 400;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -webkit-user-drag: none;
-    height: 100%;
-}
-
-
-#root,
-.main {
-    width: inherit;
-    height: inherit;
-    display: inherit;
-    flex-direction: inherit;
-    align-items: inherit;
-    justify-content: inherit;
-}*/
-
 @layer utilities {
-
-    div,
-    section,
-    input {
-        cursor: default;
+    :root {
+        --highlight-background: var(--color-primary-500);
+        --highlight-foreground: var(--color-primary-50);
     }
 }
