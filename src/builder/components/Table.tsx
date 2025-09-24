@@ -62,9 +62,9 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
         </TableHeader>
         <TableBody className={tableCellVariants({ variant: cellVariant })}>
           <Row>
-            <Cell>홍길동</Cell>
-            <Cell>25</Cell>
-            <Cell>hong@example.com</Cell>
+            <Cell>이현준</Cell>
+            <Cell>18</Cell>
+            <Cell>hyunjunlee@gmail.com</Cell>
           </Row>
         </TableBody>
       </>
