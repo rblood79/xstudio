@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAsyncList } from 'react-stately'; // AsyncListOptions, AsyncListLoadOptions 임포트 제거
 import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, Collection, SortDirection } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
@@ -38,6 +38,7 @@ interface TableColumn<T> {
   key: keyof T;
   label: string;
   allowsSorting?: boolean;
+  isRowHeader?: boolean;
 }
 
 interface TableProps<T extends Record<string, unknown>> {
@@ -94,7 +95,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     cellVariant = 'default',
     'data-testid': testId,
     data, // 정적 데이터
-    columns, // 컬럼 정의
+    columns = createDefaultTableProps().columns, // 컬럼 정의
     sortDescriptor: propSortDescriptor,
     onSortChange: propOnSortChange,
     selectionMode = 'none',
@@ -145,6 +146,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         ...item,
         id: String((item as T & Record<string, unknown>)[dataMapping?.idKey || 'id']) // idKey에 따라 id 설정
       }));
+
+      // 직접 데이터에 저장
+      setDirectData(mappedItems);
 
       return {
         items: mappedItems,
@@ -203,13 +207,68 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     });
   }, [enableAsyncLoading, data, sortDescriptor]);
 
+  // 직접 데이터 관리 (useAsyncList 우회)
+  const [directData, setDirectData] = useState<(T & { id: Key })[]>([]);
+
+  // useEffect를 사용하여 직접 데이터 로드
+  useEffect(() => {
+    if (enableAsyncLoading && apiUrlKey && endpointPath) {
+      console.log("🚀 Direct data loading started");
+      const loadData = async () => {
+        try {
+          const fetchApiData = apiConfig[apiUrlKey];
+          if (!fetchApiData || typeof fetchApiData !== 'function') {
+            console.error(`API handler for key '${apiUrlKey}' not found or is not a function.`);
+            return;
+          }
+
+          console.log("➡️ Direct calling fetchApiData for:", apiUrlKey, endpointPath, {});
+          const json: T[] | Record<string, unknown> = await fetchApiData(endpointPath, {});
+          console.log("⬅️ Direct received JSON data:", json);
+
+          // 데이터 매핑 적용 (기본값 사용)
+          const resultItems = Array.isArray(json) ? json : [];
+
+          const mappedItems = resultItems.map((item: T) => ({
+            ...item,
+            id: String((item as T & Record<string, unknown>).id || Math.random())
+          })) as (T & { id: Key })[];
+
+          console.log("✅ Direct mapped items:", mappedItems.length);
+          setDirectData(mappedItems);
+        } catch (error) {
+          console.error("Failed to load direct table data:", error);
+        }
+      };
+
+      loadData();
+    }
+  }, [enableAsyncLoading, apiUrlKey, endpointPath]);
+
   const finalData: (T & { id: Key })[] = useMemo(() => {
+    // 비동기 로딩이 활성화되고 directData가 있으면 우선 사용
+    if (enableAsyncLoading && directData.length > 0) {
+      console.log("🔄 Using direct data:", directData.length);
+      return directData;
+    }
+
     const items = enableAsyncLoading ? listItems : sortedStaticData;
-    return (items || []).map(item => ({
+    const processedItems = (items || []).map(item => ({
       ...item,
       id: (item as T & { id?: Key }).id || String(Math.random()), // Fallback for missing id
     })) as (T & { id: Key })[];
-  }, [enableAsyncLoading, listItems, sortedStaticData]);
+
+    return processedItems;
+  }, [enableAsyncLoading, listItems, sortedStaticData, directData]);
+
+  // 디버깅을 위한 로그 추가
+  console.log("🔍 finalData debug:", {
+    enableAsyncLoading,
+    listItemsLength: listItems?.length || 0,
+    finalDataLength: finalData.length,
+    sortedStaticDataLength: sortedStaticData?.length || 0,
+    directDataLength: directData.length
+  });
 
   // children이 없거나 빈 배열인 경우 기본 구조 제공 또는 data prop 사용
   const hasChildrenContent = children && React.Children.count(children) > 0;
@@ -217,11 +276,14 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const tableContent = useMemo(() => {
     // 비동기 로딩이 활성화되면 항상 데이터 기반으로 렌더링
     if (enableAsyncLoading && finalData && columns) {
+      console.log("🟢 Rendering async data-based table content");
+      console.log("📊 finalData length:", finalData.length);
+      console.log("📋 columns:", columns);
       return (
         <>
           <TableHeader className={tableHeaderVariants({ variant: headerVariant })} columns={columns}>
             {(column: TableColumn<T>) => (
-              <Column key={String(column.key)} allowsSorting={column.allowsSorting}>
+              <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
                 {({ sortDirection, allowsSorting }) => (
                   <>
                     {column.label}
@@ -265,7 +327,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         <>
           <TableHeader className={tableHeaderVariants({ variant: headerVariant })} columns={columns}>
             {(column: TableColumn<T>) => (
-              <Column key={String(column.key)} allowsSorting={column.allowsSorting}>
+              <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
                 {({ sortDirection, allowsSorting }) => (
                   <>
                     {column.label}
@@ -290,6 +352,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       );
     } else {
       // 기본 플레이스홀더 내용
+      console.log("🔴 Rendering placeholder content");
+      console.log("🔍 enableAsyncLoading:", enableAsyncLoading);
+      console.log("🔍 finalData:", finalData);
+      console.log("🔍 columns:", columns);
+      console.log("🔍 hasChildrenContent:", hasChildrenContent);
       return (
         <>
           <TableHeader className={tableHeaderVariants({ variant: headerVariant })}>
