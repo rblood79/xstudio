@@ -20,16 +20,32 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
+    let filteredData = largeMockData;
+
     // Simulate filtering if 'search' param is provided
     if (params && typeof params.search === 'string') {
         const searchTerm = params.search.toLowerCase();
-        return largeMockData.filter(user =>
+        filteredData = largeMockData.filter(user =>
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
             user.jobTitle.toLowerCase().includes(searchTerm)
         );
     }
-    return largeMockData;
+
+    // 페이지네이션 지원
+    if (params && typeof params.page === 'number' && typeof params.limit === 'number') {
+        const page = params.page;
+        const limit = params.limit;
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+
+        console.log(`📄 Pagination: page ${page}, limit ${limit}, startIndex ${startIndex}, endIndex ${endIndex}`);
+        console.log(`📊 Total data: ${filteredData.length}, returning: ${Math.min(endIndex, filteredData.length) - startIndex} items`);
+
+        return filteredData.slice(startIndex, endIndex);
+    }
+
+    return filteredData;
 };
 
 export const apiConfig: MockApiConfig = {
