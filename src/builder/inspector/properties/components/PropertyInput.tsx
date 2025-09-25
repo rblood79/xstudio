@@ -13,6 +13,7 @@ interface PropertyInputProps {
     }>;
     placeholder?: string;
     className?: string;
+    multiline?: boolean; // New prop for multiline input
 }
 
 export function PropertyInput({
@@ -22,17 +23,28 @@ export function PropertyInput({
     type = 'text',
     icon,
     placeholder,
-    className
+    className,
+    multiline // Destructure the new prop
 }: PropertyInputProps) {
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
-            <input
-                className='control-input'
-                type={type}
-                value={value || ''}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-            />
+            {multiline ? (
+                <textarea
+                    className='control-input resize-y' // Added resize-y for vertical resizing
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                    rows={4} // Default rows for textarea
+                />
+            ) : (
+                <input
+                    className='control-input'
+                    type={type}
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={placeholder}
+                />
+            )}
         </PropertyFieldset>
     );
 }

@@ -1,7 +1,7 @@
 import { Table as AriaTable, TableProps, Column as AriaColumn, Row as AriaRow, Cell as AriaCell, TableHeader as AriaTableHeader, TableBody as AriaTableBody, composeRenderProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import { forwardRef } from 'react';
-import { largeMockData, MockUserData } from '../../api/mockLargeDataV2';
+import { MockUserData } from '../api/mockLargeDataV2';
 import React from 'react';
 
 const dataGridStyles = tv({
