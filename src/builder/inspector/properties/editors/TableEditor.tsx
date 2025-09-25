@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { SquarePlus, Trash, Table, Grid, Settings, Tag } from 'lucide-react';
-import { PropertyInput, PropertySelect } from '../components';
+import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List, Key } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -8,7 +8,7 @@ import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import { Element } from '../../../../types/store';
 import { ElementUtils } from '../../../../utils/elementUtils';
-import { TableElementProps, ColumnElementProps } from '../../../../types/unified';
+import { TableElementProps } from '../../../../types/unified';
 
 // interface TableEditorProps {
 //     // element: Element;
@@ -20,6 +20,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     const setElements = useStore(state => state.setElements);
     const [isAddingColumn, setIsAddingColumn] = useState(false);
     const [newColumnLabel, setNewColumnLabel] = useState('');
+    const [newColumnKey, setNewColumnKey] = useState(''); // New state for column key
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
@@ -34,108 +35,13 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     }
 
     // Table 구조 분석
-    const tableHeader = elements.find(el => el.parent_id === element.id && el.tag === 'TableHeader');
     const tableBody = elements.find(el => el.parent_id === element.id && el.tag === 'TableBody');
-
-    // 현재 테이블의 컬럼들 찾기 (TableHeader > Column)
-    const columns = tableHeader
-        ? elements.filter(el => el.parent_id === tableHeader.id && el.tag === 'Column')
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-        : [];
 
     // 현재 테이블의 행들 찾기 (TableBody > Row)
     const rows = tableBody
         ? elements.filter(el => el.parent_id === tableBody.id && el.tag === 'Row')
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
         : [];
-
-    const addColumn = async () => {
-        if (!newColumnLabel.trim() || !tableHeader) return;
-
-        try {
-            const columnId = ElementUtils.generateId();
-            const newColumnElement: Element = {
-                id: columnId,
-                tag: 'Column',
-                props: {
-                    children: newColumnLabel,
-                    isRowHeader: false
-                },
-                parent_id: tableHeader.id,
-                page_id: element.page_id!,
-                order_num: columns.length,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-
-            // 데이터베이스에 저장
-            const { error } = await supabase
-                .from('elements')
-                .upsert([newColumnElement], {
-                    onConflict: 'id'
-                });
-
-            if (error) {
-                console.error('컬럼 추가 실패:', error);
-                return;
-            }
-
-            // 메모리 상태 업데이트
-            const updatedElements = [...elements, newColumnElement];
-
-            // 기존 행들에 새 Cell 추가
-            for (const row of rows) {
-                const cellId = ElementUtils.generateId();
-                const newCellElement: Element = {
-                    id: cellId,
-                    tag: 'Cell',
-                    props: {
-                        children: ''
-                    },
-                    parent_id: row.id,
-                    page_id: element.page_id!,
-                    order_num: columns.length,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
-
-                const { error: cellError } = await supabase
-                    .from('elements')
-                    .upsert([newCellElement], {
-                        onConflict: 'id'
-                    });
-
-                if (!cellError) {
-                    updatedElements.push(newCellElement);
-                }
-            }
-
-            setElements(updatedElements);
-
-            // 폼 초기화
-            setNewColumnLabel('');
-            setIsAddingColumn(false);
-
-            console.log('✅ 테이블 컬럼 추가 완료:', newColumnLabel);
-        } catch (error) {
-            console.error('컬럼 추가 중 오류:', error);
-        }
-    };
-
-    const removeColumn = async (columnId: string) => {
-        try {
-            const columnToRemove = elements.find(el => el.id === columnId);
-            if (!columnToRemove) return;
-
-            // removeElement 함수를 사용하여 연관된 Cell들도 함께 삭제
-            const { removeElement } = useStore.getState();
-            await removeElement(columnId);
-
-            console.log('✅ 테이블 컬럼 삭제 완료:', columnId);
-        } catch (error) {
-            console.error('컬럼 삭제 중 오류:', error);
-        }
-    };
 
     const addRow = async () => {
         if (!tableBody) return;
@@ -167,7 +73,9 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
 
             // 각 컬럼에 대한 셀 생성
             const cellsToCreate: Element[] = [];
-            for (let i = 0; i < columns.length; i++) {
+            const columnsFromProps = (currentProps as TableElementProps)?.columns || [];
+
+            for (let i = 0; i < columnsFromProps.length; i++) {
                 const cellId = ElementUtils.generateId();
                 const newCellElement: Element = {
                     id: cellId,
@@ -226,10 +134,104 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         });
     };
 
+    const handleAddColumnToTableProps = () => {
+        if (!newColumnLabel.trim() || !newColumnKey.trim()) return;
+
+        const currentColumns = (currentProps as TableElementProps)?.columns || [];
+        const newColumn = {
+            key: newColumnKey.trim(),
+            label: newColumnLabel.trim(),
+            allowsSorting: true, // Default to sortable
+        };
+
+        updateTableProps({
+            columns: [...currentColumns, newColumn],
+        });
+
+        setNewColumnLabel('');
+        setNewColumnKey('');
+        setIsAddingColumn(false);
+    };
+
+    const handleRemoveColumnFromTableProps = (keyToRemove: string) => {
+        const currentColumns = (currentProps as TableElementProps)?.columns || [];
+        updateTableProps({
+            columns: currentColumns.filter(col => col.key !== keyToRemove),
+        });
+    };
+
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>Table Properties</legend>
+
+                {/* Enable Async Loading */}
+                <PropertyCheckbox
+                    icon={Cloud}
+                    label="비동기 로딩 활성화"
+                    isSelected={(currentProps as TableElementProps)?.enableAsyncLoading || false}
+                    onChange={(enableAsyncLoading) => updateTableProps({ enableAsyncLoading })}
+                />
+
+                {/* API URL Key */}
+                {(currentProps as TableElementProps)?.enableAsyncLoading && (
+                    <PropertyInput
+                        icon={Link}
+                        label="API URL 키"
+                        value={(currentProps as TableElementProps)?.apiUrlKey || ''}
+                        onChange={(apiUrlKey) => updateTableProps({ apiUrlKey })}
+                        placeholder="API URL 키 (예: SWAPI_API)"
+                    />
+                )}
+
+                {/* Endpoint Path */}
+                {(currentProps as TableElementProps)?.enableAsyncLoading && (
+                    <PropertyInput
+                        icon={Link}
+                        label="엔드포인트 경로"
+                        value={(currentProps as TableElementProps)?.endpointPath || ''}
+                        onChange={(endpointPath) => updateTableProps({ endpointPath })}
+                        placeholder="엔드포인트 경로 (예: /people)"
+                    />
+                )}
+
+                {/* API Parameters (JSON) */}
+                {(currentProps as TableElementProps)?.enableAsyncLoading && (
+                    <PropertyInput
+                        icon={List}
+                        label="API 파라미터 (JSON)"
+                        value={JSON.stringify((currentProps as TableElementProps)?.apiParams || {}, null, 2)}
+                        onChange={(value) => {
+                            try {
+                                updateTableProps({ apiParams: JSON.parse(value) });
+                            } catch (e) {
+                                console.error("Invalid JSON for API Parameters", e);
+                                // 사용자에게 피드백 제공 (예: 오류 메시지 표시)
+                            }
+                        }}
+                        placeholder={`{"search": "Luke"}`}
+                        multiline={true} // Explicitly set multiline prop
+                    />
+                )}
+
+                {/* Data Mapping (JSON) */}
+                {(currentProps as TableElementProps)?.enableAsyncLoading && (
+                    <PropertyInput
+                        icon={List}
+                        label="데이터 매핑 (JSON)"
+                        value={JSON.stringify((currentProps as TableElementProps)?.dataMapping || {}, null, 2)}
+                        onChange={(value) => {
+                            try {
+                                updateTableProps({ dataMapping: JSON.parse(value) });
+                            } catch (e) {
+                                console.error("Invalid JSON for Data Mapping", e);
+                                // 사용자에게 피드백 제공
+                            }
+                        }}
+                        placeholder={`{"resultPath": "results", "idKey": "name"}`}
+                        multiline={true} // Explicitly set multiline prop
+                    />
+                )}
 
                 {/* Selection Mode */}
                 <PropertySelect
@@ -302,38 +304,45 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 {/* 컬럼 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total columns: {columns.length || 0}
+                        Total columns: {(currentProps as TableElementProps)?.columns?.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Manage table columns and their properties
                     </p>
                 </div>
 
-                {/* 컬럼 입력 필드 (항상 표시) */}
+                {/* 컬럼 추가 필드 */}
                 {isAddingColumn && (
-                    <PropertyInput
-                        label="컬럼 이름"
-                        value={newColumnLabel}
-                        onChange={setNewColumnLabel}
-                        placeholder="컬럼 이름을 입력하세요"
-                        icon={Tag}
-                    />
+                    <div className="space-y-2">
+                        <PropertyInput
+                            icon={Tag}
+                            label="컬럼 라벨"
+                            value={newColumnLabel}
+                            onChange={setNewColumnLabel}
+                            placeholder="표시될 컬럼 이름"
+                        />
+                        <PropertyInput
+                            icon={Key}
+                            label="컬럼 키"
+                            value={newColumnKey}
+                            onChange={setNewColumnKey}
+                            placeholder="데이터 객체의 키 (예: id, name)"
+                        />
+                    </div>
                 )}
 
                 {/* 기존 컬럼들 */}
-                {columns.length > 0 && (
+                {((currentProps as TableElementProps)?.columns || []).length > 0 && (
                     <div className='tabs-list'>
-                        {columns.map((column, index) => (
-                            <div key={column.id} className='tab-list-item'>
+                        {((currentProps as TableElementProps)?.columns || []).map((column, index) => (
+                            <div key={column.key} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    {column.props?.children || `Column ${index + 1}`}
-                                    {(column.props as ColumnElementProps)?.isRowHeader && (
-                                        <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-600 rounded">헤더</span>
-                                    )}
+                                    {column.label || `Column ${index + 1}`}
+                                    <span className="ml-2 text-gray-500 text-sm">({column.key})</span>
                                 </span>
                                 <button
                                     className='control-button delete'
-                                    onClick={() => removeColumn(column.id)}
+                                    onClick={() => handleRemoveColumnFromTableProps(column.key)}
                                 >
                                     <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 </button>
@@ -348,7 +357,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         <>
                             <button
                                 className='control-button add'
-                                onClick={addColumn}
+                                onClick={handleAddColumnToTableProps}
                             >
                                 <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                                 Add Column
@@ -358,6 +367,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                                 onClick={() => {
                                     setIsAddingColumn(false);
                                     setNewColumnLabel('');
+                                    setNewColumnKey('');
                                 }}
                             >
                                 Cancel

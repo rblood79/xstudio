@@ -246,6 +246,11 @@ export interface TableElementProps extends BaseElementProps {
     size?: 'sm' | 'md' | 'lg'; // Table size 추가
     headerVariant?: 'default' | 'dark' | 'primary'; // headerVariant 추가
     cellVariant?: 'default' | 'striped'; // cellVariant 추가
+    enableAsyncLoading?: boolean; // 비동기 로딩 활성화 여부 추가
+    apiUrlKey?: string; // 전역 API URL 맵핑 키 (예: 'SWAPI_PEOPLE_API')
+    endpointPath?: string; // 기본 URL에 추가될 엔드포인트 경로 (예: '/people')
+    apiParams?: Record<string, unknown>; // API 호출 시 전달될 추가 파라미터 (예: { search: 'Luke' })
+    dataMapping?: { resultPath?: string; idKey?: string }; // API 응답 데이터 매핑 정보
 }
 
 export interface TableHeaderElementProps extends BaseElementProps {
@@ -636,13 +641,24 @@ export function createDefaultSwitchProps(): SwitchElementProps {
 export function createDefaultTableProps(): TableElementProps {
     return {
         items: [],
-        columns: [],
+        columns: [
+            { key: 'id', label: 'ID', allowsSorting: true },
+            { key: 'name', label: '이름', allowsSorting: true },
+            { key: 'email', label: '이메일', allowsSorting: true },
+            { key: 'jobTitle', label: '직업', allowsSorting: true },
+        ],
         selectionMode: 'none',
         selectedKeys: [],
         variant: 'default', // 기본값 추가
         size: 'md', // 기본값 추가
         headerVariant: 'default', // 기본값 추가
         cellVariant: 'default', // 기본값 추가
+        // 비동기 로딩을 위한 기본값 추가
+        enableAsyncLoading: true,
+        apiUrlKey: 'MOCK_USER_DATA',
+        endpointPath: '/api/mock/users',
+        apiParams: {},
+        dataMapping: { resultPath: '', idKey: 'id' },
     };
 }
 

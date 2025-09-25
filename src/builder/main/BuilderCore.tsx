@@ -21,6 +21,7 @@ import { useThemeManager } from '../hooks/useThemeManager';
 import { useValidation } from '../hooks/useValidation';
 import { memoryMonitor } from '../utils/memoryMonitor';
 import { Monitor } from '../monitor'; // BuilderFooter 컴포넌트 임포트
+import { createDefaultTableProps } from '../../types/unified'; // createDefaultTableProps 임포트
 
 import './index.css';
 import { MessageService } from '../../utils/messaging';
@@ -33,6 +34,7 @@ export const BuilderCore: React.FC = () => {
     const currentPageId = useStore((state) => state.currentPageId);
     const selectedElementId = useStore((state) => state.selectedElementId);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const setElements = useStore((state) => state.setElements);
 
     // 새로운 히스토리 시스템 사용
     const [historyInfo, setHistoryInfo] = useState({
@@ -120,7 +122,8 @@ export const BuilderCore: React.FC = () => {
         setPages,
         fetchElements,
         handleAddPage: createPage,
-        initializeProject
+        initializeProject,
+        loadPageElements,
     } = usePageManager();
     const {
         handleIframeLoad,
@@ -162,6 +165,30 @@ export const BuilderCore: React.FC = () => {
             }
         };
     }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
+
+    // 페이지 요소가 로드된 후 Table 컴포넌트의 columns 초기화 로직
+    useEffect(() => {
+        if (currentPageId && elements.length > 0) {
+            const updatedElements = elements.map(el => {
+                if (el.tag === 'Table' && !el.props.columns?.length) {
+                    return {
+                        ...el,
+                        props: {
+                            ...el.props,
+                            columns: createDefaultTableProps().columns,
+                        },
+                    };
+                }
+                return el;
+            });
+
+            // 변경된 요소가 있다면 Zustand 스토어 업데이트
+            if (JSON.stringify(updatedElements) !== JSON.stringify(elements)) {
+                setElements(updatedElements);
+                sendElementsToIframe(updatedElements);
+            }
+        }
+    }, [currentPageId, elements, setElements, sendElementsToIframe]);
 
     // 프로젝트 초기화 후 프리뷰에 요소 전송 (중복 전송 방지)
     useEffect(() => {
