@@ -642,7 +642,7 @@ export function createDefaultTableProps(): TableElementProps {
     return {
         items: [],
         columns: [
-            { key: 'id', label: 'ID', allowsSorting: true },
+            { key: 'id', label: 'ID', allowsSorting: true, isRowHeader: true },
             { key: 'name', label: '이름', allowsSorting: true },
             { key: 'email', label: '이메일', allowsSorting: true },
             { key: 'jobTitle', label: '직업', allowsSorting: true },
