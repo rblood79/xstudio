@@ -2,10 +2,12 @@ import React from 'react';
 import { useAsyncList } from 'react-stately';
 import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, Collection, SortDirection } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import { forwardRef, useState, useMemo, useCallback } from 'react';
+import { forwardRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { SortIcon } from './SortIcon'; // SortIcon 임포트 경로 수정 (혹은 임시 로딩 컴포넌트 사용)
 import { apiConfig } from '../../services/api'; // apiConfig 임포트
-import { createDefaultTableProps } from '../../types/unified'; // createDefaultTableProps 임포트
+import { createDefaultTableProps, TableElementProps } from '../../types/unified'; // createDefaultTableProps 임포트
+import { useStore } from '../stores'; // useStore 임포트
+import { Pagination } from './Pagination';
 
 const tableHeaderVariants = tv({
   base: 'bg-gray-50 border-b border-gray-200',
@@ -48,6 +50,12 @@ interface TableProps<T extends Record<string, unknown>> {
   size?: 'sm' | 'md' | 'lg';
   headerVariant?: 'default' | 'dark' | 'primary';
   cellVariant?: 'default' | 'striped';
+  // 페이지네이션 모드
+  paginationMode?: 'pagination' | 'infinite-scroll';
+  // 가상화 관련 props
+  height?: number;
+  itemHeight?: number;
+  overscan?: number;
   'data-testid'?: string;
   data?: T[]; // 정적 데이터 프로퍼티 추가
   columns?: TableColumn<T>[]; // 컬럼 정의 추가
@@ -107,8 +115,33 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     apiUrlKey = createDefaultTableProps().apiUrlKey, // 기본값 설정
     endpointPath = createDefaultTableProps().endpointPath, // 기본값 설정
     // apiParams, dataMapping 제거 - 직접 데이터 관리 사용
+    paginationMode = createDefaultTableProps().paginationMode, // 기본값 설정
     ...props
   }: TableProps<T>, ref: React.Ref<HTMLTableElement>) {
+
+  // 빌더 환경에서 실제 element 찾기
+  const elements = useStore(state => state.elements);
+  const elementId = 'data-element-id' in props ? props['data-element-id'] as string : undefined;
+  const actualElement = elements.find(el => el.id === elementId);
+
+  // 실제 element props 읽기 (TableElementProps로 캐스팅)
+  const actualElementProps = actualElement?.props || {};
+  const actualPaginationMode = (actualElementProps as TableElementProps)?.paginationMode;
+
+  // 실제 element에서 읽은 값을 우선시 (빌더 환경에서)
+  const finalPaginationMode = actualPaginationMode || paginationMode || createDefaultTableProps().paginationMode;
+
+  // enableAsyncLoading도 동일하게 처리
+  const actualEnableAsyncLoading = (actualElementProps as TableElementProps)?.enableAsyncLoading;
+  const finalEnableAsyncLoading = actualEnableAsyncLoading !== undefined ? actualEnableAsyncLoading : enableAsyncLoading;
+
+  // 디버깅: paginationMode 값 확인
+  console.log("🔍 Table 컴포넌트 paginationMode:", paginationMode);
+  console.log("🔍 Table 컴포넌트 elementId:", elementId);
+  console.log("🔍 Table 컴포넌트 actualElement found:", !!actualElement);
+  console.log("🔍 Table 컴포넌트 actualPaginationMode:", actualPaginationMode);
+  console.log("🔍 Table 컴포넌트 finalPaginationMode:", finalPaginationMode);
+  console.log("🔍 Table 컴포넌트 actualElementProps:", actualElementProps);
 
   // sortDescriptor 초기값 설정 (propSortDescriptor가 없으면 기본값 사용)
   const defaultSortDescriptor: SortDescriptor = {
@@ -167,9 +200,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     }
   }, [apiUrlKey, endpointPath]);
 
-  // useAsyncList 훅 사용 (성능 최적화)
+  // useAsyncList 훅 사용 (무한 스크롤 모드에서만)
   const asyncList = useAsyncList<T & { id: Key }, string>({
-    load: loadFunction,
+    load: finalPaginationMode === 'infinite-scroll' ? loadFunction : async () => ({ items: [], cursor: undefined }),
     getKey: (item: T & { id: Key }) => item.id,
   });
 
@@ -177,6 +210,133 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const asyncListItems = asyncList.items;
   const asyncListLoadingState = asyncList.loadingState;
   const asyncListLoadMore = asyncList.loadMore;
+
+  // 페이지네이션 상태 관리
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [paginationData, setPaginationData] = useState<(T & { id: Key })[]>([]);
+  const [paginationLoading, setPaginationLoading] = useState(false);
+  const [infiniteScrollData, setInfiniteScrollData] = useState<(T & { id: Key })[]>([]);
+  const [infiniteScrollLoading, setInfiniteScrollLoading] = useState(false);
+
+  // 페이지네이션 모드용 데이터 로딩 함수
+  const loadPaginationData = useCallback(async (page: number) => {
+    console.log("🔄 loadPaginationData called with page:", page);
+    console.log("🔍 API config:", { apiUrlKey, endpointPath });
+
+    if (!apiUrlKey || !endpointPath) {
+      console.warn("❌ API URL Key or Endpoint Path is missing");
+      return;
+    }
+
+    setPaginationLoading(true);
+    try {
+      const service = apiConfig[apiUrlKey as keyof typeof apiConfig];
+      if (!service) {
+        console.error(`❌ API service not found for key: ${apiUrlKey}`);
+        return;
+      }
+
+      const params = { page, limit: 50 };
+      console.log("📤 Calling API with params:", params);
+      const json = await service(endpointPath, params);
+      console.log("📥 API response:", json);
+
+      const items = json.map((item: T) => ({
+        ...item,
+        id: (item as T & { id?: Key }).id || String(Math.random()),
+      })) as (T & { id: Key })[];
+
+      console.log("✅ Setting pagination data:", items.length, "items");
+      setPaginationData(items);
+      console.log("📄 Pagination data loaded:", items.length, "items for page", page);
+    } catch (error) {
+      console.error("❌ Failed to load pagination data:", error);
+    } finally {
+      setPaginationLoading(false);
+    }
+  }, [apiUrlKey, endpointPath]);
+
+  // 무한 스크롤 모드용 데이터 로딩 함수
+  const loadInfiniteScrollData = useCallback(async (page: number, append: boolean = false) => {
+    if (!apiUrlKey || !endpointPath) return;
+
+    setInfiniteScrollLoading(true);
+    try {
+      const service = apiConfig[apiUrlKey as keyof typeof apiConfig];
+      if (!service) {
+        console.error(`API service not found for key: ${apiUrlKey}`);
+        return;
+      }
+
+      const params = { page, limit: 50 };
+      const json = await service(endpointPath, params);
+
+      const items = json.map((item: T) => ({
+        ...item,
+        id: (item as T & { id?: Key }).id || String(Math.random()),
+      })) as (T & { id: Key })[];
+
+      if (append) {
+        setInfiniteScrollData(prev => [...prev, ...items]);
+        console.log("📄 Infinite scroll data appended:", items.length, "items for page", page);
+      } else {
+        setInfiniteScrollData(items);
+        console.log("📄 Infinite scroll data loaded:", items.length, "items for page", page);
+      }
+    } catch (error) {
+      console.error("Failed to load infinite scroll data:", error);
+    } finally {
+      setInfiniteScrollLoading(false);
+    }
+  }, [apiUrlKey, endpointPath]);
+
+  // 페이지네이션 핸들러
+  const handlePageChange = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      // 페이지네이션 모드에서는 별도 데이터 로딩
+      if (finalPaginationMode === 'pagination') {
+        loadPaginationData(page);
+      } else {
+        // 무한 스크롤 모드에서는 loadMore 사용
+        if (page > currentPage) {
+          asyncListLoadMore();
+        }
+      }
+    }
+  }, [currentPage, totalPages, asyncListLoadMore, finalPaginationMode, loadPaginationData]);
+
+  // 초기 데이터 로딩
+  useEffect(() => {
+    console.log("🔄 Initial data loading effect triggered:", {
+      finalEnableAsyncLoading,
+      finalPaginationMode,
+      paginationDataLength: paginationData.length,
+      infiniteScrollDataLength: infiniteScrollData.length
+    });
+
+    if (finalEnableAsyncLoading) {
+      if (finalPaginationMode === 'pagination') {
+        console.log("🔄 Loading initial pagination data...");
+        loadPaginationData(1);
+      } else {
+        console.log("🔄 Loading initial infinite scroll data...");
+        loadInfiniteScrollData(1, false);
+      }
+    }
+  }, [finalEnableAsyncLoading, finalPaginationMode]);
+
+  // 페이지네이션 정보 업데이트
+  useEffect(() => {
+    if (finalEnableAsyncLoading && finalPaginationMode === 'pagination') {
+      // 실제 API에서는 total count를 받아야 하지만, 현재는 추정값 사용
+      const estimatedTotalPages = Math.ceil(500 / 50); // 500개 데이터, 50개씩 로드
+      setTotalPages(estimatedTotalPages);
+      setHasNextPage(currentPage < estimatedTotalPages);
+    }
+  }, [finalEnableAsyncLoading, finalPaginationMode, currentPage]);
 
   // 최종 sortDescriptor와 onSortChange 결정
   const sortDescriptor: SortDescriptor = propSortDescriptor || defaultSortDescriptor;
@@ -186,9 +346,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const selectedKeys = propSelectedKeys || localSelectedKeys;
   const onSelectionChange = propOnSelectionChange || setLocalSelectedKeys;
 
-  // 데이터 정렬 로직 (정적 데이터의 경우 - enableAsyncLoading이 false일 때 사용)
+  // 데이터 정렬 로직 (정적 데이터의 경우 - finalEnableAsyncLoading이 false일 때 사용)
   const sortedStaticData = useMemo(() => {
-    if (enableAsyncLoading || !data || !sortDescriptor || !sortDescriptor.column) {
+    if (finalEnableAsyncLoading || !data || !sortDescriptor || !sortDescriptor.column) {
       return data;
     }
     const columnKey = sortDescriptor.column as keyof T;
@@ -201,32 +361,52 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       }
       return cmp;
     });
-  }, [enableAsyncLoading, data, sortDescriptor]);
+  }, [finalEnableAsyncLoading, data, sortDescriptor]);
 
   // directData 제거 - useAsyncList 사용
 
   const finalData: (T & { id: Key })[] = useMemo(() => {
-    if (enableAsyncLoading) {
-      // useAsyncList의 items 사용 (가상화 지원)
-      console.log("🔄 Using asyncList items:", asyncListItems.length);
-      return asyncListItems || [];
+    console.log("🔄 finalData calculation:", {
+      finalEnableAsyncLoading,
+      finalPaginationMode,
+      paginationDataLength: paginationData.length,
+      infiniteScrollDataLength: infiniteScrollData.length,
+      sortedStaticDataLength: sortedStaticData?.length || 0
+    });
+
+    if (finalEnableAsyncLoading) {
+      if (finalPaginationMode === 'pagination') {
+        // 페이지네이션 모드에서는 별도 데이터 사용
+        console.log("🔄 Using pagination data:", paginationData.length);
+        console.log("📊 Pagination data sample:", paginationData.slice(0, 2));
+        return paginationData || [];
+      } else {
+        // 무한 스크롤 모드에서는 별도 데이터 사용
+        console.log("🔄 Using infinite scroll data:", infiniteScrollData.length);
+        console.log("📊 Infinite scroll data sample:", infiniteScrollData.slice(0, 2));
+        return infiniteScrollData || [];
+      }
     }
 
     // 정적 데이터 사용
+    console.log("🔄 Using static data:", sortedStaticData?.length || 0);
     const processedItems = (sortedStaticData || []).map(item => ({
       ...item,
       id: (item as T & { id?: Key }).id || String(Math.random()), // Fallback for missing id
     })) as (T & { id: Key })[];
 
     return processedItems;
-  }, [enableAsyncLoading, asyncListItems, sortedStaticData]);
+  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, infiniteScrollData, sortedStaticData]);
 
   // 디버깅을 위한 로그 추가
   console.log("🔍 finalData debug:", {
-    enableAsyncLoading,
+    finalEnableAsyncLoading,
     finalDataLength: finalData.length,
-    asyncListItemsLength: asyncListItems?.length || 0,
-    loadingState: asyncListLoadingState,
+    finalPaginationMode,
+    paginationDataLength: paginationData.length,
+    paginationLoading,
+    infiniteScrollDataLength: infiniteScrollData.length,
+    infiniteScrollLoading,
     sortedStaticDataLength: sortedStaticData?.length || 0
   });
 
@@ -235,7 +415,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
   const tableContent = useMemo(() => {
     // 비동기 로딩이 활성화되면 항상 데이터 기반으로 렌더링
-    if (enableAsyncLoading && finalData && columns) {
+    if (finalEnableAsyncLoading && finalData && columns) {
       console.log("🟢 Rendering async data-based table content");
       console.log("📊 finalData length:", finalData.length);
       console.log("📋 columns:", columns);
@@ -262,10 +442,16 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
               </Row>
             )}
           </TableBody>
-          {enableAsyncLoading && asyncListLoadingState === 'loadingMore' && (
+
+          {/* 무한 스크롤 모드에 따른 로딩 UI */}
+          {finalEnableAsyncLoading && finalPaginationMode === 'infinite-scroll' && (
             <CustomTableLoadMoreItem
-              onLoadMore={asyncListLoadMore}
-              isLoading={asyncListLoadingState === 'loadingMore'}
+              onLoadMore={() => {
+                const nextPage = Math.floor(infiniteScrollData.length / 50) + 1;
+                console.log("🔄 Loading more data for infinite scroll, page:", nextPage);
+                loadInfiniteScrollData(nextPage, true);
+              }}
+              isLoading={infiniteScrollLoading}
             >
               <div className="flex items-center justify-center p-4 text-gray-500">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -276,6 +462,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
               </div>
             </CustomTableLoadMoreItem>
           )}
+
         </>
       );
     } else if (hasChildrenContent) {
@@ -313,7 +500,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     } else {
       // 기본 플레이스홀더 내용
       console.log("🔴 Rendering placeholder content");
-      console.log("🔍 enableAsyncLoading:", enableAsyncLoading);
+      console.log("🔍 finalEnableAsyncLoading:", finalEnableAsyncLoading);
       console.log("🔍 finalData:", finalData);
       console.log("🔍 columns:", columns);
       console.log("🔍 hasChildrenContent:", hasChildrenContent);
@@ -334,7 +521,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         </>
       );
     }
-  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, enableAsyncLoading, asyncListLoadingState, asyncListLoadMore]); // useMemo 의존성 배열 수정
+  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, finalEnableAsyncLoading, asyncListLoadingState, finalPaginationMode, asyncListItems.length, currentPage, handlePageChange, hasNextPage, totalPages, infiniteScrollData.length, infiniteScrollLoading, loadInfiniteScrollData]);
 
   // 테이블 스타일 클래스
   const tableClasses = [
@@ -363,6 +550,22 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       >
         {tableContent}
       </AriaTable>
+
+      {/* 페이지네이션 UI - 재사용 가능한 컴포넌트 사용 */}
+      {finalEnableAsyncLoading && finalPaginationMode === 'pagination' && (
+        <div className="p-4 bg-gray-50 border-t border-gray-200">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hasNextPage={hasNextPage}
+            isLoading={paginationLoading}
+            onPageChange={handlePageChange}
+            totalItems={paginationData.length}
+            showPageInfo={true}
+            className="w-full"
+          />
+        </div>
+      )}
     </ResizableTableContainer>
   );
 });
