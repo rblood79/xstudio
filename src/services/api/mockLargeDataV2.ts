@@ -23,4 +23,4 @@ export const generateMockUsers = (count: number): MockUserData[] => {
     return users;
 };
 
-export const largeMockData: MockUserData[] = generateMockUsers(500);
+export const largeMockData: MockUserData[] = generateMockUsers(5000);

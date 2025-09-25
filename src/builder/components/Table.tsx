@@ -135,6 +135,10 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const actualEnableAsyncLoading = (actualElementProps as TableElementProps)?.enableAsyncLoading;
   const finalEnableAsyncLoading = actualEnableAsyncLoading !== undefined ? actualEnableAsyncLoading : enableAsyncLoading;
 
+  // itemsPerPage 값도 동일하게 처리
+  const actualItemsPerPage = (actualElementProps as TableElementProps)?.itemsPerPage;
+  const finalItemsPerPage = actualItemsPerPage !== undefined ? actualItemsPerPage : createDefaultTableProps().itemsPerPage;
+
   // 디버깅: paginationMode 값 확인
   console.log("🔍 Table 컴포넌트 paginationMode:", paginationMode);
   console.log("🔍 Table 컴포넌트 elementId:", elementId);
@@ -169,7 +173,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       // 페이지네이션을 위한 파라미터 추가
       const params = {
         page: cursor ? parseInt(cursor) : 1,
-        limit: 50, // 한 번에 50개씩 로드
+        limit: finalItemsPerPage, // 설정된 페이지당 행 수만큼 로드
       };
 
       console.log("➡️ Loading page:", params.page, "limit:", params.limit);
@@ -198,7 +202,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       console.error("Failed to load async table data:", error);
       return { items: [], cursor: undefined };
     }
-  }, [apiUrlKey, endpointPath]);
+  }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
   // useAsyncList 훅 사용 (무한 스크롤 모드에서만)
   const asyncList = useAsyncList<T & { id: Key }, string>({
@@ -238,7 +242,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         return;
       }
 
-      const params = { page, limit: 50 };
+      const params = { page, limit: finalItemsPerPage };
       console.log("📤 Calling API with params:", params);
       const json = await service(endpointPath, params);
       console.log("📥 API response:", json);
@@ -256,7 +260,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     } finally {
       setPaginationLoading(false);
     }
-  }, [apiUrlKey, endpointPath]);
+  }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
   // 무한 스크롤 모드용 데이터 로딩 함수
   const loadInfiniteScrollData = useCallback(async (page: number, append: boolean = false) => {
@@ -270,7 +274,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         return;
       }
 
-      const params = { page, limit: 50 };
+      const params = { page, limit: finalItemsPerPage };
       const json = await service(endpointPath, params);
 
       const items = json.map((item: T) => ({
@@ -290,7 +294,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     } finally {
       setInfiniteScrollLoading(false);
     }
-  }, [apiUrlKey, endpointPath]);
+  }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
   // 페이지네이션 핸들러
   const handlePageChange = useCallback((page: number) => {
@@ -396,7 +400,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     })) as (T & { id: Key })[];
 
     return processedItems;
-  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, infiniteScrollData, sortedStaticData]);
+  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, infiniteScrollData, sortedStaticData, finalItemsPerPage]);
 
   // 디버깅을 위한 로그 추가
   console.log("🔍 finalData debug:", {
@@ -447,7 +451,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
           {finalEnableAsyncLoading && finalPaginationMode === 'infinite-scroll' && (
             <CustomTableLoadMoreItem
               onLoadMore={() => {
-                const nextPage = Math.floor(infiniteScrollData.length / 50) + 1;
+                const nextPage = Math.floor(infiniteScrollData.length / (finalItemsPerPage || 10)) + 1;
                 console.log("🔄 Loading more data for infinite scroll, page:", nextPage);
                 loadInfiniteScrollData(nextPage, true);
               }}
