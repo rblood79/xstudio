@@ -298,6 +298,63 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 />
             </fieldset>
 
+            {/* 페이지네이션 모드 설정 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <List className="legend-icon" />
+                    Pagination Mode
+                </legend>
+
+                <PropertySelect
+                    icon={Settings}
+                    label="페이지네이션 모드"
+                    value={(currentProps as TableElementProps)?.paginationMode || 'infinite-scroll'}
+                    options={[
+                        { value: 'infinite-scroll', label: '무한 스크롤 (모바일 친화적)' },
+                        { value: 'pagination', label: '페이지네이션 (데스크탑 친화적)' }
+                    ]}
+                    onChange={(paginationMode) => updateTableProps({ paginationMode: paginationMode as 'pagination' | 'infinite-scroll' })}
+                />
+
+                <div className="tab-overview">
+                    <span className="help-text">
+                        {currentProps?.paginationMode === 'pagination'
+                            ? '페이지 번호로 네비게이션하는 전통적인 방식'
+                            : '스크롤 시 자동으로 더 많은 데이터를 로드하는 방식'
+                        }
+                    </span>
+                </div>
+            </fieldset>
+
+            {/* 가상화 설정 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <Grid className="legend-icon" />
+                    Virtualization Settings
+                </legend>
+
+                <PropertyInput
+                    icon={Settings}
+                    label="테이블 높이 (px)"
+                    value={(currentProps as TableElementProps)?.height || 400}
+                    onChange={(height) => updateTableProps({ height: parseInt(height) || 400 })}
+                />
+
+                <PropertyInput
+                    icon={Settings}
+                    label="행 높이 (px)"
+                    value={(currentProps as TableElementProps)?.itemHeight || 50}
+                    onChange={(itemHeight) => updateTableProps({ itemHeight: parseInt(itemHeight) || 50 })}
+                />
+
+                <PropertyInput
+                    icon={Settings}
+                    label="미리 렌더링 행 수"
+                    value={(currentProps as TableElementProps)?.overscan || 5}
+                    onChange={(overscan) => updateTableProps({ overscan: parseInt(overscan) || 5 })}
+                />
+            </fieldset>
+
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>Column Management</legend>
 

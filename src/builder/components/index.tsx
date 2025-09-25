@@ -20,3 +20,4 @@ function Components({ handleAddElement, selectedElementId }: ComponentsProps) {
 
 export default Components;
 export { ComponentList };
+export { Pagination } from './Pagination';
