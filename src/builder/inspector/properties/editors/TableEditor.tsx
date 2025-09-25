@@ -324,6 +324,17 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         }
                     </span>
                 </div>
+
+                {/* 페이지당 행 수 설정 - 페이지네이션 모드일 때만 표시 */}
+                {currentProps?.paginationMode === 'pagination' && (
+                    <PropertyInput
+                        icon={Settings}
+                        label="페이지당 행 수"
+                        value={(currentProps as TableElementProps)?.itemsPerPage || 10}
+                        onChange={(itemsPerPage) => updateTableProps({ itemsPerPage: parseInt(itemsPerPage) || 10 })}
+                        type="number"
+                    />
+                )}
             </fieldset>
 
             {/* 가상화 설정 */}
