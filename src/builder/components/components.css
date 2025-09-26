@@ -2956,11 +2956,20 @@
     max-width:
         /*var(--spacing-xl);*/
         100%;
+    height: auto;
     overflow: auto;
     position: relative;
     border: 1px solid var(--border-color);
     border-radius: var(--spacing-sm);
     background: var(--background-color);
+
+    &[data-infinite-scroll] {
+        height: 51%;
+    }
+
+    &[data-infinite-scroll='false'] {
+        height: auto;
+    }
 
     .react-aria-Table {
         border: none;

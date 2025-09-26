@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAsyncList } from 'react-stately';
-import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, Collection, SortDirection } from 'react-aria-components';
+import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, SortDirection } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import { forwardRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { SortIcon } from './SortIcon'; // SortIcon 임포트 경로 수정 (혹은 임시 로딩 컴포넌트 사용)
@@ -10,7 +10,7 @@ import { useStore } from '../stores'; // useStore 임포트
 import { Pagination } from './Pagination';
 
 const tableHeaderVariants = tv({
-  base: 'bg-gray-50 border-b border-gray-200',
+  base: 'react-aria-TableHeader',
   variants: {
     variant: {
       default: '',
@@ -24,7 +24,7 @@ const tableHeaderVariants = tv({
 });
 
 const tableCellVariants = tv({
-  base: 'px-4 py-2 border-b border-gray-200',
+  base: '',
   variants: {
     variant: {
       default: '',
@@ -74,24 +74,6 @@ interface TableProps<T extends Record<string, unknown>> {
 }
 
 // TableLoadMoreItem 컴포넌트 (무한 스크롤 지원)
-interface TableLoadMoreItemProps {
-  onLoadMore?: () => void;
-  isLoading?: boolean;
-  children: React.ReactNode;
-}
-function CustomTableLoadMoreItem({ onLoadMore, isLoading, children }: TableLoadMoreItemProps) {
-  return (
-    <Row>
-      <Cell colSpan={99} className="text-center">
-        {isLoading ? (
-          children
-        ) : (
-          onLoadMore && <button onClick={onLoadMore} className="p-2 text-blue-500">더 보기</button>
-        )}
-      </Cell>
-    </Row>
-  );
-}
 
 export const Table = forwardRef(function Table<T extends Record<string, unknown>>(
   {
@@ -204,16 +186,43 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     }
   }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
+  // 페이지네이션 모드에서는 useAsyncList 비활성화
+  const shouldUseAsyncList = finalEnableAsyncLoading && finalPaginationMode === 'infinite-scroll';
+
   // useAsyncList 훅 사용 (무한 스크롤 모드에서만)
   const asyncList = useAsyncList<T & { id: Key }, string>({
-    load: finalPaginationMode === 'infinite-scroll' ? loadFunction : async () => ({ items: [], cursor: undefined }),
+    load: shouldUseAsyncList ? loadFunction : async () => ({ items: [], cursor: undefined }),
     getKey: (item: T & { id: Key }) => item.id,
   });
 
+  // 페이지네이션 모드에서는 useAsyncList 완전 비활성화
+  if (!shouldUseAsyncList) {
+    // 페이지네이션 모드에서는 useAsyncList를 사용하지 않음
+    console.log("🚫 useAsyncList 비활성화됨 - 페이지네이션 모드");
+  }
+
   // asyncList에서 필요한 속성들 추출
   const asyncListItems = asyncList.items;
-  const asyncListLoadingState = asyncList.loadingState;
   const asyncListLoadMore = asyncList.loadMore;
+
+  // 페이지네이션 모드에서는 useAsyncList 완전 비활성화
+  const safeAsyncListItems = useMemo(() =>
+    shouldUseAsyncList ? asyncListItems : [],
+    [shouldUseAsyncList, asyncListItems]
+  );
+  const safeAsyncListLoadMore = useMemo(() =>
+    shouldUseAsyncList ? asyncListLoadMore : () => { },
+    [shouldUseAsyncList, asyncListLoadMore]
+  );
+
+  // 디버깅을 위한 로그
+  console.log("🔍 useAsyncList 상태:", {
+    shouldUseAsyncList,
+    finalPaginationMode,
+    finalEnableAsyncLoading,
+    asyncListItemsLength: asyncListItems.length,
+    safeAsyncListItemsLength: safeAsyncListItems.length
+  });
 
   // 페이지네이션 상태 관리
   const [currentPage, setCurrentPage] = useState(1);
@@ -221,8 +230,6 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const [hasNextPage, setHasNextPage] = useState(true);
   const [paginationData, setPaginationData] = useState<(T & { id: Key })[]>([]);
   const [paginationLoading, setPaginationLoading] = useState(false);
-  const [infiniteScrollData, setInfiniteScrollData] = useState<(T & { id: Key })[]>([]);
-  const [infiniteScrollLoading, setInfiniteScrollLoading] = useState(false);
 
   // 페이지네이션 모드용 데이터 로딩 함수
   const loadPaginationData = useCallback(async (page: number) => {
@@ -263,38 +270,6 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
   // 무한 스크롤 모드용 데이터 로딩 함수
-  const loadInfiniteScrollData = useCallback(async (page: number, append: boolean = false) => {
-    if (!apiUrlKey || !endpointPath) return;
-
-    setInfiniteScrollLoading(true);
-    try {
-      const service = apiConfig[apiUrlKey as keyof typeof apiConfig];
-      if (!service) {
-        console.error(`API service not found for key: ${apiUrlKey}`);
-        return;
-      }
-
-      const params = { page, limit: finalItemsPerPage };
-      const json = await service(endpointPath, params);
-
-      const items = json.map((item: T) => ({
-        ...item,
-        id: (item as T & { id?: Key }).id || String(Math.random()),
-      })) as (T & { id: Key })[];
-
-      if (append) {
-        setInfiniteScrollData(prev => [...prev, ...items]);
-        console.log("📄 Infinite scroll data appended:", items.length, "items for page", page);
-      } else {
-        setInfiniteScrollData(items);
-        console.log("📄 Infinite scroll data loaded:", items.length, "items for page", page);
-      }
-    } catch (error) {
-      console.error("Failed to load infinite scroll data:", error);
-    } finally {
-      setInfiniteScrollLoading(false);
-    }
-  }, [apiUrlKey, endpointPath, finalItemsPerPage]);
 
   // 페이지네이션 핸들러
   const handlePageChange = useCallback((page: number) => {
@@ -318,19 +293,23 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       finalEnableAsyncLoading,
       finalPaginationMode,
       paginationDataLength: paginationData.length,
-      infiniteScrollDataLength: infiniteScrollData.length
+      asyncListItemsLength: asyncListItems.length,
+      shouldUseAsyncList
     });
 
     if (finalEnableAsyncLoading) {
       if (finalPaginationMode === 'pagination') {
         console.log("🔄 Loading initial pagination data...");
         loadPaginationData(1);
-      } else {
-        console.log("🔄 Loading initial infinite scroll data...");
-        loadInfiniteScrollData(1, false);
+      } else if (shouldUseAsyncList) {
+        console.log("🔄 Infinite scroll mode - triggering initial load");
+        // useAsyncList의 초기 로딩을 강제로 트리거
+        if (safeAsyncListItems.length === 0) {
+          safeAsyncListLoadMore();
+        }
       }
     }
-  }, [finalEnableAsyncLoading, finalPaginationMode]);
+  }, [finalEnableAsyncLoading, finalPaginationMode, shouldUseAsyncList, loadPaginationData, safeAsyncListItems.length, safeAsyncListLoadMore, asyncListItems.length, paginationData.length]);
 
   // 페이지네이션 정보 업데이트
   useEffect(() => {
@@ -374,21 +353,25 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       finalEnableAsyncLoading,
       finalPaginationMode,
       paginationDataLength: paginationData.length,
-      infiniteScrollDataLength: infiniteScrollData.length,
+      asyncListItemsLength: asyncListItems.length,
       sortedStaticDataLength: sortedStaticData?.length || 0
     });
 
     if (finalEnableAsyncLoading) {
       if (finalPaginationMode === 'pagination') {
-        // 페이지네이션 모드에서는 별도 데이터 사용
+        // 페이지네이션 모드에서는 paginationData만 사용
         console.log("🔄 Using pagination data:", paginationData.length);
         console.log("📊 Pagination data sample:", paginationData.slice(0, 2));
         return paginationData || [];
+      } else if (shouldUseAsyncList) {
+        // 무한 스크롤 모드에서는 useAsyncList의 items 사용
+        console.log("🔄 Using asyncList items:", safeAsyncListItems.length);
+        console.log("📊 AsyncList data sample:", safeAsyncListItems.slice(0, 2));
+        return safeAsyncListItems || [];
       } else {
-        // 무한 스크롤 모드에서는 별도 데이터 사용
-        console.log("🔄 Using infinite scroll data:", infiniteScrollData.length);
-        console.log("📊 Infinite scroll data sample:", infiniteScrollData.slice(0, 2));
-        return infiniteScrollData || [];
+        // fallback: paginationData 사용
+        console.log("🔄 Using pagination data (fallback):", paginationData.length);
+        return paginationData || [];
       }
     }
 
@@ -400,7 +383,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     })) as (T & { id: Key })[];
 
     return processedItems;
-  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, infiniteScrollData, sortedStaticData, finalItemsPerPage]);
+  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, safeAsyncListItems, sortedStaticData, shouldUseAsyncList, asyncListItems.length]);
 
   // 디버깅을 위한 로그 추가
   console.log("🔍 finalData debug:", {
@@ -409,8 +392,6 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     finalPaginationMode,
     paginationDataLength: paginationData.length,
     paginationLoading,
-    infiniteScrollDataLength: infiniteScrollData.length,
-    infiniteScrollLoading,
     sortedStaticDataLength: sortedStaticData?.length || 0
   });
 
@@ -447,25 +428,6 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
             )}
           </TableBody>
 
-          {/* 무한 스크롤 모드에 따른 로딩 UI */}
-          {finalEnableAsyncLoading && finalPaginationMode === 'infinite-scroll' && (
-            <CustomTableLoadMoreItem
-              onLoadMore={() => {
-                const nextPage = Math.floor(infiniteScrollData.length / (finalItemsPerPage || 10)) + 1;
-                console.log("🔄 Loading more data for infinite scroll, page:", nextPage);
-                loadInfiniteScrollData(nextPage, true);
-              }}
-              isLoading={infiniteScrollLoading}
-            >
-              <div className="flex items-center justify-center p-4 text-gray-500">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                데이터 로딩 중...
-              </div>
-            </CustomTableLoadMoreItem>
-          )}
 
         </>
       );
@@ -489,15 +451,13 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
             )}
           </TableHeader>
           <TableBody className={tableCellVariants({ variant: cellVariant })} items={finalData}>
-            <Collection items={finalData}>
-              {(item: T & { id: Key }) => (
-                <Row id={item.id}>
-                  {columns.map(column => (
-                    <Cell key={String(column.key)}>{(item as Record<string, unknown>)[column.key as string] as React.ReactNode}</Cell>
-                  ))}
-                </Row>
-              )}
-            </Collection>
+            {(item: T & { id: Key }) => (
+              <Row id={item.id}>
+                {columns.map(column => (
+                  <Cell key={String(column.key)}>{(item as Record<string, unknown>)[column.key as string] as React.ReactNode}</Cell>
+                ))}
+              </Row>
+            )}
           </TableBody>
         </>
       );
@@ -525,11 +485,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         </>
       );
     }
-  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, finalEnableAsyncLoading, asyncListLoadingState, finalPaginationMode, asyncListItems.length, currentPage, handlePageChange, hasNextPage, totalPages, infiniteScrollData.length, infiniteScrollLoading, loadInfiniteScrollData]);
+  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, finalEnableAsyncLoading]);
 
   // 테이블 스타일 클래스
   const tableClasses = [
-    "react-aria-Table w-full border-collapse",
+    "react-aria-Table",
     variant === 'bordered' ? 'border border-gray-300' : '',
     variant === 'striped' ? 'border border-gray-300' : '',
     size === 'sm' ? 'text-sm' : '',
@@ -539,7 +499,18 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   ].filter(Boolean).join(' ');
 
   return (
-    <ResizableTableContainer>
+    <ResizableTableContainer
+      data-infinite-scroll={shouldUseAsyncList}
+
+      onScroll={shouldUseAsyncList ? (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        // 스크롤이 하단에 가까우면 더 많은 데이터 로드
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+          console.log("🔄 스크롤 감지 - 더 많은 데이터 로드");
+          safeAsyncListLoadMore();
+        }
+      } : undefined}
+    >
       <AriaTable
         ref={ref}
         className={tableClasses}
@@ -557,7 +528,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
       {/* 페이지네이션 UI - 재사용 가능한 컴포넌트 사용 */}
       {finalEnableAsyncLoading && finalPaginationMode === 'pagination' && (
-        <div className="p-4 bg-gray-50 border-t border-gray-200">
+        <div className="p-2 bg-gray-50 border-t border-gray-200">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
