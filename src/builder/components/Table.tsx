@@ -64,6 +64,9 @@ interface TableProps<T extends Record<string, unknown>> {
   // 헤더 고정 관련 props
   stickyHeader?: boolean;
   stickyHeaderOffset?: number;
+  // 정렬 관련 props
+  sortColumn?: string;
+  sortDirection?: 'ascending' | 'descending';
   'data-testid'?: string;
   data?: T[]; // 정적 데이터 프로퍼티 추가
   columns?: TableColumn<T>[]; // 컬럼 정의 추가
@@ -108,6 +111,8 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     paginationMode = createDefaultTableProps().paginationMode, // 기본값 설정
     stickyHeader = createDefaultTableProps().stickyHeader, // 기본값 설정
     stickyHeaderOffset = createDefaultTableProps().stickyHeaderOffset, // 기본값 설정
+    sortColumn = createDefaultTableProps().sortColumn, // 기본값 설정
+    sortDirection = createDefaultTableProps().sortDirection, // 기본값 설정
     ...props
   }: TableProps<T>, ref: React.Ref<HTMLTableElement>) {
 
@@ -138,6 +143,13 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const actualStickyHeaderOffset = (actualElementProps as TableElementProps)?.stickyHeaderOffset;
   const finalStickyHeaderOffset = actualStickyHeaderOffset !== undefined ? actualStickyHeaderOffset : stickyHeaderOffset;
 
+  // 정렬 옵션 처리
+  const actualSortColumn = (actualElementProps as TableElementProps)?.sortColumn;
+  const finalSortColumn = actualSortColumn !== undefined ? actualSortColumn : sortColumn;
+
+  const actualSortDirection = (actualElementProps as TableElementProps)?.sortDirection;
+  const finalSortDirection = actualSortDirection !== undefined ? actualSortDirection : sortDirection;
+
   // 디버깅: paginationMode 값 확인
   console.log("🔍 Table 컴포넌트 paginationMode:", paginationMode);
   console.log("🔍 Table 컴포넌트 elementId:", elementId);
@@ -148,8 +160,8 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
   // sortDescriptor 초기값 설정 (propSortDescriptor가 없으면 기본값 사용)
   const defaultSortDescriptor: SortDescriptor = {
-    column: 'id' as Key, // 유효한 Key 값으로 초기화
-    direction: 'ascending' as SortDirection,
+    column: (finalSortColumn || 'id') as Key, // 설정된 정렬 컬럼 사용
+    direction: (finalSortDirection || 'ascending') as SortDirection, // 설정된 정렬 방향 사용
   };
 
   // API 호출을 위한 동적 load 함수 생성
@@ -366,9 +378,21 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     }
   }, [currentPage, finalEnableAsyncLoading, finalPaginationMode]);
 
+  // 정렬 상태 관리
+  const [localSortDescriptor, setLocalSortDescriptor] = useState<SortDescriptor>(defaultSortDescriptor);
+
   // 최종 sortDescriptor와 onSortChange 결정
-  const sortDescriptor: SortDescriptor = propSortDescriptor || defaultSortDescriptor;
-  const onSortChange = propOnSortChange || (() => { }); // undefined 대신 빈 함수 제공
+  const sortDescriptor: SortDescriptor = propSortDescriptor || localSortDescriptor;
+  const onSortChange = propOnSortChange || ((descriptor: SortDescriptor) => {
+    console.log("🔄 정렬 변경:", descriptor);
+    setLocalSortDescriptor(descriptor);
+
+    // 비동기 로딩이 활성화된 경우 정렬된 데이터를 다시 로드
+    if (finalEnableAsyncLoading && finalPaginationMode === 'pagination') {
+      console.log("🔄 정렬 변경으로 인한 데이터 재로드");
+      loadPaginationData(1); // 첫 페이지부터 다시 로드
+    }
+  });
 
   const [localSelectedKeys, setLocalSelectedKeys] = useState<'all' | Set<Key>>(new Set());
   const selectedKeys = propSelectedKeys || localSelectedKeys;
@@ -399,36 +423,53 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       finalPaginationMode,
       paginationDataLength: paginationData.length,
       asyncListItemsLength: asyncListItems.length,
-      sortedStaticDataLength: sortedStaticData?.length || 0
+      sortedStaticDataLength: sortedStaticData?.length || 0,
+      sortDescriptor
     });
+
+    let baseData: (T & { id: Key })[] = [];
 
     if (finalEnableAsyncLoading) {
       if (finalPaginationMode === 'pagination') {
         // 페이지네이션 모드에서는 paginationData만 사용
         console.log("🔄 Using pagination data:", paginationData.length);
-        console.log("📊 Pagination data sample:", paginationData.slice(0, 2));
-        return paginationData || [];
+        baseData = paginationData || [];
       } else if (shouldUseAsyncList) {
         // 무한 스크롤 모드에서는 useAsyncList의 items 사용
         console.log("🔄 Using asyncList items:", safeAsyncListItems.length);
-        console.log("📊 AsyncList data sample:", safeAsyncListItems.slice(0, 2));
-        return safeAsyncListItems || [];
+        baseData = safeAsyncListItems || [];
       } else {
         // fallback: paginationData 사용
         console.log("🔄 Using pagination data (fallback):", paginationData.length);
-        return paginationData || [];
+        baseData = paginationData || [];
       }
+    } else {
+      // 정적 데이터 사용
+      console.log("🔄 Using static data:", sortedStaticData?.length || 0);
+      baseData = (sortedStaticData || []).map(item => ({
+        ...item,
+        id: (item as T & { id?: Key }).id || String(Math.random()), // Fallback for missing id
+      })) as (T & { id: Key })[];
     }
 
-    // 정적 데이터 사용
-    console.log("🔄 Using static data:", sortedStaticData?.length || 0);
-    const processedItems = (sortedStaticData || []).map(item => ({
-      ...item,
-      id: (item as T & { id?: Key }).id || String(Math.random()), // Fallback for missing id
-    })) as (T & { id: Key })[];
+    // 정렬 적용
+    if (sortDescriptor && sortDescriptor.column && baseData.length > 0) {
+      const columnKey = sortDescriptor.column as keyof T;
+      const sortedData = [...baseData].sort((a, b) => {
+        const aValue = a[columnKey];
+        const bValue = b[columnKey];
+        let cmp = (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
+        if (sortDescriptor.direction === 'descending') {
+          cmp *= -1;
+        }
+        return cmp;
+      });
+      console.log("🔄 Applied sorting:", { column: sortDescriptor.column, direction: sortDescriptor.direction });
+      return sortedData;
+    }
 
-    return processedItems;
-  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, safeAsyncListItems, sortedStaticData, shouldUseAsyncList, asyncListItems.length]);
+    return baseData;
+  }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, safeAsyncListItems, sortedStaticData, shouldUseAsyncList, asyncListItems.length, sortDescriptor]);
 
   // 디버깅을 위한 로그 추가
   console.log("🔍 finalData debug:", {
@@ -458,12 +499,15 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
           >
             {(column: TableColumn<T>) => (
               <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
-                {({ sortDirection, allowsSorting }) => (
-                  <>
-                    {column.label}
-                    {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
-                  </>
-                )}
+                {({ sortDirection, allowsSorting }) => {
+
+                  return (
+                    <div className="column-header">
+                      {column.label}
+                      {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
+                    </div>
+                  );
+                }}
               </Column>
             )}
           </TableHeader>
@@ -494,12 +538,15 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
           >
             {(column: TableColumn<T>) => (
               <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
-                {({ sortDirection, allowsSorting }) => (
-                  <>
-                    {column.label}
-                    {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
-                  </>
-                )}
+                {({ sortDirection, allowsSorting }) => {
+                  console.log(`🔍 Column ${String(column.key)} sorting state:`, { sortDirection, allowsSorting });
+                  return (
+                    <div className="column-header">
+                      {column.label}
+                      {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
+                    </div>
+                  );
+                }}
               </Column>
             )}
           </TableHeader>
@@ -584,18 +631,15 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
       {/* 페이지네이션 UI - 재사용 가능한 컴포넌트 사용 */}
       {finalEnableAsyncLoading && finalPaginationMode === 'pagination' && (
-        <div className="p-2 bg-gray-50 border-t border-gray-200">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            hasNextPage={hasNextPage}
-            isLoading={paginationLoading}
-            onPageChange={handlePageChange}
-            totalItems={paginationData.length}
-            showPageInfo={true}
-            className="w-full"
-          />
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          hasNextPage={hasNextPage}
+          isLoading={paginationLoading}
+          onPageChange={handlePageChange}
+          totalItems={paginationData.length}
+          showPageInfo={true}
+        />
       )}
     </ResizableTableContainer>
   );
