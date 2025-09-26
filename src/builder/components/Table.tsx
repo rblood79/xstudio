@@ -2,7 +2,7 @@ import React from 'react';
 import { useAsyncList } from 'react-stately';
 import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, SortDirection } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import { forwardRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { forwardRef, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { SortIcon } from './SortIcon'; // SortIcon 임포트 경로 수정 (혹은 임시 로딩 컴포넌트 사용)
 import { apiConfig } from '../../services/api'; // apiConfig 임포트
 import { createDefaultTableProps, TableElementProps } from '../../types/unified'; // createDefaultTableProps 임포트
@@ -17,9 +17,14 @@ const tableHeaderVariants = tv({
       dark: 'bg-gray-800 text-white',
       primary: 'bg-blue-500 text-white',
     },
+    sticky: {
+      true: 'sticky top-0 z-10',
+      false: '',
+    },
   },
   defaultVariants: {
     variant: 'default',
+    sticky: false,
   },
 });
 
@@ -56,6 +61,9 @@ interface TableProps<T extends Record<string, unknown>> {
   height?: number;
   itemHeight?: number;
   overscan?: number;
+  // 헤더 고정 관련 props
+  stickyHeader?: boolean;
+  stickyHeaderOffset?: number;
   'data-testid'?: string;
   data?: T[]; // 정적 데이터 프로퍼티 추가
   columns?: TableColumn<T>[]; // 컬럼 정의 추가
@@ -98,6 +106,8 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     endpointPath = createDefaultTableProps().endpointPath, // 기본값 설정
     // apiParams, dataMapping 제거 - 직접 데이터 관리 사용
     paginationMode = createDefaultTableProps().paginationMode, // 기본값 설정
+    stickyHeader = createDefaultTableProps().stickyHeader, // 기본값 설정
+    stickyHeaderOffset = createDefaultTableProps().stickyHeaderOffset, // 기본값 설정
     ...props
   }: TableProps<T>, ref: React.Ref<HTMLTableElement>) {
 
@@ -120,6 +130,13 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   // itemsPerPage 값도 동일하게 처리
   const actualItemsPerPage = (actualElementProps as TableElementProps)?.itemsPerPage;
   const finalItemsPerPage = actualItemsPerPage !== undefined ? actualItemsPerPage : createDefaultTableProps().itemsPerPage;
+
+  // 헤더 고정 옵션 처리
+  const actualStickyHeader = (actualElementProps as TableElementProps)?.stickyHeader;
+  const finalStickyHeader = actualStickyHeader !== undefined ? actualStickyHeader : stickyHeader;
+
+  const actualStickyHeaderOffset = (actualElementProps as TableElementProps)?.stickyHeaderOffset;
+  const finalStickyHeaderOffset = actualStickyHeaderOffset !== undefined ? actualStickyHeaderOffset : stickyHeaderOffset;
 
   // 디버깅: paginationMode 값 확인
   console.log("🔍 Table 컴포넌트 paginationMode:", paginationMode);
@@ -155,7 +172,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       // 페이지네이션을 위한 파라미터 추가
       const params = {
         page: cursor ? parseInt(cursor) : 1,
-        limit: finalItemsPerPage, // 설정된 페이지당 행 수만큼 로드
+        limit: finalItemsPerPage || 10, // 설정된 페이지당 행 수만큼 로드
       };
 
       console.log("➡️ Loading page:", params.page, "limit:", params.limit);
@@ -231,6 +248,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const [paginationData, setPaginationData] = useState<(T & { id: Key })[]>([]);
   const [paginationLoading, setPaginationLoading] = useState(false);
 
+  // 무한루프 방지를 위한 ref
+  const prevPaginationMode = useRef(finalPaginationMode);
+  const prevEnableAsyncLoading = useRef(finalEnableAsyncLoading);
+  const prevShouldUseAsyncList = useRef(shouldUseAsyncList);
+
   // 페이지네이션 모드용 데이터 로딩 함수
   const loadPaginationData = useCallback(async (page: number) => {
     console.log("🔄 loadPaginationData called with page:", page);
@@ -249,7 +271,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         return;
       }
 
-      const params = { page, limit: finalItemsPerPage };
+      const params = { page, limit: finalItemsPerPage || 10 };
       console.log("📤 Calling API with params:", params);
       const json = await service(endpointPath, params);
       console.log("📥 API response:", json);
@@ -289,12 +311,22 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
   // 초기 데이터 로딩
   useEffect(() => {
+    // 값이 실제로 변경되었을 때만 실행
+    const paginationModeChanged = prevPaginationMode.current !== finalPaginationMode;
+    const enableAsyncLoadingChanged = prevEnableAsyncLoading.current !== finalEnableAsyncLoading;
+    const shouldUseAsyncListChanged = prevShouldUseAsyncList.current !== shouldUseAsyncList;
+
+    if (!paginationModeChanged && !enableAsyncLoadingChanged && !shouldUseAsyncListChanged) {
+      return; // 값이 변경되지 않았으면 실행하지 않음
+    }
+
     console.log("🔄 Initial data loading effect triggered:", {
       finalEnableAsyncLoading,
       finalPaginationMode,
-      paginationDataLength: paginationData.length,
-      asyncListItemsLength: asyncListItems.length,
-      shouldUseAsyncList
+      shouldUseAsyncList,
+      paginationModeChanged,
+      enableAsyncLoadingChanged,
+      shouldUseAsyncListChanged
     });
 
     if (finalEnableAsyncLoading) {
@@ -309,7 +341,12 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         }
       }
     }
-  }, [finalEnableAsyncLoading, finalPaginationMode, shouldUseAsyncList, loadPaginationData, safeAsyncListItems.length, safeAsyncListLoadMore, asyncListItems.length, paginationData.length]);
+
+    // 현재 값들을 ref에 저장
+    prevPaginationMode.current = finalPaginationMode;
+    prevEnableAsyncLoading.current = finalEnableAsyncLoading;
+    prevShouldUseAsyncList.current = shouldUseAsyncList;
+  }, [finalEnableAsyncLoading, finalPaginationMode, shouldUseAsyncList, loadPaginationData, safeAsyncListLoadMore, safeAsyncListItems.length]);
 
   // 페이지네이션 정보 업데이트
   useEffect(() => {
@@ -320,6 +357,14 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       setHasNextPage(currentPage < estimatedTotalPages);
     }
   }, [finalEnableAsyncLoading, finalPaginationMode, currentPage]);
+
+  // hasNextPage 업데이트 (currentPage 변경 시)
+  useEffect(() => {
+    if (finalEnableAsyncLoading && finalPaginationMode === 'pagination') {
+      const estimatedTotalPages = Math.ceil(500 / 50);
+      setHasNextPage(currentPage < estimatedTotalPages);
+    }
+  }, [currentPage, finalEnableAsyncLoading, finalPaginationMode]);
 
   // 최종 sortDescriptor와 onSortChange 결정
   const sortDescriptor: SortDescriptor = propSortDescriptor || defaultSortDescriptor;
@@ -406,7 +451,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       console.log("📋 columns:", columns);
       return (
         <>
-          <TableHeader className={tableHeaderVariants({ variant: headerVariant })} columns={columns}>
+          <TableHeader
+            className={tableHeaderVariants({ variant: headerVariant, sticky: finalStickyHeader })}
+            columns={columns}
+            style={finalStickyHeader ? { top: `${finalStickyHeaderOffset}px` } : undefined}
+          >
             {(column: TableColumn<T>) => (
               <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
                 {({ sortDirection, allowsSorting }) => (
@@ -438,7 +487,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       // 비동기 로딩이 아니고 children도 없지만, 정적 데이터가 있으면
       return (
         <>
-          <TableHeader className={tableHeaderVariants({ variant: headerVariant })} columns={columns}>
+          <TableHeader
+            className={tableHeaderVariants({ variant: headerVariant, sticky: finalStickyHeader })}
+            columns={columns}
+            style={finalStickyHeader ? { top: `${finalStickyHeaderOffset}px` } : undefined}
+          >
             {(column: TableColumn<T>) => (
               <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
                 {({ sortDirection, allowsSorting }) => (
@@ -470,7 +523,10 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       console.log("🔍 hasChildrenContent:", hasChildrenContent);
       return (
         <>
-          <TableHeader className={tableHeaderVariants({ variant: headerVariant })}>
+          <TableHeader
+            className={tableHeaderVariants({ variant: headerVariant, sticky: finalStickyHeader })}
+            style={finalStickyHeader ? { top: `${finalStickyHeaderOffset}px` } : undefined}
+          >
             <Column isRowHeader>이름</Column>
             <Column>나이</Column>
             <Column>이메일</Column>
@@ -485,7 +541,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
         </>
       );
     }
-  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, finalEnableAsyncLoading]);
+  }, [hasChildrenContent, children, finalData, columns, headerVariant, cellVariant, finalEnableAsyncLoading, finalStickyHeader, finalStickyHeaderOffset]);
 
   // 테이블 스타일 클래스
   const tableClasses = [

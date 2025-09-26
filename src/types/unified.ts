@@ -258,6 +258,9 @@ export interface TableElementProps extends BaseElementProps {
     height?: number; // 테이블 높이 (px)
     itemHeight?: number; // 각 행의 높이 (px)
     overscan?: number; // 미리 렌더링할 행 수
+    // 헤더 고정 관련 속성
+    stickyHeader?: boolean; // 헤더 고정 여부
+    stickyHeaderOffset?: number; // 헤더 고정 시 오프셋 (px)
 }
 
 export interface TableHeaderElementProps extends BaseElementProps {
@@ -673,6 +676,9 @@ export function createDefaultTableProps(): TableElementProps {
         height: 400,
         itemHeight: 50,
         overscan: 5,
+        // 헤더 고정 관련 기본값 추가
+        stickyHeader: false,
+        stickyHeaderOffset: 0,
     };
 }
 

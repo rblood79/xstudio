@@ -364,6 +364,21 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     value={(currentProps as TableElementProps)?.overscan || 5}
                     onChange={(overscan) => updateTableProps({ overscan: parseInt(overscan) || 5 })}
                 />
+
+                <PropertyCheckbox
+                    icon={Table}
+                    label="헤더 고정"
+                    isSelected={(currentProps as TableElementProps)?.stickyHeader || false}
+                    onChange={(stickyHeader) => updateTableProps({ stickyHeader })}
+                />
+
+                <PropertyInput
+                    icon={Settings}
+                    label="헤더 고정 오프셋 (px)"
+                    value={(currentProps as TableElementProps)?.stickyHeaderOffset || 0}
+                    onChange={(stickyHeaderOffset) => updateTableProps({ stickyHeaderOffset: parseInt(stickyHeaderOffset) || 0 })}
+                    type="number"
+                />
             </fieldset>
 
             <fieldset className="properties-aria">
