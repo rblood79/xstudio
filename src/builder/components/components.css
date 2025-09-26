@@ -2832,7 +2832,7 @@
     .react-aria-TableHeader {
         font-size: var(--text-sm);
         color: var(--color-primary-600);
-        background: var(--color-gray-50);
+        background: var(--color-gray-200);
 
         /*  &:after {
             content: '';
