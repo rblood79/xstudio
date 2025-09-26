@@ -160,6 +160,18 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         });
     };
 
+    const handleColumnSortingChange = (columnKey: string, allowsSorting: boolean) => {
+        const currentColumns = (currentProps as TableElementProps)?.columns || [];
+        const updatedColumns = currentColumns.map(col =>
+            col.key === columnKey
+                ? { ...col, allowsSorting }
+                : col
+        );
+        updateTableProps({
+            columns: updatedColumns,
+        });
+    };
+
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
@@ -381,6 +393,38 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 />
             </fieldset>
 
+            {/* 정렬 설정 */}
+            <fieldset className="component-fieldset">
+                <legend className="component-legend">
+                    <List className="legend-icon" />
+                    Sorting Settings
+                </legend>
+
+                <PropertySelect
+                    icon={Tag}
+                    label="기본 정렬 컬럼"
+                    value={(currentProps as TableElementProps)?.sortColumn || 'id'}
+                    options={[
+                        { value: 'id', label: 'ID' },
+                        { value: 'name', label: '이름' },
+                        { value: 'email', label: '이메일' },
+                        { value: 'jobTitle', label: '직업' },
+                    ]}
+                    onChange={(sortColumn) => updateTableProps({ sortColumn })}
+                />
+
+                <PropertySelect
+                    icon={List}
+                    label="기본 정렬 방향"
+                    value={(currentProps as TableElementProps)?.sortDirection || 'ascending'}
+                    options={[
+                        { value: 'ascending', label: '오름차순' },
+                        { value: 'descending', label: '내림차순' },
+                    ]}
+                    onChange={(sortDirection) => updateTableProps({ sortDirection: sortDirection as 'ascending' | 'descending' })}
+                />
+            </fieldset>
+
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>Column Management</legend>
 
@@ -419,16 +463,29 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     <div className='tabs-list'>
                         {((currentProps as TableElementProps)?.columns || []).map((column, index) => (
                             <div key={column.key} className='tab-list-item'>
-                                <span className='tab-title'>
-                                    {column.label || `Column ${index + 1}`}
-                                    <span className="ml-2 text-gray-500 text-sm">({column.key})</span>
-                                </span>
-                                <button
-                                    className='control-button delete'
-                                    onClick={() => handleRemoveColumnFromTableProps(column.key)}
-                                >
-                                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
+                                <div className='tab-content'>
+                                    <span className='tab-title'>
+                                        {column.label || `Column ${index + 1}`}
+                                        <span className="ml-2 text-gray-500 text-sm">({column.key})</span>
+                                    </span>
+                                    <div className='tab-controls'>
+                                        <label className='flex items-center gap-2 text-sm'>
+                                            <input
+                                                type="checkbox"
+                                                checked={(column as any).allowsSorting !== false}
+                                                onChange={(e) => handleColumnSortingChange(column.key, e.target.checked)}
+                                                className='rounded'
+                                            />
+                                            <span className='text-gray-600'>Sortable</span>
+                                        </label>
+                                        <button
+                                            className='control-button delete'
+                                            onClick={() => handleRemoveColumnFromTableProps(column.key)}
+                                        >
+                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>

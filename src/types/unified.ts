@@ -237,6 +237,8 @@ export interface TableElementProps extends BaseElementProps {
     columns?: Array<{
         key: string;
         label: string;
+        allowsSorting?: boolean;
+        isRowHeader?: boolean;
         render?: (item: Record<string, unknown>) => React.ReactNode;
     }>;
     selectionMode?: 'none' | 'single' | 'multiple';
@@ -261,6 +263,9 @@ export interface TableElementProps extends BaseElementProps {
     // 헤더 고정 관련 속성
     stickyHeader?: boolean; // 헤더 고정 여부
     stickyHeaderOffset?: number; // 헤더 고정 시 오프셋 (px)
+    // 정렬 관련 속성
+    sortColumn?: string; // 정렬할 컬럼 키
+    sortDirection?: 'ascending' | 'descending'; // 정렬 방향
 }
 
 export interface TableHeaderElementProps extends BaseElementProps {
@@ -679,6 +684,9 @@ export function createDefaultTableProps(): TableElementProps {
         // 헤더 고정 관련 기본값 추가
         stickyHeader: false,
         stickyHeaderOffset: 0,
+        // 정렬 관련 기본값 추가
+        sortColumn: 'id',
+        sortDirection: 'ascending',
     };
 }
 
