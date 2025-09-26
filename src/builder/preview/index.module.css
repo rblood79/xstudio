@@ -2,5 +2,6 @@
     :root {
         --highlight-background: var(--color-primary-500);
         --highlight-foreground: var(--color-primary-50);
+        --overlay-background: var(--color-gray-50);
     }
 }
