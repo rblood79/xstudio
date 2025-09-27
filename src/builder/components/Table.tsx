@@ -3,6 +3,7 @@ import { useAsyncList } from 'react-stately';
 import { Table as AriaTable, Row, Cell, TableHeader, TableBody, Column, ResizableTableContainer, SortDescriptor, Key, SortDirection } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import { forwardRef, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { SortIcon } from './SortIcon'; // SortIcon 임포트 경로 수정 (혹은 임시 로딩 컴포넌트 사용)
 import { apiConfig } from '../../services/api'; // apiConfig 임포트
 import { createDefaultTableProps, TableElementProps } from '../../types/unified'; // createDefaultTableProps 임포트
@@ -253,6 +254,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     safeAsyncListItemsLength: safeAsyncListItems.length
   });
 
+  // 가상화 설정을 위한 ref
+  const parentRef = useRef<HTMLDivElement>(null);
+
   // 페이지네이션 상태 관리
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -481,6 +485,28 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     sortedStaticDataLength: sortedStaticData?.length || 0
   });
 
+  // 가상화 설정 (finalData 선언 후)
+  const itemHeight = 50; // 각 행의 높이
+  const overscan = 5; // 추가로 렌더링할 항목 수
+
+  // 가상화 설정
+  const virtualizer = useVirtualizer({
+    count: finalData.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => itemHeight,
+    overscan: overscan,
+  });
+
+  // 가상화 디버깅
+  const virtualItems = virtualizer.getVirtualItems();
+  console.log("🔍 Table 가상화 상태:", {
+    totalRows: finalData.length,
+    virtualItemsCount: virtualItems.length,
+    startIndex: virtualItems[0]?.index || 0,
+    endIndex: virtualItems[virtualItems.length - 1]?.index || 0,
+    totalSize: virtualizer.getTotalSize()
+  });
+
   // children이 없거나 빈 배열인 경우 기본 구조 제공 또는 data prop 사용
   const hasChildrenContent = children && React.Children.count(children) > 0;
 
@@ -601,10 +627,93 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     className
   ].filter(Boolean).join(' ');
 
+  // 가상화된 테이블 렌더링
+  if (finalData.length > 100) { // 100개 이상일 때만 가상화 사용
+    return (
+      <div
+        ref={parentRef}
+        className={`${tableClasses} overflow-auto`}
+        style={{ height: '400px' }}
+        data-testid={testId}
+        onScroll={shouldUseAsyncList ? (e) => {
+          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+          // 스크롤이 하단에 가까우면 더 많은 데이터 로드
+          if (scrollTop + clientHeight >= scrollHeight - 100) {
+            console.log("🔄 가상화된 테이블 스크롤 감지 - 더 많은 데이터 로드");
+            safeAsyncListLoadMore();
+          }
+        } : undefined}
+      >
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            position: 'relative',
+            width: '100%'
+          }}
+        >
+          <table className="w-full">
+            <thead className="sticky top-0 bg-white z-10">
+              <tr>
+                {columns?.map((column) => (
+                  <th
+                    key={String(column.key)}
+                    className="px-4 py-2 text-left font-semibold border-b border-gray-200"
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {virtualItems.map((virtualRow) => {
+                const item = finalData[virtualRow.index];
+                if (!item) return null;
+
+                return (
+                  <tr
+                    key={item.id}
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                    }}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
+                    {columns?.map((column) => (
+                      <td
+                        key={String(column.key)}
+                        className="px-4 py-2"
+                      >
+                        {(item as Record<string, unknown>)[column.key as string] as React.ReactNode}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 로딩 인디케이터 */}
+        {shouldUseAsyncList && (
+          <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-90 p-2 text-center">
+            <div className="inline-flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              로딩 중...
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 기존 테이블 렌더링 (100개 미만일 때)
   return (
     <ResizableTableContainer
       data-infinite-scroll={shouldUseAsyncList}
-
       onScroll={shouldUseAsyncList ? (e) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
         // 스크롤이 하단에 가까우면 더 많은 데이터 로드

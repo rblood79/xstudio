@@ -3095,6 +3095,17 @@
     display: block;
 }
 
+/* DataGrid 컴포넌트 스타일 */
+.react-aria-DataGrid {
+    display: block;
+    border-radius: var(--spacing-sm);
+    background-color: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    transition: all 0.2s ease-in-out;
+    overflow: hidden;
+}
+
+/* Pagination 컴포넌트 스타일 */
 .react-aria-Pagination {
     font-size: var(--text-sm);
     color: var(--color-gray-600);
