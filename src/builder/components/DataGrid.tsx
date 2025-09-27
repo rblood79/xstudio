@@ -27,7 +27,7 @@ const dataGridVariants = tv({
 });
 
 const cellVariants = tv({
-    base: 'flex items-center px-3 py-2 border-r border-b border-gray-200 text-left',
+    base: 'react-aria-Row',
     variants: {
         isHeader: {
             true: 'bg-gray-50 font-semibold text-gray-700',
@@ -180,7 +180,7 @@ function VirtualRow<T extends Record<string, unknown>>({
                             minWidth: (column as { minWidth?: number }).minWidth || 100,
                             maxWidth: (column as { maxWidth?: number }).maxWidth || 300
                         }}
-                        className="border-r border-gray-200 px-2 py-1 flex items-center"
+                        className="react-aria-Cell"
                         onDoubleClick={() => handleCellDoubleClick(cellKey)}
                     >
                         {isEditing ? (
@@ -464,7 +464,7 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
             {...domProps}
         >
             {/* 헤더 */}
-            <div className="flex border-b border-gray-300 bg-gray-50">
+            <div className="react-aria-TableHeader">
                 {finalColumns.map((column) => (
                     <div
                         key={column.key}
