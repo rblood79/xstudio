@@ -5,6 +5,9 @@ export { ProjectsApiService, projectsApi, type Project, type CreateProjectData }
 export { PagesApiService, pagesApi, type Page, type CreatePageData } from './PagesApiService';
 import { largeMockData, MockUserData } from './mockLargeDataV2';
 
+// MockUserData 타입 export
+export type { MockUserData };
+
 // Import the instances for the ApiService class
 import { elementsApi } from './ElementsApiService';
 import { projectsApi } from './ProjectsApiService';

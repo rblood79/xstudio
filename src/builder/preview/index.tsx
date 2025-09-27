@@ -38,6 +38,7 @@ import {
   DateRangePicker,
   Switch, // Switch 추가
   Table, // Table 추가
+  DataGrid, // DataGrid 추가
   Card,
   TagGroup,
   Tag,
@@ -113,7 +114,7 @@ function Preview() {
       if (!data || typeof data !== 'object' || !data.type) return;
 
       if (data.type === 'UPDATE_ELEMENTS') {
-        setElements(data.elements || [], { skipHistory: true });
+        setElements(data.elements || []);
       }
 
       // 개별 요소 속성 업데이트 처리
@@ -141,7 +142,7 @@ function Preview() {
         const updatedElements = elements.filter(element =>
           !data.elementIds.includes(element.id)
         );
-        setElements(updatedElements, { skipHistory: true });
+        setElements(updatedElements);
         return;
       }
 
@@ -150,7 +151,7 @@ function Preview() {
         const updatedElements = elements.filter(element =>
           element.id !== data.elementId
         );
-        setElements(updatedElements, { skipHistory: true });
+        setElements(updatedElements);
         return;
       }
 
@@ -236,7 +237,7 @@ function Preview() {
 
   // renderElement 함수 수정
 
-  const renderElement = (el: PreviewElement): React.ReactNode => {
+  const renderElement = (el: PreviewElement, key?: string): React.ReactNode => {
     const children = elements
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -362,7 +363,7 @@ function Preview() {
           }}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </ToggleButton>
       );
     }
@@ -387,7 +388,7 @@ function Preview() {
           }}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Checkbox>
       );
     }
@@ -407,7 +408,7 @@ function Preview() {
             className={el.props.className}
           >
             {typeof el.props.children === 'string' ? el.props.children : null}
-            {children.map((child) => renderElement(child))}
+            {children.map((child) => renderElement(child, child.id))}
           </Radio>
         );
       } else {
@@ -423,7 +424,7 @@ function Preview() {
               className={el.props.className}
             >
               {typeof el.props.children === 'string' ? el.props.children : null}
-              {children.map((child) => renderElement(child))}
+              {children.map((child) => renderElement(child, child.id))}
             </Radio>
           </RadioGroup>
         );
@@ -440,7 +441,7 @@ function Preview() {
           className={el.props.className}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Label>
       );
     }
@@ -479,7 +480,7 @@ function Preview() {
           className={el.props.className}
         >
           {typeof el.props.text === 'string' ? el.props.text : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Description>
       );
     }
@@ -493,7 +494,7 @@ function Preview() {
           className={el.props.className}
         >
           {typeof el.props.text === 'string' ? el.props.text : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </FieldError>
       );
     }
@@ -670,7 +671,7 @@ function Preview() {
           onKeyUp={eventHandlers.onKeyUp as unknown as (e: unknown) => void}
         >
           {typeof el.props.children === 'string' ? el.props.children : (children.length === 0 ? 'Button' : null)}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Button>
       );
     }
@@ -1235,7 +1236,7 @@ function Preview() {
           className: el.props.className,
         },
         el.props.children,
-        ...children.map((child) => renderElement(child))
+        ...children.map((child) => renderElement(child, child.id))
       );
     }
 
@@ -1427,7 +1428,7 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
         >
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Panel>
       );
     }
@@ -1451,7 +1452,7 @@ function Preview() {
           onClick={eventHandlers.onClick as unknown as () => void}
         >
           {typeof el.props.children === 'string' ? el.props.children : null}
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Card>
       );
     }
@@ -1513,11 +1514,9 @@ function Preview() {
         <Table
           key={el.id}
           data-element-id={el.id}
-          style={el.props.style}
           className={el.props.className}
           selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
-          selectionBehavior={(el.props.selectionBehavior as 'toggle' | 'replace') || 'toggle'}
-          selectedKeys={Array.isArray(el.props.selectedKeys) ? el.props.selectedKeys as string[] : []}
+          selectedKeys={Array.isArray(el.props.selectedKeys) ? new Set(el.props.selectedKeys as unknown as string[]) : new Set()}
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -1526,7 +1525,7 @@ function Preview() {
             updateElementProps(el.id, updatedProps);
           }}
         >
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Table>
       );
     }
@@ -1535,7 +1534,7 @@ function Preview() {
     if (el.tag === 'TableHeader') {
       return (
         <TableHeader key={el.id} data-element-id={el.id} {...el.props}>
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </TableHeader>
       );
     }
@@ -1544,7 +1543,7 @@ function Preview() {
     if (el.tag === 'TableBody') {
       return (
         <TableBody key={el.id} data-element-id={el.id} {...el.props}>
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </TableBody>
       );
     }
@@ -1562,7 +1561,7 @@ function Preview() {
     if (el.tag === 'Row') {
       return (
         <Row key={el.id} data-element-id={el.id} style={el.props.style} className={el.props.className} value={el.props.value as object}>
-          {children.map((child) => renderElement(child))}
+          {children.map((child) => renderElement(child, child.id))}
         </Row>
       );
     }
@@ -1664,7 +1663,7 @@ function Preview() {
             };
 
             // 4. 모든 상태를 한 번에 업데이트
-            setElements(updatedElements, { skipHistory: true });
+            setElements(updatedElements);
             updateElementProps(el.id, updatedProps);
 
             // 5. 데이터베이스에 TagGroup props 저장
@@ -1754,6 +1753,7 @@ function Preview() {
       'DateRangePicker': DateRangePicker,
       'Switch': Switch,
       'Table': Table,
+      'DataGrid': DataGrid,
       'Card': Card,
       'TagGroup': TagGroup,
       'Tag': Tag,
@@ -1777,10 +1777,11 @@ function Preview() {
 
     if (ReactComponent) {
       // React 컴포넌트인 경우 - JSX.Element 반환
-      const content = children.map((child) => renderElement(child));
+      const content = children.map((child) => renderElement(child, child.id));
       return React.createElement(
         ReactComponent,
         {
+          key,
           ...finalProps,
           "data-element-id": el.id,
         },
@@ -1796,7 +1797,7 @@ function Preview() {
     if (isHTMLElement) {
       // HTML 요소인 경우 - React Aria 전용 props 제거
       const cleanProps = { ...finalProps };
-      const content = children.map((child) => renderElement(child));
+      const content = children.map((child) => renderElement(child, child.id));
 
       // React Aria 전용 props 제거
       const propsToRemove = [
@@ -1832,6 +1833,7 @@ function Preview() {
       return React.createElement(
         effectiveTag.toLowerCase(),
         {
+          key,
           ...cleanProps,
           "data-element-id": el.id,
         },
@@ -1842,7 +1844,7 @@ function Preview() {
     // 알 수 없는 태그인 경우 div로 렌더링
     console.warn(`Unknown component/element type: ${effectiveTag}. Rendering as div.`);
 
-    const content = children.map((child) => renderElement(child));
+    const content = children.map((child) => renderElement(child, child.id));
     const fallbackProps = {
       "data-element-id": el.id,
       "data-unknown-component": effectiveTag,
@@ -1853,7 +1855,7 @@ function Preview() {
 
     return React.createElement(
       'div',
-      fallbackProps,
+      { ...fallbackProps, key },
       content.length > 0 ? content : `Unknown: ${effectiveTag}`
     );
   };
@@ -1869,14 +1871,14 @@ function Preview() {
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       // body의 자식들을 렌더링 (body 자체는 Preview 컴포넌트의 루트에서 처리)
-      return bodyChildren.map((el) => renderElement(el));
+      return bodyChildren.map((el) => renderElement(el, el.id));
     } else {
       // body가 없는 경우 루트 요소들 렌더링
       const rootElements = elements
         .filter((el) => !el.parent_id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      return rootElements.map((el) => renderElement(el));
+      return rootElements.map((el) => renderElement(el, el.id));
     }
   };
 
