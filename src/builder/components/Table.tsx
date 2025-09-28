@@ -47,6 +47,7 @@ interface TableColumn<T> {
   label: string;
   allowsSorting?: boolean;
   isRowHeader?: boolean;
+  width?: number; // 컬럼 너비 추가
 }
 
 interface TableProps<T extends Record<string, unknown>> {
@@ -158,6 +159,10 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   console.log("🔍 Table 컴포넌트 actualPaginationMode:", actualPaginationMode);
   console.log("🔍 Table 컴포넌트 finalPaginationMode:", finalPaginationMode);
   console.log("🔍 Table 컴포넌트 actualElementProps:", actualElementProps);
+
+  // 디버깅: props 전달 상태 확인
+  console.log("🔍 Table 컴포넌트 props:", props);
+  console.log("🔍 Table 컴포넌트 data-element-id:", (props as Record<string, unknown>)['data-element-id']);
 
   // sortDescriptor 초기값 설정 (propSortDescriptor가 없으면 기본값 사용)
   const defaultSortDescriptor: SortDescriptor = {
@@ -485,17 +490,80 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     sortedStaticDataLength: sortedStaticData?.length || 0
   });
 
-  // 가상화 설정 (finalData 선언 후)
-  const itemHeight = 50; // 각 행의 높이
-  const overscan = 5; // 추가로 렌더링할 항목 수
+  // 가상화 설정 (참조 코드 기반)
+  const itemHeight = 34; // 참조 코드와 동일한 높이
+  const overscan = 20; // 참조 코드와 동일한 overscan
 
-  // 가상화 설정
+  // 가상화 설정 - 스크롤 문제 수정
   const virtualizer = useVirtualizer({
     count: finalData.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
     overscan: overscan,
+    // 스크롤 방향 명시적 지정
+    horizontal: false,
   });
+
+  // 가상화 디버깅을 위한 useEffect
+  useEffect(() => {
+    console.log("🔍 Virtualizer 상태:", {
+      totalItems: finalData.length,
+      virtualizerEnabled: !!parentRef.current,
+      scrollElement: parentRef.current,
+      totalSize: virtualizer.getTotalSize(),
+      virtualItems: virtualizer.getVirtualItems().length,
+      scrollHeight: parentRef.current?.scrollHeight,
+      clientHeight: parentRef.current?.clientHeight
+    });
+  }, [finalData.length, virtualizer]);
+
+  // 무한 스크롤을 위한 스크롤 이벤트 감지 - 개선된 버전
+  useEffect(() => {
+    const scrollElement = parentRef.current;
+    if (!scrollElement || !shouldUseAsyncList) return;
+
+    let isLoadingMore = false; // 중복 로딩 방지
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+
+      // 스크롤이 하단에 가까우면 더 많은 데이터 로드
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+      if (isNearBottom && !isLoadingMore) {
+        isLoadingMore = true;
+        console.log("🔄 무한 스크롤 감지 - 더 많은 데이터 로드 시도");
+
+        // asyncList의 loadingState 확인
+        const currentLoadingState = asyncList.loadingState;
+        console.log("🔍 현재 로딩 상태:", currentLoadingState);
+
+        if (currentLoadingState === 'idle' || currentLoadingState === 'loading') {
+          console.log("✅ loadMore 호출");
+          safeAsyncListLoadMore();
+          // 비동기 작업이므로 setTimeout으로 로딩 상태 해제
+          setTimeout(() => {
+            isLoadingMore = false;
+          }, 1000);
+        } else {
+          isLoadingMore = false;
+        }
+      }
+    };
+
+    // 스크롤 이벤트에 디바운스 적용
+    let timeoutId: NodeJS.Timeout;
+    const debouncedHandleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+
+    scrollElement.addEventListener('scroll', debouncedHandleScroll);
+    return () => {
+      scrollElement.removeEventListener('scroll', debouncedHandleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [shouldUseAsyncList, safeAsyncListLoadMore, asyncList.loadingState]);
 
   // 가상화 디버깅
   const virtualItems = virtualizer.getVirtualItems();
@@ -627,82 +695,117 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     className
   ].filter(Boolean).join(' ');
 
-  // 가상화된 테이블 렌더링
-  if (finalData.length > 100) { // 100개 이상일 때만 가상화 사용
+  // 가상화된 테이블 렌더링 (스크롤 문제 수정)
+  if (finalData.length > 20 || (shouldUseAsyncList && finalData.length > 0)) {
     return (
       <div
         ref={parentRef}
-        className={`${tableClasses} overflow-auto`}
-        style={{ height: '400px' }}
+        className={`${tableClasses} relative`}
+        style={{
+          height: '400px',
+          overflow: 'auto',
+          border: '1px solid #e5e7eb',
+          position: 'relative', // 스크롤 컨테이너 위치 지정
+          backgroundColor: '#f9f9f9' // 스크롤 영역 시각적 확인용
+        }}
         data-testid={testId}
-        onScroll={shouldUseAsyncList ? (e) => {
-          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-          // 스크롤이 하단에 가까우면 더 많은 데이터 로드
-          if (scrollTop + clientHeight >= scrollHeight - 100) {
-            console.log("🔄 가상화된 테이블 스크롤 감지 - 더 많은 데이터 로드");
-            safeAsyncListLoadMore();
-          }
-        } : undefined}
+        {...props} // 모든 props 전달 (data-element-id 포함)
       >
         <div
           style={{
             height: `${virtualizer.getTotalSize()}px`,
             position: 'relative',
-            width: '100%'
+            width: '100%' // 전체 너비 확보
           }}
         >
-          <table className="w-full">
-            <thead className="sticky top-0 bg-white z-10">
-              <tr>
-                {columns?.map((column) => (
-                  <th
-                    key={String(column.key)}
-                    className="px-4 py-2 text-left font-semibold border-b border-gray-200"
-                  >
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+          <AriaTable
+            ref={ref}
+            className="w-full"
+            aria-label="가상화된 테이블"
+            selectionMode={selectionMode}
+            sortDescriptor={sortDescriptor}
+            onSortChange={onSortChange}
+            selectedKeys={selectedKeys}
+            onSelectionChange={onSelectionChange}
+            style={{
+              tableLayout: 'fixed',
+              width: '100%' // 테이블 너비 확보
+            }}
+          >
+            <TableHeader
+              className={tableHeaderVariants({ variant: headerVariant, sticky: true })}
+              columns={columns}
+            >
+              {(column: TableColumn<T>) => (
+                <Column
+                  key={String(column.key)}
+                  allowsSorting={column.allowsSorting}
+                  isRowHeader={column.isRowHeader}
+                  width={column.width || 150} // 컬럼 너비 설정
+                >
+                  {({ sortDirection, allowsSorting }) => (
+                    <div className="column-header flex items-center justify-between p-2">
+                      <span>{column.label}</span>
+                      {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
+                    </div>
+                  )}
+                </Column>
+              )}
+            </TableHeader>
+            <TableBody className={tableCellVariants({ variant: cellVariant })}>
               {virtualItems.map((virtualRow) => {
                 const item = finalData[virtualRow.index];
                 if (!item) return null;
 
+                // 가상화 디버깅 로그
+                console.log(`🔍 Virtual Row ${virtualRow.index}:`, {
+                  start: virtualRow.start,
+                  size: virtualRow.size,
+                  end: virtualRow.end,
+                  itemId: item.id
+                });
+
                 return (
-                  <tr
+                  <Row
                     key={item.id}
+                    id={item.id}
                     style={{
-                      height: `${virtualRow.size}px`,
                       transform: `translateY(${virtualRow.start}px)`,
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
                     }}
-                    className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    {columns?.map((column) => (
-                      <td
+                    {columns?.map((column, colIndex) => (
+                      <Cell
                         key={String(column.key)}
-                        className="px-4 py-2"
+                        style={{
+                          width: column.width || 150,
+                          borderRight: colIndex < columns.length - 1 ? '1px solid #e5e7eb' : 'none'
+                        }}
                       >
                         {(item as Record<string, unknown>)[column.key as string] as React.ReactNode}
-                      </td>
+                      </Cell>
                     ))}
-                  </tr>
+                  </Row>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </AriaTable>
         </div>
 
-        {/* 로딩 인디케이터 */}
-        {shouldUseAsyncList && (
-          <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-90 p-2 text-center">
-            <div className="inline-flex items-center">
+        {/* 로딩 인디케이터 개선 */}
+        {shouldUseAsyncList && asyncList.loadingState === 'loadingMore' && (
+          <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-90 p-2 text-center border-t">
+            <div className="inline-flex items-center text-sm text-gray-600">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-              로딩 중...
+              더 많은 데이터 로딩 중...
+            </div>
+          </div>
+        )}
+
+        {/* 에러 상태 표시 */}
+        {shouldUseAsyncList && asyncList.loadingState === 'error' && (
+          <div className="absolute bottom-0 left-0 right-0 bg-red-50 p-2 text-center border-t border-red-200">
+            <div className="text-sm text-red-600">
+              데이터 로딩 중 오류가 발생했습니다. 다시 시도해주세요.
             </div>
           </div>
         )}
@@ -712,32 +815,23 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
 
   // 기존 테이블 렌더링 (100개 미만일 때)
   return (
-    <ResizableTableContainer
-      data-infinite-scroll={shouldUseAsyncList}
-      onScroll={shouldUseAsyncList ? (e) => {
-        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-        // 스크롤이 하단에 가까우면 더 많은 데이터 로드
-        if (scrollTop + clientHeight >= scrollHeight - 100) {
-          console.log("🔄 스크롤 감지 - 더 많은 데이터 로드");
-          safeAsyncListLoadMore();
-        }
-      } : undefined}
-    >
-      <AriaTable
-        ref={ref}
-        className={tableClasses}
-        data-testid={testId}
-        aria-label="테이블"
-        selectionMode={selectionMode}
-        sortDescriptor={sortDescriptor}
-        onSortChange={onSortChange}
-        selectedKeys={selectedKeys}
-        onSelectionChange={onSelectionChange}
-        {...props}
-      >
-        {tableContent}
-      </AriaTable>
-
+    <ResizableTableContainer {...props}>
+      <div style={{ height: paginationMode === 'pagination' ? `auto` : `${virtualizer.getTotalSize()}px` }}>
+        <AriaTable
+          ref={ref}
+          className={tableClasses}
+          data-testid={testId}
+          aria-label="테이블"
+          selectionMode={selectionMode}
+          sortDescriptor={sortDescriptor}
+          onSortChange={onSortChange}
+          selectedKeys={selectedKeys}
+          onSelectionChange={onSelectionChange}
+          {...props}
+        >
+          {tableContent}
+        </AriaTable>
+      </div>
       {/* 페이지네이션 UI - 재사용 가능한 컴포넌트 사용 */}
       {finalEnableAsyncLoading && finalPaginationMode === 'pagination' && (
         <Pagination

@@ -2969,13 +2969,13 @@
     border-radius: var(--spacing-sm);
     background: var(--background-color);
 
-    &[data-infinite-scroll] {
+    /*&[data-infinite-scroll] {
         height: 51%;
     }
 
     &[data-infinite-scroll='false'] {
         height: auto;
-    }
+    }*/
 
     .react-aria-Table {
         border: none;
