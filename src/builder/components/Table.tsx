@@ -700,37 +700,29 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     return (
       <div
         ref={parentRef}
-        className={`${tableClasses} relative`}
+        className={`react-aria-ResizableTable`}
         style={{
           height: '400px',
           overflow: 'auto',
-          border: '1px solid #e5e7eb',
-          position: 'relative', // 스크롤 컨테이너 위치 지정
-          backgroundColor: '#f9f9f9' // 스크롤 영역 시각적 확인용
         }}
         data-testid={testId}
         {...props} // 모든 props 전달 (data-element-id 포함)
       >
         <div
           style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            position: 'relative',
-            width: '100%' // 전체 너비 확보
+            height: `${virtualizer.getTotalSize()}px`
           }}
         >
           <AriaTable
             ref={ref}
-            className="w-full"
+            className="react-aria-Table"
             aria-label="가상화된 테이블"
             selectionMode={selectionMode}
             sortDescriptor={sortDescriptor}
             onSortChange={onSortChange}
             selectedKeys={selectedKeys}
             onSelectionChange={onSelectionChange}
-            style={{
-              tableLayout: 'fixed',
-              width: '100%' // 테이블 너비 확보
-            }}
+
           >
             <TableHeader
               className={tableHeaderVariants({ variant: headerVariant, sticky: true })}
@@ -744,7 +736,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
                   width={column.width || 150} // 컬럼 너비 설정
                 >
                   {({ sortDirection, allowsSorting }) => (
-                    <div className="column-header flex items-center justify-between p-2">
+                    <div className="column-header flex items-center justify-between">
                       <span>{column.label}</span>
                       {allowsSorting && sortDirection && <SortIcon direction={sortDirection} />}
                     </div>
@@ -753,7 +745,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
               )}
             </TableHeader>
             <TableBody className={tableCellVariants({ variant: cellVariant })}>
-              {virtualItems.map((virtualRow) => {
+              {virtualItems.map((virtualRow, index) => {
                 const item = finalData[virtualRow.index];
                 if (!item) return null;
 
@@ -769,8 +761,10 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
                   <Row
                     key={item.id}
                     id={item.id}
+
                     style={{
-                      transform: `translateY(${virtualRow.start}px)`,
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`
                     }}
                   >
                     {columns?.map((column, colIndex) => (

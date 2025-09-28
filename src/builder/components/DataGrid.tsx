@@ -223,7 +223,7 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         onLoadMore,
         hasMore = true,
         isLoading = false,
-        size = 'md',
+        size = 'sm',
         variant = 'default',
         className,
         'data-testid': testId,
