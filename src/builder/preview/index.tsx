@@ -1569,11 +1569,11 @@ function Preview() {
 
       // API 데이터용 컬럼 정의
       const finalColumns = [
-        { key: 'id', label: 'ID', allowsSorting: true, width: 80 },
-        { key: 'name', label: 'Name', allowsSorting: true, width: 200 },
-        { key: 'email', label: 'Email', allowsSorting: true, width: 250 },
-        { key: 'phone', label: 'Phone', allowsSorting: true, width: 150 },
-        { key: 'company', label: 'Company', allowsSorting: true, width: 200 }
+        { key: 'id' as const, label: 'ID', allowsSorting: true, width: 80 },
+        { key: 'name' as const, label: 'Name', allowsSorting: true, width: 200 },
+        { key: 'email' as const, label: 'Email', allowsSorting: true, width: 250 },
+        { key: 'phone' as const, label: 'Phone', allowsSorting: true, width: 150 },
+        { key: 'company' as const, label: 'Company', allowsSorting: true, width: 200 }
       ];
 
       return (
@@ -1583,7 +1583,7 @@ function Preview() {
           className={el.props.className}
           columns={finalColumns}
           data={useApiData ? undefined : finalData}
-          paginationMode={(el.props.paginationMode as 'pagination' | 'infinite-scroll') || 'pagination'}
+          paginationMode={(el.props.paginationMode as 'pagination' | 'infinite') || 'pagination'}
           itemsPerPage={typeof el.props.itemsPerPage === 'number' ? el.props.itemsPerPage : 50}
           height={typeof el.props.height === 'number' ? el.props.height : 300}
           rowHeight={typeof el.props.rowHeight === 'number' ? el.props.rowHeight : 40}

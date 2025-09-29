@@ -233,6 +233,7 @@ export interface SwitchElementProps extends BaseElementProps {
 
 export interface TableElementProps extends BaseElementProps {
     children?: React.ReactNode;
+    'data-element-id'?: string;
     items?: Array<Record<string, unknown>>;
     columns?: Array<{
         key: string;
@@ -254,7 +255,7 @@ export interface TableElementProps extends BaseElementProps {
     apiParams?: Record<string, unknown>; // API 호출 시 전달될 추가 파라미터 (예: { search: 'Luke' })
     dataMapping?: { resultPath?: string; idKey?: string }; // API 응답 데이터 매핑 정보
     // 페이지네이션 모드 선택
-    paginationMode?: 'pagination' | 'infinite-scroll'; // 페이지네이션 또는 무한스크롤 모드
+    paginationMode?: 'pagination' | 'infinite'; // 페이지네이션 또는 무한스크롤 모드
     itemsPerPage?: number; // 페이지당 표시할 행 수 (기본값: 50)
     // 가상화 관련 속성 추가
     height?: number; // 테이블 높이 (px)
@@ -695,7 +696,7 @@ export function createDefaultTableProps(): TableElementProps {
         apiParams: {},
         dataMapping: { resultPath: '', idKey: 'id' },
         // 페이지네이션 모드 기본값
-        paginationMode: 'infinite-scroll', // 기본값은 무한스크롤
+        paginationMode: 'infinite', // 기본값은 무한스크롤
         itemsPerPage: 10, // 페이지당 표시할 행 수 기본값
         // 가상화 관련 기본값 추가
         height: 400,

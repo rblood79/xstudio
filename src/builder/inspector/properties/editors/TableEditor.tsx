@@ -320,12 +320,12 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 <PropertySelect
                     icon={Settings}
                     label="페이지네이션 모드"
-                    value={(currentProps as TableElementProps)?.paginationMode || 'infinite-scroll'}
+                    value={(currentProps as TableElementProps)?.paginationMode || 'infinite'}
                     options={[
-                        { value: 'infinite-scroll', label: '무한 스크롤 (모바일 친화적)' },
+                        { value: 'infinite', label: '무한 스크롤 (모바일 친화적)' },
                         { value: 'pagination', label: '페이지네이션 (데스크탑 친화적)' }
                     ]}
-                    onChange={(paginationMode) => updateTableProps({ paginationMode: paginationMode as 'pagination' | 'infinite-scroll' })}
+                    onChange={(paginationMode) => updateTableProps({ paginationMode: paginationMode as 'pagination' | 'infinite' })}
                 />
 
                 <div className="tab-overview">

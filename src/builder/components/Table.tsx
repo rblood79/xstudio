@@ -11,7 +11,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { apiConfig } from '../../services/api'; // ← 더미 apiConfig.demo 사용 (배열 반환)
 
-export type PaginationMode = 'pagination' | 'infinite-scroll';
+export type PaginationMode = 'pagination' | 'infinite';
 
 export interface ColumnDefinition<T> {
   key: keyof T;
@@ -25,6 +25,7 @@ export interface ColumnDefinition<T> {
 
 export interface TableProps<T extends { id: string | number }> {
   className?: string;
+  'data-element-id'?: string;
 
   // 데이터 소스: 정적 or 비동기
   data?: T[];                 // 정적 데이터가 들어오면 API는 호출하지 않음
@@ -36,7 +37,7 @@ export interface TableProps<T extends { id: string | number }> {
   columns: ColumnDefinition<T>[];
 
   // 표 옵션
-  paginationMode?: PaginationMode; // 'pagination' | 'infinite-scroll' (default: 'pagination')
+  paginationMode?: PaginationMode; // 'pagination' | 'infinite' (default: 'pagination')
   itemsPerPage?: number;           // default: 50
   height?: number;                 // default: 400
   rowHeight?: number;              // default: 40
@@ -78,17 +79,9 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     enableResize = true,
   } = props;
 
-  const mode: 'pagination' | 'infinite' =
-    paginationMode === 'infinite-scroll' ? 'infinite' : 'pagination';
+  const mode: 'pagination' | 'infinite' = paginationMode || 'pagination';
   const isAsync = enableAsyncLoading && !staticData && apiUrlKey && endpointPath;
 
-  console.log('🔍 Table API 설정:', {
-    enableAsyncLoading,
-    staticData: !!staticData,
-    apiUrlKey,
-    endpointPath,
-    isAsync
-  });
 
   // ----- 정렬 상태 -----
   const initialSorting: SortingState = React.useMemo(() => {
@@ -125,13 +118,10 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // 주의: apiConfig[apiUrlKey](endpoint, { page, limit })는 배열을 반환해야 함
   const fetchPage = React.useCallback(
     async (nextIndex: number) => {
-      console.log('🔍 fetchPage 호출:', { isAsync, apiUrlKey, endpointPath, nextIndex });
       if (!isAsync || !apiUrlKey || !endpointPath) {
-        console.log('❌ API 호출 조건 불만족');
         return { items: [] as T[], total: 0 };
       }
       const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (endpoint: string, params: Record<string, unknown>) => Promise<T[]>;
-      console.log('🔍 API 서비스 호출:', { service: !!service, endpointPath });
       setLoading(true);
       try {
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
@@ -140,9 +130,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
           limit: itemsPerPage,
           ...sort,
         };
-        console.log('🔍 API 파라미터:', params);
         const res: T[] = await service!(endpointPath, params);
-        console.log('✅ API 응답:', { count: res.length, firstItem: res[0] });
         // total이 없으므로 데모 총량 가정(필요시 api/프론트 모두 수정)
         const assumedTotal = 1000;
         return { items: res, total: assumedTotal };
@@ -248,7 +236,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // 무한 스크롤 트리거 (스크롤 점프 방지 + 디바운싱)
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
-  const loadMoreTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const loadMoreTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
     if (!isAsync || mode !== 'infinite' || !hasNext || loading || isLoadingMore) return;
@@ -302,28 +290,21 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       className={['react-aria-Table border rounded overflow-hidden', className]
         .filter(Boolean)
         .join(' ')}
-      role="table"
+      role="grid"
       aria-rowcount={rows.length}
     >
       {/* 헤더 */}
-      <div className="react-aria-TableHeader sticky top-0 z-10" role="rowgroup">
-        <div className="react-aria-Row flex border-b bg-gray-50" role="row">
+      <div className="react-aria-TableHeader" role="rowgroup">
+        <div className="react-aria-Row flex border-b bg-gray-50" role="row" aria-rowindex={1}>
           {table.getFlatHeaders().map((h, colIndex) => {
             const align = columns.find(c => String(c.key) === h.column.id)?.align ?? 'left';
             const isSorted = h.column.getIsSorted(); // 'asc' | 'desc' | false
             return (
               <div
                 key={h.id}
-                role="columnheader"
+                role="gridcell"
                 aria-colindex={colIndex + 1}
-                aria-sort={
-                  isSorted === 'asc'
-                    ? 'ascending'
-                    : isSorted === 'desc'
-                      ? 'descending'
-                      : 'none'
-                }
-                className="react-aria-Column relative px-2 py-1 select-none cursor-pointer hover:bg-gray-100"
+                className="react-aria-ColumnHeader relative px-2 py-1 select-none cursor-pointer hover:bg-gray-100"
                 style={{ width: h.getSize(), textAlign: align as 'left' | 'center' | 'right' }}
                 onClick={h.column.getToggleSortingHandler()}
                 tabIndex={0}
@@ -428,7 +409,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                   return (
                     <div
                       key={cell.id}
-                      role="cell"
+                      role="gridcell"
                       aria-colindex={cellIndex + 1}
                       className="react-aria-Cell px-2 py-1"
                       style={{ width: cell.column.getSize(), textAlign: align as 'left' | 'center' | 'right' }}
