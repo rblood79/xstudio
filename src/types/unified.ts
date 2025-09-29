@@ -676,7 +676,8 @@ export function createDefaultTableProps(): TableElementProps {
     return {
         items: [],
         columns: [
-            { key: 'id', label: 'ID', allowsSorting: true, isRowHeader: true },
+            { key: 'num', label: '번호', allowsSorting: true, isRowHeader: true, width: 80 },
+            { key: 'id', label: 'ID', allowsSorting: true },
             { key: 'name', label: '이름', allowsSorting: true },
             { key: 'email', label: '이메일', allowsSorting: true },
             { key: 'jobTitle', label: '직업', allowsSorting: true },
@@ -803,6 +804,7 @@ export function createDefaultDataGridProps(): DataGridElementProps {
     return {
         data: [],
         columns: [
+            { key: 'num', label: '번호', width: 80 },
             { key: 'id', label: 'ID', width: 80 },
             { key: 'name', label: '이름', width: 150 },
             { key: 'email', label: '이메일', width: 200 },

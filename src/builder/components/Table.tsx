@@ -9,6 +9,7 @@ import { apiConfig } from '../../services/api'; // apiConfig 임포트
 import { createDefaultTableProps, TableElementProps } from '../../types/unified'; // createDefaultTableProps 임포트
 import { useStore } from '../stores'; // useStore 임포트
 import { Pagination } from './Pagination';
+import TanStackTable from './TanStackTable';
 
 const tableHeaderVariants = tv({
   base: 'react-aria-TableHeader',
@@ -42,13 +43,38 @@ const tableCellVariants = tv({
   },
 });
 
-interface TableColumn<T> {
+// 컬럼 정의 타입 - 성능 최적화를 위한 메타데이터 포함
+interface ColumnDefinition<T> {
   key: keyof T;
   label: string;
   allowsSorting?: boolean;
   isRowHeader?: boolean;
-  width?: number; // 컬럼 너비 추가
+  width?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  align?: 'left' | 'center' | 'right';
+  frozen?: boolean;
+  resizable?: boolean;
 }
+
+// 컬럼 메타데이터 - 스타일 계산 캐싱용
+interface ColumnMeta {
+  style: React.CSSProperties;
+  className: string;
+  headerStyle: React.CSSProperties;
+  headerClassName: string;
+}
+
+// 기존 TableColumn과의 호환성을 위한 타입 별칭
+type TableColumn<T> = ColumnDefinition<T>;
+
+// 선택 상태 관리를 위한 내부 상태
+interface SelectionState {
+  selectedKeys: Set<Key>;
+  lastSelectionChange: number;
+  isSelectionChanging: boolean;
+}
+
 
 interface TableProps<T extends Record<string, unknown>> {
   children?: React.ReactNode;
@@ -84,6 +110,8 @@ interface TableProps<T extends Record<string, unknown>> {
   endpointPath?: string; // 엔드포인트 경로
   apiParams?: Record<string, unknown>; // API 호출 시 전달될 추가 파라미터
   dataMapping?: { resultPath?: string; idKey?: string }; // API 응답 데이터 매핑 정보
+  // 성능 최적화 옵션
+  useTanStack?: boolean; // TanStack Table 사용 여부 (성능 향상)
 }
 
 // TableLoadMoreItem 컴포넌트 (무한 스크롤 지원)
@@ -115,6 +143,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     stickyHeaderOffset = createDefaultTableProps().stickyHeaderOffset, // 기본값 설정
     sortColumn = createDefaultTableProps().sortColumn, // 기본값 설정
     sortDirection = createDefaultTableProps().sortDirection, // 기본값 설정
+    useTanStack = true, // 기본적으로 TanStack Table 사용
     ...props
   }: TableProps<T>, ref: React.Ref<HTMLTableElement>) {
 
@@ -152,17 +181,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const actualSortDirection = (actualElementProps as TableElementProps)?.sortDirection;
   const finalSortDirection = actualSortDirection !== undefined ? actualSortDirection : sortDirection;
 
-  // 디버깅: paginationMode 값 확인
-  console.log("🔍 Table 컴포넌트 paginationMode:", paginationMode);
-  console.log("🔍 Table 컴포넌트 elementId:", elementId);
-  console.log("🔍 Table 컴포넌트 actualElement found:", !!actualElement);
-  console.log("🔍 Table 컴포넌트 actualPaginationMode:", actualPaginationMode);
-  console.log("🔍 Table 컴포넌트 finalPaginationMode:", finalPaginationMode);
-  console.log("🔍 Table 컴포넌트 actualElementProps:", actualElementProps);
-
-  // 디버깅: props 전달 상태 확인
-  console.log("🔍 Table 컴포넌트 props:", props);
-  console.log("🔍 Table 컴포넌트 data-element-id:", (props as Record<string, unknown>)['data-element-id']);
+  // 개발 모드에서만 핵심 로그만 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔍 Table 컴포넌트 finalPaginationMode:", finalPaginationMode);
+    console.log("🔍 Table 컴포넌트 elementId:", elementId);
+  }
 
   // sortDescriptor 초기값 설정 (propSortDescriptor가 없으면 기본값 사용)
   const defaultSortDescriptor: SortDescriptor = {
@@ -170,13 +193,60 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     direction: (finalSortDirection || 'ascending') as SortDirection, // 설정된 정렬 방향 사용
   };
 
+  // 컬럼 메타데이터 캐싱 - 스타일 계산 최적화
+  const columnMetas = useMemo(() => {
+    const metaMap = new Map<keyof T, ColumnMeta>();
+
+    columns?.forEach((column) => {
+      const style: React.CSSProperties = {
+        width: column.width || 150,
+        minWidth: column.minWidth || 100,
+        maxWidth: column.maxWidth || 300,
+        textAlign: column.align || 'left',
+      };
+
+      const className = `table-cell ${column.frozen ? 'frozen' : ''} ${column.resizable ? 'resizable' : ''}`;
+
+      const headerStyle: React.CSSProperties = {
+        ...style,
+        fontWeight: '600',
+        backgroundColor: '#f9fafb',
+      };
+
+      const headerClassName = `table-header ${column.frozen ? 'frozen' : ''} ${column.resizable ? 'resizable' : ''}`;
+
+      metaMap.set(column.key, {
+        style,
+        className,
+        headerStyle,
+        headerClassName,
+      });
+    });
+
+    return metaMap;
+  }, [columns]);
+
+  // 선택 상태 최적화 - Set 인스턴스 재사용
+  const selectionStateRef = useRef<SelectionState>({
+    selectedKeys: new Set(),
+    lastSelectionChange: 0,
+    isSelectionChanging: false,
+  });
+
+  // 선택 상태 변경 감지 로직 - finalData와 onSelectionChange가 정의된 후에 이동
+
+
   // API 호출을 위한 동적 load 함수 생성
   // 페이지네이션을 지원하는 load 함수
   const loadFunction = useCallback(async ({ cursor }: { signal: AbortSignal; cursor?: string }) => {
-    console.log("🟢 loadFunction called with cursor:", cursor);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🟢 loadFunction called with cursor:", cursor);
+    }
 
     if (!apiUrlKey || !endpointPath) {
-      console.warn("API URL Key or Endpoint Path is not provided for async table loading.");
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("API URL Key or Endpoint Path is not provided for async table loading.");
+      }
       return { items: [], cursor: undefined };
     }
 
@@ -250,14 +320,16 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     [shouldUseAsyncList, asyncListLoadMore]
   );
 
-  // 디버깅을 위한 로그
-  console.log("🔍 useAsyncList 상태:", {
-    shouldUseAsyncList,
-    finalPaginationMode,
-    finalEnableAsyncLoading,
-    asyncListItemsLength: asyncListItems.length,
-    safeAsyncListItemsLength: safeAsyncListItems.length
-  });
+  // 디버깅을 위한 로그 - 개발 모드에서만
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔍 useAsyncList 상태:", {
+      shouldUseAsyncList,
+      finalPaginationMode,
+      finalEnableAsyncLoading,
+      asyncListItemsLength: asyncListItems.length,
+      safeAsyncListItemsLength: safeAsyncListItems.length
+    });
+  }
 
   // 가상화 설정을 위한 ref
   const parentRef = useRef<HTMLDivElement>(null);
@@ -416,7 +488,19 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     return [...data].sort((a, b) => {
       const aValue = a[columnKey];
       const bValue = b[columnKey];
-      let cmp = (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
+
+      let cmp = 0;
+
+      // 숫자 컬럼인 경우 숫자로 정렬
+      if (columnKey === 'num' || columnKey === 'id') {
+        const aNum = typeof aValue === 'number' ? aValue : parseInt(String(aValue), 10);
+        const bNum = typeof bValue === 'number' ? bValue : parseInt(String(bValue), 10);
+        cmp = (aNum < bNum ? -1 : aNum > bNum ? 1 : 0);
+      } else {
+        // 문자열 컬럼인 경우 문자열로 정렬
+        cmp = (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
+      }
+
       if (sortDescriptor.direction === 'descending') {
         cmp *= -1;
       }
@@ -467,7 +551,19 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       const sortedData = [...baseData].sort((a, b) => {
         const aValue = a[columnKey];
         const bValue = b[columnKey];
-        let cmp = (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
+
+        let cmp = 0;
+
+        // 숫자 컬럼인 경우 숫자로 정렬
+        if (columnKey === 'num' || columnKey === 'id') {
+          const aNum = typeof aValue === 'number' ? aValue : parseInt(String(aValue), 10);
+          const bNum = typeof bValue === 'number' ? bValue : parseInt(String(bValue), 10);
+          cmp = (aNum < bNum ? -1 : aNum > bNum ? 1 : 0);
+        } else {
+          // 문자열 컬럼인 경우 문자열로 정렬
+          cmp = (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
+        }
+
         if (sortDescriptor.direction === 'descending') {
           cmp *= -1;
         }
@@ -480,15 +576,61 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     return baseData;
   }, [finalEnableAsyncLoading, finalPaginationMode, paginationData, safeAsyncListItems, sortedStaticData, shouldUseAsyncList, asyncListItems.length, sortDescriptor]);
 
-  // 디버깅을 위한 로그 추가
-  console.log("🔍 finalData debug:", {
-    finalEnableAsyncLoading,
-    finalDataLength: finalData.length,
-    finalPaginationMode,
-    paginationDataLength: paginationData.length,
-    paginationLoading,
-    sortedStaticDataLength: sortedStaticData?.length || 0
-  });
+  // 선택 상태 변경 감지 로직 - finalData가 정의된 후
+  const optimizedSelectionChange = useCallback((keys: 'all' | Set<Key>) => {
+    const now = Date.now();
+    const state = selectionStateRef.current;
+
+    // 동일한 선택 결과에 대한 재렌더 방지
+    if (keys === 'all') {
+      if (state.selectedKeys.size === finalData.length && !state.isSelectionChanging) {
+        return;
+      }
+    } else if (keys instanceof Set) {
+      const keysArray = Array.from(keys);
+      const stateArray = Array.from(state.selectedKeys);
+
+      if (keysArray.length === stateArray.length &&
+        keysArray.every(key => stateArray.includes(key)) &&
+        !state.isSelectionChanging) {
+        return;
+      }
+    }
+
+    state.isSelectionChanging = true;
+    state.lastSelectionChange = now;
+
+    // 실제 선택 상태 업데이트
+    if (keys === 'all') {
+      state.selectedKeys = new Set(finalData.map(item => item.id));
+    } else {
+      state.selectedKeys = new Set(keys);
+    }
+
+    // 선택 변경 핸들러 호출
+    onSelectionChange?.(keys);
+
+    // 상태 변경 플래그 해제
+    setTimeout(() => {
+      state.isSelectionChanging = false;
+    }, 0);
+  }, [finalData, onSelectionChange]);
+
+  // 디버깅을 위한 로그 추가 - 개발 모드에서만
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔍 finalData debug:", {
+      finalEnableAsyncLoading,
+      finalDataLength: finalData.length,
+      finalPaginationMode,
+      paginationDataLength: paginationData.length,
+      paginationLoading,
+      sortedStaticDataLength: sortedStaticData?.length || 0,
+      shouldUseAsyncList,
+      asyncListItemsLength: asyncListItems.length,
+      safeAsyncListItemsLength: safeAsyncListItems.length,
+      asyncListLoadingState: asyncList.loadingState
+    });
+  }
 
   // 가상화 설정 (참조 코드 기반)
   const itemHeight = 34; // 참조 코드와 동일한 높이
@@ -504,17 +646,19 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     horizontal: false,
   });
 
-  // 가상화 디버깅을 위한 useEffect
+  // 가상화 디버깅을 위한 useEffect - 개발 모드에서만
   useEffect(() => {
-    console.log("🔍 Virtualizer 상태:", {
-      totalItems: finalData.length,
-      virtualizerEnabled: !!parentRef.current,
-      scrollElement: parentRef.current,
-      totalSize: virtualizer.getTotalSize(),
-      virtualItems: virtualizer.getVirtualItems().length,
-      scrollHeight: parentRef.current?.scrollHeight,
-      clientHeight: parentRef.current?.clientHeight
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔍 Virtualizer 상태:", {
+        totalItems: finalData.length,
+        virtualizerEnabled: !!parentRef.current,
+        scrollElement: parentRef.current,
+        totalSize: virtualizer.getTotalSize(),
+        virtualItems: virtualizer.getVirtualItems().length,
+        scrollHeight: parentRef.current?.scrollHeight,
+        clientHeight: parentRef.current?.clientHeight
+      });
+    }
   }, [finalData.length, virtualizer]);
 
   // 무한 스크롤을 위한 스크롤 이벤트 감지 - 개선된 버전
@@ -528,11 +672,12 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       const { scrollTop, scrollHeight, clientHeight } = scrollElement;
 
       // 스크롤이 하단에 가까우면 더 많은 데이터 로드
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
 
       if (isNearBottom && !isLoadingMore) {
         isLoadingMore = true;
         console.log("🔄 무한 스크롤 감지 - 더 많은 데이터 로드 시도");
+        console.log("🔍 스크롤 상태:", { scrollTop, scrollHeight, clientHeight, isNearBottom });
 
         // asyncList의 loadingState 확인
         const currentLoadingState = asyncList.loadingState;
@@ -546,6 +691,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
             isLoadingMore = false;
           }, 1000);
         } else {
+          console.log("❌ 로딩 상태로 인해 loadMore 호출하지 않음:", currentLoadingState);
           isLoadingMore = false;
         }
       }
@@ -565,15 +711,17 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     };
   }, [shouldUseAsyncList, safeAsyncListLoadMore, asyncList.loadingState]);
 
-  // 가상화 디버깅
+  // 가상화 디버깅 - 개발 모드에서만 (레퍼런스 코드 스타일)
   const virtualItems = virtualizer.getVirtualItems();
-  console.log("🔍 Table 가상화 상태:", {
-    totalRows: finalData.length,
-    virtualItemsCount: virtualItems.length,
-    startIndex: virtualItems[0]?.index || 0,
-    endIndex: virtualItems[virtualItems.length - 1]?.index || 0,
-    totalSize: virtualizer.getTotalSize()
-  });
+  if (process.env.NODE_ENV === 'development' && virtualItems.length > 0) {
+    console.log("🔍 Table 가상화 상태:", {
+      totalRows: finalData.length,
+      virtualItemsCount: virtualItems.length,
+      startIndex: virtualItems[0]?.index || 0,
+      endIndex: virtualItems[virtualItems.length - 1]?.index || 0,
+      totalSize: virtualizer.getTotalSize()
+    });
+  }
 
   // children이 없거나 빈 배열인 경우 기본 구조 제공 또는 data prop 사용
   const hasChildrenContent = children && React.Children.count(children) > 0;
@@ -581,9 +729,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const tableContent = useMemo(() => {
     // 비동기 로딩이 활성화되면 항상 데이터 기반으로 렌더링
     if (finalEnableAsyncLoading && finalData && columns) {
-      console.log("🟢 Rendering async data-based table content");
-      console.log("📊 finalData length:", finalData.length);
-      console.log("📋 columns:", columns);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🟢 Rendering async data-based table content");
+        console.log("📊 finalData length:", finalData.length);
+        console.log("📋 columns:", columns);
+      }
       return (
         <>
           <TableHeader
@@ -633,7 +783,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
             {(column: TableColumn<T>) => (
               <Column key={String(column.key)} allowsSorting={column.allowsSorting} isRowHeader={column.isRowHeader}>
                 {({ sortDirection, allowsSorting }) => {
-                  console.log(`🔍 Column ${String(column.key)} sorting state:`, { sortDirection, allowsSorting });
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log(`🔍 Column ${String(column.key)} sorting state:`, { sortDirection, allowsSorting });
+                  }
                   return (
                     <div className="column-header">
                       {column.label}
@@ -657,23 +809,27 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       );
     } else {
       // 기본 플레이스홀더 내용
-      console.log("🔴 Rendering placeholder content");
-      console.log("🔍 finalEnableAsyncLoading:", finalEnableAsyncLoading);
-      console.log("🔍 finalData:", finalData);
-      console.log("🔍 columns:", columns);
-      console.log("🔍 hasChildrenContent:", hasChildrenContent);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("🔴 Rendering placeholder content");
+        console.log("🔍 finalEnableAsyncLoading:", finalEnableAsyncLoading);
+        console.log("🔍 finalData:", finalData);
+        console.log("🔍 columns:", columns);
+        console.log("🔍 hasChildrenContent:", hasChildrenContent);
+      }
       return (
         <>
           <TableHeader
             className={tableHeaderVariants({ variant: headerVariant, sticky: finalStickyHeader })}
             style={finalStickyHeader ? { top: `${finalStickyHeaderOffset}px` } : undefined}
           >
-            <Column isRowHeader>이름</Column>
+            <Column isRowHeader>Num</Column>
+            <Column>이름</Column>
             <Column>나이</Column>
             <Column>이메일</Column>
           </TableHeader>
           <TableBody className={tableCellVariants({ variant: cellVariant })} items={[]}>
             <Row>
+              <Cell>1</Cell>
               <Cell>홍길동</Cell>
               <Cell>25</Cell>
               <Cell>hong@example.com</Cell>
@@ -695,22 +851,64 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     className
   ].filter(Boolean).join(' ');
 
+  // TanStack Table 사용 (성능 최적화)
+  if (useTanStack && finalData.length > 0) {
+    return (
+      <TanStackTable
+        data={finalData}
+        columns={columns?.map(col => ({
+          key: col.key,
+          label: col.label,
+          allowsSorting: col.allowsSorting,
+          width: col.width,
+          align: col.align,
+          type: col.key === 'num' || col.key === 'id' ? 'number' : 'string'
+        })) || []}
+        variant={variant}
+        size={size}
+        headerVariant={headerVariant}
+        cellVariant={cellVariant}
+        stickyHeader={stickyHeader}
+        height={400}
+        itemHeight={34}
+        overscan={20}
+        className={className}
+        data-testid={testId}
+        onSortChange={(sorting) => {
+          if (sorting.length > 0) {
+            const sort = sorting[0];
+            const descriptor: SortDescriptor = {
+              column: sort.id as Key,
+              direction: sort.desc ? 'descending' : 'ascending'
+            };
+            onSortChange?.(descriptor);
+          }
+        }}
+        onLoadMore={shouldUseAsyncList ? safeAsyncListLoadMore : undefined}
+        hasMore={shouldUseAsyncList ? (asyncList.loadingState !== 'error') : false}
+        isLoading={shouldUseAsyncList ? (asyncList.loadingState === 'loading' || asyncList.loadingState === 'loadingMore') : false}
+      />
+    );
+  }
+
   // 가상화된 테이블 렌더링 (스크롤 문제 수정)
   if (finalData.length > 20 || (shouldUseAsyncList && finalData.length > 0)) {
     return (
       <div
         ref={parentRef}
-        className={`react-aria-ResizableTable`}
+        className={`react-aria-ResizableTable2`}
         style={{
           height: '400px',
           overflow: 'auto',
+          position: 'relative'
         }}
         data-testid={testId}
         {...props} // 모든 props 전달 (data-element-id 포함)
       >
         <div
           style={{
-            height: `${virtualizer.getTotalSize()}px`
+            height: `${virtualizer.getTotalSize()}px`,
+            position: 'relative'
           }}
         >
           <AriaTable
@@ -721,8 +919,11 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
             sortDescriptor={sortDescriptor}
             onSortChange={onSortChange}
             selectedKeys={selectedKeys}
-            onSelectionChange={onSelectionChange}
-
+            onSelectionChange={optimizedSelectionChange}
+            style={{
+              width: '100%',
+              tableLayout: 'fixed'
+            }}
           >
             <TableHeader
               className={tableHeaderVariants({ variant: headerVariant, sticky: true })}
@@ -744,43 +945,45 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
                 </Column>
               )}
             </TableHeader>
-            <TableBody className={tableCellVariants({ variant: cellVariant })}>
-              {virtualItems.map((virtualRow, index) => {
-                const item = finalData[virtualRow.index];
-                if (!item) return null;
-
-                // 가상화 디버깅 로그
-                console.log(`🔍 Virtual Row ${virtualRow.index}:`, {
-                  start: virtualRow.start,
-                  size: virtualRow.size,
-                  end: virtualRow.end,
-                  itemId: item.id
-                });
+            <TableBody
+              className={tableCellVariants({ variant: cellVariant })}
+              items={virtualItems.map(virtualRow => ({
+                ...finalData[virtualRow.index],
+                virtualRow
+              })).filter(item => item.id)}
+            >
+              {(item: T & { id: Key; virtualRow?: { index: number; start: number; size: number; end: number } }) => {
+                const virtualRow = item.virtualRow;
+                if (!virtualRow) return null;
 
                 return (
                   <Row
-                    key={item.id}
                     id={item.id}
-
                     style={{
                       height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`
+                      transform: `translateY(${virtualRow.start}px)`,
+                      width: '100%'
                     }}
                   >
-                    {columns?.map((column, colIndex) => (
-                      <Cell
-                        key={String(column.key)}
-                        style={{
-                          width: column.width || 150,
-                          borderRight: colIndex < columns.length - 1 ? '1px solid #e5e7eb' : 'none'
-                        }}
-                      >
-                        {(item as Record<string, unknown>)[column.key as string] as React.ReactNode}
-                      </Cell>
-                    ))}
+                    {columns?.map((column, colIndex) => {
+                      const meta = columnMetas.get(column.key);
+                      return (
+                        <Cell
+                          key={String(column.key)}
+                          style={{
+                            ...meta?.style,
+                            width: column.width || 150,
+                            borderRight: colIndex < columns.length - 1 ? '1px solid #e5e7eb' : 'none'
+                          }}
+                          className={meta?.className}
+                        >
+                          {(item as Record<string, unknown>)[column.key as string] as React.ReactNode}
+                        </Cell>
+                      );
+                    })}
                   </Row>
                 );
-              })}
+              }}
             </TableBody>
           </AriaTable>
         </div>
@@ -820,7 +1023,7 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
           sortDescriptor={sortDescriptor}
           onSortChange={onSortChange}
           selectedKeys={selectedKeys}
-          onSelectionChange={onSelectionChange}
+          onSelectionChange={optimizedSelectionChange}
           {...props}
         >
           {tableContent}
