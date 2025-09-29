@@ -144,6 +144,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     sortColumn = createDefaultTableProps().sortColumn, // 기본값 설정
     sortDirection = createDefaultTableProps().sortDirection, // 기본값 설정
     useTanStack = true, // 기본적으로 TanStack Table 사용
+    height = createDefaultTableProps().height, // 기본 높이 설정
+    itemHeight = createDefaultTableProps().itemHeight, // 기본 행 높이 설정
+    overscan = createDefaultTableProps().overscan, // 기본 오버스캔 설정
     ...props
   }: TableProps<T>, ref: React.Ref<HTMLTableElement>) {
 
@@ -174,6 +177,16 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   const actualStickyHeaderOffset = (actualElementProps as TableElementProps)?.stickyHeaderOffset;
   const finalStickyHeaderOffset = actualStickyHeaderOffset !== undefined ? actualStickyHeaderOffset : stickyHeaderOffset;
 
+  // 높이 관련 옵션 처리
+  const actualHeight = (actualElementProps as TableElementProps)?.height;
+  const finalHeight = actualHeight !== undefined ? actualHeight : height;
+
+  const actualItemHeight = (actualElementProps as TableElementProps)?.itemHeight;
+  const finalItemHeight = actualItemHeight !== undefined ? actualItemHeight : itemHeight;
+
+  const actualOverscan = (actualElementProps as TableElementProps)?.overscan;
+  const finalOverscan = actualOverscan !== undefined ? actualOverscan : overscan;
+
   // 정렬 옵션 처리
   const actualSortColumn = (actualElementProps as TableElementProps)?.sortColumn;
   const finalSortColumn = actualSortColumn !== undefined ? actualSortColumn : sortColumn;
@@ -185,6 +198,14 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   if (process.env.NODE_ENV === 'development') {
     console.log("🔍 Table 컴포넌트 finalPaginationMode:", finalPaginationMode);
     console.log("🔍 Table 컴포넌트 elementId:", elementId);
+    console.log("🔍 Table 컴포넌트 높이값:", {
+      actualHeight,
+      finalHeight,
+      actualItemHeight,
+      finalItemHeight,
+      actualOverscan,
+      finalOverscan
+    });
   }
 
   // sortDescriptor 초기값 설정 (propSortDescriptor가 없으면 기본값 사용)
@@ -637,16 +658,12 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
     });
   }
 
-  // 가상화 설정 (참조 코드 기반)
-  const itemHeight = 34; // 참조 코드와 동일한 높이
-  const overscan = 20; // 참조 코드와 동일한 overscan
-
   // 가상화 설정 - 스크롤 문제 수정
   const virtualizer = useVirtualizer({
     count: finalData.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: overscan,
+    estimateSize: () => finalItemHeight || 50,
+    overscan: finalOverscan || 5,
     // 스크롤 방향 명시적 지정
     horizontal: false,
   });
@@ -875,9 +892,9 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
           headerVariant={headerVariant}
           cellVariant={cellVariant}
           stickyHeader={stickyHeader}
-          height={400}
-          itemHeight={34}
-          overscan={20}
+          height={finalHeight}
+          itemHeight={finalItemHeight}
+          overscan={finalOverscan}
           className={className}
           data-testid={testId}
           data-element-id={elementId}
