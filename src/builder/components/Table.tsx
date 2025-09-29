@@ -241,24 +241,59 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     count: rows.length + (isAsync && mode === 'infinite' && hasNext ? 1 : 0), // 로딩 행 1개
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
-    overscan,
+    overscan: Math.max(overscan, 5), // 최소 5개 overscan 보장
+    measureElement: undefined, // 고정 높이 사용으로 측정 비활성화
   });
 
-  // 무한 스크롤 트리거
+  // 무한 스크롤 트리거 (스크롤 점프 방지 + 디바운싱)
   const virtualItems = rowVirtualizer.getVirtualItems();
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  const loadMoreTimeoutRef = React.useRef<NodeJS.Timeout>();
+
   React.useEffect(() => {
-    if (!isAsync || mode !== 'infinite' || !hasNext || loading) return;
+    if (!isAsync || mode !== 'infinite' || !hasNext || loading || isLoadingMore) return;
     if (!virtualItems.length) return;
     const last = virtualItems[virtualItems.length - 1];
     if (last.index >= rows.length - 5) {
-      (async () => {
-        const { items, nextCursor } = await fetchMore(cursor ?? '1');
-        setFlatRows((prev) => [...prev, ...items]);
-        setCursor(nextCursor);
-        setHasNext(Boolean(nextCursor));
-      })();
+      // 디바운싱: 100ms 내에 연속 호출 방지
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
+
+      loadMoreTimeoutRef.current = setTimeout(() => {
+        setIsLoadingMore(true);
+        (async () => {
+          try {
+            // 현재 스크롤 위치 저장
+            const scrollElement = parentRef.current;
+            const currentScrollTop = scrollElement?.scrollTop || 0;
+
+            const { items, nextCursor } = await fetchMore(cursor ?? '1');
+
+            // 데이터 업데이트
+            setFlatRows((prev) => [...prev, ...items]);
+            setCursor(nextCursor);
+            setHasNext(Boolean(nextCursor));
+
+            // 스크롤 위치 복원 (다음 프레임에서)
+            requestAnimationFrame(() => {
+              if (scrollElement) {
+                scrollElement.scrollTop = currentScrollTop;
+              }
+            });
+          } finally {
+            setIsLoadingMore(false);
+          }
+        })();
+      }, 100);
     }
-  }, [isAsync, mode, hasNext, rows.length, virtualItems, fetchMore, cursor, loading]);
+
+    return () => {
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+      }
+    };
+  }, [isAsync, mode, hasNext, rows.length, virtualItems, fetchMore, cursor, loading, isLoadingMore]);
 
   // ----- 렌더 -----
   return (
@@ -329,24 +364,28 @@ export default function Table<T extends { id: string | number }>(props: TablePro
           {rowVirtualizer.getVirtualItems().map((vi) => {
             const row = rows[vi.index];
 
-            // 로딩 더미 행 (무한 스크롤)
+            // 로딩 더미 행 (무한 스크롤) - 부드러운 애니메이션
             if (!row) {
               return (
                 <div
                   key={vi.key}
                   role="row"
                   aria-rowindex={rows.length + 1}
-                  className="react-aria-Row flex items-center justify-center text-sm text-gray-500 border-b"
+                  className="react-aria-Row flex items-center justify-center text-sm text-gray-500 border-b animate-pulse"
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    transform: `translateY(${vi.start}px)`, // 중요: vi.start만 사용
+                    transform: `translateY(${vi.start}px)`,
                     height: vi.size,
+                    transition: 'opacity 0.2s ease-in-out',
                   }}
                 >
-                  Loading…
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    Loading more data...
+                  </div>
                 </div>
               );
             }
