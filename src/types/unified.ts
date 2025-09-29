@@ -676,7 +676,7 @@ export function createDefaultTableProps(): TableElementProps {
     return {
         items: [],
         columns: [
-            { key: 'num', label: '번호', allowsSorting: true, isRowHeader: true, width: 80 },
+            { key: 'num', label: '번호', allowsSorting: true, isRowHeader: true },
             { key: 'id', label: 'ID', allowsSorting: true },
             { key: 'name', label: '이름', allowsSorting: true },
             { key: 'email', label: '이메일', allowsSorting: true },
@@ -699,7 +699,7 @@ export function createDefaultTableProps(): TableElementProps {
         itemsPerPage: 10, // 페이지당 표시할 행 수 기본값
         // 가상화 관련 기본값 추가
         height: 400,
-        itemHeight: 50,
+        itemHeight: 48,
         overscan: 5,
         // 헤더 고정 관련 기본값 추가
         stickyHeader: false,
