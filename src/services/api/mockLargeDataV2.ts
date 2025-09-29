@@ -1,5 +1,6 @@
 
 export interface MockUserData {
+    num: number;
     id: string;
     name: string;
     email: string;
@@ -12,6 +13,7 @@ export const generateMockUsers = (count: number): MockUserData[] => {
     const users: MockUserData[] = [];
     for (let i = 1; i <= count; i++) {
         users.push({
+            num: i,
             id: `data-${i}`,
             name: `데이터 사용자 ${i}`,
             email: `datauser${i}@example.com`,
