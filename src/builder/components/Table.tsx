@@ -628,7 +628,12 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
       shouldUseAsyncList,
       asyncListItemsLength: asyncListItems.length,
       safeAsyncListItemsLength: safeAsyncListItems.length,
-      asyncListLoadingState: asyncList.loadingState
+      asyncListLoadingState: asyncList.loadingState,
+      useTanStack,
+      currentPage,
+      totalPages,
+      hasNextPage,
+      elementId
     });
   }
 
@@ -854,40 +859,76 @@ export const Table = forwardRef(function Table<T extends Record<string, unknown>
   // TanStack Table 사용 (성능 최적화)
   if (useTanStack && finalData.length > 0) {
     return (
-      <TanStackTable
-        data={finalData}
-        columns={columns?.map(col => ({
-          key: col.key,
-          label: col.label,
-          allowsSorting: col.allowsSorting,
-          width: col.width,
-          align: col.align,
-          type: col.key === 'num' || col.key === 'id' ? 'number' : 'string'
-        })) || []}
-        variant={variant}
-        size={size}
-        headerVariant={headerVariant}
-        cellVariant={cellVariant}
-        stickyHeader={stickyHeader}
-        height={400}
-        itemHeight={34}
-        overscan={20}
-        className={className}
-        data-testid={testId}
-        onSortChange={(sorting) => {
-          if (sorting.length > 0) {
-            const sort = sorting[0];
-            const descriptor: SortDescriptor = {
-              column: sort.id as Key,
-              direction: sort.desc ? 'descending' : 'ascending'
-            };
-            onSortChange?.(descriptor);
+      <div>
+        <TanStackTable
+          data={finalData}
+          columns={columns?.map(col => ({
+            key: col.key,
+            label: col.label,
+            allowsSorting: col.allowsSorting,
+            width: col.width,
+            align: col.align,
+            type: col.key === 'num' || col.key === 'id' ? 'number' : 'string'
+          })) || []}
+          variant={variant}
+          size={size}
+          headerVariant={headerVariant}
+          cellVariant={cellVariant}
+          stickyHeader={stickyHeader}
+          height={400}
+          itemHeight={34}
+          overscan={20}
+          className={className}
+          data-testid={testId}
+          data-element-id={elementId}
+          onSortChange={(sorting) => {
+            if (sorting.length > 0) {
+              const sort = sorting[0];
+              const descriptor: SortDescriptor = {
+                column: sort.id as Key,
+                direction: sort.desc ? 'descending' : 'ascending'
+              };
+              onSortChange?.(descriptor);
+            }
+          }}
+          onLoadMore={shouldUseAsyncList ? safeAsyncListLoadMore : undefined}
+          hasMore={shouldUseAsyncList ? (asyncList.loadingState !== 'error') : false}
+          isLoading={shouldUseAsyncList ? (asyncList.loadingState === 'loading' || asyncList.loadingState === 'loadingMore') : false}
+        />
+
+        {/* TanStackTable 사용 시에도 페이지네이션 표시 */}
+        {(() => {
+          const shouldShowPagination = finalEnableAsyncLoading && finalPaginationMode === 'pagination' && totalPages > 1;
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log("🔍 페이지네이션 조건 확인:", {
+              finalEnableAsyncLoading,
+              finalPaginationMode,
+              shouldShowPagination,
+              currentPage,
+              totalPages,
+              hasNextPage,
+              paginationLoading,
+              paginationDataLength: paginationData.length,
+              condition1: finalEnableAsyncLoading,
+              condition2: finalPaginationMode === 'pagination',
+              condition3: totalPages > 1
+            });
           }
-        }}
-        onLoadMore={shouldUseAsyncList ? safeAsyncListLoadMore : undefined}
-        hasMore={shouldUseAsyncList ? (asyncList.loadingState !== 'error') : false}
-        isLoading={shouldUseAsyncList ? (asyncList.loadingState === 'loading' || asyncList.loadingState === 'loadingMore') : false}
-      />
+
+          return shouldShowPagination ? (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              hasNextPage={hasNextPage}
+              isLoading={paginationLoading}
+              onPageChange={handlePageChange}
+              totalItems={paginationData.length}
+              showPageInfo={true}
+            />
+          ) : null;
+        })()}
+      </div>
     );
   }
 

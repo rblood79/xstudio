@@ -84,6 +84,7 @@ interface TanStackTableProps<T extends Record<string, unknown>> {
     overscan?: number;
     className?: string;
     'data-testid'?: string;
+    'data-element-id'?: string; // 프리뷰 화면에서 선택을 위한 element ID
     onSortChange?: (sorting: SortingState) => void;
     onLoadMore?: () => void; // 무한 스크롤을 위한 콜백 추가
     hasMore?: boolean; // 더 많은 데이터가 있는지 여부
@@ -103,6 +104,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
     overscan = 20,
     className,
     'data-testid': testId,
+    'data-element-id': elementId,
     onSortChange,
     onLoadMore,
     hasMore = true,
@@ -198,6 +200,9 @@ export function TanStackTable<T extends Record<string, unknown>>({
             totalRows: rows.length,
             virtualItems: virtualizer.getVirtualItems().length,
             totalSize: virtualizer.getTotalSize(),
+            elementId,
+            hasMore,
+            isLoading
         });
     }
 
@@ -207,6 +212,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
             className="container"
             style={{ height: `${height}px`, overflow: 'auto' }}
             data-testid={testId}
+            data-element-id={elementId}
         >
             <div
                 style={{
