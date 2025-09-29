@@ -49,17 +49,23 @@ const cellVariants = tv({
     }
 });
 
+type ColumnDefinition = {
+    key: string;
+    label: string;
+    width?: number;
+    minWidth?: number;
+    maxWidth?: number;
+};
+
+type ColumnMeta = ColumnDefinition & {
+    style: React.CSSProperties;
+};
+
 // DataGrid Props 인터페이스
 interface DataGridProps<T extends Record<string, unknown>> {
     // 기본 props
     data?: T[];
-    columns?: Array<{
-        key: string;
-        label: string;
-        width?: number;
-        minWidth?: number;
-        maxWidth?: number;
-    }>;
+    columns?: ColumnDefinition[];
 
     // 크기 및 스타일
     width?: number;
@@ -110,8 +116,8 @@ interface VirtualRowProps<T> {
         end: number;
     };
     row: GridRow<T>;
-    columns: Array<{ key: string; label: string; width?: number }>;
-    selectedKeys: Set<string>;
+    columns: ColumnMeta[];
+    isSelected: boolean;
     onRowClick: (rowId: string) => void;
     onCellEdit: (rowId: string, cellKey: keyof T, value: string) => void;
     onCellSave: (rowId: string, cellKey: keyof T) => void;
@@ -122,13 +128,12 @@ function VirtualRow<T extends Record<string, unknown>>({
     virtualRow,
     row,
     columns,
-    selectedKeys,
+    isSelected,
     onRowClick,
     onCellEdit,
     onCellSave,
     onCellCancel
 }: VirtualRowProps<T>) {
-    const isSelected = selectedKeys.has(row.id);
     const [editingCell, setEditingCell] = useState<keyof T | null>(null);
     const [editValue, setEditValue] = useState<string>('');
 
@@ -175,11 +180,7 @@ function VirtualRow<T extends Record<string, unknown>>({
                 return (
                     <div
                         key={column.key}
-                        style={{
-                            width: column.width || 150,
-                            minWidth: (column as { minWidth?: number }).minWidth || 100,
-                            maxWidth: (column as { maxWidth?: number }).maxWidth || 300
-                        }}
+                        style={column.style}
                         className="react-aria-Cell"
                         onDoubleClick={() => handleCellDoubleClick(cellKey)}
                     >
@@ -208,6 +209,24 @@ function VirtualRow<T extends Record<string, unknown>>({
     );
 }
 
+const MemoizedVirtualRow = React.memo(
+    VirtualRow as <T extends Record<string, unknown>>(props: VirtualRowProps<T>) => JSX.Element,
+    (
+        prev: VirtualRowProps<Record<string, unknown>>,
+        next: VirtualRowProps<Record<string, unknown>>
+    ) =>
+        prev.virtualRow.index === next.virtualRow.index &&
+        prev.virtualRow.start === next.virtualRow.start &&
+        prev.virtualRow.size === next.virtualRow.size &&
+        prev.isSelected === next.isSelected &&
+        prev.row === next.row &&
+        prev.columns === next.columns &&
+        prev.onRowClick === next.onRowClick &&
+        prev.onCellEdit === next.onCellEdit &&
+        prev.onCellSave === next.onCellSave &&
+        prev.onCellCancel === next.onCellCancel
+) as typeof VirtualRow;
+
 export const DataGrid = forwardRef(function DataGrid<T extends Record<string, unknown>>(
     {
         data = [],
@@ -217,7 +236,7 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         rowHeight = 35,
         columnWidth = 150,
         selectionMode = 'none',
-        selectedKeys = new Set(),
+        selectedKeys,
         onSelectionChange,
         enableInfiniteScroll = true,
         onLoadMore,
@@ -237,6 +256,16 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
     const actualElement = elementId ? elements.find(el => el.id === elementId) : null;
     const actualElementProps = actualElement?.props as TableElementProps || {};
 
+    const [internalSelectedKeys, setInternalSelectedKeys] = useState<Set<string>>(() => new Set());
+    const isControlledSelection = selectedKeys !== undefined;
+    const resolvedSelectedKeys = isControlledSelection ? selectedKeys! : internalSelectedKeys;
+
+    useEffect(() => {
+        if (selectionMode === 'none' && !isControlledSelection && internalSelectedKeys.size > 0) {
+            setInternalSelectedKeys(() => new Set());
+        }
+    }, [selectionMode, isControlledSelection, internalSelectedKeys]);
+
     // API 데이터 상태
     const [apiData, setApiData] = useState<MockUserData[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(false);
@@ -247,14 +276,18 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
     const fetchDataFromApi = useCallback(async (page: number = 1, limit: number = 50) => {
         try {
             setIsLoadingData(true);
-            console.log(`🔄 DataGrid API 데이터 로드: page ${page}, limit ${limit}`);
+            if (import.meta.env.DEV) {
+                console.log(`🔄 DataGrid API 데이터 로드: page ${page}, limit ${limit}`);
+            }
 
             const fetchedData = await apiConfig.MOCK_USER_DATA('/api/mock/users', {
                 page,
                 limit
             });
 
-            console.log(`✅ DataGrid API 데이터 로드 완료: ${fetchedData.length}개 항목`);
+            if (import.meta.env.DEV) {
+                console.log(`✅ DataGrid API 데이터 로드 완료: ${fetchedData.length}개 항목`);
+            }
 
             if (page === 1) {
                 setApiData(fetchedData);
@@ -263,7 +296,9 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
                 setApiData(prev => {
                     const newData = [...prev, ...fetchedData];
                     if (newData.length > 1000) {
-                        console.log(`🧹 DataGrid 메모리 최적화: ${newData.length}개 → 1000개로 제한`);
+                        if (import.meta.env.DEV) {
+                            console.log(`🧹 DataGrid 메모리 최적화: ${newData.length}개 → 1000개로 제한`);
+                        }
                         return newData.slice(-1000); // 최근 1000개만 유지
                     }
                     return newData;
@@ -291,7 +326,9 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
     useEffect(() => {
         return () => {
             // 메모리 정리
-            console.log("🧹 DataGrid 컴포넌트 언마운트 - 메모리 정리");
+            if (import.meta.env.DEV) {
+                console.log("🧹 DataGrid 컴포넌트 언마운트 - 메모리 정리");
+            }
         };
     }, []);
 
@@ -308,7 +345,9 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
 
         // 메모리 최적화: 최대 1000개까지만 사용
         if (sourceData.length > 1000) {
-            console.log(`🧹 DataGrid finalData 메모리 최적화: ${sourceData.length}개 → 1000개로 제한`);
+            if (import.meta.env.DEV) {
+                console.log(`🧹 DataGrid finalData 메모리 최적화: ${sourceData.length}개 → 1000개로 제한`);
+            }
             return sourceData.slice(-1000); // 최근 1000개만 사용
         }
 
@@ -325,6 +364,18 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
             { key: 'address', label: '주소', width: 200 }
         ],
         [columns]
+    );
+
+    const columnMeta = useMemo<ColumnMeta[]>(() =>
+        finalColumns.map((column) => ({
+            ...column,
+            style: {
+                width: column.width ?? columnWidth,
+                minWidth: column.minWidth ?? 100,
+                maxWidth: column.maxWidth ?? 300
+            }
+        })),
+        [finalColumns, columnWidth]
     );
 
     // Grid rows 생성
@@ -352,6 +403,7 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
 
     // 가상화 디버깅
     const virtualItems = rowVirtualizer.getVirtualItems();
+    const totalVirtualHeight = rowVirtualizer.getTotalSize();
 
     // 메모리 사용량 모니터링 (개발 모드에서만)
     if (import.meta.env.DEV) {
@@ -360,41 +412,71 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
             virtualItemsCount: virtualItems.length,
             startIndex: virtualItems[0]?.index || 0,
             endIndex: virtualItems[virtualItems.length - 1]?.index || 0,
-            totalSize: rowVirtualizer.getTotalSize(),
+            totalSize: totalVirtualHeight,
             memoryOptimized: gridRows.length <= 1000
         });
     }
 
+    const updateSelection = useCallback((updater: (prev: Set<string>) => Set<string>) => {
+        if (selectionMode === 'none') {
+            return;
+        }
+
+        const nextSelection = updater(resolvedSelectedKeys);
+
+        if (nextSelection.size === resolvedSelectedKeys.size) {
+            let isSame = true;
+            for (const key of nextSelection) {
+                if (!resolvedSelectedKeys.has(key)) {
+                    isSame = false;
+                    break;
+                }
+            }
+            if (isSame) {
+                return;
+            }
+        }
+
+        if (!isControlledSelection) {
+            setInternalSelectedKeys(() => nextSelection);
+        }
+
+        onSelectionChange?.(nextSelection);
+    }, [isControlledSelection, onSelectionChange, resolvedSelectedKeys, selectionMode]);
+
     // 행 클릭 핸들러
     const handleRowClick = useCallback((rowId: string) => {
-        if (selectionMode !== 'none') {
-            const newSelectedKeys = new Set(selectedKeys);
-            if (newSelectedKeys.has(rowId)) {
-                newSelectedKeys.delete(rowId);
+        updateSelection(prev => {
+            const next = new Set(prev);
+            if (next.has(rowId)) {
+                next.delete(rowId);
             } else {
                 if (selectionMode === 'single') {
-                    newSelectedKeys.clear();
+                    next.clear();
                 }
-                newSelectedKeys.add(rowId);
+                next.add(rowId);
             }
-            onSelectionChange?.(newSelectedKeys);
-        }
-    }, [selectedKeys, selectionMode, onSelectionChange]);
+            return next;
+        });
+    }, [selectionMode, updateSelection]);
 
     // 셀 편집 핸들러
     const handleCellEdit = useCallback((rowId: string, cellKey: keyof T, value: string) => {
-        // 셀 편집 로직
-        console.log('Cell edit:', { rowId, cellKey, value });
+        if (import.meta.env.DEV) {
+            console.log('Cell edit:', { rowId, cellKey, value });
+        }
     }, []);
 
     const handleCellSave = useCallback((rowId: string, cellKey: keyof T) => {
-        // 셀 저장 로직
-        console.log('Cell save:', { rowId, cellKey });
+        if (import.meta.env.DEV) {
+            console.log('Cell save:', { rowId, cellKey });
+        }
     }, []);
 
     const handleCellCancel = useCallback((rowId: string, cellKey: keyof T) => {
-        // 셀 취소 로직
-        console.log('Cell cancel:', { rowId, cellKey });
+        if (import.meta.env.DEV) {
+            console.log('Cell cancel:', { rowId, cellKey });
+        }
     }, []);
 
     // 디바운싱된 스크롤 핸들러
@@ -408,7 +490,9 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         // 무한 스크롤 처리 (API 데이터)
         if (enableInfiniteScroll && hasMoreData && !isLoadingData) {
             if (scrollTop + clientHeight >= scrollHeight - 100) {
-                console.log("🔄 DataGrid 무한 스크롤 - API에서 더 많은 데이터 로드");
+                if (import.meta.env.DEV) {
+                    console.log("🔄 DataGrid 무한 스크롤 - API에서 더 많은 데이터 로드");
+                }
                 fetchDataFromApi(currentPage + 1, 50);
             }
         }
@@ -416,7 +500,9 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         // 기존 onLoadMore 콜백도 호출 (호환성 유지)
         if (enableInfiniteScroll && hasMore && !isLoading && onLoadMore) {
             if (scrollTop + clientHeight >= scrollHeight - 100) {
-                console.log("🔄 DataGrid 무한 스크롤 - 외부 콜백 호출");
+                if (import.meta.env.DEV) {
+                    console.log("🔄 DataGrid 무한 스크롤 - 외부 콜백 호출");
+                }
                 onLoadMore();
             }
         }
@@ -441,15 +527,17 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         };
     }, [handleScroll]);
 
-    console.log("🔍 DataGrid 렌더링:", {
-        totalRows: gridRows.length,
-        totalColumns: finalColumns.length,
-        dataLength: finalData.length,
-        columnsLength: finalColumns.length,
-        enableInfiniteScroll,
-        hasMore,
-        isLoading
-    });
+    if (import.meta.env.DEV) {
+        console.log("🔍 DataGrid 렌더링:", {
+            totalRows: gridRows.length,
+            totalColumns: finalColumns.length,
+            dataLength: finalData.length,
+            columnsLength: finalColumns.length,
+            enableInfiniteScroll,
+            hasMore,
+            isLoading
+        });
+    }
 
     // DOM에서 지원하지 않는 props 필터링
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -465,14 +553,10 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
         >
             {/* 헤더 */}
             <div className="react-aria-TableHeader">
-                {finalColumns.map((column) => (
+                {columnMeta.map((column) => (
                     <div
                         key={column.key}
-                        style={{
-                            width: column.width || columnWidth,
-                            minWidth: (column as { minWidth?: number }).minWidth || 100,
-                            maxWidth: (column as { maxWidth?: number }).maxWidth || 300
-                        }}
+                        style={column.style}
                         className="border-r border-gray-200 px-3 py-2 font-semibold text-gray-700"
                     >
                         {column.label}
@@ -491,7 +575,7 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
             >
                 <div
                     style={{
-                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        height: `${totalVirtualHeight}px`,
                         position: 'relative',
                         width: '100%'
                     }}
@@ -501,12 +585,12 @@ export const DataGrid = forwardRef(function DataGrid<T extends Record<string, un
                         if (!row) return null;
 
                         return (
-                            <VirtualRow
+                            <MemoizedVirtualRow
                                 key={row.id}
                                 virtualRow={virtualRow}
                                 row={row}
-                                columns={finalColumns}
-                                selectedKeys={selectedKeys}
+                                columns={columnMeta}
+                                isSelected={resolvedSelectedKeys.has(row.id)}
                                 onRowClick={handleRowClick}
                                 onCellEdit={handleCellEdit}
                                 onCellSave={handleCellSave}
