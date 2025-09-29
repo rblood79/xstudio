@@ -37,17 +37,12 @@ import {
   DatePicker,
   DateRangePicker,
   Switch, // Switch 추가
-  Table, // Table 추가
   DataGrid, // DataGrid 추가
   Card,
   TagGroup,
   Tag,
-  Column,
-  TableHeader,
-  TableBody,
-  Row,
-  Cell,
 } from '../components/list';
+import Table from '../components/Table';
 import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
 //import { useBatchUpdate } from '../stores';
@@ -1507,72 +1502,106 @@ function Preview() {
       );
     }
 
-    // Table 컴포넌트 특별 처리
+    // Table 컴포넌트 특별 처리 (새로운 TanStack Table 기반)
     if (el.tag === 'Table') {
       console.log('🔍 Table rendering:', { id: el.id, childrenCount: children.length, props: el.props });
+      console.log('🔍 Table children:', children.map(c => ({ tag: c.tag, id: c.id })));
+      console.log('🔍 All elements:', elements.filter(e => e.parent_id === el.id).map(e => ({ tag: e.tag, id: e.id, parent_id: e.parent_id })));
+
+      // 컬럼 정의 추출 (children에서 Column 요소들)
+      const columnElements = children.filter(child => child.tag === 'Column');
+      const columns = columnElements.map(col => ({
+        key: (col.props.key || col.props.id || 'col') as string,
+        label: (col.props.children || col.props.label || 'Column') as string,
+        allowsSorting: Boolean(col.props.allowsSorting ?? true),
+        width: typeof col.props.width === 'number' ? col.props.width : undefined,
+        minWidth: typeof col.props.minWidth === 'number' ? col.props.minWidth : undefined,
+        maxWidth: typeof col.props.maxWidth === 'number' ? col.props.maxWidth : undefined,
+        align: (col.props.align || 'left') as 'left' | 'center' | 'right'
+      }));
+
+      // 데이터 추출 (children에서 Row 요소들)
+      // TableBody 내부의 Row 요소들을 찾기
+      const tableBodyElement = children.find(child => child.tag === 'TableBody');
+      const rowElements = tableBodyElement
+        ? elements.filter(el => el.parent_id === tableBodyElement.id && el.tag === 'Row')
+        : children.filter(child => child.tag === 'Row');
+      const data = rowElements.map((row, index) => {
+        const cellElements = elements.filter(el => el.parent_id === row.id && el.tag === 'Cell');
+        const rowData: Record<string, unknown> = { id: row.id || index };
+
+        cellElements.forEach((cell, cellIndex) => {
+          const columnKey = columns[cellIndex]?.key || `col${cellIndex}`;
+          rowData[columnKey] = cell.props.children || cell.props.value || '';
+        });
+
+        return rowData as { id: string | number;[key: string]: unknown };
+      });
+
+      console.log('🔍 Extracted data:', {
+        columns: columns.length,
+        data: data.length,
+        rowElements: rowElements.length,
+        tableBodyElement: tableBodyElement?.id
+      });
+
+      // API 데이터 사용 여부 확인 (테스트를 위해 강제로 true)
+      const useApiData = true; // Boolean(el.props.enableAsyncLoading) && 
+      // typeof el.props.apiUrlKey === 'string' && 
+      // typeof el.props.endpointPath === 'string';
+
+      console.log('🔍 API 사용 여부:', {
+        useApiData,
+        enableAsyncLoading: el.props.enableAsyncLoading,
+        apiUrlKey: el.props.apiUrlKey,
+        endpointPath: el.props.endpointPath
+      });
+
+      // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
+      // 샘플 데이터 사용 시 정적 데이터 제공
+      const finalData = useApiData ? [] : [
+        { id: 1, name: 'Sample Item 1', value: 'Value 1' },
+        { id: 2, name: 'Sample Item 2', value: 'Value 2' },
+        { id: 3, name: 'Sample Item 3', value: 'Value 3' },
+        { id: 4, name: 'Sample Item 4', value: 'Value 4' },
+        { id: 5, name: 'Sample Item 5', value: 'Value 5' }
+      ];
+
+      // API 데이터용 컬럼 정의
+      const finalColumns = [
+        { key: 'id', label: 'ID', allowsSorting: true, width: 80 },
+        { key: 'name', label: 'Name', allowsSorting: true, width: 200 },
+        { key: 'email', label: 'Email', allowsSorting: true, width: 250 },
+        { key: 'phone', label: 'Phone', allowsSorting: true, width: 150 },
+        { key: 'company', label: 'Company', allowsSorting: true, width: 200 }
+      ];
+
       return (
         <Table
           key={el.id}
           data-element-id={el.id}
           className={el.props.className}
-          selectionMode={(el.props.selectionMode as 'none' | 'single' | 'multiple') || 'none'}
-          selectedKeys={Array.isArray(el.props.selectedKeys) ? new Set(el.props.selectedKeys as unknown as string[]) : new Set()}
-          onSelectionChange={(selectedKeys) => {
-            const updatedProps = {
-              ...el.props,
-              selectedKeys: Array.from(selectedKeys)
-            };
-            updateElementProps(el.id, updatedProps);
-          }}
-        >
-          {children.map((child) => renderElement(child, child.id))}
-        </Table>
+          columns={finalColumns}
+          data={useApiData ? undefined : finalData}
+          paginationMode={(el.props.paginationMode as 'pagination' | 'infinite-scroll') || 'pagination'}
+          itemsPerPage={typeof el.props.itemsPerPage === 'number' ? el.props.itemsPerPage : 50}
+          height={typeof el.props.height === 'number' ? el.props.height : 300}
+          rowHeight={typeof el.props.rowHeight === 'number' ? el.props.rowHeight : 40}
+          overscan={typeof el.props.overscan === 'number' ? el.props.overscan : 10}
+          enableAsyncLoading={useApiData}
+          apiUrlKey={useApiData ? (el.props.apiUrlKey as string) : 'demo'}
+          endpointPath={useApiData ? (el.props.endpointPath as string) : '/users'}
+          sortColumn={typeof el.props.sortColumn === 'string' ? el.props.sortColumn : undefined}
+          sortDirection={(el.props.sortDirection as 'ascending' | 'descending') || 'ascending'}
+          enableResize={Boolean(el.props.enableResize ?? true)}
+        />
       );
     }
 
-    // TableHeader 컴포넌트 처리
-    if (el.tag === 'TableHeader') {
-      return (
-        <TableHeader key={el.id} data-element-id={el.id} {...el.props}>
-          {children.map((child) => renderElement(child, child.id))}
-        </TableHeader>
-      );
-    }
-
-    // TableBody 컴포넌트 처리
-    if (el.tag === 'TableBody') {
-      return (
-        <TableBody key={el.id} data-element-id={el.id} {...el.props}>
-          {children.map((child) => renderElement(child, child.id))}
-        </TableBody>
-      );
-    }
-
-    // Column 컴포넌트 처리
-    if (el.tag === 'Column') {
-      return (
-        <Column key={el.id} data-element-id={el.id} {...el.props}>
-          {el.props.children || 'Column'}
-        </Column>
-      );
-    }
-
-    // Row 컴포넌트 처리
-    if (el.tag === 'Row') {
-      return (
-        <Row key={el.id} data-element-id={el.id} style={el.props.style} className={el.props.className} value={el.props.value as object}>
-          {children.map((child) => renderElement(child, child.id))}
-        </Row>
-      );
-    }
-
-    // Cell 컴포넌트 처리
-    if (el.tag === 'Cell') {
-      return (
-        <Cell key={el.id} data-element-id={el.id} {...el.props}>
-          {el.props.children || 'Cell'}
-        </Cell>
-      );
+    // TableHeader, TableBody, Column, Row, Cell은 Table 컴포넌트 내부에서 처리됨
+    // 이들은 Table의 children으로만 사용되며 개별 렌더링은 하지 않음
+    if (el.tag === 'TableHeader' || el.tag === 'TableBody' || el.tag === 'Column' || el.tag === 'Row' || el.tag === 'Cell') {
+      return null; // Table 컴포넌트에서 처리되므로 개별 렌더링하지 않음
     }
 
     // TagGroup 컴포넌트 특별 처리
