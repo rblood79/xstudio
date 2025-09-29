@@ -11,7 +11,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { tv } from 'tailwind-variants';
 
 const tableVariants = tv({
-    base: 'w-full border-collapse',
+    base: 'react-aria-Table',
     variants: {
         variant: {
             default: 'border border-gray-200',
@@ -31,7 +31,7 @@ const tableVariants = tv({
 });
 
 const headerVariants = tv({
-    base: 'px-4 py-2 text-left font-semibold bg-gray-50 border-b border-gray-200 cursor-pointer select-none',
+    base: 'react-aria-Column',
     variants: {
         variant: {
             default: 'bg-gray-50',
@@ -50,7 +50,7 @@ const headerVariants = tv({
 });
 
 const cellVariants = tv({
-    base: 'px-4 py-2 border-b border-gray-100',
+    base: 'react-aria-Cell',
     variants: {
         variant: {
             default: '',
@@ -220,7 +220,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
                 }}
             >
                 <table className={tableVariants({ variant, size, className })}>
-                    <thead>
+                    <thead className='react-aria-TableHeader'>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <tr key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
@@ -262,11 +262,12 @@ export function TanStackTable<T extends Record<string, unknown>>({
                             </tr>
                         ))}
                     </thead>
-                    <tbody>
+                    <tbody className='react-aria-TableBody'>
                         {virtualizer.getVirtualItems().map((virtualRow, index) => {
                             const row = rows[virtualRow.index];
                             return (
                                 <tr
+                                    className='react-aria-Row'
                                     key={row.id}
                                     style={{
                                         height: `${virtualRow.size}px`,
