@@ -700,8 +700,8 @@ export function createDefaultTableProps(): TableElementProps {
         itemsPerPage: 10, // 페이지당 표시할 행 수 기본값
         // 가상화 관련 기본값 추가
         height: 400,
-        itemHeight: 48,
-        overscan: 5,
+        itemHeight: 38, // ✅ 48로 설정됨
+        overscan: 10,
         // 헤더 고정 관련 기본값 추가
         stickyHeader: false,
         stickyHeaderOffset: 0,
