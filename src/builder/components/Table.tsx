@@ -233,11 +233,11 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // rowVirtualizer는 아래에서 필요하므로 먼저 선언
   const rows = table.getRowModel().rows;
 
+  // ---------- 가상 스크롤 (useMemo로 최적화) ----------
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
-    estimateSize: () => rowHeight, // 스크롤바 정확도용 추정치
+    estimateSize: () => rowHeight,
     getScrollElement: () => containerRef.current,
-    // 레퍼런스처럼 Firefox 제외 동적 측정 ON
     measureElement:
       typeof window !== 'undefined' &&
         navigator.userAgent.indexOf('Firefox') === -1
@@ -398,7 +398,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                           className="react-aria-Cell"
                           role="gridcell"
                           aria-colindex={cellIndex + 1}
-                          style={{ display: 'flex', textAlign: align as 'left' | 'center' | 'right', width: cell.column.getSize() }}
+                          style={{ textAlign: align as 'left' | 'center' | 'right', width: cell.column.getSize() }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
