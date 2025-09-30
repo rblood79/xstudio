@@ -2831,6 +2831,12 @@
         outline-offset: -1px;
     }
 
+    .react-aria-TableVirtualizer {
+        overflow: auto;
+        position: relative;
+        overflow-anchor: none;
+    }
+
     .react-aria-TableHeader {
         font-size: var(--text-sm);
         color: var(--color-primary-600);
@@ -2843,14 +2849,46 @@
         }*/
 
         & tr:last-child .react-aria-Column {
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--color-gray-300);
             cursor: default;
         }
 
-        .column-header {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing);
+        .react-aria-Column {
+            border-right: 1px solid var(--color-gray-300);
+
+            &:last-child {
+                border-right: none;
+            }
+        }
+    }
+
+    .react-aria-Resizable {
+        .react-aria-ColumnResizer {
+            position: absolute;
+            right: 0;
+            top: 10%;
+            bottom: 10%;
+            width: var(--spacing-2xs);
+            background-color: var(--color-sky-500);
+            height: 80%;
+            flex: 0 0 auto;
+            touch-action: none;
+            box-sizing: border-box;
+            border: var(--spacing-sm);
+            border-style: none solid;
+            border-color: transparent;
+            background-clip: content-box;
+            cursor: col-resize;
+
+
+            &[data-focus-visible] {
+                background-color: var(--focus-ring-color);
+            }
+
+            &[data-resizing] {
+                border-color: var(--focus-ring-color);
+                background-color: transparent;
+            }
         }
     }
 
@@ -2904,6 +2942,13 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+
+        border-right: 1px solid var(--border-color);
+
+        &:last-child {
+            border-right: none;
+        }
+
 
         &[data-focus-visible] {
             outline: 2px solid var(--focus-ring-color);
@@ -2960,6 +3005,8 @@
 }
 
 .react-aria-TableBody {
+    position: relative;
+
     &[data-empty] {
         text-align: center;
         font-style: italic;
@@ -2976,114 +3023,6 @@
     }
 }
 
-.react-aria-ResizableTable {
-    border: 1px solid var(--border-color);
-    border-radius: var(--spacing-sm);
-    background: var(--background-color);
-
-    .react-aria-Table {
-        table-layout: fixed;
-        width: 100%;
-        border: none;
-    }
-
-    .react-aria-Cell {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-.react-aria-ResizableTableContainer {
-    max-width:
-        /*var(--spacing-xl);*/
-        100%;
-    height: auto;
-    overflow: auto;
-    position: relative;
-    border: 1px solid var(--border-color);
-    border-radius: var(--spacing-sm);
-    background: var(--background-color);
-
-    /*&[data-infinite-scroll] {
-        height: 51%;
-    }
-
-    &[data-infinite-scroll='false'] {
-        height: auto;
-    }*/
-
-    .react-aria-Table {
-        border: none;
-    }
-
-    .column-name,
-    .react-aria-Button {
-        --background-color: var(--overlay-background);
-        flex: 1;
-        font: inherit;
-        text-align: start;
-        color: inherit;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        border-color: transparent;
-        transition: background 200ms;
-
-        &[data-hovered] {
-            background: var(--highlight-hover);
-        }
-
-        &[data-pressed] {
-            background: var(--highlight-pressed);
-            box-shadow: none;
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--focus-ring-color);
-        }
-    }
-
-    .react-aria-ColumnResizer {
-        width: var(--spacing-sm);
-        background-color: grey;
-        height: var(--spacing-lg);
-        flex: 0 0 auto;
-        touch-action: none;
-        box-sizing: border-box;
-        border: var(--spacing-sm);
-        border-style: none solid;
-        border-color: transparent;
-        background-clip: content-box;
-
-        &[data-resizable-direction=both] {
-            cursor: ew-resize;
-        }
-
-        &[data-resizable-direction=left] {
-            cursor: e-resize;
-        }
-
-        &[data-resizable-direction=right] {
-            cursor: w-resize;
-        }
-
-        &[data-focus-visible] {
-            background-color: var(--focus-ring-color);
-        }
-
-        &[data-resizing] {
-            border-color: var(--focus-ring-color);
-            background-color: transparent;
-        }
-    }
-
-    .react-aria-Column,
-    .react-aria-Cell {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
 
 .react-aria-Row {
     &[data-dragging] {

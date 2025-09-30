@@ -259,7 +259,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     const el = parentRef.current;
     if (!el) return;
 
-    const THRESHOLD = 200; // 하단 200px 이내면 로드
+    const THRESHOLD = 100; // 하단 200px 이내면 로드
     const onScroll = () => {
       if (!hasNext || isLoadingMore || loading) return;
       const { scrollTop, scrollHeight, clientHeight } = el;
@@ -313,14 +313,14 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       el.removeEventListener('scroll', onScroll);
       if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
     };
-  }, [isAsync, mode, hasNext, loading, cursor, flatRows.length, fetchMore]);
+  }, [isAsync, mode, hasNext, loading, isLoadingMore, cursor, flatRows.length, fetchMore]);
 
   // ----- 렌더 -----
   return (
     <>
       <div
         data-element-id={props['data-element-id']}
-        className={['react-aria-Table border rounded overflow-hidden', className]
+        className={['react-aria-Table', className]
           .filter(Boolean)
           .join(' ')}
         role="grid"
@@ -328,7 +328,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         aria-colcount={table.getAllLeafColumns().length}
       >
         {/* 헤더 */}
-        <div className="react-aria-TableHeader" role="rowgroup">
+        <div className="react-aria-TableHeader react-aria-Resizable" role="rowgroup">
           <div className="react-aria-Row" role="row" aria-rowindex={1}>
             {table.getFlatHeaders().map((h, colIndex) => {
               const align =
@@ -373,7 +373,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                       aria-label="Resize column"
                       onMouseDown={h.getResizeHandler()}
                       onTouchStart={h.getResizeHandler()}
-                      className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-300"
+                      className="react-aria-ColumnResizer hover:bg-blue-300"
                     />
                   )}
                 </div>
@@ -383,11 +383,11 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         </div>
 
         {/* 바디(가상 스크롤 컨테이너) */}
-        <div ref={parentRef} style={{ height, overflow: 'auto', position: 'relative', overflowAnchor: 'none' as any }}>
+        <div className="react-aria-TableVirtualizer" ref={parentRef} style={{ height }}>
           <div
             className="react-aria-TableBody"
             role="rowgroup"
-            style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}
+            style={{ height: rowVirtualizer.getTotalSize() }}
           >
             {rowVirtualizer.getVirtualItems().map((vi) => {
               const row = rows[vi.index];
@@ -401,10 +401,6 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                     aria-rowindex={rows.length + 1}
                     className="react-aria-Row"
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
                       transform: `translateY(${vi.start}px)`,
                       height: vi.size,
                       transition: 'opacity 0.2s ease-in-out',
