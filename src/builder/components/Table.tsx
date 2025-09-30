@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { apiConfig } from '../../services/api'; // ← 더미 apiConfig.demo 사용 (배열 반환)
+import { apiConfig } from '../../services/api'; // apiConfig.demo: (endpoint, {page,limit,...}) => Promise<T[]>
 
 export type PaginationMode = 'pagination' | 'infinite';
 
@@ -82,7 +82,6 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   const mode: 'pagination' | 'infinite' = paginationMode || 'pagination';
   const isAsync = enableAsyncLoading && !staticData && apiUrlKey && endpointPath;
 
-
   // ----- 정렬 상태 -----
   const initialSorting: SortingState = React.useMemo(() => {
     if (!sortColumn) return [];
@@ -94,7 +93,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // ----- ColumnDef 변환 -----
   const columnDefs = React.useMemo<ColumnDef<T, unknown>[]>(() => {
     return columns.map((c) => ({
-      id: String(c.key), // id 필드 추가
+      id: String(c.key),
       accessorKey: String(c.key),
       header: c.label,
       size: c.width ?? 150,
@@ -115,23 +114,21 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   const [loading, setLoading] = React.useState(false);
 
   // ----- API 어댑터 (더미 배열 응답 기반) -----
-  // 주의: apiConfig[apiUrlKey](endpoint, { page, limit })는 배열을 반환해야 함
   const fetchPage = React.useCallback(
     async (nextIndex: number) => {
       if (!isAsync || !apiUrlKey || !endpointPath) {
         return { items: [] as T[], total: 0 };
       }
-      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (endpoint: string, params: Record<string, unknown>) => Promise<T[]>;
+      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
+        endpoint: string,
+        params: Record<string, unknown>
+      ) => Promise<T[]>;
       setLoading(true);
       try {
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
-        const params = {
-          page: nextIndex + 1,
-          limit: itemsPerPage,
-          ...sort,
-        };
+        const params = { page: nextIndex + 1, limit: itemsPerPage, ...sort };
         const res: T[] = await service!(endpointPath, params);
-        // total이 없으므로 데모 총량 가정(필요시 api/프론트 모두 수정)
+        // total 미제공이므로 데모 총량 가정(필요 시 API/프론트 함께 수정)
         const assumedTotal = 1000;
         return { items: res, total: assumedTotal };
       } finally {
@@ -143,18 +140,25 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
   const fetchMore = React.useCallback(
     async (nextCursor?: string) => {
-      if (!isAsync || !apiUrlKey || !endpointPath) return { items: [] as T[], nextCursor: undefined as string | undefined };
-      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (endpoint: string, params: Record<string, unknown>) => Promise<T[]>;
+      if (!isAsync || !apiUrlKey || !endpointPath) {
+        return { items: [] as T[], nextCursor: undefined as string | undefined };
+      }
+      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
+        endpoint: string,
+        params: Record<string, unknown>
+      ) => Promise<T[]>;
       setLoading(true);
       try {
         const page = nextCursor ? parseInt(nextCursor, 10) : 1;
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
-        const res: T[] = await service!(endpointPath, {
-          page,
-          limit: itemsPerPage,
-          ...sort,
-        });
-        // 다음 커서 계산(데모: 더 가져올 게 있으면 page+1)
+        const res: T[] = await service!(endpointPath, { page, limit: itemsPerPage, ...sort });
+
+        // 빈 응답이면 다음 커서 없음
+        if (!res || res.length === 0) {
+          return { items: [], nextCursor: undefined };
+        }
+
+        // 다음 커서 계산(정확 total이 없으니 '딱 pageSize'일 때만 더 있다고 가정)
         const next = res.length === itemsPerPage ? String(page + 1) : undefined;
         return { items: res, nextCursor: next };
       } finally {
@@ -183,6 +187,14 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         setFlatRows(items);
         setCursor(nextCursor);
         setHasNext(Boolean(nextCursor));
+        // 초기 로딩 직후에도 화면을 못 채우면 한 번 더
+        const el = parentRef.current;
+        if (el && el.scrollHeight <= el.clientHeight + 10 && nextCursor) {
+          const r = await fetchMore(nextCursor);
+          setFlatRows(prev => [...prev, ...r.items]);
+          setCursor(r.nextCursor);
+          setHasNext(Boolean(r.nextCursor));
+        }
       })();
     }
   }, [isAsync, mode, itemsPerPage, sorting, fetchPage, fetchMore]);
@@ -215,9 +227,9 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(), // 헤더 정렬표시 일관성
+    getSortedRowModel: getSortedRowModel(),
     enableColumnResizing: enableResize,
-    columnResizeMode: 'onChange', // 드래그 중 실시간 반영
+    columnResizeMode: 'onChange',
     debugTable: process.env.NODE_ENV === 'development',
   });
 
@@ -225,208 +237,247 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
   // ----- 가상 스크롤 -----
   const parentRef = React.useRef<HTMLDivElement>(null);
+
+  // 로딩 행은 실제 로딩 중일 때만 1개 추가
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const rowVirtualizer = useVirtualizer({
-    count: rows.length + (isAsync && mode === 'infinite' && hasNext ? 1 : 0), // 로딩 행 1개
+    count:
+      rows.length +
+      (isAsync && mode === 'infinite' && hasNext && (isLoadingMore || loading) ? 1 : 0),
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
-    overscan: Math.max(overscan, 5), // 최소 5개 overscan 보장
-    measureElement: undefined, // 고정 높이 사용으로 측정 비활성화
+    overscan: Math.max(overscan, 5),
+    measureElement: undefined,
   });
 
-  // 무한 스크롤 트리거 (스크롤 점프 방지 + 디바운싱)
-  const virtualItems = rowVirtualizer.getVirtualItems();
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+  // 무한 스크롤 트리거 (스크롤 위치 기반 + 디바운싱 + 중복 커서 방지)
   const loadMoreTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastRequestedCursorRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (!isAsync || mode !== 'infinite' || !hasNext || loading || isLoadingMore) return;
-    if (!virtualItems.length) return;
-    const last = virtualItems[virtualItems.length - 1];
-    if (last.index >= rows.length - 5) {
-      // 디바운싱: 100ms 내에 연속 호출 방지
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-      }
+    if (!isAsync || mode !== 'infinite') return;
+    const el = parentRef.current;
+    if (!el) return;
 
-      loadMoreTimeoutRef.current = setTimeout(() => {
+    const THRESHOLD = 200; // 하단 200px 이내면 로드
+    const onScroll = () => {
+      if (!hasNext || isLoadingMore || loading) return;
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - THRESHOLD;
+      if (!nearBottom) return;
+
+      // 디바운스
+      if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
+      loadMoreTimeoutRef.current = setTimeout(async () => {
+        const next = cursor ?? '1';
+
+        // 같은 커서로 중복 요청 방지
+        if (lastRequestedCursorRef.current === next) return;
+        lastRequestedCursorRef.current = next;
+
         setIsLoadingMore(true);
-        (async () => {
-          try {
-            // 현재 스크롤 위치 저장
-            const scrollElement = parentRef.current;
-            const currentScrollTop = scrollElement?.scrollTop || 0;
+        try {
+          const prevLen = flatRows.length;
+          const currentScrollTop = el.scrollTop;
 
-            const { items, nextCursor } = await fetchMore(cursor ?? '1');
+          const { items, nextCursor } = await fetchMore(next);
 
-            // 데이터 업데이트
-            setFlatRows((prev) => [...prev, ...items]);
-            setCursor(nextCursor);
-            setHasNext(Boolean(nextCursor));
+          setFlatRows(prev => [...prev, ...items]);
+          setCursor(nextCursor);
+          setHasNext(Boolean(nextCursor));
 
-            // 스크롤 위치 복원 (다음 프레임에서)
-            requestAnimationFrame(() => {
-              if (scrollElement) {
-                scrollElement.scrollTop = currentScrollTop;
-              }
-            });
-          } finally {
-            setIsLoadingMore(false);
+          if (!nextCursor && items.length === 0) {
+            setHasNext(false);
           }
-        })();
-      }, 100);
-    }
 
-    return () => {
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-      }
+          // 점프 방지
+          requestAnimationFrame(() => {
+            el.scrollTop = currentScrollTop;
+          });
+
+          // 길이가 그대로이고 nextCursor도 없거나 동일하면 더 이상 시도 X
+          if (flatRows.length === prevLen && (!nextCursor || nextCursor === next)) {
+            setHasNext(false);
+          }
+        } finally {
+          setIsLoadingMore(false);
+        }
+      }, 80);
     };
-  }, [isAsync, mode, hasNext, rows.length, virtualItems, fetchMore, cursor, loading, isLoadingMore]);
+
+    // 처음에도 체크 (이미 바닥이면 즉시 한 번 로드)
+    onScroll();
+
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
+    };
+  }, [isAsync, mode, hasNext, loading, cursor, flatRows.length, fetchMore]);
 
   // ----- 렌더 -----
   return (
-    <div
-      data-element-id={props['data-element-id']}
-      className={['react-aria-Table border rounded overflow-hidden', className]
-        .filter(Boolean)
-        .join(' ')}
-      role="grid"
-      aria-rowcount={rows.length}
-    >
-      {/* 헤더 */}
-      <div className="react-aria-TableHeader" role="rowgroup">
-        <div className="react-aria-Row flex border-b bg-gray-50" role="row" aria-rowindex={1}>
-          {table.getFlatHeaders().map((h, colIndex) => {
-            const align = columns.find(c => String(c.key) === h.column.id)?.align ?? 'left';
-            const isSorted = h.column.getIsSorted(); // 'asc' | 'desc' | false
-            return (
-              <div
-                key={h.id}
-                role="gridcell"
-                aria-colindex={colIndex + 1}
-                className="react-aria-ColumnHeader relative px-2 py-1 select-none cursor-pointer hover:bg-gray-100"
-                style={{ width: h.getSize(), textAlign: align as 'left' | 'center' | 'right' }}
-                onClick={h.column.getToggleSortingHandler()}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    h.column.getToggleSortingHandler()?.(e as unknown as React.MouseEvent);
-                  }
-                }}
-              >
-                {flexRender(h.column.columnDef.header, h.getContext())}
-                {isSorted === 'asc' ? ' 🔼' : isSorted === 'desc' ? ' 🔽' : null}
+    <>
+      <div
+        data-element-id={props['data-element-id']}
+        className={['react-aria-Table border rounded overflow-hidden', className]
+          .filter(Boolean)
+          .join(' ')}
+        role="grid"
+        aria-rowcount={rows.length}
+        aria-colcount={table.getAllLeafColumns().length}
+      >
+        {/* 헤더 */}
+        <div className="react-aria-TableHeader" role="rowgroup">
+          <div className="react-aria-Row" role="row" aria-rowindex={1}>
+            {table.getFlatHeaders().map((h, colIndex) => {
+              const align =
+                columns.find(c => String(c.key) === h.column.id)?.align ?? 'left';
+              const isSorted = h.column.getIsSorted(); // 'asc' | 'desc' | false
+              return (
+                <div
+                  key={h.id}
+                  role="columnheader" // ✅ 헤더 역할
+                  aria-colindex={colIndex + 1}
+                  aria-sort={
+                    isSorted === 'asc'
+                      ? 'ascending'
+                      : isSorted === 'desc'
+                        ? 'descending'
+                        : 'none'
+                  } // ✅ 정렬 상태 제공
+                  className="react-aria-Column"
+                  style={{
+                    width: h.getSize(),
+                    textAlign: align as 'left' | 'center' | 'right',
+                  }}
+                  onClick={h.column.getToggleSortingHandler()}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      h.column.getToggleSortingHandler()?.(
+                        e as unknown as React.MouseEvent
+                      );
+                    }
+                  }}
+                >
+                  {flexRender(h.column.columnDef.header, h.getContext())}
+                  {isSorted === 'asc' ? ' 🔼' : isSorted === 'desc' ? ' 🔽' : null}
 
-                {/* 리사이즈 핸들 */}
-                {enableResize && h.column.getCanResize() && (
-                  <div
-                    role="separator"
-                    aria-orientation="vertical"
-                    aria-label="Resize column"
-                    onMouseDown={h.getResizeHandler()}
-                    onTouchStart={h.getResizeHandler()}
-                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-300"
-                  />
-                )}
-              </div>
-            );
-          })}
+                  {/* 리사이즈 핸들 */}
+                  {enableResize && h.column.getCanResize() && (
+                    <div
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label="Resize column"
+                      onMouseDown={h.getResizeHandler()}
+                      onTouchStart={h.getResizeHandler()}
+                      className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-blue-300"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* 바디(가상 스크롤 컨테이너) */}
-      <div ref={parentRef} style={{ height, overflow: 'auto', position: 'relative' }}>
-        <div
-          className="react-aria-TableBody"
-          role="rowgroup"
-          style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}
-        >
-          {rowVirtualizer.getVirtualItems().map((vi) => {
-            const row = rows[vi.index];
+        {/* 바디(가상 스크롤 컨테이너) */}
+        <div ref={parentRef} style={{ height, overflow: 'auto', position: 'relative', overflowAnchor: 'none' as any }}>
+          <div
+            className="react-aria-TableBody"
+            role="rowgroup"
+            style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}
+          >
+            {rowVirtualizer.getVirtualItems().map((vi) => {
+              const row = rows[vi.index];
 
-            // 로딩 더미 행 (무한 스크롤) - 부드러운 애니메이션
-            if (!row) {
+              // 로딩 더미 행 (무한 스크롤) - 로딩 중에만 표시
+              if (!row && (isLoadingMore || loading)) {
+                return (
+                  <div
+                    key={vi.key}
+                    role="row"
+                    aria-rowindex={rows.length + 1}
+                    className="react-aria-Row"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${vi.start}px)`,
+                      height: vi.size,
+                      transition: 'opacity 0.2s ease-in-out',
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                      Loading more data...
+                    </div>
+                  </div>
+                );
+              }
+
+              if (!row) return null;
+
               return (
                 <div
                   key={vi.key}
                   role="row"
-                  aria-rowindex={rows.length + 1}
-                  className="react-aria-Row flex items-center justify-center text-sm text-gray-500 border-b animate-pulse"
+                  aria-rowindex={vi.index + 1}
+                  className="react-aria-Row"
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
                     transform: `translateY(${vi.start}px)`,
-                    height: vi.size,
-                    transition: 'opacity 0.2s ease-in-out',
+                    height: vi.size
+                  }}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    // 키보드 네비게이션 지원
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      const nextIndex = Math.min(vi.index + 1, rows.length - 1);
+                      const nextElement = parentRef.current?.querySelector(
+                        `[aria-rowindex="${nextIndex + 1}"]`
+                      ) as HTMLElement;
+                      nextElement?.focus();
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      const prevIndex = Math.max(vi.index - 1, 0);
+                      const prevElement = parentRef.current?.querySelector(
+                        `[aria-rowindex="${prevIndex + 1}"]`
+                      ) as HTMLElement;
+                      prevElement?.focus();
+                    }
                   }}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                    Loading more data...
-                  </div>
+                  {row.getVisibleCells().map((cell, cellIndex) => {
+                    const align =
+                      columns.find(c => String(c.key) === cell.column.id)?.align ?? 'left';
+                    return (
+                      <div
+                        key={cell.id}
+                        role="gridcell"
+                        aria-colindex={cellIndex + 1}
+                        className="react-aria-Cell"
+                        style={{
+                          width: cell.column.getSize(),
+                          textAlign: align as 'left' | 'center' | 'right',
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            }
-
-            return (
-              <div
-                key={vi.key}
-                role="row"
-                aria-rowindex={vi.index + 1}
-                className="react-aria-Row hover:bg-gray-50"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${vi.start}px)`, // 오프셋 점프 방지
-                  height: vi.size,
-                  display: 'flex',
-                  borderBottom: '1px solid #e5e7eb',
-                  alignItems: 'stretch',
-                }}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  // 키보드 네비게이션 지원
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    const nextIndex = Math.min(vi.index + 1, rows.length - 1);
-                    const nextElement = parentRef.current?.querySelector(`[aria-rowindex="${nextIndex + 1}"]`) as HTMLElement;
-                    nextElement?.focus();
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    const prevIndex = Math.max(vi.index - 1, 0);
-                    const prevElement = parentRef.current?.querySelector(`[aria-rowindex="${prevIndex + 1}"]`) as HTMLElement;
-                    prevElement?.focus();
-                  }
-                }}
-              >
-                {row.getVisibleCells().map((cell, cellIndex) => {
-                  const align = columns.find(c => String(c.key) === cell.column.id)?.align ?? 'left';
-                  return (
-                    <div
-                      key={cell.id}
-                      role="gridcell"
-                      aria-colindex={cellIndex + 1}
-                      className="react-aria-Cell px-2 py-1"
-                      style={{ width: cell.column.getSize(), textAlign: align as 'left' | 'center' | 'right' }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+            })}
+          </div>
         </div>
       </div>
 
-      {/* 페이지네이션 (정적 데이터엔 표시 의미 없음) */}
+      {/* ✅ 페이지네이션은 grid 바깥으로 이동 (axe 오류 방지) */}
       {isAsync && mode === 'pagination' && pageCount !== null && (
-        <div className="flex items-center gap-2 p-2 border-t">
+        <div className="flex items-center gap-2 p-2 border rounded mt-2">
           <button
             onClick={async () => {
               const { items, total } = await fetchPage(0);
@@ -484,6 +535,6 @@ export default function Table<T extends { id: string | number }>(props: TablePro
           {loading && <span className="text-sm text-gray-500 ml-2">Loading…</span>}
         </div>
       )}
-    </div>
+    </>
   );
 }
