@@ -2824,6 +2824,7 @@
     max-width: 100%;
     word-break: break-word;
     forced-color-adjust: none;
+    overflow: hidden;
 
     &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
@@ -2860,6 +2861,7 @@
         border-radius: var(--radius);
         clip-path: inset(0 round var(--radius));*/
         /* firefox */
+        display: flex;
         outline: none;
         cursor: default;
         color: var(--text-color);
@@ -2897,6 +2899,7 @@
         padding: var(--spacing-sm) var(--spacing-sm);
         text-align: left;
         outline: none;
+        position: relative;
 
         white-space: nowrap;
         overflow: hidden;
@@ -2960,6 +2963,16 @@
     &[data-empty] {
         text-align: center;
         font-style: italic;
+    }
+
+    .react-aria-Row {
+        position: absolute;
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        top: 0;
+        left: 0;
+        border-bottom: 1px solid var(--border-color);
     }
 }
 
