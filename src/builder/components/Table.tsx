@@ -8,7 +8,6 @@ import {
   type ColumnDef,
   type SortingState,
   type Row as TableRow,
-  //type OnChangeFn,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { apiConfig } from '../../services/api';
@@ -202,8 +201,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       const s = sorting[0];
       const key = s?.id as keyof T;
       const sorted = [...staticData].sort((a, b) => {
-        const av = a[key] as unknown;
-        const bv = b[key] as unknown;
+        const av = a[key] as string | number;
+        const bv = b[key] as string | number;
         if (av == null && bv == null) return 0;
         if (av == null) return -1;
         if (bv == null) return 1;
@@ -321,7 +320,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                         role="columnheader"
                         aria-colindex={colIndex + 1}
                         aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
-                        style={{ display: 'flex', textAlign: align as any, width: header.getSize() }}
+                        style={{ display: 'flex', textAlign: align as 'left' | 'center' | 'right', width: header.getSize() }}
                       >
                         <div
                           className={header.column.getCanSort() ? 'cursor-pointer select-none' : undefined}
@@ -329,7 +328,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              header.column.getToggleSortingHandler()?.(e as unknown as React.MouseEvent);
+                              // KeyboardEvent를 MouseEvent로 변환하지 말고 직접 정렬 토글
+                              header.column.toggleSorting();
                             }
                           }}
                           tabIndex={0}
@@ -398,7 +398,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                           className="react-aria-Cell"
                           role="gridcell"
                           aria-colindex={cellIndex + 1}
-                          style={{ display: 'flex', textAlign: align as any, width: cell.column.getSize() }}
+                          style={{ display: 'flex', textAlign: align as 'left' | 'center' | 'right', width: cell.column.getSize() }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
