@@ -63,10 +63,10 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
     columns,
     paginationMode = 'pagination',
-    itemsPerPage = 50,
+    itemsPerPage = 500,
     height = 400,
-    rowHeight = 40,
-    overscan = 12,
+    rowHeight = 38,
+    overscan = 10,
 
     sortColumn,
     sortDirection = 'ascending',
