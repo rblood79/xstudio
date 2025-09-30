@@ -2815,7 +2815,7 @@
     padding: 0;
     border: 1px solid var(--border-color);
     border-radius: var(--spacing-sm);
-    background: var(--overlay-background);
+    background: var(--color-background);
     outline: none;
     border-spacing: 0;
     min-height: var(--spacing-xl);
@@ -2874,7 +2874,7 @@
             flex: 0 0 auto;
             touch-action: none;
             box-sizing: border-box;
-            border: var(--spacing-sm);
+            border: var(--spacing-2xs);
             border-style: none solid;
             border-color: transparent;
             background-clip: content-box;
