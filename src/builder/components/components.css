@@ -2826,6 +2826,10 @@
     forced-color-adjust: none;
     overflow: hidden;
 
+    table {
+        display: grid;
+    }
+
     &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -1px;
@@ -2837,10 +2841,19 @@
         overflow-anchor: none;
     }
 
+    .react-aria-Sticky {
+        display: grid;
+        position: sticky;
+        top: 0px;
+        z-index: 1;
+    }
+
     .react-aria-TableHeader {
         font-size: var(--text-sm);
         color: var(--color-primary-600);
         background: var(--color-gray-200);
+
+
 
         /*  &:after {
             content: '';
