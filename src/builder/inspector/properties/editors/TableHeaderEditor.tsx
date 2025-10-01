@@ -4,7 +4,7 @@ import { useStore } from '../../../stores';
 import { PropertySelect, PropertyInput } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
-import { Table, Pin, SquarePlus, Trash, Tag } from 'lucide-react';
+import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
 import { supabase } from '../../../../env/supabase.client';
 import { ElementUtils } from '../../../../utils/elementUtils';
 
@@ -23,6 +23,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
     const { addElement, removeElement } = useStore();
     const [isAddingColumn, setIsAddingColumn] = useState(false);
     const [newColumnLabel, setNewColumnLabel] = useState('');
+    const [newColumnKey, setNewColumnKey] = useState('');
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
@@ -52,7 +53,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
     // 컬럼 추가 함수
     const addColumn = async () => {
-        if (!newColumnLabel.trim() || !tableElement) return;
+        if (!newColumnLabel.trim() || !newColumnKey.trim() || !tableElement) return;
 
         try {
             const newOrderNum = columns.length + 1;
@@ -63,8 +64,12 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                 id: columnId,
                 tag: 'Column',
                 props: {
-                    children: newColumnLabel,
-                    isRowHeader: false
+                    key: newColumnKey.trim(),
+                    children: newColumnLabel.trim(),
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 150
                 },
                 parent_id: elementId, // TableHeader ID
                 page_id: element.page_id!,
@@ -118,9 +123,10 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
             // 폼 초기화
             setNewColumnLabel('');
+            setNewColumnKey('');
             setIsAddingColumn(false);
 
-            console.log('✅ 헤더에서 컬럼 추가 완료:', newColumnLabel, `(컬럼 1개 + 셀 ${newCellElements.length}개)`);
+            console.log('✅ 헤더에서 컬럼 추가 완료:', newColumnLabel, `(key: ${newColumnKey}, 컬럼 1개 + 셀 ${newCellElements.length}개)`);
         } catch (error) {
             console.error('컬럼 추가 중 오류:', error);
         }
@@ -193,36 +199,63 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
                 {/* 컬럼 입력 필드 */}
                 {isAddingColumn && (
-                    <PropertyInput
-                        label="컬럼 이름"
-                        value={newColumnLabel}
-                        onChange={setNewColumnLabel}
-                        placeholder="컬럼 이름을 입력하세요"
-                        icon={Tag}
-                    />
+                    <div className="space-y-2">
+                        <PropertyInput
+                            label="데이터 키"
+                            value={newColumnKey}
+                            onChange={setNewColumnKey}
+                            placeholder="데이터 필드명 (예: id, name)"
+                            icon={Tag}
+                        />
+                        <PropertyInput
+                            label="컬럼 제목"
+                            value={newColumnLabel}
+                            onChange={setNewColumnLabel}
+                            placeholder="화면에 표시될 제목"
+                            icon={Type}
+                        />
+                    </div>
                 )}
 
                 {/* 컬럼 목록 */}
                 {columns.length > 0 && (
                     <div className='tabs-list'>
-                        {columns.map((column, index) => (
-                            <div key={column.id} className='tab-list-item'>
-                                <span className='tab-title'>
-                                    {index + 1}. {(column.props as ColumnElementProps)?.children as string || '제목 없음'}
-                                    {(column.props as ColumnElementProps)?.isRowHeader && (
-                                        <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-600 rounded">
-                                            헤더
+                        {columns.map((column, index) => {
+                            const columnProps = column.props as ColumnElementProps;
+                            return (
+                                <div key={column.id} className='tab-list-item'>
+                                    <div className='tab-content'>
+                                        <span className='tab-title'>
+                                            {index + 1}. {columnProps?.children as string || '제목 없음'}
+                                            {columnProps?.key && (
+                                                <span className="ml-2 text-gray-500 text-sm">
+                                                    ({columnProps.key})
+                                                </span>
+                                            )}
+                                            {columnProps?.isRowHeader && (
+                                                <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-600 rounded">
+                                                    헤더
+                                                </span>
+                                            )}
                                         </span>
-                                    )}
-                                </span>
-                                <button
-                                    className='control-button delete'
-                                    onClick={() => deleteColumn(column.id)}
-                                >
-                                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
-                            </div>
-                        ))}
+                                        <div className='tab-controls'>
+                                            {columnProps?.allowsSorting !== false && (
+                                                <span className="text-xs text-gray-500">📊</span>
+                                            )}
+                                            {columnProps?.enableResizing !== false && (
+                                                <span className="text-xs text-gray-500">↔️</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        className='control-button delete'
+                                        onClick={() => deleteColumn(column.id)}
+                                    >
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -242,6 +275,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                                 onClick={() => {
                                     setIsAddingColumn(false);
                                     setNewColumnLabel('');
+                                    setNewColumnKey('');
                                 }}
                             >
                                 Cancel

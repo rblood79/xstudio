@@ -20,6 +20,7 @@ export interface ColumnDefinition<T> {
   key: keyof T;
   label: string;
   allowsSorting?: boolean;
+  enableResizing?: boolean;
   width?: number;
   minWidth?: number;
   maxWidth?: number;
@@ -97,6 +98,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       minSize: c.minWidth,
       maxSize: c.maxWidth,
       enableSorting: c.allowsSorting ?? true,
+      enableResizing: c.enableResizing ?? true,
       cell: (info) => info.getValue() as React.ReactNode,
     }));
   }, [columns]);
