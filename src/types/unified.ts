@@ -373,33 +373,6 @@ export interface GridListItemElementProps extends BaseElementProps {
     isDisabled?: boolean;
 }
 
-export interface DataGridElementProps extends BaseElementProps {
-    data?: any[]; // DataGrid에 표시할 데이터
-    columns?: Array<{
-        key: string;
-        label: string;
-        width?: number;
-        minWidth?: number;
-        maxWidth?: number;
-    }>; // 컬럼 정의
-    itemTemplate?: string; // 각 셀의 내용 템플릿
-    maxRows?: number; // 가상화를 위한 최대 행 수
-    selectionMode?: 'none' | 'single' | 'multiple';
-
-    // 크기 및 스타일
-    size?: 'sm' | 'md' | 'lg';
-    variant?: 'default' | 'striped' | 'bordered';
-    height?: number;
-    rowHeight?: number;
-    columnWidth?: number;
-
-    // 기능 설정
-    enableInfiniteScroll?: boolean;
-    enableSorting?: boolean;
-    enableFiltering?: boolean;
-    enableEditing?: boolean;
-}
-
 export interface TextElementProps extends BaseElementProps {
     children?: React.ReactNode;
 }
@@ -451,7 +424,6 @@ export type ComponentElementProps =
     | ListBoxItemElementProps
     | GridListElementProps
     | GridListItemElementProps
-    | DataGridElementProps // DataGridProps 추가
     | TextElementProps
     | DivElementProps
     | SectionElementProps
@@ -801,37 +773,6 @@ export function createDefaultGridListItemProps(): GridListItemElementProps {
     };
 }
 
-export function createDefaultDataGridProps(): DataGridElementProps {
-    return {
-        data: [],
-        columns: [
-            { key: 'num', label: '번호', width: 80 },
-            { key: 'id', label: 'ID', width: 80 },
-            { key: 'name', label: '이름', width: 150 },
-            { key: 'email', label: '이메일', width: 200 },
-            { key: 'jobTitle', label: '직책', width: 150 },
-            { key: 'phone', label: '전화번호', width: 150 },
-            { key: 'address', label: '주소', width: 200 }
-        ],
-        itemTemplate: '{{name}} - {{email}}',
-        maxRows: 100,
-        selectionMode: 'none',
-
-        // 크기 및 스타일 기본값
-        size: 'md',
-        variant: 'default',
-        height: 400,
-        rowHeight: 35,
-        columnWidth: 150,
-
-        // 기능 설정 기본값
-        enableInfiniteScroll: true,
-        enableSorting: true,
-        enableFiltering: false,
-        enableEditing: false,
-    };
-}
-
 export function createDefaultTextProps(): TextElementProps {
     return {
         children: 'Text' // 기본 텍스트 내용 추가
@@ -886,7 +827,6 @@ export function getDefaultProps(tag: string): ComponentElementProps {
         ListBoxItem: createDefaultListBoxItemProps,
         GridList: createDefaultGridListProps,
         GridListItem: createDefaultGridListItemProps,
-        DataGrid: createDefaultDataGridProps,
         Text: createDefaultTextProps,
         Div: createDefaultDivProps,
         Section: createDefaultSectionProps,
