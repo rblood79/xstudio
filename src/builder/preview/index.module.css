@@ -1,6 +1,7 @@
 @layer utilities {
     :root {
-        --background-color: var(--color-sky-500);
+        --color-border: var(--color-gray-300);
+        --color-background: var(--color-white);
         --highlight-background: var(--color-primary-500);
         --highlight-foreground: var(--color-primary-50);
         --overlay-background: var(--color-gray-50);
