@@ -15,7 +15,7 @@ import { pagesApi } from './PagesApiService';
 
 // === Mock API Endpoint ===
 interface MockApiConfig {
-    [key: string]: (path: string, params?: Record<string, unknown>) => Promise<any>;
+    [key: string]: (path: string, params?: Record<string, unknown>) => Promise<unknown>;
 }
 
 const fetchMockUsers = async (path: string, params?: Record<string, unknown>): Promise<MockUserData[]> => {
@@ -31,7 +31,8 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
         filteredData = largeMockData.filter(user =>
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
-            user.jobTitle.toLowerCase().includes(searchTerm)
+            user.company.toLowerCase().includes(searchTerm) ||
+            user.role.toLowerCase().includes(searchTerm)
         );
     }
 

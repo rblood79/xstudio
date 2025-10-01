@@ -19,6 +19,7 @@ export type PaginationMode = 'pagination' | 'infinite';
 export interface ColumnDefinition<T> {
   key: keyof T;
   label: string;
+  elementId?: string; // Column Element ID for selection
   allowsSorting?: boolean;
   enableResizing?: boolean;
   width?: number;
@@ -30,6 +31,7 @@ export interface ColumnDefinition<T> {
 export interface TableProps<T extends { id: string | number }> {
   className?: string;
   'data-element-id'?: string;
+  tableHeaderElementId?: string; // TableHeader Element ID for selection
 
   // 데이터 소스: 정적 or 비동기
   data?: T[];                 // 정적 데이터면 API 호출 안 함
@@ -58,6 +60,7 @@ export interface TableProps<T extends { id: string | number }> {
 export default function Table<T extends { id: string | number }>(props: TableProps<T>) {
   const {
     className,
+    tableHeaderElementId,
 
     data: staticData,
     apiUrlKey,
@@ -242,7 +245,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     return () => {
       initialLoadRef.current = false;
     };
-  }, [isAsync, mode, itemsPerPage]);
+  }, [isAsync, mode, itemsPerPage, fetchPage, fetchMore]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
@@ -348,19 +351,22 @@ export default function Table<T extends { id: string | number }>(props: TablePro
             <thead
               className="react-aria-TableHeader react-aria-Resizable"
               role="rowgroup"
+              data-element-id={tableHeaderElementId}
               style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
             >
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id} className="react-aria-Row" role="row" style={{ display: 'flex', width: '100%' }}>
                   {headerGroup.headers.map((header, colIndex) => {
-                    const align =
-                      columns.find(c => String(c.key) === header.column.id)?.align ?? 'left';
+                    const columnDef = columns.find(c => String(c.key) === header.column.id);
+                    const align = columnDef?.align ?? 'left';
+                    const columnElementId = columnDef?.elementId;
                     const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
                     return (
                       <th
                         key={header.id}
                         className="react-aria-Column"
                         role="columnheader"
+                        data-element-id={columnElementId}
                         aria-colindex={colIndex + 1}
                         aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
                         style={{ display: 'flex', textAlign: align as 'left' | 'center' | 'right', width: header.getSize() }}
