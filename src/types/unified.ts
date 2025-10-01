@@ -677,8 +677,8 @@ export function createDefaultTableProps(): TableElementProps {
         // 헤더 고정 관련 기본값 추가
         stickyHeader: false,
         stickyHeaderOffset: 0,
-        // 정렬 관련 기본값 추가
-        sortColumn: 'id',
+        // 정렬 관련 기본값 추가 (undefined로 설정하여 API 순서 유지)
+        sortColumn: undefined,
         sortDirection: 'ascending',
     };
 }

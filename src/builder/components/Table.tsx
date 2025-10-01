@@ -12,6 +12,8 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { apiConfig } from '../../services/api';
 
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 export type PaginationMode = 'pagination' | 'infinite';
 
 export interface ColumnDefinition<T> {
@@ -79,7 +81,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
   // ---------- 정렬 ----------
   const initialSorting: SortingState = React.useMemo(() => {
-    if (!sortColumn) return [];
+    // sortColumn이 없거나 빈 문자열이면 정렬하지 않음
+    if (!sortColumn || sortColumn === '') return [];
     return [{ id: String(sortColumn), desc: sortDirection === 'descending' }];
   }, [sortColumn, sortDirection]);
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
@@ -373,10 +376,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                           tabIndex={0}
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {{
-                            asc: ' 🔼',
-                            desc: ' 🔽',
-                          }[header.column.getIsSorted() as string] ?? null}
+                          {header.column.getIsSorted() === 'asc' ? <ChevronUp size={21} /> : header.column.getIsSorted() === 'desc' ? <ChevronDown size={21} /> : null}
                         </div>
 
                         {/* 리사이즈 핸들 */}
