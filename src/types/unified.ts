@@ -283,10 +283,13 @@ export interface TableBodyElementProps extends BaseElementProps {
 
 export interface ColumnElementProps extends BaseElementProps {
     children?: React.ReactNode;
+    key?: string; // 데이터 필드명 (예: 'id', 'name', 'email')
     isRowHeader?: boolean;
-    width?: string;
-    minWidth?: string;
-    maxWidth?: string;
+    allowsSorting?: boolean;
+    enableResizing?: boolean;
+    width?: number; // 픽셀 단위 숫자
+    minWidth?: number;
+    maxWidth?: number;
 }
 
 export interface RowElementProps extends BaseElementProps {

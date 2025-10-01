@@ -1580,9 +1580,111 @@ export class ComponentFactory {
             updated_at: new Date().toISOString()
         } as Element;
 
-        const childrenData: Element[] = [];
+        // TableHeader 생성
+        const tableHeaderId = ElementUtils.generateId();
+        const tableHeader: Element = {
+            id: tableHeaderId,
+            tag: 'TableHeader',
+            props: createDefaultTableHeaderProps() as ComponentElementProps,
+            parent_id: parentData.id,
+            page_id: pageId,
+            order_num: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
 
-        // 모든 요소(부모)를 한 번에 UI에 추가
+        // Column들 생성 (기본 5개 - API 데이터 필드에 맞춤)
+        const columns: Element[] = [
+            {
+                id: ElementUtils.generateId(),
+                tag: 'Column',
+                props: {
+                    key: 'id',
+                    children: 'ID',
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 80
+                } as ComponentElementProps,
+                parent_id: tableHeaderId,
+                page_id: pageId,
+                order_num: 1,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: ElementUtils.generateId(),
+                tag: 'Column',
+                props: {
+                    key: 'name',
+                    children: 'Name',
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 200
+                } as ComponentElementProps,
+                parent_id: tableHeaderId,
+                page_id: pageId,
+                order_num: 2,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: ElementUtils.generateId(),
+                tag: 'Column',
+                props: {
+                    key: 'email',
+                    children: 'Email',
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 250
+                } as ComponentElementProps,
+                parent_id: tableHeaderId,
+                page_id: pageId,
+                order_num: 3,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: ElementUtils.generateId(),
+                tag: 'Column',
+                props: {
+                    key: 'phone',
+                    children: 'Phone',
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 150
+                } as ComponentElementProps,
+                parent_id: tableHeaderId,
+                page_id: pageId,
+                order_num: 4,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            },
+            {
+                id: ElementUtils.generateId(),
+                tag: 'Column',
+                props: {
+                    key: 'company',
+                    children: 'Company',
+                    isRowHeader: false,
+                    allowsSorting: true,
+                    enableResizing: true,
+                    width: 200
+                } as ComponentElementProps,
+                parent_id: tableHeaderId,
+                page_id: pageId,
+                order_num: 5,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+        ];
+
+        const childrenData: Element[] = [tableHeader, ...columns];
+
+        // 모든 요소를 한 번에 UI에 추가
         const store = useStore.getState();
         const currentElements = store.elements;
         const newElements = [...currentElements, parentData, ...childrenData];
@@ -1590,6 +1692,8 @@ export class ComponentFactory {
         console.log('🏗️ Table 구조 생성:', {
             parentId: parentData.id,
             parentTag: parentData.tag,
+            tableHeaderId: tableHeader.id,
+            columns: columns.length,
             children: childrenData.map(child => ({
                 id: child.id,
                 tag: child.tag,
@@ -1606,7 +1710,7 @@ export class ComponentFactory {
             saveSnapshot(newElements, '복합 컴포넌트 생성');
         }
 
-        // 백그라운드에서 DB에 순차 저장 (Tabs와 동일한 패턴)
+        // 백그라운드에서 DB에 순차 저장
         try {
             // 부모 먼저 저장
             const parentToSave = {
@@ -1618,12 +1722,38 @@ export class ComponentFactory {
 
             // 스토어에서 부모 요소 ID 업데이트
             const store = useStore.getState();
-            const updatedElements = store.elements.map(el =>
+            let updatedElements = store.elements.map(el =>
                 el.id === parentData.id ? { ...el, id: savedParent.id } : el
             );
             store.setElements(updatedElements);
 
-            console.log(`🎯 Table elements saved to DB: ${savedParent.id}`);
+            // TableHeader 저장
+            const tableHeaderToSave = {
+                ...tableHeader,
+                parent_id: savedParent.id
+            };
+            const savedTableHeader = await ElementUtils.createElement(tableHeaderToSave);
+
+            updatedElements = store.elements.map(el =>
+                el.id === tableHeader.id ? { ...el, id: savedTableHeader.id } : el
+            );
+            store.setElements(updatedElements);
+
+            // Column들 저장
+            for (let i = 0; i < columns.length; i++) {
+                const columnToSave = {
+                    ...columns[i],
+                    parent_id: savedTableHeader.id
+                };
+                const savedColumn = await ElementUtils.createElement(columnToSave);
+
+                updatedElements = store.elements.map(el =>
+                    el.id === columns[i].id ? { ...el, id: savedColumn.id } : el
+                );
+                store.setElements(updatedElements);
+            }
+
+            console.log(`🎯 Table elements saved to DB: ${savedParent.id} (TableHeader + ${columns.length} Columns)`);
 
         } catch (error) {
             console.error('Background save failed:', error);

@@ -1507,17 +1507,34 @@ function Preview() {
       console.log('🔍 Table children:', children.map(c => ({ tag: c.tag, id: c.id })));
       console.log('🔍 All elements:', elements.filter(e => e.parent_id === el.id).map(e => ({ tag: e.tag, id: e.id, parent_id: e.parent_id })));
 
-      // 컬럼 정의 추출 (children에서 Column 요소들)
-      const columnElements = children.filter(child => child.tag === 'Column');
-      const columns = columnElements.map(col => ({
-        key: (col.props.key || col.props.id || 'col') as string,
-        label: (col.props.children || col.props.label || 'Column') as string,
-        allowsSorting: Boolean(col.props.allowsSorting ?? true),
-        width: typeof col.props.width === 'number' ? col.props.width : undefined,
-        minWidth: typeof col.props.minWidth === 'number' ? col.props.minWidth : undefined,
-        maxWidth: typeof col.props.maxWidth === 'number' ? col.props.maxWidth : undefined,
-        align: (col.props.align || 'left') as 'left' | 'center' | 'right'
-      }));
+      // TableHeader를 먼저 찾고, 그 아래의 Column들을 찾기
+      const tableHeaderElement = children.find(child => child.tag === 'TableHeader');
+      const columnElements = tableHeaderElement
+        ? elements.filter(el => el.parent_id === tableHeaderElement.id && el.tag === 'Column')
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+        : children.filter(child => child.tag === 'Column'); // fallback: 직접 Column 찾기
+
+      console.log('🔍 TableHeader:', tableHeaderElement?.id);
+      console.log('🔍 Columns found:', columnElements.length, columnElements.map(c => c.props.children));
+
+      const columns = columnElements.map((col, index) => {
+        // key 우선순위: props.key > children (소문자) > id > fallback
+        const dataKey = col.props.key ||
+          (typeof col.props.children === 'string' ? col.props.children.toLowerCase() : '') ||
+          col.props.id ||
+          `col${index}`;
+
+        return {
+          key: dataKey as string,
+          label: (col.props.children || col.props.label || 'Column') as string,
+          allowsSorting: Boolean(col.props.allowsSorting ?? true),
+          enableResizing: Boolean(col.props.enableResizing ?? true),
+          width: typeof col.props.width === 'number' ? col.props.width : 150,
+          minWidth: typeof col.props.minWidth === 'number' ? col.props.minWidth : undefined,
+          maxWidth: typeof col.props.maxWidth === 'number' ? col.props.maxWidth : undefined,
+          align: (col.props.align || 'left') as 'left' | 'center' | 'right'
+        };
+      });
 
       // 데이터 추출 (children에서 Row 요소들)
       // TableBody 내부의 Row 요소들을 찾기
@@ -1558,22 +1575,20 @@ function Preview() {
 
       // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
       // 샘플 데이터 사용 시 정적 데이터 제공
-      const finalData = useApiData ? [] : [
-        { id: 1, name: 'Sample Item 1', value: 'Value 1' },
-        { id: 2, name: 'Sample Item 2', value: 'Value 2' },
-        { id: 3, name: 'Sample Item 3', value: 'Value 3' },
-        { id: 4, name: 'Sample Item 4', value: 'Value 4' },
-        { id: 5, name: 'Sample Item 5', value: 'Value 5' }
-      ];
+      const finalData = useApiData ? [] : data;
 
-      // API 데이터용 컬럼 정의
-      const finalColumns = [
+      // Column Element에서 추출한 컬럼 사용
+      // Element가 없으면 기본 컬럼 사용
+      const finalColumns = columns.length > 0 ? columns : [
         { key: 'id' as const, label: 'ID', allowsSorting: true, width: 80 },
         { key: 'name' as const, label: 'Name', allowsSorting: true, width: 200 },
         { key: 'email' as const, label: 'Email', allowsSorting: true, width: 250 },
         { key: 'phone' as const, label: 'Phone', allowsSorting: true, width: 150 },
         { key: 'company' as const, label: 'Company', allowsSorting: true, width: 200 }
       ];
+
+      console.log('🔍 Final columns for Table:', finalColumns);
+      console.log('🔍 Final data for Table:', finalData.length, 'rows');
 
       return (
         <Table
