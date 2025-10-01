@@ -20,7 +20,6 @@ export * from './DatePicker';
 export * from './DateRangePicker';
 export * from './Switch';
 export * from './Table'; // Table 추가
-export * from './DataGrid'; // DataGrid 추가
 export * from './Card';
 export * from './TagGroup'; // TagGroup 추가
 export * from './types';

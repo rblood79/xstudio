@@ -47,7 +47,6 @@ const widgetComp = [
     { tag: 'Panel', label: 'panel', icon: InspectionPanel },
     { tag: 'Nav', label: 'navigation', icon: Menu },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
-    { tag: 'DataGrid', label: 'data grid', icon: Grid },
 ] as const;
 
 const pageComp = [

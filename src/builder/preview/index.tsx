@@ -37,7 +37,6 @@ import {
   DatePicker,
   DateRangePicker,
   Switch, // Switch 추가
-  DataGrid, // DataGrid 추가
   Card,
   TagGroup,
   Tag,
@@ -1782,7 +1781,6 @@ function Preview() {
       'DateRangePicker': DateRangePicker,
       'Switch': Switch,
       'Table': Table,
-      'DataGrid': DataGrid,
       'Card': Card,
       'TagGroup': TagGroup,
       'Tag': Tag,

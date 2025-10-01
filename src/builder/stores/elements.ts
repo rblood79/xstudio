@@ -67,7 +67,6 @@ const reorderElements = async (
     // 특별 정렬이 필요한 컴포넌트들 확인
     const isTabsChildren = parentTag === 'Tabs';
     const isListBoxChildren = parentTag === 'ListBox';
-    const isDataGridChildren = parentTag === 'DataGrid'; // DataGrid 추가
     const isGridListChildren = parentTag === 'GridList';
     const isMenuChildren = parentTag === 'Menu';
     const isComboBoxChildren = parentTag === 'ComboBox';
@@ -76,7 +75,7 @@ const reorderElements = async (
     const isToggleButtonChildren = parentTag === 'ToggleButtonGroup';
 
     // 디버깅: 특별 정렬 대상 컴포넌트 확인
-    if (isTabsChildren || isListBoxChildren || isDataGridChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
         parentKey,
         parentElement: parentElement ? { id: parentElement.id, tag: parentElement.tag } : null,
@@ -147,7 +146,7 @@ const reorderElements = async (
       sorted.forEach((el, index) => {
         console.log(`  ${index + 1}. ${el.tag}: ${(el.props as { title?: string }).title} (new order: ${index + 1})`);
       });
-    } else if (isListBoxChildren || isDataGridChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+    } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       // 컬렉션 컴포넌트들의 아이템 정렬 (ToggleButton 포함)
       console.log(`📋 ${parentTag} 하위 요소 재정렬: ${children.length}개 아이템`);
 
@@ -1282,7 +1281,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     if (currentPageId) {
       // 컬렉션 컴포넌트의 아이템들 확인
       const isCollectionItem = element.tag === 'Tab' || element.tag === 'Panel' ||
-        element.tag === 'ListBoxItem' || element.tag === 'GridListItem' || element.tag === 'DataGrid' || // DataGrid 추가
+        element.tag === 'ListBoxItem' || element.tag === 'GridListItem' ||
         element.tag === 'MenuItem' || element.tag === 'ComboBoxItem' ||
         element.tag === 'SelectItem' || element.tag === 'TreeItem' || element.tag === 'ToggleButton';
 
