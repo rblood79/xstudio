@@ -18,9 +18,6 @@ import { TableElementProps } from '../../../../types/unified';
 export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
     const setElements = useStore(state => state.setElements);
-    const [isAddingColumn, setIsAddingColumn] = useState(false);
-    const [newColumnLabel, setNewColumnLabel] = useState('');
-    const [newColumnKey, setNewColumnKey] = useState(''); // New state for column key
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
@@ -134,43 +131,17 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         });
     };
 
-    const handleAddColumnToTableProps = () => {
-        if (!newColumnLabel.trim() || !newColumnKey.trim()) return;
+    // TableHeader 찾기
+    const tableHeaderElement = elements.find(el =>
+        el.parent_id === element?.id && el.tag === 'TableHeader'
+    );
 
-        const currentColumns = (currentProps as TableElementProps)?.columns || [];
-        const newColumn = {
-            key: newColumnKey.trim(),
-            label: newColumnLabel.trim(),
-            allowsSorting: true, // Default to sortable
-        };
-
-        updateTableProps({
-            columns: [...currentColumns, newColumn],
-        });
-
-        setNewColumnLabel('');
-        setNewColumnKey('');
-        setIsAddingColumn(false);
-    };
-
-    const handleRemoveColumnFromTableProps = (keyToRemove: string) => {
-        const currentColumns = (currentProps as TableElementProps)?.columns || [];
-        updateTableProps({
-            columns: currentColumns.filter(col => col.key !== keyToRemove),
-        });
-    };
-
-    const handleColumnSortingChange = (columnKey: string, allowsSorting: boolean) => {
-        const currentColumns = (currentProps as TableElementProps)?.columns || [];
-        const updatedColumns = currentColumns.map(col =>
-            col.key === columnKey
-                ? { ...col, allowsSorting }
-                : col
-        );
-        updateTableProps({
-            columns: updatedColumns,
-        });
-    };
+    // 실제 Column Element들 가져오기
+    const actualColumns = tableHeaderElement
+        ? elements.filter(el =>
+            el.parent_id === tableHeaderElement.id && el.tag === 'Column'
+        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+        : [];
 
     return (
         <div className="component-props">
@@ -438,98 +409,51 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 {/* 컬럼 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total columns: {(currentProps as TableElementProps)?.columns?.length || 0}
+                        Total columns: {actualColumns.length || 0}
                     </p>
                     <p className='tab-overview-help'>
-                        💡 Manage table columns and their properties
+                        💡 컬럼을 추가/삭제하려면 <strong>TableHeader</strong>를 선택하세요
                     </p>
                 </div>
 
-                {/* 컬럼 추가 필드 */}
-                {isAddingColumn && (
-                    <div className="space-y-2">
-                        <PropertyInput
-                            icon={Tag}
-                            label="컬럼 라벨"
-                            value={newColumnLabel}
-                            onChange={setNewColumnLabel}
-                            placeholder="표시될 컬럼 이름"
-                        />
-                        <PropertyInput
-                            icon={Key}
-                            label="컬럼 키"
-                            value={newColumnKey}
-                            onChange={setNewColumnKey}
-                            placeholder="데이터 객체의 키 (예: id, name)"
-                        />
-                    </div>
-                )}
-
-                {/* 기존 컬럼들 */}
-                {((currentProps as TableElementProps)?.columns || []).length > 0 && (
+                {/* 실제 Column Element 목록 (읽기 전용) */}
+                {actualColumns.length > 0 && (
                     <div className='tabs-list'>
-                        {((currentProps as TableElementProps)?.columns || []).map((column, index) => (
-                            <div key={column.key} className='tab-list-item'>
-                                <div className='tab-content'>
-                                    <span className='tab-title'>
-                                        {column.label || `Column ${index + 1}`}
-                                        <span className="ml-2 text-gray-500 text-sm">({column.key})</span>
-                                    </span>
-                                    <div className='tab-controls'>
-                                        <label className='flex items-center gap-2 text-sm'>
-                                            <input
-                                                type="checkbox"
-                                                checked={(column as any).allowsSorting !== false}
-                                                onChange={(e) => handleColumnSortingChange(column.key, e.target.checked)}
-                                                className='rounded'
-                                            />
-                                            <span className='text-gray-600'>Sortable</span>
-                                        </label>
-                                        <button
-                                            className='control-button delete'
-                                            onClick={() => handleRemoveColumnFromTableProps(column.key)}
-                                        >
-                                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                        </button>
+                        {actualColumns.map((column, index) => {
+                            const columnProps = column.props as any;
+                            return (
+                                <div key={column.id} className='tab-list-item'>
+                                    <div className='tab-content'>
+                                        <span className='tab-title'>
+                                            {index + 1}. {columnProps?.children || '제목 없음'}
+                                            {columnProps?.key && (
+                                                <span className="ml-2 text-gray-500 text-sm">
+                                                    ({columnProps.key})
+                                                </span>
+                                            )}
+                                        </span>
+                                        <div className='tab-controls'>
+                                            {columnProps?.allowsSorting !== false && (
+                                                <span className="text-xs text-gray-500" title="정렬 가능">📊</span>
+                                            )}
+                                            {columnProps?.enableResizing !== false && (
+                                                <span className="text-xs text-gray-500" title="크기 조절 가능">↔️</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
-                {/* 컬럼 관리 버튼들 */}
-                <div className='tab-actions'>
-                    {isAddingColumn ? (
-                        <>
-                            <button
-                                className='control-button add'
-                                onClick={handleAddColumnToTableProps}
-                            >
-                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                Add Column
-                            </button>
-                            <button
-                                className='control-button secondary'
-                                onClick={() => {
-                                    setIsAddingColumn(false);
-                                    setNewColumnLabel('');
-                                    setNewColumnKey('');
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            className='control-button add'
-                            onClick={() => setIsAddingColumn(true)}
-                        >
-                            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                            Add Column
-                        </button>
-                    )}
-                </div>
+                {actualColumns.length === 0 && (
+                    <div className='tab-overview'>
+                        <p className='tab-overview-help'>
+                            ⚠️ 컬럼이 없습니다. <strong>Layers</strong>에서 <strong>TableHeader</strong>를 선택하고 컬럼을 추가하세요.
+                        </p>
+                    </div>
+                )}
             </fieldset>
 
             <fieldset className="properties-aria">

@@ -235,13 +235,7 @@ export interface TableElementProps extends BaseElementProps {
     children?: React.ReactNode;
     'data-element-id'?: string;
     items?: Array<Record<string, unknown>>;
-    columns?: Array<{
-        key: string;
-        label: string;
-        allowsSorting?: boolean;
-        isRowHeader?: boolean;
-        render?: (item: Record<string, unknown>) => React.ReactNode;
-    }>;
+    // ⚠️ columns는 더 이상 사용하지 않음 - TableHeader > Column Elements를 사용
     selectionMode?: 'none' | 'single' | 'multiple';
     selectedKeys?: string[];
     onSelectionChange?: (keys: string[]) => void;
@@ -651,13 +645,7 @@ export function createDefaultSwitchProps(): SwitchElementProps {
 export function createDefaultTableProps(): TableElementProps {
     return {
         items: [],
-        columns: [
-            { key: 'num', label: '번호', allowsSorting: true, isRowHeader: true },
-            { key: 'id', label: 'ID', allowsSorting: true },
-            { key: 'name', label: '이름', allowsSorting: true },
-            { key: 'email', label: '이메일', allowsSorting: true },
-            { key: 'jobTitle', label: '직업', allowsSorting: true },
-        ],
+        // ⚠️ columns 배열 제거 - TableHeader > Column Elements 사용
         selectionMode: 'none',
         selectedKeys: [],
         variant: 'default', // 기본값 추가
@@ -675,7 +663,7 @@ export function createDefaultTableProps(): TableElementProps {
         itemsPerPage: 10, // 페이지당 표시할 행 수 기본값
         // 가상화 관련 기본값 추가
         height: 400,
-        itemHeight: 38, // ✅ 48로 설정됨
+        itemHeight: 38,
         overscan: 10,
         // 헤더 고정 관련 기본값 추가
         stickyHeader: false,
@@ -703,7 +691,11 @@ export function createDefaultTableBodyProps(): TableBodyElementProps {
 export function createDefaultColumnProps(): ColumnElementProps {
     return {
         children: 'Column',
+        key: 'column',
         isRowHeader: false,
+        allowsSorting: true,
+        enableResizing: true,
+        width: 150,
     };
 }
 
