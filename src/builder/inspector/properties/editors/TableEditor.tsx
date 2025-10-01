@@ -400,17 +400,24 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     Sorting Settings
                 </legend>
 
+                <div className="tab-overview">
+                    <span className="help-text">
+                        💡 기본 정렬을 설정하거나 API 순서를 그대로 유지할 수 있습니다. 사용자는 헤더를 클릭하여 언제든지 정렬을 변경할 수 있습니다.
+                    </span>
+                </div>
+
                 <PropertySelect
                     icon={Tag}
                     label="기본 정렬 컬럼"
-                    value={(currentProps as TableElementProps)?.sortColumn || 'id'}
+                    value={(currentProps as TableElementProps)?.sortColumn || ''}
                     options={[
+                        { value: '', label: '정렬 안함 (API 순서 유지)' },
                         { value: 'id', label: 'ID' },
                         { value: 'name', label: '이름' },
                         { value: 'email', label: '이메일' },
                         { value: 'jobTitle', label: '직업' },
                     ]}
-                    onChange={(sortColumn) => updateTableProps({ sortColumn })}
+                    onChange={(sortColumn) => updateTableProps({ sortColumn: sortColumn || undefined })}
                 />
 
                 <PropertySelect
