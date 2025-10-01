@@ -1527,6 +1527,7 @@ function Preview() {
         return {
           key: dataKey as string,
           label: (col.props.children || col.props.label || 'Column') as string,
+          elementId: col.id, // Column Element ID 전달 ⭐
           allowsSorting: Boolean(col.props.allowsSorting ?? true),
           enableResizing: Boolean(col.props.enableResizing ?? true),
           width: typeof col.props.width === 'number' ? col.props.width : 150,
@@ -1594,6 +1595,7 @@ function Preview() {
         <Table
           key={el.id}
           data-element-id={el.id}
+          tableHeaderElementId={tableHeaderElement?.id}
           className={el.props.className}
           columns={finalColumns}
           data={useApiData ? undefined : finalData}
