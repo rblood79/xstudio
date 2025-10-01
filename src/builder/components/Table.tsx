@@ -108,16 +108,28 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   const [loading, setLoading] = React.useState(false);
 
   // ---------- API 어댑터 (더미 배열 응답 기반) ----------
+  const isFetchingRef = React.useRef(false);
+
   const fetchPage = React.useCallback(
     async (nextIndex: number) => {
       if (!isAsync || !apiUrlKey || !endpointPath) {
         return { items: [] as T[], total: 0 };
       }
+
+      // 중복 호출 방지
+      if (isFetchingRef.current) {
+        console.log('⏸️ Fetch already in progress, skipping...');
+        return { items: [] as T[], total: 0 };
+      }
+
       const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
         endpoint: string,
         params: Record<string, unknown>
       ) => Promise<T[]>;
+
+      isFetchingRef.current = true;
       setLoading(true);
+
       try {
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
         const params = { page: nextIndex + 1, limit: itemsPerPage, ...sort };
@@ -126,6 +138,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         return { items: res, total: assumedTotal };
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     },
     [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting]
@@ -136,11 +149,21 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       if (!isAsync || !apiUrlKey || !endpointPath) {
         return { items: [] as T[], nextCursor: undefined as string | undefined };
       }
+
+      // 중복 호출 방지
+      if (isFetchingRef.current) {
+        console.log('⏸️ Fetch already in progress, skipping...');
+        return { items: [] as T[], nextCursor: undefined as string | undefined };
+      }
+
       const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
         endpoint: string,
         params: Record<string, unknown>
       ) => Promise<T[]>;
+
+      isFetchingRef.current = true;
       setLoading(true);
+
       try {
         const page = nextCursor ? parseInt(nextCursor, 10) : 1;
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
@@ -152,6 +175,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         return { items: res, nextCursor: next };
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     },
     [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting]
@@ -159,12 +183,22 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
   // ---------- 초기/리로드 ----------
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const initialLoadRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!isAsync) return;
 
+    // 초기 로드 중복 방지 (React Strict Mode 대응)
+    if (initialLoadRef.current) {
+      console.log('⏸️ Initial load already completed, skipping duplicate effect');
+      return;
+    }
+
+    initialLoadRef.current = true;
+
     if (mode === 'pagination') {
       (async () => {
+        console.log('📥 Initial pagination load: page 0');
         const { items, total } = await fetchPage(0);
         setPageRows(items);
         setPageIndex(0);
@@ -172,6 +206,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       })();
     } else {
       (async () => {
+        console.log('📥 Initial infinite scroll load: page 1');
         setFlatRows([]);
         setCursor(undefined);
         setHasNext(true);
@@ -180,19 +215,29 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         setCursor(nextCursor);
         setHasNext(Boolean(nextCursor));
 
-        // 초기 화면이 안 찼으면 한 번 더
+        // 초기 화면이 안 찼으면 한 번 더 (약간의 지연 후)
         if (containerRef.current && nextCursor) {
-          const el = containerRef.current;
-          if (el.scrollHeight <= el.clientHeight + 10) {
-            const r = await fetchMore(nextCursor);
-            setFlatRows(prev => [...prev, ...r.items]);
-            setCursor(r.nextCursor);
-            setHasNext(Boolean(r.nextCursor));
-          }
+          setTimeout(() => {
+            if (!containerRef.current) return;
+            const el = containerRef.current;
+            if (el.scrollHeight <= el.clientHeight + 10) {
+              console.log('📥 Loading more to fill viewport: page 2');
+              fetchMore(nextCursor).then(r => {
+                setFlatRows(prev => [...prev, ...r.items]);
+                setCursor(r.nextCursor);
+                setHasNext(Boolean(r.nextCursor));
+              });
+            }
+          }, 100);
         }
       })();
     }
-  }, [isAsync, mode, itemsPerPage, sorting, fetchPage, fetchMore]);
+
+    // cleanup: 다음 effect 실행 전 초기화
+    return () => {
+      initialLoadRef.current = false;
+    };
+  }, [isAsync, mode, itemsPerPage]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
@@ -254,16 +299,14 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // }));
 
   // ---------- 무한 스크롤 프리페치(onScroll 전용) ----------
-  const isFetchingRef = React.useRef(false);
-  React.useEffect(() => { isFetchingRef.current = loading; }, [loading]);
-
   const onScrollFetch = React.useCallback((el?: HTMLDivElement | null) => {
     if (!isAsync || mode !== 'infinite') return;
-    if (!el || !hasNext || isFetchingRef.current) return;
+    if (!el || !hasNext || loading) return; // loading 체크로 중복 방지
 
     const { scrollHeight, scrollTop, clientHeight } = el;
     if (scrollHeight - scrollTop - clientHeight < 500) {
       // 하단 500px 이내
+      console.log('📥 Scroll triggered load');
       void (async () => {
         const next = cursor ?? '1';
         const { items, nextCursor } = await fetchMore(next);
@@ -272,12 +315,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         setHasNext(Boolean(nextCursor));
       })();
     }
-  }, [isAsync, mode, hasNext, cursor, fetchMore]);
-
-  // 초기에도 한 번 검사 (레퍼런스와 동일)
-  React.useEffect(() => {
-    onScrollFetch(containerRef.current);
-  }, [onScrollFetch]);
+  }, [isAsync, mode, hasNext, cursor, loading, fetchMore]);
 
   // ---------- 렌더 ----------
   return (
