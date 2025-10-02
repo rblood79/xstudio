@@ -36,6 +36,12 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
         );
     }
 
+    // 전체 데이터 요청 확인
+    if (params && params.getAll === true) {
+        console.log(`📊 Returning all data: ${filteredData.length} items`);
+        return filteredData;
+    }
+
     // 페이지네이션 지원
     if (params && typeof params.page === 'number' && typeof params.limit === 'number') {
         const page = params.page;
@@ -49,6 +55,8 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
         return filteredData.slice(startIndex, endIndex);
     }
 
+    // 기본적으로 모든 데이터 반환 (기존 동작 유지)
+    console.log(`📊 Returning all data (default): ${filteredData.length} items`);
     return filteredData;
 };
 

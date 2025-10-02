@@ -142,7 +142,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
         const params = { page: nextIndex + 1, limit: itemsPerPage, ...sort };
         const res: T[] = await service!(endpointPath, params);
-        const assumedTotal = 1000; // 데모 가정
+        const assumedTotal = 10000; // 데모 가정
         return { items: res, total: assumedTotal };
       } finally {
         setLoading(false);
