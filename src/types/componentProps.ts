@@ -294,6 +294,13 @@ export interface TableElementProps extends BaseElementProps {
         label: string;
         value: string;
     }>;
+    // 높이 관련 속성들
+    height?: number; // 테이블 높이 (기본값: 400)
+    heightMode?: 'auto' | 'fixed' | 'viewport' | 'full'; // 높이 모드
+    heightUnit?: 'px' | 'vh' | 'rem' | 'em'; // 높이 단위
+    viewportHeight?: number; // 뷰포트 높이 비율 (%)
+    // 데이터 매핑 관련 속성들
+    dataMapping?: { resultPath?: string; idKey?: string; totalKey?: string }; // API 응답 데이터 매핑 정보
 }
 
 // Card 컴포넌트 타입
