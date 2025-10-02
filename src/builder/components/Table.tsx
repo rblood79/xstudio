@@ -10,10 +10,9 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { apiConfig } from '../../services/api';
-
+import { Button } from './list';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
+import { apiConfig } from '../../services/api';
 export type PaginationMode = 'pagination' | 'infinite';
 
 export interface ColumnDefinition<T> {
@@ -579,21 +578,13 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                               aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
                               colSpan={header.colSpan}
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
+
                                 justifyContent: align === 'center' ? 'center' :
                                   align === 'right' ? 'flex-end' : 'flex-start',
                                 textAlign: align as 'left' | 'center' | 'right',
                                 width: header.getSize(),
                                 minWidth: header.getSize(),
-                                backgroundColor: '#ffffff',
-                                color: '#374151',
-                                fontWeight: '500',
-                                borderBottom: '1px solid #e5e7eb',
-                                borderRight: '1px solid #e5e7eb',
-                                padding: '8px 16px',
-                                fontSize: '13px',
-                                lineHeight: '1.5',
+
                               }}
                             >
                               <div
@@ -735,33 +726,33 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
           {/* 페이지 네비게이션 */}
           <div className="react-aria-PageNavigation">
-            <button
+            <Button
               onClick={async () => {
                 const { items, total } = await fetchPage(0, itemsPerPage);
                 setPageRows(items);
                 setPageIndex(0);
                 setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
               }}
-              disabled={pageIndex === 0 || loading}
+              isDisabled={pageIndex === 0 || loading}
               className="react-aria-PageButton"
-              title="First page"
-            >
-              {'<<'}
-            </button>
+              aria-label="First page"
+              children="<<"
+              size="sm"
+            />
 
-            <button
+            <Button
               onClick={async () => {
                 const next = Math.max(0, pageIndex - 1);
                 const { items } = await fetchPage(next, itemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
-              disabled={pageIndex === 0 || loading}
+              isDisabled={pageIndex === 0 || loading}
               className="react-aria-PageButton"
-              title="Previous page"
-            >
-              {'<'}
-            </button>
+              aria-label="Previous page"
+              children="<"
+              size="sm"
+            />
 
             {/* 페이지 번호 표시 */}
             <div className="react-aria-PageNumbers">
@@ -779,7 +770,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                 const pages = [];
                 for (let i = startPage; i <= endPage; i++) {
                   pages.push(
-                    <button
+                    <Button
                       key={i}
                       onClick={async () => {
                         const targetPage = i - 1;
@@ -787,44 +778,42 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                         setPageRows(items);
                         setPageIndex(targetPage);
                       }}
-                      disabled={loading}
+                      isDisabled={loading}
                       className={`react-aria-PageButton ${i === currentPage ? 'active' : ''}`}
-                    >
-                      {i}
-                    </button>
+                      children={i}
+                      size="sm"
+                    />
                   );
                 }
                 return pages;
               })()}
             </div>
 
-            <button
+            <Button
               onClick={async () => {
                 const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
                 const { items } = await fetchPage(next, itemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
-              disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
+              isDisabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
               className="react-aria-PageButton"
-              title="Next page"
-            >
-              {'>'}
-            </button>
+              aria-label="Next page"
+              children=">"
+            />
 
-            <button
+            <Button
               onClick={async () => {
                 const next = (pageCount ?? 1) - 1;
                 const { items } = await fetchPage(next, itemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
-              disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
+              isDisabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
               className="react-aria-PageButton"
-              title="Last page"
-            >
-              {'>>'}
-            </button>
+              aria-label="Last page"
+              children=">>"
+            />
           </div>
 
           {/* Go to page */}
@@ -853,18 +842,18 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               disabled={loading}
               className="react-aria-GoToPageInput"
             />
-            <button
+            <Button
               onClick={async () => {
                 const targetPage = Math.max(1, Math.min(pageCount, pageIndex + 1));
                 const { items } = await fetchPage(targetPage - 1, itemsPerPage);
                 setPageRows(items);
                 setPageIndex(targetPage - 1);
               }}
-              disabled={loading}
+              isDisabled={loading}
               className="react-aria-GoToPageButton"
-            >
-              Go
-            </button>
+              children="Go"
+              size="sm"
+            />
           </div>
 
           {/* 페이지 정보 */}
