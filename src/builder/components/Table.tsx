@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from './list';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiConfig } from '../../services/api';
 export type PaginationMode = 'pagination' | 'infinite';
 
@@ -842,7 +842,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               isDisabled={pageIndex === 0 || loading}
               className="react-aria-PageButton"
               aria-label="First page"
-              children="<<"
+              children={<ChevronFirst size={16} />}
               size="sm"
             />
 
@@ -856,7 +856,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               isDisabled={pageIndex === 0 || loading}
               className="react-aria-PageButton"
               aria-label="Previous page"
-              children="<"
+              children={<ChevronLeft size={16} />}
               size="sm"
             />
 
@@ -905,7 +905,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               isDisabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
               className="react-aria-PageButton"
               aria-label="Next page"
-              children=">"
+              children={<ChevronRight size={16} />}
             />
 
             <Button
@@ -918,7 +918,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               isDisabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
               className="react-aria-PageButton"
               aria-label="Last page"
-              children=">>"
+              children={<ChevronLast size={16} />}
             />
           </div>
 
@@ -957,7 +957,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               }}
               isDisabled={loading}
               className="react-aria-GoToPageButton"
-              children="Go"
+              children={<ChevronLast size={16} />}
               size="sm"
             />
           </div>
