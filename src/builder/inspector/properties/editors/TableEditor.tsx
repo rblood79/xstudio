@@ -128,6 +128,11 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         if (!tableHeaderElement) return;
 
         try {
+            // 기존 Column Group들의 order_num 중 최대값 찾기
+            const maxOrderNum = actualColumnGroups.length > 0
+                ? Math.max(...actualColumnGroups.map(group => group.order_num || 0))
+                : -1;
+
             const groupId = ElementUtils.generateId();
             const newGroupElement: Element = {
                 id: groupId,
@@ -142,7 +147,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 },
                 parent_id: tableHeaderElement.id,
                 page_id: element.page_id!,
-                order_num: actualColumnGroups.length,
+                order_num: maxOrderNum + 1, // 중복 방지를 위해 최대값 + 1
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };

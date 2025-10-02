@@ -73,9 +73,10 @@ const reorderElements = async (
     const isSelectChildren = parentTag === 'Select';
     const isTreeChildren = parentTag === 'Tree';
     const isToggleButtonChildren = parentTag === 'ToggleButtonGroup';
+    const isTableHeaderChildren = parentTag === 'TableHeader';
 
     // 디버깅: 특별 정렬 대상 컴포넌트 확인
-    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
+    if (isTabsChildren || isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren || isTableHeaderChildren) {
       console.log(`🔍 컬렉션 컴포넌트 그룹 분석:`, {
         parentKey,
         parentElement: parentElement ? { id: parentElement.id, tag: parentElement.tag } : null,
@@ -145,6 +146,33 @@ const reorderElements = async (
       console.log('📋 최종 정렬된 순서:');
       sorted.forEach((el, index) => {
         console.log(`  ${index + 1}. ${el.tag}: ${(el.props as { title?: string }).title} (new order: ${index + 1})`);
+      });
+    } else if (isTableHeaderChildren) {
+      // TableHeader 하위의 ColumnGroup들 정렬
+      console.log(`📊 ${parentTag} 하위 ColumnGroup 재정렬: ${children.length}개 그룹`);
+
+      sorted = children.sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff === 0) {
+          // order_num이 같을 경우, label로 추가 정렬
+          const labelA = (a.props as { label?: string }).label || '';
+          const labelB = (b.props as { label?: string }).label || '';
+          const comparison = String(labelA).localeCompare(String(labelB));
+
+          if (comparison === 0) {
+            // label도 같으면 ID로 정렬 (안정적인 순서 보장)
+            return a.id.localeCompare(b.id);
+          }
+          return comparison;
+        }
+        return orderDiff;
+      });
+
+      console.log(`📊 ${parentTag} 정렬된 ColumnGroup 순서:`);
+      sorted.forEach((group, index) => {
+        const label = (group.props as { label?: string }).label || 'Untitled';
+        const span = (group.props as { span?: number }).span || 1;
+        console.log(`  ${index + 1}. ColumnGroup: ${label} (span: ${span}, order: ${group.order_num} → ${index + 1})`);
       });
     } else if (isListBoxChildren || isGridListChildren || isMenuChildren || isComboBoxChildren || isSelectChildren || isTreeChildren || isToggleButtonChildren) {
       // 컬렉션 컴포넌트들의 아이템 정렬 (ToggleButton 포함)
