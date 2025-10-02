@@ -3258,72 +3258,70 @@
 .react-aria-PageNavigation {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--spacing-2xs);
 }
 
 .react-aria-PageNumbers {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    margin: 0 0.5rem;
+    gap: var(--spacing-2xs);
 }
 
 .react-aria-PageButton {
     cursor: pointer;
     transition: all 0.15s ease;
-    min-width: 40px;
+    min-width: calc(var(--spacing-xl) * 1.125);
+    height: calc(var(--spacing-xl) * 1.125);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 calc(var(--spacing-2xs) * 2);
 }
 
 .react-aria-PageButton:hover:not(:disabled) {
-    background-color: #f9fafb;
-    border-color: #9ca3af;
+    background-color: var(--color-primary-500);
 }
 
 .react-aria-PageButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background-color: #f3f4f6;
 }
 
 .react-aria-PageButton.active {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-    color: #ffffff;
+    background-color: var(--color-primary-900);
+    color: var(--color-white);
 }
 
 .react-aria-PageButton.active:hover {
-    background-color: #2563eb;
-    border-color: #2563eb;
+    background-color: var(--color-primary-950);
 }
 
 .react-aria-GoToPage {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--spacing-2xs);
 }
 
 .react-aria-GoToPageLabel {
-    font-size: 0.875rem;
-    color: #6b7280;
     white-space: nowrap;
 }
 
 .react-aria-GoToPageInput {
-    width: 60px;
+    width: var(--spacing-xl);
     text-align: center;
 }
 
 .react-aria-GoToPageInput:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--color-primary-700);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .react-aria-GoToPageButton {}
 
 .react-aria-GoToPageButton:hover:not(:disabled) {
-    background-color: #2563eb;
-    border-color: #2563eb;
+    background-color: var(--color-primary-900);
 }
 
 .react-aria-GoToPageButton:disabled {

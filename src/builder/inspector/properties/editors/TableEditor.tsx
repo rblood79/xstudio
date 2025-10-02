@@ -1,5 +1,6 @@
 
 import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List, Layers } from 'lucide-react';
+import { Button } from '../../../components/list';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -9,7 +10,7 @@ import { useStore } from '../../../stores';
 import { Element } from '../../../../types/store';
 import { ElementUtils } from '../../../../utils/elementUtils';
 import { TableElementProps } from '../../../../types/unified';
-import { useCallback, useRef } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 // interface TableEditorProps {
 //     // element: Element;
@@ -20,8 +21,10 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     const elements = useStore(state => state.elements);
     const setElements = useStore(state => state.setElements);
 
-    // JSON 파싱을 위한 디바운싱 타이머
-    const jsonParseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 로컬 상태 추가 (포커스 유지를 위해)
+    const [localApiParams, setLocalApiParams] = useState<string>('');
+    const [localDataMapping, setLocalDataMapping] = useState<string>('');
 
     // Table 속성 업데이트 함수들
     const updateTableProps = useCallback((newProps: Partial<TableElementProps>) => {
@@ -31,69 +34,34 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         });
     }, [currentProps, onUpdate]);
 
-    // 디바운싱된 JSON 파싱 함수 (데이터 매핑용)
-    const debouncedJsonParse = useCallback((value: string) => {
-        // 이전 타이머 취소
-        if (jsonParseTimeoutRef.current) {
-            clearTimeout(jsonParseTimeoutRef.current);
+    // currentProps 변경 시 로컬 상태 초기화
+    useEffect(() => {
+        const currentApiParams = (currentProps as TableElementProps)?.apiParams || {};
+        setLocalApiParams(JSON.stringify(currentApiParams, null, 2));
+
+        const currentDataMapping = (currentProps as TableElementProps)?.dataMapping || { resultPath: "", idKey: "id", totalKey: "" };
+        setLocalDataMapping(JSON.stringify(currentDataMapping, null, 2));
+    }, [(currentProps as TableElementProps)?.apiParams, (currentProps as TableElementProps)?.dataMapping]);
+
+    // 확인 버튼을 위한 함수들
+    const handleApiParamsConfirm = useCallback(() => {
+        try {
+            const parsed = JSON.parse(localApiParams);
+            updateTableProps({ apiParams: parsed });
+        } catch (error) {
+            alert('JSON 파싱 오류: ' + (error as Error).message);
         }
+    }, [localApiParams, updateTableProps]);
 
-        // 1000ms 후에 JSON 파싱 시도
-        jsonParseTimeoutRef.current = setTimeout(() => {
-            const trimmedValue = value.trim();
-
-            // 빈 문자열이면 undefined로 설정
-            if (!trimmedValue) {
-                updateTableProps({ dataMapping: undefined });
-                return;
-            }
-
-            // 완전한 JSON 객체인지 확인
-            if (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) {
-                try {
-                    const parsed = JSON.parse(trimmedValue);
-                    if (typeof parsed === 'object' && parsed !== null) {
-                        updateTableProps({ dataMapping: parsed });
-                    }
-                } catch {
-                    // JSON 파싱 실패 시 아무것도 하지 않음 (현재 상태 유지)
-                }
-            }
-            // 불완전한 JSON이면 아무것도 하지 않음 (사용자가 계속 입력할 수 있도록)
-        }, 1000);
-    }, [updateTableProps]);
-
-    // 디바운싱된 JSON 파싱 함수 (API 파라미터용)
-    const debouncedApiParamsParse = useCallback((value: string) => {
-        // 이전 타이머 취소
-        if (jsonParseTimeoutRef.current) {
-            clearTimeout(jsonParseTimeoutRef.current);
+    const handleDataMappingConfirm = useCallback(() => {
+        try {
+            const parsed = JSON.parse(localDataMapping);
+            updateTableProps({ dataMapping: parsed });
+        } catch (error) {
+            alert('JSON 파싱 오류: ' + (error as Error).message);
         }
+    }, [localDataMapping, updateTableProps]);
 
-        // 1000ms 후에 JSON 파싱 시도
-        jsonParseTimeoutRef.current = setTimeout(() => {
-            const trimmedValue = value.trim();
-
-            // 빈 문자열이면 undefined로 설정
-            if (!trimmedValue) {
-                updateTableProps({ apiParams: undefined });
-                return;
-            }
-
-            // 완전한 JSON 객체인지 확인
-            if (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) {
-                try {
-                    const parsed = JSON.parse(trimmedValue);
-                    if (typeof parsed === 'object' && parsed !== null) {
-                        updateTableProps({ apiParams: parsed });
-                    }
-                } catch {
-                    // JSON 파싱 실패 시 아무것도 하지 않음 (현재 상태 유지)
-                }
-            }
-            // 불완전한 JSON이면 아무것도 하지 않음 (사용자가 계속 입력할 수 있도록)
-        }, 1000);
-    }, [updateTableProps]);
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
@@ -315,30 +283,44 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
 
                 {/* API Parameters (JSON) */}
                 {(currentProps as TableElementProps)?.enableAsyncLoading && (
-                    <PropertyInput
-                        icon={List}
-                        label="API 파라미터 (JSON)"
-                        value={JSON.stringify((currentProps as TableElementProps)?.apiParams || {}, null, 2)}
-                        onChange={debouncedApiParamsParse}
-                        placeholder={`{"search": "Luke"}`}
-                        multiline={true} // Explicitly set multiline prop
-                    />
+                    <div className="space-y-2">
+                        <PropertyInput
+                            icon={List}
+                            label="API 파라미터 (JSON)"
+                            value={localApiParams}
+                            onChange={setLocalApiParams}
+                            placeholder={`{"search": "Luke"}`}
+                            multiline={true}
+                        />
+                        <Button
+                            onClick={handleApiParamsConfirm}
+                            className="other"
+                            children="확인"
+                        />
+                    </div>
                 )}
 
                 {/* Data Mapping (JSON) */}
                 {(currentProps as TableElementProps)?.enableAsyncLoading && (
-                    <PropertyInput
-                        icon={List}
-                        label="데이터 매핑 (JSON)"
-                        value={JSON.stringify((currentProps as TableElementProps)?.dataMapping || { resultPath: "", idKey: "id", totalKey: "" }, null, 2)}
-                        onChange={debouncedJsonParse}
-                        placeholder={`{
+                    <div className="space-y-2">
+                        <PropertyInput
+                            icon={List}
+                            label="데이터 매핑 (JSON)"
+                            value={localDataMapping}
+                            onChange={setLocalDataMapping}
+                            placeholder={`{
   "resultPath": "results",
   "idKey": "id", 
   "totalKey": "count"
 }`}
-                        multiline={true} // Explicitly set multiline prop
-                    />
+                            multiline={true}
+                        />
+                        <Button
+                            onClick={handleDataMappingConfirm}
+                            className="other"
+                            children="확인"
+                        />
+                    </div>
                 )}
 
                 {/* Selection Mode */}
