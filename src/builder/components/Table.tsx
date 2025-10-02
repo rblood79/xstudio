@@ -19,6 +19,7 @@ export interface ColumnDefinition<T> {
   key: keyof T;
   label: string;
   elementId?: string; // Column Element ID for selection
+  order_num?: number; // order_num 추가
   allowsSorting?: boolean;
   enableResizing?: boolean;
   width?: number;
@@ -148,9 +149,17 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       return a.span - b.span;
     });
 
+    // 컬럼들을 order_num 순서로 정렬 (이미 정렬되어 있지만 확실히 하기 위해)
+    const sortedColumns = [...columns].sort((a, b) => {
+      if (a.order_num !== undefined && b.order_num !== undefined) {
+        return a.order_num - b.order_num;
+      }
+      return 0;
+    });
+
     for (const group of sortedGroups) {
       // 그룹에 속할 컬럼들 선택 (span 범위만큼)
-      const groupColumns = columns.slice(columnIndex, columnIndex + group.span);
+      const groupColumns = sortedColumns.slice(columnIndex, columnIndex + group.span);
 
       if (groupColumns.length > 0) {
         // 하위 컬럼들을 columnHelper.accessor()로 생성
@@ -175,13 +184,11 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         const groupColumn = columnHelper.group({
           id: `group-${group.id}`,
           header: () => <span style={{
-            fontWeight: '600',
-            fontSize: '14px',
+
             color: group.variant === 'primary' ? '#ffffff' : '#374151',
             backgroundColor: group.variant === 'primary' ? '#3b82f6' :
               group.variant === 'secondary' ? '#6b7280' : '#f8fafc',
-            padding: '8px 16px',
-            borderRadius: '4px',
+
             textAlign: group.align || 'center',
           }}>{group.label}</span>,
           columns: subColumns,
@@ -201,8 +208,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     }
 
     // 남은 컬럼들을 개별 컬럼으로 추가 (Column Group이 아닌 컬럼들)
-    if (columnIndex < columns.length) {
-      const remainingColumns = columns.slice(columnIndex);
+    if (columnIndex < sortedColumns.length) {
+      const remainingColumns = sortedColumns.slice(columnIndex);
       for (const c of remainingColumns) {
         result.push(
           columnHelper.accessor(String(c.key), {
@@ -519,8 +526,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                               aria-colindex={colIndex + 1}
                               colSpan={header.colSpan}
                               style={{
-                                display: 'flex',
-                                alignItems: 'center',
+
                                 justifyContent: groupAlign === 'center' ? 'center' :
                                   groupAlign === 'right' ? 'flex-end' : 'flex-start',
                                 textAlign: groupAlign as 'left' | 'center' | 'right',
@@ -529,30 +535,10 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                                 backgroundColor: groupVariant === 'primary' ? '#3b82f6' :
                                   groupVariant === 'secondary' ? '#6b7280' : '#f8fafc',
                                 color: groupVariant !== 'default' ? '#ffffff' : '#374151',
-                                fontWeight: '600',
-                                borderBottom: '2px solid #e5e7eb',
-                                borderRight: '1px solid #e5e7eb',
-                                padding: '12px 16px',
-                                fontSize: '14px',
-                                lineHeight: '1.5',
+
                               }}
                             >
-                              <div
-                                style={{
-                                  width: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'inherit',
-                                }}
-                              >
-                                <span style={{
-                                  fontWeight: 'inherit',
-                                  fontSize: 'inherit',
-                                  lineHeight: 'inherit',
-                                }}>
-                                  {flexRender(header.column.columnDef.header, header.getContext())}
-                                </span>
-                              </div>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
                             </th>
                           );
                         })}

@@ -1528,6 +1528,7 @@ function Preview() {
           key: dataKey as string,
           label: (col.props.children || col.props.label || 'Column') as string,
           elementId: col.id, // Column Element ID 전달 ⭐
+          order_num: col.order_num, // order_num 추가
           allowsSorting: Boolean(col.props.allowsSorting ?? true),
           enableResizing: Boolean(col.props.enableResizing ?? true),
           width: typeof col.props.width === 'number' ? col.props.width : 150,
