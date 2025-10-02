@@ -23,6 +23,7 @@ export { TableEditor } from './TableEditor';
 export { TableHeaderEditor } from './TableHeaderEditor';
 export { TableBodyEditor } from './TableBodyEditor';
 export { ColumnEditor } from './ColumnEditor';
+export { ColumnGroupEditor } from './ColumnGroupEditor';
 export { RowEditor } from './RowEditor';
 export { CellEditor } from './CellEditor';
 export { CardEditor } from './CardEditor';

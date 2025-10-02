@@ -2966,6 +2966,7 @@
         border-right: 1px solid var(--border-color);
 
         &:last-child {
+            flex: 1;
             border-right: none;
         }
 

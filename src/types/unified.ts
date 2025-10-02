@@ -286,6 +286,15 @@ export interface ColumnElementProps extends BaseElementProps {
     maxWidth?: number;
 }
 
+export interface ColumnGroupElementProps extends BaseElementProps {
+    children?: React.ReactNode;
+    label?: string; // 그룹 헤더 텍스트
+    span?: number; // 합쳐질 컬럼 수 (colspan)
+    align?: 'left' | 'center' | 'right';
+    variant?: 'default' | 'primary' | 'secondary';
+    sticky?: boolean; // 그룹 헤더 고정 여부
+}
+
 export interface RowElementProps extends BaseElementProps {
     children?: React.ReactNode;
     variant?: 'default' | 'striped' | 'hover';
@@ -412,6 +421,7 @@ export type ComponentElementProps =
     | TableHeaderElementProps
     | TableBodyElementProps
     | ColumnElementProps
+    | ColumnGroupElementProps
     | RowElementProps
     | CellElementProps
     | CardElementProps
@@ -696,6 +706,17 @@ export function createDefaultColumnProps(): ColumnElementProps {
         allowsSorting: true,
         enableResizing: true,
         width: 150,
+    };
+}
+
+export function createDefaultColumnGroupProps(): ColumnGroupElementProps {
+    return {
+        children: 'Column Group',
+        label: 'Group',
+        span: 2,
+        align: 'center',
+        variant: 'default',
+        sticky: false,
     };
 }
 

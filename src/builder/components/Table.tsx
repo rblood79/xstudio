@@ -5,9 +5,9 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
-  type ColumnDef,
   type SortingState,
   type Row as TableRow,
+  createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { apiConfig } from '../../services/api';
@@ -28,6 +28,15 @@ export interface ColumnDefinition<T> {
   align?: 'left' | 'center' | 'right';
 }
 
+export interface ColumnGroupDefinition {
+  id: string;
+  label: string;
+  span: number;
+  align?: 'left' | 'center' | 'right';
+  variant?: 'default' | 'primary' | 'secondary';
+  sticky?: boolean;
+}
+
 export interface TableProps<T extends { id: string | number }> {
   className?: string;
   'data-element-id'?: string;
@@ -41,6 +50,7 @@ export interface TableProps<T extends { id: string | number }> {
 
   // 컬럼
   columns: ColumnDefinition<T>[];
+  columnGroups?: ColumnGroupDefinition[]; // Column Groups 추가
 
   // 표 옵션
   paginationMode?: PaginationMode; // 'pagination' | 'infinite'
@@ -68,6 +78,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     enableAsyncLoading = false,
 
     columns,
+    columnGroups = [],
     paginationMode = 'pagination',
     itemsPerPage = 500,
     height = 400,
@@ -91,20 +102,122 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   }, [sortColumn, sortDirection]);
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
 
-  // ---------- ColumnDef ----------
-  const columnDefs = React.useMemo<ColumnDef<T, unknown>[]>(() => {
-    return columns.map((c) => ({
-      id: String(c.key),
-      accessorKey: String(c.key),
-      header: c.label,
-      size: c.width ?? 150,
-      minSize: c.minWidth,
-      maxSize: c.maxWidth,
-      enableSorting: c.allowsSorting ?? true,
-      enableResizing: c.enableResizing ?? true,
-      cell: (info) => info.getValue() as React.ReactNode,
-    }));
-  }, [columns]);
+  // ---------- Column Definitions with Groups ----------
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const columnDefsWithGroups = React.useMemo<any[]>(() => {
+    console.log('🔍 Column Groups received:', columnGroups);
+
+    // Column Helper 생성
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const columnHelper = createColumnHelper<any>();
+
+    if (columnGroups.length === 0) {
+      // Column Group이 없으면 기본 컬럼 정의 반환
+      const basicColumns = columns.map((c) =>
+        columnHelper.accessor(String(c.key), {
+          id: String(c.key),
+          header: () => <span style={{
+            fontWeight: '500',
+            fontSize: '13px',
+            color: '#374151',
+          }}>{c.label}</span>,
+          size: c.width ?? 150,
+          minSize: c.minWidth,
+          maxSize: c.maxWidth,
+          enableSorting: c.allowsSorting ?? true,
+          enableResizing: c.enableResizing ?? true,
+          cell: (info: { getValue: () => unknown }) => info.getValue() as React.ReactNode,
+        })
+      );
+      console.log('🔍 Basic columns (no groups):', basicColumns);
+      return basicColumns;
+    }
+
+    // Column Group이 있으면 span 개수만큼만 컬럼을 그룹으로 묶고, 나머지는 개별 컬럼으로 유지
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: any[] = [];
+    let columnIndex = 0;
+
+    // Column Group들을 span 순서대로 정렬
+    const sortedGroups = [...columnGroups].sort((a, b) => a.span - b.span);
+
+    for (const group of sortedGroups) {
+      // 그룹에 속할 컬럼들 선택 (span 범위만큼)
+      const groupColumns = columns.slice(columnIndex, columnIndex + group.span);
+
+      if (groupColumns.length > 0) {
+        // 하위 컬럼들을 columnHelper.accessor()로 생성
+        const subColumns = groupColumns.map((c) =>
+          columnHelper.accessor(String(c.key), {
+            id: String(c.key),
+            header: () => <span style={{
+              fontWeight: '500',
+              fontSize: '13px',
+              color: '#374151',
+            }}>{c.label}</span>,
+            size: c.width ?? 150,
+            minSize: c.minWidth,
+            maxSize: c.maxWidth,
+            enableSorting: c.allowsSorting ?? true,
+            enableResizing: c.enableResizing ?? true,
+            cell: (info: { getValue: () => unknown }) => info.getValue() as React.ReactNode,
+          })
+        );
+
+        // TanStack Table의 columnHelper.group()을 사용한 Column Group 생성
+        const groupColumn = columnHelper.group({
+          id: `group-${group.id}`,
+          header: () => <span style={{
+            fontWeight: '600',
+            fontSize: '14px',
+            color: group.variant === 'primary' ? '#ffffff' : '#374151',
+            backgroundColor: group.variant === 'primary' ? '#3b82f6' :
+              group.variant === 'secondary' ? '#6b7280' : '#f8fafc',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            textAlign: group.align || 'center',
+          }}>{group.label}</span>,
+          columns: subColumns,
+          meta: {
+            isGroupHeader: true,
+            align: group.align || 'center',
+            variant: group.variant || 'default',
+            sticky: group.sticky || false,
+          }
+        });
+
+        result.push(groupColumn);
+      }
+
+      columnIndex += group.span;
+    }
+
+    // 남은 컬럼들을 개별 컬럼으로 추가 (Column Group이 아닌 컬럼들)
+    if (columnIndex < columns.length) {
+      const remainingColumns = columns.slice(columnIndex);
+      for (const c of remainingColumns) {
+        result.push(
+          columnHelper.accessor(String(c.key), {
+            id: String(c.key),
+            header: () => <span style={{
+              fontWeight: '500',
+              fontSize: '13px',
+              color: '#374151',
+            }}>{c.label}</span>,
+            size: c.width ?? 150,
+            minSize: c.minWidth,
+            maxSize: c.maxWidth,
+            enableSorting: c.allowsSorting ?? true,
+            enableResizing: c.enableResizing ?? true,
+            cell: (info: { getValue: () => unknown }) => info.getValue() as React.ReactNode,
+          })
+        );
+      }
+    }
+
+    console.log('🔍 Final column definitions with groups:', result);
+    return result;
+  }, [columns, columnGroups]);
 
   // ---------- 비동기 상태 ----------
   const [pageIndex, setPageIndex] = React.useState(0);
@@ -271,7 +384,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   // ---------- React Table ----------
   const table = useReactTable({
     data,
-    columns: columnDefs,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    columns: columnDefsWithGroups as any,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -354,55 +468,116 @@ export default function Table<T extends { id: string | number }>(props: TablePro
               data-element-id={tableHeaderElementId}
               style={{ display: 'grid', position: 'sticky', top: 0, zIndex: 1 }}
             >
-              {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id} className="react-aria-Row" role="row" style={{ display: 'flex', width: '100%' }}>
-                  {headerGroup.headers.map((header, colIndex) => {
-                    const columnDef = columns.find(c => String(c.key) === header.column.id);
-                    const align = columnDef?.align ?? 'left';
-                    const columnElementId = columnDef?.elementId;
-                    const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
-                    return (
-                      <th
-                        key={header.id}
-                        className="react-aria-Column"
-                        role="columnheader"
-                        data-element-id={columnElementId}
-                        aria-colindex={colIndex + 1}
-                        aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
-                        style={{ display: 'flex', textAlign: align as 'left' | 'center' | 'right', width: header.getSize() }}
-                      >
-                        <div
-                          className={header.column.getCanSort() ? 'cursor-pointer select-none' : undefined}
-                          onClick={header.column.getToggleSortingHandler()}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              // KeyboardEvent를 MouseEvent로 변환하지 말고 직접 정렬 토글
-                              header.column.toggleSorting();
-                            }
-                          }}
-                          tabIndex={0}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getIsSorted() === 'asc' ? <ChevronUp size={21} /> : header.column.getIsSorted() === 'desc' ? <ChevronDown size={21} /> : null}
-                        </div>
+              {table.getHeaderGroups().map((headerGroup, groupIndex) => {
+                console.log(`🔍 Header Group ${groupIndex}:`, headerGroup);
+                console.log(`🔍 Header Group headers count:`, headerGroup.headers.length);
+                console.log(`🔍 Header Group headers:`, headerGroup.headers.map(h => ({
+                  id: h.id,
+                  columnId: h.column.id,
+                  isGroupHeader: (h.column.columnDef.meta as Record<string, unknown>)?.isGroupHeader,
+                  colSpan: h.colSpan,
+                  header: h.column.columnDef.header
+                })));
+                return (
+                  <tr key={headerGroup.id} className="react-aria-Row" role="row" style={{ display: 'flex', width: '100%' }}>
+                    {headerGroup.headers.map((header, colIndex) => {
+                      const columnDef = columns.find(c => String(c.key) === header.column.id);
+                      const align = columnDef?.align ?? 'left';
 
-                        {/* 리사이즈 핸들 */}
-                        {enableResize && header.column.getCanResize() && (
+                      // Column Group 메타데이터 확인
+                      const groupMeta = header.column.columnDef.meta as Record<string, unknown>;
+                      const isGroupHeader = groupMeta?.isGroupHeader;
+                      const columnElementId = columnDef?.elementId;
+                      const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
+
+                      // Column Group 스타일 적용
+                      const isColumnGroup = isGroupHeader === true;
+                      const groupAlign = (groupMeta?.align as string) || 'center';
+                      const groupVariant = (groupMeta?.variant as string) || 'default';
+
+                      return (
+                        <th
+                          key={header.id}
+                          className={`react-aria-Column ${isColumnGroup ? 'column-group-header' : ''}`}
+                          role="columnheader"
+                          data-element-id={columnElementId}
+                          aria-colindex={colIndex + 1}
+                          aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
+                          colSpan={header.colSpan} // TanStack Table이 자동으로 계산한 colSpan 사용
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: isColumnGroup ?
+                              (groupAlign === 'center' ? 'center' :
+                                groupAlign === 'right' ? 'flex-end' : 'flex-start') :
+                              (align === 'center' ? 'center' :
+                                align === 'right' ? 'flex-end' : 'flex-start'),
+                            textAlign: (isColumnGroup ? groupAlign : align) as 'left' | 'center' | 'right',
+                            width: header.getSize(),
+                            minWidth: header.getSize(),
+                            backgroundColor: isColumnGroup ?
+                              (groupVariant === 'primary' ? '#3b82f6' :
+                                groupVariant === 'secondary' ? '#6b7280' : '#f8fafc') :
+                              '#ffffff',
+                            color: isColumnGroup && groupVariant !== 'default' ? '#ffffff' : '#374151',
+                            fontWeight: isColumnGroup ? '600' : '500',
+                            borderBottom: isColumnGroup ? '2px solid #e5e7eb' : '1px solid #e5e7eb',
+                            borderRight: '1px solid #e5e7eb',
+                            padding: isColumnGroup ? '12px 16px' : '8px 16px',
+                            fontSize: isColumnGroup ? '14px' : '13px',
+                            lineHeight: '1.5',
+                          }}
+                        >
                           <div
-                            role="separator"
-                            aria-orientation="vertical"
-                            aria-label="Resize column"
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            className="react-aria-ColumnResizer"
-                          />
-                        )}
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
+                            className={`flex items-center gap-2 ${!isColumnGroup && header.column.getCanSort() ? 'cursor-pointer select-none hover:text-blue-600' : ''
+                              }`}
+                            onClick={!isColumnGroup ? header.column.getToggleSortingHandler() : undefined}
+                            onKeyDown={!isColumnGroup ? (e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                header.column.toggleSorting();
+                              }
+                            } : undefined}
+                            tabIndex={!isColumnGroup ? 0 : -1}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'inherit',
+                              gap: '8px',
+                            }}
+                          >
+                            <span style={{
+                              fontWeight: 'inherit',
+                              fontSize: 'inherit',
+                              lineHeight: 'inherit',
+                            }}>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                            </span>
+                            {!isColumnGroup && header.column.getIsSorted() === 'asc' ? (
+                              <ChevronUp size={16} style={{ color: '#3b82f6' }} />
+                            ) : !isColumnGroup && header.column.getIsSorted() === 'desc' ? (
+                              <ChevronDown size={16} style={{ color: '#3b82f6' }} />
+                            ) : null}
+                          </div>
+
+                          {/* 리사이즈 핸들 - Column Group이 아닌 경우에만 */}
+                          {!isColumnGroup && enableResize && header.column.getCanResize() && (
+                            <div
+                              role="separator"
+                              aria-orientation="vertical"
+                              aria-label="Resize column"
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              className="react-aria-ColumnResizer"
+                            />
+                          )}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </thead>
 
             {/* 바디: 가상 높이 + 절대 위치 행 */}
