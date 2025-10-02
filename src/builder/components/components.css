@@ -2880,6 +2880,11 @@
                 gap: var(--spacing-sm);
             }
         }
+
+        .column-group-header {
+            display: flex;
+            align-items: center;
+        }
     }
 
     .react-aria-Resizable {
