@@ -247,7 +247,12 @@ export interface TableElementProps extends BaseElementProps {
     apiUrlKey?: string; // 전역 API URL 맵핑 키 (예: 'SWAPI_PEOPLE_API')
     endpointPath?: string; // 기본 URL에 추가될 엔드포인트 경로 (예: '/people')
     apiParams?: Record<string, unknown>; // API 호출 시 전달될 추가 파라미터 (예: { search: 'Luke' })
-    dataMapping?: { resultPath?: string; idKey?: string }; // API 응답 데이터 매핑 정보
+    // 높이 관련 속성들
+    height?: number; // 테이블 높이 (기본값: 400)
+    heightMode?: 'auto' | 'fixed' | 'viewport' | 'full'; // 높이 모드
+    heightUnit?: 'px' | 'vh' | 'rem' | 'em'; // 높이 단위
+    viewportHeight?: number; // 뷰포트 높이 비율 (%)
+    dataMapping?: { resultPath?: string; idKey?: string; totalKey?: string }; // API 응답 데이터 매핑 정보
     // 페이지네이션 모드 선택
     paginationMode?: 'pagination' | 'infinite'; // 페이지네이션 또는 무한스크롤 모드
     itemsPerPage?: number; // 페이지당 표시할 행 수 (기본값: 50)

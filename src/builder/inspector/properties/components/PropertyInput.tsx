@@ -14,6 +14,8 @@ interface PropertyInputProps {
     placeholder?: string;
     className?: string;
     multiline?: boolean; // New prop for multiline input
+    min?: string | number; // 최소값
+    max?: string | number; // 최대값
 }
 
 export function PropertyInput({
@@ -24,7 +26,9 @@ export function PropertyInput({
     icon,
     placeholder,
     className,
-    multiline // Destructure the new prop
+    multiline, // Destructure the new prop
+    min,
+    max
 }: PropertyInputProps) {
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
@@ -43,6 +47,8 @@ export function PropertyInput({
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
+                    min={min}
+                    max={max}
                 />
             )}
         </PropertyFieldset>

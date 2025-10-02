@@ -38,6 +38,13 @@ export interface ColumnGroupDefinition {
   sticky?: boolean;
 }
 
+// 데이터 매핑 인터페이스
+export interface DataMapping {
+  resultPath?: string;        // API 응답에서 데이터 배열 경로 (예: "results", "data")
+  idKey?: string;            // 고유 식별자 필드 (예: "id", "name")
+  totalKey?: string;         // 전체 개수 필드 (예: "total", "count")
+}
+
 export interface TableProps<T extends { id: string | number }> {
   className?: string;
   'data-element-id'?: string;
@@ -48,6 +55,7 @@ export interface TableProps<T extends { id: string | number }> {
   apiUrlKey?: string;         // apiConfig 키 (예: "demo")
   endpointPath?: string;      // 엔드포인트 (예: "/users")
   enableAsyncLoading?: boolean; // true일 때만 API 사용
+  dataMapping?: DataMapping;   // 데이터 매핑 설정
 
   // 컬럼
   columns: ColumnDefinition<T>[];
@@ -57,6 +65,9 @@ export interface TableProps<T extends { id: string | number }> {
   paginationMode?: PaginationMode; // 'pagination' | 'infinite'
   itemsPerPage?: number;           // default: 50
   height?: number;                 // 뷰포트 높이, default: 400
+  heightMode?: 'auto' | 'fixed' | 'viewport' | 'full'; // 높이 모드
+  heightUnit?: 'px' | 'vh' | 'rem' | 'em'; // 높이 단위
+  viewportHeight?: number;         // 뷰포트 높이 비율 (%), default: 50
   rowHeight?: number;              // 추정 행 높이, default: 40
   overscan?: number;               // default: 12
 
@@ -77,12 +88,16 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     apiUrlKey,
     endpointPath,
     enableAsyncLoading = false,
+    dataMapping,
 
     columns,
     columnGroups = [],
     paginationMode = 'pagination',
     itemsPerPage = 500,
     height = 400,
+    heightMode = 'fixed',
+    heightUnit = 'px',
+    viewportHeight = 50,
     rowHeight = 38,
     overscan = 10,
 
@@ -94,6 +109,83 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
   const mode: PaginationMode = paginationMode || 'pagination';
   const isAsync = enableAsyncLoading && !staticData && apiUrlKey && endpointPath;
+
+  // ---------- 데이터 매핑 함수 ----------
+  const processApiResponse = React.useCallback((response: unknown, mapping?: DataMapping): { items: T[], total: number } => {
+    if (!mapping) {
+      // 매핑 설정이 없으면 원본 데이터 그대로 사용
+      const items = Array.isArray(response) ? response as T[] : [];
+      return { items, total: items.length };
+    }
+
+    try {
+      // response를 Record<string, unknown>으로 타입 가드
+      const responseObj = response as Record<string, unknown>;
+
+      // resultPath로 데이터 배열 추출
+      let dataArray: unknown[];
+      if (mapping.resultPath) {
+        // resultPath가 설정된 경우 해당 경로에서 데이터 추출
+        const pathData = responseObj[mapping.resultPath] as unknown[];
+        if (Array.isArray(pathData)) {
+          dataArray = pathData;
+        } else {
+          // resultPath에 데이터가 없으면 원본이 배열인지 확인
+          dataArray = Array.isArray(response) ? response : [];
+        }
+      } else {
+        // resultPath가 없는 경우 원본 데이터 사용
+        dataArray = Array.isArray(response) ? response : [];
+      }
+
+      // 각 아이템에 id 추가 (idKey가 있으면 해당 필드를 id로 사용)
+      const mappedItems = dataArray.map((item: unknown, index: number) => {
+        const itemObj = item as Record<string, unknown>;
+        return {
+          ...itemObj,
+          id: mapping.idKey ? itemObj[mapping.idKey] : itemObj.id || index
+        } as T;
+      });
+
+      // total 추출 (totalKey가 있으면 해당 필드 사용)
+      const total = mapping.totalKey
+        ? (responseObj[mapping.totalKey] as number) || dataArray.length
+        : dataArray.length;
+
+      console.log('🔍 Data mapping applied:', {
+        original: response,
+        dataArray: dataArray,
+        mapped: mappedItems,
+        total,
+        mapping,
+        resultPath: mapping.resultPath,
+        idKey: mapping.idKey,
+        totalKey: mapping.totalKey
+      });
+
+      return { items: mappedItems, total };
+    } catch (error) {
+      console.error('❌ Data mapping error:', error);
+      const items = Array.isArray(response) ? response as T[] : [];
+      return { items, total: items.length };
+    }
+  }, []);
+
+  // ---------- 높이 계산 ----------
+  const calculatedHeight = React.useMemo(() => {
+    switch (heightMode) {
+      case 'auto':
+        return 'auto';
+      case 'fixed':
+        return `${height}${heightUnit}`;
+      case 'viewport':
+        return `${viewportHeight}vh`;
+      case 'full':
+        return '100vh';
+      default:
+        return `${height}px`;
+    }
+  }, [heightMode, height, heightUnit, viewportHeight]);
 
   // ---------- 정렬 ----------
   const initialSorting: SortingState = React.useMemo(() => {
@@ -167,9 +259,6 @@ export default function Table<T extends { id: string | number }>(props: TablePro
           columnHelper.accessor(String(c.key), {
             id: String(c.key),
             header: () => <span style={{
-              fontWeight: '500',
-              fontSize: '13px',
-              color: '#374151',
             }}>{c.label}</span>,
             size: c.width ?? 150,
             minSize: c.minWidth,
@@ -270,15 +359,17 @@ export default function Table<T extends { id: string | number }>(props: TablePro
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
         const limit = pageSize ?? itemsPerPage;
         const params = { page: nextIndex + 1, limit, ...sort };
-        const res: T[] = await service!(endpointPath, params);
-        const assumedTotal = 10000; // 데모 가정
-        return { items: res, total: assumedTotal };
+        const response = await service!(endpointPath, params);
+
+        // 데이터 매핑 적용
+        const { items, total } = processApiResponse(response, dataMapping);
+        return { items, total };
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
       }
     },
-    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting]
+    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting, processApiResponse, dataMapping]
   );
 
   const fetchMore = React.useCallback(
@@ -304,18 +395,21 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       try {
         const page = nextCursor ? parseInt(nextCursor, 10) : 1;
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
-        const res: T[] = await service!(endpointPath, { page, limit: itemsPerPage, ...sort });
-        if (!res || res.length === 0) {
+        const response = await service!(endpointPath, { page, limit: itemsPerPage, ...sort });
+
+        // 데이터 매핑 적용
+        const { items } = processApiResponse(response, dataMapping);
+        if (!items || items.length === 0) {
           return { items: [], nextCursor: undefined };
         }
-        const next = res.length === itemsPerPage ? String(page + 1) : undefined;
-        return { items: res, nextCursor: next };
+        const next = items.length === itemsPerPage ? String(page + 1) : undefined;
+        return { items, nextCursor: next };
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
       }
     },
-    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting]
+    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting, processApiResponse, dataMapping]
   );
 
   // ---------- 초기/리로드 ----------
@@ -471,7 +565,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
           className="react-aria-TableVirtualizer"
           onScroll={(e) => onScrollFetch(e.currentTarget)}
           style={{
-            height,
+            height: calculatedHeight,
             overflow: 'auto',
             position: 'relative',
           }}

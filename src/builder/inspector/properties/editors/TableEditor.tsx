@@ -9,6 +9,7 @@ import { useStore } from '../../../stores';
 import { Element } from '../../../../types/store';
 import { ElementUtils } from '../../../../utils/elementUtils';
 import { TableElementProps } from '../../../../types/unified';
+import { useCallback, useRef } from 'react';
 
 // interface TableEditorProps {
 //     // element: Element;
@@ -18,6 +19,81 @@ import { TableElementProps } from '../../../../types/unified';
 export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
     const setElements = useStore(state => state.setElements);
+
+    // JSON 파싱을 위한 디바운싱 타이머
+    const jsonParseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Table 속성 업데이트 함수들
+    const updateTableProps = useCallback((newProps: Partial<TableElementProps>) => {
+        onUpdate({
+            ...currentProps,
+            ...newProps
+        });
+    }, [currentProps, onUpdate]);
+
+    // 디바운싱된 JSON 파싱 함수 (데이터 매핑용)
+    const debouncedJsonParse = useCallback((value: string) => {
+        // 이전 타이머 취소
+        if (jsonParseTimeoutRef.current) {
+            clearTimeout(jsonParseTimeoutRef.current);
+        }
+
+        // 1000ms 후에 JSON 파싱 시도
+        jsonParseTimeoutRef.current = setTimeout(() => {
+            const trimmedValue = value.trim();
+
+            // 빈 문자열이면 undefined로 설정
+            if (!trimmedValue) {
+                updateTableProps({ dataMapping: undefined });
+                return;
+            }
+
+            // 완전한 JSON 객체인지 확인
+            if (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) {
+                try {
+                    const parsed = JSON.parse(trimmedValue);
+                    if (typeof parsed === 'object' && parsed !== null) {
+                        updateTableProps({ dataMapping: parsed });
+                    }
+                } catch {
+                    // JSON 파싱 실패 시 아무것도 하지 않음 (현재 상태 유지)
+                }
+            }
+            // 불완전한 JSON이면 아무것도 하지 않음 (사용자가 계속 입력할 수 있도록)
+        }, 1000);
+    }, [updateTableProps]);
+
+    // 디바운싱된 JSON 파싱 함수 (API 파라미터용)
+    const debouncedApiParamsParse = useCallback((value: string) => {
+        // 이전 타이머 취소
+        if (jsonParseTimeoutRef.current) {
+            clearTimeout(jsonParseTimeoutRef.current);
+        }
+
+        // 1000ms 후에 JSON 파싱 시도
+        jsonParseTimeoutRef.current = setTimeout(() => {
+            const trimmedValue = value.trim();
+
+            // 빈 문자열이면 undefined로 설정
+            if (!trimmedValue) {
+                updateTableProps({ apiParams: undefined });
+                return;
+            }
+
+            // 완전한 JSON 객체인지 확인
+            if (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) {
+                try {
+                    const parsed = JSON.parse(trimmedValue);
+                    if (typeof parsed === 'object' && parsed !== null) {
+                        updateTableProps({ apiParams: parsed });
+                    }
+                } catch {
+                    // JSON 파싱 실패 시 아무것도 하지 않음 (현재 상태 유지)
+                }
+            }
+            // 불완전한 JSON이면 아무것도 하지 않음 (사용자가 계속 입력할 수 있도록)
+        }, 1000);
+    }, [updateTableProps]);
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
@@ -184,14 +260,6 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         }
     };
 
-    // Table 속성 업데이트 함수들
-    const updateTableProps = (newProps: Partial<TableElementProps>) => {
-        onUpdate({
-            ...currentProps,
-            ...newProps
-        });
-    };
-
     // TableHeader 찾기
     const tableHeaderElement = elements.find(el =>
         el.parent_id === element?.id && el.tag === 'TableHeader'
@@ -214,7 +282,6 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Table Properties</legend>
 
                 {/* Enable Async Loading */}
                 <PropertyCheckbox
@@ -252,14 +319,7 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         icon={List}
                         label="API 파라미터 (JSON)"
                         value={JSON.stringify((currentProps as TableElementProps)?.apiParams || {}, null, 2)}
-                        onChange={(value) => {
-                            try {
-                                updateTableProps({ apiParams: JSON.parse(value) });
-                            } catch (e) {
-                                console.error("Invalid JSON for API Parameters", e);
-                                // 사용자에게 피드백 제공 (예: 오류 메시지 표시)
-                            }
-                        }}
+                        onChange={debouncedApiParamsParse}
                         placeholder={`{"search": "Luke"}`}
                         multiline={true} // Explicitly set multiline prop
                     />
@@ -270,16 +330,13 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     <PropertyInput
                         icon={List}
                         label="데이터 매핑 (JSON)"
-                        value={JSON.stringify((currentProps as TableElementProps)?.dataMapping || {}, null, 2)}
-                        onChange={(value) => {
-                            try {
-                                updateTableProps({ dataMapping: JSON.parse(value) });
-                            } catch (e) {
-                                console.error("Invalid JSON for Data Mapping", e);
-                                // 사용자에게 피드백 제공
-                            }
-                        }}
-                        placeholder={`{"resultPath": "results", "idKey": "name"}`}
+                        value={JSON.stringify((currentProps as TableElementProps)?.dataMapping || { resultPath: "", idKey: "id", totalKey: "" }, null, 2)}
+                        onChange={debouncedJsonParse}
+                        placeholder={`{
+  "resultPath": "results",
+  "idKey": "id", 
+  "totalKey": "count"
+}`}
                         multiline={true} // Explicitly set multiline prop
                     />
                 )}
@@ -361,8 +418,8 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     label="페이지네이션 모드"
                     value={(currentProps as TableElementProps)?.paginationMode || 'infinite'}
                     options={[
-                        { value: 'infinite', label: '무한 스크롤 (모바일 친화적)' },
-                        { value: 'pagination', label: '페이지네이션 (데스크탑 친화적)' }
+                        { value: 'infinite', label: 'scroll' },
+                        { value: 'pagination', label: 'pagination' }
                     ]}
                     onChange={(paginationMode) => updateTableProps({ paginationMode: paginationMode as 'pagination' | 'infinite' })}
                 />
@@ -395,12 +452,58 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     Virtualization Settings
                 </legend>
 
-                <PropertyInput
+                <PropertySelect
                     icon={Settings}
-                    label="테이블 높이 (px)"
-                    value={(currentProps as TableElementProps)?.height || 400}
-                    onChange={(height) => updateTableProps({ height: parseInt(height) || 400 })}
+                    label="테이블 높이 모드"
+                    value={(currentProps as TableElementProps)?.heightMode || 'fixed'}
+                    options={[
+                        { value: 'auto', label: '자동 (내용에 따라)' },
+                        { value: 'fixed', label: '고정 높이' },
+                        { value: 'viewport', label: '뷰포트 기준' },
+                        { value: 'full', label: '전체 화면' },
+                    ]}
+                    onChange={(heightMode) => updateTableProps({ heightMode: heightMode as 'auto' | 'fixed' | 'viewport' | 'full' })}
                 />
+
+                {/* 고정 높이 설정 - heightMode가 'fixed'일 때만 표시 */}
+                {(currentProps as TableElementProps)?.heightMode === 'fixed' && (
+                    <div className="flex gap-2">
+                        <PropertyInput
+                            icon={Settings}
+                            label="높이 값"
+                            value={String((currentProps as TableElementProps)?.height || 400)}
+                            onChange={(height) => updateTableProps({ height: parseInt(height) || 400 })}
+                            type="number"
+                            className="flex-1"
+                        />
+                        <PropertySelect
+                            icon={Settings}
+                            label="단위"
+                            value={(currentProps as TableElementProps)?.heightUnit || 'px'}
+                            options={[
+                                { value: 'px', label: '픽셀 (px)' },
+                                { value: 'vh', label: '뷰포트 높이 (%)' },
+                                { value: 'rem', label: 'rem' },
+                                { value: 'em', label: 'em' },
+                            ]}
+                            onChange={(heightUnit) => updateTableProps({ heightUnit: heightUnit as 'px' | 'vh' | 'rem' | 'em' })}
+                            className="w-32"
+                        />
+                    </div>
+                )}
+
+                {/* 뷰포트 기준 설정 - heightMode가 'viewport'일 때만 표시 */}
+                {(currentProps as TableElementProps)?.heightMode === 'viewport' && (
+                    <PropertyInput
+                        icon={Settings}
+                        label="뷰포트 높이 비율 (%)"
+                        value={String((currentProps as TableElementProps)?.viewportHeight || 50)}
+                        onChange={(viewportHeight) => updateTableProps({ viewportHeight: parseInt(viewportHeight) || 50 })}
+                        type="number"
+                        min={10}
+                        max={100}
+                    />
+                )}
 
                 <PropertyInput
                     icon={Settings}

@@ -1624,11 +1624,19 @@ function Preview() {
           paginationMode={(el.props.paginationMode as 'pagination' | 'infinite') || 'pagination'}
           itemsPerPage={typeof el.props.itemsPerPage === 'number' ? el.props.itemsPerPage : 50}
           height={typeof el.props.height === 'number' ? el.props.height : 300}
+          heightMode={(el.props.heightMode as 'auto' | 'fixed' | 'viewport' | 'full') || 'fixed'}
+          heightUnit={(el.props.heightUnit as 'px' | 'vh' | 'rem' | 'em') || 'px'}
+          viewportHeight={typeof el.props.viewportHeight === 'number' ? el.props.viewportHeight : 50}
           rowHeight={typeof el.props.rowHeight === 'number' ? el.props.rowHeight : 40}
           overscan={typeof el.props.overscan === 'number' ? el.props.overscan : 10}
           enableAsyncLoading={useApiData}
           apiUrlKey={useApiData ? (el.props.apiUrlKey as string) : 'demo'}
           endpointPath={useApiData ? (el.props.endpointPath as string) : '/users'}
+          dataMapping={el.props.dataMapping ? {
+            resultPath: el.props.dataMapping.resultPath,
+            idKey: el.props.dataMapping.idKey,
+            totalKey: el.props.dataMapping.totalKey
+          } : undefined}
           sortColumn={typeof el.props.sortColumn === 'string' ? el.props.sortColumn : undefined}
           sortDirection={(el.props.sortDirection as 'ascending' | 'descending') || 'ascending'}
           enableResize={Boolean(el.props.enableResize ?? true)}
