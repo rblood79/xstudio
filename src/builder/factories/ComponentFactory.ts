@@ -1772,15 +1772,24 @@ export class ComponentFactory {
      */
     static async createColumnGroup(
         parentElement: Element | null,
-        pageId: string
+        pageId: string,
+        elements: Element[] = []
     ): Promise<ComponentCreationResult> {
+        // 기존 Column Group들의 order_num 중 최대값 찾기
+        const existingColumnGroups = elements.filter(el =>
+            el.parent_id === parentElement?.id && el.tag === 'ColumnGroup'
+        );
+        const maxOrderNum = existingColumnGroups.length > 0
+            ? Math.max(...existingColumnGroups.map(group => group.order_num || 0))
+            : -1;
+
         const parentData: Element = {
             id: ElementUtils.generateId(),
             tag: 'ColumnGroup',
             props: createDefaultColumnGroupProps(),
             parent_id: parentElement?.id || null,
             page_id: pageId,
-            order_num: 0,
+            order_num: maxOrderNum + 1, // 중복 방지를 위해 최대값 + 1
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };

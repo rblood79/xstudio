@@ -121,6 +121,269 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
 
     const childrenAs = <C,>(v: unknown): C[] => (Array.isArray(v) ? (v as C[]) : []);
 
+    // Table 구조를 특별히 렌더링하는 함수
+    const renderTableStructure = <T extends { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: any }>(
+        items: T[],
+        getLabel: (item: T) => string,
+        onClick: (item: T) => void,
+        onDelete: (item: T) => Promise<void>,
+        tableId: string,
+        depth: number,
+        isExpanded: boolean,
+        toggleExpand: (id: string) => void,
+        expandedItems: Set<string>
+    ): React.ReactNode => {
+        const tableHeader = items.find(child =>
+            child.parent_id === tableId && child.tag === 'TableHeader'
+        );
+        if (!tableHeader) return null;
+
+        const columnGroups = items.filter(child =>
+            child.parent_id === tableHeader.id && child.tag === 'ColumnGroup'
+        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        const columns = items.filter(child =>
+            child.parent_id === tableHeader.id && child.tag === 'Column'
+        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        return (
+            <>
+                {/* TableHeader */}
+                <div
+                    key={tableHeader.id}
+                    data-depth={depth + 1}
+                    data-has-children={columnGroups.length > 0 || columns.length > 0}
+                    className="element"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClick(tableHeader);
+                    }}
+                >
+                    <div className={`elementItem ${selectedElementId === tableHeader.id ? 'active' : ''}`}>
+                        <div className="elementItemIndent" style={{ width: `${(depth + 1) * 8}px` }}></div>
+                        <div
+                            className="elementItemIcon"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (columnGroups.length > 0 || columns.length > 0) {
+                                    toggleExpand(tableHeader.id);
+                                }
+                            }}
+                        >
+                            {(columnGroups.length > 0 || columns.length > 0) ? (
+                                <ChevronRight
+                                    color={iconEditProps.color}
+                                    strokeWidth={iconEditProps.stroke}
+                                    size={iconEditProps.size}
+                                    style={{
+                                        transform: expandedItems.has(tableHeader.id) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                    }}
+                                />
+                            ) : (
+                                <Box
+                                    color={iconEditProps.color}
+                                    strokeWidth={iconEditProps.stroke}
+                                    size={iconEditProps.size}
+                                    style={{ padding: '2px' }}
+                                />
+                            )}
+                        </div>
+                        <div className="elementItemLabel">thead</div>
+                        <div className="elementItemActions">
+                            <button className="iconButton" aria-label="Settings">
+                                <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                            </button>
+                            <button
+                                className="iconButton"
+                                aria-label="Delete thead"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    await onDelete(tableHeader);
+                                }}
+                            >
+                                <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Column Groups 행 */}
+                {columnGroups.length > 0 && expandedItems.has(tableHeader.id) && (
+                    <div
+                        data-depth={depth + 2}
+                        data-has-children={true}
+                        className="element"
+                    >
+                        <div className="elementItem">
+                            <div className="elementItemIndent" style={{ width: `${(depth + 2) * 8}px` }}></div>
+                            <div
+                                className="elementItemIcon"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (columnGroups.length > 0) {
+                                        // Column Groups 행의 펼치기/닫기 로직
+                                        const groupRowId = `column-groups-${tableHeader.id}`;
+                                        toggleExpand(groupRowId);
+                                    }
+                                }}
+                            >
+                                {columnGroups.length > 0 ? (
+                                    <ChevronRight
+                                        color={iconEditProps.color}
+                                        strokeWidth={iconEditProps.stroke}
+                                        size={iconEditProps.size}
+                                        style={{
+                                            transform: expandedItems.has(`column-groups-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                        }}
+                                    />
+                                ) : (
+                                    <Box
+                                        color={iconEditProps.color}
+                                        strokeWidth={iconEditProps.stroke}
+                                        size={iconEditProps.size}
+                                        style={{ padding: '2px' }}
+                                    />
+                                )}
+                            </div>
+                            <div className="elementItemLabel">tr (Column Groups)</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Column Groups */}
+                {expandedItems.has(`column-groups-${tableHeader.id}`) && columnGroups.map((group) => (
+                    <div
+                        key={group.id}
+                        data-depth={depth + 3}
+                        data-has-children={false}
+                        className="element"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick(group);
+                        }}
+                    >
+                        <div className={`elementItem ${selectedElementId === group.id ? 'active' : ''}`}>
+                            <div className="elementItemIndent" style={{ width: `${(depth + 3) * 8}px` }}></div>
+                            <div className="elementItemIcon">
+                                <Box
+                                    color={iconEditProps.color}
+                                    strokeWidth={iconEditProps.stroke}
+                                    size={iconEditProps.size}
+                                    style={{ padding: '2px' }}
+                                />
+                            </div>
+                            <div className="elementItemLabel">
+                                ColumnGroup: {(group.props as any)?.label || 'Untitled'}
+                            </div>
+                            <div className="elementItemActions">
+                                <button className="iconButton" aria-label="Settings">
+                                    <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                                <button
+                                    className="iconButton"
+                                    aria-label="Delete ColumnGroup"
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await onDelete(group);
+                                    }}
+                                >
+                                    <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Individual Columns 행 */}
+                {columns.length > 0 && expandedItems.has(tableHeader.id) && (
+                    <div
+                        data-depth={depth + 2}
+                        data-has-children={true}
+                        className="element"
+                    >
+                        <div className="elementItem">
+                            <div className="elementItemIndent" style={{ width: `${(depth + 2) * 8}px` }}></div>
+                            <div
+                                className="elementItemIcon"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (columns.length > 0) {
+                                        // Individual Columns 행의 펼치기/닫기 로직
+                                        const columnRowId = `individual-columns-${tableHeader.id}`;
+                                        toggleExpand(columnRowId);
+                                    }
+                                }}
+                            >
+                                {columns.length > 0 ? (
+                                    <ChevronRight
+                                        color={iconEditProps.color}
+                                        strokeWidth={iconEditProps.stroke}
+                                        size={iconEditProps.size}
+                                        style={{
+                                            transform: expandedItems.has(`individual-columns-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                        }}
+                                    />
+                                ) : (
+                                    <Box
+                                        color={iconEditProps.color}
+                                        strokeWidth={iconEditProps.stroke}
+                                        size={iconEditProps.size}
+                                        style={{ padding: '2px' }}
+                                    />
+                                )}
+                            </div>
+                            <div className="elementItemLabel">tr (Individual Columns)</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Individual Columns */}
+                {expandedItems.has(`individual-columns-${tableHeader.id}`) && columns.map((column) => (
+                    <div
+                        key={column.id}
+                        data-depth={depth + 3}
+                        data-has-children={false}
+                        className="element"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick(column);
+                        }}
+                    >
+                        <div className={`elementItem ${selectedElementId === column.id ? 'active' : ''}`}>
+                            <div className="elementItemIndent" style={{ width: `${(depth + 3) * 8}px` }}></div>
+                            <div className="elementItemIcon">
+                                <Box
+                                    color={iconEditProps.color}
+                                    strokeWidth={iconEditProps.stroke}
+                                    size={iconEditProps.size}
+                                    style={{ padding: '2px' }}
+                                />
+                            </div>
+                            <div className="elementItemLabel">
+                                th: {(column.props as any)?.children || 'Column'}
+                            </div>
+                            <div className="elementItemActions">
+                                <button className="iconButton" aria-label="Settings">
+                                    <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                                <button
+                                    className="iconButton"
+                                    aria-label="Delete Column"
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        await onDelete(column);
+                                    }}
+                                >
+                                    <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </>
+        );
+    };
+
     const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
         items: T[],
         getLabel: (item: T) => string,
@@ -193,17 +456,19 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
 
                 filteredItems = pairedItems;
             } else if (parentItem && hasTag(parentItem) && parentItem.tag === 'Table') {
-                // Table 하위의 TableHeader, TableBody, Column, Row, Cell 정렬
+                // Table 하위의 TableHeader, TableBody, Column, ColumnGroup, Row, Cell 정렬
                 const tableHeaders = filteredItems.filter(item => hasTag(item) && item.tag === 'TableHeader');
                 const tableBodies = filteredItems.filter(item => hasTag(item) && item.tag === 'TableBody');
                 const columns = filteredItems.filter(item => hasTag(item) && item.tag === 'Column');
+                const columnGroups = filteredItems.filter(item => hasTag(item) && item.tag === 'ColumnGroup');
                 const rows = filteredItems.filter(item => hasTag(item) && item.tag === 'Row');
                 const cells = filteredItems.filter(item => hasTag(item) && item.tag === 'Cell');
 
-                // TableHeader → TableBody 순서로 정렬
+                // TableHeader → TableBody → ColumnGroup → Column → Row → Cell 순서로 정렬
                 const sortedItems: T[] = [
                     ...tableHeaders.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
                     ...tableBodies.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
+                    ...columnGroups.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
                     ...columns.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
                     ...rows.sort((a, b) => (a.order_num || 0) - (b.order_num || 0)),
                     ...cells.sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
@@ -364,8 +629,13 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                             </div>
                             {isExpanded && (
                                 <>
-                                    {/* 일반 자식 노드들 렌더링 (Tab과 Panel 포함) */}
-                                    {hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)}
+                                    {/* Table 컴포넌트의 경우 특별한 구조로 렌더링 */}
+                                    {hasTableChildren ? (
+                                        renderTableStructure(items, getLabel, onClick, onDelete, item.id, depth, isExpanded, toggleExpand, expandedItems)
+                                    ) : (
+                                        /* 일반 자식 노드들 렌더링 (Table 제외) */
+                                        hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)
+                                    )}
 
                                     {/* Tabs 컴포넌트의 경우 가상 자식 노드 제거 - 실제 Tab과 Panel이 위에서 렌더링됨 */}
 

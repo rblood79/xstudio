@@ -3216,3 +3216,176 @@
     border-color: var(--spectrum-global-color-gray-200);
     box-shadow: none;
 }
+
+/* Enhanced Pagination Styles */
+.react-aria-Pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.react-aria-PageSizeSelector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.react-aria-PageSizeLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.react-aria-PageSizeSelect {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: #ffffff;
+    min-width: 60px;
+}
+
+.react-aria-PageSizeSelect:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.react-aria-PageSizeText {
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.react-aria-PageNavigation {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.react-aria-PageNumbers {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0 0.5rem;
+}
+
+.react-aria-PageButton {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: #ffffff;
+    color: #374151;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 40px;
+    text-align: center;
+}
+
+.react-aria-PageButton:hover:not(:disabled) {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.react-aria-PageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f3f4f6;
+}
+
+.react-aria-PageButton.active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.react-aria-PageButton.active:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.react-aria-GoToPage {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.react-aria-GoToPageLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.react-aria-GoToPageInput {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    width: 60px;
+    text-align: center;
+}
+
+.react-aria-GoToPageInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.react-aria-GoToPageButton {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #3b82f6;
+    border-radius: 0.375rem;
+    background-color: #3b82f6;
+    color: #ffffff;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.react-aria-GoToPageButton:hover:not(:disabled) {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.react-aria-GoToPageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.react-aria-PageInfo {
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.react-aria-LoadingText {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .react-aria-Pagination {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .react-aria-PageSizeSelector,
+    .react-aria-PageNavigation,
+    .react-aria-GoToPage,
+    .react-aria-PageInfo {
+        justify-content: center;
+    }
+
+    .react-aria-PageNumbers {
+        margin: 0;
+    }
+}

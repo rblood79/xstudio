@@ -1599,6 +1599,7 @@ function Preview() {
               id: groupEl.id,
               label: props?.label || 'Group',
               span: props?.span || 2,
+              order_num: groupEl.order_num, // order_num 추가
               align: props?.align || 'center',
               variant: props?.variant || 'default',
               sticky: props?.sticky || false,

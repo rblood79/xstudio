@@ -32,6 +32,7 @@ export interface ColumnGroupDefinition {
   id: string;
   label: string;
   span: number;
+  order_num?: number; // order_num 추가
   align?: 'left' | 'center' | 'right';
   variant?: 'default' | 'primary' | 'secondary';
   sticky?: boolean;
@@ -138,8 +139,15 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     const result: any[] = [];
     let columnIndex = 0;
 
-    // Column Group들을 span 순서대로 정렬
-    const sortedGroups = [...columnGroups].sort((a, b) => a.span - b.span);
+    // Column Group들을 order_num 순서대로 정렬
+    const sortedGroups = [...columnGroups].sort((a, b) => {
+      // order_num이 있는 경우 order_num 기준으로 정렬
+      if (a.order_num !== undefined && b.order_num !== undefined) {
+        return a.order_num - b.order_num;
+      }
+      // order_num이 없는 경우 span 기준으로 정렬 (fallback)
+      return a.span - b.span;
+    });
 
     for (const group of sortedGroups) {
       // 그룹에 속할 컬럼들 선택 (span 범위만큼)
@@ -183,6 +191,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
             align: group.align || 'center',
             variant: group.variant || 'default',
             sticky: group.sticky || false,
+            elementId: group.id, // Column Group의 elementId 추가
           }
         });
 
@@ -232,7 +241,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   const isFetchingRef = React.useRef(false);
 
   const fetchPage = React.useCallback(
-    async (nextIndex: number) => {
+    async (nextIndex: number, pageSize?: number) => {
       if (!isAsync || !apiUrlKey || !endpointPath) {
         return { items: [] as T[], total: 0 };
       }
@@ -253,7 +262,8 @@ export default function Table<T extends { id: string | number }>(props: TablePro
 
       try {
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
-        const params = { page: nextIndex + 1, limit: itemsPerPage, ...sort };
+        const limit = pageSize ?? itemsPerPage;
+        const params = { page: nextIndex + 1, limit, ...sort };
         const res: T[] = await service!(endpointPath, params);
         const assumedTotal = 10000; // 데모 가정
         return { items: res, total: assumedTotal };
@@ -478,104 +488,163 @@ export default function Table<T extends { id: string | number }>(props: TablePro
                   colSpan: h.colSpan,
                   header: h.column.columnDef.header
                 })));
+
+                // Column Group과 개별 컬럼을 분리
+                const groupHeaders = headerGroup.headers.filter(header => {
+                  const groupMeta = header.column.columnDef.meta as Record<string, unknown>;
+                  return groupMeta?.isGroupHeader === true;
+                });
+
+                const individualHeaders = headerGroup.headers.filter(header => {
+                  const groupMeta = header.column.columnDef.meta as Record<string, unknown>;
+                  return groupMeta?.isGroupHeader !== true;
+                });
+
                 return (
-                  <tr key={headerGroup.id} className="react-aria-Row" role="row" style={{ display: 'flex', width: '100%' }}>
-                    {headerGroup.headers.map((header, colIndex) => {
-                      const columnDef = columns.find(c => String(c.key) === header.column.id);
-                      const align = columnDef?.align ?? 'left';
+                  <React.Fragment key={headerGroup.id}>
+                    {/* Column Group 행 */}
+                    {groupHeaders.length > 0 && (
+                      <tr className="react-aria-Row column-group-row" role="row" style={{ display: 'flex', width: '100%' }}>
+                        {groupHeaders.map((header, colIndex) => {
+                          const groupMeta = header.column.columnDef.meta as Record<string, unknown>;
+                          const groupAlign = (groupMeta?.align as string) || 'center';
+                          const groupVariant = (groupMeta?.variant as string) || 'default';
+                          const elementId = groupMeta?.elementId as string;
 
-                      // Column Group 메타데이터 확인
-                      const groupMeta = header.column.columnDef.meta as Record<string, unknown>;
-                      const isGroupHeader = groupMeta?.isGroupHeader;
-                      const columnElementId = columnDef?.elementId;
-                      const isSorted = header.column.getIsSorted(); // 'asc' | 'desc' | false
+                          return (
+                            <th
+                              key={header.id}
+                              className="react-aria-Column column-group-header"
+                              role="columnheader"
+                              data-element-id={elementId}
+                              aria-colindex={colIndex + 1}
+                              colSpan={header.colSpan}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: groupAlign === 'center' ? 'center' :
+                                  groupAlign === 'right' ? 'flex-end' : 'flex-start',
+                                textAlign: groupAlign as 'left' | 'center' | 'right',
+                                width: header.getSize(),
+                                minWidth: header.getSize(),
+                                backgroundColor: groupVariant === 'primary' ? '#3b82f6' :
+                                  groupVariant === 'secondary' ? '#6b7280' : '#f8fafc',
+                                color: groupVariant !== 'default' ? '#ffffff' : '#374151',
+                                fontWeight: '600',
+                                borderBottom: '2px solid #e5e7eb',
+                                borderRight: '1px solid #e5e7eb',
+                                padding: '12px 16px',
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'inherit',
+                                }}
+                              >
+                                <span style={{
+                                  fontWeight: 'inherit',
+                                  fontSize: 'inherit',
+                                  lineHeight: 'inherit',
+                                }}>
+                                  {flexRender(header.column.columnDef.header, header.getContext())}
+                                </span>
+                              </div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    )}
 
-                      // Column Group 스타일 적용
-                      const isColumnGroup = isGroupHeader === true;
-                      const groupAlign = (groupMeta?.align as string) || 'center';
-                      const groupVariant = (groupMeta?.variant as string) || 'default';
+                    {/* 개별 컬럼 행 */}
+                    {individualHeaders.length > 0 && (
+                      <tr className="react-aria-Row individual-column-row" role="row" style={{ display: 'flex', width: '100%' }}>
+                        {individualHeaders.map((header, colIndex) => {
+                          const columnDef = columns.find(c => String(c.key) === header.column.id);
+                          const align = columnDef?.align ?? 'left';
+                          const isSorted = header.column.getIsSorted();
+                          const elementId = columnDef?.elementId;
 
-                      return (
-                        <th
-                          key={header.id}
-                          className={`react-aria-Column ${isColumnGroup ? 'column-group-header' : ''}`}
-                          role="columnheader"
-                          data-element-id={columnElementId}
-                          aria-colindex={colIndex + 1}
-                          aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
-                          colSpan={header.colSpan} // TanStack Table이 자동으로 계산한 colSpan 사용
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: isColumnGroup ?
-                              (groupAlign === 'center' ? 'center' :
-                                groupAlign === 'right' ? 'flex-end' : 'flex-start') :
-                              (align === 'center' ? 'center' :
-                                align === 'right' ? 'flex-end' : 'flex-start'),
-                            textAlign: (isColumnGroup ? groupAlign : align) as 'left' | 'center' | 'right',
-                            width: header.getSize(),
-                            minWidth: header.getSize(),
-                            backgroundColor: isColumnGroup ?
-                              (groupVariant === 'primary' ? '#3b82f6' :
-                                groupVariant === 'secondary' ? '#6b7280' : '#f8fafc') :
-                              '#ffffff',
-                            color: isColumnGroup && groupVariant !== 'default' ? '#ffffff' : '#374151',
-                            fontWeight: isColumnGroup ? '600' : '500',
-                            borderBottom: isColumnGroup ? '2px solid #e5e7eb' : '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            padding: isColumnGroup ? '12px 16px' : '8px 16px',
-                            fontSize: isColumnGroup ? '14px' : '13px',
-                            lineHeight: '1.5',
-                          }}
-                        >
-                          <div
-                            className={`flex items-center gap-2 ${!isColumnGroup && header.column.getCanSort() ? 'cursor-pointer select-none hover:text-blue-600' : ''
-                              }`}
-                            onClick={!isColumnGroup ? header.column.getToggleSortingHandler() : undefined}
-                            onKeyDown={!isColumnGroup ? (e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                header.column.toggleSorting();
-                              }
-                            } : undefined}
-                            tabIndex={!isColumnGroup ? 0 : -1}
-                            style={{
-                              width: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'inherit',
-                              gap: '8px',
-                            }}
-                          >
-                            <span style={{
-                              fontWeight: 'inherit',
-                              fontSize: 'inherit',
-                              lineHeight: 'inherit',
-                            }}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                            </span>
-                            {!isColumnGroup && header.column.getIsSorted() === 'asc' ? (
-                              <ChevronUp size={16} style={{ color: '#3b82f6' }} />
-                            ) : !isColumnGroup && header.column.getIsSorted() === 'desc' ? (
-                              <ChevronDown size={16} style={{ color: '#3b82f6' }} />
-                            ) : null}
-                          </div>
+                          return (
+                            <th
+                              key={header.id}
+                              className="react-aria-Column individual-column"
+                              role="columnheader"
+                              data-element-id={elementId}
+                              aria-colindex={colIndex + 1}
+                              aria-sort={isSorted === 'asc' ? 'ascending' : isSorted === 'desc' ? 'descending' : 'none'}
+                              colSpan={header.colSpan}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: align === 'center' ? 'center' :
+                                  align === 'right' ? 'flex-end' : 'flex-start',
+                                textAlign: align as 'left' | 'center' | 'right',
+                                width: header.getSize(),
+                                minWidth: header.getSize(),
+                                backgroundColor: '#ffffff',
+                                color: '#374151',
+                                fontWeight: '500',
+                                borderBottom: '1px solid #e5e7eb',
+                                borderRight: '1px solid #e5e7eb',
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                lineHeight: '1.5',
+                              }}
+                            >
+                              <div
+                                className={`flex items-center gap-2 ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-blue-600' : ''}`}
+                                onClick={header.column.getToggleSortingHandler()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    header.column.toggleSorting();
+                                  }
+                                }}
+                                tabIndex={0}
+                                style={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'inherit',
+                                  gap: '8px',
+                                }}
+                              >
+                                <span style={{
+                                  fontWeight: 'inherit',
+                                  fontSize: 'inherit',
+                                  lineHeight: 'inherit',
+                                }}>
+                                  {flexRender(header.column.columnDef.header, header.getContext())}
+                                </span>
+                                {header.column.getIsSorted() === 'asc' ? (
+                                  <ChevronUp size={16} style={{ color: '#3b82f6' }} />
+                                ) : header.column.getIsSorted() === 'desc' ? (
+                                  <ChevronDown size={16} style={{ color: '#3b82f6' }} />
+                                ) : null}
+                              </div>
 
-                          {/* 리사이즈 핸들 - Column Group이 아닌 경우에만 */}
-                          {!isColumnGroup && enableResize && header.column.getCanResize() && (
-                            <div
-                              role="separator"
-                              aria-orientation="vertical"
-                              aria-label="Resize column"
-                              onMouseDown={header.getResizeHandler()}
-                              onTouchStart={header.getResizeHandler()}
-                              className="react-aria-ColumnResizer"
-                            />
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
+                              {/* 리사이즈 핸들 */}
+                              {enableResize && header.column.getCanResize() && (
+                                <div
+                                  role="separator"
+                                  aria-orientation="vertical"
+                                  aria-label="Resize column"
+                                  onMouseDown={header.getResizeHandler()}
+                                  onTouchStart={header.getResizeHandler()}
+                                  className="react-aria-ColumnResizer"
+                                />
+                              )}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </thead>
@@ -636,59 +705,172 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       {/* 페이지네이션 (grid 바깥) */}
       {isAsync && mode === 'pagination' && pageCount !== null && (
         <div className="react-aria-Pagination">
-          <button
-            onClick={async () => {
-              const { items, total } = await fetchPage(0);
-              setPageRows(items);
-              setPageIndex(0);
-              setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
-            }}
-            disabled={pageIndex === 0 || loading}
-            className="react-aria-PageButton"
-          >
-            {'<<'}
-          </button>
+          {/* 페이지 크기 선택 */}
+          <div className="react-aria-PageSizeSelector">
+            <label htmlFor="page-size-select" className="react-aria-PageSizeLabel">
+              Show:
+            </label>
+            <select
+              id="page-size-select"
+              value={itemsPerPage}
+              onChange={async (e) => {
+                const newPageSize = Number(e.target.value);
+                const { items, total } = await fetchPage(0, newPageSize);
+                setPageRows(items);
+                setPageIndex(0);
+                // itemsPerPage는 prop이므로 변경할 수 없음 - 부모 컴포넌트에서 관리해야 함
+                setPageCount(Math.max(1, Math.ceil((total || 0) / newPageSize)));
+              }}
+              disabled={loading}
+              className="react-aria-PageSizeSelect"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="react-aria-PageSizeText">entries</span>
+          </div>
 
-          <button
-            onClick={async () => {
-              const next = Math.max(0, pageIndex - 1);
-              const { items } = await fetchPage(next);
-              setPageRows(items);
-              setPageIndex(next);
-            }}
-            disabled={pageIndex === 0 || loading}
-            className="react-aria-PageButton"
-          >
-            {'<'}
-          </button>
+          {/* 페이지 네비게이션 */}
+          <div className="react-aria-PageNavigation">
+            <button
+              onClick={async () => {
+                const { items, total } = await fetchPage(0, itemsPerPage);
+                setPageRows(items);
+                setPageIndex(0);
+                setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
+              }}
+              disabled={pageIndex === 0 || loading}
+              className="react-aria-PageButton"
+              title="First page"
+            >
+              {'<<'}
+            </button>
 
-          <span className="react-aria-PageInfo">Page {pageIndex + 1} / {pageCount}</span>
+            <button
+              onClick={async () => {
+                const next = Math.max(0, pageIndex - 1);
+                const { items } = await fetchPage(next, itemsPerPage);
+                setPageRows(items);
+                setPageIndex(next);
+              }}
+              disabled={pageIndex === 0 || loading}
+              className="react-aria-PageButton"
+              title="Previous page"
+            >
+              {'<'}
+            </button>
 
-          <button
-            onClick={async () => {
-              const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
-              const { items } = await fetchPage(next);
-              setPageRows(items);
-              setPageIndex(next);
-            }}
-            disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
-            className="react-aria-PageButton"
-          >
-            {'>'}
-          </button>
+            {/* 페이지 번호 표시 */}
+            <div className="react-aria-PageNumbers">
+              {(() => {
+                const totalPages = pageCount;
+                const currentPage = pageIndex + 1;
+                const maxVisible = 5;
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                const endPage = Math.min(totalPages, startPage + maxVisible - 1);
 
-          <button
-            onClick={async () => {
-              const next = (pageCount ?? 1) - 1;
-              const { items } = await fetchPage(next);
-              setPageRows(items);
-              setPageIndex(next);
-            }}
-            disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
-            className="react-aria-PageButton"
-          >
-            {'>>'}
-          </button>
+                if (endPage - startPage < maxVisible - 1) {
+                  startPage = Math.max(1, endPage - maxVisible + 1);
+                }
+
+                const pages = [];
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(
+                    <button
+                      key={i}
+                      onClick={async () => {
+                        const targetPage = i - 1;
+                        const { items } = await fetchPage(targetPage, itemsPerPage);
+                        setPageRows(items);
+                        setPageIndex(targetPage);
+                      }}
+                      disabled={loading}
+                      className={`react-aria-PageButton ${i === currentPage ? 'active' : ''}`}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+                return pages;
+              })()}
+            </div>
+
+            <button
+              onClick={async () => {
+                const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
+                const { items } = await fetchPage(next, itemsPerPage);
+                setPageRows(items);
+                setPageIndex(next);
+              }}
+              disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
+              className="react-aria-PageButton"
+              title="Next page"
+            >
+              {'>'}
+            </button>
+
+            <button
+              onClick={async () => {
+                const next = (pageCount ?? 1) - 1;
+                const { items } = await fetchPage(next, itemsPerPage);
+                setPageRows(items);
+                setPageIndex(next);
+              }}
+              disabled={pageCount === 0 || pageIndex >= (pageCount - 1) || loading}
+              className="react-aria-PageButton"
+              title="Last page"
+            >
+              {'>>'}
+            </button>
+          </div>
+
+          {/* Go to page */}
+          <div className="react-aria-GoToPage">
+            <label htmlFor="go-to-page-input" className="react-aria-GoToPageLabel">
+              Go to:
+            </label>
+            <input
+              id="go-to-page-input"
+              type="number"
+              min="1"
+              max={pageCount}
+              value={pageIndex + 1}
+              onChange={(e) => {
+                const targetPage = Math.max(1, Math.min(pageCount, Number(e.target.value)));
+                setPageIndex(targetPage - 1);
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  const targetPage = Math.max(1, Math.min(pageCount, Number(e.currentTarget.value)));
+                  const { items } = await fetchPage(targetPage - 1, itemsPerPage);
+                  setPageRows(items);
+                  setPageIndex(targetPage - 1);
+                }
+              }}
+              disabled={loading}
+              className="react-aria-GoToPageInput"
+            />
+            <button
+              onClick={async () => {
+                const targetPage = Math.max(1, Math.min(pageCount, pageIndex + 1));
+                const { items } = await fetchPage(targetPage - 1, itemsPerPage);
+                setPageRows(items);
+                setPageIndex(targetPage - 1);
+              }}
+              disabled={loading}
+              className="react-aria-GoToPageButton"
+            >
+              Go
+            </button>
+          </div>
+
+          {/* 페이지 정보 */}
+          <div className="react-aria-PageInfo">
+            Showing {pageIndex * itemsPerPage + 1} to {Math.min((pageIndex + 1) * itemsPerPage, pageRows.length + pageIndex * itemsPerPage)} of {pageCount * itemsPerPage} entries
+          </div>
 
           {loading && <span className="react-aria-LoadingText">Loading…</span>}
         </div>
