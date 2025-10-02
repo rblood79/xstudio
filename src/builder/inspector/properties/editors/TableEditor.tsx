@@ -1,5 +1,5 @@
 
-import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List } from 'lucide-react';
+import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List, Layers } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -124,6 +124,61 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         }
     };
 
+    const addColumnGroup = async () => {
+        if (!tableHeaderElement) return;
+
+        try {
+            const groupId = ElementUtils.generateId();
+            const newGroupElement: Element = {
+                id: groupId,
+                tag: 'ColumnGroup',
+                props: {
+                    children: 'New Group',
+                    label: 'New Group',
+                    span: 2,
+                    align: 'center',
+                    variant: 'default',
+                    sticky: false,
+                },
+                parent_id: tableHeaderElement.id,
+                page_id: element.page_id!,
+                order_num: actualColumnGroups.length,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const { error } = await supabase
+                .from('elements')
+                .upsert([newGroupElement], {
+                    onConflict: 'id'
+                });
+
+            if (error) {
+                console.error('Column Group 추가 실패:', error);
+                return;
+            }
+
+            // 메모리 상태 업데이트
+            const updatedElements = [...elements, newGroupElement];
+            setElements(updatedElements);
+
+            console.log('✅ Column Group 추가 완료');
+        } catch (error) {
+            console.error('Column Group 추가 중 오류:', error);
+        }
+    };
+
+    const removeColumnGroup = async (groupId: string) => {
+        try {
+            const { removeElement } = useStore.getState();
+            await removeElement(groupId);
+
+            console.log('✅ Column Group 삭제 완료:', groupId);
+        } catch (error) {
+            console.error('Column Group 삭제 중 오류:', error);
+        }
+    };
+
     // Table 속성 업데이트 함수들
     const updateTableProps = (newProps: Partial<TableElementProps>) => {
         onUpdate({
@@ -141,6 +196,13 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     const actualColumns = tableHeaderElement
         ? elements.filter(el =>
             el.parent_id === tableHeaderElement.id && el.tag === 'Column'
+        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+        : [];
+
+    // Column Group Element들 가져오기
+    const actualColumnGroups = tableHeaderElement
+        ? elements.filter(el =>
+            el.parent_id === tableHeaderElement.id && el.tag === 'ColumnGroup'
         ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
         : [];
 
@@ -455,6 +517,82 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         </p>
                     </div>
                 )}
+            </fieldset>
+
+            {/* Column Group Management */}
+            <fieldset className="properties-aria">
+                <legend className='fieldset-legend'>Column Group Management</legend>
+
+                {/* Column Group 개수 표시 */}
+                <div className='tab-overview'>
+                    <p className='tab-overview-text'>
+                        Total groups: {actualColumnGroups.length || 0}
+                    </p>
+                    <p className='tab-overview-help'>
+                        💡 Column Group을 사용하여 관련 컬럼들을 그룹화하고 멀티레벨 헤더를 만들 수 있습니다
+                    </p>
+                </div>
+
+                {/* 실제 Column Group Element 목록 */}
+                {actualColumnGroups.length > 0 && (
+                    <div className='tabs-list'>
+                        {actualColumnGroups.map((group, index) => {
+                            const groupProps = group.props as Record<string, unknown>;
+                            return (
+                                <div key={group.id} className='tab-list-item'>
+                                    <div className='tab-content'>
+                                        <span className='tab-title'>
+                                            {index + 1}. {groupProps?.label as string || 'Group'}
+                                            <span className="ml-2 text-gray-500 text-sm">
+                                                (span: {groupProps?.span as number || 2})
+                                            </span>
+                                        </span>
+                                        <div className='tab-controls'>
+                                            <span className="text-xs text-gray-500" title="Column Group">
+                                                📊
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className='control-button delete'
+                                        onClick={() => removeColumnGroup(group.id)}
+                                    >
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {actualColumnGroups.length === 0 && (
+                    <div className='tab-overview'>
+                        <p className='tab-overview-help'>
+                            📋 Column Group이 없습니다. 아래 버튼을 클릭하여 그룹을 추가하세요.
+                        </p>
+                    </div>
+                )}
+
+                {/* Column Group 추가 버튼 */}
+                <div className='tab-actions'>
+                    <button
+                        className='control-button add'
+                        onClick={addColumnGroup}
+                    >
+                        <Layers color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        Add Column Group
+                    </button>
+                </div>
+
+                {/* Column Group 사용법 안내 */}
+                <div className='tab-overview'>
+                    <p className='tab-overview-help'>
+                        <strong>💡 Column Group 사용법:</strong><br />
+                        • Column Group은 여러 컬럼을 하나의 헤더로 그룹화합니다<br />
+                        • span 속성으로 그룹이 포함할 컬럼 수를 설정합니다<br />
+                        • 중첩된 그룹 구조도 지원합니다
+                    </p>
+                </div>
             </fieldset>
 
             <fieldset className="properties-aria">

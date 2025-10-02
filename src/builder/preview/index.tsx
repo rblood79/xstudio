@@ -1588,7 +1588,26 @@ function Preview() {
         { key: 'company' as const, label: 'Company', allowsSorting: true, width: 200 }
       ];
 
+      // Column Group Element에서 추출한 그룹 데이터 생성
+      const columnGroups = tableHeaderElement
+        ? elements
+          .filter(el => el.parent_id === tableHeaderElement.id && el.tag === 'ColumnGroup')
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+          .map(groupEl => {
+            const props = groupEl.props as any;
+            return {
+              id: groupEl.id,
+              label: props?.label || 'Group',
+              span: props?.span || 2,
+              align: props?.align || 'center',
+              variant: props?.variant || 'default',
+              sticky: props?.sticky || false,
+            };
+          })
+        : [];
+
       console.log('🔍 Final columns for Table:', finalColumns);
+      console.log('🔍 Final column groups for Table:', columnGroups);
       console.log('🔍 Final data for Table:', finalData.length, 'rows');
 
       return (
@@ -1598,6 +1617,7 @@ function Preview() {
           tableHeaderElementId={tableHeaderElement?.id}
           className={el.props.className}
           columns={finalColumns}
+          columnGroups={columnGroups}
           data={useApiData ? undefined : finalData}
           paginationMode={(el.props.paginationMode as 'pagination' | 'infinite') || 'pagination'}
           itemsPerPage={typeof el.props.itemsPerPage === 'number' ? el.props.itemsPerPage : 50}

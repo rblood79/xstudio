@@ -8,6 +8,7 @@ import {
     createDefaultTableHeaderProps,
     createDefaultTableBodyProps,
     createDefaultColumnProps,
+    createDefaultColumnGroupProps,
     createDefaultRowProps,
     createDefaultCellProps
 } from '../../types/unified';
@@ -1758,6 +1759,33 @@ export class ComponentFactory {
         } catch (error) {
             console.error('Background save failed:', error);
         }
+
+        return {
+            parent: parentData,
+            children: childrenData,
+            allElements: [parentData, ...childrenData]
+        };
+    }
+
+    /**
+     * ColumnGroup 생성
+     */
+    static async createColumnGroup(
+        parentElement: Element | null,
+        pageId: string
+    ): Promise<ComponentCreationResult> {
+        const parentData: Element = {
+            id: ElementUtils.generateId(),
+            tag: 'ColumnGroup',
+            props: createDefaultColumnGroupProps(),
+            parent_id: parentElement?.id || null,
+            page_id: pageId,
+            order_num: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        const childrenData: Element[] = [];
 
         return {
             parent: parentData,
