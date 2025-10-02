@@ -109,7 +109,6 @@ const Signin = () => {
           <Button
             type="submit"
             isDisabled={loading}
-            className="primary-button"
           >
             {loading
               ? (isSignUp ? '가입 중...' : '로그인 중...')
@@ -119,26 +118,19 @@ const Signin = () => {
 
           <div className="helper-text">
             {isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?'}{' '}
-            <button
-              type="button"
+            <Button
               onClick={toggleMode}
-              className="text-link"
-            >
-              {isSignUp ? '로그인하기' : '회원가입하기'}
-            </button>
+              children={isSignUp ? '로그인하기' : '회원가입하기'}
+            />
+            {!isSignUp ? (
+              <Button
+                onClick={() => navigate('/forgot-password')}
+                children="비밀번호를 잊으셨나요?"
+              />
+            ) : null}
           </div>
 
-          {!isSignUp && (
-            <div className="helper-text">
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                className="link-button"
-              >
-                비밀번호를 잊으셨나요?
-              </button>
-            </div>
-          )}
+
         </form>
 
 

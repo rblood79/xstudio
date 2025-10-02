@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router';
+import { Button } from './builder/components/list';
 import './App.css'
 
 function App() {
@@ -7,8 +8,7 @@ function App() {
   return (
     <main className="grid justify-center items-center h-screen ">
       <div className="main-container">
-        <button onClick={() => navigate("/signin")} className='btn btn-primary'>sign in</button>
-        <button onClick={() => navigate("/history")} className='btn btn-primary'>history</button>
+        <Button onClick={() => navigate("/signin")} size="sm" children="START" />
       </div>
     </main>
   )
