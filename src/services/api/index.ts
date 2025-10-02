@@ -42,17 +42,32 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
         return filteredData;
     }
 
-    // 페이지네이션 지원
+    // 페이지네이션 지원 (page/limit 방식)
     if (params && typeof params.page === 'number' && typeof params.limit === 'number') {
         const page = params.page;
         const limit = params.limit;
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
+        const totalItems = filteredData.length;
+        const returnedItems = Math.min(endIndex, totalItems) - startIndex;
 
         console.log(`📄 Pagination: page ${page}, limit ${limit}, startIndex ${startIndex}, endIndex ${endIndex}`);
-        console.log(`📊 Total data: ${filteredData.length}, returning: ${Math.min(endIndex, filteredData.length) - startIndex} items`);
+        console.log(`📊 Total data: ${totalItems}, returning: ${returnedItems} items`);
 
-        return filteredData.slice(startIndex, endIndex);
+        // 페이지네이션을 위해 전체 데이터 개수 정보를 포함한 객체 반환
+        const result = filteredData.slice(startIndex, endIndex);
+
+        // 페이지네이션을 위한 메타데이터 추가
+        (result as any).__meta = {
+            totalItems,
+            currentPage: page,
+            itemsPerPage: limit,
+            hasNextPage: endIndex < totalItems,
+            startIndex,
+            endIndex
+        };
+
+        return result;
     }
 
     // 기본적으로 모든 데이터 반환 (기존 동작 유지)

@@ -56,6 +56,7 @@ export interface TableProps<T extends { id: string | number }> {
   endpointPath?: string;      // 엔드포인트 (예: "/users")
   enableAsyncLoading?: boolean; // true일 때만 API 사용
   dataMapping?: DataMapping;   // 데이터 매핑 설정
+  apiParams?: Record<string, unknown>; // API 파라미터
 
   // 컬럼
   columns: ColumnDefinition<T>[];
@@ -89,6 +90,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
     endpointPath,
     enableAsyncLoading = false,
     dataMapping,
+    apiParams,
 
     columns,
     columnGroups = [],
@@ -358,18 +360,42 @@ export default function Table<T extends { id: string | number }>(props: TablePro
       try {
         const sort = sorting[0] ? { sortBy: sorting[0].id, desc: sorting[0].desc } : undefined;
         const limit = pageSize ?? itemsPerPage;
-        const params = { page: nextIndex + 1, limit, ...sort };
+
+        // 두 모드 모두 page/limit 방식 사용
+        const params = {
+          page: nextIndex + 1,
+          limit,
+          ...sort,
+          ...(apiParams || {}) // API 파라미터 추가 (기본값 오버라이드)
+        };
+
+        console.log('🔍 API 호출 파라미터:', params);
         const response = await service!(endpointPath, params);
 
         // 데이터 매핑 적용
         const { items, total } = processApiResponse(response, dataMapping);
-        return { items, total };
+
+        // API 응답에서 메타데이터 확인 (Pagination용)
+        const meta = (response as any).__meta;
+        let actualTotal = total;
+
+        if (meta && typeof meta.totalItems === 'number') {
+          // API에서 제공하는 정확한 정보 사용
+          actualTotal = meta.totalItems;
+          console.log('🔍 API 메타데이터 사용 (Pagination):', {
+            totalItems: meta.totalItems,
+            currentPage: meta.currentPage,
+            itemsPerPage: meta.itemsPerPage
+          });
+        }
+
+        return { items, total: actualTotal };
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
       }
     },
-    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting, processApiResponse, dataMapping]
+    [isAsync, apiUrlKey, endpointPath, itemsPerPage, sorting, processApiResponse, dataMapping, mode, apiParams]
   );
 
   const fetchMore = React.useCallback(
