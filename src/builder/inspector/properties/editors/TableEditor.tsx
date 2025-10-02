@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List, Key } from 'lucide-react';
+
+import { SquarePlus, Trash, Table, Grid, Settings, Tag, Cloud, Link, List } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -70,7 +70,8 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
 
             // 각 컬럼에 대한 셀 생성
             const cellsToCreate: Element[] = [];
-            const columnsFromProps = (currentProps as TableElementProps)?.columns || [];
+            // TableElementProps에는 columns가 없으므로 실제 Column Element들을 사용
+            const columnsFromProps = actualColumns;
 
             for (let i = 0; i < columnsFromProps.length; i++) {
                 const cellId = ElementUtils.generateId();
@@ -420,15 +421,15 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 {actualColumns.length > 0 && (
                     <div className='tabs-list'>
                         {actualColumns.map((column, index) => {
-                            const columnProps = column.props as any;
+                            const columnProps = column.props as Record<string, unknown>;
                             return (
                                 <div key={column.id} className='tab-list-item'>
                                     <div className='tab-content'>
                                         <span className='tab-title'>
-                                            {index + 1}. {columnProps?.children || '제목 없음'}
-                                            {columnProps?.key && (
+                                            {index + 1}. {(columnProps?.children as string) || '제목 없음'}
+                                            {columnProps?.key != null && (
                                                 <span className="ml-2 text-gray-500 text-sm">
-                                                    ({columnProps.key})
+                                                    ({String(columnProps.key)})
                                                 </span>
                                             )}
                                         </span>
