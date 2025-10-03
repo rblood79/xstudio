@@ -2510,6 +2510,20 @@
     }
 }
 
+.react-aria-CalendarGrid {
+    .react-aria-CalendarGridHeader {
+        .react-aria-CalendarHeaderCell {
+            font-size: var(--text-sm);
+        }
+    }
+
+    .react-aria-CalendarGridBody {
+        .react-aria-CalendarCell {
+            font-size: var(--text-sm);
+        }
+    }
+}
+
 .react-aria-Calendar,
 .react-aria-RangeCalendar {
     width: fit-content;
@@ -2530,9 +2544,9 @@
     }
 
     .react-aria-Button {
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
+        /*width: 2rem;
+        height: 2rem;*/
+        padding: var(--spacing);
     }
 
     .react-aria-CalendarCell {

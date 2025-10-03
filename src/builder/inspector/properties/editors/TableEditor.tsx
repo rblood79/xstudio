@@ -289,7 +289,12 @@ export function TableEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                             label="API 파라미터 (JSON)"
                             value={localApiParams}
                             onChange={setLocalApiParams}
-                            placeholder={`{"search": "Luke"}`}
+                            placeholder={`{
+                                "page": 1,
+                                "limit": 10,
+                                "sortBy": "id",
+                                "desc": false
+                            }`}
                             multiline={true}
                         />
                         <Button
