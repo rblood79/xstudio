@@ -231,12 +231,12 @@ export interface CalendarElementProps extends BaseElementProps {
     'aria-label'?: string;
     isDisabled?: boolean;
     visibleDuration?: number;
+    value?: any; // DateValue 타입 (런타임에서 처리)
+    defaultValue?: any; // DateValue 타입 (런타임에서 처리)
+    onChange?: (value: any) => void; // DateValue 타입 (런타임에서 처리)
     pageBehavior?: 'visible' | 'single';
-    value?: Date;
-    defaultValue?: Date;
     minValue?: Date;
     maxValue?: Date;
-    onChange?: (value: Date) => void;
 }
 
 // DatePicker 컴포넌트 타입

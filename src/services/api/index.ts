@@ -23,7 +23,51 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
+    // 엔드포인트 경로에 따라 다른 데이터 반환
     let filteredData = largeMockData;
+
+    // 특정 엔드포인트 경로에 대한 데이터 필터링
+    if (path === '/users' || path === '/api/users') {
+        // 사용자 데이터만 반환 (프론트엔드, 백엔드, 풀스택 개발자 등)
+        filteredData = largeMockData.filter(user =>
+            user.role.includes('개발자') || user.role.includes('디자이너') || user.role.includes('분석가')
+        );
+        console.log(`📊 /users 엔드포인트: 사용자 데이터 ${filteredData.length}개 반환`);
+    } else if (path === '/admins' || path === '/api/admins' || path === '/api/users/admins') {
+        // 관리자 데이터만 반환 (프로젝트 매니저, 시스템 아키텍트 등)
+        filteredData = largeMockData.filter(user =>
+            user.role.includes('매니저') || user.role.includes('아키텍트') || user.role.includes('보안')
+        );
+        console.log(`📊 /admins 엔드포인트: 관리자 데이터 ${filteredData.length}개 반환`);
+    } else if (path === '/companies' || path === '/api/companies') {
+        // 회사별로 그룹화된 데이터 반환 (특정 회사만)
+        const targetCompanies = ['테크노베이션', '디지털솔루션', '스마트시스템즈'];
+        filteredData = largeMockData.filter(user =>
+            targetCompanies.includes(user.company)
+        );
+        console.log(`📊 /companies 엔드포인트: 회사 관련 데이터 ${filteredData.length}개 반환`);
+    } else if (path === '/developers' || path === '/api/developers' || path === '/api/users/developers') {
+        // 개발자만 반환
+        filteredData = largeMockData.filter(user =>
+            user.role.includes('개발자')
+        );
+        console.log(`📊 /developers 엔드포인트: 개발자 데이터 ${filteredData.length}개 반환`);
+    } else if (path === '/managers' || path === '/api/managers' || path === '/api/users/managers') {
+        // 매니저만 반환
+        filteredData = largeMockData.filter(user =>
+            user.role.includes('매니저')
+        );
+        console.log(`📊 /managers 엔드포인트: 매니저 데이터 ${filteredData.length}개 반환`);
+    } else if (path === '/products' || path === '/api/products') {
+        // 제품 관련 데이터 (향후 확장을 위해 추가)
+        filteredData = largeMockData.filter(user =>
+            user.role.includes('제품') || user.role.includes('기획') || user.role.includes('디자이너')
+        );
+        console.log(`📊 /products 엔드포인트: 제품 관련 데이터 ${filteredData.length}개 반환`);
+    } else {
+        // 기본적으로 모든 데이터 반환 (기존 동작 유지)
+        console.log(`📊 기본 엔드포인트 또는 알 수 없는 경로: 전체 데이터 ${filteredData.length}개 반환`);
+    }
 
     // Simulate filtering if 'search' param is provided
     if (params && typeof params.search === 'string') {

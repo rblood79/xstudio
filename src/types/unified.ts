@@ -192,9 +192,9 @@ export interface TreeItemElementProps extends BaseElementProps {
 }
 
 export interface CalendarElementProps extends BaseElementProps {
-    value?: Date;
-    defaultValue?: Date;
-    onChange?: (value: Date) => void;
+    value?: any; // DateValue 타입 (런타임에서 처리)
+    defaultValue?: any; // DateValue 타입 (런타임에서 처리)
+    onChange?: (value: any) => void; // DateValue 타입 (런타임에서 처리)
     isDisabled?: boolean;
     isReadOnly?: boolean;
     minValue?: Date;
@@ -670,7 +670,7 @@ export function createDefaultTableProps(): TableElementProps {
         // 비동기 로딩을 위한 기본값 추가
         enableAsyncLoading: true,
         apiUrlKey: 'MOCK_USER_DATA',
-        endpointPath: '/api/mock/users',
+        endpointPath: '/users',
         apiParams: {},
         dataMapping: { resultPath: '', idKey: 'id' },
         // 페이지네이션 모드 기본값
