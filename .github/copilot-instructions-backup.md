@@ -119,20 +119,40 @@ CREATE TABLE public.design_themes (
 ### 디렉토리 구조
 ```
 src/
+├── App.tsx / App.css        # 루트 애플리케이션 셸
+├── assets/                  # 정적 자산
+├── auth/                    # 인증 관련 컴포넌트
 ├── builder/                 # 핵심 빌더 시스템
-│   ├── main/                # BuilderCore, BuilderHeader, BuilderWorkspace, BuilderViewport
-│   ├── stores/              # Zustand 상태 (elements.ts, history.ts, ui.ts)
-│   ├── components/          # React Aria 래핑 컴포넌트
+│   ├── ai/                  # AI 어시스턴트 UI
+│   ├── components/          # React Aria 기반 위젯 래퍼
+│   ├── dataset/             # 샘플 데이터
+│   ├── factories/           # 컴포넌트 팩토리
+│   ├── hooks/               # 빌더 전용 훅
 │   ├── inspector/           # 속성 편집기
+│   │   ├── design/          # 디자인 속성 편집
+│   │   ├── events/          # 이벤트 속성 편집
 │   │   └── properties/      # 컴포넌트별 속성 에디터
-│   ├── hooks/               # 빌더 전용 훅 (useIframeMessenger, useElementCreator 등)
-│   ├── preview/             # iframe 프리뷰 렌더러
+│   ├── library/             # 컴포넌트 라이브러리
+│   ├── main/                # 메인 빌더 컴포넌트
+│   ├── monitor/             # 성능 모니터링
 │   ├── nodes/               # 노드 트리 관리
-│   └── theme/               # 테마 편집기
-├── services/api/            # Supabase API 서비스 클래스
-├── stories/                 # Storybook 문서
+│   ├── overlay/             # 선택 오버레이
+│   ├── preview/             # iframe 프리뷰
+│   ├── setting/             # 빌더 설정
+│   ├── sidebar/             # 사이드바 컴포넌트
+│   ├── stores/              # Zustand 상태 저장소
+│   ├── theme/               # 테마 편집기
+│   ├── user/                # 사용자 관련
+│   └── utils/               # 빌더 유틸리티
+├── dashboard/               # 프로젝트 대시보드
+├── demo/                    # 데모 컴포넌트
+├── env/                     # 환경 설정
+├── hooks/                   # 전역 훅
+├── services/api/            # API 서비스 레이어
+├── stories/                 # Storybook 스토리
 ├── types/                   # TypeScript 타입 정의
-└── utils/                   # 전역 유틸리티
+├── utils/                   # 전역 유틸리티
+└── main.tsx                 # 애플리케이션 진입점
 ```
 
 ### 🏗️ 빌더 핵심 컴포넌트 역할
@@ -308,6 +328,129 @@ const handleMessage = (event: MessageEvent) => {
         return;
     }
     // 메시지 처리...
+};
+```
+├── services/api/            # API 서비스 레이어
+├── stories/                 # Storybook 스토리
+├── types/                   # TypeScript 타입 정의
+├── utils/                   # 전역 유틸리티
+└── main.tsx                 # 애플리케이션 진입점
+```
+
+### 주요 컴포넌트 아키텍처
+
+#### 1. 빌더 핵심 컴포넌트
+- **BuilderCore**: 메인 빌더 컴포넌트 (`src/builder/main/BuilderCore.tsx`)
+- **BuilderHeader**: 상단 툴바 (`src/builder/main/BuilderHeader.tsx`)
+- **BuilderWorkspace**: 작업 영역 (`src/builder/main/BuilderWorkspace.tsx`)
+- **BuilderViewport**: 레이아웃 컨테이너 (`src/builder/main/BuilderViewport.tsx`)
+
+#### 2. 데이터 흐름
+```typescript
+// UI 액션 → Zustand 상태 업데이트 → Supabase API 호출
+const handleAddElement = async (tag: string) => {
+  const newElement = { 
+    id: crypto.randomUUID(),
+    tag,
+    props: getDefaultProps(tag),
+    parent_id: parentId,
+    page_id: currentPageId,
+    order_num: calculateNextOrderNum()
+  };
+  
+  // 1. Supabase에 저장
+  const { data, error } = await supabase
+    .from("elements")
+    .insert([newElement])
+    .select()
+    .single();
+    
+  if (!error && data) {
+    // 2. Zustand 상태 업데이트
+    addElement(data);
+    
+    // 3. iframe 프리뷰 동기화
+    sendElementsToIframe();
+  }
+};
+```
+
+## 프로젝트 구조 및 아키텍처
+
+### 디렉토리 구조
+```
+src/
+├── App.tsx / App.css        # 루트 애플리케이션 셸
+├── assets/                  # 정적 자산
+├── auth/                    # 인증 관련 컴포넌트
+├── builder/                 # 핵심 빌더 시스템
+│   ├── ai/                  # AI 어시스턴트 UI
+│   ├── components/          # React Aria 기반 위젯 래퍼
+│   ├── dataset/             # 샘플 데이터
+│   ├── factories/           # 컴포넌트 팩토리
+│   ├── hooks/               # 빌더 전용 훅
+│   ├── inspector/           # 속성 편집기
+│   │   ├── design/          # 디자인 속성 편집
+│   │   ├── events/          # 이벤트 속성 편집
+│   │   └── properties/      # 컴포넌트별 속성 에디터
+│   ├── library/             # 컴포넌트 라이브러리
+│   ├── main/                # 메인 빌더 컴포넌트
+│   ├── monitor/             # 성능 모니터링
+│   ├── nodes/               # 노드 트리 관리
+│   ├── overlay/             # 선택 오버레이
+│   ├── preview/             # iframe 프리뷰
+│   ├── setting/             # 빌더 설정
+│   ├── sidebar/             # 사이드바 컴포넌트
+│   ├── stores/              # Zustand 상태 저장소
+│   ├── theme/               # 테마 편집기
+│   ├── user/                # 사용자 관련
+│   └── utils/               # 빌더 유틸리티
+├── dashboard/               # 프로젝트 대시보드
+├── demo/                    # 데모 컴포넌트
+├── env/                     # 환경 설정
+├── hooks/                   # 전역 훅
+├── services/api/            # API 서비스 레이어
+├── stories/                 # Storybook 스토리
+├── types/                   # TypeScript 타입 정의
+├── utils/                   # 전역 유틸리티
+└── main.tsx                 # 애플리케이션 진입점
+```
+
+### 주요 컴포넌트 아키텍처
+
+#### 1. 빌더 핵심 컴포넌트
+- **BuilderCore**: 메인 빌더 컴포넌트 (`src/builder/main/BuilderCore.tsx`)
+- **BuilderHeader**: 상단 툴바 (`src/builder/main/BuilderHeader.tsx`)
+- **BuilderWorkspace**: 작업 영역 (`src/builder/main/BuilderWorkspace.tsx`)
+- **BuilderViewport**: 레이아웃 컨테이너 (`src/builder/main/BuilderViewport.tsx`)
+
+#### 2. 데이터 흐름
+```typescript
+// UI 액션 → Zustand 상태 업데이트 → Supabase API 호출
+const handleAddElement = async (tag: string) => {
+  const newElement = { 
+    id: crypto.randomUUID(),
+    tag,
+    props: getDefaultProps(tag),
+    parent_id: parentId,
+    page_id: currentPageId,
+    order_num: calculateNextOrderNum()
+  };
+  
+  // 1. Supabase에 저장
+  const { data, error } = await supabase
+    .from("elements")
+    .insert([newElement])
+    .select()
+    .single();
+    
+  if (!error && data) {
+    // 2. Zustand 상태 업데이트
+    addElement(data);
+    
+    // 3. iframe 프리뷰 동기화
+    sendElementsToIframe();
+  }
 };
 ```
 
