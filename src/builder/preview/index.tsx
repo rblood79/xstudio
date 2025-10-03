@@ -46,6 +46,7 @@ import { EventEngine } from '../../utils/eventEngine';
 import { ElementEvent, EventContext } from '../../types/events';
 //import { useBatchUpdate } from '../stores';
 import { ElementUtils } from '../../utils/elementUtils';
+import { today, getLocalTimeZone } from '@internationalized/date';
 
 
 interface PreviewElement {
@@ -1264,11 +1265,11 @@ function Preview() {
           isDisabled={Boolean(el.props.isDisabled)}
           visibleDuration={getVisibleDuration()}
           pageBehavior={getPageBehavior() as 'visible' | 'single'}
-          value={el.props.value as unknown as never}
+          defaultValue={today(getLocalTimeZone())}
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
-              value: String(date || '')
+              value: date
             };
             updateElementProps(el.id, updatedProps);
           }}

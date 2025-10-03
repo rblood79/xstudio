@@ -110,7 +110,7 @@ export default function Table<T extends { id: string | number }>(props: TablePro
   } = props;
 
   const mode: PaginationMode = paginationMode || 'pagination';
-  const isAsync = enableAsyncLoading && !staticData && apiUrlKey && endpointPath;
+  const isAsync = enableAsyncLoading && !staticData && apiUrlKey && endpointPath && endpointPath.trim().length > 0;
 
   // ---------- 데이터 매핑 함수 ----------
   const processApiResponse = React.useCallback((response: unknown, mapping?: DataMapping): { items: T[], total: number } => {
