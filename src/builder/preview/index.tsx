@@ -1318,11 +1318,7 @@ function Preview() {
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value as unknown as never}
-          defaultValue={el.props.defaultValue as unknown as never}
-          minValue={el.props.minValue as unknown as never}
-          maxValue={el.props.maxValue as unknown as never}
-          placeholderValue={el.props.placeholderValue as unknown as never}
+          defaultValue={today(getLocalTimeZone())}
           granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
           firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1340,7 +1336,7 @@ function Preview() {
           onChange={(date) => {
             const updatedProps = {
               ...el.props,
-              value: String(date || '')
+              value: date
             };
             updateElementProps(el.id, updatedProps);
           }}
@@ -1380,11 +1376,13 @@ function Preview() {
           isRequired={Boolean(el.props.isRequired)}
           isReadOnly={Boolean(el.props.isReadOnly)}
           isInvalid={Boolean(el.props.isInvalid)}
-          value={el.props.value as unknown as never}
-          defaultValue={el.props.defaultValue as unknown as never}
-          minValue={el.props.minValue as unknown as never}
-          maxValue={el.props.maxValue as unknown as never}
-          placeholderValue={el.props.placeholderValue as unknown as never}
+          defaultValue={{
+            start: today(getLocalTimeZone()),
+            end: today(getLocalTimeZone())
+          }}
+          minValue={el.props.minValue ? undefined : undefined}
+          maxValue={el.props.maxValue ? undefined : undefined}
+          placeholderValue={el.props.placeholderValue ? undefined : undefined}
           granularity={getGranularity() as 'day' | 'hour' | 'minute' | 'second'}
           firstDayOfWeek={['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][getFirstDayOfWeek()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'}
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1404,7 +1402,7 @@ function Preview() {
           onChange={(dateRange) => {
             const updatedProps = {
               ...el.props,
-              value: String(dateRange || '')
+              value: dateRange
             };
             updateElementProps(el.id, updatedProps);
           }}

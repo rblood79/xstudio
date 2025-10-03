@@ -19,6 +19,8 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+
 import './components.css';
 
 export interface DatePickerProps<T extends DateValue>
@@ -82,7 +84,9 @@ export function DatePicker<T extends DateValue>({
           )}
         </DateInput>
         {showCalendarIcon && calendarIconPosition === 'right' && (
-          <Button>▼</Button>
+          <Button>
+            <ChevronDown size={16} />
+          </Button>
         )}
         {allowClear && props.value && (
           <Button
@@ -104,9 +108,13 @@ export function DatePicker<T extends DateValue>({
               data-show-week-numbers={showWeekNumbers}
             >
               <header>
-                <Button slot="previous">◀</Button>
+                <Button slot="previous">
+                  <ChevronLeft size={16} />
+                </Button>
                 <Heading />
-                <Button slot="next">▶</Button>
+                <Button slot="next">
+                  <ChevronRight size={16} />
+                </Button>
               </header>
               <CalendarGrid>
                 {(date) => <CalendarCell date={date} />}
