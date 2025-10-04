@@ -3,10 +3,55 @@ export { BaseApiService } from './BaseApiService';
 export { ElementsApiService, elementsApi } from './ElementsApiService';
 export { ProjectsApiService, projectsApi, type Project, type CreateProjectData } from './ProjectsApiService';
 export { PagesApiService, pagesApi, type Page, type CreatePageData } from './PagesApiService';
-import { largeMockData, MockUserData } from './mockLargeDataV2';
+import {
+    cmsMockData,
+    largeMockData,
+    mockAuditLogs,
+    mockDepartments,
+    mockInvitations,
+    mockOrganizations,
+    mockPermissions,
+    mockProjectMemberships,
+    mockProjects,
+    mockRoles,
+    type CmsMockData,
+    type MockAuditLog,
+    type MockDepartment,
+    type MockInvitation,
+    type MockOrganization,
+    type MockPermission,
+    type MockProject,
+    type MockProjectMembership,
+    type MockRole,
+    type MockUserData,
+} from './mockLargeDataV2';
 
-// MockUserData 타입 export
-export type { MockUserData };
+// 확장된 CMS 목업 데이터 export
+export {
+    cmsMockData,
+    largeMockData,
+    mockAuditLogs,
+    mockDepartments,
+    mockInvitations,
+    mockOrganizations,
+    mockPermissions,
+    mockProjectMemberships,
+    mockProjects,
+    mockRoles,
+};
+
+export type {
+    CmsMockData,
+    MockAuditLog,
+    MockDepartment,
+    MockInvitation,
+    MockOrganization,
+    MockPermission,
+    MockProject,
+    MockProjectMembership,
+    MockRole,
+    MockUserData,
+};
 
 // Import the instances for the ApiService class
 import { elementsApi } from './ElementsApiService';
