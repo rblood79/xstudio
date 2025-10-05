@@ -140,7 +140,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
   };
 
   return (
-    <div className="">
+    <>
       {/* 데이터 소스 선택 - Properties와 동일한 구조 */}
       <div className="component-props">
         <fieldset className="properties-aria">
@@ -192,22 +192,10 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
               <Popover>
                 <ListBox>
                   <ListBoxItem id="">선택 안 함</ListBoxItem>
-                  <ListBoxItem id="api">
-                    <span className="source-icon">🌐</span>
-                    REST API
-                  </ListBoxItem>
-                  <ListBoxItem id="supabase">
-                    <span className="source-icon">🗄️</span>
-                    Supabase
-                  </ListBoxItem>
-                  <ListBoxItem id="state">
-                    <span className="source-icon">🔄</span>
-                    Zustand Store
-                  </ListBoxItem>
-                  <ListBoxItem id="static">
-                    <span className="source-icon">📄</span>
-                    Static Data
-                  </ListBoxItem>
+                  <ListBoxItem id="api">REST API</ListBoxItem>
+                  <ListBoxItem id="supabase">Supabase</ListBoxItem>
+                  <ListBoxItem id="state">Zustand Store</ListBoxItem>
+                  <ListBoxItem id="static">Static Data</ListBoxItem>
                 </ListBox>
               </Popover>
             </Select>
@@ -327,6 +315,6 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
