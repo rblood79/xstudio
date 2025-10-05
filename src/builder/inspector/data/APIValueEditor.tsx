@@ -37,7 +37,7 @@ export function APIValueEditor({ config, onChange }: APIValueEditorProps) {
   };
 
   return (
-    <div className="api-value-editor">
+    <div className="api-value-editor component-props">
       <TextField className="field">
         <Label>Base URL</Label>
         <Input

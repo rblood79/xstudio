@@ -96,9 +96,7 @@ export function SupabaseCollectionEditor({
   };
 
   return (
-    <div className="supabase-collection-editor">
-      <h5 className="editor-subtitle">Supabase Table</h5>
-
+    <div className="supabase-collection-editor component-props">
       {/* 테이블 선택 */}
       <Select
         className="table-select"

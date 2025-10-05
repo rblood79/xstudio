@@ -88,9 +88,7 @@ export function SupabaseValueEditor({
   };
 
   return (
-    <div className="supabase-value-editor">
-      <h5 className="editor-subtitle">Supabase Single Value</h5>
-
+    <div className="supabase-value-editor component-props">
       {/* 테이블 선택 */}
       <Select
         className="table-select"
