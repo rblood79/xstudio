@@ -4,11 +4,12 @@ import {
   Input,
   Select,
   SelectValue,
-  Button,
   ListBox,
   ListBoxItem,
   Popover,
 } from "react-aria-components";
+
+import { Button } from "../../components/list";
 import type { APICollectionConfig } from "../types";
 
 export interface APICollectionEditorProps {
@@ -261,32 +262,9 @@ export function APICollectionEditor({
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">API Parameters (JSON)</legend>
         <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-braces"
-              aria-hidden="true"
-            >
-              <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
-              <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
-            </svg>
-          </label>
           <div style={{ flex: 1 }}>
             <textarea
               className="control-input"
-              style={{
-                minHeight: "120px",
-                fontFamily: "monospace",
-                fontSize: "12px",
-              }}
               value={localParams}
               onChange={(e) => setLocalParams(e.target.value)}
               placeholder={`{
@@ -297,13 +275,7 @@ export function APICollectionEditor({
               rows={6}
             />
             <div className="editor-actions">
-              <button
-                type="button"
-                className="confirm-button"
-                onClick={handleParamsConfirm}
-              >
-                확인
-              </button>
+              <Button onClick={handleParamsConfirm} children="확인" />
             </div>
           </div>
         </div>
@@ -313,34 +285,9 @@ export function APICollectionEditor({
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">Headers (JSON)</legend>
         <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-file-key"
-              aria-hidden="true"
-            >
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-              <circle cx="10" cy="16" r="2" />
-              <path d="m16 10-4.5 4.5" />
-              <path d="m15 11 1 1" />
-            </svg>
-          </label>
           <div style={{ flex: 1 }}>
             <textarea
               className="control-input"
-              style={{
-                minHeight: "80px",
-                fontFamily: "monospace",
-                fontSize: "12px",
-              }}
               value={localHeaders}
               onChange={(e) => setLocalHeaders(e.target.value)}
               placeholder={`{
@@ -350,13 +297,7 @@ export function APICollectionEditor({
               rows={4}
             />
             <div className="editor-actions">
-              <button
-                type="button"
-                className="confirm-button"
-                onClick={handleHeadersConfirm}
-              >
-                확인
-              </button>
+              <Button onClick={handleHeadersConfirm} children="확인" />
             </div>
           </div>
         </div>
@@ -366,33 +307,9 @@ export function APICollectionEditor({
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">Data Mapping (JSON)</legend>
         <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-map"
-              aria-hidden="true"
-            >
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-              <line x1="9" x2="9" y1="3" y2="18" />
-              <line x1="15" x2="15" y1="6" y2="21" />
-            </svg>
-          </label>
           <div style={{ flex: 1 }}>
             <textarea
               className="control-input"
-              style={{
-                minHeight: "120px",
-                fontFamily: "monospace",
-                fontSize: "12px",
-              }}
               value={localDataMapping}
               onChange={(e) => setLocalDataMapping(e.target.value)}
               placeholder={`{
@@ -403,13 +320,7 @@ export function APICollectionEditor({
               rows={6}
             />
             <div className="editor-actions">
-              <button
-                type="button"
-                className="confirm-button"
-                onClick={handleDataMappingConfirm}
-              >
-                확인
-              </button>
+              <Button onClick={handleDataMappingConfirm} children="확인" />
             </div>
           </div>
         </div>

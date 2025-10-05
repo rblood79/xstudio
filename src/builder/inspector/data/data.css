@@ -8,6 +8,16 @@
         justify-content: center;
         padding: var(--spacing-8);
         text-align: center;
+
+        .empty-icon {
+          font-size: 3rem;
+          margin-bottom: var(--spacing-3);
+        }
+
+        .empty-message {
+          color: var(--color-text-secondary);
+          font-size: var(--font-size-sm);
+        }
       }
 
       .source-icon {
@@ -24,12 +34,15 @@
       }
     }
 
+    /* JSON textarea 스타일 */
     textarea.control-input {
       resize: vertical;
       font-family: var(--font-mono);
       line-height: 1.4;
+      padding: var(--spacing-sm);
     }
 
+    /* 확인 버튼 컨테이너 */
     .editor-actions {
       display: flex;
       justify-content: flex-end;
@@ -44,10 +57,144 @@
         border-radius: var(--radius-sm);
         font-size: var(--font-size-sm);
         cursor: pointer;
+        transition: background 0.2s;
 
         &:hover {
           background: var(--color-primary-hover);
         }
+      }
+    }
+
+    /* SupabaseCollectionEditor 특수 스타일 */
+    .supabase-collection-editor {
+      .column-selection {
+        .column-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: var(--spacing-2);
+          margin-top: var(--spacing-2);
+        }
+
+        .column-item {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-2);
+          padding: var(--spacing-2);
+          background: var(--color-background);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:hover {
+            background: var(--color-hover);
+            border-color: var(--color-primary);
+          }
+
+          &.selected {
+            background: var(--color-primary);
+            color: var(--color-primary-foreground);
+            border-color: var(--color-primary);
+          }
+        }
+      }
+
+      .order-controls {
+        display: flex;
+        gap: var(--spacing-2);
+
+        .order-direction {
+          padding: var(--spacing-2) var(--spacing-4);
+          background: var(--color-primary);
+          color: var(--color-primary-foreground);
+          border: none;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+
+          &:hover {
+            opacity: 0.9;
+          }
+        }
+      }
+    }
+
+    /* StateBindingEditor Helper text */
+    .state-binding-editor {
+      .helper-text {
+        margin-top: var(--spacing-4);
+        padding: var(--spacing-3);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+
+        .helper-code {
+          display: block;
+          padding: var(--spacing-2);
+          background: var(--color-background);
+          border-radius: var(--radius-sm);
+          font-family: var(--font-mono);
+          font-size: var(--font-size-xs);
+          color: var(--color-primary);
+        }
+      }
+    }
+
+    /* StaticDataEditor 예시 버튼 */
+    .static-data-editor {
+      .example-button {
+        padding: var(--spacing-1) var(--spacing-3);
+        background: var(--color-secondary);
+        color: var(--color-secondary-foreground);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+
+    /* Error/Success Messages */
+    .error-message {
+      padding: var(--spacing-2) var(--spacing-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-3);
+      background: var(--color-danger-background);
+      color: var(--color-danger-foreground);
+      border: 1px solid var(--color-danger-border);
+    }
+
+    .success-message {
+      padding: var(--spacing-2) var(--spacing-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-3);
+      background: var(--color-success-background);
+      color: var(--color-success-foreground);
+      border: 1px solid var(--color-success-border);
+    }
+
+    /* Helper text */
+    .helper-text {
+      padding: var(--spacing-3);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+
+      .helper-title {
+        margin: 0 0 var(--spacing-1) 0;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .helper-content {
+        margin: 0;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+        line-height: 1.4;
       }
     }
   }
