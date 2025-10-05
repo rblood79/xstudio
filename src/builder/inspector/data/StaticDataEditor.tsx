@@ -75,9 +75,8 @@ export function StaticDataEditor({
   };
 
   return (
-    <div className="static-data-editor">
-      <div className="editor-header">
-        <h5 className="editor-subtitle">Static Data</h5>
+    <div className="static-data-editor component-props">
+      <div className="editor-actions">
         <Button className="example-button" onPress={handleLoadExample}>
           예시 불러오기
         </Button>

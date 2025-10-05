@@ -23,9 +23,7 @@ export function StateBindingEditor({
   const valueConfig = !isCollection ? (config as StateValueConfig) : null;
 
   return (
-    <div className="state-binding-editor">
-      <h5 className="editor-subtitle">Zustand Store Binding</h5>
-
+    <div className="state-binding-editor component-props">
       <TextField
         className="store-path-field"
         value={config.storePath || ""}
