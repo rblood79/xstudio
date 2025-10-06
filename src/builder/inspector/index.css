@@ -172,6 +172,94 @@
           flex-direction: column;
           gap: var(--spacing-sm);
         }
+
+        .transform-alignment,
+        .transform-size,
+        .transform-position {
+          display: grid;
+          grid-template-rows: auto 27px;
+          grid-template-columns: 1fr 1fr 27px;
+          grid-template-areas:
+            "label label label"
+            "input1 input2 icon";
+          gap: 4px 8px;
+
+          .alignment-controls-horizontal {
+            grid-area: input1;
+            display: flex;
+          }
+          .alignment-controls-vertical {
+            grid-area: input2;
+            display: flex;
+          }
+          .fieldset-actions {
+            grid-area: icon;
+          }
+
+          .size-control-width {
+            grid-area: input1;
+            display: flex;
+          }
+          .size-control-height {
+            grid-area: input2;
+            display: flex;
+          }
+
+          .position-control-x {
+            grid-area: input1;
+            display: flex;
+          }
+          .position-control-y {
+            grid-area: input2;
+            display: flex;
+          }
+        }
+
+        .layout-direction {
+          display: grid;
+          grid-template-rows: auto 27px;
+          grid-template-columns: 1fr 1fr 27px;
+          grid-template-areas:
+            "label label label"
+            "input1 input2 icon"
+            "input3 input2 icon"
+            "input4 input2 icon";
+          gap: 4px 8px;
+
+          .direction-controls {
+            grid-area: input1;
+            display: flex;
+          }
+          .direction-alignment-grid {
+            grid-area: input2;
+
+            .react-aria-ToggleButtonGroup {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              grid-template-rows: repeat(3, 1fr);
+              gap: 0px;
+              background-color: var(--color-gray-50);
+              border-radius: var(--radius-md);
+
+              .react-aria-ToggleButton {
+                outline-color: var(--color-gray-200);
+                margin-inline-start: 0;
+                border-width: 0;
+                height: 29px;
+              }
+            }
+          }
+
+          .justify-control {
+            grid-area: input3;
+            display: flex;
+          }
+
+          .gap-control {
+            grid-area: input4;
+            display: flex;
+          }
+        }
       }
 
       .react-aria-Group {
