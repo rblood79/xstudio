@@ -52,6 +52,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      width: calc(var(--sizes-inspectorWidth) - 8px);
     }
 
     .inspector-tabs {
@@ -159,6 +160,11 @@
           display: flex;
           flex-direction: column;
           gap: var(--spacing-sm);
+
+          .react-aria-ListBoxItem {
+            flex-direction: row;
+            justify-content: space-between;
+          }
         }
 
         .component-fieldset {
