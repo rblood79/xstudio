@@ -3,10 +3,71 @@ export { BaseApiService } from './BaseApiService';
 export { ElementsApiService, elementsApi } from './ElementsApiService';
 export { ProjectsApiService, projectsApi, type Project, type CreateProjectData } from './ProjectsApiService';
 export { PagesApiService, pagesApi, type Page, type CreatePageData } from './PagesApiService';
-import { largeMockData, MockUserData } from './mockLargeDataV2';
+import {
+    buildComponentTree,
+    cmsMockData,
+    getProjectEnginesSummary,
+    largeMockData,
+    mockAuditLogs,
+    mockComponents,
+    mockDepartments,
+    mockEngines,
+    mockInvitations,
+    mockOrganizations,
+    mockPermissions,
+    mockProjectMemberships,
+    mockProjects,
+    mockRoles,
+    type CmsMockData,
+    type ComponentTreeNode,
+    type MockAuditLog,
+    type MockComponent,
+    type MockDepartment,
+    type MockEngine,
+    type MockInvitation,
+    type MockOrganization,
+    type MockPermission,
+    type MockProject,
+    type MockProjectMembership,
+    type MockRole,
+    type MockUserData,
+    type ProjectEngineSummary,
+} from './mockLargeDataV2';
 
-// MockUserData 타입 export
-export type { MockUserData };
+// 확장된 CMS 목업 데이터 export
+export {
+    buildComponentTree,
+    cmsMockData,
+    getProjectEnginesSummary,
+    largeMockData,
+    mockAuditLogs,
+    mockComponents,
+    mockDepartments,
+    mockEngines,
+    mockInvitations,
+    mockOrganizations,
+    mockPermissions,
+    mockProjectMemberships,
+    mockProjects,
+    mockRoles,
+};
+
+export type {
+    CmsMockData,
+    ComponentTreeNode,
+    MockAuditLog,
+    MockComponent,
+    MockDepartment,
+    MockEngine,
+    MockInvitation,
+    MockOrganization,
+    MockPermission,
+    MockProject,
+    MockProjectMembership,
+    MockRole,
+    MockUserData,
+    ProjectEngineSummary,
+};
 
 // Import the instances for the ApiService class
 import { elementsApi } from './ElementsApiService';
