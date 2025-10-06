@@ -205,7 +205,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
       {/* 소스별 에디터 렌더링 */}
       {binding && (
-        <div className="data-editor-container">
+        <>
           {binding.source === "api" && bindingType === "collection" && (
             <APICollectionEditor
               config={binding.config as APICollectionConfig}
@@ -313,7 +313,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
               }
             />
           )}
-        </div>
+        </>
       )}
     </>
   );

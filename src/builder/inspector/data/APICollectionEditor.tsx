@@ -64,7 +64,7 @@ export function APICollectionEditor({
   };
 
   return (
-    <div className="api-collection-editor component-props">
+    <div className="component-props">
       {/* Base URL */}
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">Base URL</legend>
