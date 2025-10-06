@@ -373,9 +373,13 @@ const sanitizeDomain = (value: string): string => {
     return sanitized.length > 0 ? sanitized : 'example';
 };
 
-const getRealisticEmail = (num: number, domain: string): string => {
-    const sanitizedDomain = domain.includes('.') ? domain : `${sanitizeDomain(domain)}.com`;
-    return `user${num}@${sanitizedDomain}`;
+const getRealisticEmail = (name: string, companyOrDomain: string, num: number): string => {
+    const sanitizedLocal = sanitizeDomain(name);
+    const localPart = sanitizedLocal.length > 0 ? `${sanitizedLocal}.${num}` : `user${num}`;
+    const sanitizedDomain = companyOrDomain.includes('.')
+        ? companyOrDomain
+        : `${sanitizeDomain(companyOrDomain)}.com`;
+    return `${localPart}@${sanitizedDomain}`;
 };
 
 const getSeoulAddress = (): string => {
@@ -647,7 +651,7 @@ const generateMockUsers = (
             num: i,
             id: getRandomId('user_'),
             name,
-            email: getRealisticEmail(i, organization.domain),
+            email: getRealisticEmail(name, organization.domain ?? organization.name, i),
             address: getSeoulAddress(),
             phone: `010-${getRandomFourDigits()}-${getRandomFourDigits()}`,
             company: organization.name,

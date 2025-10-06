@@ -75,11 +75,29 @@ import { projectsApi } from './ProjectsApiService';
 import { pagesApi } from './PagesApiService';
 
 // === Mock API Endpoint ===
-interface MockApiConfig {
-    [key: string]: (path: string, params?: Record<string, unknown>) => Promise<unknown>;
+interface MockUserQueryParams {
+    search?: string;
+    getAll?: boolean;
+    page?: number;
+    limit?: number;
 }
 
-const fetchMockUsers = async (path: string, params?: Record<string, unknown>): Promise<MockUserData[]> => {
+type MockUserListWithMeta = MockUserData[] & {
+    __meta?: {
+        totalItems: number;
+        currentPage: number;
+        itemsPerPage: number;
+        hasNextPage: boolean;
+        startIndex: number;
+        endIndex: number;
+    };
+};
+
+interface MockApiConfig {
+    [key: string]: (path: string, params?: MockUserQueryParams) => Promise<unknown>;
+}
+
+const fetchMockUsers = async (path: string, params?: MockUserQueryParams): Promise<MockUserData[]> => {
     console.log("Fetching mock users from path:", path, "with params:", params);
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -142,7 +160,7 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
     }
 
     // 전체 데이터 요청 확인
-    if (params && params.getAll === true) {
+    if (params?.getAll) {
         console.log(`📊 Returning all data: ${filteredData.length} items`);
         return filteredData;
     }
@@ -160,16 +178,16 @@ const fetchMockUsers = async (path: string, params?: Record<string, unknown>): P
         console.log(`📊 Total data: ${totalItems}, returning: ${returnedItems} items`);
 
         // 페이지네이션을 위해 전체 데이터 개수 정보를 포함한 객체 반환
-        const result = filteredData.slice(startIndex, endIndex);
+        const result = filteredData.slice(startIndex, endIndex) as MockUserListWithMeta;
 
         // 페이지네이션을 위한 메타데이터 추가
-        (result as any).__meta = {
+        result.__meta = {
             totalItems,
             currentPage: page,
             itemsPerPage: limit,
             hasNextPage: endIndex < totalItems,
             startIndex,
-            endIndex
+            endIndex,
         };
 
         return result;
