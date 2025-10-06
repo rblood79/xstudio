@@ -96,8 +96,7 @@ function Inspector() {
   return (
     <div className="inspector-container">
       <div className="inspector-header">
-        <h2 className="inspector-title">{selectedElement.type}</h2>
-        <span className="inspector-id">#{selectedElement.id}</span>
+        <span className="inspector-id">{selectedElement.id}</span>
       </div>
 
       <Tabs className="react-aria-Tabs">
