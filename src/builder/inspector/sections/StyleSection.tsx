@@ -125,32 +125,10 @@ export function StyleSection({ element }: StyleSectionProps) {
           <div className="size-control-width react-aria-Group">
             <label className="control-label">W</label>
             <input className="control-input" type="text" placeholder="auto" />
-            <Select
-              items={[
-                { id: "auto", label: "auto" },
-                { id: "px", label: "px" },
-                { id: "%", label: "%" },
-                { id: "vw", label: "vw" },
-              ]}
-              selectedKey="auto"
-            >
-              {(item) => <SelectItem>{item.label}</SelectItem>}
-            </Select>
           </div>
           <div className="size-control-height react-aria-Group">
             <label className="control-label">H</label>
             <input className="control-input" type="text" placeholder="auto" />
-            <Select
-              items={[
-                { id: "auto", label: "auto" },
-                { id: "px", label: "px" },
-                { id: "%", label: "%" },
-                { id: "vh", label: "vh" },
-              ]}
-              selectedKey="auto"
-            >
-              {(item) => <SelectItem>{item.label}</SelectItem>}
-            </Select>
           </div>
           <div className="fieldset-actions">
             <Button>
@@ -300,17 +278,6 @@ export function StyleSection({ element }: StyleSectionProps) {
               />
             </label>
             <input className="control-input"></input>
-            <Select
-              items={[
-                { id: "class", label: "class" },
-                { id: "0", label: "0" },
-                { id: "2", label: "2" },
-                { id: "4", label: "4" },
-              ]}
-              aria-label="Gap value selector"
-            >
-              {(item) => <SelectItem>{item.label}</SelectItem>}
-            </Select>
           </div>
         </fieldset>
 
@@ -326,21 +293,6 @@ export function StyleSection({ element }: StyleSectionProps) {
                 />
               </label>
               <input className="control-input" />
-              <Select
-                items={[
-                  { id: "class", label: "class" },
-                  { id: "0", label: "0" },
-                  { id: "2", label: "2" },
-                  { id: "4", label: "4" },
-                  { id: "8", label: "8" },
-                  { id: "16", label: "16" },
-                  { id: "32", label: "32" },
-                  { id: "64", label: "64" },
-                ]}
-                aria-label="Padding value selector"
-              >
-                {(item) => <SelectItem>{item.label}</SelectItem>}
-              </Select>
             </div>
           </fieldset>
           <fieldset className="spacing-margin">
@@ -354,20 +306,6 @@ export function StyleSection({ element }: StyleSectionProps) {
                 />
               </label>
               <input className="control-input" />
-              <Select
-                items={[
-                  { id: "class", label: "class" },
-                  { id: "0", label: "0" },
-                  { id: "2", label: "2" },
-                  { id: "4", label: "4" },
-                  { id: "8", label: "8" },
-                  { id: "16", label: "16" },
-                  { id: "32", label: "32" },
-                  { id: "64", label: "64" },
-                ]}
-              >
-                {(item) => <SelectItem>{item.label}</SelectItem>}
-              </Select>
             </div>
           </fieldset>
           <div className="fieldset-actions">
