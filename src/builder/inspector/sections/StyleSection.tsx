@@ -320,6 +320,100 @@ export function StyleSection({ element }: StyleSectionProps) {
         </div>
       </div>
 
+      <div className="section-header">
+        <h3 className="section-title">Style</h3>
+        <div className="header-actions">
+          <button className="iconButton" aria-label="Add Element">
+            <ChevronUp
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          </button>
+        </div>
+      </div>
+
+      <div className="section-content">
+        <fieldset className="style-background">
+          <legend className="fieldset-legend">Background</legend>
+          <div className="color-control react-aria-Group">
+            <label className="control-label">
+              <Square color={iconProps.color} size={18} strokeWidth={0} />
+            </label>
+            <input className="control-input" />
+          </div>
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </fieldset>
+        <div className="border-controls-container">
+          <fieldset className="style-border">
+            <legend className="fieldset-legend">Border Color</legend>
+            <div className="color-control react-aria-Group">
+              <label className="control-label">
+                <Square color={iconProps.color} size={18} strokeWidth={0} />
+              </label>
+              <input className="control-input" />
+            </div>
+          </fieldset>
+          <fieldset className="style-border-width">
+            <legend className="fieldset-legend">Border Width</legend>
+
+            <div className="border-width-control react-aria-Group">
+              <label className="control-label">
+                <SquareDashed
+                  color={iconProps.color}
+                  strokeWidth={iconProps.stroke}
+                  size={iconProps.size}
+                />
+              </label>
+              <input className="control-input" />
+            </div>
+          </fieldset>
+          <fieldset className="style-border-radius">
+            <legend className="fieldset-legend">Border Radius</legend>
+            <div className="border-radius-control react-aria-Group">
+              <label className="control-label">
+                <SquareRoundCorner
+                  color={iconProps.color}
+                  strokeWidth={iconProps.stroke}
+                  size={iconProps.size}
+                />
+              </label>
+              <input className="control-input" />
+            </div>
+          </fieldset>
+          <fieldset className="style-border-style">
+            <legend className="fieldset-legend">Border Style</legend>
+            <div className="border-style-control react-aria-Group">
+              <label className="control-label">
+                <SquareDashedBottom
+                  color={iconProps.color}
+                  strokeWidth={iconProps.stroke}
+                  size={iconProps.size}
+                />
+              </label>
+              <input className="control-input" />
+            </div>
+          </fieldset>
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <PreviewPanel
         semanticClasses={element.semanticClasses}
         cssVariables={element.cssVariables}
