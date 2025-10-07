@@ -207,7 +207,8 @@
             display: flex;
           }
         }
-        .style-background {
+        .style-background,
+        .typography-font {
           display: grid;
           grid-template-rows: auto 27px;
           grid-template-columns: 1fr 1fr 27px;
@@ -273,7 +274,8 @@
             "input1";
           gap: 4px 8px;
         }
-        .style-border {
+        .style-border,
+        .font-select-control {
           grid-area: input1;
         }
         .style-border-width {
@@ -355,6 +357,18 @@
         background-color: var(--color-gray-100);
         border-radius: var(--radius-md);
         width: 100%;
+
+        .react-aria-Select {
+          width: 100%;
+          .react-aria-Button {
+            padding: 0 0 0 var(--spacing);
+            background-color: transparent;
+            border-color: transparent;
+          }
+          .react-aria-SelectValue {
+            font-size: var(--text-xs);
+          }
+        }
       }
 
       .react-aria-control {
@@ -366,12 +380,14 @@
           width: 100%;
           justify-content: space-between;
           flex-direction: row-reverse;
+          padding: 0;
         }
 
         .react-aria-Select {
           width: 100%;
           .react-aria-Button {
-            padding-left: var(--spacing);
+            padding: 0;
+            background-color: transparent;
             border-color: transparent;
           }
           .react-aria-SelectValue {
