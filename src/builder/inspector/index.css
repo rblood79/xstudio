@@ -175,7 +175,9 @@
 
         .transform-alignment,
         .transform-size,
-        .transform-position {
+        .transform-position,
+        .layout-direction,
+        .spacing-controls-container {
           display: grid;
           grid-template-rows: auto 27px;
           grid-template-columns: 1fr 1fr 27px;
@@ -194,8 +196,10 @@
           }
           .fieldset-actions {
             grid-area: icon;
+            .react-aria-Button {
+              padding: var(--spacing);
+            }
           }
-
           .size-control-width {
             grid-area: input1;
             display: flex;
@@ -213,6 +217,27 @@
             grid-area: input2;
             display: flex;
           }
+
+          .spacing-control {
+            grid-area: input1;
+            display: flex;
+          }
+        }
+        .spacing-controls-container {
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: flex-end;
+        }
+        .spacing-padding,
+        .spacing-margin {
+          display: grid;
+          grid-template-rows: auto;
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "label"
+            "input1";
+          gap: 4px 8px;
         }
 
         .layout-direction {
@@ -237,15 +262,17 @@
               display: grid;
               grid-template-columns: repeat(3, 1fr);
               grid-template-rows: repeat(3, 1fr);
-              gap: 0px;
-              background-color: var(--color-gray-50);
+              gap: 3px;
               border-radius: var(--radius-md);
 
               .react-aria-ToggleButton {
-                outline-color: var(--color-gray-200);
                 margin-inline-start: 0;
-                border-width: 0;
-                height: 29px;
+                height: 27px;
+                .alignment-dot {
+                  width: 4px;
+                  height: 4px;
+                  background-color: var(--color-gray-300);
+                }
               }
             }
           }
@@ -273,22 +300,14 @@
         align-items: center;
         justify-content: space-between;
 
-        .react-aria-Select {
-          flex: 1;
-          .react-aria-Button {
-            background: transparent;
-            border-color: transparent;
-          }
-          /*span[aria-hidden] {
-            width: var(--spacing-lg);
-            height: var(--spacing-lg);
-          }*/
-        }
-
         .react-aria-Checkbox {
           width: 100%;
           justify-content: space-between;
           flex-direction: row-reverse;
+        }
+
+        .react-aria-Select {
+          width: 100%;
         }
       }
 
@@ -313,6 +332,28 @@
         border-left-width: 0px;
         border-radius: 0 var(--radius-md) var(--radius-md) 0;
         font-size: var(--text-xs);
+      }
+
+      .react-aria-ToggleButtonGroup {
+        flex: 1;
+        background-color: var(--color-gray-100);
+        border-radius: var(--radius-md);
+
+        .react-aria-ToggleButton {
+          padding: var(--spacing);
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: transparent;
+          border-color: transparent;
+          &[data-selected] {
+            background: var(--color-white);
+            border-radius: var(--radius-md);
+            border-color: var(--color-gray-300);
+            border-width: 1px;
+          }
+        }
       }
 
       .loading-message,
