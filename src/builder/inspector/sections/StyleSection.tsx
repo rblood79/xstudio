@@ -414,6 +414,48 @@ export function StyleSection({ element }: StyleSectionProps) {
         </div>
       </div>
 
+      <div className="section-header">
+        <h3 className="section-title">Text</h3>
+        <div className="header-actions">
+          <button className="iconButton" aria-label="Add Element">
+            <ChevronUp
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          </button>
+        </div>
+      </div>
+
+      <div className="section-content">
+        <fieldset className="typography-font">
+          <legend className="fieldset-legend">Font</legend>
+          <div className="font-select-control react-aria-Group">
+            <Select
+              items={[
+                { id: "Arial", label: "Arial" },
+                { id: "Helvetica", label: "Helvetica" },
+                { id: "Times New Roman", label: "Times New Roman" },
+                { id: "Georgia", label: "Georgia" },
+                { id: "Courier New", label: "Courier New" },
+                { id: "Verdana", label: "Verdana" },
+              ]}
+            >
+              {(item) => <SelectItem>{item.label}</SelectItem>}
+            </Select>
+          </div>
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </fieldset>
+      </div>
+
       <PreviewPanel
         semanticClasses={element.semanticClasses}
         cssVariables={element.cssVariables}
