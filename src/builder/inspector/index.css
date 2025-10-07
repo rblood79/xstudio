@@ -142,6 +142,12 @@
           font-weight: var(--font-weight-semibold);
           font-size: var(--text-sm);
         }
+
+        .header-actions {
+          .iconButton {
+            padding: var(--spacing-sm);
+          }
+        }
       }
 
       .section-content {
@@ -186,43 +192,36 @@
             "input1 input2 icon";
           gap: 4px 8px;
 
-          .alignment-controls-horizontal {
-            grid-area: input1;
-            display: flex;
-          }
-          .alignment-controls-vertical {
-            grid-area: input2;
-            display: flex;
-          }
-          .fieldset-actions {
-            grid-area: icon;
-            .react-aria-Button {
-              padding: var(--spacing);
-            }
-          }
-          .size-control-width {
-            grid-area: input1;
-            display: flex;
-          }
-          .size-control-height {
-            grid-area: input2;
-            display: flex;
-          }
-
-          .position-control-x {
-            grid-area: input1;
-            display: flex;
-          }
-          .position-control-y {
-            grid-area: input2;
-            display: flex;
-          }
-
+          .alignment-controls-horizontal,
+          .color-control,
+          .size-control-width,
+          .position-control-x,
           .spacing-control {
             grid-area: input1;
             display: flex;
           }
+          .alignment-controls-vertical,
+          .size-control-height,
+          .position-control-y {
+            grid-area: input2;
+            display: flex;
+          }
         }
+        .style-background {
+          display: grid;
+          grid-template-rows: auto 27px;
+          grid-template-columns: 1fr 1fr 27px;
+          grid-template-areas:
+            "label label label"
+            "input1 input1 icon";
+          gap: 4px 8px;
+
+          .color-control {
+            grid-area: input1;
+            display: flex;
+          }
+        }
+
         .spacing-controls-container {
           display: flex;
           flex-direction: row;
@@ -238,6 +237,69 @@
             "label"
             "input1";
           gap: 4px 8px;
+        }
+
+        .border-controls-container {
+          display: grid;
+          grid-template-rows: repeat(2, 1fr);
+          grid-template-columns: 1fr 1fr 27px;
+          grid-template-areas:
+            "input1 input2 icon"
+            "input3 input4 empty";
+          gap: 8px;
+
+          .color-control,
+          .border-width-control,
+          .border-radius-control,
+          .border-style-control {
+            grid-area: input1;
+            display: flex;
+          }
+          .fieldset-actions {
+            align-items: flex-end;
+          }
+        }
+
+        .style-border,
+        .style-border-width,
+        .style-border-radius,
+        .style-border-style {
+          flex: 1;
+          display: grid;
+          grid-template-rows: auto;
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "label"
+            "input1";
+          gap: 4px 8px;
+        }
+        .style-border {
+          grid-area: input1;
+        }
+        .style-border-width {
+          grid-area: input2;
+        }
+        .style-border-radius {
+          grid-area: input3;
+        }
+        .style-border-style {
+          grid-area: input4;
+        }
+        .fieldset-legend {
+          grid-area: label;
+          font-size: var(--text-2xs);
+          color: var(--color-gray-400);
+        }
+        .fieldset-actions {
+          grid-area: icon;
+          display: flex;
+          .react-aria-Button {
+            background-color: var(--color-gray-100);
+            border-color: transparent;
+            padding: var(--spacing);
+            height: 27px;
+            width: 27px;
+          }
         }
 
         .layout-direction {
@@ -308,6 +370,13 @@
 
         .react-aria-Select {
           width: 100%;
+          .react-aria-Button {
+            padding-left: var(--spacing);
+            border-color: transparent;
+          }
+          .react-aria-SelectValue {
+            font-size: var(--text-xs);
+          }
         }
       }
 
@@ -332,6 +401,7 @@
         border-left-width: 0px;
         border-radius: 0 var(--radius-md) var(--radius-md) 0;
         font-size: var(--text-xs);
+        padding: 0 var(--spacing);
       }
 
       .react-aria-ToggleButtonGroup {
