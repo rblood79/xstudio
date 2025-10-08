@@ -60,22 +60,22 @@ export function StyleSection({ element }: StyleSectionProps) {
         <fieldset className="transform-alignment">
           <legend className="fieldset-legend">Alignment</legend>
           <div className="alignment-controls-horizontal">
-            <ToggleButtonGroup>
-              <ToggleButton>
+            <ToggleButtonGroup aria-label="Flex alignment-vertical">
+              <ToggleButton id="align-vertical-start">
                 <AlignStartVertical
                   color={iconProps.color}
                   size={iconProps.size}
                   strokeWidth={iconProps.stroke}
                 />
               </ToggleButton>
-              <ToggleButton>
+              <ToggleButton id="align-vertical-center">
                 <AlignHorizontalJustifyCenter
                   color={iconProps.color}
                   size={iconProps.size}
                   strokeWidth={iconProps.stroke}
                 />
               </ToggleButton>
-              <ToggleButton>
+              <ToggleButton id="align-vertical-end">
                 <AlignEndVertical
                   color={iconProps.color}
                   size={iconProps.size}
@@ -85,22 +85,22 @@ export function StyleSection({ element }: StyleSectionProps) {
             </ToggleButtonGroup>
           </div>
           <div className="alignment-controls-vertical">
-            <ToggleButtonGroup>
-              <ToggleButton>
+            <ToggleButtonGroup aria-label="Flex alignment-horizontal">
+              <ToggleButton id="align-horizontal-start">
                 <AlignStartHorizontal
                   color={iconProps.color}
                   size={iconProps.size}
                   strokeWidth={iconProps.stroke}
                 />
               </ToggleButton>
-              <ToggleButton>
+              <ToggleButton id="align-horizontal-center">
                 <AlignVerticalJustifyCenter
                   color={iconProps.color}
                   size={iconProps.size}
                   strokeWidth={iconProps.stroke}
                 />
               </ToggleButton>
-              <ToggleButton>
+              <ToggleButton id="align-horizontal-end">
                 <AlignEndHorizontal
                   color={iconProps.color}
                   size={iconProps.size}
