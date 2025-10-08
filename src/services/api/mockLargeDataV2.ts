@@ -84,6 +84,50 @@ export interface MockInvitation {
   createdAt: string;
 }
 
+export interface MockEngine {
+  id: string;
+  projectId: string;
+  name: string;
+  code: string;
+  version: string;
+  status: "설계" | "제작" | "테스트" | "양산" | "단종";
+  manufacturer: string;
+  specifications: {
+    power?: string;
+    weight?: string;
+    dimensions?: string;
+    [key: string]: string | undefined;
+  };
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+export interface MockComponent {
+  id: string;
+  engineId: string;
+  parentId: string | null;
+  name: string;
+  code: string;
+  type: "assembly" | "part";
+  level: number;
+  orderIndex: number;
+  quantity: number;
+  unit: "EA" | "SET" | "M" | "KG" | "L";
+  supplier: string;
+  cost: number;
+  leadTime: number;
+  status: "정상" | "단종" | "검토중" | "승인대기";
+  specifications?: {
+    material?: string;
+    color?: string;
+    [key: string]: string | undefined;
+  };
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MockUserData {
   num: number;
   id: string;
@@ -115,6 +159,8 @@ export interface CmsMockData {
   projectMemberships: MockProjectMembership[];
   auditLogs: MockAuditLog[];
   invitations: MockInvitation[];
+  engines: MockEngine[];
+  components: MockComponent[];
 }
 
 // Utility helpers
@@ -145,6 +191,19 @@ const getRandomDateWithinYears = (yearsBack: number): Date => {
   past.setFullYear(now.getFullYear() - yearsBack);
   const randomTime = randomInt(past.getTime(), now.getTime());
   return new Date(randomTime);
+};
+
+// 향후 사용을 위해 유지 (현재 미사용)
+// const addMonths = (date: Date, months: number): Date => {
+//   const result = new Date(date.getTime());
+//   result.setMonth(result.getMonth() + months);
+//   return result;
+// };
+
+const addDays = (date: Date, days: number): Date => {
+  const result = new Date(date.getTime());
+  result.setDate(result.getDate() + days);
+  return result;
 };
 
 const formatDate = (date: Date): string => date.toISOString();
@@ -249,6 +308,104 @@ const firstNames = [
   "시은",
   "연우",
   "지안",
+];
+
+const ENGINE_TYPES = [
+  "전기 모터",
+  "가솔린 엔진",
+  "디젤 엔진",
+  "하이브리드 엔진",
+  "터보 엔진",
+  "수소 연료전지",
+  "로터리 엔진",
+  "V6 엔진",
+  "V8 엔진",
+  "직렬 4기통",
+];
+
+const ENGINE_MANUFACTURERS = [
+  "현대모비스",
+  "LG전자",
+  "삼성SDI",
+  "만도",
+  "한온시스템",
+  "LS일렉트릭",
+  "효성중공업",
+  "Bosch",
+  "Continental",
+  "Denso",
+];
+
+const COMPONENT_ASSEMBLIES = [
+  {
+    name: "동력 전달 시스템",
+    parts: ["변속기", "클러치", "드라이브 샤프트", "차동 장치", "휠 허브"],
+  },
+  {
+    name: "냉각 시스템",
+    parts: ["라디에이터", "워터 펌프", "쿨링 팬", "서모스탯", "냉각수 호스"],
+  },
+  {
+    name: "연료 시스템",
+    parts: ["연료 펌프", "인젝터", "연료 필터", "연료 탱크", "연료 라인"],
+  },
+  {
+    name: "전기 시스템",
+    parts: ["배터리", "알터네이터", "스타터 모터", "점화 코일", "배선 하네스"],
+  },
+  {
+    name: "흡기 시스템",
+    parts: [
+      "에어 필터",
+      "흡기 매니폴드",
+      "스로틀 바디",
+      "터보차저",
+      "인터쿨러",
+    ],
+  },
+  {
+    name: "배기 시스템",
+    parts: ["배기 매니폴드", "촉매 컨버터", "머플러", "산소 센서", "배기관"],
+  },
+  {
+    name: "윤활 시스템",
+    parts: ["오일 펌프", "오일 필터", "오일 팬", "오일 쿨러", "오일 라인"],
+  },
+  {
+    name: "제어 시스템",
+    parts: ["ECU", "센서 모듈", "액추에이터", "CAN 통신 모듈", "진단 포트"],
+  },
+];
+
+const SUPPLIERS = [
+  "현대위아",
+  "대원강업",
+  "세원정공",
+  "화신",
+  "동희오토",
+  "평화산업",
+  "코렌스",
+  "일진다이아",
+  "디와이파워",
+  "성우하이텍",
+];
+
+const MATERIALS = [
+  "알루미늄 합금",
+  "강철",
+  "스테인리스",
+  "플라스틱",
+  "고무",
+  "구리",
+  "티타늄",
+  "카본",
+];
+const COLORS = ["은색", "검정", "회색", "파랑", "빨강", "투명", "흰색"];
+const COMPONENT_STATUSES: MockComponent["status"][] = [
+  "정상",
+  "단종",
+  "검토중",
+  "승인대기",
 ];
 
 const industries = [
@@ -735,6 +892,249 @@ const generateMockInvitations = (
   return invitations;
 };
 
+const generateMockEngines = (
+  projects: MockProject[],
+  users: MockUserData[]
+): MockEngine[] => {
+  const engines: MockEngine[] = [];
+
+  projects.forEach((project) => {
+    const engineCount = randomInt(1, 3);
+
+    for (let i = 0; i < engineCount; i++) {
+      const engineType = randomFromArray(ENGINE_TYPES);
+      const createdAt = new Date(project.startDate);
+      const updatedAt = addDays(createdAt, randomInt(1, 100));
+
+      let status: MockEngine["status"];
+      if (project.status === "완료") {
+        status = Math.random() > 0.3 ? "양산" : "단종";
+      } else if (project.status === "진행중") {
+        status = randomFromArray(["제작", "테스트", "양산"]);
+      } else {
+        status = "설계";
+      }
+
+      const projectUsers = users.filter(
+        (u) =>
+          u.projectMembershipIds.length > 0 &&
+          u.organizationId === project.organizationId
+      );
+      const creator =
+        projectUsers.length > 0
+          ? randomFromArray(projectUsers)
+          : randomFromArray(users);
+
+      engines.push({
+        id: getRandomId("eng_"),
+        projectId: project.id,
+        name: `${engineType} ${String.fromCharCode(65 + i)}형`,
+        code: `ENG-${randomInt(1000, 9999)}-${String.fromCharCode(65 + i)}`,
+        version: `v${randomInt(1, 3)}.${randomInt(0, 9)}.${randomInt(0, 9)}`,
+        status,
+        manufacturer: randomFromArray(ENGINE_MANUFACTURERS),
+        specifications: {
+          power: `${randomInt(100, 500)}kW`,
+          weight: `${randomInt(50, 300)}kg`,
+          dimensions: `${randomInt(400, 800)}x${randomInt(
+            300,
+            600
+          )}x${randomInt(400, 700)}mm`,
+        },
+        createdAt: formatDate(createdAt),
+        updatedAt: formatDate(updatedAt),
+        createdBy: creator.id,
+      });
+    }
+  });
+
+  return engines;
+};
+
+const generateComponentsRecursive = (
+  config: {
+    engineId: string;
+    parentId: string | null;
+    parentName: string;
+    level: number;
+    orderIndex: number;
+    createdAt: Date;
+    availableParts: string[];
+  },
+  depth: number,
+  maxDepth: number,
+  minChildrenPerNode: number,
+  maxChildrenPerNode: number,
+  assemblyProbability: number
+): MockComponent[] => {
+  const components: MockComponent[] = [];
+  const {
+    engineId,
+    parentId,
+    parentName,
+    level,
+    orderIndex,
+    createdAt,
+    availableParts,
+  } = config;
+
+  const shouldBeLeaf = depth >= maxDepth || Math.random() > assemblyProbability;
+
+  if (shouldBeLeaf) {
+    const partName =
+      availableParts.length > 0
+        ? randomFromArray(availableParts)
+        : `${parentName} 부품 ${orderIndex + 1}`;
+
+    const part: MockComponent = {
+      id: getRandomId("comp_"),
+      engineId,
+      parentId,
+      name: partName,
+      code: `PRT-${randomInt(10000, 99999)}`,
+      type: "part",
+      level,
+      orderIndex,
+      quantity: randomInt(1, 10),
+      unit: randomFromArray(["EA", "SET", "M", "KG", "L"] as const),
+      supplier: randomFromArray(SUPPLIERS),
+      cost: randomInt(5000, 500000),
+      leadTime: randomInt(7, 30),
+      status: randomFromArray(COMPONENT_STATUSES),
+      specifications: {
+        material: randomFromArray(MATERIALS),
+        color: randomFromArray(COLORS),
+      },
+      notes: Math.random() > 0.7 ? "특수 규격 부품" : undefined,
+      createdAt: formatDate(createdAt),
+      updatedAt: formatDate(addDays(createdAt, randomInt(1, 60))),
+    };
+    components.push(part);
+    return components;
+  }
+
+  const assemblyName =
+    parentId === null
+      ? parentName
+      : `${parentName} 서브어셈블리 ${orderIndex + 1}`;
+
+  const assembly: MockComponent = {
+    id: getRandomId("comp_"),
+    engineId,
+    parentId,
+    name: assemblyName,
+    code:
+      level === 0
+        ? `ASM-${randomInt(100, 999)}-${orderIndex + 1}`
+        : `SUB-${randomInt(100, 999)}-${level}-${orderIndex + 1}`,
+    type: "assembly",
+    level,
+    orderIndex,
+    quantity: parentId === null ? 1 : randomInt(1, 2),
+    unit: "SET",
+    supplier: randomFromArray(SUPPLIERS),
+    cost: randomInt(100000, 5000000) * (1 / (level + 1)),
+    leadTime: randomInt(20, 90) - level * 5,
+    status: randomFromArray(COMPONENT_STATUSES),
+    createdAt: formatDate(createdAt),
+    updatedAt: formatDate(addDays(createdAt, randomInt(1, 60))),
+  };
+  components.push(assembly);
+
+  const childCountMultiplier = Math.max(0.3, 1 - depth * 0.15);
+  const adjustedMinChildren = Math.max(
+    1,
+    Math.floor(minChildrenPerNode * childCountMultiplier)
+  );
+  const adjustedMaxChildren = Math.max(
+    adjustedMinChildren,
+    Math.floor(maxChildrenPerNode * childCountMultiplier)
+  );
+  const childCount = randomInt(adjustedMinChildren, adjustedMaxChildren);
+
+  for (let i = 0; i < childCount; i++) {
+    const childComponents = generateComponentsRecursive(
+      {
+        engineId,
+        parentId: assembly.id,
+        parentName: assemblyName,
+        level: level + 1,
+        orderIndex: i,
+        createdAt,
+        availableParts,
+      },
+      depth + 1,
+      maxDepth,
+      minChildrenPerNode,
+      maxChildrenPerNode,
+      assemblyProbability * 0.7
+    );
+    components.push(...childComponents);
+  }
+
+  return components;
+};
+
+const generateMockComponents = (
+  engines: MockEngine[],
+  options: {
+    maxDepth?: number;
+    minChildrenPerNode?: number;
+    maxChildrenPerNode?: number;
+    topLevelAssemblies?: number[];
+    assemblyProbability?: number;
+  } = {}
+): MockComponent[] => {
+  const {
+    maxDepth = 5,
+    minChildrenPerNode = 2,
+    maxChildrenPerNode = 4,
+    topLevelAssemblies = [4, 7],
+    assemblyProbability = 0.8,
+  } = options;
+
+  const components: MockComponent[] = [];
+
+  engines.forEach((engine) => {
+    const createdAt = new Date(engine.createdAt);
+
+    const assemblyCount = randomInt(
+      topLevelAssemblies[0],
+      topLevelAssemblies[1]
+    );
+    const selectedAssemblies = [];
+    const availableAssemblies = [...COMPONENT_ASSEMBLIES];
+
+    for (let i = 0; i < assemblyCount && availableAssemblies.length > 0; i++) {
+      const index = randomInt(0, availableAssemblies.length - 1);
+      selectedAssemblies.push(availableAssemblies.splice(index, 1)[0]);
+    }
+
+    selectedAssemblies.forEach((assembly, assemblyIndex) => {
+      const treeComponents = generateComponentsRecursive(
+        {
+          engineId: engine.id,
+          parentId: null,
+          parentName: assembly.name,
+          level: 0,
+          orderIndex: assemblyIndex,
+          createdAt,
+          availableParts: assembly.parts,
+        },
+        0,
+        maxDepth,
+        minChildrenPerNode,
+        maxChildrenPerNode,
+        assemblyProbability
+      );
+
+      components.push(...treeComponents);
+    });
+  });
+
+  return components;
+};
+
 const hydrateManagers = (
   departments: MockDepartment[],
   organizations: MockOrganization[],
@@ -779,6 +1179,11 @@ const generateCmsMockData = (
     organizationCount: 10,
     projectCount: 60,
     userCount: 10000,
+    bomMaxDepth: 5,
+    bomMinChildrenPerNode: 2,
+    bomMaxChildrenPerNode: 4,
+    bomTopLevelAssemblies: [4, 7],
+    bomAssemblyProbability: 0.8,
     ...options,
   };
 
@@ -810,6 +1215,14 @@ const generateCmsMockData = (
       roles,
       users,
     });
+    const engines = generateMockEngines(projects, users);
+    const components = generateMockComponents(engines, {
+      maxDepth: config.bomMaxDepth,
+      minChildrenPerNode: config.bomMinChildrenPerNode,
+      maxChildrenPerNode: config.bomMaxChildrenPerNode,
+      topLevelAssemblies: config.bomTopLevelAssemblies,
+      assemblyProbability: config.bomAssemblyProbability,
+    });
 
     hydrateManagers(departments, organizations, users);
 
@@ -823,6 +1236,8 @@ const generateCmsMockData = (
   - Project Memberships: ${projectMemberships.length}
   - Audit Logs: ${auditLogs.length}
   - Invitations: ${invitations.length}
+  - Engines: ${engines.length}
+  - Components: ${components.length}
 `);
 
     return {
@@ -835,6 +1250,8 @@ const generateCmsMockData = (
       projectMemberships,
       auditLogs,
       invitations,
+      engines,
+      components,
     };
   } catch (error) {
     // ✅ 개선: 에러 처리
@@ -861,3 +1278,144 @@ export const mockRoles = cmsMockData.roles;
 export const mockProjectMemberships = cmsMockData.projectMemberships;
 export const mockAuditLogs = cmsMockData.auditLogs;
 export const mockInvitations = cmsMockData.invitations;
+export const mockEngines = cmsMockData.engines;
+export const mockComponents = cmsMockData.components;
+
+// ============================================
+// Utility Functions for Tree Structure
+// ============================================
+
+/**
+ * 특정 엔진의 모든 컴포넌트를 트리 구조로 변환
+ */
+export const buildComponentTree = (
+  engineId: string,
+  components: MockComponent[]
+) => {
+  type TreeNode = MockComponent & { children: TreeNode[] };
+
+  const engineComponents = components.filter((c) => c.engineId === engineId);
+  const map = new Map<string, TreeNode>(
+    engineComponents.map((c) => [c.id, { ...c, children: [] }])
+  );
+  const roots: TreeNode[] = [];
+
+  engineComponents.forEach((component) => {
+    const node = map.get(component.id)!;
+    if (component.parentId === null) {
+      roots.push(node);
+    } else {
+      const parent = map.get(component.parentId);
+      if (parent) parent.children.push(node);
+    }
+  });
+
+  const sortChildren = (nodes: TreeNode[]): void => {
+    nodes.sort((a, b) => a.orderIndex - b.orderIndex);
+    nodes.forEach((node) => {
+      if (node.children.length > 0) {
+        sortChildren(node.children);
+      }
+    });
+  };
+
+  sortChildren(roots);
+  return roots;
+};
+
+/**
+ * 프로젝트의 모든 엔진과 컴포넌트 요약 정보
+ */
+export const getProjectEnginesSummary = (
+  projectId: string,
+  engines: MockEngine[],
+  components: MockComponent[]
+) => {
+  const projectEngines = engines.filter((e) => e.projectId === projectId);
+
+  return projectEngines.map((engine) => {
+    const engineComponents = components.filter((c) => c.engineId === engine.id);
+    const assemblies = engineComponents.filter(
+      (c) => c.type === "assembly" && c.level === 0
+    );
+    const totalParts = engineComponents.filter((c) => c.type === "part");
+    const totalCost = engineComponents.reduce(
+      (sum, c) => sum + c.cost * c.quantity,
+      0
+    );
+    const maxDepth = Math.max(...engineComponents.map((c) => c.level), 0);
+
+    return {
+      engine,
+      assembliesCount: assemblies.length,
+      totalPartsCount: totalParts.length,
+      totalComponentsCount: engineComponents.length,
+      estimatedTotalCost: totalCost,
+      maxTreeDepth: maxDepth + 1,
+    };
+  });
+};
+
+/**
+ * 컴포넌트 트리의 최대 깊이 계산
+ */
+export const getComponentTreeDepth = (
+  engineId: string,
+  components: MockComponent[]
+): number => {
+  const engineComponents = components.filter((c) => c.engineId === engineId);
+  if (engineComponents.length === 0) return 0;
+  return Math.max(...engineComponents.map((c) => c.level)) + 1;
+};
+
+/**
+ * 특정 레벨의 모든 컴포넌트 가져오기
+ */
+export const getComponentsByLevel = (
+  engineId: string,
+  level: number,
+  components: MockComponent[]
+): MockComponent[] => {
+  return components.filter((c) => c.engineId === engineId && c.level === level);
+};
+
+/**
+ * 컴포넌트의 전체 경로 가져오기 (루트부터 해당 컴포넌트까지)
+ */
+export const getComponentPath = (
+  componentId: string,
+  components: MockComponent[]
+): MockComponent[] => {
+  const component = components.find((c) => c.id === componentId);
+  if (!component) return [];
+
+  const path: MockComponent[] = [component];
+  let current = component;
+
+  while (current.parentId) {
+    const parent = components.find((c) => c.id === current.parentId);
+    if (!parent) break;
+    path.unshift(parent);
+    current = parent;
+  }
+
+  return path;
+};
+
+/**
+ * 컴포넌트의 모든 자식 (재귀적으로) 가져오기
+ */
+export const getComponentDescendants = (
+  componentId: string,
+  components: MockComponent[]
+): MockComponent[] => {
+  const descendants: MockComponent[] = [];
+  const children = components.filter((c) => c.parentId === componentId);
+
+  children.forEach((child) => {
+    descendants.push(child);
+    descendants.push(...getComponentDescendants(child.id, components));
+  });
+
+  return descendants;
+};
