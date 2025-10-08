@@ -143,41 +143,557 @@ try {
 
 ---
 
+## 📚 함수별 상세 사용법
+
+### 1. `buildComponentTree(engineId, components)`
+
+**목적:** 특정 엔진의 모든 컴포넌트를 계층적 트리 구조로 변환
+
+**파라미터:**
+
+- `engineId: string` - 엔진 ID
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** `TreeNode[]` (children 속성을 포함한 트리 노드 배열)
+
+**사용 예시:**
+
+```typescript
+import {
+  mockEngines,
+  mockComponents,
+  buildComponentTree,
+} from "@/services/api";
+
+// 첫 번째 엔진의 트리 구조 생성
+const engineId = mockEngines[0].id;
+const tree = buildComponentTree(engineId, mockComponents);
+
+// 트리 구조 출력
+console.log(tree);
+// [
+//   {
+//     id: 'comp_abc123',
+//     name: '동력 전달 시스템',
+//     type: 'assembly',
+//     level: 0,
+//     children: [
+//       {
+//         id: 'comp_def456',
+//         name: '변속기',
+//         type: 'part',
+//         level: 1,
+//         children: []
+//       },
+//       // ... 더 많은 자식 노드
+//     ]
+//   }
+// ]
+
+// React 컴포넌트에서 렌더링
+function BOMTree({ engineId }: { engineId: string }) {
+  const tree = buildComponentTree(engineId, mockComponents);
+
+  return (
+    <ul>
+      {tree.map((node) => (
+        <TreeNode key={node.id} node={node} />
+      ))}
+    </ul>
+  );
+}
+```
+
+---
+
+### 2. `getProjectEnginesSummary(projectId, engines, components)`
+
+**목적:** 프로젝트의 모든 엔진과 BOM 요약 정보 조회
+
+**파라미터:**
+
+- `projectId: string` - 프로젝트 ID
+- `engines: MockEngine[]` - 전체 엔진 배열
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** 엔진별 요약 정보 배열
+
+```typescript
+Array<{
+  engine: MockEngine;
+  assembliesCount: number; // 최상위 어셈블리 개수
+  totalPartsCount: number; // 전체 부품 개수
+  totalComponentsCount: number; // 전체 컴포넌트 개수
+  estimatedTotalCost: number; // 총 예상 비용
+  maxTreeDepth: number; // 최대 트리 깊이
+}>;
+```
+
+**사용 예시:**
+
+```typescript
+import {
+  mockProjects,
+  mockEngines,
+  mockComponents,
+  getProjectEnginesSummary,
+} from "@/services/api";
+
+const projectId = mockProjects[0].id;
+const summary = getProjectEnginesSummary(
+  projectId,
+  mockEngines,
+  mockComponents
+);
+
+console.log(summary);
+// [
+//   {
+//     engine: { id: 'eng_123', name: '전기 모터 A형', ... },
+//     assembliesCount: 6,
+//     totalPartsCount: 142,
+//     totalComponentsCount: 148,
+//     estimatedTotalCost: 8750000,
+//     maxTreeDepth: 5
+//   },
+//   { ... }
+// ]
+
+// 대시보드에서 표시
+function ProjectDashboard({ projectId }: { projectId: string }) {
+  const summary = getProjectEnginesSummary(
+    projectId,
+    mockEngines,
+    mockComponents
+  );
+
+  return (
+    <div>
+      <h2>프로젝트 BOM 요약</h2>
+      {summary.map(
+        ({ engine, assembliesCount, totalPartsCount, estimatedTotalCost }) => (
+          <Card key={engine.id}>
+            <h3>{engine.name}</h3>
+            <p>어셈블리: {assembliesCount}개</p>
+            <p>부품: {totalPartsCount}개</p>
+            <p>예상 비용: ₩{estimatedTotalCost.toLocaleString()}</p>
+          </Card>
+        )
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### 3. `getComponentTreeDepth(engineId, components)`
+
+**목적:** 특정 엔진의 BOM 트리 최대 깊이 계산
+
+**파라미터:**
+
+- `engineId: string` - 엔진 ID
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** `number` (트리 깊이, 루트는 1)
+
+**사용 예시:**
+
+```typescript
+import {
+  mockEngines,
+  mockComponents,
+  getComponentTreeDepth,
+} from "@/services/api";
+
+const engineId = mockEngines[0].id;
+const depth = getComponentTreeDepth(engineId, mockComponents);
+
+console.log(`BOM 트리 깊이: ${depth}`); // BOM 트리 깊이: 5
+
+// 복잡도에 따라 시각화 방식 변경
+function BOMVisualization({ engineId }: { engineId: string }) {
+  const depth = getComponentTreeDepth(engineId, mockComponents);
+
+  if (depth > 7) {
+    return <SimplifiedView engineId={engineId} />;
+  } else if (depth > 4) {
+    return <CollapsibleTreeView engineId={engineId} />;
+  } else {
+    return <FullTreeView engineId={engineId} />;
+  }
+}
+```
+
+---
+
+### 4. `getComponentsByLevel(engineId, level, components)`
+
+**목적:** 특정 레벨의 모든 컴포넌트 조회
+
+**파라미터:**
+
+- `engineId: string` - 엔진 ID
+- `level: number` - 트리 레벨 (0: 최상위)
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** `MockComponent[]` (해당 레벨의 컴포넌트 배열)
+
+**사용 예시:**
+
+```typescript
+import {
+  mockEngines,
+  mockComponents,
+  getComponentsByLevel,
+} from "@/services/api";
+
+const engineId = mockEngines[0].id;
+
+// 최상위 어셈블리 (Level 0)
+const topAssemblies = getComponentsByLevel(engineId, 0, mockComponents);
+console.log(`최상위 어셈블리: ${topAssemblies.length}개`);
+
+// Level 2 컴포넌트
+const level2 = getComponentsByLevel(engineId, 2, mockComponents);
+console.log(`Level 2 컴포넌트: ${level2.length}개`);
+
+// 레벨별 통계 생성
+function BOMStatistics({ engineId }: { engineId: string }) {
+  const maxDepth = getComponentTreeDepth(engineId, mockComponents);
+  const levelStats = Array.from({ length: maxDepth }, (_, level) => ({
+    level,
+    count: getComponentsByLevel(engineId, level, mockComponents).length,
+  }));
+
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>레벨</th>
+          <th>컴포넌트 수</th>
+        </tr>
+      </thead>
+      <tbody>
+        {levelStats.map(({ level, count }) => (
+          <tr key={level}>
+            <td>Level {level}</td>
+            <td>{count}개</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+---
+
+### 5. `getComponentPath(componentId, components)`
+
+**목적:** 루트부터 특정 컴포넌트까지의 전체 경로 추적
+
+**파라미터:**
+
+- `componentId: string` - 컴포넌트 ID
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** `MockComponent[]` (루트부터 해당 컴포넌트까지의 경로)
+
+**사용 예시:**
+
+```typescript
+import { mockComponents, getComponentPath } from "@/services/api";
+
+// 특정 부품의 전체 경로 조회
+const componentId = "comp_xyz789";
+const path = getComponentPath(componentId, mockComponents);
+
+console.log("컴포넌트 경로:");
+path.forEach((comp, idx) => {
+  console.log(`  ${"  ".repeat(idx)}└─ ${comp.name} (${comp.code})`);
+});
+// 출력:
+// └─ 동력 전달 시스템 (ASM-123-1)
+//   └─ 변속기 서브어셈블리 1 (SUB-456-1-0)
+//     └─ 클러치 (PRT-78901)
+
+// Breadcrumb 네비게이션
+function ComponentBreadcrumb({ componentId }: { componentId: string }) {
+  const path = getComponentPath(componentId, mockComponents);
+
+  return (
+    <nav>
+      {path.map((comp, idx) => (
+        <span key={comp.id}>
+          <a href={`/component/${comp.id}`}>{comp.name}</a>
+          {idx < path.length - 1 && " > "}
+        </span>
+      ))}
+    </nav>
+  );
+}
+```
+
+---
+
+### 6. `getComponentDescendants(componentId, components)`
+
+**목적:** 특정 컴포넌트의 모든 하위 컴포넌트 조회 (재귀)
+
+**파라미터:**
+
+- `componentId: string` - 컴포넌트 ID
+- `components: MockComponent[]` - 전체 컴포넌트 배열
+
+**반환값:** `MockComponent[]` (모든 자손 컴포넌트)
+
+**사용 예시:**
+
+```typescript
+import { mockComponents, getComponentDescendants } from "@/services/api";
+
+const assemblyId = "comp_abc123";
+const descendants = getComponentDescendants(assemblyId, mockComponents);
+
+console.log(`총 하위 컴포넌트: ${descendants.length}개`);
+
+// 타입별 분류
+const parts = descendants.filter((c) => c.type === "part");
+const assemblies = descendants.filter((c) => c.type === "assembly");
+
+console.log(`  - 부품: ${parts.length}개`);
+console.log(`  - 어셈블리: ${assemblies.length}개`);
+
+// 총 비용 계산
+const totalCost = descendants.reduce((sum, c) => sum + c.cost * c.quantity, 0);
+console.log(`총 비용: ₩${totalCost.toLocaleString()}`);
+
+// 컴포넌트 삭제 시 영향도 분석
+function DeleteConfirmation({ componentId }: { componentId: string }) {
+  const component = mockComponents.find((c) => c.id === componentId);
+  const descendants = getComponentDescendants(componentId, mockComponents);
+
+  return (
+    <Dialog>
+      <h3>⚠️ 삭제 확인</h3>
+      <p>
+        <strong>{component?.name}</strong>을(를) 삭제하시겠습니까?
+      </p>
+      <p>
+        이 작업은 <strong>{descendants.length}개</strong>의 하위 컴포넌트도 함께
+        삭제합니다.
+      </p>
+      <Button variant="danger">삭제</Button>
+      <Button variant="outline">취소</Button>
+    </Dialog>
+  );
+}
+```
+
+---
+
+### 7. `generateCmsMockData(options?)`
+
+**목적:** CMS Mock 데이터 생성 (모든 엔티티 포함)
+
+**파라미터:**
+
+```typescript
+options?: Partial<{
+  organizationCount: number;        // 조직 개수 (기본: 10)
+  projectCount: number;             // 프로젝트 개수 (기본: 60)
+  userCount: number;                // 사용자 개수 (기본: 10000)
+  bomMaxDepth: number;              // BOM 최대 깊이 (기본: 5)
+  bomMinChildrenPerNode: number;    // 최소 자식 노드 (기본: 2)
+  bomMaxChildrenPerNode: number;    // 최대 자식 노드 (기본: 4)
+  bomTopLevelAssemblies: number[];  // 최상위 어셈블리 범위 (기본: [4, 7])
+  bomAssemblyProbability: number;   // 어셈블리 확률 (기본: 0.8)
+}>
+```
+
+**반환값:** `CmsMockData` (모든 엔티티 포함)
+
+**사용 예시:**
+
+```typescript
+import { generateCmsMockData } from "@/services/api/mockLargeDataV2";
+
+// 기본 설정으로 생성
+const data = generateCmsMockData();
+console.log(data.users.length); // 10000
+console.log(data.engines.length); // 약 90개 (프로젝트당 1-3개)
+console.log(data.components.length); // 수천 개
+
+// 소규모 테스트 데이터
+const testData = generateCmsMockData({
+  organizationCount: 3,
+  projectCount: 10,
+  userCount: 100,
+  bomMaxDepth: 3,
+  bomMinChildrenPerNode: 1,
+  bomMaxChildrenPerNode: 2,
+});
+
+// 대용량 프로덕션 데이터
+const productionData = generateCmsMockData({
+  organizationCount: 50,
+  projectCount: 500,
+  userCount: 100000,
+  bomMaxDepth: 4, // 성능 고려
+  bomMinChildrenPerNode: 2,
+  bomMaxChildrenPerNode: 3,
+});
+
+// 복잡한 BOM 구조 생성
+const complexBOM = generateCmsMockData({
+  bomMaxDepth: 7,
+  bomMinChildrenPerNode: 3,
+  bomMaxChildrenPerNode: 6,
+  bomTopLevelAssemblies: [6, 8], // 최상위 어셈블리 6-8개
+  bomAssemblyProbability: 0.9, // 90% 확률로 어셈블리 (더 많은 계층)
+});
+```
+
+---
+
+## 🎯 실전 활용 예시
+
+### 예시 1: BOM 뷰어 컴포넌트
+
+```typescript
+import {
+  mockEngines,
+  mockComponents,
+  buildComponentTree,
+  getComponentTreeDepth,
+} from "@/services/api";
+
+function BOMViewer({ engineId }: { engineId: string }) {
+  const tree = buildComponentTree(engineId, mockComponents);
+  const depth = getComponentTreeDepth(engineId, mockComponents);
+
+  return (
+    <div>
+      <h2>BOM 구조 (깊이: {depth})</h2>
+      <TreeView nodes={tree} />
+    </div>
+  );
+}
+
+function TreeView({ nodes }: { nodes: TreeNode[] }) {
+  return (
+    <ul>
+      {nodes.map((node) => (
+        <li key={node.id}>
+          <span>
+            {node.type === "assembly" ? "📦" : "🔩"} {node.name} - ₩
+            {node.cost.toLocaleString()}
+          </span>
+          {node.children.length > 0 && <TreeView nodes={node.children} />}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### 예시 2: 프로젝트 대시보드
+
+```typescript
+import {
+  mockProjects,
+  mockEngines,
+  mockComponents,
+  getProjectEnginesSummary,
+} from "@/services/api";
+
+function ProjectDashboard() {
+  return (
+    <div>
+      {mockProjects.slice(0, 10).map((project) => {
+        const summary = getProjectEnginesSummary(
+          project.id,
+          mockEngines,
+          mockComponents
+        );
+
+        const totalCost = summary.reduce(
+          (sum, s) => sum + s.estimatedTotalCost,
+          0
+        );
+        const totalParts = summary.reduce(
+          (sum, s) => sum + s.totalPartsCount,
+          0
+        );
+
+        return (
+          <Card key={project.id}>
+            <h3>{project.name}</h3>
+            <p>엔진: {summary.length}개</p>
+            <p>총 부품: {totalParts}개</p>
+            <p>예상 비용: ₩{totalCost.toLocaleString()}</p>
+            <p>예산: ₩{project.budget.toLocaleString()}</p>
+            <p>예산 대비: {((totalCost / project.budget) * 100).toFixed(1)}%</p>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+### 예시 3: 컴포넌트 검색
+
+```typescript
+import {
+  mockComponents,
+  getComponentPath,
+  getComponentDescendants,
+} from "@/services/api";
+
+function ComponentSearch({ searchTerm }: { searchTerm: string }) {
+  const results = mockComponents.filter(
+    (c) =>
+      c.name.includes(searchTerm) ||
+      c.code.includes(searchTerm) ||
+      c.supplier.includes(searchTerm)
+  );
+
+  return (
+    <div>
+      <h3>검색 결과: {results.length}개</h3>
+      {results.map((component) => {
+        const path = getComponentPath(component.id, mockComponents);
+        const descendants =
+          component.type === "assembly"
+            ? getComponentDescendants(component.id, mockComponents)
+            : [];
+
+        return (
+          <Card key={component.id}>
+            <h4>
+              {component.type === "assembly" ? "📦" : "🔩"} {component.name}
+            </h4>
+            <p>코드: {component.code}</p>
+            <p>공급업체: {component.supplier}</p>
+            <p>비용: ₩{component.cost.toLocaleString()}</p>
+            <p>경로: {path.map((p) => p.name).join(" > ")}</p>
+            {descendants.length > 0 && (
+              <p>하위 컴포넌트: {descendants.length}개</p>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+---
+
 ## 추가 유틸리티 함수
-
-### 컴포넌트 트리 조작
-
-```typescript
-// 트리 구조 변환
-const tree = buildComponentTree(engineId, components);
-
-// 트리 깊이 계산
-const depth = getComponentTreeDepth(engineId, components);
-
-// 특정 레벨 컴포넌트 조회
-const level2Components = getComponentsByLevel(engineId, 2, components);
-
-// 컴포넌트 경로 추적
-const path = getComponentPath(componentId, components);
-
-// 모든 자식 조회 (재귀)
-const descendants = getComponentDescendants(componentId, components);
-```
-
-### 프로젝트 요약 정보
-
-```typescript
-const summary = getProjectEnginesSummary(projectId, engines, components);
-// Returns:
-// [{
-//     engine: {...},
-//     assembliesCount: 8,
-//     totalPartsCount: 245,
-//     totalComponentsCount: 253,
-//     estimatedTotalCost: 12500000,
-//     maxTreeDepth: 6
-// }]
-```
 
 ---
 
