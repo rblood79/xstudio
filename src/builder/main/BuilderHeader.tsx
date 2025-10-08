@@ -10,7 +10,14 @@ import {
   Smartphone,
   Asterisk,
 } from "lucide-react";
-import { RadioGroup, Radio, Key, Label } from "react-aria-components";
+import {
+  RadioGroup,
+  Radio,
+  Key,
+  Label,
+  Switch,
+  Button,
+} from "react-aria-components";
 import { iconProps } from "../../utils/uiConstants";
 
 export interface Breakpoint {
@@ -126,6 +133,11 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             </Radio>
           ))}
         </RadioGroup>
+        <Switch id="realtime-mode">
+          <div className="indicator" />
+          Auto
+        </Switch>
+        <Button id="save-button">Save</Button>
       </div>
 
       <div className="header_contents header_right">
