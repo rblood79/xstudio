@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from "react";
 import { useParams } from "react-router";
 import { useStore } from "../stores";
+import { saveService } from "../../services/save";
 import { ElementProps } from "../../types/supabase";
 //import { supabase } from '../../env/supabase.client'; // 추가된 import
 import styles from "./index.module.css";
@@ -400,12 +401,30 @@ function Preview() {
           isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
-          onChange={(isSelected) => {
+          onChange={async (isSelected) => {
+            console.log("🔲 Preview Checkbox 변경:", {
+              elementId: el.id,
+              isSelected,
+              props: el.props,
+            });
             const updatedProps = {
               ...el.props,
               isSelected: Boolean(isSelected),
             };
+
+            // 1. Store 업데이트
             updateElementProps(el.id, updatedProps);
+
+            // 2. SaveService 호출 (store 외부에서 호출하여 인스턴스 불일치 방지)
+            try {
+              await saveService.savePropertyChange({
+                table: "elements",
+                id: el.id,
+                data: { props: updatedProps },
+              });
+            } catch (error) {
+              console.warn("⚠️ Preview Checkbox 저장 실패:", error);
+            }
           }}
         >
           {typeof el.props.children === "string" ? el.props.children : null}
@@ -1918,15 +1937,31 @@ function Preview() {
             )
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
             .map((groupEl) => {
-              const props = groupEl.props as any;
+              const props = groupEl.props as ElementProps;
+
+              // ColumnGroupDefinition 타입에 맞게 변환
+              const alignValue = String(props?.align || "center");
+              const align: "left" | "center" | "right" =
+                alignValue === "left" ||
+                alignValue === "center" ||
+                alignValue === "right"
+                  ? alignValue
+                  : "center";
+
+              const variantValue = String(props?.variant || "default");
+              const variant: "default" | "primary" | "secondary" =
+                variantValue === "primary" || variantValue === "secondary"
+                  ? variantValue
+                  : "default";
+
               return {
                 id: groupEl.id,
-                label: props?.label || "Group",
-                span: props?.span || 2,
-                order_num: groupEl.order_num, // order_num 추가
-                align: props?.align || "center",
-                variant: props?.variant || "default",
-                sticky: props?.sticky || false,
+                label: String(props?.label || "Group"),
+                span: Number(props?.span || 2),
+                order_num: groupEl.order_num,
+                align,
+                variant,
+                sticky: Boolean(props?.sticky || false),
               };
             })
         : [];

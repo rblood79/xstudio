@@ -624,6 +624,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
     const element = findElementById(state.elements, elementId);
     if (!element) return;
 
+    console.log("🔧 updateElementProps 호출:", {
+      elementId,
+      elementTag: element.tag,
+      변경props: props,
+      호출위치: new Error().stack?.split("\n")[2]?.trim(),
+    });
+
     // 1. 메모리 상태 업데이트 (우선)
     set(
       produce((state: ElementsState) => {
@@ -661,28 +668,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
-    // 3. 데이터베이스 업데이트 (비동기, 실패해도 메모리는 유지)
-    try {
-      const { error } = await supabase
-        .from("elements")
-        .update({ props: { ...element.props, ...props } })
-        .eq("id", elementId);
+    // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
-      if (error) {
-        if (error.code === "23503") {
-          console.warn(
-            "⚠️ 외래키 제약조건으로 인한 업데이트 실패 (메모리는 정상):",
-            error.message
-          );
-        } else {
-          console.warn("⚠️ 데이터베이스 업데이트 실패 (메모리는 정상):", error);
-        }
-      } else {
-        console.log("✅ 데이터베이스에서 요소 업데이트 완료:", elementId);
-      }
-    } catch (error) {
-      console.warn("⚠️ 데이터베이스 업데이트 중 오류 (메모리는 정상):", error);
-    }
+    // 3. SaveService는 외부(Preview, PropertyPanel 등)에서 호출하도록 변경
+    // 이유: store slice 내부에서 동적 import 사용 시 store 인스턴스 불일치 발생
   },
 
   updateElement: async (elementId, updates) => {
@@ -716,39 +705,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       })
     );
 
-    // 2. 데이터베이스 업데이트
-    try {
-      const updateData: Record<string, unknown> = {};
-      if (updates.props !== undefined) updateData.props = updates.props;
-      if (updates.dataBinding !== undefined)
-        updateData.data_binding = updates.dataBinding; // snake_case로 변환
-      if (updates.tag !== undefined) updateData.tag = updates.tag;
-
-      console.log("📤 DB 업데이트 데이터:", updateData);
-
-      const { error } = await supabase
-        .from("elements")
-        .update(updateData)
-        .eq("id", elementId);
-
-      if (error) {
-        console.error("⚠️ 데이터베이스 업데이트 실패 (메모리는 정상):", {
-          error,
-          errorMessage: error.message,
-          errorDetails: error.details,
-          errorHint: error.hint,
-          updateData,
-        });
-      } else {
-        console.log(
-          "✅ Element 데이터베이스 업데이트 완료:",
-          elementId,
-          updateData
-        );
-      }
-    } catch (error) {
-      console.warn("⚠️ 데이터베이스 업데이트 중 오류 (메모리는 정상):", error);
-    }
+    // 2. SaveService를 통한 저장 (실시간/수동 모드 확인)
+    // useSyncWithBuilder에서 이미 saveService를 호출하므로 여기서는 중복 저장 방지
+    // 주석 처리: saveService가 useSyncWithBuilder에서 관리
   },
 
   setSelectedElement: (elementId, props) =>
