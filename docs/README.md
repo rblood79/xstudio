@@ -23,6 +23,7 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 ### 실시간 저장 모드
 
 - [REALTIME_SAVE_MODE_IMPLEMENTATION.md](./features/REALTIME_SAVE_MODE_IMPLEMENTATION.md) - 실시간 저장 모드 구현
+- [SAVESERVICE_REFACTORING.md](./features/SAVESERVICE_REFACTORING.md) - SaveService 리팩토링 (서비스 레이어 구조 개선)
 - [SAVE_MODE_BEHAVIOR.md](./features/SAVE_MODE_BEHAVIOR.md) - 저장 모드 동작 방식
 - [REALTIME_SAVE_BUG_FIX.md](./features/REALTIME_SAVE_BUG_FIX.md) - 실시간 저장 버그 수정
 
@@ -34,6 +35,7 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 ### Preview
 
 - [PREVIEW_CHECKBOX_BEHAVIOR.md](./features/PREVIEW_CHECKBOX_BEHAVIOR.md) - Preview Checkbox 동작 방식
+- [PREVIEW_STATE_RESET_BUG.md](./features/PREVIEW_STATE_RESET_BUG.md) - Preview 상태 컴포넌트 리셋 버그 수정 ✅
 
 ---
 

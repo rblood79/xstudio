@@ -15,7 +15,10 @@
 
 ### 2️⃣ **SaveService 싱글톤 클래스 생성**
 
-- **파일**: `src/builder/services/saveService.ts` (신규 생성)
+> **📦 리팩토링**: `src/builder/services/` → `src/services/save/`로 이동됨 (2025-10-09)  
+> 자세한 내용은 [SaveService 리팩토링](./SAVESERVICE_REFACTORING.md) 참고
+
+- **파일**: `src/services/save/saveService.ts` (신규 생성)
 - **기능**:
   - `savePropertyChange()`: 속성 변경 저장 (실시간 모드 확인)
     - 실시간 모드 ON: 즉시 Supabase 저장
@@ -87,17 +90,25 @@
 
 ## 📁 수정/생성된 파일 목록
 
-### 신규 생성 (2개)
+### 신규 생성 (4개)
 
 1. `src/builder/stores/saveMode.ts` - SaveMode Zustand Slice
-2. `src/builder/services/saveService.ts` - SaveService 싱글톤 클래스
+2. `src/services/save/saveService.ts` - SaveService 싱글톤 클래스 (**리팩토링**: `src/builder/services/` → `src/services/save/`로 이동)
+3. `src/services/save/index.ts` - SaveService export 관리
+4. `src/services/index.ts` - 전체 서비스 레이어 통합 export
 
 ### 수정 (4개)
 
 1. `src/builder/stores/index.ts` - SaveMode Slice 통합
-2. `src/builder/main/BuilderHeader.tsx` - Switch/Save 버튼 UI 추가
+2. `src/builder/main/BuilderHeader.tsx` - Switch/Save 버튼 UI 추가 (import: `"../../services/save"`)
 3. `src/builder/main/index.css` - Switch/Save 버튼 스타일 추가
 4. `src/builder/inspector/hooks/useSyncWithBuilder.ts` - SaveService 통합
+
+### 리팩토링 (2025-10-09)
+
+- `src/builder/services/` → `src/services/save/`로 이동
+- 모든 import 경로 업데이트 완료
+- 자세한 내용: [SaveService 리팩토링](./SAVESERVICE_REFACTORING.md)
 
 ---
 

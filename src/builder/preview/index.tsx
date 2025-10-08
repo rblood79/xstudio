@@ -293,6 +293,8 @@ function Preview() {
     // };
 
     // ToggleButtonGroup 컴포넌트 특별 처리
+    // ToggleButtonGroup 컴포넌트 특별 처리
+    // ⚠️ defaultSelectedKeys로 uncontrolled 방식 사용
     if (el.tag === "ToggleButtonGroup") {
       const orientation = el.props.orientation as "horizontal" | "vertical";
 
@@ -311,8 +313,9 @@ function Preview() {
           className={el.props.className}
           orientation={orientation}
           selectionMode={el.props.selectionMode as "single" | "multiple"}
-          // ... existing code ...
-          selectedKeys={Array.isArray(el.props.value) ? el.props.value : []}
+          defaultSelectedKeys={
+            Array.isArray(el.props.value) ? el.props.value : []
+          }
           onSelectionChange={async (selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -391,12 +394,13 @@ function Preview() {
     }
 
     // Checkbox 컴포넌트 특별 처리
+    // ⚠️ defaultSelected로 uncontrolled 방식 사용 (iframe 재전송 시 상태 유지)
     if (el.tag === "Checkbox") {
       return (
         <Checkbox
           key={el.id}
           data-element-id={el.id}
-          isSelected={Boolean(el.props.isSelected)}
+          defaultSelected={Boolean(el.props.isSelected)}
           isIndeterminate={Boolean(el.props.isIndeterminate)}
           isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
@@ -490,6 +494,8 @@ function Preview() {
 
     // Input 컴포넌트 렌더링 수정
 
+    // Input 컴포넌트 특별 처리
+    // ⚠️ defaultValue로 uncontrolled 방식 사용
     if (el.tag === "Input") {
       return (
         <Input
@@ -508,7 +514,7 @@ function Preview() {
               | "number") || "text"
           }
           placeholder={String(el.props.placeholder || "")} // placeholder 추가
-          value={String(el.props.value || "")}
+          defaultValue={String(el.props.value || "")}
           disabled={Boolean(el.props.isDisabled || false)}
           readOnly={Boolean(el.props.isReadOnly || false)}
           onChange={(value) => {
@@ -623,6 +629,8 @@ function Preview() {
     }
 
     // RadioGroup 컴포넌트 특별 처리
+    // RadioGroup 컴포넌트 특별 처리
+    // ⚠️ defaultValue로 uncontrolled 방식 사용
     if (el.tag === "RadioGroup") {
       // 실제 Radio 자식 요소들을 찾기
       const radioChildren = elements
@@ -636,7 +644,7 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           label={String(el.props.label || "")}
-          value={String(el.props.value || "")}
+          defaultValue={String(el.props.value || "")}
           orientation={
             (el.props.orientation as "horizontal" | "vertical") || "vertical"
           }
@@ -666,22 +674,8 @@ function Preview() {
     }
 
     // TextField 컴포넌트 특별 처리
+    // ⚠️ defaultValue로 uncontrolled 방식 사용
     if (el.tag === "TextField") {
-      // 개발 환경에서 받은 props 확인
-      /*if (process.env.NODE_ENV === 'development') {
-        console.log('Preview TextField props:', {
-          id: el.id,
-          label: el.props.label,
-          placeholder: el.props.placeholder,
-          description: el.props.description,
-          type: el.props.type,
-          value: el.props.value,
-          isRequired: el.props.isRequired,
-          isDisabled: el.props.isDisabled,
-          isReadOnly: el.props.isReadOnly
-        });
-      }*/
-
       return (
         <TextField
           key={el.id}
@@ -702,8 +696,7 @@ function Preview() {
               | "url"
               | "number") || "text"
           }
-          value={String(el.props.value || "")} // value만 사용
-          // defaultValue 제거
+          defaultValue={String(el.props.value || "")}
           isDisabled={Boolean(el.props.isDisabled || false)}
           isRequired={Boolean(el.props.isRequired || false)}
           isReadOnly={Boolean(el.props.isReadOnly || false)}
@@ -760,6 +753,8 @@ function Preview() {
     }
 
     // GridList 컴포넌트 특별 처리
+    // GridList 컴포넌트 특별 처리
+    // ⚠️ defaultSelectedKeys로 uncontrolled 방식 사용
     if (el.tag === "GridList") {
       // 실제 GridListItem 자식 요소들을 찾기
       const gridListChildren = elements
@@ -777,13 +772,11 @@ function Preview() {
           selectionMode={
             (el.props.selectionMode as "none" | "single" | "multiple") || "none"
           }
-          // ... existing code ...
-          selectedKeys={
+          defaultSelectedKeys={
             Array.isArray(el.props.selectedKeys)
               ? (el.props.selectedKeys as unknown as string[])
               : []
           }
-          // ... existing code ...
           onSelectionChange={(selectedKeys) => {
             const updatedProps = {
               ...el.props,
@@ -809,6 +802,7 @@ function Preview() {
     }
 
     // ListBox 컴포넌트 특별 처리
+    // ⚠️ defaultSelectedKeys로 uncontrolled 방식 사용
     if (el.tag === "ListBox") {
       // 실제 ListBoxItem 자식 요소들을 찾기
       const listBoxChildren = elements
@@ -829,7 +823,7 @@ function Preview() {
           selectionMode={
             (el.props.selectionMode as "none" | "single" | "multiple") || "none"
           }
-          selectedKeys={
+          defaultSelectedKeys={
             Array.isArray(el.props.selectedKeys)
               ? (el.props.selectedKeys as unknown as string[])
               : []
@@ -860,6 +854,8 @@ function Preview() {
     }
 
     // Select 컴포넌트 특별 처리
+    // Select 컴포넌트 특별 처리
+    // ⚠️ defaultSelectedKey로 uncontrolled 방식 사용
     if (el.tag === "Select") {
       const selectItemChildren = elements
         .filter(
@@ -878,7 +874,6 @@ function Preview() {
 
       // selectedKey 상태 확인
       const currentSelectedKey = elementProps.selectedKey;
-      //const hasSelection = currentSelectedKey && currentSelectedKey !== '' && currentSelectedKey !== 'undefined';
 
       // 접근성을 위한 aria-label 설정
       const ariaLabel = processedLabel
@@ -886,15 +881,6 @@ function Preview() {
         : elementProps["aria-label"] ||
           processedPlaceholder ||
           `Select ${el.id}`;
-
-      /*console.log('Select 렌더링 (개선된):', {
-        id: el.id,
-        label: processedLabel,
-        placeholder: processedPlaceholder,
-        selectedKey: currentSelectedKey,
-        hasSelection,
-        shouldShowPlaceholder: !hasSelection
-      });*/
 
       return (
         <Select
@@ -915,10 +901,9 @@ function Preview() {
           }
           placeholder={processedPlaceholder} // 항상 placeholder 전달
           aria-label={ariaLabel}
-          selectedKey={
+          defaultSelectedKey={
             currentSelectedKey ? String(currentSelectedKey) : undefined
-          } // 빈 문자열 대신 undefined 사용
-          defaultSelectedKey={String(elementProps.defaultSelectedKey || "")}
+          }
           isDisabled={Boolean(elementProps.isDisabled)}
           isRequired={Boolean(elementProps.isRequired)}
           autoFocus={Boolean(elementProps.autoFocus)}
@@ -999,6 +984,8 @@ function Preview() {
     }
 
     // ComboBox 컴포넌트 특별 처리
+    // ComboBox 컴포넌트 특별 처리
+    // ⚠️ defaultSelectedKey, defaultInputValue로 uncontrolled 방식 사용
     if (el.tag === "ComboBox") {
       // 실제 ComboBoxItem 자식 요소들을 찾기
       const comboBoxItemChildren = elements
@@ -1019,12 +1006,12 @@ function Preview() {
           placeholder={String(el.props.placeholder || "")}
           {...(el.props.selectedKey || el.props.selectedValue
             ? {
-                selectedKey: String(
+                defaultSelectedKey: String(
                   el.props.selectedKey || el.props.selectedValue
                 ),
               }
             : {})}
-          inputValue={String(el.props.inputValue || "")}
+          defaultInputValue={String(el.props.inputValue || "")}
           allowsCustomValue={Boolean(el.props.allowsCustomValue)}
           isDisabled={Boolean(el.props.isDisabled)}
           isRequired={Boolean(el.props.isRequired)}
@@ -1169,6 +1156,8 @@ function Preview() {
     }
 
     // Slider 컴포넌트 특별 처리
+    // Slider 컴포넌트 특별 처리
+    // ⚠️ defaultValue로 uncontrolled 방식 사용
     if (el.tag === "Slider") {
       return (
         <Slider
@@ -1177,7 +1166,7 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           label={String(el.props.label || "")}
-          value={Array.isArray(el.props.value) ? el.props.value : [50]}
+          defaultValue={Array.isArray(el.props.value) ? el.props.value : [50]}
           minValue={Number(el.props.minValue) || 0}
           maxValue={Number(el.props.maxValue) || 100}
           step={Number(el.props.step) || 1}
@@ -1720,12 +1709,13 @@ function Preview() {
     }
 
     // Switch 컴포넌트 특별 처리
+    // ⚠️ defaultSelected로 uncontrolled 방식 사용 (iframe 재전송 시 상태 유지)
     if (el.tag === "Switch") {
       return (
         <Switch
           key={el.id}
           data-element-id={el.id}
-          isSelected={Boolean(el.props.isSelected)}
+          defaultSelected={Boolean(el.props.isSelected)}
           isDisabled={Boolean(el.props.isDisabled)}
           style={el.props.style}
           className={el.props.className}
