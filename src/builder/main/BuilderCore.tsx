@@ -187,6 +187,12 @@ export const BuilderCore: React.FC = () => {
   }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
 
   // 프로젝트 초기화 후 프리뷰에 요소 전송 (중복 전송 방지)
+  // ⚠️ 최적화: elements 배열 전체가 아닌 구조 변경만 감지 (선택 변경 시 재전송 방지)
+  const elementStructure = React.useMemo(
+    () => elements.map((el) => `${el.id}:${el.tag}:${el.parent_id}`).join(","),
+    [elements]
+  );
+
   useEffect(() => {
     if (projectId && elements.length > 0 && iframeReadyState === "ready") {
       // 중복 전송 방지를 위한 디바운싱
@@ -201,7 +207,8 @@ export const BuilderCore: React.FC = () => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [projectId, elements, iframeReadyState, sendElementsToIframe]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, elementStructure, iframeReadyState, sendElementsToIframe]);
 
   // 테마 토큰 적용
   useEffect(() => {
