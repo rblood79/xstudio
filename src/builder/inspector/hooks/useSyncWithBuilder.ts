@@ -63,7 +63,11 @@ export function useSyncWithBuilder() {
         elementId: selectedElement.id,
         update: elementUpdate,
       });
+
+      // Zustand Store 업데이트만 수행
+      // SaveService 저장은 updateElementProps에서 이미 처리하므로 중복 방지
       updateElement(selectedElement.id, elementUpdate);
+
       pendingTimeoutRef.current = null;
       // 동기화 완료 후 플래그 해제 (50ms 후 - Builder 상태 반영 대기)
       setTimeout(() => {

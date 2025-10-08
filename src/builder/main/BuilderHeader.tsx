@@ -19,6 +19,8 @@ import {
   Button,
 } from "react-aria-components";
 import { iconProps } from "../../utils/uiConstants";
+import { useStore } from "../stores";
+import { saveService } from "../../services/save";
 
 export interface Breakpoint {
   id: string;
@@ -64,6 +66,38 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPlay,
   onPublish,
 }) => {
+  // SaveMode 상태와 액션을 별도 selector로 가져오기 (최신 상태 보장)
+  const isRealtimeMode = useStore((state) => state.isRealtimeMode);
+  const pendingChanges = useStore((state) => state.pendingChanges);
+  const setRealtimeMode = useStore((state) => state.setRealtimeMode);
+  const pendingCount = pendingChanges.size;
+
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleSave = (): void => {
+    setIsSaving(true);
+    saveService
+      .saveAllPendingChanges()
+      .then(() => {
+        console.log("✅ 저장 완료");
+      })
+      .catch((error) => {
+        console.error("❌ 저장 실패:", error);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
+  };
+
+  const handleRealtimeModeChange = (enabled: boolean): void => {
+    setRealtimeMode(enabled);
+
+    if (enabled && pendingChanges.size > 0) {
+      // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
+      handleSave();
+    }
+  };
+
   return (
     <nav className="header">
       <div className="header_contents header_left">
@@ -133,11 +167,23 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             </Radio>
           ))}
         </RadioGroup>
-        <Switch id="realtime-mode">
+        <Switch
+          id="realtime-mode"
+          isSelected={isRealtimeMode}
+          onChange={handleRealtimeModeChange}
+        >
           <div className="indicator" />
-          Auto
+          {isRealtimeMode ? "Auto" : "Manual"}
         </Switch>
-        <Button id="save-button">Save</Button>
+        <Button
+          id="save-button"
+          onPress={handleSave}
+          isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
+        >
+          {isSaving
+            ? "Saving..."
+            : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+        </Button>
       </div>
 
       <div className="header_contents header_right">

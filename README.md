@@ -38,7 +38,16 @@ XStudio는 React 19, TypeScript, Supabase를 기반으로 한 현대적인 웹 �
 - **Playwright** - E2E 테스트
 - **ESLint + TypeScript ESLint** - 코드 품질
 
-## 🚀 빠른 시작
+## � 문서
+
+프로젝트의 상세한 문서는 [`/docs`](./docs) 디렉토리에서 확인할 수 있습니다:
+
+- **[개발 가이드](./docs/guides)** - 개발 워크플로우 및 컨벤션
+- **[기능 문서](./docs/features)** - 기능 구현 및 버그 수정 내역
+
+자세한 내용은 [문서 인덱스](./docs/README.md)를 참고하세요.
+
+## �🚀 빠른 시작
 
 ### 사전 요구사항
 
@@ -165,23 +174,21 @@ npm run type-check
 
 ```typescript
 // src/builder/components/NewComponent.tsx
-import { ComponentProps } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
+import { ComponentProps } from "react-aria-components";
+import { tv } from "tailwind-variants";
 
 const variants = tv({
-    base: 'base-classes',
-    variants: {
-        variant: {
-            primary: 'primary-classes',
-            secondary: 'secondary-classes'
-        }
-    }
+  base: "base-classes",
+  variants: {
+    variant: {
+      primary: "primary-classes",
+      secondary: "secondary-classes",
+    },
+  },
 });
 
-export function NewComponent({ variant = 'primary', ...props }) {
-    return (
-        <div className={variants({ variant })} {...props} />
-    );
+export function NewComponent({ variant = "primary", ...props }) {
+  return <div className={variants({ variant })} {...props} />;
 }
 ```
 
@@ -190,15 +197,15 @@ export function NewComponent({ variant = 'primary', ...props }) {
 ```typescript
 // src/builder/inspector/properties/editors/NewComponentEditor.tsx
 export function NewComponentEditor({ element, onChange }) {
-    return (
-        <PropertyPanel title="New Component">
-            <PropertyInput 
-                label="텍스트"
-                value={element.props.text}
-                onChange={(text) => onChange({ text })}
-            />
-        </PropertyPanel>
-    );
+  return (
+    <PropertyPanel title="New Component">
+      <PropertyInput
+        label="텍스트"
+        value={element.props.text}
+        onChange={(text) => onChange({ text })}
+      />
+    </PropertyPanel>
+  );
 }
 ```
 
@@ -207,12 +214,12 @@ export function NewComponentEditor({ element, onChange }) {
 ```typescript
 // src/stories/NewComponent.stories.tsx
 export default {
-    title: 'Builder/Components/NewComponent',
-    component: NewComponent
+  title: "Builder/Components/NewComponent",
+  component: NewComponent,
 };
 
 export const Primary = {
-    args: { variant: 'primary', children: '예시 텍스트' }
+  args: { variant: "primary", children: "예시 텍스트" },
 };
 ```
 
@@ -257,12 +264,12 @@ design_themes (id, project_id, name, status, version)
 
 ```typescript
 // 컴포넌트 테스트
-import { render, screen } from '@testing-library/react';
-import { Button } from './Button';
+import { render, screen } from "@testing-library/react";
+import { Button } from "./Button";
 
-test('버튼이 올바르게 렌더링된다', () => {
-    render(<Button>클릭하세요</Button>);
-    expect(screen.getByRole('button')).toHaveTextContent('클릭하세요');
+test("버튼이 올바르게 렌더링된다", () => {
+  render(<Button>클릭하세요</Button>);
+  expect(screen.getByRole("button")).toHaveTextContent("클릭하세요");
 });
 ```
 
@@ -373,6 +380,7 @@ test: Button 컴포넌트 테스트 추가
 ## 👨‍💻 개발팀
 
 - **메인 개발자**: [rblood79](https://github.com/rblood79)
+
 ## 📞 지원
 
 - 💬 [GitHub Discussions](https://github.com/your-username/xstudio/discussions)
