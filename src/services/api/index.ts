@@ -24,6 +24,14 @@ import {
   mockProjectMemberships,
   mockProjects,
   mockRoles,
+  mockEngines,
+  mockComponents,
+  buildComponentTree,
+  getProjectEnginesSummary,
+  getComponentTreeDepth,
+  getComponentsByLevel,
+  getComponentPath,
+  getComponentDescendants,
   type CmsMockData,
   type MockAuditLog,
   type MockDepartment,
@@ -34,6 +42,8 @@ import {
   type MockProjectMembership,
   type MockRole,
   type MockUserData,
+  type MockEngine,
+  type MockComponent,
 } from "./mockLargeDataV2";
 
 // 확장된 CMS 목업 데이터 export
@@ -48,6 +58,14 @@ export {
   mockProjectMemberships,
   mockProjects,
   mockRoles,
+  mockEngines,
+  mockComponents,
+  buildComponentTree,
+  getProjectEnginesSummary,
+  getComponentTreeDepth,
+  getComponentsByLevel,
+  getComponentPath,
+  getComponentDescendants,
 };
 
 export type {
@@ -61,6 +79,8 @@ export type {
   MockProjectMembership,
   MockRole,
   MockUserData,
+  MockEngine,
+  MockComponent,
 };
 
 // Import the instances for the ApiService class
@@ -221,14 +241,16 @@ const fetchMockUsers = async (
     const result = filteredData.slice(startIndex, endIndex);
 
     // 페이지네이션을 위한 메타데이터 추가
-    (result as any).__meta = {
-      totalItems,
-      currentPage: page,
-      itemsPerPage: limit,
-      hasNextPage: endIndex < totalItems,
-      startIndex,
-      endIndex,
-    };
+    Object.assign(result, {
+      __meta: {
+        totalItems,
+        currentPage: page,
+        itemsPerPage: limit,
+        hasNextPage: endIndex < totalItems,
+        startIndex,
+        endIndex,
+      },
+    });
 
     return result;
   }
