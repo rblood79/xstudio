@@ -87,7 +87,7 @@ export interface TableProps<T extends { id: string | number }> {
   enableResize?: boolean; // default: true
 }
 
-export default function Table<T extends { id: string | number }>(
+export default React.memo(function Table<T extends { id: string | number }>(
   props: TableProps<T>
 ) {
   const {
@@ -172,17 +172,6 @@ export default function Table<T extends { id: string | number }>(
           ? (responseObj[mapping.totalKey] as number) || dataArray.length
           : dataArray.length;
 
-        console.log("🔍 Data mapping applied:", {
-          original: response,
-          dataArray: dataArray,
-          mapped: mappedItems,
-          total,
-          mapping,
-          resultPath: mapping.resultPath,
-          idKey: mapping.idKey,
-          totalKey: mapping.totalKey,
-        });
-
         return { items: mappedItems, total };
       } catch (error) {
         console.error("❌ Data mapping error:", error);
@@ -220,8 +209,6 @@ export default function Table<T extends { id: string | number }>(
   // ---------- Column Definitions with Groups ----------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columnDefsWithGroups = React.useMemo<any[]>(() => {
-    console.log("🔍 Column Groups received:", columnGroups);
-
     // Column Helper 생성
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const columnHelper = createColumnHelper<any>();
@@ -251,7 +238,6 @@ export default function Table<T extends { id: string | number }>(
             info.getValue() as React.ReactNode,
         })
       );
-      console.log("🔍 Basic columns (no groups):", basicColumns);
       return basicColumns;
     }
 
@@ -312,8 +298,8 @@ export default function Table<T extends { id: string | number }>(
                   group.variant === "primary"
                     ? "#3b82f6"
                     : group.variant === "secondary"
-                    ? "#6b7280"
-                    : "#f8fafc",
+                      ? "#6b7280"
+                      : "#f8fafc",
 
                 textAlign: group.align || "center",
               }}
@@ -367,7 +353,6 @@ export default function Table<T extends { id: string | number }>(
       }
     }
 
-    console.log("🔍 Final column definitions with groups:", result);
     return result;
   }, [columns, columnGroups]);
 
@@ -554,7 +539,6 @@ export default function Table<T extends { id: string | number }>(
 
     if (mode === "pagination") {
       (async () => {
-        console.log("📥 Initial pagination load: page 0");
         const { items, total } = await fetchPage(0);
         setPageRows(items);
         setPageIndex(0);
@@ -562,7 +546,6 @@ export default function Table<T extends { id: string | number }>(
       })();
     } else {
       (async () => {
-        console.log("📥 Initial infinite scroll load: page 1");
         setFlatRows([]);
         setCursor(undefined);
         setHasNext(true);
@@ -644,7 +627,7 @@ export default function Table<T extends { id: string | number }>(
     getScrollElement: () => containerRef.current,
     measureElement:
       typeof window !== "undefined" &&
-      navigator.userAgent.indexOf("Firefox") === -1
+        navigator.userAgent.indexOf("Firefox") === -1
         ? (el) => el?.getBoundingClientRect().height
         : undefined,
     overscan: Math.max(overscan, 5),
@@ -708,25 +691,7 @@ export default function Table<T extends { id: string | number }>(
               data-element-id={tableHeaderElementId}
               style={{ display: "grid", position: "sticky", top: 0, zIndex: 1 }}
             >
-              {table.getHeaderGroups().map((headerGroup, groupIndex) => {
-                console.log(`🔍 Header Group ${groupIndex}:`, headerGroup);
-                console.log(
-                  `🔍 Header Group headers count:`,
-                  headerGroup.headers.length
-                );
-                console.log(
-                  `🔍 Header Group headers:`,
-                  headerGroup.headers.map((h) => ({
-                    id: h.id,
-                    columnId: h.column.id,
-                    isGroupHeader: (
-                      h.column.columnDef.meta as Record<string, unknown>
-                    )?.isGroupHeader,
-                    colSpan: h.colSpan,
-                    header: h.column.columnDef.header,
-                  }))
-                );
-
+              {table.getHeaderGroups().map((headerGroup) => {
                 // Column Group과 개별 컬럼을 분리
                 const groupHeaders = headerGroup.headers.filter((header) => {
                   const groupMeta = header.column.columnDef.meta as Record<
@@ -777,8 +742,8 @@ export default function Table<T extends { id: string | number }>(
                                   groupAlign === "center"
                                     ? "center"
                                     : groupAlign === "right"
-                                    ? "flex-end"
-                                    : "flex-start",
+                                      ? "flex-end"
+                                      : "flex-start",
                                 textAlign: groupAlign as
                                   | "left"
                                   | "center"
@@ -789,8 +754,8 @@ export default function Table<T extends { id: string | number }>(
                                   groupVariant === "primary"
                                     ? "#3b82f6"
                                     : groupVariant === "secondary"
-                                    ? "#6b7280"
-                                    : "#f8fafc",
+                                      ? "#6b7280"
+                                      : "#f8fafc",
                                 color:
                                   groupVariant !== "default"
                                     ? "#ffffff"
@@ -833,8 +798,8 @@ export default function Table<T extends { id: string | number }>(
                                 isSorted === "asc"
                                   ? "ascending"
                                   : isSorted === "desc"
-                                  ? "descending"
-                                  : "none"
+                                    ? "descending"
+                                    : "none"
                               }
                               colSpan={header.colSpan}
                               style={{
@@ -842,19 +807,18 @@ export default function Table<T extends { id: string | number }>(
                                   align === "center"
                                     ? "center"
                                     : align === "right"
-                                    ? "flex-end"
-                                    : "flex-start",
+                                      ? "flex-end"
+                                      : "flex-start",
                                 textAlign: align as "left" | "center" | "right",
                                 width: header.getSize(),
                                 minWidth: header.getSize(),
                               }}
                             >
                               <div
-                                className={`flex items-center gap-2 ${
-                                  header.column.getCanSort()
+                                className={`flex items-center gap-2 ${header.column.getCanSort()
                                     ? "cursor-pointer select-none hover:text-blue-600"
                                     : ""
-                                }`}
+                                  }`}
                                 onClick={header.column.getToggleSortingHandler()}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -1079,9 +1043,8 @@ export default function Table<T extends { id: string | number }>(
                         setPageIndex(targetPage);
                       }}
                       isDisabled={loading}
-                      className={`react-aria-PageButton ${
-                        i === currentPage ? "active" : ""
-                      }`}
+                      className={`react-aria-PageButton ${i === currentPage ? "active" : ""
+                        }`}
                       children={i}
                       size="sm"
                     />
@@ -1192,4 +1155,4 @@ export default function Table<T extends { id: string | number }>(
       )}
     </>
   );
-}
+});
