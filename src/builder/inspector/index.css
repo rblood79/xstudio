@@ -17,6 +17,16 @@
         align-items: center;
         justify-content: center;
       }
+      .react-aria-Tabs{
+        .react-aria-TabList{
+          padding: var(--spacing) var(--spacing-sm) 0 var(--spacing-sm);
+          gap: var(--spacing-md);
+          .react-aria-Tab{
+            padding: var(--spacing) 0;
+          }
+        }
+      }
+      
     }
 
     .empty-state {
