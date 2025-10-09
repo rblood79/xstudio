@@ -19,5 +19,8 @@
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "editor.tabSize": 2,
-  "editor.stickyScroll.enabled": true
+  "editor.stickyScroll.enabled": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }
