@@ -350,7 +350,7 @@ function Preview() {
           isSelected={
             isInGroup
               ? Array.isArray(parentGroup?.props.value) &&
-                parentGroup.props.value.includes(el.id)
+              parentGroup.props.value.includes(el.id)
               : el.props.isSelected
           }
           defaultSelected={el.props.defaultSelected}
@@ -406,11 +406,6 @@ function Preview() {
           style={el.props.style}
           className={el.props.className}
           onChange={async (isSelected) => {
-            console.log("🔲 Preview Checkbox 변경:", {
-              elementId: el.id,
-              isSelected,
-              props: el.props,
-            });
             const updatedProps = {
               ...el.props,
               isSelected: Boolean(isSelected),
@@ -719,11 +714,11 @@ function Preview() {
           data-element-id={el.id}
           variant={
             el.props.variant as
-              | "primary"
-              | "secondary"
-              | "surface"
-              | "outline"
-              | "ghost"
+            | "primary"
+            | "secondary"
+            | "surface"
+            | "outline"
+            | "ghost"
           }
           size={el.props.size as "sm" | "md" | "lg"}
           type={(el.props.type as "button" | "submit" | "reset") || "button"}
@@ -745,8 +740,8 @@ function Preview() {
           {typeof el.props.children === "string"
             ? el.props.children
             : children.length === 0
-            ? "Button"
-            : null}
+              ? "Button"
+              : null}
           {children.map((child) => renderElement(child, child.id))}
         </Button>
       );
@@ -879,8 +874,8 @@ function Preview() {
       const ariaLabel = processedLabel
         ? undefined
         : elementProps["aria-label"] ||
-          processedPlaceholder ||
-          `Select ${el.id}`;
+        processedPlaceholder ||
+        `Select ${el.id}`;
 
       return (
         <Select
@@ -926,8 +921,8 @@ function Preview() {
               if (selectedItem) {
                 actualValue = String(
                   selectedItem.props.value ||
-                    selectedItem.props.label ||
-                    `option-${index + 1}`
+                  selectedItem.props.label ||
+                  `option-${index + 1}`
                 );
               }
             }
@@ -1006,10 +1001,10 @@ function Preview() {
           placeholder={String(el.props.placeholder || "")}
           {...(el.props.selectedKey || el.props.selectedValue
             ? {
-                defaultSelectedKey: String(
-                  el.props.selectedKey || el.props.selectedValue
-                ),
-              }
+              defaultSelectedKey: String(
+                el.props.selectedKey || el.props.selectedValue
+              ),
+            }
             : {})}
           defaultInputValue={String(el.props.inputValue || "")}
           allowsCustomValue={Boolean(el.props.allowsCustomValue)}
@@ -1045,13 +1040,13 @@ function Preview() {
                 // 여기가 핵심: label을 표시용으로, value를 데이터 저장용으로 사용
                 actualValue = String(
                   selectedItem.props.value ||
-                    selectedItem.props.label ||
-                    `option-${index + 1}`
+                  selectedItem.props.label ||
+                  `option-${index + 1}`
                 );
                 displayValue = String(
                   selectedItem.props.label ||
-                    selectedItem.props.value ||
-                    `option-${index + 1}`
+                  selectedItem.props.value ||
+                  `option-${index + 1}`
                 );
               }
             } else {
@@ -1065,13 +1060,13 @@ function Preview() {
               if (selectedItem) {
                 actualValue = String(
                   selectedItem.props.value ||
-                    selectedItem.props.label ||
-                    selectedKey
+                  selectedItem.props.label ||
+                  selectedKey
                 );
                 displayValue = String(
                   selectedItem.props.label ||
-                    selectedItem.props.value ||
-                    selectedKey
+                  selectedItem.props.value ||
+                  selectedKey
                 );
               }
             }
@@ -1308,10 +1303,10 @@ function Preview() {
 
           const displayTitle = String(
             item.props.title ||
-              item.props.label ||
-              item.props.value ||
-              item.props.children ||
-              `Item ${item.id}`
+            item.props.label ||
+            item.props.value ||
+            item.props.children ||
+            `Item ${item.id}`
           );
 
           const hasChildren = childTreeItems.length > 0;
@@ -1401,10 +1396,10 @@ function Preview() {
 
       const displayTitle = String(
         el.props.title ||
-          el.props.label ||
-          el.props.value ||
-          el.props.children ||
-          `Item ${el.id}`
+        el.props.label ||
+        el.props.value ||
+        el.props.children ||
+        `Item ${el.id}`
       );
 
       const hasChildren = childTreeItems.length > 0;
@@ -1531,7 +1526,7 @@ function Preview() {
           granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
           firstDayOfWeek={
             ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][
-              getFirstDayOfWeek()
+            getFirstDayOfWeek()
             ] as "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
           }
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1599,7 +1594,7 @@ function Preview() {
           granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
           firstDayOfWeek={
             ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][
-              getFirstDayOfWeek()
+            getFirstDayOfWeek()
             ] as "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
           }
           showCalendarIcon={el.props.showCalendarIcon !== false}
@@ -1734,41 +1729,18 @@ function Preview() {
 
     // Table 컴포넌트 특별 처리 (새로운 TanStack Table 기반)
     if (el.tag === "Table") {
-      console.log("🔍 Table rendering:", {
-        id: el.id,
-        childrenCount: children.length,
-        props: el.props,
-      });
-      console.log(
-        "🔍 Table children:",
-        children.map((c) => ({ tag: c.tag, id: c.id }))
-      );
-      console.log(
-        "🔍 All elements:",
-        elements
-          .filter((e) => e.parent_id === el.id)
-          .map((e) => ({ tag: e.tag, id: e.id, parent_id: e.parent_id }))
-      );
-
       // TableHeader를 먼저 찾고, 그 아래의 Column들을 찾기
       const tableHeaderElement = children.find(
         (child) => child.tag === "TableHeader"
       );
       const columnElements = tableHeaderElement
         ? elements
-            .filter(
-              (el) =>
-                el.parent_id === tableHeaderElement.id && el.tag === "Column"
-            )
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+          .filter(
+            (el) =>
+              el.parent_id === tableHeaderElement.id && el.tag === "Column"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
         : children.filter((child) => child.tag === "Column"); // fallback: 직접 Column 찾기
-
-      console.log("🔍 TableHeader:", tableHeaderElement?.id);
-      console.log(
-        "🔍 Columns found:",
-        columnElements.length,
-        columnElements.map((c) => c.props.children)
-      );
 
       const columns = columnElements.map((col, index) => {
         // key 우선순위: props.key > children (소문자) > id > fallback
@@ -1807,8 +1779,8 @@ function Preview() {
       );
       const rowElements = tableBodyElement
         ? elements.filter(
-            (el) => el.parent_id === tableBodyElement.id && el.tag === "Row"
-          )
+          (el) => el.parent_id === tableBodyElement.id && el.tag === "Row"
+        )
         : children.filter((child) => child.tag === "Row");
       const data = rowElements.map((row, index) => {
         const cellElements = elements.filter(
@@ -1821,26 +1793,13 @@ function Preview() {
           rowData[columnKey] = cell.props.children || cell.props.value || "";
         });
 
-        return rowData as { id: string | number; [key: string]: unknown };
-      });
-
-      console.log("🔍 Extracted data:", {
-        columns: columns.length,
-        data: data.length,
-        rowElements: rowElements.length,
-        tableBodyElement: tableBodyElement?.id,
+        return rowData as { id: string | number;[key: string]: unknown };
       });
 
       // dataBinding을 통한 API 데이터 사용 여부 확인
       const hasApiBinding =
         el.dataBinding?.type === "collection" &&
         el.dataBinding?.source === "api";
-
-      console.log("🔍 API 바인딩 확인:", {
-        hasDataBinding: !!el.dataBinding,
-        dataBinding: el.dataBinding,
-        hasApiBinding,
-      });
 
       // API 설정 추출
       let apiConfig: {
@@ -1871,8 +1830,6 @@ function Preview() {
           params: config.params,
           dataMapping: config.dataMapping,
         };
-
-        console.log("📊 추출된 API 설정:", apiConfig);
       }
 
       // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
@@ -1885,80 +1842,76 @@ function Preview() {
         columns.length > 0
           ? columns
           : [
-              {
-                key: "id" as const,
-                label: "ID",
-                allowsSorting: true,
-                width: 80,
-              },
-              {
-                key: "name" as const,
-                label: "Name",
-                allowsSorting: true,
-                width: 200,
-              },
-              {
-                key: "email" as const,
-                label: "Email",
-                allowsSorting: true,
-                width: 250,
-              },
-              {
-                key: "phone" as const,
-                label: "Phone",
-                allowsSorting: true,
-                width: 150,
-              },
-              {
-                key: "company" as const,
-                label: "Company",
-                allowsSorting: true,
-                width: 200,
-              },
-            ];
+            {
+              key: "id" as const,
+              label: "ID",
+              allowsSorting: true,
+              width: 80,
+            },
+            {
+              key: "name" as const,
+              label: "Name",
+              allowsSorting: true,
+              width: 200,
+            },
+            {
+              key: "email" as const,
+              label: "Email",
+              allowsSorting: true,
+              width: 250,
+            },
+            {
+              key: "phone" as const,
+              label: "Phone",
+              allowsSorting: true,
+              width: 150,
+            },
+            {
+              key: "company" as const,
+              label: "Company",
+              allowsSorting: true,
+              width: 200,
+            },
+          ];
 
       // Column Group Element에서 추출한 그룹 데이터 생성
       const columnGroups = tableHeaderElement
         ? elements
-            .filter(
-              (el) =>
-                el.parent_id === tableHeaderElement.id &&
-                el.tag === "ColumnGroup"
-            )
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-            .map((groupEl) => {
-              const props = groupEl.props as ElementProps;
+          .filter(
+            (el) =>
+              el.parent_id === tableHeaderElement.id &&
+              el.tag === "ColumnGroup"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+          .map((groupEl) => {
+            const props = groupEl.props as ElementProps;
 
-              // ColumnGroupDefinition 타입에 맞게 변환
-              const alignValue = String(props?.align || "center");
-              const align: "left" | "center" | "right" =
-                alignValue === "left" ||
+            // ColumnGroupDefinition 타입에 맞게 변환
+            const alignValue = String(props?.align || "center");
+            const align: "left" | "center" | "right" =
+              alignValue === "left" ||
                 alignValue === "center" ||
                 alignValue === "right"
-                  ? alignValue
-                  : "center";
+                ? alignValue
+                : "center";
 
-              const variantValue = String(props?.variant || "default");
-              const variant: "default" | "primary" | "secondary" =
-                variantValue === "primary" || variantValue === "secondary"
-                  ? variantValue
-                  : "default";
+            const variantValue = String(props?.variant || "default");
+            const variant: "default" | "primary" | "secondary" =
+              variantValue === "primary" || variantValue === "secondary"
+                ? variantValue
+                : "default";
 
-              return {
-                id: groupEl.id,
-                label: String(props?.label || "Group"),
-                span: Number(props?.span || 2),
-                order_num: groupEl.order_num,
-                align,
-                variant,
-                sticky: Boolean(props?.sticky || false),
-              };
-            })
+            return {
+              id: groupEl.id,
+              label: String(props?.label || "Group"),
+              span: Number(props?.span || 2),
+              order_num: groupEl.order_num,
+              align,
+              variant,
+              sticky: Boolean(props?.sticky || false),
+            };
+          })
         : [];
-
-      console.log("🔍 Final columns for Table:", finalColumns);
-      console.log("🔍 Final column groups for Table:", columnGroups);
-      console.log("🔍 Final data for Table:", finalData.length, "rows");
 
       return (
         <Table
@@ -2004,10 +1957,10 @@ function Preview() {
           dataMapping={
             hasApiBinding && apiConfig.dataMapping
               ? {
-                  resultPath: apiConfig.dataMapping.resultPath || "",
-                  idKey: apiConfig.dataMapping.idKey || "id",
-                  totalKey: apiConfig.dataMapping.totalKey || "",
-                }
+                resultPath: apiConfig.dataMapping.resultPath || "",
+                idKey: apiConfig.dataMapping.idKey || "id",
+                totalKey: apiConfig.dataMapping.totalKey || "",
+              }
               : undefined
           }
           sortColumn={
