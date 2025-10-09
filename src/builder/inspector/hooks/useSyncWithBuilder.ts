@@ -119,6 +119,10 @@ export function useSyncWithBuilder(): void {
             table: "elements",
             id: selectedElement.id,
             data: payload,
+          }, {
+            source: 'inspector',
+            allowPreviewSaves: true,
+            validateSerialization: true
           });
         }
       } catch (error) {
