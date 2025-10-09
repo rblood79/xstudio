@@ -36,7 +36,7 @@ export default {
 ```css
 @layer utilities {
     .custom-class {
-        @apply /* Tailwind 유틸리티 클래스 */;
+       font-size:var(--text-sm)/* Tailwind 변수 명시적 으로사용 */;
     }
 }
 ```
