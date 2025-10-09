@@ -69,29 +69,22 @@
     color: var(--color-neutral-100);
 }
 
-.footer .memory-stats {
-    padding: var(--spacing-sm);
-    display: flex;
-    gap: var(--spacing-lg);
-}
-
-/* Save Monitor Styles */
-.footer .save-monitor {
+.footer .monitor{
     padding: var(--spacing-sm);
 }
 
-.footer .save-stats {
+.footer .stats {
     display: flex;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-sm);
     flex-wrap: wrap;
 }
 
-.footer .save-stats li {
+.footer .stats li {
     background: rgba(255, 255, 255, 0.1);
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
+    font-size: var(--text-sm);
 }
 
 .footer .validation-errors {
@@ -105,7 +98,7 @@
 .footer .validation-errors h4 {
     color: var(--color-red-400);
     margin: 0 0 var(--spacing-xs) 0;
-    font-size: var(--font-size-sm);
+    font-size: var(--text-sm);
     font-weight: 600;
 }
 
@@ -118,7 +111,7 @@
 .footer .error-item {
     padding: var(--spacing-xs) 0;
     border-bottom: 1px solid rgba(220, 38, 38, 0.2);
-    font-size: var(--font-size-xs);
+    font-size: var(--text-xs);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -134,13 +127,13 @@
 
 .footer .error-item .timestamp {
     color: var(--text-color-tertiary);
-    font-size: var(--font-size-xs);
+    font-size: var(--text-xs);
 }
 
 .footer .more-errors {
     margin: var(--spacing-xs) 0 0 0;
     color: var(--text-color-secondary);
-    font-size: var(--font-size-xs);
+    font-size: var(--text-xs);
     font-style: italic;
 }
 

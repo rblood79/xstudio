@@ -43,10 +43,10 @@ export const Monitor: React.FC = () => {
         setValidationErrors([]);
     };
 
-    const totalSkips = saveMetrics ? 
+    const totalSkips = saveMetrics ?
         saveMetrics.skipCounts.preview + saveMetrics.skipCounts.validation : 0;
-    
-    const successRate = saveMetrics && saveMetrics.saveOperations > 0 ? 
+
+    const successRate = saveMetrics && saveMetrics.saveOperations > 0 ?
         ((saveMetrics.saveOperations - validationErrors.length) / saveMetrics.saveOperations * 100).toFixed(1) :
         '100.0';
 
@@ -54,13 +54,13 @@ export const Monitor: React.FC = () => {
         <>
             <div className="header">
                 <div className="tabs">
-                    <button 
+                    <button
                         className={activeTab === 'memory' ? 'tab active' : 'tab'}
                         onClick={() => setActiveTab('memory')}
                     >
                         Memory Monitor
                     </button>
-                    <button 
+                    <button
                         className={activeTab === 'save' ? 'tab active' : 'tab'}
                         onClick={() => setActiveTab('save')}
                     >
@@ -78,23 +78,25 @@ export const Monitor: React.FC = () => {
             </div>
             <div className="contents">
                 {activeTab === 'memory' ? (
-                    stats ? (
-                        <ul className="memory-stats">
-                            <li>Total Entries: {stats.totalEntries}</li>
-                            <li>Command Count: {stats.commandCount}</li>
-                            <li>Cache Size: {stats.cacheSize}</li>
-                            <li>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</li>
-                            <li>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</li>
-                            <li>Recommendation: {stats.recommendation}</li>
-                        </ul>
-                    ) : (
-                        <li>Loading memory stats...</li>
-                    )
+                    <div className="monitor">
+                        {stats ? (
+                            <ul className="stats">
+                                <li>Total Entries: {stats.totalEntries}</li>
+                                <li>Command Count: {stats.commandCount}</li>
+                                <li>Cache Size: {stats.cacheSize}</li>
+                                <li>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</li>
+                                <li>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</li>
+                                <li>Recommendation: {stats.recommendation}</li>
+                            </ul>
+                        ) : (
+                            <li>Loading memory stats...</li>
+                        )}
+                    </div>
                 ) : (
-                    <div className="save-monitor">
+                    <div className="monitor">
                         {saveMetrics ? (
                             <>
-                                <ul className="save-stats">
+                                <ul className="stats">
                                     <li>Save Operations: {saveMetrics.saveOperations}</li>
                                     <li>Average Time: {saveMetrics.averageSaveTime.toFixed(2)}ms</li>
                                     <li>Success Rate: {successRate}%</li>
@@ -102,7 +104,7 @@ export const Monitor: React.FC = () => {
                                     <li>Validation Skips: {saveMetrics.skipCounts.validation}</li>
                                     <li>Total Skips: {totalSkips}</li>
                                 </ul>
-                                
+
                                 {validationErrors.length > 0 && (
                                     <div className="validation-errors">
                                         <h4>Validation Errors ({validationErrors.length})</h4>
