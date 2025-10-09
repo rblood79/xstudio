@@ -16,12 +16,12 @@ import {
   Popover,
   Text,
   TimeField,
-  ValidationResult
-} from 'react-aria-components';
+  ValidationResult,
+} from "react-aria-components";
 
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
-import './components.css';
+import "./components.css";
 
 export interface DatePickerProps<T extends DateValue>
   extends AriaDatePickerProps<T> {
@@ -30,7 +30,7 @@ export interface DatePickerProps<T extends DateValue>
   errorMessage?: string | ((validation: ValidationResult) => string);
   // 추가 커스텀 프로퍼티들
   showCalendarIcon?: boolean;
-  calendarIconPosition?: 'left' | 'right';
+  calendarIconPosition?: "left" | "right";
   placeholder?: string;
   dateFormat?: string;
   showWeekNumbers?: boolean;
@@ -38,7 +38,7 @@ export interface DatePickerProps<T extends DateValue>
   allowClear?: boolean;
   // 새로운 time 옵션
   includeTime?: boolean;
-  timeFormat?: '12h' | '24h';
+  timeFormat?: "12h" | "24h";
   timeLabel?: string;
 }
 
@@ -48,21 +48,21 @@ export function DatePicker<T extends DateValue>({
   errorMessage,
   firstDayOfWeek,
   showCalendarIcon = true,
-  calendarIconPosition = 'right',
+  calendarIconPosition = "right",
   placeholder,
   showWeekNumbers = false,
   highlightToday = true,
   allowClear = false,
   includeTime = false,
-  timeFormat = '24h',
-  timeLabel = '시간',
+  timeFormat = "24h",
+  timeLabel = "시간",
   granularity,
   ...props
 }: DatePickerProps<T>) {
   // includeTime이 true일 때 granularity를 자동으로 설정
   const effectiveGranularity = includeTime
-    ? (granularity || 'minute')
-    : (granularity || 'day');
+    ? granularity || "minute"
+    : granularity || "day";
 
   return (
     <AriaDatePicker
@@ -72,18 +72,20 @@ export function DatePicker<T extends DateValue>({
     >
       {label && <Label>{label}</Label>}
       <Group>
-        {showCalendarIcon && calendarIconPosition === 'left' && (
+        {showCalendarIcon && calendarIconPosition === "left" && (
           <Button slot="prefix">📅</Button>
         )}
         <DateInput>
           {(segment) => (
             <DateSegment
               segment={segment}
-              data-placeholder={!segment.isPlaceholder ? undefined : placeholder}
+              data-placeholder={
+                !segment.isPlaceholder ? undefined : placeholder
+              }
             />
           )}
         </DateInput>
-        {showCalendarIcon && calendarIconPosition === 'right' && (
+        {showCalendarIcon && calendarIconPosition === "right" && (
           <Button>
             <ChevronDown size={16} />
           </Button>
@@ -126,7 +128,7 @@ export function DatePicker<T extends DateValue>({
                 <div className="time-field-wrapper">
                   <Label className="time-field-label">{timeLabel}</Label>
                   <TimeField
-                    hourCycle={timeFormat === '12h' ? 12 : 24}
+                    hourCycle={timeFormat === "12h" ? 12 : 24}
                     className="react-aria-DatePicker-time-field"
                   >
                     <DateInput>

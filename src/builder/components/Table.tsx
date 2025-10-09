@@ -441,7 +441,9 @@ export default function Table<T extends { id: string | number }>(
         const { items, total } = processApiResponse(response, dataMapping);
 
         // API 응답에서 메타데이터 확인 (Pagination용)
-        const meta = (response as any).__meta;
+        const meta = (response as unknown as Record<string, unknown>).__meta as
+          | { totalItems?: number; currentPage?: number; itemsPerPage?: number }
+          | undefined;
         let actualTotal = total;
 
         if (meta && typeof meta.totalItems === "number") {
