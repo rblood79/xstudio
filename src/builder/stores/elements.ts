@@ -639,19 +639,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
 
         // 히스토리 추가
         if (state.currentPageId) {
+          // Immer proxy 문제 방지: 깊은 복사로 순수 객체 생성
+          const prevPropsClone = JSON.parse(JSON.stringify(element.props));
+          const newPropsClone = JSON.parse(JSON.stringify(props));
+          const prevElementClone = JSON.parse(JSON.stringify(element));
+
           console.log("📝 Props 변경 히스토리 추가:", {
             elementId,
             elementTag: element.tag,
-            prevProps: { ...element.props },
-            newProps: props,
+            prevProps: prevPropsClone,
+            newProps: newPropsClone,
           });
           historyManager.addEntry({
             type: "update",
             elementId: elementId,
             data: {
-              props: props,
-              prevProps: { ...element.props },
-              prevElement: { ...element },
+              props: newPropsClone,
+              prevProps: prevPropsClone,
+              prevElement: prevElementClone,
             },
           });
         }
@@ -691,6 +696,30 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
       produce((state: ElementsState) => {
         const element = findElementById(state.elements, elementId);
         if (!element) return;
+
+        // 히스토리 추가 (updateElementProps와 동일한 로직)
+        if (state.currentPageId && updates.props) {
+          // Immer proxy 문제 방지: 깊은 복사로 순수 객체 생성
+          const prevPropsClone = JSON.parse(JSON.stringify(element.props));
+          const newPropsClone = JSON.parse(JSON.stringify(updates.props));
+          const prevElementClone = JSON.parse(JSON.stringify(element));
+
+          console.log("📝 Element 변경 히스토리 추가:", {
+            elementId,
+            elementTag: element.tag,
+            prevProps: prevPropsClone,
+            newProps: newPropsClone,
+          });
+          historyManager.addEntry({
+            type: "update",
+            elementId: elementId,
+            data: {
+              props: newPropsClone,
+              prevProps: prevPropsClone,
+              prevElement: prevElementClone,
+            },
+          });
+        }
 
         // 요소 업데이트 (props, dataBinding 등)
         Object.assign(element, updates);
