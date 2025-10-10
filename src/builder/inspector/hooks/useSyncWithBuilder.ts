@@ -100,51 +100,74 @@ export function useSyncWithBuilder(): void {
       });
 
       try {
-        // Table 요소에 API Collection이 설정되면 기존 Column 자식 삭제
+        // Table 요소에 API Collection의 Endpoint가 변경되면 기존 Column 자식 삭제
+        // (Parameters, Headers, DataMapping 변경 시에는 삭제하지 않음)
         if (
           selectedElement.type === "Table" &&
           selectedElement.dataBinding?.type === "collection" &&
           selectedElement.dataBinding?.source === "api"
         ) {
-          const childColumns = elements.filter(
-            (el) =>
-              el.tag === "Column" &&
-              el.parent_id &&
-              elements.some(
-                (parent) =>
-                  parent.id === el.parent_id &&
-                  parent.tag === "TableHeader" &&
-                  parent.parent_id === selectedElement.id
-              )
-          );
+          // 현재 Store의 요소와 비교하여 Endpoint가 실제로 변경되었는지 확인
+          const currentConfig = currentElementInStore?.dataBinding?.config;
+          const newConfig = selectedElement.dataBinding?.config;
+          
+          const currentEndpoint = 
+            currentConfig && 'endpoint' in currentConfig ? currentConfig.endpoint : undefined;
+          const newEndpoint = 
+            newConfig && 'endpoint' in newConfig ? newConfig.endpoint : undefined;
+          
+          const endpointChanged = currentEndpoint !== newEndpoint;
 
-          if (childColumns.length > 0) {
-            console.log("🗑️ API Collection 설정 - 기존 Column 삭제:", {
-              tableId: selectedElement.id,
-              columnsToDelete: childColumns.map((c) => c.id),
-            });
-
-            // 한 번에 모든 Column ID 수집
-            const columnIdsToDelete = childColumns.map((c) => c.id);
-
-            // 1. DB에서 일괄 삭제
-            try {
-              await elementsApi.deleteMultipleElements(columnIdsToDelete);
-              console.log("✅ DB에서 Column 삭제 완료:", columnIdsToDelete);
-            } catch (error) {
-              console.error("❌ DB Column 삭제 실패:", error);
-            }
-
-            // 2. Store에서 일괄 제거 (새 배열 참조 생성)
-            const newElements = elements.filter(
-              (el) => !columnIdsToDelete.includes(el.id)
+          if (endpointChanged) {
+            const childColumns = elements.filter(
+              (el) =>
+                el.tag === "Column" &&
+                el.parent_id &&
+                elements.some(
+                  (parent) =>
+                    parent.id === el.parent_id &&
+                    parent.tag === "TableHeader" &&
+                    parent.parent_id === selectedElement.id
+                )
             );
-            setElements(newElements);
-            console.log("✅ Store에서 Column 제거 완료:", {
-              삭제전: elements.length,
-              삭제후: newElements.length,
-              삭제된개수: elements.length - newElements.length,
-            });
+
+            if (childColumns.length > 0) {
+              console.log("🗑️ Endpoint 변경 감지 - 기존 Column 삭제:", {
+                tableId: selectedElement.id,
+                oldEndpoint: currentEndpoint,
+                newEndpoint: newEndpoint,
+                columnsToDelete: childColumns.map((c) => c.id),
+              });
+
+              // 한 번에 모든 Column ID 수집
+              const columnIdsToDelete = childColumns.map((c) => c.id);
+
+              // 1. DB에서 일괄 삭제
+              try {
+                await elementsApi.deleteMultipleElements(columnIdsToDelete);
+                console.log("✅ DB에서 Column 삭제 완료:", columnIdsToDelete);
+              } catch (error) {
+                console.error("❌ DB Column 삭제 실패:", error);
+              }
+
+              // 2. Store에서 일괄 제거 (새 배열 참조 생성)
+              const newElements = elements.filter(
+                (el) => !columnIdsToDelete.includes(el.id)
+              );
+              setElements(newElements);
+              console.log("✅ Store에서 Column 제거 완료:", {
+                삭제전: elements.length,
+                삭제후: newElements.length,
+                삭제된개수: elements.length - newElements.length,
+              });
+            } else {
+              console.log("ℹ️ Endpoint 변경되었으나 삭제할 Column 없음:", {
+                oldEndpoint: currentEndpoint,
+                newEndpoint: newEndpoint,
+              });
+            }
+          } else {
+            console.log("ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지");
           }
         }
 
