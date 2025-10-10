@@ -46,7 +46,10 @@ export function useSyncWithBuilder(): void {
     );
 
     if (!currentElementInStore) {
-      console.log("⚠️ useSyncWithBuilder - Builder에서 요소를 찾을 수 없음:", selectedElement.id);
+      console.log(
+        "⚠️ useSyncWithBuilder - Builder에서 요소를 찾을 수 없음:",
+        selectedElement.id
+      );
       return;
     }
 
@@ -100,25 +103,49 @@ export function useSyncWithBuilder(): void {
       });
 
       try {
-        // Table 요소에 API Collection의 Endpoint가 변경되면 기존 Column 자식 삭제
+        // Table 요소에 API Collection의 Endpoint 또는 Static Data의 컬럼 매핑이 변경되면 기존 Column 자식 삭제
         // (Parameters, Headers, DataMapping 변경 시에는 삭제하지 않음)
         if (
           selectedElement.type === "Table" &&
           selectedElement.dataBinding?.type === "collection" &&
-          selectedElement.dataBinding?.source === "api"
+          (selectedElement.dataBinding?.source === "api" ||
+            selectedElement.dataBinding?.source === "static")
         ) {
           // 현재 Store의 요소와 비교하여 Endpoint가 실제로 변경되었는지 확인
           const currentConfig = currentElementInStore?.dataBinding?.config;
           const newConfig = selectedElement.dataBinding?.config;
-          
-          const currentEndpoint = 
-            currentConfig && 'endpoint' in currentConfig ? currentConfig.endpoint : undefined;
-          const newEndpoint = 
-            newConfig && 'endpoint' in newConfig ? newConfig.endpoint : undefined;
-          
+
+          const currentEndpoint =
+            currentConfig && "endpoint" in currentConfig
+              ? currentConfig.endpoint
+              : undefined;
+          const newEndpoint =
+            newConfig && "endpoint" in newConfig
+              ? newConfig.endpoint
+              : undefined;
+
+          // Endpoint 변경 또는 컬럼 매핑 변경 감지
           const endpointChanged = currentEndpoint !== newEndpoint;
 
-          if (endpointChanged) {
+          // Static Data의 컬럼 매핑 변경 감지
+          const currentColumnMapping =
+            currentConfig && "columnMapping" in currentConfig
+              ? currentConfig.columnMapping
+              : undefined;
+          const newColumnMapping =
+            newConfig && "columnMapping" in newConfig
+              ? newConfig.columnMapping
+              : undefined;
+          const columnMappingChanged =
+            JSON.stringify(currentColumnMapping) !==
+            JSON.stringify(newColumnMapping);
+
+          // API Endpoint 변경 또는 Static Data 컬럼 매핑 변경 시 컬럼 재설정
+          if (
+            endpointChanged ||
+            (selectedElement.dataBinding?.source === "static" &&
+              columnMappingChanged)
+          ) {
             const childColumns = elements.filter(
               (el) =>
                 el.tag === "Column" &&
@@ -132,10 +159,12 @@ export function useSyncWithBuilder(): void {
             );
 
             if (childColumns.length > 0) {
-              console.log("🗑️ Endpoint 변경 감지 - 기존 Column 삭제:", {
+              console.log("🗑️ 컬럼 변경 감지 - 기존 Column 삭제:", {
                 tableId: selectedElement.id,
+                source: selectedElement.dataBinding?.source,
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
+                columnMappingChanged,
                 columnsToDelete: childColumns.map((c) => c.id),
               });
 
@@ -161,13 +190,17 @@ export function useSyncWithBuilder(): void {
                 삭제된개수: elements.length - newElements.length,
               });
             } else {
-              console.log("ℹ️ Endpoint 변경되었으나 삭제할 Column 없음:", {
+              console.log("ℹ️ 컬럼 변경되었으나 삭제할 Column 없음:", {
+                source: selectedElement.dataBinding?.source,
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
+                columnMappingChanged,
               });
             }
           } else {
-            console.log("ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지");
+            console.log(
+              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지"
+            );
           }
         }
 
@@ -188,15 +221,18 @@ export function useSyncWithBuilder(): void {
         }
 
         if (Object.keys(payload).length > 0) {
-          await saveService.savePropertyChange({
-            table: "elements",
-            id: selectedElement.id,
-            data: payload,
-          }, {
-            source: 'inspector',
-            allowPreviewSaves: true,
-            validateSerialization: true
-          });
+          await saveService.savePropertyChange(
+            {
+              table: "elements",
+              id: selectedElement.id,
+              data: payload,
+            },
+            {
+              source: "inspector",
+              allowPreviewSaves: true,
+              validateSerialization: true,
+            }
+          );
         }
       } catch (error) {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
@@ -214,5 +250,12 @@ export function useSyncWithBuilder(): void {
         clearTimeout(pendingTimeoutRef.current);
       }
     };
-  }, [selectedElement, updateElement, setElements, setSyncingToBuilder, historyOperationInProgress, elements]);
+  }, [
+    selectedElement,
+    updateElement,
+    setElements,
+    setSyncingToBuilder,
+    historyOperationInProgress,
+    elements,
+  ]);
 }

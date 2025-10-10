@@ -149,6 +149,7 @@ export interface StaticCollectionConfig {
       type?: "string" | "number" | "boolean" | "date";
       sortable?: boolean;
       width?: number;
+      align?: "left" | "center" | "right";
     };
   };
 }

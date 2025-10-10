@@ -1776,28 +1776,32 @@ function Preview() {
       });
 
       // 데이터 추출 (children에서 Row 요소들)
-      // TableBody 내부의 Row 요소들을 찾기
-      const tableBodyElement = children.find(
-        (child) => child.tag === "TableBody"
-      );
-      const rowElements = tableBodyElement
-        ? elements.filter(
-          (el) => el.parent_id === tableBodyElement.id && el.tag === "Row"
-        )
-        : children.filter((child) => child.tag === "Row");
-      const data = rowElements.map((row, index) => {
-        const cellElements = elements.filter(
-          (el) => el.parent_id === row.id && el.tag === "Cell"
-        );
-        const rowData: Record<string, unknown> = { id: row.id || index };
+      // 현재는 Row Element로부터 데이터를 생성하지 않음
+      // 정적 데이터는 dataBinding에서, API 데이터는 Table 컴포넌트 내부에서 처리
 
-        cellElements.forEach((cell, cellIndex) => {
-          const columnKey = columns[cellIndex]?.key || `col${cellIndex}`;
-          rowData[columnKey] = cell.props.children || cell.props.value || "";
-        });
+      // const tableBodyElement = children.find(
+      //   (child) => child.tag === "TableBody"
+      // );
+      // const rowElements = tableBodyElement
+      //   ? elements.filter(
+      //     (el) => el.parent_id === tableBodyElement.id && el.tag === "Row"
+      //   )
+      //   : children.filter((child) => child.tag === "Row");
 
-        return rowData as { id: string | number;[key: string]: unknown };
-      });
+      // Row Element로부터 생성된 데이터 (사용되지 않음, 정적 데이터 또는 API 데이터 사용)
+      // const data = rowElements.map((row, index) => {
+      //   const cellElements = elements.filter(
+      //     (el) => el.parent_id === row.id && el.tag === "Cell"
+      //   );
+      //   const rowData: Record<string, unknown> = { id: row.id || index };
+
+      //   cellElements.forEach((cell, cellIndex) => {
+      //     const columnKey = columns[cellIndex]?.key || `col${cellIndex}`;
+      //     rowData[columnKey] = cell.props.children || cell.props.value || "";
+      //   });
+
+      //   return rowData as { id: string | number;[key: string]: unknown };
+      // });
 
       // dataBinding을 통한 API 데이터 사용 여부 확인
       const hasApiBinding =
@@ -1856,15 +1860,28 @@ function Preview() {
           type?: string;
           sortable?: boolean;
           width?: number;
+          align?: string;
         }>;
 
-        mappedColumns = Object.entries(columnMapping).map(([columnName, mapping]) => ({
-          key: mapping.key || columnName,
-          label: mapping.label || columnName,
-          allowsSorting: mapping.sortable !== false,
-          width: mapping.width || 150,
-          align: 'left' as const,
-        }));
+        console.log("🔍 정적 데이터 컬럼 매핑 발견:", columnMapping);
+
+        mappedColumns = Object.entries(columnMapping).map(([columnName, mapping]) => {
+          console.log("📝 컬럼 생성:", columnName, mapping);
+          return {
+            key: (mapping.key || columnName) as keyof { id: string | number },
+            label: mapping.label || columnName,
+            allowsSorting: mapping.sortable !== false,
+            enableResizing: true,
+            width: mapping.width || 150,
+            align: (mapping.align || 'left') as "left" | "center" | "right",
+            elementId: ElementUtils.generateId(),
+          };
+        });
+
+        console.log("✅ 생성된 컬럼 개수:", mappedColumns.length, mappedColumns);
+
+        // Preview는 읽기 전용이므로 Column Element 생성은 하지 않음
+        // 대신 mappedColumns를 사용하여 테이블 렌더링
       }
 
       // API 바인딩이 있으면 빈 배열로 전달하여 자동 컬럼 감지 활성화 ⭐
@@ -1873,7 +1890,7 @@ function Preview() {
         hasApiBinding && columns.length === 0
           ? [] // API 바인딩 + 컬럼 없음 = 자동 감지
           : columns.length > 0
-            ? columns // 수동 컬럼 있음
+            ? columns // 수동 컬럼 있음 (Column Element 우선)
             : mappedColumns.length > 0
               ? mappedColumns // 정적 데이터 컬럼 매핑 사용
               : [ // Fallback 기본 컬럼
@@ -1965,7 +1982,7 @@ function Preview() {
           className={el.props.className}
           columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
           columnGroups={columnGroups}
-          data={hasApiBinding ? undefined : finalData}
+          data={hasApiBinding ? undefined : (finalData as { id: string | number }[] | undefined)}
           paginationMode={
             (el.props.paginationMode as "pagination" | "infinite") ||
             "pagination"
