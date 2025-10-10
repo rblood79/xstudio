@@ -1083,49 +1083,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
       {/* 페이지네이션 (grid 바깥) */}
       {isAsync && mode === "pagination" && pageCount !== null && (
         <div className="react-aria-Pagination">
-          {/* 페이지 크기 선택 */}
-          <div className="react-aria-PageSizeSelector">
-            <label
-              htmlFor="page-size-select"
-              className="react-aria-PageSizeLabel"
-            >
-              Show:
-            </label>
-            <Select
-              id="page-size-select"
-              selectedKey={currentItemsPerPage.toString()}
-              onSelectionChange={async (key) => {
-                const newPageSize = Number(key);
-                setCurrentItemsPerPage(newPageSize); // 내부 상태 업데이트
-                const { items, total } = await fetchPage(0, newPageSize);
-                setPageRows(items);
-                setPageIndex(0);
-                setPageCount(
-                  Math.max(1, Math.ceil((total || 0) / newPageSize))
-                );
-                // 부모 컴포넌트에 페이지당 항목 수 변경 알림
-                if (onItemsPerPageChange) {
-                  onItemsPerPageChange(newPageSize);
-                }
-              }}
-              isDisabled={loading}
-              className="react-aria-PageSizeSelect"
-              items={[
-                { value: 5, label: "5" },
-                { value: 10, label: "10" },
-                { value: 20, label: "20" },
-                { value: 50, label: "50" },
-                { value: 100, label: "100" },
-              ]}
-            >
-              {(item) => (
-                <SelectItem key={item.value} id={item.value.toString()}>
-                  {item.label}
-                </SelectItem>
-              )}
-            </Select>
-            <span className="react-aria-PageSizeText">entries</span>
+          {/* 페이지 정보 */}
+          <div className="react-aria-PageInfo">
+            {pageIndex * currentItemsPerPage + 1} to{" "}
+            {Math.min(
+              (pageIndex + 1) * currentItemsPerPage,
+              pageRows.length + pageIndex * currentItemsPerPage
+            )}{" "}
+            of {pageCount * currentItemsPerPage} entries
           </div>
+
+
 
           {/* 페이지 네비게이션 */}
           <div className="react-aria-PageNavigation">
@@ -1290,14 +1258,41 @@ export default React.memo(function Table<T extends { id: string | number }>(
             />
           </div>
 
-          {/* 페이지 정보 */}
-          <div className="react-aria-PageInfo">
-            Showing {pageIndex * currentItemsPerPage + 1} to{" "}
-            {Math.min(
-              (pageIndex + 1) * currentItemsPerPage,
-              pageRows.length + pageIndex * currentItemsPerPage
-            )}{" "}
-            of {pageCount * currentItemsPerPage} entries
+          {/* 페이지 크기 선택 */}
+          <div className="react-aria-PageSizeSelector">
+            <Select
+              id="page-size-select"
+              selectedKey={currentItemsPerPage.toString()}
+              onSelectionChange={async (key) => {
+                const newPageSize = Number(key);
+                setCurrentItemsPerPage(newPageSize); // 내부 상태 업데이트
+                const { items, total } = await fetchPage(0, newPageSize);
+                setPageRows(items);
+                setPageIndex(0);
+                setPageCount(
+                  Math.max(1, Math.ceil((total || 0) / newPageSize))
+                );
+                // 부모 컴포넌트에 페이지당 항목 수 변경 알림
+                if (onItemsPerPageChange) {
+                  onItemsPerPageChange(newPageSize);
+                }
+              }}
+              isDisabled={loading}
+              className="react-aria-PageSizeSelect"
+              items={[
+                { value: 5, label: "5" },
+                { value: 10, label: "10" },
+                { value: 20, label: "20" },
+                { value: 50, label: "50" },
+                { value: 100, label: "100" },
+              ]}
+            >
+              {(item) => (
+                <SelectItem key={item.value} id={item.value.toString()}>
+                  {item.label}
+                </SelectItem>
+              )}
+            </Select>
           </div>
 
           {loading && <span className="react-aria-LoadingText">Loading…</span>}

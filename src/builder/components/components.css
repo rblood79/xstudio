@@ -3086,12 +3086,11 @@
 
 /* Pagination 컴포넌트 스타일 */
 .react-aria-Pagination {
-  font-size: var(--text-sm);
-  color: var(--color-gray-600);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: var(--spacing-2xs);
+  font-size: var(--text-sm);
+  gap: var(--spacing-sm);
 }
 
 
@@ -3324,9 +3323,7 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .react-aria-Pagination {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: stretch;
+    gap: var(--spacing-xs);
   }
 
   .react-aria-PageSizeSelector,
