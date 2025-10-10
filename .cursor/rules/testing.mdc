@@ -1,3 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Testing (Vitest / Playwright)
+[globs]: ["**/*.{test,spec}.{ts,tsx}"]
+- Testing Library: prefer role/label queries
+- Include at least one edge-case per unit
+- Playwright focuses on core user flows
 # Testing (Vitest / Playwright)
 [globs]: ["**/*.{test,spec}.{ts,tsx}"]
 - Testing Library: prefer role/label queries

@@ -1,3 +1,12 @@
+---
+alwaysApply: true
+---
+
+# TypeScript
+[globs]: ["**/*.{ts,tsx}"]
+- strict typing; avoid any; explicit returns
+- DTOs in src/types/; components/hooks kept thin
+- prefer aliased/absolute imports
 # TypeScript
 [globs]: ["**/*.{ts,tsx}"]
 - strict typing; avoid any; explicit returns
