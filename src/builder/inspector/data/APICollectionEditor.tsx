@@ -47,15 +47,19 @@ export function APICollectionEditor({
     return endpointChanged || paramsChanged || headersChanged || dataMappingChanged;
   }, [endpointChanged, paramsChanged, headersChanged, dataMappingChanged]);
 
-  // 모든 변경사항 한 번에 적용
+  // Params, Headers, DataMapping만 변경되었는지 확인 (Endpoint 제외)
+  const hasOtherChanges = useMemo(() => {
+    return paramsChanged || headersChanged || dataMappingChanged;
+  }, [paramsChanged, headersChanged, dataMappingChanged]);
+
+  // Params, Headers, DataMapping만 적용 (Endpoint는 개별 버튼으로 적용)
   const handleApplyChanges = () => {
     try {
       const parsedParams = JSON.parse(localParams);
       const parsedHeaders = JSON.parse(localHeaders);
       const parsedDataMapping = JSON.parse(localDataMapping);
 
-      console.log("✅ API 설정 일괄 적용:", {
-        endpoint: localEndpoint,
+      console.log("✅ API 설정 적용 (Params, Headers, DataMapping):", {
         params: parsedParams,
         headers: parsedHeaders,
         dataMapping: parsedDataMapping,
@@ -63,7 +67,6 @@ export function APICollectionEditor({
 
       onChange({
         ...config,
-        endpoint: localEndpoint,
         params: parsedParams,
         headers: parsedHeaders,
         dataMapping: parsedDataMapping,
@@ -79,6 +82,15 @@ export function APICollectionEditor({
     setLocalParams(JSON.stringify(config.params || {}, null, 2));
     setLocalHeaders(JSON.stringify(config.headers || {}, null, 2));
     setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
+  };
+
+  // Endpoint만 개별 적용 (Column 구조 변경)
+  const handleApplyEndpoint = () => {
+    console.log("✅ Endpoint만 적용:", localEndpoint);
+    onChange({
+      ...config,
+      endpoint: localEndpoint,
+    });
   };
 
   return (
@@ -214,6 +226,21 @@ export function APICollectionEditor({
                 setLocalEndpoint(e.target.value);
               }}
             />
+
+            <Button
+              size="sm"
+              onClick={handleApplyEndpoint}
+              isDisabled={!endpointChanged}
+              style={{
+                marginLeft: "8px",
+                backgroundColor: endpointChanged ? "var(--color-primary)" : "var(--color-gray-300)",
+                color: endpointChanged ? "white" : "var(--color-gray-500)",
+                cursor: endpointChanged ? "pointer" : "not-allowed",
+                opacity: endpointChanged ? 1 : 0.6,
+              }}
+            >
+              Apply
+            </Button>
           </TextField>
         </div>
       </fieldset>
@@ -339,21 +366,21 @@ export function APICollectionEditor({
       <div className="action-buttons">
         {/* Discard Changes 버튼 - 변경사항이 있을 때만 표시 */}
         {hasChanges && (
-          <Button 
+          <Button
             onClick={handleDiscardChanges}
             className="discard-button"
           >
             Discard
           </Button>
         )}
-        
-        {/* Apply Changes 버튼 - 변경사항 여부에 따라 활성화/비활성화 */}
-        <Button 
+
+        {/* Apply Others 버튼 - Params, Headers, DataMapping만 적용 (Endpoint 제외) */}
+        <Button
           onClick={handleApplyChanges}
-          isDisabled={!hasChanges}
-          className={`apply-button ${hasChanges ? "has-changes" : ""}`}
+          isDisabled={!hasOtherChanges}
+          className={`apply-button ${hasOtherChanges ? "has-changes" : ""}`}
         >
-          {hasChanges ? "Apply" : "No Changes"}
+          {hasOtherChanges ? "Apply Others" : "No Changes"}
         </Button>
       </div>
     </div>
