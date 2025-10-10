@@ -42,13 +42,13 @@ import {
   TagGroup,
   Tag,
 } from "../components/list";
-import Table from "../components/Table";
+import Table, { type ColumnDefinition } from "../components/Table";
 import { EventEngine } from "../../utils/eventEngine";
 import { ElementEvent, EventContext } from "../../types/events";
 //import { useBatchUpdate } from '../stores';
 import { ElementUtils } from "../../utils/elementUtils";
 import { today, getLocalTimeZone } from "@internationalized/date";
-import type { DataBinding } from "../../types/unified";
+import type { DataBinding, Element } from "../../types/unified";
 
 interface PreviewElement {
   id: string;
@@ -59,12 +59,13 @@ interface PreviewElement {
   page_id: string; // 필수 속성으로 변경 (store의 Element와 일치)
   order_num?: number;
   dataBinding?: DataBinding; // 데이터 바인딩 추가
+  deleted?: boolean; // 삭제 여부 ⭐
 }
 
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
-  const { setElements, updateElementProps } = useStore();
+  const { setElements, updateElementProps, addElement } = useStore();
   const eventEngine = EventEngine.getInstance();
 
   // Console error/warning suppression for development
@@ -1737,10 +1738,12 @@ function Preview() {
         ? elements
           .filter(
             (el) =>
-              el.parent_id === tableHeaderElement.id && el.tag === "Column"
+              el.parent_id === tableHeaderElement.id && 
+              el.tag === "Column" &&
+              !el.deleted // 삭제된 Column 제외 ⭐
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
-        : children.filter((child) => child.tag === "Column"); // fallback: 직접 Column 찾기
+        : children.filter((child) => child.tag === "Column" && !child.deleted); // fallback: 직접 Column 찾기
 
       const columns = columnElements.map((col, index) => {
         // key 우선순위: props.key > children (소문자) > id > fallback
@@ -1836,18 +1839,20 @@ function Preview() {
       // 샘플 데이터 사용 시 정적 데이터 제공
       const finalData = hasApiBinding ? [] : data;
 
-      // Column Element에서 추출한 컬럼 사용
-      // Element가 없으면 기본 컬럼 사용
+      // API 바인딩이 있으면 빈 배열로 전달하여 자동 컬럼 감지 활성화 ⭐
+      // Column Element가 있으면 해당 컬럼 사용, 없으면 기본 컬럼 제공
       const finalColumns =
-        columns.length > 0
-          ? columns
-          : [
-            {
-              key: "id" as const,
-              label: "ID",
-              allowsSorting: true,
-              width: 80,
-            },
+        hasApiBinding && columns.length === 0
+          ? [] // API 바인딩 + 컬럼 없음 = 자동 감지
+          : columns.length > 0
+            ? columns // 수동 컬럼 있음
+            : [ // Fallback 기본 컬럼
+              {
+                key: "id" as const,
+                label: "ID",
+                allowsSorting: true,
+                width: 80,
+              },
             {
               key: "name" as const,
               label: "Name",
@@ -1873,6 +1878,15 @@ function Preview() {
               width: 200,
             },
           ];
+
+      console.log("🎨 Table 렌더링 준비:", {
+        tableId: el.id,
+        hasApiBinding,
+        columnElementsCount: columnElements.length,
+        columnsLength: columns.length,
+        finalColumnsLength: finalColumns.length,
+        willAutoDetect: hasApiBinding && columns.length === 0,
+      });
 
       // Column Group Element에서 추출한 그룹 데이터 생성
       const columnGroups = tableHeaderElement
@@ -1919,7 +1933,7 @@ function Preview() {
           data-element-id={el.id}
           tableHeaderElementId={tableHeaderElement?.id}
           className={el.props.className}
-          columns={finalColumns}
+          columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
           columnGroups={columnGroups}
           data={hasApiBinding ? undefined : finalData}
           paginationMode={
@@ -1973,6 +1987,39 @@ function Preview() {
             "ascending"
           }
           enableResize={Boolean(el.props.enableResize ?? true)}
+          onColumnsDetected={(detectedColumns) => {
+            // 자동 감지된 컬럼을 Store에 Column Element로 추가
+            console.log("🎯 Preview에서 자동 감지된 컬럼 수신:", detectedColumns);
+            
+            // TableHeader Element 찾기
+            if (!tableHeaderElement) {
+              console.warn("⚠️ TableHeader Element를 찾을 수 없어 컬럼을 추가할 수 없습니다.");
+              return;
+            }
+            
+            // 각 컬럼을 Column Element로 추가
+            detectedColumns.forEach((colDef, index) => {
+              const columnElement: Element = {
+                id: colDef.elementId || `col_${Date.now()}_${index}`,
+                tag: "Column",
+                page_id: el.page_id, // Table Element의 page_id 사용
+                parent_id: tableHeaderElement.id,
+                order_num: index,
+                props: {
+                  key: String(colDef.key),
+                  label: colDef.label,
+                  children: colDef.label,
+                  allowsSorting: colDef.allowsSorting ?? true,
+                  enableResizing: colDef.enableResizing ?? true,
+                  width: colDef.width ?? 150,
+                  align: colDef.align ?? "left",
+                },
+              };
+              
+              console.log("➕ Column Element 추가:", columnElement);
+              addElement(columnElement);
+            });
+          }}
         />
       );
     }

@@ -31,6 +31,7 @@ export interface Element {
   page_id: string;
   created_at?: string;
   updated_at?: string;
+  deleted?: boolean; // 삭제 여부 (UI 필터링용) ⭐
   // Inspector 데이터 바인딩 (선택적)
   dataBinding?: DataBinding;
 }
