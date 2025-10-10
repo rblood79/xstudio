@@ -3312,6 +3312,7 @@
 .react-aria-PageInfo {
   color: #6b7280;
   white-space: nowrap;
+  font-size: var(--text-xs);
 }
 
 .react-aria-LoadingText {
