@@ -10,7 +10,7 @@ import {
   createColumnHelper,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Button } from "./list";
+import { Button, Select, SelectItem } from "./list";
 import {
   ChevronDown,
   ChevronUp,
@@ -86,9 +86,10 @@ export interface TableProps<T extends { id: string | number }> {
 
   // 기능
   enableResize?: boolean; // default: true
-  
+
   // 콜백
   onColumnsDetected?: (columns: ColumnDefinition<T>[]) => void; // 자동 감지된 컬럼 전달
+  onItemsPerPageChange?: (itemsPerPage: number) => void; // 페이지당 항목 수 변경 콜백
 }
 
 export default React.memo(function Table<T extends { id: string | number }>(
@@ -121,6 +122,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
     enableResize = true,
     onColumnsDetected, // 자동 감지된 컬럼 콜백
+    onItemsPerPageChange, // 페이지당 항목 수 변경 콜백
   } = props;
 
   const mode: PaginationMode = paginationMode || "pagination";
@@ -219,10 +221,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- 컬럼 자동 감지 함수 ----------
   const detectColumnsFromData = React.useCallback((data: T[]): ColumnDefinition<T>[] => {
     if (!data || data.length === 0) return [];
-    
+
     const firstItem = data[0];
     const keys = Object.keys(firstItem);
-    
+
     return keys.map((key) => ({
       key: key as keyof T,
       label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
@@ -240,7 +242,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const columnDefsWithGroups = React.useMemo<any[]>(() => {
     // 사용할 컬럼 결정: 제공된 컬럼이 있으면 사용, 없으면 자동 감지된 컬럼 사용
     const effectiveColumns = columns.length > 0 ? columns : detectedColumns;
-    
+
     if (effectiveColumns.length === 0) {
       return [];
     }
@@ -401,10 +403,16 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const [pageIndex, setPageIndex] = React.useState(0);
   const [pageCount, setPageCount] = React.useState<number | null>(null);
   const [pageRows, setPageRows] = React.useState<T[]>([]);
+  const [currentItemsPerPage, setCurrentItemsPerPage] = React.useState(itemsPerPage); // 내부 상태 추가
   const [flatRows, setFlatRows] = React.useState<T[]>([]);
   const [cursor, setCursor] = React.useState<string | undefined>(undefined);
   const [hasNext, setHasNext] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
+
+  // prop 변경 시 내부 상태 동기화
+  React.useEffect(() => {
+    setCurrentItemsPerPage(itemsPerPage);
+  }, [itemsPerPage]);
 
   // ---------- API 어댑터 (더미 배열 응답 기반) ----------
   const isFetchingRef = React.useRef(false);
@@ -450,7 +458,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         const sort = sorting[0]
           ? { sortBy: sorting[0].id, desc: sorting[0].desc }
           : undefined;
-        const limit = pageSize ?? itemsPerPage;
+        const limit = pageSize ?? currentItemsPerPage; // itemsPerPage 대신 currentItemsPerPage 사용
 
         // 두 모드 모두 page/limit 방식 사용
         // apiParams를 먼저 spread하고, page와 limit으로 오버라이드
@@ -484,7 +492,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
           const detected = detectColumnsFromData(items);
           setDetectedColumns(detected);
           console.log("🔍 자동 감지된 컬럼:", detected);
-          
+
           // 부모 컴포넌트에 자동 감지된 컬럼 전달
           if (onColumnsDetected) {
             onColumnsDetected(detected);
@@ -522,7 +530,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       isAsync,
       apiUrlKey,
       endpointPath,
-      itemsPerPage,
+      currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
       sorting,
       processApiResponse,
       dataMapping,
@@ -567,7 +575,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
           : undefined;
         const response = await service!(endpointPath, {
           page,
-          limit: itemsPerPage,
+          limit: currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
           ...sort,
         });
 
@@ -590,7 +598,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
           const detected = detectColumnsFromData(items);
           setDetectedColumns(detected);
           console.log("🔍 자동 감지된 컬럼 (fetchMore):", detected);
-          
+
           // 부모 컴포넌트에 자동 감지된 컬럼 전달
           if (onColumnsDetected) {
             onColumnsDetected(detected);
@@ -606,7 +614,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
           return { items: [], nextCursor: undefined };
         }
         const next =
-          items.length === itemsPerPage ? String(page + 1) : undefined;
+          items.length === currentItemsPerPage ? String(page + 1) : undefined; // itemsPerPage 대신 currentItemsPerPage
         return { items, nextCursor: next };
       } finally {
         setLoading(false);
@@ -617,7 +625,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       isAsync,
       apiUrlKey,
       endpointPath,
-      itemsPerPage,
+      currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
       sorting,
       processApiResponse,
       dataMapping,
@@ -637,7 +645,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   React.useEffect(() => {
     // 모드 변경 또는 API 설정 변경 감지
     const modeChanged = prevModeRef.current !== mode;
-    const apiConfigChanged = 
+    const apiConfigChanged =
       prevApiConfigRef.current.apiUrlKey !== apiUrlKey ||
       prevApiConfigRef.current.endpointPath !== endpointPath ||
       prevApiConfigRef.current.isAsync !== isAsync;
@@ -647,7 +655,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       initialLoadRef.current = false;
       prevModeRef.current = mode;
       prevApiConfigRef.current = { apiUrlKey, endpointPath, isAsync };
-      
+
       // 기존 데이터 초기화
       setPageRows([]);
       setFlatRows([]);
@@ -674,7 +682,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         const { items, total } = await fetchPage(0);
         setPageRows(items);
         setPageIndex(0);
-        setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
+        setPageCount(Math.max(1, Math.ceil((total || 0) / currentItemsPerPage)));
         initialLoadRef.current = false;
       })();
     } else {
@@ -707,7 +715,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
     // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAsync, mode, itemsPerPage, apiUrlKey, endpointPath, enableAsyncLoading]);
+  }, [isAsync, mode, currentItemsPerPage, apiUrlKey, endpointPath, enableAsyncLoading]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
@@ -947,8 +955,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
                             >
                               <div
                                 className={`flex items-center gap-2 ${header.column.getCanSort()
-                                    ? "cursor-pointer select-none hover:text-blue-600"
-                                    : ""
+                                  ? "cursor-pointer select-none hover:text-blue-600"
+                                  : ""
                                   }`}
                                 onClick={header.column.getToggleSortingHandler()}
                                 onKeyDown={(e) => {
@@ -1083,28 +1091,39 @@ export default React.memo(function Table<T extends { id: string | number }>(
             >
               Show:
             </label>
-            <select
+            <Select
               id="page-size-select"
-              value={itemsPerPage}
-              onChange={async (e) => {
-                const newPageSize = Number(e.target.value);
+              selectedKey={currentItemsPerPage.toString()}
+              onSelectionChange={async (key) => {
+                const newPageSize = Number(key);
+                setCurrentItemsPerPage(newPageSize); // 내부 상태 업데이트
                 const { items, total } = await fetchPage(0, newPageSize);
                 setPageRows(items);
                 setPageIndex(0);
-                // itemsPerPage는 prop이므로 변경할 수 없음 - 부모 컴포넌트에서 관리해야 함
                 setPageCount(
                   Math.max(1, Math.ceil((total || 0) / newPageSize))
                 );
+                // 부모 컴포넌트에 페이지당 항목 수 변경 알림
+                if (onItemsPerPageChange) {
+                  onItemsPerPageChange(newPageSize);
+                }
               }}
-              disabled={loading}
+              isDisabled={loading}
               className="react-aria-PageSizeSelect"
+              items={[
+                { value: 5, label: "5" },
+                { value: 10, label: "10" },
+                { value: 20, label: "20" },
+                { value: 50, label: "50" },
+                { value: 100, label: "100" },
+              ]}
             >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
+              {(item) => (
+                <SelectItem key={item.value} id={item.value.toString()}>
+                  {item.label}
+                </SelectItem>
+              )}
+            </Select>
             <span className="react-aria-PageSizeText">entries</span>
           </div>
 
@@ -1112,11 +1131,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
           <div className="react-aria-PageNavigation">
             <Button
               onClick={async () => {
-                const { items, total } = await fetchPage(0, itemsPerPage);
+                const { items, total } = await fetchPage(0, currentItemsPerPage);
                 setPageRows(items);
                 setPageIndex(0);
                 setPageCount(
-                  Math.max(1, Math.ceil((total || 0) / itemsPerPage))
+                  Math.max(1, Math.ceil((total || 0) / currentItemsPerPage))
                 );
               }}
               isDisabled={pageIndex === 0 || loading}
@@ -1129,7 +1148,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
             <Button
               onClick={async () => {
                 const next = Math.max(0, pageIndex - 1);
-                const { items } = await fetchPage(next, itemsPerPage);
+                const { items } = await fetchPage(next, currentItemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
@@ -1168,7 +1187,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                         const targetPage = i - 1;
                         const { items } = await fetchPage(
                           targetPage,
-                          itemsPerPage
+                          currentItemsPerPage
                         );
                         setPageRows(items);
                         setPageIndex(targetPage);
@@ -1188,7 +1207,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
             <Button
               onClick={async () => {
                 const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
-                const { items } = await fetchPage(next, itemsPerPage);
+                const { items } = await fetchPage(next, currentItemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
@@ -1203,7 +1222,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
             <Button
               onClick={async () => {
                 const next = (pageCount ?? 1) - 1;
-                const { items } = await fetchPage(next, itemsPerPage);
+                const { items } = await fetchPage(next, currentItemsPerPage);
                 setPageRows(items);
                 setPageIndex(next);
               }}
@@ -1245,7 +1264,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   );
                   const { items } = await fetchPage(
                     targetPage - 1,
-                    itemsPerPage
+                    currentItemsPerPage
                   );
                   setPageRows(items);
                   setPageIndex(targetPage - 1);
@@ -1260,7 +1279,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   1,
                   Math.min(pageCount, pageIndex + 1)
                 );
-                const { items } = await fetchPage(targetPage - 1, itemsPerPage);
+                const { items } = await fetchPage(targetPage - 1, currentItemsPerPage);
                 setPageRows(items);
                 setPageIndex(targetPage - 1);
               }}
@@ -1273,12 +1292,12 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
           {/* 페이지 정보 */}
           <div className="react-aria-PageInfo">
-            Showing {pageIndex * itemsPerPage + 1} to{" "}
+            Showing {pageIndex * currentItemsPerPage + 1} to{" "}
             {Math.min(
-              (pageIndex + 1) * itemsPerPage,
-              pageRows.length + pageIndex * itemsPerPage
+              (pageIndex + 1) * currentItemsPerPage,
+              pageRows.length + pageIndex * currentItemsPerPage
             )}{" "}
-            of {pageCount * itemsPerPage} entries
+            of {pageCount * currentItemsPerPage} entries
           </div>
 
           {loading && <span className="react-aria-LoadingText">Loading…</span>}
