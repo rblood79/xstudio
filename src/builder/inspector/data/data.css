@@ -197,5 +197,71 @@
         line-height: 1.4;
       }
     }
+
+    /* APICollectionEditor 변경 감지 스타일 */
+    .api-collection-editor {
+      /* 변경된 필드 하이라이트 */
+      .control-input.field-modified {
+        border-color: var(--color-primary);
+        border-width: 2px;
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        transition: all 0.2s ease-in-out;
+      }
+
+      /* Action 버튼 컨테이너 */
+      .action-buttons {
+        display: flex;
+        gap: var(--spacing-sm);
+        justify-content: center;
+      }
+
+      /* Discard Changes 버튼 */
+      .discard-button {
+        padding: var(--spacing-2) var(--spacing-4);
+        background: var(--color-gray-100);
+        color: var(--color-gray-600);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background: var(--color-gray-200);
+          border-color: var(--color-gray-400);
+        }
+      }
+
+      /* Apply Changes 버튼 */
+      .apply-button {
+        padding: var(--spacing) var(--spacing-md);
+        background: var(--color-primary-700);
+        color: white;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover:not(:disabled) {
+          background: var(--color-primary-900);
+          box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.3);
+        }
+
+        &:disabled {
+          background: var(--color-gray-300);
+          color: var(--color-gray-500);
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        /* 변경사항 있음 표시 */
+        &.has-changes::after {
+          content: " ●";
+          color: var(--color-success);
+        }
+      }
+    }
   }
 }
