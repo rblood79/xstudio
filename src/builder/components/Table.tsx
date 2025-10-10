@@ -523,14 +523,20 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- 초기/리로드 ----------
   const containerRef = React.useRef<HTMLDivElement>(null);
   const initialLoadRef = React.useRef(false);
+  const hasLoadedRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!isAsync) return;
 
+    // 이미 로드된 경우 스킵 (리렌더링 시 재실행 방지)
+    if (hasLoadedRef.current) {
+      return;
+    }
+
     // 초기 로드 중복 방지 (React Strict Mode 대응)
     if (initialLoadRef.current) {
       console.log(
-        "⏸️ Initial load already completed, skipping duplicate effect"
+        "⏸️ Initial load already in progress, skipping duplicate effect"
       );
       return;
     }
@@ -543,6 +549,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
         setPageRows(items);
         setPageIndex(0);
         setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
+        hasLoadedRef.current = true;
+        initialLoadRef.current = false;
       })();
     } else {
       (async () => {
@@ -569,14 +577,13 @@ export default React.memo(function Table<T extends { id: string | number }>(
             }
           }, 100);
         }
+        hasLoadedRef.current = true;
+        initialLoadRef.current = false;
       })();
     }
-
-    // cleanup: 다음 effect 실행 전 초기화
-    return () => {
-      initialLoadRef.current = false;
-    };
-  }, [isAsync, mode, itemsPerPage, fetchPage, fetchMore]);
+    // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAsync, mode, itemsPerPage]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {

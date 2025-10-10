@@ -1,3 +1,13 @@
+---
+alwaysApply: true
+---
+
+# Supabase
+[globs]: ["**/*.{ts,tsx}"]
+- RLS assumption; never ship service keys
+- After mutations, fetch fresh row with .select().single()
+- APIs under services/api/*.ts; consume via hooks
+- Separate toasts from logging; safe error serialization
 # Supabase
 [globs]: ["**/*.{ts,tsx}"]
 - RLS assumption; never ship service keys
