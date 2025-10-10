@@ -3094,9 +3094,6 @@
   gap: var(--spacing-2xs);
 }
 
-.react-aria-Pagination span {
-  color: var(--spectrum-global-color-gray-600);
-}
 
 /* Card 컴포넌트 스타일 */
 .react-aria-Card {
@@ -3303,8 +3300,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.react-aria-GoToPageButton {
-}
 
 .react-aria-GoToPageButton:hover:not(:disabled) {
   background-color: var(--color-primary-900);
