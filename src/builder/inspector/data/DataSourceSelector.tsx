@@ -8,6 +8,7 @@ import {
 } from "react-aria-components";
 import { useComponentMeta } from "../hooks/useComponentMeta";
 import { useInspectorState } from "../hooks/useInspectorState";
+import { useStore } from "../../stores/elements";
 import { SupabaseCollectionEditor } from "./SupabaseCollectionEditor.tsx";
 import { SupabaseValueEditor } from "./SupabaseValueEditor.tsx";
 import { StateBindingEditor } from "./StateBindingEditor.tsx";
@@ -33,6 +34,9 @@ export interface DataSourceSelectorProps {
 export function DataSourceSelector({ element }: DataSourceSelectorProps) {
   const meta = useComponentMeta(element.type);
   const { updateDataBinding, updateProperty } = useInspectorState();
+  const addElement = useStore((state) => state.addElement);
+  const updateElement = useStore((state) => state.updateElement);
+  const elements = useStore((state) => state.elements);
 
   const bindingType = meta?.inspector.dataBindingType;
   const binding = element.dataBinding;

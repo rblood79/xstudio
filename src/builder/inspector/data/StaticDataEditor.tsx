@@ -8,6 +8,18 @@ import type {
 } from "../types";
 import "./data.css";
 
+// 컬럼 매핑 타입 정의
+interface ColumnMappingItem {
+  key: string;
+  label?: string;
+  type?: "string" | "number" | "boolean" | "date";
+  sortable?: boolean;
+  width?: number;
+  align?: "left" | "center" | "right";
+}
+
+type ColumnMapping = Record<string, ColumnMappingItem>;
+
 
 export interface StaticDataEditorProps {
   bindingType: DataBindingType;
@@ -38,7 +50,7 @@ export function StaticDataEditor({
   const [localColumnMapping, setLocalColumnMapping] = useState(JSON.stringify(initialColumnMapping, null, 2));
   const [error, setError] = useState("");
   const [pendingData, setPendingData] = useState<unknown[] | null>(null);
-  const [pendingColumnMapping, setPendingColumnMapping] = useState<Record<string, any> | null>(null);
+  const [pendingColumnMapping, setPendingColumnMapping] = useState<ColumnMapping | null>(null);
 
   // 변경 감지
   const jsonChanged = useMemo(() => {
@@ -65,6 +77,7 @@ export function StaticDataEditor({
     setPendingData(null);
 
     if (!input.trim()) {
+      setPendingColumnMapping({});
       return;
     }
 
@@ -74,6 +87,28 @@ export function StaticDataEditor({
         if (Array.isArray(parsed)) {
           // Apply 버튼으로 적용할 수 있도록 pendingData에 저장
           setPendingData(parsed);
+
+          // 데이터의 키를 기반으로 자동 컬럼 매핑 생성
+          if (parsed.length > 0) {
+            const firstItem = parsed[0] as Record<string, unknown>;
+            const keys = Object.keys(firstItem);
+
+            const autoColumnMapping: ColumnMapping = {};
+            keys.forEach((key) => {
+              autoColumnMapping[key] = {
+                key: key,
+                label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                type: typeof firstItem[key] === 'number' ? 'number' :
+                  typeof firstItem[key] === 'boolean' ? 'boolean' :
+                    typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
+                sortable: true,
+                width: 150
+              };
+            });
+
+            setLocalColumnMapping(JSON.stringify(autoColumnMapping, null, 2));
+            setPendingColumnMapping(autoColumnMapping);
+          }
         } else {
           setError("Collection 바인딩은 배열이어야 합니다.");
         }
@@ -98,6 +133,44 @@ export function StaticDataEditor({
       const parsed = JSON.parse(input);
       if (typeof parsed === 'object' && parsed !== null) {
         setPendingColumnMapping(parsed);
+
+        // 데이터가 있고 컬럼 매핑이 비어있거나 일부만 설정된 경우 자동 완성 제안
+        if (pendingData && pendingData.length > 0) {
+          const firstItem = pendingData[0] as Record<string, unknown>;
+          const dataKeys = Object.keys(firstItem);
+          const mappingKeys = Object.keys(parsed);
+
+          // 누락된 키들을 찾아 자동으로 추가
+          const missingKeys = dataKeys.filter(key => !mappingKeys.includes(key));
+
+          if (missingKeys.length > 0) {
+            console.log("🔍 누락된 컬럼 키 발견, 자동 완성 제안:", missingKeys);
+
+            // 사용자에게 자동 완성할지 물어보는 메시지 표시 (간단한 구현)
+            // 실제로는 더 sophisticated한 UI가 필요할 수 있음
+            const shouldAutoComplete = confirm(
+              `${missingKeys.length}개의 컬럼(${missingKeys.join(', ')})이 데이터에 있지만 매핑에 없습니다. 자동으로 추가하시겠습니까?`
+            );
+
+            if (shouldAutoComplete) {
+              const autoCompletedMapping: ColumnMapping = { ...parsed };
+              missingKeys.forEach(key => {
+                autoCompletedMapping[key] = {
+                  key: key,
+                  label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                  type: typeof firstItem[key] === 'number' ? 'number' :
+                    typeof firstItem[key] === 'boolean' ? 'boolean' :
+                      typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
+                  sortable: true,
+                  width: 150
+                };
+              });
+
+              setLocalColumnMapping(JSON.stringify(autoCompletedMapping, null, 2));
+              setPendingColumnMapping(autoCompletedMapping);
+            }
+          }
+        }
       } else {
         setError("컬럼 매핑은 객체 형식이어야 합니다.");
       }
@@ -123,6 +196,13 @@ export function StaticDataEditor({
 
       if (Object.keys(updates).length > 0) {
         console.log("✅ Static Data Apply:", updates);
+        console.log("📊 현재 데이터 상태:", {
+          hasPendingData: !!pendingData,
+          hasCurrentData: !!(config as StaticCollectionConfig).data?.length,
+          pendingDataLength: pendingData?.length,
+          currentDataLength: (config as StaticCollectionConfig).data?.length,
+          updates: Object.keys(updates)
+        });
         const newConfig = { ...config, ...updates } as StaticCollectionConfig;
         onChange(newConfig);
 
@@ -130,14 +210,18 @@ export function StaticDataEditor({
         if (onTablePropsUpdate) {
           const tableProps: Record<string, unknown> = {};
 
-          if (updates.data) {
-            tableProps.data = updates.data;
+          // 데이터 업데이트 (pending이 없어도 기존 데이터 유지)
+          const currentData = updates.data || (config as StaticCollectionConfig).data;
+          if (currentData && currentData.length > 0) {
+            tableProps.data = currentData;
             tableProps.enableAsyncLoading = false; // 정적 데이터 사용 시 비활성화
           }
 
-          if (updates.columnMapping) {
+          // 컬럼 매핑 업데이트
+          const currentColumnMapping = updates.columnMapping || (config as StaticCollectionConfig).columnMapping;
+          if (currentColumnMapping && Object.keys(currentColumnMapping).length > 0) {
             // 컬럼 매핑에서 컬럼 정의 생성
-            const columns = Object.entries(updates.columnMapping).map(([key, mapping]: [string, any]) => ({
+            const columns = Object.entries(currentColumnMapping).map(([key, mapping]) => ({
               key: mapping.key || key,
               label: mapping.label || key,
               type: mapping.type || 'string',
@@ -165,28 +249,92 @@ export function StaticDataEditor({
   };
 
   const handleLoadExample = () => {
-    const exampleData = isCollection
-      ? JSON.stringify(
+    // 현재 입력된 데이터가 있으면 그 데이터를 기반으로 예제 생성
+    const currentData = localJsonInput.trim();
+    let exampleData: string;
+    let exampleColumnMapping: ColumnMapping = {};
+
+    if (currentData && isCollection) {
+      try {
+        const parsed = JSON.parse(currentData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // 현재 데이터를 예제로 사용하되, 최대 3개 항목으로 제한
+          const limitedData = parsed.slice(0, 3);
+          exampleData = JSON.stringify(limitedData, null, 2);
+
+          // 현재 데이터의 키를 기반으로 컬럼 매핑 생성
+          const firstItem = limitedData[0] as Record<string, unknown>;
+          const keys = Object.keys(firstItem);
+          keys.forEach((key) => {
+            exampleColumnMapping[key] = {
+              key: key,
+              label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+              type: typeof firstItem[key] === 'number' ? 'number' :
+                typeof firstItem[key] === 'boolean' ? 'boolean' :
+                  typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
+              sortable: true,
+              width: 150
+            };
+          });
+        } else {
+          // 파싱 실패 시 기본 예제 사용
+          exampleData = JSON.stringify(
+            [
+              { id: 1, name: "Item 1", active: "true" },
+              { id: 2, name: "Item 2", active: "false" },
+              { id: 3, name: "Item 3", active: "true" },
+            ],
+            null,
+            2
+          );
+
+          exampleColumnMapping = {
+            id: { key: "id", label: "ID", type: "number", sortable: true, width: 150 },
+            name: { key: "name", label: "이름", type: "string", sortable: true, width: 150 },
+            active: { key: "active", label: "활성", type: "boolean", sortable: true, width: 150 },
+          };
+        }
+      } catch {
+        // 파싱 실패 시 기본 예제 사용
+        exampleData = JSON.stringify(
+          [
+            { id: 1, name: "Item 1", active: "true" },
+            { id: 2, name: "Item 2", active: "false" },
+            { id: 3, name: "Item 3", active: "true" },
+          ],
+          null,
+          2
+        );
+
+        exampleColumnMapping = {
+          id: { key: "id", label: "ID", type: "number", sortable: true, width: 150 },
+          name: { key: "name", label: "이름", type: "string", sortable: true, width: 150 },
+          active: { key: "active", label: "활성", type: "boolean", sortable: true, width: 150 },
+        };
+      }
+    } else {
+      // 데이터가 없으면 기본 예제 사용
+      exampleData = JSON.stringify(
         [
-          { id: 1, name: "Item 1", active: true },
-          { id: 2, name: "Item 2", active: false },
-          { id: 3, name: "Item 3", active: true },
+          { id: 1, name: "Item 1", active: "true" },
+          { id: 2, name: "Item 2", active: "false" },
+          { id: 3, name: "Item 3", active: "true" },
         ],
         null,
         2
-      )
-      : "Hello World";
+      );
 
-    const exampleColumnMapping = JSON.stringify({
-      id: { key: "id", label: "ID", type: "number", sortable: true },
-      name: { key: "name", label: "이름", type: "string", sortable: true },
-      active: { key: "active", label: "활성", type: "boolean", sortable: true },
-    }, null, 2);
+      exampleColumnMapping = {
+        id: { key: "id", label: "ID", type: "number", sortable: true, width: 150 },
+        name: { key: "name", label: "이름", type: "string", sortable: true, width: 150 },
+        active: { key: "active", label: "활성", type: "boolean", sortable: true, width: 150 },
+      };
+    }
 
     if (isCollection) {
       handleJSONInput(exampleData);
-      setLocalColumnMapping(exampleColumnMapping);
-      setPendingColumnMapping(JSON.parse(exampleColumnMapping));
+      setLocalColumnMapping(JSON.stringify(exampleColumnMapping, null, 2));
+      setPendingColumnMapping(exampleColumnMapping);
     } else {
       handleValueChange(exampleData);
     }
@@ -206,9 +354,9 @@ export function StaticDataEditor({
                   value={localJsonInput}
                   onChange={(e) => handleJSONInput(e.target.value)}
                   placeholder={`[
-  { "id": 1, "name": "Item 1", "active": true },
-  { "id": 2, "name": "Item 2", "active": false },
-  { "id": 3, "name": "Item 3", "active": true }
+  { "id": 1, "name": "Item 1", "active": "true" },
+  { "id": 2, "name": "Item 2", "active": "false" },
+  { "id": 3, "name": "Item 3", "active": "true" }
 ]`}
                   rows={10}
                 />
@@ -225,11 +373,35 @@ export function StaticDataEditor({
                   className={`control-input ${pendingColumnMapping ? "field-modified" : ""}`}
                   value={localColumnMapping}
                   onChange={(e) => handleColumnMappingInput(e.target.value)}
-                  placeholder={`{
-  "id": { "key": "id", "label": "ID", "type": "number" },
-  "name": { "key": "name", "label": "이름", "type": "string" },
-  "active": { "key": "active", "label": "활성", "type": "boolean" }
-}`}
+                  placeholder={(() => {
+                    // 데이터가 있으면 실제 키를 기반으로 placeholder 생성
+                    if (pendingData && pendingData.length > 0) {
+                      const firstItem = pendingData[0] as Record<string, unknown>;
+                      const keys = Object.keys(firstItem);
+                      const exampleMapping: ColumnMapping = {};
+
+                      keys.slice(0, 3).forEach((key) => { // 처음 3개 키만 예제로 사용
+                        exampleMapping[key] = {
+                          key: key,
+                          label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                          type: typeof firstItem[key] === 'number' ? 'number' :
+                            typeof firstItem[key] === 'boolean' ? 'boolean' :
+                              typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
+                          sortable: true,
+                          width: 150
+                        };
+                      });
+
+                      return JSON.stringify(exampleMapping, null, 2);
+                    }
+
+                    // 기본 placeholder
+                    return `{
+  "id": { "key": "id", "label": "ID", "type": "number", "width": 150 },
+  "name": { "key": "name", "label": "이름", "type": "string", "width": 150 },
+  "active": { "key": "active", "label": "활성", "type": "boolean", "width": 150 }
+}`;
+                  })()}
                   rows={8}
                 />
               </div>
