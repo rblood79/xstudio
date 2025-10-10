@@ -216,7 +216,7 @@ export function APICollectionEditor({
               <circle cx="18" cy="5" r="3" />
             </svg>
           </label>
-          <TextField>
+          <TextField className={"api-endpoint-path"}>
             <Input
               className={`control-input ${endpointChanged ? "field-modified" : ""}`}
               placeholder="/api/v1/items"
