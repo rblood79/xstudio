@@ -1738,7 +1738,7 @@ function Preview() {
         ? elements
           .filter(
             (el) =>
-              el.parent_id === tableHeaderElement.id && 
+              el.parent_id === tableHeaderElement.id &&
               el.tag === "Column" &&
               !el.deleted // 삭제된 Column 제외 ⭐
           )
@@ -1835,9 +1835,37 @@ function Preview() {
         };
       }
 
+      // 정적 데이터 바인딩에서 데이터 추출
+      const staticData = el.dataBinding?.type === "collection" &&
+        el.dataBinding?.source === "static" &&
+        el.dataBinding?.config &&
+        (el.dataBinding.config as { data?: unknown[] }).data;
+
       // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
-      // 샘플 데이터 사용 시 정적 데이터 제공
-      const finalData = hasApiBinding ? [] : data;
+      // 정적 데이터 사용 시 실제 데이터 제공
+      const finalData = hasApiBinding ? [] : (staticData || []);
+
+      // 정적 데이터 바인딩의 컬럼 매핑에서 컬럼 생성
+      let mappedColumns: ColumnDefinition<{ id: string | number }>[] = [];
+      if (el.dataBinding?.type === "collection" &&
+        el.dataBinding?.source === "static" &&
+        el.dataBinding?.config?.columnMapping) {
+        const columnMapping = el.dataBinding.config.columnMapping as Record<string, {
+          key: string;
+          label?: string;
+          type?: string;
+          sortable?: boolean;
+          width?: number;
+        }>;
+
+        mappedColumns = Object.entries(columnMapping).map(([columnName, mapping]) => ({
+          key: mapping.key || columnName,
+          label: mapping.label || columnName,
+          allowsSorting: mapping.sortable !== false,
+          width: mapping.width || 150,
+          align: 'left' as const,
+        }));
+      }
 
       // API 바인딩이 있으면 빈 배열로 전달하여 자동 컬럼 감지 활성화 ⭐
       // Column Element가 있으면 해당 컬럼 사용, 없으면 기본 컬럼 제공
@@ -1846,38 +1874,40 @@ function Preview() {
           ? [] // API 바인딩 + 컬럼 없음 = 자동 감지
           : columns.length > 0
             ? columns // 수동 컬럼 있음
-            : [ // Fallback 기본 컬럼
-              {
-                key: "id" as const,
-                label: "ID",
-                allowsSorting: true,
-                width: 80,
-              },
-            {
-              key: "name" as const,
-              label: "Name",
-              allowsSorting: true,
-              width: 200,
-            },
-            {
-              key: "email" as const,
-              label: "Email",
-              allowsSorting: true,
-              width: 250,
-            },
-            {
-              key: "phone" as const,
-              label: "Phone",
-              allowsSorting: true,
-              width: 150,
-            },
-            {
-              key: "company" as const,
-              label: "Company",
-              allowsSorting: true,
-              width: 200,
-            },
-          ];
+            : mappedColumns.length > 0
+              ? mappedColumns // 정적 데이터 컬럼 매핑 사용
+              : [ // Fallback 기본 컬럼
+                {
+                  key: "id" as const,
+                  label: "ID",
+                  allowsSorting: true,
+                  width: 80,
+                },
+                {
+                  key: "name" as const,
+                  label: "Name",
+                  allowsSorting: true,
+                  width: 200,
+                },
+                {
+                  key: "email" as const,
+                  label: "Email",
+                  allowsSorting: true,
+                  width: 250,
+                },
+                {
+                  key: "phone" as const,
+                  label: "Phone",
+                  allowsSorting: true,
+                  width: 150,
+                },
+                {
+                  key: "company" as const,
+                  label: "Company",
+                  allowsSorting: true,
+                  width: 200,
+                },
+              ];
 
       console.log("🎨 Table 렌더링 준비:", {
         tableId: el.id,
@@ -1990,13 +2020,13 @@ function Preview() {
           onColumnsDetected={(detectedColumns) => {
             // 자동 감지된 컬럼을 Store에 Column Element로 추가
             console.log("🎯 Preview에서 자동 감지된 컬럼 수신:", detectedColumns);
-            
+
             // TableHeader Element 찾기
             if (!tableHeaderElement) {
               console.warn("⚠️ TableHeader Element를 찾을 수 없어 컬럼을 추가할 수 없습니다.");
               return;
             }
-            
+
             // 각 컬럼을 Column Element로 추가
             detectedColumns.forEach((colDef, index) => {
               const columnElement: Element = {
@@ -2015,7 +2045,7 @@ function Preview() {
                   align: colDef.align ?? "left",
                 },
               };
-              
+
               console.log("➕ Column Element 추가:", columnElement);
               addElement(columnElement);
             });

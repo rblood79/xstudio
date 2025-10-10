@@ -8,16 +8,19 @@ import type {
 } from "../types";
 import "./data.css";
 
+
 export interface StaticDataEditorProps {
   bindingType: DataBindingType;
   config: StaticCollectionConfig | StaticValueConfig;
   onChange: (config: StaticCollectionConfig | StaticValueConfig) => void;
+  onTablePropsUpdate?: (props: Record<string, unknown>) => void;
 }
 
 export function StaticDataEditor({
   bindingType,
   config,
   onChange,
+  onTablePropsUpdate,
 }: StaticDataEditorProps) {
   const isCollection = bindingType === "collection";
 
@@ -27,10 +30,15 @@ export function StaticDataEditor({
       ? JSON.stringify((config as StaticCollectionConfig).data, null, 2)
       : "";
 
+  // 컬럼 매핑 초기값 설정
+  const initialColumnMapping = (config as StaticCollectionConfig).columnMapping || {};
+
   // Local state로 관리 (즉각 적용 방지)
   const [localJsonInput, setLocalJsonInput] = useState(initialJson);
+  const [localColumnMapping, setLocalColumnMapping] = useState(JSON.stringify(initialColumnMapping, null, 2));
   const [error, setError] = useState("");
   const [pendingData, setPendingData] = useState<unknown[] | null>(null);
+  const [pendingColumnMapping, setPendingColumnMapping] = useState<Record<string, any> | null>(null);
 
   // 변경 감지
   const jsonChanged = useMemo(() => {
@@ -39,6 +47,11 @@ export function StaticDataEditor({
       : "";
     return localJsonInput !== currentJson;
   }, [localJsonInput, config, isCollection]);
+
+  const columnMappingChanged = useMemo(() => {
+    const currentMapping = JSON.stringify((config as StaticCollectionConfig).columnMapping || {}, null, 2);
+    return localColumnMapping !== currentMapping;
+  }, [localColumnMapping, config]);
 
   const handleValueChange = (value: string) => {
     if (!isCollection) {
@@ -71,22 +84,88 @@ export function StaticDataEditor({
     }
   };
 
+  const handleColumnMappingInput = (input: string) => {
+    setLocalColumnMapping(input);
+    setError("");
+    setPendingColumnMapping(null);
+
+    if (!input.trim()) {
+      setPendingColumnMapping({});
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(input);
+      if (typeof parsed === 'object' && parsed !== null) {
+        setPendingColumnMapping(parsed);
+      } else {
+        setError("컬럼 매핑은 객체 형식이어야 합니다.");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_e) {
+      setError("유효한 JSON이 아닙니다.");
+    }
+  };
+
   const handleApply = () => {
-    if (pendingData && isCollection) {
-      console.log("✅ Static Data Apply:", pendingData);
-      onChange({ data: pendingData } as StaticCollectionConfig);
-      setPendingData(null);
+    if (isCollection) {
+      const updates: Partial<StaticCollectionConfig> = {};
+
+      if (pendingData) {
+        updates.data = pendingData;
+        setPendingData(null);
+      }
+
+      if (pendingColumnMapping !== null) {
+        updates.columnMapping = pendingColumnMapping;
+        setPendingColumnMapping(null);
+      }
+
+      if (Object.keys(updates).length > 0) {
+        console.log("✅ Static Data Apply:", updates);
+        const newConfig = { ...config, ...updates } as StaticCollectionConfig;
+        onChange(newConfig);
+
+        // Table 컴포넌트 props 업데이트
+        if (onTablePropsUpdate) {
+          const tableProps: Record<string, unknown> = {};
+
+          if (updates.data) {
+            tableProps.data = updates.data;
+            tableProps.enableAsyncLoading = false; // 정적 데이터 사용 시 비활성화
+          }
+
+          if (updates.columnMapping) {
+            // 컬럼 매핑에서 컬럼 정의 생성
+            const columns = Object.entries(updates.columnMapping).map(([key, mapping]: [string, any]) => ({
+              key: mapping.key || key,
+              label: mapping.label || key,
+              type: mapping.type || 'string',
+              sortable: mapping.sortable !== false,
+              width: mapping.width || 150,
+              align: 'left',
+            }));
+            tableProps.columns = columns;
+          }
+
+          if (Object.keys(tableProps).length > 0) {
+            onTablePropsUpdate(tableProps);
+          }
+        }
+      }
     }
   };
 
   const handleDiscard = () => {
     setLocalJsonInput(initialJson);
+    setLocalColumnMapping(JSON.stringify((config as StaticCollectionConfig).columnMapping || {}, null, 2));
     setError("");
     setPendingData(null);
+    setPendingColumnMapping(null);
   };
 
   const handleLoadExample = () => {
-    const example = isCollection
+    const exampleData = isCollection
       ? JSON.stringify(
         [
           { id: 1, name: "Item 1", active: true },
@@ -98,10 +177,18 @@ export function StaticDataEditor({
       )
       : "Hello World";
 
+    const exampleColumnMapping = JSON.stringify({
+      id: { key: "id", label: "ID", type: "number", sortable: true },
+      name: { key: "name", label: "이름", type: "string", sortable: true },
+      active: { key: "active", label: "활성", type: "boolean", sortable: true },
+    }, null, 2);
+
     if (isCollection) {
-      handleJSONInput(example);
+      handleJSONInput(exampleData);
+      setLocalColumnMapping(exampleColumnMapping);
+      setPendingColumnMapping(JSON.parse(exampleColumnMapping));
     } else {
-      handleValueChange(example);
+      handleValueChange(exampleData);
     }
   };
 
@@ -129,6 +216,26 @@ export function StaticDataEditor({
             </div>
           </fieldset>
 
+          {/* Column Mapping */}
+          <fieldset className="properties-aria">
+            <legend className="fieldset-legend">Column Mapping (JSON)</legend>
+            <div className="react-aria-control react-aria-Group">
+              <div style={{ flex: 1 }}>
+                <textarea
+                  className={`control-input ${pendingColumnMapping ? "field-modified" : ""}`}
+                  value={localColumnMapping}
+                  onChange={(e) => handleColumnMappingInput(e.target.value)}
+                  placeholder={`{
+  "id": { "key": "id", "label": "ID", "type": "number" },
+  "name": { "key": "name", "label": "이름", "type": "string" },
+  "active": { "key": "active", "label": "활성", "type": "boolean" }
+}`}
+                  rows={8}
+                />
+              </div>
+            </div>
+          </fieldset>
+
           {/* Status Messages */}
           {error && <div className="error-message">⚠️ {error}</div>}
 
@@ -140,7 +247,7 @@ export function StaticDataEditor({
 
           {!error &&
             (config as StaticCollectionConfig).data.length > 0 &&
-            !pendingData && (
+            !pendingData && !columnMappingChanged && (
               <div className="success-message">
                 ✓ {(config as StaticCollectionConfig).data.length}개 항목 로드됨
               </div>
@@ -156,7 +263,7 @@ export function StaticDataEditor({
             </Button>
 
             {/* Discard 버튼 - 변경사항이 있을 때만 표시 */}
-            {jsonChanged && (
+            {(jsonChanged || columnMappingChanged) && (
               <Button onClick={handleDiscard} className="discard-button">
                 Discard
               </Button>
@@ -164,11 +271,11 @@ export function StaticDataEditor({
 
             {/* Apply 버튼 */}
             <Button
-              className={`apply-button ${pendingData ? "has-changes" : ""}`}
+              className={`apply-button ${(pendingData || pendingColumnMapping) ? "has-changes" : ""}`}
               onPress={handleApply}
-              isDisabled={!pendingData || !!error}
+              isDisabled={(!pendingData && !pendingColumnMapping) || !!error}
             >
-              {pendingData ? "Apply" : "No Changes"}
+              {(pendingData || pendingColumnMapping) ? "Apply" : "No Changes"}
             </Button>
           </div>
         </>
