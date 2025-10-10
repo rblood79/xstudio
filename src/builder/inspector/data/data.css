@@ -197,7 +197,9 @@
         line-height: 1.4;
       }
     }
-
+    .api-endpoint-path {
+      display: flex;
+    }
     /* APICollectionEditor 변경 감지 스타일 */
     .api-collection-editor {
       /* 변경된 필드 하이라이트 */
