@@ -228,12 +228,11 @@ export function APICollectionEditor({
             />
 
             <Button
-              size="sm"
+              size="xs"
               onClick={handleApplyEndpoint}
               isDisabled={!endpointChanged}
               style={{
-                marginLeft: "8px",
-                backgroundColor: endpointChanged ? "var(--color-primary)" : "var(--color-gray-300)",
+                backgroundColor: endpointChanged ? "var(--color-primary-700)" : "var(--color-gray-300)",
                 color: endpointChanged ? "white" : "var(--color-gray-500)",
                 cursor: endpointChanged ? "pointer" : "not-allowed",
                 opacity: endpointChanged ? 1 : 0.6,

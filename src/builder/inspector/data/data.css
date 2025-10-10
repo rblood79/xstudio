@@ -199,6 +199,7 @@
     }
     .api-endpoint-path {
       display: flex;
+      flex: 1;
     }
     /* APICollectionEditor 변경 감지 스타일 */
     .api-collection-editor {

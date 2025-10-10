@@ -296,6 +296,11 @@
     }
 
     /* Size styles */
+    &.xs {
+      padding: 0 var(--spacing-2xs);
+      font-size: var(--text-xs);
+    }
+
     &.sm {
       padding: var(--spacing) var(--spacing-md);
       font-size: var(--text-sm);
@@ -309,6 +314,11 @@
     &.lg {
       padding: var(--spacing-lg) var(--spacing-xl);
       font-size: var(--text-lg);
+    }
+
+    &.xl {
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      font-size: var(--text-xl);
     }
   }
 
