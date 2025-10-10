@@ -142,6 +142,15 @@ export interface StateValueConfig {
  */
 export interface StaticCollectionConfig {
   data: unknown[];
+  columnMapping?: {
+    [columnName: string]: {
+      key: string; // 데이터 객체의 키
+      label?: string; // 표시할 라벨
+      type?: "string" | "number" | "boolean" | "date";
+      sortable?: boolean;
+      width?: number;
+    };
+  };
 }
 
 /**

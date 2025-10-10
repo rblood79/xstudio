@@ -133,11 +133,23 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
       }
     } else if (source === "static") {
       if (bindingType === "collection") {
+        const initialConfig: StaticCollectionConfig = {
+          data: [],
+          columnMapping: {},
+        };
+
         updateDataBinding({
           type: "collection",
           source: "static",
-          config: { data: [] },
+          config: initialConfig,
         });
+
+        // Table 컴포넌트인 경우 props 초기화
+        if (element.type === "Table") {
+          updateProperty("enableAsyncLoading", false);
+          updateProperty("data", []);
+          updateProperty("columns", []);
+        }
       } else {
         updateDataBinding({
           type: "value",
@@ -224,7 +236,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                   source: "api",
                   config,
                 });
-                
+
                 // Table 컴포넌트인 경우 props 동기화
                 if (element.type === "Table") {
                   updateProperty("enableAsyncLoading", true);
@@ -316,6 +328,15 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                   config: config as StaticCollectionConfig,
                 })
               }
+              onTablePropsUpdate={(props) => {
+                // Table 컴포넌트인 경우 props 동기화
+                if (element.type === "Table") {
+                  Object.entries(props).forEach(([key, value]) => {
+                    updateProperty(key, value);
+                  });
+                  console.log("🔄 StaticDataEditor - Table props 업데이트:", props);
+                }
+              }}
             />
           )}
 
