@@ -60,43 +60,38 @@ const Signin = () => {
       <div className="auth-card">
         <div className="auth-header">
           <h1 className="auth-title">
-            {isSignUp ? '회원가입' : '로그인'}
+            {isSignUp ? 'Sign Up' : 'Sign In'}
           </h1>
           <p className="auth-subtitle">
-            {isSignUp ? '새 계정을 만들어보세요' : '계정에 로그인하세요'}
+            {isSignUp ? 'Create a new account' : 'Log in to your account'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-field-group">
             <TextField
-              label="이메일 주소"
+              label="Email Address"
               type="email"
               value={email}
               onChange={setEmail}
               isRequired={true}
-              description="로그인에 사용할 이메일 주소입니다."
+              //description="로그인에 사용할 이메일 주소입니다."
+              errorMessage={error ? error : undefined}
             />
           </div>
 
           <div className="form-field-group">
             <TextField
-              label="비밀번호"
+              label="Password"
               type="password"
               value={password}
               onChange={setPassword}
               isRequired={true}
-              description={isSignUp ? "8자 이상의 안전한 비밀번호를 입력하세요." : "계정 비밀번호를 입력하세요."}
+              description={isSignUp ? "Enter a secure password with at least 8 characters." : "Enter your account password."}
             />
           </div>
 
-          {error && (
-            <div className="error-message">
-              <p className="error-text">
-                {error}
-              </p>
-            </div>
-          )}
+
 
           {message && (
             <div className="success-message">
@@ -109,23 +104,24 @@ const Signin = () => {
           <Button
             type="submit"
             isDisabled={loading}
-          >
-            {loading
-              ? (isSignUp ? '가입 중...' : '로그인 중...')
-              : (isSignUp ? '회원가입' : '로그인')
+            children={loading
+              ? (isSignUp ? 'Signing Up...' : 'Signing In...')
+              : (isSignUp ? 'Sign Up' : 'Sign In')
             }
-          </Button>
+          />
 
           <div className="helper-text">
-            {isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?'}{' '}
+
             <Button
+              variant="ghost"
               onClick={toggleMode}
-              children={isSignUp ? '로그인하기' : '회원가입하기'}
+              children={isSignUp ? 'Log In' : 'Sign Up'}
             />
             {!isSignUp ? (
               <Button
+                variant="ghost"
                 onClick={() => navigate('/forgot-password')}
-                children="비밀번호를 잊으셨나요?"
+                children="Forgot Password?"
               />
             ) : null}
           </div>
