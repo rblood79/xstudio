@@ -36,11 +36,5 @@
   "editor.stickyScroll.enabled": true,
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "[postcss]": {
-    "editor.defaultFormatter": "stylelint.vscode-stylelint"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }
