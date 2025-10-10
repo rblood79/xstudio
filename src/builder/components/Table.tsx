@@ -412,15 +412,16 @@ export default React.memo(function Table<T extends { id: string | number }>(
         const limit = pageSize ?? itemsPerPage;
 
         // 두 모드 모두 page/limit 방식 사용
+        // apiParams를 먼저 spread하고, page와 limit으로 오버라이드
         const params = {
-          page: nextIndex + 1,
-          limit,
+          ...(apiParams || {}), // API 파라미터 먼저 (기본값)
           ...sort,
-          ...(apiParams || {}), // API 파라미터 추가 (기본값 오버라이드)
+          page: nextIndex + 1, // nextIndex는 0부터 시작하므로 +1 (오버라이드)
+          limit, // (오버라이드)
         };
 
-        console.log("🔍 API 호출 파라미터:", params);
-        const response = await service!(endpointPath, params);
+        console.log("🔍 API 호출 파라미터:", params, "nextIndex:", nextIndex);
+        const response = await service(endpointPath, params);
 
         // 데이터 매핑 적용
         const { items, total } = processApiResponse(response, dataMapping);
@@ -523,15 +524,33 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- 초기/리로드 ----------
   const containerRef = React.useRef<HTMLDivElement>(null);
   const initialLoadRef = React.useRef(false);
-  const hasLoadedRef = React.useRef(false);
+  const prevModeRef = React.useRef<PaginationMode>(mode);
+  const prevApiConfigRef = React.useRef({ apiUrlKey, endpointPath, isAsync });
 
   React.useEffect(() => {
-    if (!isAsync) return;
+    // 모드 변경 또는 API 설정 변경 감지
+    const modeChanged = prevModeRef.current !== mode;
+    const apiConfigChanged = 
+      prevApiConfigRef.current.apiUrlKey !== apiUrlKey ||
+      prevApiConfigRef.current.endpointPath !== endpointPath ||
+      prevApiConfigRef.current.isAsync !== isAsync;
 
-    // 이미 로드된 경우 스킵 (리렌더링 시 재실행 방지)
-    if (hasLoadedRef.current) {
-      return;
+    if (modeChanged || apiConfigChanged) {
+      // 상태 초기화
+      initialLoadRef.current = false;
+      prevModeRef.current = mode;
+      prevApiConfigRef.current = { apiUrlKey, endpointPath, isAsync };
+      
+      // 기존 데이터 초기화
+      setPageRows([]);
+      setFlatRows([]);
+      setPageIndex(0);
+      setPageCount(null);
+      setCursor(undefined);
+      setHasNext(true);
     }
+
+    if (!isAsync) return;
 
     // 초기 로드 중복 방지 (React Strict Mode 대응)
     if (initialLoadRef.current) {
@@ -549,7 +568,6 @@ export default React.memo(function Table<T extends { id: string | number }>(
         setPageRows(items);
         setPageIndex(0);
         setPageCount(Math.max(1, Math.ceil((total || 0) / itemsPerPage)));
-        hasLoadedRef.current = true;
         initialLoadRef.current = false;
       })();
     } else {
@@ -577,13 +595,12 @@ export default React.memo(function Table<T extends { id: string | number }>(
             }
           }, 100);
         }
-        hasLoadedRef.current = true;
         initialLoadRef.current = false;
       })();
     }
     // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAsync, mode, itemsPerPage]);
+  }, [isAsync, mode, itemsPerPage, apiUrlKey, endpointPath]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
