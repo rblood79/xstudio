@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   TextField,
   Input,
@@ -11,6 +11,7 @@ import {
 
 import { Button } from "../../components/list";
 import type { APICollectionConfig } from "../types";
+import "./data.css";
 
 export interface APICollectionEditorProps {
   config: APICollectionConfig;
@@ -34,6 +35,17 @@ export function APICollectionEditor({
   const [localDataMapping, setLocalDataMapping] = useState(
     JSON.stringify(config.dataMapping, null, 2)
   );
+
+  // 변경 감지: 각 필드별로 변경 여부 확인
+  const endpointChanged = localEndpoint !== (config.endpoint || "");
+  const paramsChanged = localParams !== JSON.stringify(config.params || {}, null, 2);
+  const headersChanged = localHeaders !== JSON.stringify(config.headers || {}, null, 2);
+  const dataMappingChanged = localDataMapping !== JSON.stringify(config.dataMapping, null, 2);
+
+  // 전체 변경사항 여부
+  const hasChanges = useMemo(() => {
+    return endpointChanged || paramsChanged || headersChanged || dataMappingChanged;
+  }, [endpointChanged, paramsChanged, headersChanged, dataMappingChanged]);
 
   // 모든 변경사항 한 번에 적용
   const handleApplyChanges = () => {
@@ -61,8 +73,16 @@ export function APICollectionEditor({
     }
   };
 
+  // 변경사항 취소 (원래 값으로 되돌리기)
+  const handleDiscardChanges = () => {
+    setLocalEndpoint(config.endpoint || "");
+    setLocalParams(JSON.stringify(config.params || {}, null, 2));
+    setLocalHeaders(JSON.stringify(config.headers || {}, null, 2));
+    setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
+  };
+
   return (
-    <div className="component-props">
+    <div className="component-props api-collection-editor">
       {/* Base URL */}
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">Base URL</legend>
@@ -186,7 +206,7 @@ export function APICollectionEditor({
           </label>
           <TextField>
             <Input
-              className="control-input"
+              className={`control-input ${endpointChanged ? "field-modified" : ""}`}
               placeholder="/api/v1/items"
               value={localEndpoint}
               onChange={(e) => {
@@ -262,7 +282,7 @@ export function APICollectionEditor({
         <div className="react-aria-control react-aria-Group">
           <div style={{ flex: 1 }}>
             <textarea
-              className="control-input"
+              className={`control-input ${paramsChanged ? "field-modified" : ""}`}
               value={localParams}
               onChange={(e) => setLocalParams(e.target.value)}
               placeholder={`{
@@ -282,7 +302,7 @@ export function APICollectionEditor({
         <div className="react-aria-control react-aria-Group">
           <div style={{ flex: 1 }}>
             <textarea
-              className="control-input"
+              className={`control-input ${headersChanged ? "field-modified" : ""}`}
               value={localHeaders}
               onChange={(e) => setLocalHeaders(e.target.value)}
               placeholder={`{
@@ -301,7 +321,7 @@ export function APICollectionEditor({
         <div className="react-aria-control react-aria-Group">
           <div style={{ flex: 1 }}>
             <textarea
-              className="control-input"
+              className={`control-input ${dataMappingChanged ? "field-modified" : ""}`}
               value={localDataMapping}
               onChange={(e) => setLocalDataMapping(e.target.value)}
               placeholder={`{
@@ -315,9 +335,26 @@ export function APICollectionEditor({
         </div>
       </fieldset>
 
-      {/* Apply Changes Button */}
-      <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-        <Button onClick={handleApplyChanges} children="Apply Changes" />
+      {/* Action Buttons */}
+      <div className="action-buttons">
+        {/* Discard Changes 버튼 - 변경사항이 있을 때만 표시 */}
+        {hasChanges && (
+          <Button 
+            onClick={handleDiscardChanges}
+            className="discard-button"
+          >
+            Discard
+          </Button>
+        )}
+        
+        {/* Apply Changes 버튼 - 변경사항 여부에 따라 활성화/비활성화 */}
+        <Button 
+          onClick={handleApplyChanges}
+          isDisabled={!hasChanges}
+          className={`apply-button ${hasChanges ? "has-changes" : ""}`}
+        >
+          {hasChanges ? "Apply" : "No Changes"}
+        </Button>
       </div>
     </div>
   );
