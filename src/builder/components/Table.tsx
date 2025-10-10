@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { apiConfig } from "../../services/api";
+import { ElementUtils } from "../../utils/elementUtils";
 export type PaginationMode = "pagination" | "infinite";
 
 export interface ColumnDefinition<T> {
@@ -85,6 +86,9 @@ export interface TableProps<T extends { id: string | number }> {
 
   // 기능
   enableResize?: boolean; // default: true
+  
+  // 콜백
+  onColumnsDetected?: (columns: ColumnDefinition<T>[]) => void; // 자동 감지된 컬럼 전달
 }
 
 export default React.memo(function Table<T extends { id: string | number }>(
@@ -116,6 +120,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     sortDirection = "ascending",
 
     enableResize = true,
+    onColumnsDetected, // 자동 감지된 컬럼 콜백
   } = props;
 
   const mode: PaginationMode = paginationMode || "pagination";
@@ -206,16 +211,47 @@ export default React.memo(function Table<T extends { id: string | number }>(
   }, [sortColumn, sortDirection]);
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
 
+  // ---------- 자동 감지된 컬럼 상태 ----------
+  const [detectedColumns, setDetectedColumns] = React.useState<
+    ColumnDefinition<T>[]
+  >([]);
+
+  // ---------- 컬럼 자동 감지 함수 ----------
+  const detectColumnsFromData = React.useCallback((data: T[]): ColumnDefinition<T>[] => {
+    if (!data || data.length === 0) return [];
+    
+    const firstItem = data[0];
+    const keys = Object.keys(firstItem);
+    
+    return keys.map((key) => ({
+      key: key as keyof T,
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+      allowsSorting: true,
+      enableResizing: true,
+      width: 150,
+      align: 'left' as const,
+      // 자동 생성된 컬럼에 UUID 기반 elementId 부여
+      elementId: ElementUtils.generateId(),
+    }));
+  }, []);
+
   // ---------- Column Definitions with Groups ----------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columnDefsWithGroups = React.useMemo<any[]>(() => {
+    // 사용할 컬럼 결정: 제공된 컬럼이 있으면 사용, 없으면 자동 감지된 컬럼 사용
+    const effectiveColumns = columns.length > 0 ? columns : detectedColumns;
+    
+    if (effectiveColumns.length === 0) {
+      return [];
+    }
+
     // Column Helper 생성
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const columnHelper = createColumnHelper<any>();
 
     if (columnGroups.length === 0) {
       // Column Group이 없으면 기본 컬럼 정의 반환
-      const basicColumns = columns.map((c) =>
+      const basicColumns = effectiveColumns.map((c) =>
         columnHelper.accessor(String(c.key), {
           id: String(c.key),
           header: () => (
@@ -257,7 +293,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     });
 
     // 컬럼들을 order_num 순서로 정렬 (이미 정렬되어 있지만 확실히 하기 위해)
-    const sortedColumns = [...columns].sort((a, b) => {
+    const sortedColumns = [...effectiveColumns].sort((a, b) => {
       if (a.order_num !== undefined && b.order_num !== undefined) {
         return a.order_num - b.order_num;
       }
@@ -354,7 +390,12 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
 
     return result;
-  }, [columns, columnGroups]);
+  }, [columns, columnGroups, detectedColumns]);
+
+  // ---------- 사용할 컬럼 결정 ----------
+  const effectiveColumns = React.useMemo(() => {
+    return columns.length > 0 ? columns : detectedColumns;
+  }, [columns, detectedColumns]);
 
   // ---------- 비동기 상태 ----------
   const [pageIndex, setPageIndex] = React.useState(0);
@@ -423,8 +464,37 @@ export default React.memo(function Table<T extends { id: string | number }>(
         console.log("🔍 API 호출 파라미터:", params, "nextIndex:", nextIndex);
         const response = await service(endpointPath, params);
 
+        console.log("📦 API 응답:", {
+          responseType: Array.isArray(response) ? 'Array' : typeof response,
+          responseLength: Array.isArray(response) ? response.length : 'N/A',
+          dataMapping,
+        });
+
         // 데이터 매핑 적용
         const { items, total } = processApiResponse(response, dataMapping);
+
+        console.log("📊 processApiResponse 결과:", {
+          itemsLength: items.length,
+          total,
+          firstItem: items[0],
+        });
+
+        // 컬럼이 제공되지 않았고 데이터가 있으면 자동 감지
+        if (columns.length === 0 && items.length > 0) {
+          const detected = detectColumnsFromData(items);
+          setDetectedColumns(detected);
+          console.log("🔍 자동 감지된 컬럼:", detected);
+          
+          // 부모 컴포넌트에 자동 감지된 컬럼 전달
+          if (onColumnsDetected) {
+            onColumnsDetected(detected);
+          }
+        } else {
+          console.log("⚠️ 자동 감지 조건 미충족:", {
+            columnsLength: columns.length,
+            itemsLength: items.length,
+          });
+        }
 
         // API 응답에서 메타데이터 확인 (Pagination용)
         const meta = (response as unknown as Record<string, unknown>).__meta as
@@ -457,6 +527,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
       processApiResponse,
       dataMapping,
       apiParams,
+      columns.length,
+      detectColumnsFromData,
+      setDetectedColumns,
+      onColumnsDetected,
     ]
   );
 
@@ -497,8 +571,37 @@ export default React.memo(function Table<T extends { id: string | number }>(
           ...sort,
         });
 
+        console.log("📦 API 응답 (fetchMore):", {
+          responseType: Array.isArray(response) ? 'Array' : typeof response,
+          responseLength: Array.isArray(response) ? response.length : 'N/A',
+          dataMapping,
+        });
+
         // 데이터 매핑 적용
         const { items } = processApiResponse(response, dataMapping);
+
+        console.log("📊 processApiResponse 결과 (fetchMore):", {
+          itemsLength: items.length,
+          firstItem: items[0],
+        });
+
+        // 컬럼이 제공되지 않았고 데이터가 있으면 자동 감지
+        if (columns.length === 0 && items.length > 0) {
+          const detected = detectColumnsFromData(items);
+          setDetectedColumns(detected);
+          console.log("🔍 자동 감지된 컬럼 (fetchMore):", detected);
+          
+          // 부모 컴포넌트에 자동 감지된 컬럼 전달
+          if (onColumnsDetected) {
+            onColumnsDetected(detected);
+          }
+        } else {
+          console.log("⚠️ 자동 감지 조건 미충족 (fetchMore):", {
+            columnsLength: columns.length,
+            itemsLength: items.length,
+          });
+        }
+
         if (!items || items.length === 0) {
           return { items: [], nextCursor: undefined };
         }
@@ -518,6 +621,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
       sorting,
       processApiResponse,
       dataMapping,
+      columns.length,
+      detectColumnsFromData,
+      setDetectedColumns,
+      onColumnsDetected,
     ]
   );
 
@@ -600,7 +707,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
     // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAsync, mode, itemsPerPage, apiUrlKey, endpointPath]);
+  }, [isAsync, mode, itemsPerPage, apiUrlKey, endpointPath, enableAsyncLoading]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
@@ -804,7 +911,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                         style={{ display: "flex", width: "100%" }}
                       >
                         {individualHeaders.map((header, colIndex) => {
-                          const columnDef = columns.find(
+                          const columnDef = effectiveColumns.find(
                             (c) => String(c.key) === header.column.id
                           );
                           const align = columnDef?.align ?? "left";
@@ -937,7 +1044,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   >
                     {row.getVisibleCells().map((cell, cellIndex) => {
                       const align =
-                        columns.find((c) => String(c.key) === cell.column.id)
+                        effectiveColumns.find((c) => String(c.key) === cell.column.id)
                           ?.align ?? "left";
                       return (
                         <td

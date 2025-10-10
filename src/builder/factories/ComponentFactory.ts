@@ -1609,9 +1609,17 @@ export class ComponentFactory {
     const parentId = parentElement?.id || null;
     const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
+    const defaultProps = createDefaultTableProps();
+    
+    // REST API 설정 여부 확인
+    const hasApiConfig = 
+      defaultProps.enableAsyncLoading === true &&
+      defaultProps.apiUrlKey &&
+      defaultProps.endpointPath;
+
     const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
       tag: "Table",
-      props: createDefaultTableProps() as ComponentElementProps,
+      props: defaultProps as ComponentElementProps,
       page_id: pageId,
       parent_id: parentId,
       order_num: orderNum,
@@ -1638,8 +1646,8 @@ export class ComponentFactory {
       updated_at: new Date().toISOString(),
     };
 
-    // Column들 생성 (기본 5개 - API 데이터 필드에 맞춤)
-    const columns: Element[] = [
+    // 조건부 컬럼 생성: REST API가 설정된 경우 기본 컬럼 생성 안 함 (자동 감지 사용)
+    const columns: Element[] = hasApiConfig ? [] : [
       {
         id: ElementUtils.generateId(),
         tag: "Column",
@@ -1738,7 +1746,11 @@ export class ComponentFactory {
       parentId: parentData.id,
       parentTag: parentData.tag,
       tableHeaderId: tableHeader.id,
+      hasApiConfig,
       columns: columns.length,
+      note: hasApiConfig 
+        ? "REST API 설정됨 - 컬럼 자동 감지 사용" 
+        : "기본 컬럼 생성됨",
       children: childrenData.map((child) => ({
         id: child.id,
         tag: child.tag,

@@ -96,14 +96,103 @@ interface MockApiConfig {
   ) => Promise<unknown>;
 }
 
-const fetchMockUsers = async (
+const fetchMockData = async (
   path: string,
   params?: Record<string, unknown>
-): Promise<MockUserData[]> => {
-  console.log("Fetching mock users from path:", path, "with params:", params);
+): Promise<unknown> => {
+  console.log("🌐 Fetching mock data from path:", path, "with params:", params);
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 300));
 
+  // 엔드포인트 경로에 따라 다른 데이터 타입 반환
+  if (path === "/permissions" || path === "/api/permissions") {
+    return handlePermissionsEndpoint(params);
+  } else if (path === "/roles" || path === "/api/roles") {
+    return handleRolesEndpoint(params);
+  } else if (path === "/departments" || path === "/api/departments") {
+    return handleDepartmentsEndpoint(params);
+  } else if (path === "/organizations" || path === "/api/organizations") {
+    return handleOrganizationsEndpoint(params);
+  } else if (path === "/projects" || path === "/api/projects") {
+    return handleProjectsEndpoint(params);
+  } else if (path === "/project-memberships" || path === "/api/project-memberships") {
+    return handleProjectMembershipsEndpoint(params);
+  } else if (path === "/audit-logs" || path === "/api/audit-logs") {
+    return handleAuditLogsEndpoint(params);
+  } else if (path === "/invitations" || path === "/api/invitations") {
+    return handleInvitationsEndpoint(params);
+  } else if (path === "/engines" || path === "/api/engines") {
+    return handleEnginesEndpoint(params);
+  } else if (path === "/components" || path === "/api/components") {
+    return handleComponentsEndpoint(params);
+  } else {
+    // 기본: 사용자 데이터
+    return handleUsersEndpoint(path, params);
+  }
+};
+
+// Permissions 엔드포인트 핸들러
+const handlePermissionsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /permissions 엔드포인트: ${mockPermissions.length}개 반환`);
+  return applyPagination(mockPermissions, params);
+};
+
+// Roles 엔드포인트 핸들러
+const handleRolesEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /roles 엔드포인트: ${mockRoles.length}개 반환`);
+  return applyPagination(mockRoles, params);
+};
+
+// Departments 엔드포인트 핸들러
+const handleDepartmentsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /departments 엔드포인트: ${mockDepartments.length}개 반환`);
+  return applyPagination(mockDepartments, params);
+};
+
+// Organizations 엔드포인트 핸들러
+const handleOrganizationsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /organizations 엔드포인트: ${mockOrganizations.length}개 반환`);
+  return applyPagination(mockOrganizations, params);
+};
+
+// Projects 엔드포인트 핸들러
+const handleProjectsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /projects 엔드포인트: ${mockProjects.length}개 반환`);
+  return applyPagination(mockProjects, params);
+};
+
+// Project Memberships 엔드포인트 핸들러
+const handleProjectMembershipsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /project-memberships 엔드포인트: ${mockProjectMemberships.length}개 반환`);
+  return applyPagination(mockProjectMemberships, params);
+};
+
+// Audit Logs 엔드포인트 핸들러
+const handleAuditLogsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /audit-logs 엔드포인트: ${mockAuditLogs.length}개 반환`);
+  return applyPagination(mockAuditLogs, params);
+};
+
+// Invitations 엔드포인트 핸들러
+const handleInvitationsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /invitations 엔드포인트: ${mockInvitations.length}개 반환`);
+  return applyPagination(mockInvitations, params);
+};
+
+// Engines 엔드포인트 핸들러
+const handleEnginesEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /engines 엔드포인트: ${mockEngines.length}개 반환`);
+  return applyPagination(mockEngines, params);
+};
+
+// Components 엔드포인트 핸들러
+const handleComponentsEndpoint = (params?: Record<string, unknown>) => {
+  console.log(`📊 /components 엔드포인트: ${mockComponents.length}개 반환`);
+  return applyPagination(mockComponents, params);
+};
+
+// Users 엔드포인트 핸들러 (기존 로직)
+const handleUsersEndpoint = (path: string, params?: Record<string, unknown>) => {
   // 엔드포인트 경로에 따라 다른 데이터 반환
   let filteredData = largeMockData;
 
@@ -211,10 +300,18 @@ const fetchMockUsers = async (
     );
   }
 
+  return applyPagination(filteredData, params);
+};
+
+// 페이지네이션 공통 로직
+const applyPagination = <T,>(
+  data: T[],
+  params?: Record<string, unknown>
+): T[] => {
   // 전체 데이터 요청 확인
   if (params && params.getAll === true) {
-    console.log(`📊 Returning all data: ${filteredData.length} items`);
-    return filteredData;
+    console.log(`📊 Returning all data: ${data.length} items`);
+    return data;
   }
 
   // 페이지네이션 지원 (page/limit 방식)
@@ -227,7 +324,7 @@ const fetchMockUsers = async (
     const limit = params.limit;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const totalItems = filteredData.length;
+    const totalItems = data.length;
     const returnedItems = Math.min(endIndex, totalItems) - startIndex;
 
     console.log(
@@ -238,7 +335,7 @@ const fetchMockUsers = async (
     );
 
     // 페이지네이션을 위해 전체 데이터 개수 정보를 포함한 객체 반환
-    const result = filteredData.slice(startIndex, endIndex);
+    const result = data.slice(startIndex, endIndex);
 
     // 페이지네이션을 위한 메타데이터 추가
     Object.assign(result, {
@@ -256,12 +353,12 @@ const fetchMockUsers = async (
   }
 
   // 기본적으로 모든 데이터 반환 (기존 동작 유지)
-  console.log(`📊 Returning all data (default): ${filteredData.length} items`);
-  return filteredData;
+  console.log(`📊 Returning all data (default): ${data.length} items`);
+  return data;
 };
 
 export const apiConfig: MockApiConfig = {
-  MOCK_DATA: fetchMockUsers,
+  MOCK_DATA: fetchMockData,
   // 여기에 다른 Mock API 또는 실제 API 매핑을 추가할 수 있습니다.
 };
 

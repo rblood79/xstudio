@@ -32,7 +32,7 @@ export interface DataSourceSelectorProps {
 
 export function DataSourceSelector({ element }: DataSourceSelectorProps) {
   const meta = useComponentMeta(element.type);
-  const { updateDataBinding } = useInspectorState();
+  const { updateDataBinding, updateProperty } = useInspectorState();
 
   const bindingType = meta?.inspector.dataBindingType;
   const binding = element.dataBinding;
@@ -94,6 +94,15 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
           source: "api",
           config: initialConfig,
         });
+
+        // Table 컴포넌트인 경우 props도 함께 업데이트
+        if (element.type === "Table") {
+          updateProperty("enableAsyncLoading", true);
+          updateProperty("apiUrlKey", initialConfig.baseUrl);
+          updateProperty("endpointPath", initialConfig.endpoint);
+          updateProperty("dataMapping", initialConfig.dataMapping);
+          updateProperty("apiParams", initialConfig.params);
+        }
       } else {
         updateDataBinding({
           type: "value",
@@ -209,13 +218,23 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
           {binding.source === "api" && bindingType === "collection" && (
             <APICollectionEditor
               config={binding.config as APICollectionConfig}
-              onChange={(config: APICollectionConfig) =>
+              onChange={(config: APICollectionConfig) => {
                 updateDataBinding({
                   type: "collection",
                   source: "api",
                   config,
-                })
-              }
+                });
+                
+                // Table 컴포넌트인 경우 props 동기화
+                if (element.type === "Table") {
+                  updateProperty("enableAsyncLoading", true);
+                  updateProperty("apiUrlKey", config.baseUrl);
+                  updateProperty("endpointPath", config.endpoint);
+                  updateProperty("dataMapping", config.dataMapping);
+                  updateProperty("apiParams", config.params);
+                  console.log("🔄 APICollectionEditor - Table props 업데이트:", config);
+                }
+              }}
             />
           )}
 

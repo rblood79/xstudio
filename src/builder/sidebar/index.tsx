@@ -384,7 +384,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         );
     };
 
-    const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number }>(
+    const renderTree = <T extends { id: string; parent_id?: string | null; order_num?: number; deleted?: boolean }>(
         items: T[],
         getLabel: (item: T) => string,
         onClick: (item: T) => void,
@@ -394,6 +394,9 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     ): React.ReactNode => {
         let filteredItems = items
             .filter((item) => {
+                // 삭제된 요소 제외 ⭐
+                if (item.deleted === true) return false;
+                
                 // 기본 parent_id 필터링
                 const matchesParent = item.parent_id === parentId || (parentId === null && item.parent_id === undefined);
                 if (!matchesParent) return false;

@@ -3,6 +3,7 @@ import { useInspectorState } from "./useInspectorState";
 import { useStore } from "../../stores";
 import { mapSelectedToElementUpdate } from "../utils/elementMapper";
 import { saveService } from "../../../services/save";
+import { elementsApi } from "../../../services/api"; // elementsApi import 추가 ⭐
 
 /**
  * Inspector의 변경사항을 Builder store와 동기화하는 훅
@@ -98,6 +99,46 @@ export function useSyncWithBuilder(): void {
       });
 
       try {
+        // Table 요소에 API Collection이 설정되면 기존 Column 자식 삭제
+        if (
+          selectedElement.type === "Table" &&
+          selectedElement.dataBinding?.type === "collection" &&
+          selectedElement.dataBinding?.source === "api"
+        ) {
+          const childColumns = elements.filter(
+            (el) =>
+              el.tag === "Column" &&
+              el.parent_id &&
+              elements.some(
+                (parent) =>
+                  parent.id === el.parent_id &&
+                  parent.tag === "TableHeader" &&
+                  parent.parent_id === selectedElement.id
+              )
+          );
+
+          if (childColumns.length > 0) {
+            console.log("🗑️ API Collection 설정 - 기존 Column 삭제:", {
+              tableId: selectedElement.id,
+              columnsToDelete: childColumns.map((c) => c.id),
+            });
+
+            // 1. Store에서 삭제 (UI 즉시 반영)
+            for (const column of childColumns) {
+              await updateElement(column.id, { deleted: true } as never);
+            }
+
+            // 2. 데이터베이스에서 실제 삭제 ⭐
+            try {
+              const columnIds = childColumns.map((c) => c.id);
+              await elementsApi.deleteMultipleElements(columnIds);
+              console.log("✅ Column 요소들 DB에서 삭제 완료:", columnIds);
+            } catch (error) {
+              console.error("❌ Column 삭제 실패:", error);
+            }
+          }
+        }
+
         await updateElement(selectedElement.id, elementUpdate);
 
         const payload: Record<string, unknown> = {};
