@@ -540,7 +540,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => ({
           });
         }
 
-        state.elements.push(element);
+        // 새로운 배열 참조 생성 (리렌더링 보장)
+        state.elements = [...state.elements, element];
       })
     );
 

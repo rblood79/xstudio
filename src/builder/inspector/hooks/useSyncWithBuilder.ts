@@ -3,7 +3,7 @@ import { useInspectorState } from "./useInspectorState";
 import { useStore } from "../../stores";
 import { mapSelectedToElementUpdate } from "../utils/elementMapper";
 import { saveService } from "../../../services/save";
-import { elementsApi } from "../../../services/api"; // elementsApi import 추가 ⭐
+import { elementsApi } from "../../../services/api";
 
 /**
  * Inspector의 변경사항을 Builder store와 동기화하는 훅
@@ -14,6 +14,7 @@ export function useSyncWithBuilder(): void {
     (state) => state.setSyncingToBuilder
   );
   const updateElement = useStore((state) => state.updateElement);
+  const setElements = useStore((state) => state.setElements);
   const elements = useStore((state) => state.elements);
   const historyOperationInProgress = useStore(
     (state) => state.historyOperationInProgress
@@ -123,19 +124,27 @@ export function useSyncWithBuilder(): void {
               columnsToDelete: childColumns.map((c) => c.id),
             });
 
-            // 1. Store에서 삭제 (UI 즉시 반영)
-            for (const column of childColumns) {
-              await updateElement(column.id, { deleted: true } as never);
+            // 한 번에 모든 Column ID 수집
+            const columnIdsToDelete = childColumns.map((c) => c.id);
+
+            // 1. DB에서 일괄 삭제
+            try {
+              await elementsApi.deleteMultipleElements(columnIdsToDelete);
+              console.log("✅ DB에서 Column 삭제 완료:", columnIdsToDelete);
+            } catch (error) {
+              console.error("❌ DB Column 삭제 실패:", error);
             }
 
-            // 2. 데이터베이스에서 실제 삭제 ⭐
-            try {
-              const columnIds = childColumns.map((c) => c.id);
-              await elementsApi.deleteMultipleElements(columnIds);
-              console.log("✅ Column 요소들 DB에서 삭제 완료:", columnIds);
-            } catch (error) {
-              console.error("❌ Column 삭제 실패:", error);
-            }
+            // 2. Store에서 일괄 제거 (새 배열 참조 생성)
+            const newElements = elements.filter(
+              (el) => !columnIdsToDelete.includes(el.id)
+            );
+            setElements(newElements);
+            console.log("✅ Store에서 Column 제거 완료:", {
+              삭제전: elements.length,
+              삭제후: newElements.length,
+              삭제된개수: elements.length - newElements.length,
+            });
           }
         }
 
@@ -182,5 +191,5 @@ export function useSyncWithBuilder(): void {
         clearTimeout(pendingTimeoutRef.current);
       }
     };
-  }, [selectedElement, updateElement, setSyncingToBuilder, historyOperationInProgress, elements]);
+  }, [selectedElement, updateElement, setElements, setSyncingToBuilder, historyOperationInProgress, elements]);
 }
