@@ -1,0 +1,8 @@
+# XStudio Global Rules
+[type]: Always
+- React 19 + TypeScript + RAC + Zustand + Tailwind v4 + Supabase
+- **No inline Tailwind** in .tsx; semantic classes + CSS @apply
+- Supabase: RLS + service modules + hooks; no secrets in client
+- Storybook CSF3 + Controls/Interactions
+- postMessage origin validation; queue until PREVIEW_READY
+- CSS variables for theming tokens

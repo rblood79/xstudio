@@ -1,0 +1,6 @@
+# React / RAC
+[globs]: ["**/*.{tsx,jsx}"]
+- RAC with ARIA/role/keyboard interactions
+- tv() emits semantic class names only (e.g., primary, outline, sm)
+- Ship .tsx + .stories.tsx + .test.tsx for new components
+- TanStack Table editors: separate input/validation/state
