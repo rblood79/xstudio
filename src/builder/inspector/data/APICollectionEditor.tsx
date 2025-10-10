@@ -23,6 +23,8 @@ export function APICollectionEditor({
 }: APICollectionEditorProps) {
   console.log("🔍 APICollectionEditor 현재 config:", config);
 
+  // Local state로 모든 필드 관리 (즉각 적용 방지)
+  const [localEndpoint, setLocalEndpoint] = useState(config.endpoint || "");
   const [localParams, setLocalParams] = useState(
     JSON.stringify(config.params || {}, null, 2)
   );
@@ -33,31 +35,27 @@ export function APICollectionEditor({
     JSON.stringify(config.dataMapping, null, 2)
   );
 
-  const handleParamsConfirm = () => {
+  // 모든 변경사항 한 번에 적용
+  const handleApplyChanges = () => {
     try {
-      const parsed = JSON.parse(localParams);
-      console.log("✅ API Params 확인:", parsed);
-      onChange({ ...config, params: parsed });
-    } catch (error) {
-      alert("JSON 파싱 오류: " + (error as Error).message);
-    }
-  };
+      const parsedParams = JSON.parse(localParams);
+      const parsedHeaders = JSON.parse(localHeaders);
+      const parsedDataMapping = JSON.parse(localDataMapping);
 
-  const handleHeadersConfirm = () => {
-    try {
-      const parsed = JSON.parse(localHeaders);
-      console.log("✅ API Headers 확인:", parsed);
-      onChange({ ...config, headers: parsed });
-    } catch (error) {
-      alert("JSON 파싱 오류: " + (error as Error).message);
-    }
-  };
+      console.log("✅ API 설정 일괄 적용:", {
+        endpoint: localEndpoint,
+        params: parsedParams,
+        headers: parsedHeaders,
+        dataMapping: parsedDataMapping,
+      });
 
-  const handleDataMappingConfirm = () => {
-    try {
-      const parsed = JSON.parse(localDataMapping);
-      console.log("✅ API DataMapping 확인:", parsed);
-      onChange({ ...config, dataMapping: parsed });
+      onChange({
+        ...config,
+        endpoint: localEndpoint,
+        params: parsedParams,
+        headers: parsedHeaders,
+        dataMapping: parsedDataMapping,
+      });
     } catch (error) {
       alert("JSON 파싱 오류: " + (error as Error).message);
     }
@@ -190,10 +188,10 @@ export function APICollectionEditor({
             <Input
               className="control-input"
               placeholder="/api/v1/items"
-              value={config.endpoint || ""}
+              value={localEndpoint}
               onChange={(e) => {
-                console.log("🔄 Endpoint 변경:", e.target.value);
-                onChange({ ...config, endpoint: e.target.value });
+                console.log("🔄 Endpoint 입력 중:", e.target.value);
+                setLocalEndpoint(e.target.value);
               }}
             />
           </TextField>
@@ -274,9 +272,6 @@ export function APICollectionEditor({
 }`}
               rows={6}
             />
-            <div className="editor-actions">
-              <Button onClick={handleParamsConfirm} children="확인" />
-            </div>
           </div>
         </div>
       </fieldset>
@@ -296,9 +291,6 @@ export function APICollectionEditor({
 }`}
               rows={4}
             />
-            <div className="editor-actions">
-              <Button onClick={handleHeadersConfirm} children="확인" />
-            </div>
           </div>
         </div>
       </fieldset>
@@ -319,12 +311,14 @@ export function APICollectionEditor({
 }`}
               rows={6}
             />
-            <div className="editor-actions">
-              <Button onClick={handleDataMappingConfirm} children="확인" />
-            </div>
           </div>
         </div>
       </fieldset>
+
+      {/* Apply Changes Button */}
+      <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
+        <Button onClick={handleApplyChanges} children="Apply Changes" />
+      </div>
     </div>
   );
 }
