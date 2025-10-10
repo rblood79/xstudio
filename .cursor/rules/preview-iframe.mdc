@@ -1,0 +1,5 @@
+# Preview (iframe Messaging)
+[globs]: ["src/builder/preview/**"]
+- Verify event.origin on message receive
+- Buffer messages until PREVIEW_READY; flush after ready
+- Supported types: UPDATE_ELEMENTS, ELEMENT_SELECTED, UPDATE_ELEMENT_PROPS

@@ -1,0 +1,5 @@
+# Styles: Non-Inline TailwindCSS
+[globs]: ["**/*.{tsx,css}"]
+- Do not put Tailwind utilities in .tsx files
+- Use semantic classes from tv(); apply utilities in CSS via @apply
+- Runtime customization via props.className (from Property Editor)

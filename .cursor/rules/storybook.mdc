@@ -1,0 +1,4 @@
+# Storybook
+[globs]: ["src/**/*.stories.tsx"]
+- CSF3 with Controls/Interactions
+- Include accessibility-oriented stories (role/label)
