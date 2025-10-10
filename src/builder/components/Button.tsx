@@ -5,7 +5,7 @@ import './components.css'; // 기존 CSS import 유지
 
 export interface ButtonProps extends RACButtonProps {
   variant?: 'primary' | 'secondary' | 'surface' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const button = tv({
@@ -20,9 +20,11 @@ const button = tv({
       ghost: 'ghost',
     },
     size: {
+      xs: 'xs',
       sm: 'sm',
       md: 'md',
       lg: 'lg',
+      xl: 'xl',
     },
   },
   defaultVariants: {
