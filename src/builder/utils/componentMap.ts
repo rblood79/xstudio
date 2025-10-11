@@ -14,7 +14,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'ListBox': lazy(() => import('../components/ListBox').then(module => ({ default: module.ListBox }))),
     'GridList': lazy(() => import('../components/GridList').then(module => ({ default: module.GridList }))),
     'Tree': lazy(() => import('../components/Tree').then(module => ({ default: module.Tree }))),
-    'Table': lazy(() => import('../components/Table').then(module => ({ default: module.Table }))),
+    'Table': lazy(() => import('../components/Table')),
     'Tabs': lazy(() => import('../components/Tabs').then(module => ({ default: module.Tabs }))),
     'Dialog': lazy(() => import('../components/Dialog').then(module => ({ default: module.Dialog }))),
     'Modal': lazy(() => import('../components/Modal').then(module => ({ default: module.Modal }))),

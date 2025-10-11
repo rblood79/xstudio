@@ -122,14 +122,14 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     const childrenAs = <C,>(v: unknown): C[] => (Array.isArray(v) ? (v as C[]) : []);
 
     // Table 구조를 특별히 렌더링하는 함수
-    const renderTableStructure = <T extends { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: any }>(
+    const renderTableStructure = <T extends { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: ElementProps }>(
         items: T[],
-        getLabel: (item: T) => string,
+        _getLabel: (item: T) => string,
         onClick: (item: T) => void,
         onDelete: (item: T) => Promise<void>,
         tableId: string,
         depth: number,
-        isExpanded: boolean,
+        _isExpanded: boolean,
         toggleExpand: (id: string) => void,
         expandedItems: Set<string>
     ): React.ReactNode => {
@@ -273,7 +273,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 />
                             </div>
                             <div className="elementItemLabel">
-                                ColumnGroup: {(group.props as any)?.label || 'Untitled'}
+                                ColumnGroup: {(group.props as ElementProps)?.label as string || 'Untitled'}
                             </div>
                             <div className="elementItemActions">
                                 <button className="iconButton" aria-label="Settings">
@@ -360,7 +360,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 />
                             </div>
                             <div className="elementItemLabel">
-                                th: {(column.props as any)?.children || 'Column'}
+                                th: {(column.props as ElementProps)?.children as string || 'Column'}
                             </div>
                             <div className="elementItemActions">
                                 <button className="iconButton" aria-label="Settings">
@@ -396,7 +396,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             .filter((item) => {
                 // 삭제된 요소 제외 ⭐
                 if (item.deleted === true) return false;
-                
+
                 // 기본 parent_id 필터링
                 const matchesParent = item.parent_id === parentId || (parentId === null && item.parent_id === undefined);
                 if (!matchesParent) return false;
@@ -422,12 +422,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
 
                     // Tab의 tabId와 일치하는 Panel 찾기
                     const tabProps = hasProps(tab) ? tab.props : {};
-                    const tabId = (tabProps as any)?.tabId;
+                    const tabId = (tabProps as Record<string, unknown>)?.tabId;
 
                     if (tabId) {
                         const matchingPanel = panels.find(panel => {
                             const panelProps = hasProps(panel) ? panel.props : {};
-                            return (panelProps as any)?.tabId === tabId;
+                            return (panelProps as Record<string, unknown>)?.tabId === tabId;
                         });
 
                         if (matchingPanel && !usedPanelIds.has(matchingPanel.id)) {
