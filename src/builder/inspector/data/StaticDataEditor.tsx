@@ -429,16 +429,15 @@ export function StaticDataEditor({
           <div className="action-buttons">
             <Button
               onPress={handleLoadExample}
-              className="example-button"
-            >
-              Load Example
-            </Button>
+              children="Load Example"
+            />
 
             {/* Discard 버튼 - 변경사항이 있을 때만 표시 */}
             {(jsonChanged || columnMappingChanged) && (
-              <Button onClick={handleDiscard} className="discard-button">
-                Discard
-              </Button>
+              <Button
+                onClick={handleDiscard}
+                children="Discard"
+              />
             )}
 
             {/* Apply 버튼 */}
@@ -446,9 +445,8 @@ export function StaticDataEditor({
               className={`apply-button ${(pendingData || pendingColumnMapping) ? "has-changes" : ""}`}
               onPress={handleApply}
               isDisabled={(!pendingData && !pendingColumnMapping) || !!error}
-            >
-              {(pendingData || pendingColumnMapping) ? "Apply" : "No Changes"}
-            </Button>
+              children={(pendingData || pendingColumnMapping) ? "Apply" : "No Changes"}
+            />
           </div>
         </>
       ) : (
