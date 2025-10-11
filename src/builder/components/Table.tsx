@@ -237,6 +237,21 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }));
   }, []);
 
+  // ---------- Static 데이터 자동 감지 ----------
+  React.useEffect(() => {
+    // Static 데이터이고, 컬럼이 제공되지 않았고, 데이터가 있으면 자동 감지
+    if (!isAsync && columns.length === 0 && staticData && staticData.length > 0) {
+      const detected = detectColumnsFromData(staticData);
+      setDetectedColumns(detected);
+      console.log("🔍 Static 데이터 컬럼 자동 감지:", detected);
+
+      // 부모 컴포넌트에 자동 감지된 컬럼 전달
+      if (onColumnsDetected) {
+        onColumnsDetected(detected);
+      }
+    }
+  }, [staticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected]);
+
   // ---------- Column Definitions with Groups ----------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columnDefsWithGroups = React.useMemo<any[]>(() => {
