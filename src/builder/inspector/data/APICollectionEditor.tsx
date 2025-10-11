@@ -367,20 +367,16 @@ export function APICollectionEditor({
         {hasChanges && (
           <Button
             onClick={handleDiscardChanges}
-            className="discard-button"
-          >
-            Discard
-          </Button>
+            children="Discard"
+          />
         )}
 
         {/* Apply Others 버튼 - Params, Headers, DataMapping만 적용 (Endpoint 제외) */}
         <Button
           onClick={handleApplyChanges}
           isDisabled={!hasOtherChanges}
-          className={`apply-button ${hasOtherChanges ? "has-changes" : ""}`}
-        >
-          {hasOtherChanges ? "Apply Others" : "No Changes"}
-        </Button>
+          children={hasOtherChanges ? "Apply Others" : "No Changes"}
+        />
       </div>
     </div>
   );

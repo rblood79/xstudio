@@ -3,7 +3,7 @@ import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/unified';
 
-export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateGroupProps = (newProps: Partial<ColumnGroupElementProps>) => {
         onUpdate({
             ...currentProps,
