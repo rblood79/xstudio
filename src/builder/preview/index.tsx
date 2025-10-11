@@ -1880,51 +1880,15 @@ function Preview() {
 
         console.log("✅ 생성된 컬럼 개수:", mappedColumns.length, mappedColumns);
 
-        // Preview는 읽기 전용이므로 Column Element 생성은 하지 않음
-        // 대신 mappedColumns를 사용하여 테이블 렌더링
+        // ✅ Static 데이터도 자동 감지를 사용하여 Column Element 생성
+        // mappedColumns를 사용하지 않고, 데이터가 로드되면 자동 감지 실행
       }
 
-      // API 바인딩이 있으면 빈 배열로 전달하여 자동 컬럼 감지 활성화 ⭐
-      // Column Element가 있으면 해당 컬럼 사용, 없으면 기본 컬럼 제공
+      // Column Element가 있으면 해당 컬럼 사용, 없으면 자동 감지 활성화
       const finalColumns =
-        hasApiBinding && columns.length === 0
-          ? [] // API 바인딩 + 컬럼 없음 = 자동 감지
-          : columns.length > 0
-            ? columns // 수동 컬럼 있음 (Column Element 우선)
-            : mappedColumns.length > 0
-              ? mappedColumns // 정적 데이터 컬럼 매핑 사용
-              : [ // Fallback 기본 컬럼
-                {
-                  key: "id" as const,
-                  label: "ID",
-                  allowsSorting: true,
-                  width: 80,
-                },
-                {
-                  key: "name" as const,
-                  label: "Name",
-                  allowsSorting: true,
-                  width: 200,
-                },
-                {
-                  key: "email" as const,
-                  label: "Email",
-                  allowsSorting: true,
-                  width: 250,
-                },
-                {
-                  key: "phone" as const,
-                  label: "Phone",
-                  allowsSorting: true,
-                  width: 150,
-                },
-                {
-                  key: "company" as const,
-                  label: "Company",
-                  allowsSorting: true,
-                  width: 200,
-                },
-              ];
+        columns.length > 0
+          ? columns // Column Element가 있으면 우선 사용
+          : []; // Column Element 없음 → 빈 배열로 자동 감지 활성화
 
       console.log("🎨 Table 렌더링 준비:", {
         tableId: el.id,
@@ -1932,7 +1896,8 @@ function Preview() {
         columnElementsCount: columnElements.length,
         columnsLength: columns.length,
         finalColumnsLength: finalColumns.length,
-        willAutoDetect: hasApiBinding && columns.length === 0,
+        willAutoDetect: columns.length === 0,
+        hasMappedColumns: mappedColumns.length > 0,
       });
 
       // Column Group Element에서 추출한 그룹 데이터 생성

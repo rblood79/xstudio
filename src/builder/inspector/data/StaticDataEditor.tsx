@@ -218,19 +218,19 @@ export function StaticDataEditor({
           }
 
           // 컬럼 매핑 업데이트
-          const currentColumnMapping = updates.columnMapping || (config as StaticCollectionConfig).columnMapping;
-          if (currentColumnMapping && Object.keys(currentColumnMapping).length > 0) {
-            // 컬럼 매핑에서 컬럼 정의 생성
-            const columns = Object.entries(currentColumnMapping).map(([key, mapping]) => ({
-              key: mapping.key || key,
-              label: mapping.label || key,
-              type: mapping.type || 'string',
-              sortable: mapping.sortable !== false,
-              width: mapping.width || 150,
-              align: 'left',
-            }));
-            tableProps.columns = columns;
-          }
+          // ❌ columns props를 직접 설정하지 않음 - Table 컴포넌트의 자동 감지에 맡김
+          // const currentColumnMapping = updates.columnMapping || (config as StaticCollectionConfig).columnMapping;
+          // if (currentColumnMapping && Object.keys(currentColumnMapping).length > 0) {
+          //   const columns = Object.entries(currentColumnMapping).map(([key, mapping]) => ({
+          //     key: mapping.key || key,
+          //     label: mapping.label || key,
+          //     type: mapping.type || 'string',
+          //     sortable: mapping.sortable !== false,
+          //     width: mapping.width || 150,
+          //     align: 'left',
+          //   }));
+          //   tableProps.columns = columns;
+          // }
 
           if (Object.keys(tableProps).length > 0) {
             onTablePropsUpdate(tableProps);
