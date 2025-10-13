@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   TextField,
   Input,
@@ -11,19 +11,28 @@ import {
 import { Button } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
+import "./data.css";
 
 export interface SupabaseCollectionEditorProps {
   config: SupabaseCollectionConfig;
   onChange: (config: SupabaseCollectionConfig) => void;
+  onTablePropsUpdate?: (props: Record<string, unknown>) => void;
 }
 
 export function SupabaseCollectionEditor({
   config,
   onChange,
+  onTablePropsUpdate,
 }: SupabaseCollectionEditorProps) {
   const [tables, setTables] = useState<string[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Local state로 관리 (즉각 적용 방지)
+  const [localTable, setLocalTable] = useState(config.table || "");
+  const [localColumns, setLocalColumns] = useState<string[]>(config.columns || []);
+  const [localOrderBy, setLocalOrderBy] = useState(config.orderBy);
+  const [localLimit, setLocalLimit] = useState(config.limit?.toString() || "");
 
   // 테이블 목록 로드
   useEffect(() => {
@@ -32,10 +41,18 @@ export function SupabaseCollectionEditor({
 
   // 선택된 테이블의 컬럼 로드
   useEffect(() => {
-    if (config.table) {
-      loadColumns(config.table);
+    if (localTable) {
+      loadColumns(localTable);
     }
-  }, [config.table]);
+  }, [localTable]);
+
+  // config가 변경되면 local state 업데이트
+  useEffect(() => {
+    setLocalTable(config.table || "");
+    setLocalColumns(config.columns || []);
+    setLocalOrderBy(config.orderBy);
+    setLocalLimit(config.limit?.toString() || "");
+  }, [config.table, config.columns, config.orderBy, config.limit]);
 
   const loadTables = async () => {
     setLoading(true);
@@ -74,24 +91,128 @@ export function SupabaseCollectionEditor({
     }
   };
 
+  // 변경 감지
+  const tableChanged = useMemo(() => localTable !== (config.table || ""), [localTable, config.table]);
+  const columnsChanged = useMemo(() => {
+    return JSON.stringify(localColumns) !== JSON.stringify(config.columns || []);
+  }, [localColumns, config.columns]);
+  const orderByChanged = useMemo(() => {
+    return JSON.stringify(localOrderBy) !== JSON.stringify(config.orderBy);
+  }, [localOrderBy, config.orderBy]);
+  const limitChanged = useMemo(() => {
+    const currentLimit = config.limit?.toString() || "";
+    return localLimit !== currentLimit;
+  }, [localLimit, config.limit]);
+
+  const hasChanges = useMemo(() => {
+    return tableChanged || columnsChanged || orderByChanged || limitChanged;
+  }, [tableChanged, columnsChanged, orderByChanged, limitChanged]);
+
   const handleTableChange = (table: string) => {
-    onChange({
-      ...config,
-      table,
-      columns: [],
-    });
+    setLocalTable(table);
+    setLocalColumns([]); // 테이블 변경 시 컬럼 초기화
   };
 
   const handleColumnToggle = (column: string) => {
-    const isSelected = config.columns.includes(column);
+    const isSelected = localColumns.includes(column);
     const updatedColumns = isSelected
-      ? config.columns.filter((c) => c !== column)
-      : [...config.columns, column];
+      ? localColumns.filter((c) => c !== column)
+      : [...localColumns, column];
 
-    onChange({
-      ...config,
-      columns: updatedColumns,
-    });
+    setLocalColumns(updatedColumns);
+  };
+
+  const handleApplyChanges = async () => {
+    try {
+      // Supabase에서 실제 데이터 가져오기
+      let query = supabase.from(localTable).select(localColumns.join(", ") || "*");
+
+      // 정렬 적용
+      if (localOrderBy) {
+        query = query.order(localOrderBy.column, { ascending: localOrderBy.ascending });
+      }
+
+      // 제한 적용
+      if (localLimit) {
+        const limit = parseInt(localLimit, 10);
+        if (!isNaN(limit)) {
+          query = query.limit(limit);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Supabase 데이터 로드 오류:", error);
+        alert("데이터를 불러오는데 실패했습니다: " + error.message);
+        return;
+      }
+
+      console.log("✅ Supabase 데이터 로드 성공:", data);
+
+      // 선택된 컬럼을 기반으로 컬럼 매핑 자동 생성
+      const columnMapping: Record<string, {
+        key: string;
+        label: string;
+        type: string;
+        sortable: boolean;
+        width: number;
+        align: string;
+      }> = {};
+
+      if (data && data.length > 0 && localColumns.length > 0) {
+        const firstItem = data[0] as unknown as Record<string, unknown>;
+
+        localColumns.forEach((columnKey) => {
+          columnMapping[columnKey] = {
+            key: columnKey,
+            label: columnKey.charAt(0).toUpperCase() + columnKey.slice(1).replace(/_/g, ' '),
+            type: typeof firstItem[columnKey] === 'number' ? 'number' :
+              typeof firstItem[columnKey] === 'boolean' ? 'boolean' :
+                typeof firstItem[columnKey] === 'object' && firstItem[columnKey] instanceof Date ? 'date' : 'string',
+            sortable: true,
+            width: 150,
+            align: 'left',
+          };
+        });
+      }
+
+      console.log("📊 Supabase 컬럼 매핑 생성:", columnMapping);
+
+      // config 업데이트
+      const newConfig: SupabaseCollectionConfig = {
+        ...config,
+        table: localTable,
+        columns: localColumns,
+        orderBy: localOrderBy,
+        limit: localLimit ? parseInt(localLimit, 10) : undefined,
+      };
+
+      // Table 컴포넌트 props를 먼저 업데이트
+      if (onTablePropsUpdate && data) {
+        const tableProps: Record<string, unknown> = {
+          data: data,
+          enableAsyncLoading: false, // Supabase는 미리 로드한 데이터 사용
+          columnMapping: columnMapping, // 컬럼 매핑 추가
+        };
+
+        console.log("📊 Supabase - Table props 업데이트 전송:", tableProps);
+        onTablePropsUpdate(tableProps);
+      }
+
+      // config는 나중에 업데이트
+      onChange(newConfig);
+    } catch (error) {
+      console.error("Apply 오류:", error);
+      alert("데이터 적용 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setLocalTable(config.table || "");
+    setLocalColumns(config.columns || []);
+    setLocalOrderBy(config.orderBy);
+    setLocalLimit(config.limit?.toString() || "");
   };
 
   return (
@@ -121,7 +242,7 @@ export function SupabaseCollectionEditor({
             </svg>
           </label>
           <Select
-            selectedKey={config.table || ""}
+            selectedKey={localTable || ""}
             onSelectionChange={(key) => handleTableChange(key as string)}
           >
             <Button>
@@ -170,13 +291,13 @@ export function SupabaseCollectionEditor({
       </fieldset>
 
       {/* 컬럼 선택 */}
-      {config.table && columns.length > 0 && (
+      {localTable && columns.length > 0 && (
         <fieldset className="properties-aria">
           <legend className="fieldset-legend">Columns to Display</legend>
           <div className="column-selection">
-            <div className="column-list">
+            <div className={`column-list ${columnsChanged ? "field-modified" : ""}`}>
               {columns.map((column) => {
-                const isSelected = config.columns.includes(column);
+                const isSelected = localColumns.includes(column);
                 return (
                   <button
                     key={column}
@@ -197,7 +318,7 @@ export function SupabaseCollectionEditor({
       )}
 
       {/* 정렬 설정 */}
-      {config.table && (
+      {localTable && (
         <fieldset className="properties-aria">
           <legend className="fieldset-legend">Order By (Optional)</legend>
           <div className="react-aria-control react-aria-Group">
@@ -221,22 +342,17 @@ export function SupabaseCollectionEditor({
                 <path d="M7 4v16" />
               </svg>
             </label>
-            <div className="order-controls">
+            <div className={`order-controls ${orderByChanged ? "field-modified" : ""}`}>
               <Select
-                selectedKey={config.orderBy?.column || ""}
+                selectedKey={localOrderBy?.column || ""}
                 onSelectionChange={(key) => {
                   if (key) {
-                    onChange({
-                      ...config,
-                      orderBy: {
-                        column: key as string,
-                        ascending: config.orderBy?.ascending ?? true,
-                      },
+                    setLocalOrderBy({
+                      column: key as string,
+                      ascending: localOrderBy?.ascending ?? true,
                     });
                   } else {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const { orderBy: _orderBy, ...rest } = config;
-                    onChange(rest);
+                    setLocalOrderBy(undefined);
                   }
                 }}
               >
@@ -272,22 +388,19 @@ export function SupabaseCollectionEditor({
                 </Popover>
               </Select>
 
-              {config.orderBy && (
+              {localOrderBy && (
                 <Button
                   className="order-direction"
                   onPress={() => {
-                    if (config.orderBy) {
-                      onChange({
-                        ...config,
-                        orderBy: {
-                          column: config.orderBy.column,
-                          ascending: !config.orderBy.ascending,
-                        },
+                    if (localOrderBy) {
+                      setLocalOrderBy({
+                        column: localOrderBy.column,
+                        ascending: !localOrderBy.ascending,
                       });
                     }
                   }}
                 >
-                  {config.orderBy.ascending ? "↑ ASC" : "↓ DESC"}
+                  {localOrderBy.ascending ? "↑ ASC" : "↓ DESC"}
                 </Button>
               )}
             </div>
@@ -296,7 +409,7 @@ export function SupabaseCollectionEditor({
       )}
 
       {/* 제한 설정 */}
-      {config.table && (
+      {localTable && (
         <fieldset className="properties-aria">
           <legend className="fieldset-legend">Limit (Optional)</legend>
           <div className="react-aria-control react-aria-Group">
@@ -322,19 +435,43 @@ export function SupabaseCollectionEditor({
             </label>
             <TextField
               type="number"
-              value={config.limit?.toString() || ""}
-              onChange={(value) => {
-                const limit = value ? parseInt(value, 10) : undefined;
-                onChange({
-                  ...config,
-                  limit,
-                });
-              }}
+              value={localLimit}
+              onChange={(value) => setLocalLimit(value)}
             >
-              <Input className="control-input" placeholder="No limit" />
+              <Input
+                className={`control-input ${limitChanged ? "field-modified" : ""}`}
+                placeholder="No limit"
+              />
             </TextField>
           </div>
         </fieldset>
+      )}
+
+      {/* Status Messages */}
+      {localTable && !hasChanges && config.table && (
+        <div className="success-message">
+          ✓ 설정 완료: {config.table} 테이블
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      {localTable && (
+        <div className="action-buttons">
+          {/* Discard Changes 버튼 - 변경사항이 있을 때만 표시 */}
+          {hasChanges && (
+            <Button
+              onClick={handleDiscardChanges}
+              children="Discard"
+            />
+          )}
+
+          {/* Apply 버튼 */}
+          <Button
+            onClick={handleApplyChanges}
+            isDisabled={!hasChanges || localColumns.length === 0}
+            children={hasChanges ? "Apply" : "No Changes"}
+          />
+        </div>
       )}
     </div>
   );

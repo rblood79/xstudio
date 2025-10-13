@@ -6,6 +6,7 @@ import type { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store';
 // ElementUtils는 현재 사용되지 않음
 import { MessageService } from '../../utils/messaging';
+import { elementsApi } from '../../services/api';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -171,6 +172,44 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const handleMessage = useCallback((event: MessageEvent) => {
         if (event.origin !== window.location.origin) {
             console.warn("Received message from untrusted origin:", event.origin);
+            return;
+        }
+
+        // Preview에서 Column Elements 일괄 추가 요청
+        if (event.data.type === "ADD_COLUMN_ELEMENTS" && event.data.payload?.columns) {
+            console.log("📥 Builder: Preview에서 Column Elements 일괄 추가 요청:", event.data.payload);
+            
+            const { elements } = useStore.getState();
+            const newColumns = event.data.payload.columns;
+            
+            // 중복 제거 (이미 존재하는 Column은 제외)
+            const columnsToAdd = newColumns.filter((col: Element) => 
+                !elements.some(el => el.id === col.id)
+            );
+            
+            if (columnsToAdd.length === 0) {
+                console.log("⚠️ 추가할 새로운 Column이 없습니다 (모두 중복)");
+                return;
+            }
+            
+            // 1. Store에 일괄 추가
+            useStore.setState(state => ({
+                elements: [...state.elements, ...columnsToAdd]
+            }));
+            
+            console.log(`✅ Builder Store에 ${columnsToAdd.length}개 Column Elements 추가 완료:`, 
+                columnsToAdd.map((c: Element) => c.id));
+            
+            // 2. DB에도 저장
+            (async () => {
+                try {
+                    await elementsApi.createMultipleElements(columnsToAdd);
+                    console.log(`✅ DB에 ${columnsToAdd.length}개 Column Elements 저장 완료`);
+                } catch (error) {
+                    console.error("❌ Column Elements DB 저장 실패:", error);
+                }
+            })();
+            
             return;
         }
 

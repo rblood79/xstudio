@@ -133,6 +133,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
     endpointPath &&
     endpointPath.trim().length > 0;
 
+  // 페이지네이션 표시 여부 (API 또는 Static/Supabase 모두 지원)
+  const shouldShowPagination = mode === "pagination";
+
   // ---------- 데이터 매핑 함수 ----------
   const processApiResponse = React.useCallback(
     (
@@ -424,10 +427,43 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const [hasNext, setHasNext] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
 
+  // ---------- Static/Supabase 클라이언트 사이드 페이지네이션 상태 ----------
+  const [clientPageIndex, setClientPageIndex] = React.useState(0);
+
+  // Static/Supabase 데이터의 클라이언트 페이지네이션
+  const clientPaginatedData = React.useMemo(() => {
+    if (isAsync || !staticData) return staticData || [];
+    if (mode !== "pagination") return staticData;
+
+    const start = clientPageIndex * currentItemsPerPage;
+    const end = start + currentItemsPerPage;
+    return staticData.slice(start, end);
+  }, [isAsync, staticData, mode, clientPageIndex, currentItemsPerPage]);
+
+  const clientTotalPages = React.useMemo(() => {
+    if (isAsync || !staticData) return 0;
+    return Math.ceil(staticData.length / currentItemsPerPage);
+  }, [isAsync, staticData, currentItemsPerPage]);
+
   // prop 변경 시 내부 상태 동기화
   React.useEffect(() => {
     setCurrentItemsPerPage(itemsPerPage);
   }, [itemsPerPage]);
+
+  // ---------- API 데이터 자동 감지 ----------
+  React.useEffect(() => {
+    // API 데이터이고, 컬럼이 제공되지 않았고, 페이지 데이터가 있으면 자동 감지
+    if (isAsync && columns.length === 0 && pageRows && pageRows.length > 0) {
+      const detected = detectColumnsFromData(pageRows);
+      setDetectedColumns(detected);
+      console.log("🔍 API 데이터 컬럼 자동 감지:", detected);
+
+      // 부모 컴포넌트에 자동 감지된 컬럼 전달
+      if (onColumnsDetected) {
+        onColumnsDetected(detected);
+      }
+    }
+  }, [pageRows, columns.length, isAsync, detectColumnsFromData, onColumnsDetected]);
 
   // ---------- API 어댑터 (더미 배열 응답 기반) ----------
   const isFetchingRef = React.useRef(false);
@@ -752,8 +788,15 @@ export default React.memo(function Table<T extends { id: string | number }>(
       });
       return sorted;
     }
+
+    // 클라이언트 사이드 페이지네이션 (Static/Supabase)
+    if (!isAsync && mode === "pagination") {
+      return clientPaginatedData;
+    }
+
+    // 서버 사이드 페이지네이션 (API)
     return mode === "pagination" ? pageRows : flatRows;
-  }, [staticData, sorting, mode, pageRows, flatRows]);
+  }, [staticData, sorting, mode, pageRows, flatRows, isAsync, clientPaginatedData]);
 
   // ---------- React Table ----------
   const table = useReactTable({
@@ -1096,221 +1139,381 @@ export default React.memo(function Table<T extends { id: string | number }>(
       </div>
 
       {/* 페이지네이션 (grid 바깥) */}
-      {isAsync && mode === "pagination" && pageCount !== null && (
+      {shouldShowPagination && staticData && staticData.length > 0 && (
         <div className="react-aria-Pagination">
-          {/* 페이지 정보 */}
-          <div className="react-aria-PageInfo">
-            {pageIndex * currentItemsPerPage + 1} to{" "}
-            {Math.min(
-              (pageIndex + 1) * currentItemsPerPage,
-              pageRows.length + pageIndex * currentItemsPerPage
-            )}{" "}
-            of {pageCount * currentItemsPerPage} entries
-          </div>
+          {isAsync && pageCount !== null ? (
+            // 서버 사이드 페이지네이션 (API)
+            <>
+              {/* 페이지 정보 */}
+              <div className="react-aria-PageInfo">
+                {pageIndex * currentItemsPerPage + 1} to{" "}
+                {Math.min(
+                  (pageIndex + 1) * currentItemsPerPage,
+                  pageRows.length + pageIndex * currentItemsPerPage
+                )}{" "}
+                of {pageCount * currentItemsPerPage} entries
+              </div>
 
+              {/* 페이지 네비게이션 */}
+              <div className="react-aria-PageNavigation">
+                <Button
+                  onClick={async () => {
+                    const { items, total } = await fetchPage(0, currentItemsPerPage);
+                    setPageRows(items);
+                    setPageIndex(0);
+                    setPageCount(
+                      Math.max(1, Math.ceil((total || 0) / currentItemsPerPage))
+                    );
+                  }}
+                  isDisabled={pageIndex === 0 || loading}
+                  className="react-aria-PageButton"
+                  aria-label="First page"
+                  size="sm"
+                >
+                  <ChevronFirst size={16} />
+                </Button>
 
+                <Button
+                  onClick={async () => {
+                    const next = Math.max(0, pageIndex - 1);
+                    const { items } = await fetchPage(next, currentItemsPerPage);
+                    setPageRows(items);
+                    setPageIndex(next);
+                  }}
+                  isDisabled={pageIndex === 0 || loading}
+                  className="react-aria-PageButton"
+                  aria-label="Previous page"
+                  size="sm"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
 
-          {/* 페이지 네비게이션 */}
-          <div className="react-aria-PageNavigation">
-            <Button
-              onClick={async () => {
-                const { items, total } = await fetchPage(0, currentItemsPerPage);
-                setPageRows(items);
-                setPageIndex(0);
-                setPageCount(
-                  Math.max(1, Math.ceil((total || 0) / currentItemsPerPage))
-                );
-              }}
-              isDisabled={pageIndex === 0 || loading}
-              className="react-aria-PageButton"
-              aria-label="First page"
-              children={<ChevronFirst size={16} />}
-              size="sm"
-            />
+                {/* 페이지 번호 표시 */}
+                <div className="react-aria-PageNumbers">
+                  {(() => {
+                    const totalPages = pageCount;
+                    const currentPage = pageIndex + 1;
+                    const maxVisible = 5;
+                    let startPage = Math.max(
+                      1,
+                      currentPage - Math.floor(maxVisible / 2)
+                    );
+                    const endPage = Math.min(
+                      totalPages,
+                      startPage + maxVisible - 1
+                    );
 
-            <Button
-              onClick={async () => {
-                const next = Math.max(0, pageIndex - 1);
-                const { items } = await fetchPage(next, currentItemsPerPage);
-                setPageRows(items);
-                setPageIndex(next);
-              }}
-              isDisabled={pageIndex === 0 || loading}
-              className="react-aria-PageButton"
-              aria-label="Previous page"
-              children={<ChevronLeft size={16} />}
-              size="sm"
-            />
+                    if (endPage - startPage < maxVisible - 1) {
+                      startPage = Math.max(1, endPage - maxVisible + 1);
+                    }
 
-            {/* 페이지 번호 표시 */}
-            <div className="react-aria-PageNumbers">
-              {(() => {
-                const totalPages = pageCount;
-                const currentPage = pageIndex + 1;
-                const maxVisible = 5;
-                let startPage = Math.max(
-                  1,
-                  currentPage - Math.floor(maxVisible / 2)
-                );
-                const endPage = Math.min(
-                  totalPages,
-                  startPage + maxVisible - 1
-                );
+                    const pages = [];
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          onClick={async () => {
+                            const targetPage = i - 1;
+                            const { items } = await fetchPage(
+                              targetPage,
+                              currentItemsPerPage
+                            );
+                            setPageRows(items);
+                            setPageIndex(targetPage);
+                          }}
+                          isDisabled={loading}
+                          className={`react-aria-PageButton ${i === currentPage ? "active" : ""
+                            }`}
+                          size="sm"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+                    return pages;
+                  })()}
+                </div>
 
-                if (endPage - startPage < maxVisible - 1) {
-                  startPage = Math.max(1, endPage - maxVisible + 1);
-                }
+                <Button
+                  onClick={async () => {
+                    const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
+                    const { items } = await fetchPage(next, currentItemsPerPage);
+                    setPageRows(items);
+                    setPageIndex(next);
+                  }}
+                  isDisabled={
+                    pageCount === 0 || pageIndex >= pageCount - 1 || loading
+                  }
+                  className="react-aria-PageButton"
+                  aria-label="Next page"
+                  size="sm"
+                >
+                  <ChevronRight size={16} />
+                </Button>
 
-                const pages = [];
-                for (let i = startPage; i <= endPage; i++) {
-                  pages.push(
-                    <Button
-                      key={i}
-                      onClick={async () => {
-                        const targetPage = i - 1;
-                        const { items } = await fetchPage(
-                          targetPage,
-                          currentItemsPerPage
-                        );
-                        setPageRows(items);
-                        setPageIndex(targetPage);
-                      }}
-                      isDisabled={loading}
-                      className={`react-aria-PageButton ${i === currentPage ? "active" : ""
-                        }`}
-                      children={i}
-                      size="sm"
-                    />
-                  );
-                }
-                return pages;
-              })()}
-            </div>
+                <Button
+                  onClick={async () => {
+                    const next = (pageCount ?? 1) - 1;
+                    const { items } = await fetchPage(next, currentItemsPerPage);
+                    setPageRows(items);
+                    setPageIndex(next);
+                  }}
+                  isDisabled={
+                    pageCount === 0 || pageIndex >= pageCount - 1 || loading
+                  }
+                  className="react-aria-PageButton"
+                  aria-label="Last page"
+                  size="sm"
+                >
+                  <ChevronLast size={16} />
+                </Button>
+              </div>
 
-            <Button
-              onClick={async () => {
-                const next = Math.min((pageCount ?? 1) - 1, pageIndex + 1);
-                const { items } = await fetchPage(next, currentItemsPerPage);
-                setPageRows(items);
-                setPageIndex(next);
-              }}
-              isDisabled={
-                pageCount === 0 || pageIndex >= pageCount - 1 || loading
-              }
-              className="react-aria-PageButton"
-              aria-label="Next page"
-              children={<ChevronRight size={16} />}
-            />
+              {/* Go to page */}
+              <div className="react-aria-GoToPage">
+                <label
+                  htmlFor="go-to-page-input"
+                  className="react-aria-GoToPageLabel"
+                >
+                  Go to:
+                </label>
+                <input
+                  id="go-to-page-input"
+                  type="number"
+                  min="1"
+                  max={pageCount}
+                  value={pageIndex + 1}
+                  onChange={(e) => {
+                    const targetPage = Math.max(
+                      1,
+                      Math.min(pageCount, Number(e.target.value))
+                    );
+                    setPageIndex(targetPage - 1);
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const targetPage = Math.max(
+                        1,
+                        Math.min(pageCount, Number(e.currentTarget.value))
+                      );
+                      const { items } = await fetchPage(
+                        targetPage - 1,
+                        currentItemsPerPage
+                      );
+                      setPageRows(items);
+                      setPageIndex(targetPage - 1);
+                    }
+                  }}
+                  disabled={loading}
+                  className="react-aria-GoToPageInput"
+                />
+                <Button
+                  onClick={async () => {
+                    const targetPage = Math.max(
+                      1,
+                      Math.min(pageCount, pageIndex + 1)
+                    );
+                    const { items } = await fetchPage(targetPage - 1, currentItemsPerPage);
+                    setPageRows(items);
+                    setPageIndex(targetPage - 1);
+                  }}
+                  isDisabled={loading}
+                  className="react-aria-GoToPageButton"
+                  size="sm"
+                >
+                  <ChevronLast size={16} />
+                </Button>
+              </div>
 
-            <Button
-              onClick={async () => {
-                const next = (pageCount ?? 1) - 1;
-                const { items } = await fetchPage(next, currentItemsPerPage);
-                setPageRows(items);
-                setPageIndex(next);
-              }}
-              isDisabled={
-                pageCount === 0 || pageIndex >= pageCount - 1 || loading
-              }
-              className="react-aria-PageButton"
-              aria-label="Last page"
-              children={<ChevronLast size={16} />}
-            />
-          </div>
+              {/* 페이지 크기 선택 */}
+              <div className="react-aria-PageSizeSelector">
+                <Select
+                  id="page-size-select"
+                  selectedKey={currentItemsPerPage.toString()}
+                  onSelectionChange={async (key) => {
+                    const newPageSize = Number(key);
+                    setCurrentItemsPerPage(newPageSize); // 내부 상태 업데이트
+                    const { items, total } = await fetchPage(0, newPageSize);
+                    setPageRows(items);
+                    setPageIndex(0);
+                    setPageCount(
+                      Math.max(1, Math.ceil((total || 0) / newPageSize))
+                    );
+                    // 부모 컴포넌트에 페이지당 항목 수 변경 알림
+                    if (onItemsPerPageChange) {
+                      onItemsPerPageChange(newPageSize);
+                    }
+                  }}
+                  isDisabled={loading}
+                  className="react-aria-PageSizeSelect"
+                  items={[
+                    { value: 5, label: "5" },
+                    { value: 10, label: "10" },
+                    { value: 20, label: "20" },
+                    { value: 50, label: "50" },
+                    { value: 100, label: "100" },
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.value} id={item.value.toString()}>
+                      {item.label}
+                    </SelectItem>
+                  )}
+                </Select>
+              </div>
 
-          {/* Go to page */}
-          <div className="react-aria-GoToPage">
-            <label
-              htmlFor="go-to-page-input"
-              className="react-aria-GoToPageLabel"
-            >
-              Go to:
-            </label>
-            <input
-              id="go-to-page-input"
-              type="number"
-              min="1"
-              max={pageCount}
-              value={pageIndex + 1}
-              onChange={(e) => {
-                const targetPage = Math.max(
-                  1,
-                  Math.min(pageCount, Number(e.target.value))
-                );
-                setPageIndex(targetPage - 1);
-              }}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter") {
-                  const targetPage = Math.max(
-                    1,
-                    Math.min(pageCount, Number(e.currentTarget.value))
-                  );
-                  const { items } = await fetchPage(
-                    targetPage - 1,
-                    currentItemsPerPage
-                  );
-                  setPageRows(items);
-                  setPageIndex(targetPage - 1);
-                }
-              }}
-              disabled={loading}
-              className="react-aria-GoToPageInput"
-            />
-            <Button
-              onClick={async () => {
-                const targetPage = Math.max(
-                  1,
-                  Math.min(pageCount, pageIndex + 1)
-                );
-                const { items } = await fetchPage(targetPage - 1, currentItemsPerPage);
-                setPageRows(items);
-                setPageIndex(targetPage - 1);
-              }}
-              isDisabled={loading}
-              className="react-aria-GoToPageButton"
-              children={<ChevronLast size={16} />}
-              size="sm"
-            />
-          </div>
+              {loading && <span className="react-aria-LoadingText">Loading…</span>}
+            </>
+          ) : (
+            // 클라이언트 사이드 페이지네이션 (Static/Supabase)
+            <>
+              {/* 페이지 정보 */}
+              <div className="react-aria-PageInfo">
+                {clientPageIndex * currentItemsPerPage + 1} to{" "}
+                {Math.min(
+                  (clientPageIndex + 1) * currentItemsPerPage,
+                  staticData.length
+                )}{" "}
+                of {staticData.length} entries
+              </div>
 
-          {/* 페이지 크기 선택 */}
-          <div className="react-aria-PageSizeSelector">
-            <Select
-              id="page-size-select"
-              selectedKey={currentItemsPerPage.toString()}
-              onSelectionChange={async (key) => {
-                const newPageSize = Number(key);
-                setCurrentItemsPerPage(newPageSize); // 내부 상태 업데이트
-                const { items, total } = await fetchPage(0, newPageSize);
-                setPageRows(items);
-                setPageIndex(0);
-                setPageCount(
-                  Math.max(1, Math.ceil((total || 0) / newPageSize))
-                );
-                // 부모 컴포넌트에 페이지당 항목 수 변경 알림
-                if (onItemsPerPageChange) {
-                  onItemsPerPageChange(newPageSize);
-                }
-              }}
-              isDisabled={loading}
-              className="react-aria-PageSizeSelect"
-              items={[
-                { value: 5, label: "5" },
-                { value: 10, label: "10" },
-                { value: 20, label: "20" },
-                { value: 50, label: "50" },
-                { value: 100, label: "100" },
-              ]}
-            >
-              {(item) => (
-                <SelectItem key={item.value} id={item.value.toString()}>
-                  {item.label}
-                </SelectItem>
-              )}
-            </Select>
-          </div>
+              {/* 페이지 네비게이션 */}
+              <div className="react-aria-PageNavigation">
+                <Button
+                  onClick={() => setClientPageIndex(0)}
+                  isDisabled={clientPageIndex === 0}
+                  className="react-aria-PageButton"
+                  aria-label="First page"
+                  size="sm"
+                >
+                  <ChevronFirst size={16} />
+                </Button>
 
-          {loading && <span className="react-aria-LoadingText">Loading…</span>}
+                <Button
+                  onClick={() => setClientPageIndex(Math.max(0, clientPageIndex - 1))}
+                  isDisabled={clientPageIndex === 0}
+                  className="react-aria-PageButton"
+                  aria-label="Previous page"
+                  size="sm"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+
+                {/* 페이지 번호 표시 */}
+                <div className="react-aria-PageNumbers">
+                  {(() => {
+                    const totalPages = clientTotalPages;
+                    const currentPage = clientPageIndex + 1;
+                    const maxVisible = 5;
+                    let startPage = Math.max(
+                      1,
+                      currentPage - Math.floor(maxVisible / 2)
+                    );
+                    const endPage = Math.min(
+                      totalPages,
+                      startPage + maxVisible - 1
+                    );
+
+                    if (endPage - startPage < maxVisible - 1) {
+                      startPage = Math.max(1, endPage - maxVisible + 1);
+                    }
+
+                    const pages = [];
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          onClick={() => setClientPageIndex(i - 1)}
+                          className={`react-aria-PageButton ${i === currentPage ? "active" : ""
+                            }`}
+                          size="sm"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+                    return pages;
+                  })()}
+                </div>
+
+                <Button
+                  onClick={() => setClientPageIndex(Math.min(clientTotalPages - 1, clientPageIndex + 1))}
+                  isDisabled={clientPageIndex >= clientTotalPages - 1}
+                  className="react-aria-PageButton"
+                  aria-label="Next page"
+                  size="sm"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+
+                <Button
+                  onClick={() => setClientPageIndex(clientTotalPages - 1)}
+                  isDisabled={clientPageIndex >= clientTotalPages - 1}
+                  className="react-aria-PageButton"
+                  aria-label="Last page"
+                  size="sm"
+                >
+                  <ChevronLast size={16} />
+                </Button>
+              </div>
+
+              {/* Go to page */}
+              <div className="react-aria-GoToPage">
+                <label
+                  htmlFor="go-to-page-input"
+                  className="react-aria-GoToPageLabel"
+                >
+                  Go to:
+                </label>
+                <input
+                  id="go-to-page-input"
+                  type="number"
+                  min="1"
+                  max={clientTotalPages}
+                  value={clientPageIndex + 1}
+                  onChange={(e) => {
+                    const targetPage = Math.max(
+                      1,
+                      Math.min(clientTotalPages, Number(e.target.value))
+                    );
+                    setClientPageIndex(targetPage - 1);
+                  }}
+                  className="react-aria-GoToPageInput"
+                />
+              </div>
+
+              {/* 페이지 크기 선택 */}
+              <div className="react-aria-PageSizeSelector">
+                <Select
+                  id="page-size-select"
+                  selectedKey={currentItemsPerPage.toString()}
+                  onSelectionChange={(key) => {
+                    const newPageSize = Number(key);
+                    setCurrentItemsPerPage(newPageSize);
+                    setClientPageIndex(0);
+                    // 부모 컴포넌트에 페이지당 항목 수 변경 알림
+                    if (onItemsPerPageChange) {
+                      onItemsPerPageChange(newPageSize);
+                    }
+                  }}
+                  className="react-aria-PageSizeSelect"
+                  items={[
+                    { value: 5, label: "5" },
+                    { value: 10, label: "10" },
+                    { value: 20, label: "20" },
+                    { value: 50, label: "50" },
+                    { value: 100, label: "100" },
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.value} id={item.value.toString()}>
+                      {item.label}
+                    </SelectItem>
+                  )}
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>

@@ -42,6 +42,23 @@ export class ElementsApiService extends BaseApiService {
     });
   }
 
+  async createMultipleElements(elements: Partial<Element>[]): Promise<Element[]> {
+    this.validateInput(
+      elements,
+      (els) => Array.isArray(els) && els.length > 0,
+      "createMultipleElements"
+    );
+
+    const result = await this.handleApiCall("createMultipleElements", async () => {
+      return await this.supabase
+        .from("elements")
+        .insert(elements)
+        .select("*");
+    });
+    
+    return Array.isArray(result) ? result : [];
+  }
+
   async updateElement(
     elementId: string,
     updates: Partial<Element>

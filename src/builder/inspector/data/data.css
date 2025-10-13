@@ -73,6 +73,13 @@
           grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
           gap: var(--spacing-2);
           margin-top: var(--spacing-2);
+
+          &.field-modified {
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-2);
+            box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+          }
         }
 
         .column-item {
@@ -102,6 +109,14 @@
       .order-controls {
         display: flex;
         gap: var(--spacing-2);
+        flex: 1;
+
+        &.field-modified {
+          border: 2px solid var(--color-primary);
+          border-radius: var(--radius-sm);
+          padding: var(--spacing-2);
+          box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        }
 
         .order-direction {
           padding: var(--spacing-2) var(--spacing-4);
@@ -115,6 +130,14 @@
             opacity: 0.9;
           }
         }
+      }
+
+      /* Action Buttons - StaticDataEditor와 동일 */
+      .action-buttons {
+        display: flex;
+        gap: var(--spacing-sm);
+        justify-content: center;
+        margin-top: var(--spacing-4);
       }
     }
 
@@ -175,6 +198,16 @@
       background: var(--color-success-background);
       color: var(--color-success-foreground);
       border: 1px solid var(--color-success-border);
+    }
+
+    .pending-message {
+      padding: var(--spacing-2) var(--spacing-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-3);
+      background: var(--color-warning-background);
+      color: var(--color-warning-foreground);
+      border: 1px solid var(--color-warning-border);
     }
 
     /* Helper text */

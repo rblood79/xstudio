@@ -33,7 +33,7 @@ export interface DataSourceSelectorProps {
 
 export function DataSourceSelector({ element }: DataSourceSelectorProps) {
   const meta = useComponentMeta(element.type);
-  const { updateDataBinding, updateProperty } = useInspectorState();
+  const { updateDataBinding, updateProperties } = useInspectorState();
   //const addElement = useStore((state) => state.addElement);
   //const updateElement = useStore((state) => state.updateElement);
   //const elements = useStore((state) => state.elements);
@@ -101,11 +101,13 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
         // Table 컴포넌트인 경우 props도 함께 업데이트
         if (element.type === "Table") {
-          updateProperty("enableAsyncLoading", true);
-          updateProperty("apiUrlKey", initialConfig.baseUrl);
-          updateProperty("endpointPath", initialConfig.endpoint);
-          updateProperty("dataMapping", initialConfig.dataMapping);
-          updateProperty("apiParams", initialConfig.params);
+          updateProperties({
+            enableAsyncLoading: true,
+            apiUrlKey: initialConfig.baseUrl,
+            endpointPath: initialConfig.endpoint,
+            dataMapping: initialConfig.dataMapping,
+            apiParams: initialConfig.params,
+          });
         }
       } else {
         updateDataBinding({
@@ -150,9 +152,11 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
         // Table 컴포넌트인 경우 props 초기화
         if (element.type === "Table") {
-          updateProperty("enableAsyncLoading", false);
-          updateProperty("data", []);
-          updateProperty("columns", []);
+          updateProperties({
+            enableAsyncLoading: false,
+            data: [],
+            columns: [],
+          });
         }
       } else {
         updateDataBinding({
@@ -243,11 +247,13 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
                 // Table 컴포넌트인 경우 props 동기화
                 if (element.type === "Table") {
-                  updateProperty("enableAsyncLoading", true);
-                  updateProperty("apiUrlKey", config.baseUrl);
-                  updateProperty("endpointPath", config.endpoint);
-                  updateProperty("dataMapping", config.dataMapping);
-                  updateProperty("apiParams", config.params);
+                  updateProperties({
+                    enableAsyncLoading: true,
+                    apiUrlKey: config.baseUrl,
+                    endpointPath: config.endpoint,
+                    dataMapping: config.dataMapping,
+                    apiParams: config.params,
+                  });
                   console.log("🔄 APICollectionEditor - Table props 업데이트:", config);
                 }
               }}
@@ -277,6 +283,13 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                   config,
                 })
               }
+              onTablePropsUpdate={(props) => {
+                // Table 컴포넌트인 경우 props 동기화
+                if (element.type === "Table") {
+                  console.log("🔄 SupabaseCollectionEditor - Table props 업데이트:", props);
+                  updateProperties(props);
+                }
+              }}
             />
           )}
 
@@ -335,10 +348,8 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
               onTablePropsUpdate={(props) => {
                 // Table 컴포넌트인 경우 props 동기화
                 if (element.type === "Table") {
-                  Object.entries(props).forEach(([key, value]) => {
-                    updateProperty(key, value);
-                  });
                   console.log("🔄 StaticDataEditor - Table props 업데이트:", props);
+                  updateProperties(props);
                 }
               }}
             />
