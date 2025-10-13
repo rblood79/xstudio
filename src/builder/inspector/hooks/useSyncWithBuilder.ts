@@ -158,9 +158,25 @@ export function useSyncWithBuilder(): void {
           const supabaseColumnsChanged =
             JSON.stringify(currentColumns) !== JSON.stringify(newColumns);
 
-          // API Endpoint 변경, Static Data 컬럼 매핑 변경, 또는 Supabase 테이블/컬럼 변경 시 컬럼 재설정
+          // API 컬럼 변경 감지
+          const currentApiColumns =
+            selectedElement.dataBinding?.source === "api" &&
+            currentConfig && "columns" in currentConfig
+              ? currentConfig.columns
+              : undefined;
+          const newApiColumns =
+            selectedElement.dataBinding?.source === "api" &&
+            newConfig && "columns" in newConfig
+              ? newConfig.columns
+              : undefined;
+          const apiColumnsChanged =
+            selectedElement.dataBinding?.source === "api" &&
+            JSON.stringify(currentApiColumns) !== JSON.stringify(newApiColumns);
+
+          // API Endpoint/컬럼 변경, Static Data 컬럼 매핑 변경, 또는 Supabase 테이블/컬럼 변경 시 컬럼 재설정
           if (
             endpointChanged ||
+            apiColumnsChanged ||
             (selectedElement.dataBinding?.source === "static" &&
               columnMappingChanged) ||
             (selectedElement.dataBinding?.source === "supabase" &&
@@ -185,6 +201,9 @@ export function useSyncWithBuilder(): void {
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
                 columnMappingChanged,
+                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+                currentApiColumns,
+                newApiColumns,
                 columnsToDelete: childColumns.map((c) => c.id),
               });
 
@@ -215,11 +234,18 @@ export function useSyncWithBuilder(): void {
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
                 columnMappingChanged,
+                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+                currentApiColumns,
+                newApiColumns,
               });
             }
           } else {
             console.log(
-              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지"
+              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지", {
+                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+                currentApiColumns,
+                newApiColumns,
+              }
             );
           }
         }
