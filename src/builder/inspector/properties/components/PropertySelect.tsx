@@ -33,6 +33,7 @@ export function PropertySelect({
                 onSelectionChange={(key) => onChange(key as string)}
                 itemKey="value" // value를 key로 사용하도록 명시
             >
+
                 {(item) => <SelectItem key={item.id}>{item.label}</SelectItem>}
             </Select>
         </PropertyFieldset>
