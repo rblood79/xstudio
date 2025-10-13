@@ -67,8 +67,34 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
   }
 
   // 드롭다운 선택 핸들러: pending source만 설정 (즉시 적용 안 함)
-  const handleSourceChange = (source: string) => {
+  const handleSourceChange = async (source: string) => {
     console.log("🎯 데이터 소스 선택:", source, "현재:", currentSource);
+
+    // "선택 안 함"을 선택한 경우 (빈 문자열)
+    if (source === "" && currentSource !== "") {
+      // 기존 데이터 바인딩이 있는 경우 즉시 제거
+      console.log("🗑️ 데이터 바인딩 제거");
+
+      // Table인 경우 컬럼 삭제
+      if (element.type === "Table") {
+        try {
+          await deleteTableColumns(element.id, elements);
+        } catch (error) {
+          console.error("❌ 컬럼 삭제 실패:", error);
+        }
+      }
+
+      // 데이터 바인딩 제거
+      updateDataBinding(undefined);
+      setPendingSource("");
+      return;
+    }
+
+    // 이미 "선택 안 함" 상태에서 다시 "선택 안 함" 선택
+    if (source === "" && currentSource === "") {
+      setPendingSource("");
+      return;
+    }
 
     // 현재 소스와 동일하면 아무것도 하지 않음
     if (source === currentSource) {
