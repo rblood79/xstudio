@@ -215,6 +215,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                     updateProperties({
                       enableAsyncLoading: true,
                       apiUrlKey: config.baseUrl,
+                      customApiUrl: config.baseUrl === "CUSTOM" ? config.customUrl : undefined,
                       endpointPath: config.endpoint,
                       dataMapping: config.dataMapping,
                       apiParams: config.params,

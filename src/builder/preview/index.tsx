@@ -1814,6 +1814,7 @@ function Preview() {
       // API 설정 추출
       let apiConfig: {
         baseUrl?: string;
+        customUrl?: string;
         endpoint?: string;
         params?: Record<string, unknown>;
         dataMapping?: {
@@ -1826,6 +1827,7 @@ function Preview() {
       if (hasApiBinding && el.dataBinding?.config) {
         const config = el.dataBinding.config as {
           baseUrl?: string;
+          customUrl?: string;
           endpoint?: string;
           params?: Record<string, unknown>;
           dataMapping?: {
@@ -1836,6 +1838,7 @@ function Preview() {
         };
         apiConfig = {
           baseUrl: config.baseUrl,
+          customUrl: config.customUrl,
           endpoint: config.endpoint,
           params: config.params,
           dataMapping: config.dataMapping,
@@ -2133,6 +2136,11 @@ function Preview() {
           }
           enableAsyncLoading={hasApiBinding}
           apiUrlKey={hasApiBinding && apiConfig.baseUrl ? apiConfig.baseUrl : undefined}
+          customApiUrl={
+            hasApiBinding && apiConfig.baseUrl === "CUSTOM" && apiConfig.customUrl
+              ? apiConfig.customUrl
+              : undefined
+          }
           endpointPath={hasApiBinding && apiConfig.endpoint ? apiConfig.endpoint : undefined}
           apiParams={hasApiBinding && apiConfig.params ? apiConfig.params : undefined}
           dataMapping={
