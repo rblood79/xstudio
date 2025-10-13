@@ -91,6 +91,8 @@ export interface APICollectionConfig {
   method?: "GET" | "POST";
   params?: Record<string, unknown>;
   headers?: Record<string, string>;
+  columns?: string[]; // 선택된 컬럼 목록 (사용자가 선택한 것)
+  availableColumns?: string[]; // Load로 가져온 전체 컬럼 목록
   dataMapping: {
     resultPath: string; // 응답에서 데이터 배열 경로 (예: "data.items")
     idKey?: string; // ID 필드 이름 (기본값: "id")

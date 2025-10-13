@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   TextField,
   Input,
@@ -9,7 +9,7 @@ import {
   Popover,
 } from "react-aria-components";
 
-import { Button } from "../../components/list";
+import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import type { APICollectionConfig } from "../types";
 import "./data.css";
 
@@ -36,40 +36,134 @@ export function APICollectionEditor({
     JSON.stringify(config.dataMapping, null, 2)
   );
 
+  // 컬럼 관련 state 추가
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  const [localColumns, setLocalColumns] = useState<string[]>(config.columns || []);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // config가 변경되면 local state 업데이트 (Supabase와 동일한 패턴)
+  useEffect(() => {
+    setLocalEndpoint(config.endpoint || "");
+    setLocalParams(JSON.stringify(config.params || {}, null, 2));
+    setLocalHeaders(JSON.stringify(config.headers || {}, null, 2));
+    setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
+    setLocalColumns(config.columns || []);
+
+    // availableColumns 복원 (Load로 가져온 전체 컬럼 목록)
+    setAvailableColumns(config.availableColumns || []);
+  }, [config.endpoint, config.params, config.headers, config.dataMapping, config.columns, config.availableColumns]);
+
   // 변경 감지: 각 필드별로 변경 여부 확인
   const endpointChanged = localEndpoint !== (config.endpoint || "");
   const paramsChanged = localParams !== JSON.stringify(config.params || {}, null, 2);
   const headersChanged = localHeaders !== JSON.stringify(config.headers || {}, null, 2);
   const dataMappingChanged = localDataMapping !== JSON.stringify(config.dataMapping, null, 2);
+  const columnsChanged = useMemo(() => {
+    return JSON.stringify(localColumns) !== JSON.stringify(config.columns || []);
+  }, [localColumns, config.columns]);
 
   // 전체 변경사항 여부
   const hasChanges = useMemo(() => {
-    return endpointChanged || paramsChanged || headersChanged || dataMappingChanged;
-  }, [endpointChanged, paramsChanged, headersChanged, dataMappingChanged]);
+    return endpointChanged || paramsChanged || headersChanged || dataMappingChanged || columnsChanged;
+  }, [endpointChanged, paramsChanged, headersChanged, dataMappingChanged, columnsChanged]);
 
-  // Params, Headers, DataMapping만 변경되었는지 확인 (Endpoint 제외)
-  const hasOtherChanges = useMemo(() => {
-    return paramsChanged || headersChanged || dataMappingChanged;
-  }, [paramsChanged, headersChanged, dataMappingChanged]);
+  // Endpoint Path의 Load 버튼으로 데이터 로드 및 컬럼 추출
+  const handleLoadData = async () => {
+    setLoading(true);
+    setLoadError(null);
 
-  // Params, Headers, DataMapping만 적용 (Endpoint는 개별 버튼으로 적용)
+    try {
+      const parsedParams = JSON.parse(localParams);
+      const parsedHeaders = JSON.parse(localHeaders);
+      const parsedDataMapping = JSON.parse(localDataMapping);
+
+      // Base URL 구성
+      let baseUrl = "";
+      switch (config.baseUrl) {
+        case "MOCK_DATA":
+        case "JSONPLACEHOLDER":
+          baseUrl = "https://jsonplaceholder.typicode.com";
+          break;
+        case "CUSTOM":
+          baseUrl = config.customUrl || "";
+          break;
+      }
+
+      const fullUrl = `${baseUrl}${localEndpoint}`;
+      console.log("🌐 API 호출:", fullUrl);
+
+      // API 호출
+      const response = await fetch(fullUrl, {
+        method: config.method || "GET",
+        headers: parsedHeaders,
+        ...(config.method === "POST" && { body: JSON.stringify(parsedParams) }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("📦 API 응답 데이터:", data);
+
+      // resultPath로 데이터 추출
+      const resultPath = parsedDataMapping.resultPath || "";
+      let items = data;
+
+      if (resultPath) {
+        const paths = resultPath.split(".");
+        for (const path of paths) {
+          items = items?.[path];
+        }
+      }
+
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error("응답 데이터가 배열이 아니거나 비어있습니다.");
+      }
+
+      // 첫 번째 항목에서 컬럼 추출
+      const firstItem = items[0];
+      const cols = Object.keys(firstItem);
+
+      console.log("📋 추출된 컬럼:", cols);
+      setAvailableColumns(cols);
+      setLocalColumns(cols); // 기본적으로 모든 컬럼 선택
+
+    } catch (error) {
+      console.error("❌ API 호출 오류:", error);
+      setLoadError((error as Error).message);
+      setAvailableColumns([]);
+      setLocalColumns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 모든 변경사항 적용 (컬럼 포함)
   const handleApplyChanges = () => {
     try {
       const parsedParams = JSON.parse(localParams);
       const parsedHeaders = JSON.parse(localHeaders);
       const parsedDataMapping = JSON.parse(localDataMapping);
 
-      console.log("✅ API 설정 적용 (Params, Headers, DataMapping):", {
+      console.log("✅ API 설정 최종 적용:", {
+        endpoint: localEndpoint,
         params: parsedParams,
         headers: parsedHeaders,
         dataMapping: parsedDataMapping,
+        columns: localColumns,
+        availableColumns: availableColumns,
       });
 
       onChange({
         ...config,
+        endpoint: localEndpoint,
         params: parsedParams,
         headers: parsedHeaders,
         dataMapping: parsedDataMapping,
+        columns: localColumns,
+        availableColumns: availableColumns, // 전체 컬럼 목록도 저장
       });
     } catch (error) {
       alert("JSON 파싱 오류: " + (error as Error).message);
@@ -82,15 +176,9 @@ export function APICollectionEditor({
     setLocalParams(JSON.stringify(config.params || {}, null, 2));
     setLocalHeaders(JSON.stringify(config.headers || {}, null, 2));
     setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
-  };
-
-  // Endpoint만 개별 적용 (Column 구조 변경)
-  const handleApplyEndpoint = () => {
-    console.log("✅ Endpoint만 적용:", localEndpoint);
-    onChange({
-      ...config,
-      endpoint: localEndpoint,
-    });
+    setLocalColumns(config.columns || []);
+    setAvailableColumns(config.availableColumns || []); // 전체 컬럼 목록도 복원
+    setLoadError(null);
   };
 
   return (
@@ -219,7 +307,11 @@ export function APICollectionEditor({
           <TextField className={"api-endpoint-path"}>
             <Input
               className={`control-input ${endpointChanged ? "field-modified" : ""}`}
-              placeholder="/api/v1/items"
+              placeholder={
+                config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA"
+                  ? "/users, /posts, /comments, /albums, /photos, /todos"
+                  : "/api/v1/items"
+              }
               value={localEndpoint}
               onChange={(e) => {
                 console.log("🔄 Endpoint 입력 중:", e.target.value);
@@ -229,20 +321,73 @@ export function APICollectionEditor({
 
             <Button
               size="xs"
-              onClick={handleApplyEndpoint}
-              isDisabled={!endpointChanged}
+              onClick={handleLoadData}
+              isDisabled={!localEndpoint || loading}
               style={{
-                backgroundColor: endpointChanged ? "var(--color-primary-700)" : "var(--color-gray-300)",
-                color: endpointChanged ? "white" : "var(--color-gray-500)",
-                cursor: endpointChanged ? "pointer" : "not-allowed",
-                opacity: endpointChanged ? 1 : 0.6,
+                backgroundColor: localEndpoint && !loading ? "var(--color-primary-700)" : "var(--color-gray-300)",
+                color: localEndpoint && !loading ? "white" : "var(--color-gray-500)",
+                cursor: localEndpoint && !loading ? "pointer" : "not-allowed",
+                opacity: localEndpoint && !loading ? 1 : 0.6,
               }}
             >
-              Apply
+              {loading ? "Loading..." : "Load"}
             </Button>
           </TextField>
         </div>
       </fieldset>
+
+      {/* 로드 에러 표시 */}
+      {loadError && (
+        <div className="error-message" style={{
+          color: "var(--color-red-500)",
+          padding: "8px",
+          backgroundColor: "var(--color-red-50)",
+          borderRadius: "4px",
+          fontSize: "12px",
+          marginTop: "8px"
+        }}>
+          ⚠️ {loadError}
+          {(config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA") && (
+            <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8 }}>
+              💡 Mock 데이터 사용 가능한 엔드포인트:
+              <br />
+              • /users (100개) - JSONPlaceholder 스타일 사용자
+              <br />
+              &nbsp;&nbsp;컬럼: id, name, username, email, phone, website, address, company
+              <br />
+              • /posts (100개) - 게시글
+              <br />
+              • /comments (500개) - 댓글
+              <br />
+              • /albums (100개) - 앨범
+              <br />
+              • /photos (300개) - 사진
+              <br />
+              • /todos (200개) - 할일
+            </div>
+          )}
+        </div>
+      )}      {/* 컬럼 선택 UI - Load 성공 시에만 표시 */}
+      {availableColumns.length > 0 && (
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Columns to Display</legend>
+          <div className="react-aria-control react-aria-Group">
+            <CheckboxGroup
+              value={localColumns}
+              onChange={(value) => {
+                console.log("🔄 컬럼 선택 변경:", value);
+                setLocalColumns(value);
+              }}
+            >
+              {availableColumns.map((column) => (
+                <Checkbox key={column} value={column}>
+                  {column}
+                </Checkbox>
+              ))}
+            </CheckboxGroup>
+          </div>
+        </fieldset>
+      )}
 
       {/* HTTP Method */}
       <fieldset className="properties-aria">
@@ -371,11 +516,11 @@ export function APICollectionEditor({
           />
         )}
 
-        {/* Apply Others 버튼 - Params, Headers, DataMapping만 적용 (Endpoint 제외) */}
+        {/* Apply 버튼 - 모든 설정 최종 적용 */}
         <Button
           onClick={handleApplyChanges}
-          isDisabled={!hasOtherChanges}
-          children={hasOtherChanges ? "Apply Others" : "No Changes"}
+          isDisabled={!hasChanges}
+          children={hasChanges ? "Apply" : "No Changes"}
         />
       </div>
     </div>
