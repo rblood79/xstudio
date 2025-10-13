@@ -61,6 +61,7 @@ export interface TableProps<T extends { id: string | number }> {
   // 데이터 소스: 정적 or 비동기
   data?: T[]; // 정적 데이터면 API 호출 안 함
   apiUrlKey?: string; // apiConfig 키 (예: "demo")
+  customApiUrl?: string; // Custom API URL (apiUrlKey가 "CUSTOM"일 때 사용)
   endpointPath?: string; // 엔드포인트 (예: "/users")
   enableAsyncLoading?: boolean; // true일 때만 API 사용
   dataMapping?: DataMapping; // 데이터 매핑 설정
@@ -101,6 +102,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
     data: staticData,
     apiUrlKey,
+    customApiUrl,
     endpointPath,
     enableAsyncLoading = false,
     dataMapping,
@@ -525,16 +527,26 @@ export default React.memo(function Table<T extends { id: string | number }>(
         return { items: [] as T[], total: 0 };
       }
 
-      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
-        endpoint: string,
-        params: Record<string, unknown>
-      ) => Promise<T[]>;
+      // Custom URL을 사용하는 경우와 일반 API 서비스를 사용하는 경우 구분
+      const isCustomUrl = apiUrlKey === "CUSTOM";
 
-      if (!service) {
+      const service = !isCustomUrl
+        ? (apiConfig[apiUrlKey as keyof typeof apiConfig] as (
+          endpoint: string,
+          params: Record<string, unknown>
+        ) => Promise<T[]>)
+        : null;
+
+      if (!isCustomUrl && !service) {
         console.error("❌ API 서비스를 찾을 수 없음:", {
           apiUrlKey,
           availableKeys: Object.keys(apiConfig),
         });
+        return { items: [] as T[], total: 0 };
+      }
+
+      if (isCustomUrl && !customApiUrl) {
+        console.error("❌ Custom URL이 설정되지 않음");
         return { items: [] as T[], total: 0 };
       }
 
@@ -557,7 +569,33 @@ export default React.memo(function Table<T extends { id: string | number }>(
         };
 
         console.log("🔍 API 호출 파라미터:", params, "nextIndex:", nextIndex);
-        const response = await service(endpointPath, params);
+
+        let response: T[] | Record<string, unknown>;
+
+        if (isCustomUrl && customApiUrl) {
+          // Custom URL 직접 fetch
+          const fullUrl = `${customApiUrl}${endpointPath}`;
+          const queryParams = new URLSearchParams(
+            Object.entries(params).reduce((acc, [key, value]) => {
+              acc[key] = String(value);
+              return acc;
+            }, {} as Record<string, string>)
+          ).toString();
+          const urlWithParams = queryParams ? `${fullUrl}?${queryParams}` : fullUrl;
+
+          console.log("🌐 Custom API 호출:", urlWithParams);
+          const res = await fetch(urlWithParams);
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+
+          response = await res.json();
+        } else if (service) {
+          response = await service(endpointPath, params);
+        } else {
+          throw new Error("API 서비스가 설정되지 않음");
+        }
 
         console.log("📦 API 응답:", {
           responseType: Array.isArray(response) ? 'Array' : typeof response,
@@ -616,6 +654,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     [
       isAsync,
       apiUrlKey,
+      customApiUrl,
       endpointPath,
       currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
       sorting,
@@ -647,10 +686,15 @@ export default React.memo(function Table<T extends { id: string | number }>(
         };
       }
 
-      const service = apiConfig[apiUrlKey as keyof typeof apiConfig] as (
-        endpoint: string,
-        params: Record<string, unknown>
-      ) => Promise<T[]>;
+      // Custom URL을 사용하는 경우와 일반 API 서비스를 사용하는 경우 구분
+      const isCustomUrl = apiUrlKey === "CUSTOM";
+
+      const service = !isCustomUrl
+        ? (apiConfig[apiUrlKey as keyof typeof apiConfig] as (
+          endpoint: string,
+          params: Record<string, unknown>
+        ) => Promise<T[]>)
+        : null;
 
       isFetchingRef.current = true;
       setLoading(true);
@@ -660,11 +704,39 @@ export default React.memo(function Table<T extends { id: string | number }>(
         const sort = sorting[0]
           ? { sortBy: sorting[0].id, desc: sorting[0].desc }
           : undefined;
-        const response = await service!(endpointPath, {
+
+        const params = {
           page,
           limit: currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
           ...sort,
-        });
+        };
+
+        let response: T[] | Record<string, unknown>;
+
+        if (isCustomUrl && customApiUrl) {
+          // Custom URL 직접 fetch
+          const fullUrl = `${customApiUrl}${endpointPath}`;
+          const queryParams = new URLSearchParams(
+            Object.entries(params).reduce((acc, [key, value]) => {
+              acc[key] = String(value);
+              return acc;
+            }, {} as Record<string, string>)
+          ).toString();
+          const urlWithParams = queryParams ? `${fullUrl}?${queryParams}` : fullUrl;
+
+          console.log("🌐 Custom API 호출 (fetchMore):", urlWithParams);
+          const res = await fetch(urlWithParams);
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+
+          response = await res.json();
+        } else if (service) {
+          response = await service(endpointPath, params);
+        } else {
+          throw new Error("API 서비스가 설정되지 않음");
+        }
 
         console.log("📦 API 응답 (fetchMore):", {
           responseType: Array.isArray(response) ? 'Array' : typeof response,
@@ -711,6 +783,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     [
       isAsync,
       apiUrlKey,
+      customApiUrl,
       endpointPath,
       currentItemsPerPage, // itemsPerPage 대신 currentItemsPerPage
       sorting,
@@ -727,7 +800,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const containerRef = React.useRef<HTMLDivElement>(null);
   const initialLoadRef = React.useRef(false);
   const prevModeRef = React.useRef<PaginationMode>(mode);
-  const prevApiConfigRef = React.useRef({ apiUrlKey, endpointPath, isAsync });
+  const prevApiConfigRef = React.useRef({ apiUrlKey, customApiUrl, endpointPath, isAsync });
   const prevStaticDataRef = React.useRef(staticData);
 
   // Static 데이터 변경 감지 - 데이터 소스가 변경되면 detectedColumns 초기화
@@ -744,6 +817,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     const modeChanged = prevModeRef.current !== mode;
     const apiConfigChanged =
       prevApiConfigRef.current.apiUrlKey !== apiUrlKey ||
+      prevApiConfigRef.current.customApiUrl !== customApiUrl ||
       prevApiConfigRef.current.endpointPath !== endpointPath ||
       prevApiConfigRef.current.isAsync !== isAsync;
 
@@ -751,7 +825,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       // 상태 초기화
       initialLoadRef.current = false;
       prevModeRef.current = mode;
-      prevApiConfigRef.current = { apiUrlKey, endpointPath, isAsync };
+      prevApiConfigRef.current = { apiUrlKey, customApiUrl, endpointPath, isAsync };
 
       // 기존 데이터 초기화
       setPageRows([]);
@@ -826,7 +900,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
     // fetchPage와 fetchMore는 의도적으로 의존성에서 제외 (초기 로드만 실행, 리렌더링 시 재실행 방지)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAsync, mode, currentItemsPerPage, apiUrlKey, endpointPath, enableAsyncLoading]);
+  }, [isAsync, mode, currentItemsPerPage, apiUrlKey, customApiUrl, endpointPath, enableAsyncLoading]);
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
