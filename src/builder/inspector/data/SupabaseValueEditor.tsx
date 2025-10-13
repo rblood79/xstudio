@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import {
   Select,
   SelectValue,
-  Button,
   ListBox,
   ListBoxItem,
   Popover,
-  Label,
 } from "react-aria-components";
+import { Button } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseValueConfig } from "../types";
 
@@ -90,64 +89,138 @@ export function SupabaseValueEditor({
   return (
     <div className="supabase-value-editor component-props">
       {/* 테이블 선택 */}
-      <Select
-        className="table-select"
-        selectedKey={config.table || ""}
-        onSelectionChange={(key) => handleTableChange(key as string)}
-      >
-        <Label className="field-label">Table</Label>
-        <Button className="select-trigger">
-          <SelectValue />
-          <span className="select-arrow">▼</span>
-        </Button>
-        <Popover className="select-popover">
-          <ListBox className="select-list">
-            {loading && (
-              <ListBoxItem id="loading" className="select-item" isDisabled>
-                Loading tables...
-              </ListBoxItem>
-            )}
-            {!loading && tables.length === 0 && (
-              <ListBoxItem id="empty" className="select-item" isDisabled>
-                No tables found
-              </ListBoxItem>
-            )}
-            {!loading &&
-              tables.length > 0 &&
-              tables.map((table) => (
-                <ListBoxItem key={table} id={table} className="select-item">
-                  {table}
-                </ListBoxItem>
-              ))}
-          </ListBox>
-        </Popover>
-      </Select>
+      <fieldset className="properties-aria">
+        <legend className="fieldset-legend">Table</legend>
+        <div className="react-aria-control react-aria-Group">
+          <label className="control-label">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--color-gray-400)"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-table"
+              aria-hidden="true"
+            >
+              <path d="M12 3v18" />
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M3 15h18" />
+            </svg>
+          </label>
+          <Select
+            selectedKey={config.table || ""}
+            onSelectionChange={(key) => handleTableChange(key as string)}
+          >
+            <Button>
+              <SelectValue />
+              <span aria-hidden="true" className="select-chevron">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-chevron-down"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </Button>
+            <Popover>
+              <ListBox>
+                {loading && (
+                  <ListBoxItem id="loading" isDisabled>
+                    Loading tables...
+                  </ListBoxItem>
+                )}
+                {!loading && tables.length === 0 && (
+                  <ListBoxItem id="empty" isDisabled>
+                    No tables found
+                  </ListBoxItem>
+                )}
+                {!loading &&
+                  tables.length > 0 &&
+                  tables.map((table) => (
+                    <ListBoxItem key={table} id={table}>
+                      {table}
+                    </ListBoxItem>
+                  ))}
+              </ListBox>
+            </Popover>
+          </Select>
+        </div>
+      </fieldset>
 
       {/* 컬럼 선택 */}
       {config.table && columns.length > 0 && (
-        <Select
-          className="column-select"
-          selectedKey={config.column || ""}
-          onSelectionChange={(key) => handleColumnChange(key as string)}
-        >
-          <Label className="field-label">Column</Label>
-          <Button className="select-trigger">
-            <SelectValue />
-            <span className="select-arrow">▼</span>
-          </Button>
-          <Popover className="select-popover">
-            <ListBox className="select-list">
-              <ListBoxItem id="" className="select-item">
-                Select column...
-              </ListBoxItem>
-              {columns.map((column) => (
-                <ListBoxItem key={column} id={column} className="select-item">
-                  {column}
-                </ListBoxItem>
-              ))}
-            </ListBox>
-          </Popover>
-        </Select>
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Column</legend>
+          <div className="react-aria-control react-aria-Group">
+            <label className="control-label">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--color-gray-400)"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-columns"
+                aria-hidden="true"
+              >
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M12 3v18" />
+              </svg>
+            </label>
+            <Select
+              selectedKey={config.column || ""}
+              onSelectionChange={(key) => handleColumnChange(key as string)}
+            >
+              <Button>
+                <SelectValue />
+                <span aria-hidden="true" className="select-chevron">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-chevron-down"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              </Button>
+              <Popover>
+                <ListBox>
+                  <ListBoxItem id="">Select column...</ListBoxItem>
+                  {columns.map((column) => (
+                    <ListBoxItem key={column} id={column}>
+                      {column}
+                    </ListBoxItem>
+                  ))}
+                </ListBox>
+              </Popover>
+            </Select>
+          </div>
+        </fieldset>
       )}
     </div>
   );
