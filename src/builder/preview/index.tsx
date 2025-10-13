@@ -48,7 +48,7 @@ import { ElementEvent, EventContext } from "../../types/events";
 //import { useBatchUpdate } from '../stores';
 import { ElementUtils } from "../../utils/elementUtils";
 import { today, getLocalTimeZone } from "@internationalized/date";
-import type { DataBinding, Element } from "../../types/unified";
+import type { DataBinding } from "../../types/unified";
 
 interface PreviewElement {
   id: string;
@@ -65,8 +65,11 @@ interface PreviewElement {
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
   const elements = useStore((state) => state.elements) as PreviewElement[];
-  const { setElements, updateElementProps, addElement } = useStore();
+  const { setElements, updateElementProps } = useStore();
   const eventEngine = EventEngine.getInstance();
+
+  // Column Elements 생성 요청 추적 (중복 방지)
+  const columnCreationRequestedRef = React.useRef<Set<string>>(new Set());
 
   // Console error/warning suppression for development
   useEffect(() => {
@@ -1845,28 +1848,45 @@ function Preview() {
         el.dataBinding?.config &&
         (el.dataBinding.config as { data?: unknown[] }).data;
 
+      // Supabase 데이터는 props.data에 저장됨
+      const supabaseData = el.dataBinding?.type === "collection" &&
+        el.dataBinding?.source === "supabase" &&
+        (el.props as { data?: unknown[] }).data;
+
+      console.log("🔍 데이터 소스 확인:", {
+        hasSupabaseBinding: el.dataBinding?.source === "supabase",
+        supabaseDataLength: Array.isArray(supabaseData) ? supabaseData.length : 0,
+        hasStaticBinding: el.dataBinding?.source === "static",
+        staticDataLength: Array.isArray(staticData) ? staticData.length : 0,
+        propsData: (el.props as { data?: unknown[] }).data,
+      });
+
       // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
-      // 정적 데이터 사용 시 실제 데이터 제공
-      const finalData = hasApiBinding ? [] : (staticData || []);
+      // 정적 데이터 또는 Supabase 데이터 사용 시 실제 데이터 제공
+      const finalData = hasApiBinding ? [] : (supabaseData || staticData || []);
 
       // 정적 데이터 바인딩의 컬럼 매핑에서 컬럼 생성
       let mappedColumns: ColumnDefinition<{ id: string | number }>[] = [];
+
+      // Static Data의 컬럼 매핑 (props.columnMapping에서 가져옴)
       if (el.dataBinding?.type === "collection" &&
         el.dataBinding?.source === "static" &&
-        el.dataBinding?.config?.columnMapping) {
-        const columnMapping = el.dataBinding.config.columnMapping as Record<string, {
-          key: string;
-          label?: string;
-          type?: string;
-          sortable?: boolean;
-          width?: number;
-          align?: string;
-        }>;
+        (el.props as { columnMapping?: unknown }).columnMapping) {
+        const columnMapping = (el.props as {
+          columnMapping: Record<string, {
+            key: string;
+            label?: string;
+            type?: string;
+            sortable?: boolean;
+            width?: number;
+            align?: string;
+          }>
+        }).columnMapping;
 
-        console.log("🔍 정적 데이터 컬럼 매핑 발견:", columnMapping);
+        console.log("🔍 Static Data 컬럼 매핑 발견:", columnMapping);
 
         mappedColumns = Object.entries(columnMapping).map(([columnName, mapping]) => {
-          console.log("📝 컬럼 생성:", columnName, mapping);
+          console.log("📝 Static Data 컬럼 생성:", columnName, mapping);
           return {
             key: (mapping.key || columnName) as keyof { id: string | number },
             label: mapping.label || columnName,
@@ -1878,27 +1898,112 @@ function Preview() {
           };
         });
 
-        console.log("✅ 생성된 컬럼 개수:", mappedColumns.length, mappedColumns);
-
-        // ✅ Static 데이터도 자동 감지를 사용하여 Column Element 생성
-        // mappedColumns를 사용하지 않고, 데이터가 로드되면 자동 감지 실행
+        console.log("✅ Static Data 컬럼 생성 완료:", mappedColumns.length, mappedColumns);
       }
 
-      // Column Element가 있으면 해당 컬럼 사용, 없으면 자동 감지 활성화
+      // Supabase의 컬럼 매핑 (props.columnMapping에서 가져옴)
+      if (el.dataBinding?.type === "collection" &&
+        el.dataBinding?.source === "supabase" &&
+        (el.props as { columnMapping?: unknown }).columnMapping) {
+        const columnMapping = (el.props as {
+          columnMapping: Record<string, {
+            key: string;
+            label?: string;
+            type?: string;
+            sortable?: boolean;
+            width?: number;
+            align?: string;
+          }>
+        }).columnMapping;
+
+        console.log("🔍 Supabase 컬럼 매핑 발견:", columnMapping);
+
+        mappedColumns = Object.entries(columnMapping).map(([columnName, mapping]) => {
+          console.log("📝 Supabase 컬럼 생성:", columnName, mapping);
+          return {
+            key: (mapping.key || columnName) as keyof { id: string | number },
+            label: mapping.label || columnName,
+            allowsSorting: mapping.sortable !== false,
+            enableResizing: true,
+            width: mapping.width || 150,
+            align: (mapping.align || 'left') as "left" | "center" | "right",
+            elementId: ElementUtils.generateId(),
+          };
+        });
+
+        console.log("✅ Supabase 컬럼 생성 완료:", mappedColumns.length, mappedColumns);
+      }
+
+      // Column Element가 있으면 해당 컬럼 사용, 
+      // 없으면 매핑된 컬럼 사용 (Static/Supabase),
+      // 그것도 없으면 빈 배열로 자동 감지 활성화
       const finalColumns =
         columns.length > 0
           ? columns // Column Element가 있으면 우선 사용
-          : []; // Column Element 없음 → 빈 배열로 자동 감지 활성화
+          : mappedColumns.length > 0
+            ? mappedColumns // Static/Supabase 컬럼 매핑 사용
+            : []; // 둘 다 없으면 빈 배열로 자동 감지 활성화
 
       console.log("🎨 Table 렌더링 준비:", {
         tableId: el.id,
         hasApiBinding,
         columnElementsCount: columnElements.length,
         columnsLength: columns.length,
+        mappedColumnsLength: mappedColumns.length,
         finalColumnsLength: finalColumns.length,
-        willAutoDetect: columns.length === 0,
-        hasMappedColumns: mappedColumns.length > 0,
+        willAutoDetect: finalColumns.length === 0,
+        finalDataLength: Array.isArray(finalData) ? finalData.length : 0,
       });
+
+      // Static/Supabase의 mappedColumns가 있고 Column Elements가 없으면
+      // Column Elements 생성을 위해 부모에게 전달
+      if (mappedColumns.length > 0 && columnElements.length === 0 && tableHeaderElement) {
+        // 중복 요청 방지: 테이블ID + 컬럼 키 조합으로 체크
+        const requestKey = `${el.id}_${mappedColumns.map(c => c.key).join('_')}`;
+
+        if (!columnCreationRequestedRef.current.has(requestKey)) {
+          console.log("🔄 mappedColumns 감지 - Column Elements 생성 요청:", mappedColumns);
+
+          const columnElements = mappedColumns.map((colDef, index) => ({
+            id: colDef.elementId || `col_${Date.now()}_${index}`,
+            tag: "Column",
+            page_id: el.page_id,
+            parent_id: tableHeaderElement.id,
+            order_num: index,
+            props: {
+              key: String(colDef.key),
+              label: colDef.label,
+              children: colDef.label,
+              allowsSorting: colDef.allowsSorting ?? true,
+              enableResizing: colDef.enableResizing ?? true,
+              width: colDef.width ?? 150,
+              align: colDef.align ?? "left",
+            },
+          }));
+
+          console.log("📤 부모에게 Column Elements 생성 요청:", columnElements);
+
+          // 요청 기록
+          columnCreationRequestedRef.current.add(requestKey);
+
+          // 즉시 postMessage 전송
+          window.parent.postMessage(
+            {
+              type: "ADD_COLUMN_ELEMENTS",
+              payload: {
+                tableId: el.id,
+                tableHeaderId: tableHeaderElement.id,
+                columns: columnElements,
+              },
+            },
+            window.location.origin
+          );
+        } else {
+          console.log("⏭️ Column Elements 생성 이미 요청됨, 건너뛰기:", requestKey);
+        }
+      }
+
+
 
       // Column Group Element에서 추출한 그룹 데이터 생성
       const columnGroups = tableHeaderElement
@@ -2000,7 +2105,7 @@ function Preview() {
           }
           enableResize={Boolean(el.props.enableResize ?? true)}
           onColumnsDetected={(detectedColumns) => {
-            // 자동 감지된 컬럼을 Store에 Column Element로 추가
+            // 자동 감지된 컬럼을 부모(Builder)에게 전달하여 Column Element 추가
             console.log("🎯 Preview에서 자동 감지된 컬럼 수신:", detectedColumns);
 
             // TableHeader Element 찾기
@@ -2009,28 +2114,38 @@ function Preview() {
               return;
             }
 
-            // 각 컬럼을 Column Element로 추가
-            detectedColumns.forEach((colDef, index) => {
-              const columnElement: Element = {
-                id: colDef.elementId || `col_${Date.now()}_${index}`,
-                tag: "Column",
-                page_id: el.page_id, // Table Element의 page_id 사용
-                parent_id: tableHeaderElement.id,
-                order_num: index,
-                props: {
-                  key: String(colDef.key),
-                  label: colDef.label,
-                  children: colDef.label,
-                  allowsSorting: colDef.allowsSorting ?? true,
-                  enableResizing: colDef.enableResizing ?? true,
-                  width: colDef.width ?? 150,
-                  align: colDef.align ?? "left",
-                },
-              };
+            // 부모(Builder)에게 Column Elements 생성 요청
+            const columnElements = detectedColumns.map((colDef, index) => ({
+              id: colDef.elementId || `col_${Date.now()}_${index}`,
+              tag: "Column",
+              page_id: el.page_id, // Table Element의 page_id 사용
+              parent_id: tableHeaderElement.id,
+              order_num: index,
+              props: {
+                key: String(colDef.key),
+                label: colDef.label,
+                children: colDef.label,
+                allowsSorting: colDef.allowsSorting ?? true,
+                enableResizing: colDef.enableResizing ?? true,
+                width: colDef.width ?? 150,
+                align: colDef.align ?? "left",
+              },
+            }));
 
-              console.log("➕ Column Element 추가:", columnElement);
-              addElement(columnElement);
-            });
+            console.log("📤 부모에게 Column Elements 생성 요청:", columnElements);
+
+            // postMessage로 부모에게 전달
+            window.parent.postMessage(
+              {
+                type: "ADD_COLUMN_ELEMENTS",
+                payload: {
+                  tableId: el.id,
+                  tableHeaderId: tableHeaderElement.id,
+                  columns: columnElements,
+                },
+              },
+              window.location.origin
+            );
           }}
         />
       );

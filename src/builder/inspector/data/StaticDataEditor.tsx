@@ -217,20 +217,13 @@ export function StaticDataEditor({
             tableProps.enableAsyncLoading = false; // 정적 데이터 사용 시 비활성화
           }
 
-          // 컬럼 매핑 업데이트
-          // ❌ columns props를 직접 설정하지 않음 - Table 컴포넌트의 자동 감지에 맡김
-          // const currentColumnMapping = updates.columnMapping || (config as StaticCollectionConfig).columnMapping;
-          // if (currentColumnMapping && Object.keys(currentColumnMapping).length > 0) {
-          //   const columns = Object.entries(currentColumnMapping).map(([key, mapping]) => ({
-          //     key: mapping.key || key,
-          //     label: mapping.label || key,
-          //     type: mapping.type || 'string',
-          //     sortable: mapping.sortable !== false,
-          //     width: mapping.width || 150,
-          //     align: 'left',
-          //   }));
-          //   tableProps.columns = columns;
-          // }
+          // 컬럼 매핑 업데이트 - Table 컴포넌트의 mappedColumns 생성을 위해 전달
+          const currentColumnMapping = updates.columnMapping || (config as StaticCollectionConfig).columnMapping;
+          if (currentColumnMapping && Object.keys(currentColumnMapping).length > 0) {
+            tableProps.columnMapping = currentColumnMapping;
+          }
+
+          console.log("🔄 StaticDataEditor - Table props 업데이트:", tableProps);
 
           if (Object.keys(tableProps).length > 0) {
             onTablePropsUpdate(tableProps);

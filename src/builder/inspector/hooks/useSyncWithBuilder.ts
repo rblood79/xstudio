@@ -103,13 +103,14 @@ export function useSyncWithBuilder(): void {
       });
 
       try {
-        // Table 요소에 API Collection의 Endpoint 또는 Static Data의 컬럼 매핑이 변경되면 기존 Column 자식 삭제
+        // Table 요소에 API Collection, Static Data, Supabase의 설정이 변경되면 기존 Column 자식 삭제
         // (Parameters, Headers, DataMapping 변경 시에는 삭제하지 않음)
         if (
           selectedElement.type === "Table" &&
           selectedElement.dataBinding?.type === "collection" &&
           (selectedElement.dataBinding?.source === "api" ||
-            selectedElement.dataBinding?.source === "static")
+            selectedElement.dataBinding?.source === "static" ||
+            selectedElement.dataBinding?.source === "supabase")
         ) {
           // 현재 Store의 요소와 비교하여 Endpoint가 실제로 변경되었는지 확인
           const currentConfig = currentElementInStore?.dataBinding?.config;
@@ -127,7 +128,7 @@ export function useSyncWithBuilder(): void {
           // Endpoint 변경 또는 컬럼 매핑 변경 감지
           const endpointChanged = currentEndpoint !== newEndpoint;
 
-          // Static Data의 컬럼 매핑 변경 감지
+          // Static Data/Supabase의 컬럼 매핑 변경 감지
           const currentColumnMapping =
             currentConfig && "columnMapping" in currentConfig
               ? currentConfig.columnMapping
@@ -140,11 +141,30 @@ export function useSyncWithBuilder(): void {
             JSON.stringify(currentColumnMapping) !==
             JSON.stringify(newColumnMapping);
 
-          // API Endpoint 변경 또는 Static Data 컬럼 매핑 변경 시 컬럼 재설정
+          // Supabase의 테이블 또는 컬럼 변경 감지
+          const currentTable =
+            currentConfig && "table" in currentConfig
+              ? currentConfig.table
+              : undefined;
+          const newTable =
+            newConfig && "table" in newConfig ? newConfig.table : undefined;
+          const currentColumns =
+            currentConfig && "columns" in currentConfig
+              ? currentConfig.columns
+              : undefined;
+          const newColumns =
+            newConfig && "columns" in newConfig ? newConfig.columns : undefined;
+          const supabaseTableChanged = currentTable !== newTable;
+          const supabaseColumnsChanged =
+            JSON.stringify(currentColumns) !== JSON.stringify(newColumns);
+
+          // API Endpoint 변경, Static Data 컬럼 매핑 변경, 또는 Supabase 테이블/컬럼 변경 시 컬럼 재설정
           if (
             endpointChanged ||
             (selectedElement.dataBinding?.source === "static" &&
-              columnMappingChanged)
+              columnMappingChanged) ||
+            (selectedElement.dataBinding?.source === "supabase" &&
+              (supabaseTableChanged || supabaseColumnsChanged || columnMappingChanged))
           ) {
             const childColumns = elements.filter(
               (el) =>
