@@ -126,12 +126,28 @@ export default React.memo(function Table<T extends { id: string | number }>(
   } = props;
 
   const mode: PaginationMode = paginationMode || "pagination";
+
+  // staticData가 빈 배열이 아닌 실제 데이터가 있는지 확인
+  const hasValidStaticData = staticData && Array.isArray(staticData) && staticData.length > 0;
+
   const isAsync =
-    enableAsyncLoading &&
-    !staticData &&
-    apiUrlKey &&
-    endpointPath &&
-    endpointPath.trim().length > 0;
+    enableAsyncLoading === true &&
+    !hasValidStaticData &&  // 빈 배열도 false로 처리
+    Boolean(apiUrlKey) &&
+    Boolean(endpointPath) &&
+    (endpointPath?.trim().length ?? 0) > 0;
+
+  // 디버깅: isAsync 계산 결과 로깅
+  React.useEffect(() => {
+    console.log("🔍 Table isAsync 계산:", {
+      enableAsyncLoading,
+      staticData: staticData ? `Array(${staticData.length})` : staticData,
+      hasValidStaticData,
+      apiUrlKey,
+      endpointPath,
+      isAsync,
+    });
+  }, [enableAsyncLoading, staticData, hasValidStaticData, apiUrlKey, endpointPath, isAsync]);
 
   // 페이지네이션 표시 여부 (API 또는 Static/Supabase 모두 지원)
   const shouldShowPagination = mode === "pagination";
@@ -732,7 +748,17 @@ export default React.memo(function Table<T extends { id: string | number }>(
       console.log("🔄 데이터 소스 변경 감지 - 자동 감지 컬럼 초기화");
     }
 
-    if (!isAsync) return;
+    // isAsync가 false면 API 호출하지 않음
+    if (!isAsync) {
+      console.log("⏭️ isAsync=false, API 호출 건너뛰기");
+      return;
+    }
+
+    // API 설정이 완전하지 않으면 API 호출하지 않음
+    if (!apiUrlKey || !endpointPath || endpointPath.trim().length === 0) {
+      console.log("⏭️ API 설정 불완전, API 호출 건너뛰기:", { apiUrlKey, endpointPath });
+      return;
+    }
 
     // 초기 로드 중복 방지 (React Strict Mode 대응)
     if (initialLoadRef.current) {

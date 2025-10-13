@@ -1,4 +1,5 @@
-import { TextField, Input } from "react-aria-components";
+import React from "react";
+import { TextField, Input, Button } from "react-aria-components";
 import type {
   DataBindingType,
   StateCollectionConfig,
@@ -17,10 +18,32 @@ export function StateBindingEditor({
   onChange,
 }: StateBindingEditorProps) {
   const isCollection = bindingType === "collection";
+
+  // 로컬 상태로 관리
+  const [localConfig, setLocalConfig] = React.useState<StateCollectionConfig | StateValueConfig>(config);
+
+  // config가 외부에서 변경되면 로컬 상태 업데이트
+  React.useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
+
   const collectionConfig = isCollection
-    ? (config as StateCollectionConfig)
+    ? (localConfig as StateCollectionConfig)
     : null;
-  const valueConfig = !isCollection ? (config as StateValueConfig) : null;
+  const valueConfig = !isCollection ? (localConfig as StateValueConfig) : null;
+
+  // Apply 버튼 핸들러
+  const handleApply = () => {
+    onChange(localConfig);
+  };
+
+  // Discard 버튼 핸들러
+  const handleDiscard = () => {
+    setLocalConfig(config);
+  };
+
+  // 변경 여부 확인
+  const hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config);
 
   return (
     <div className="state-binding-editor component-props">
@@ -48,10 +71,10 @@ export function StateBindingEditor({
             </svg>
           </label>
           <TextField
-            value={config.storePath || ""}
+            value={localConfig.storePath || ""}
             onChange={(value) => {
-              onChange({
-                ...config,
+              setLocalConfig({
+                ...localConfig,
                 storePath: value,
               });
             }}
@@ -86,7 +109,7 @@ export function StateBindingEditor({
             <TextField
               value={collectionConfig.selector || ""}
               onChange={(value) => {
-                onChange({
+                setLocalConfig({
                   ...collectionConfig,
                   selector: value,
                 });
@@ -128,7 +151,7 @@ export function StateBindingEditor({
             <TextField
               value={valueConfig.transform || ""}
               onChange={(value) => {
-                onChange({
+                setLocalConfig({
                   ...valueConfig,
                   transform: value,
                 });
@@ -152,6 +175,53 @@ export function StateBindingEditor({
               ? "userStore.users → 배열 데이터"
               : "formStore.email → 단일 값"}
           </code>
+        </div>
+      </fieldset>
+
+      {/* Apply/Discard Buttons */}
+      <fieldset className="properties-aria">
+        <div className="button-group">
+          <Button
+            className="apply-button"
+            onPress={handleApply}
+            isDisabled={!hasChanges}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Apply
+          </Button>
+          <Button
+            className="discard-button"
+            onPress={handleDiscard}
+            isDisabled={!hasChanges}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            Discard
+          </Button>
         </div>
       </fieldset>
     </div>

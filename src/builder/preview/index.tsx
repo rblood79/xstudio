@@ -1863,7 +1863,10 @@ function Preview() {
 
       // API 데이터 사용 시 빈 배열로 시작 (Table 컴포넌트에서 로딩)
       // 정적 데이터 또는 Supabase 데이터 사용 시 실제 데이터 제공
-      const finalData = hasApiBinding ? [] : (supabaseData || staticData || []);
+      const rawData = hasApiBinding ? [] : (supabaseData || staticData || []);
+
+      // 빈 배열인 경우 undefined로 처리 (데이터가 없는 것과 빈 배열 구분)
+      const finalData = Array.isArray(rawData) && rawData.length === 0 ? undefined : rawData;
 
       // 데이터 소스 변경 감지 - 이전과 다른 데이터 소스면 요청 캐시 초기화
       const currentDataSource = el.dataBinding?.source || 'none';
@@ -2069,7 +2072,13 @@ function Preview() {
           className={el.props.className}
           columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
           columnGroups={columnGroups}
-          data={hasApiBinding ? undefined : (finalData as { id: string | number }[] | undefined)}
+          data={
+            hasApiBinding
+              ? undefined
+              : (finalData && Array.isArray(finalData) && finalData.length > 0
+                ? (finalData as { id: string | number }[])
+                : undefined)
+          }
           paginationMode={
             (el.props.paginationMode as "pagination" | "infinite") ||
             "pagination"
@@ -2099,9 +2108,9 @@ function Preview() {
             typeof el.props.overscan === "number" ? el.props.overscan : 10
           }
           enableAsyncLoading={hasApiBinding}
-          apiUrlKey={hasApiBinding ? apiConfig.baseUrl : undefined}
-          endpointPath={hasApiBinding ? apiConfig.endpoint : undefined}
-          apiParams={hasApiBinding ? apiConfig.params : undefined}
+          apiUrlKey={hasApiBinding && apiConfig.baseUrl ? apiConfig.baseUrl : undefined}
+          endpointPath={hasApiBinding && apiConfig.endpoint ? apiConfig.endpoint : undefined}
+          apiParams={hasApiBinding && apiConfig.params ? apiConfig.params : undefined}
           dataMapping={
             hasApiBinding && apiConfig.dataMapping
               ? {
