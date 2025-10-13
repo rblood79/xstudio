@@ -373,6 +373,18 @@
           border-radius: var(--radius-sm);
         }
       }
+
+      /* Pending 변경 알림 */
+      .pending-change-notice {
+        font-size: 13px;
+        color: var(--color-blue-700);
+        line-height: 1.5;
+        margin: 0;
+        padding: var(--spacing-md);
+        background: var(--color-blue-50);
+        border: 1px solid var(--color-blue-200);
+        border-radius: var(--radius);
+      }
     }
   }
 }
