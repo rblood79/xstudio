@@ -1865,6 +1865,22 @@ function Preview() {
       // 정적 데이터 또는 Supabase 데이터 사용 시 실제 데이터 제공
       const finalData = hasApiBinding ? [] : (supabaseData || staticData || []);
 
+      // 데이터 소스 변경 감지 - 이전과 다른 데이터 소스면 요청 캐시 초기화
+      const currentDataSource = el.dataBinding?.source || 'none';
+      const tableRequestPrefix = `${el.id}_`;
+
+      // 현재 테이블의 모든 요청 기록 중 다른 데이터 소스 것들 삭제
+      const keysToDelete: string[] = [];
+      columnCreationRequestedRef.current.forEach((key) => {
+        if (key.startsWith(tableRequestPrefix) && !key.includes(`_${currentDataSource}_`)) {
+          keysToDelete.push(key);
+        }
+      });
+      keysToDelete.forEach((key) => {
+        columnCreationRequestedRef.current.delete(key);
+        console.log("🗑️ 이전 데이터 소스 요청 기록 삭제:", key);
+      });
+
       // 정적 데이터 바인딩의 컬럼 매핑에서 컬럼 생성
       let mappedColumns: ColumnDefinition<{ id: string | number }>[] = [];
 
@@ -1958,11 +1974,12 @@ function Preview() {
       // Static/Supabase의 mappedColumns가 있고 Column Elements가 없으면
       // Column Elements 생성을 위해 부모에게 전달
       if (mappedColumns.length > 0 && columnElements.length === 0 && tableHeaderElement) {
-        // 중복 요청 방지: 테이블ID + 컬럼 키 조합으로 체크
-        const requestKey = `${el.id}_${mappedColumns.map(c => c.key).join('_')}`;
+        // 중복 요청 방지: 테이블ID + 데이터소스 + 컬럼 키 조합으로 체크
+        const dataSource = el.dataBinding?.source || 'none';
+        const requestKey = `${el.id}_${dataSource}_${mappedColumns.map(c => c.key).join('_')}`;
 
         if (!columnCreationRequestedRef.current.has(requestKey)) {
-          console.log("🔄 mappedColumns 감지 - Column Elements 생성 요청:", mappedColumns);
+          console.log("🔄 mappedColumns 감지 - Column Elements 생성 요청:", { dataSource, mappedColumns });
 
           const columnElements = mappedColumns.map((colDef, index) => ({
             id: colDef.elementId || `col_${Date.now()}_${index}`,
