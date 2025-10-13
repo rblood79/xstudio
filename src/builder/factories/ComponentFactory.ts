@@ -1646,94 +1646,9 @@ export class ComponentFactory {
       updated_at: new Date().toISOString(),
     };
 
-    // 조건부 컬럼 생성: REST API가 설정된 경우 기본 컬럼 생성 안 함 (자동 감지 사용)
-    const columns: Element[] = hasApiConfig ? [] : [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Column",
-        props: {
-          key: "id",
-          children: "ID",
-          isRowHeader: false,
-          allowsSorting: true,
-          enableResizing: true,
-          width: 80,
-        } as ComponentElementProps,
-        parent_id: tableHeaderId,
-        page_id: pageId,
-        order_num: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Column",
-        props: {
-          key: "name",
-          children: "Name",
-          isRowHeader: false,
-          allowsSorting: true,
-          enableResizing: true,
-          width: 200,
-        } as ComponentElementProps,
-        parent_id: tableHeaderId,
-        page_id: pageId,
-        order_num: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Column",
-        props: {
-          key: "email",
-          children: "Email",
-          isRowHeader: false,
-          allowsSorting: true,
-          enableResizing: true,
-          width: 250,
-        } as ComponentElementProps,
-        parent_id: tableHeaderId,
-        page_id: pageId,
-        order_num: 3,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Column",
-        props: {
-          key: "phone",
-          children: "Phone",
-          isRowHeader: false,
-          allowsSorting: true,
-          enableResizing: true,
-          width: 150,
-        } as ComponentElementProps,
-        parent_id: tableHeaderId,
-        page_id: pageId,
-        order_num: 4,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Column",
-        props: {
-          key: "company",
-          children: "Company",
-          isRowHeader: false,
-          allowsSorting: true,
-          enableResizing: true,
-          width: 200,
-        } as ComponentElementProps,
-        parent_id: tableHeaderId,
-        page_id: pageId,
-        order_num: 5,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+    // 조건부 컬럼 생성: 데이터 소스가 설정되지 않은 경우 빈 테이블로 시작
+    // 사용자가 데이터 소스를 선택하면 자동으로 컬럼이 생성됨
+    const columns: Element[] = [];
 
     const childrenData: Element[] = [tableHeader, ...columns];
 
@@ -1748,9 +1663,7 @@ export class ComponentFactory {
       tableHeaderId: tableHeader.id,
       hasApiConfig,
       columns: columns.length,
-      note: hasApiConfig 
-        ? "REST API 설정됨 - 컬럼 자동 감지 사용" 
-        : "기본 컬럼 생성됨",
+      note: "빈 테이블로 시작 - 데이터 소스 선택 시 컬럼 자동 생성",
       children: childrenData.map((child) => ({
         id: child.id,
         tag: child.tag,

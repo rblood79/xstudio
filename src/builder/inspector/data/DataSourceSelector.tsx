@@ -15,6 +15,7 @@ import { StateBindingEditor } from "./StateBindingEditor.tsx";
 import { StaticDataEditor } from "./StaticDataEditor.tsx";
 import { APICollectionEditor } from "./APICollectionEditor.tsx";
 import { APIValueEditor } from "./APIValueEditor.tsx";
+import { NoneDataSourceEditor } from "./NoneDataSourceEditor.tsx";
 import type {
   SelectedElement,
   SupabaseCollectionConfig,
@@ -233,6 +234,10 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
       </div>
 
       {/* 소스별 에디터 렌더링 */}
+      {!binding && element.type === "Table" && (
+        <NoneDataSourceEditor elementId={element.id} />
+      )}
+
       {binding && (
         <>
           {binding.source === "api" && bindingType === "collection" && (
