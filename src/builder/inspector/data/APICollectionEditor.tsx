@@ -1,13 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  TextField,
-  Input,
-  Select,
-  SelectValue,
-  ListBox,
-  ListBoxItem,
-  Popover,
-} from "react-aria-components";
+import { TextField, Input } from "react-aria-components";
+import { Database, Send } from "lucide-react";
+import { PropertySelect } from "../components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import type { APICollectionConfig } from "../types";
@@ -184,84 +178,39 @@ export function APICollectionEditor({
   return (
     <div className="component-props api-collection-editor">
       {/* Base URL */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Base URL</legend>
-        <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-globe"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-              <path d="M2 12h20" />
-            </svg>
-          </label>
-          <Select
-            selectedKey={config.baseUrl || "MOCK_DATA"}
-            onSelectionChange={(key) => {
-              console.log("🔄 Base URL 변경:", key);
+      <PropertySelect
+        icon={Database}
+        label="Base URL"
+        value={config.baseUrl || "MOCK_DATA"}
+        options={[
+          { value: "MOCK_DATA", label: "MOCKUP DATA" },
+          { value: "JSONPLACEHOLDER", label: "JSONPlaceholder" },
+          { value: "CUSTOM", label: "Custom URL" },
+        ]}
+        onChange={(key: string) => {
+          console.log("🔄 Base URL 변경:", key);
 
-              // Base URL이 실제로 변경되었는지 확인
-              if (key !== config.baseUrl) {
-                // Base URL이 변경되면 endpoint와 관련 데이터 초기화
-                setLocalEndpoint("");
-                setAvailableColumns([]);
-                setLocalColumns([]);
-                setLoadError(null);
+          // Base URL이 실제로 변경되었는지 확인
+          if (key !== config.baseUrl) {
+            // Base URL이 변경되면 endpoint와 관련 데이터 초기화
+            setLocalEndpoint("");
+            setAvailableColumns([]);
+            setLocalColumns([]);
+            setLoadError(null);
 
-                onChange({
-                  ...config,
-                  baseUrl: key as string,
-                  endpoint: "", // endpoint 초기화
-                  columns: [], // 컬럼 초기화
-                  availableColumns: [], // 전체 컬럼 목록 초기화
-                  customUrl: key === "CUSTOM" ? config.customUrl : undefined, // CUSTOM이 아니면 customUrl 제거
-                });
+            onChange({
+              ...config,
+              baseUrl: key as string,
+              endpoint: "", // endpoint 초기화
+              columns: [], // 컬럼 초기화
+              availableColumns: [], // 전체 컬럼 목록 초기화
+              customUrl: key === "CUSTOM" ? config.customUrl : undefined, // CUSTOM이 아니면 customUrl 제거
+            });
 
-                console.log("✅ Base URL 변경으로 Endpoint와 컬럼 초기화됨");
-              }
-            }}
-          >
-            <Button>
-              <SelectValue />
-              <span aria-hidden="true" className="select-chevron">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-down"
-                  aria-hidden="true"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </span>
-            </Button>
-            <Popover>
-              <ListBox>
-                <ListBoxItem id="MOCK_DATA">MOCKUP DATA</ListBoxItem>
-                <ListBoxItem id="JSONPLACEHOLDER">JSONPlaceholder</ListBoxItem>
-                <ListBoxItem id="CUSTOM">Custom URL</ListBoxItem>
-              </ListBox>
-            </Popover>
-          </Select>
-        </div>
-      </fieldset>
+            console.log("✅ Base URL 변경으로 Endpoint와 컬럼 초기화됨");
+          }
+        }}
+      />
 
       {/* Custom URL */}
       {config.baseUrl === "CUSTOM" && (
@@ -428,62 +377,18 @@ export function APICollectionEditor({
       )}
 
       {/* HTTP Method */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">HTTP Method</legend>
-        <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-send"
-              aria-hidden="true"
-            >
-              <path d="m22 2-7 20-4-9-9-4Z" />
-              <path d="M22 2 11 13" />
-            </svg>
-          </label>
-          <Select
-            selectedKey={config.method || "GET"}
-            onSelectionChange={(key) =>
-              onChange({ ...config, method: key as "GET" | "POST" })
-            }
-          >
-            <Button>
-              <SelectValue />
-              <span aria-hidden="true" className="select-chevron">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-down"
-                  aria-hidden="true"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </span>
-            </Button>
-            <Popover>
-              <ListBox>
-                <ListBoxItem id="GET">GET</ListBoxItem>
-                <ListBoxItem id="POST">POST</ListBoxItem>
-              </ListBox>
-            </Popover>
-          </Select>
-        </div>
-      </fieldset>
+      <PropertySelect
+        icon={Send}
+        label="HTTP Method"
+        value={config.method || "GET"}
+        options={[
+          { value: "GET", label: "GET" },
+          { value: "POST", label: "POST" },
+        ]}
+        onChange={(key: string) =>
+          onChange({ ...config, method: key as "GET" | "POST" })
+        }
+      />
 
       {/* API Parameters */}
       <fieldset className="properties-aria">
