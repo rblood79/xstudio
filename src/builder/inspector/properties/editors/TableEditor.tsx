@@ -8,7 +8,7 @@ import {
   List,
   Layers,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch } from "../components";
+import { PropertyInput, PropertySelect, PropertySwitch } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";

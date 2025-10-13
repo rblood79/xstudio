@@ -1,5 +1,5 @@
 import { Type, Layout, ToggleLeft, X } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
+import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 

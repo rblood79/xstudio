@@ -1,6 +1,6 @@
 import { CellElementProps } from '../../../../types/store';
 import { useStore } from '../../../stores';
-import { PropertyInput, PropertySelect } from '../components';
+import { PropertyInput, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Ruler, Palette, Grid } from 'lucide-react';
 

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ListTree, FolderTree, Workflow, Plus } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../components';
+import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
