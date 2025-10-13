@@ -4,11 +4,11 @@ import {
   Input,
   Select,
   SelectValue,
-  ListBox,
+  //ListBox,
   ListBoxItem,
   Popover,
 } from "react-aria-components";
-import { Button } from "../../components/list";
+import { Button, ListBox, Checkbox, CheckboxGroup } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
 import "./data.css";
@@ -111,15 +111,6 @@ export function SupabaseCollectionEditor({
   const handleTableChange = (table: string) => {
     setLocalTable(table);
     setLocalColumns([]); // 테이블 변경 시 컬럼 초기화
-  };
-
-  const handleColumnToggle = (column: string) => {
-    const isSelected = localColumns.includes(column);
-    const updatedColumns = isSelected
-      ? localColumns.filter((c) => c !== column)
-      : [...localColumns, column];
-
-    setLocalColumns(updatedColumns);
   };
 
   const handleApplyChanges = async () => {
@@ -294,26 +285,17 @@ export function SupabaseCollectionEditor({
       {localTable && columns.length > 0 && (
         <fieldset className="properties-aria">
           <legend className="fieldset-legend">Columns to Display</legend>
-          <div className="column-selection">
-            <div className={`column-list ${columnsChanged ? "field-modified" : ""}`}>
-              {columns.map((column) => {
-                const isSelected = localColumns.includes(column);
-                return (
-                  <button
-                    key={column}
-                    type="button"
-                    className={`column-item ${isSelected ? "selected" : ""}`}
-                    onClick={() => handleColumnToggle(column)}
-                  >
-                    <span className="column-checkbox">
-                      {isSelected ? "☑" : "☐"}
-                    </span>
-                    <span className="column-name">{column}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <CheckboxGroup
+            value={localColumns}
+            onChange={(value) => setLocalColumns(value)}
+            className={`column-list ${columnsChanged ? "field-modified" : ""}`}
+          >
+            {columns.map((column) => (
+              <Checkbox key={column} value={column}>
+                {column}
+              </Checkbox>
+            ))}
+          </CheckboxGroup>
         </fieldset>
       )}
 

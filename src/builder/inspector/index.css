@@ -2,7 +2,7 @@
 @import "./data/data.css";
 @import "./events/events.css";
 
-@layer components {
+@layer utilities {
   .inspector {
     border-left: 1px solid var(--color-border);
 
@@ -449,6 +449,18 @@
             border-radius: var(--radius-md);
             border-color: var(--color-gray-300);
             border-width: 1px;
+          }
+        }
+      }
+
+      .react-aria-CheckboxGroup {
+        background-color: var(--color-gray-100);
+        border-radius: var(--radius-md);
+        gap: 0;
+        .react-aria-Checkbox {
+          .checkbox{
+            width: var(--spacing-lg);
+            height: var(--spacing-lg);
           }
         }
       }
