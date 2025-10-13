@@ -1,12 +1,6 @@
-import {
-  Select,
-  SelectValue,
-  Button,
-  ListBox,
-  ListBoxItem,
-  Popover,
-} from "react-aria-components";
 import { useState, useEffect } from "react";
+import { Database } from "lucide-react";
+import { PropertySelect } from "../components";
 import { useComponentMeta } from "../hooks/useComponentMeta";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { useStore } from "../../stores/elements";
@@ -120,66 +114,21 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
   return (
     <>
-      {/* 데이터 소스 선택 - Properties와 동일한 구조 */}
+      {/* 데이터 소스 선택 */}
       <div className="component-props">
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">데이터 소스</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-database"
-                aria-hidden="true"
-              >
-                <ellipse cx="12" cy="5" rx="9" ry="3" />
-                <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-                <path d="M3 12A9 3 0 0 0 21 12" />
-              </svg>
-            </label>
-            <Select
-              selectedKey={displaySource}
-              onSelectionChange={(key) => handleSourceChange(key as string)}
-            >
-              <Button>
-                <SelectValue />
-                <span aria-hidden="true" className="select-chevron">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-chevron-down"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </span>
-              </Button>
-              <Popover>
-                <ListBox>
-                  <ListBoxItem id="">선택 안 함</ListBoxItem>
-                  <ListBoxItem id="api">REST API</ListBoxItem>
-                  <ListBoxItem id="supabase">Supabase</ListBoxItem>
-                  <ListBoxItem id="state">Zustand Store</ListBoxItem>
-                  <ListBoxItem id="static">Static Data</ListBoxItem>
-                </ListBox>
-              </Popover>
-            </Select>
-          </div>
-        </fieldset>
+        <PropertySelect
+          icon={Database}
+          label="데이터 소스"
+          value={displaySource}
+          options={[
+            { value: "", label: "선택 안 함" },
+            { value: "api", label: "REST API" },
+            { value: "supabase", label: "Supabase" },
+            { value: "state", label: "Zustand Store" },
+            { value: "static", label: "Static Data" },
+          ]}
+          onChange={(key: string) => handleSourceChange(key)}
+        />
       </div>
 
       {/* Pending 상태 표시 */}
