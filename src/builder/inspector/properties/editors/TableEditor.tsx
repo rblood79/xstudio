@@ -8,7 +8,7 @@ import {
   List,
   Layers,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
+import { PropertyInput, PropertySelect, PropertySwitch } from "../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
@@ -63,8 +63,8 @@ export function TableEditor({
   // 현재 테이블의 행들 찾기 (TableBody > Row)
   const rows = tableBody
     ? elements
-        .filter((el) => el.parent_id === tableBody.id && el.tag === "Row")
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+      .filter((el) => el.parent_id === tableBody.id && el.tag === "Row")
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
     : [];
 
   const addRow = async () => {
@@ -220,20 +220,20 @@ export function TableEditor({
   // 실제 Column Element들 가져오기
   const actualColumns = tableHeaderElement
     ? elements
-        .filter(
-          (el) => el.parent_id === tableHeaderElement.id && el.tag === "Column"
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+      .filter(
+        (el) => el.parent_id === tableHeaderElement.id && el.tag === "Column"
+      )
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
     : [];
 
   // Column Group Element들 가져오기
   const actualColumnGroups = tableHeaderElement
     ? elements
-        .filter(
-          (el) =>
-            el.parent_id === tableHeaderElement.id && el.tag === "ColumnGroup"
-        )
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+      .filter(
+        (el) =>
+          el.parent_id === tableHeaderElement.id && el.tag === "ColumnGroup"
+      )
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
     : [];
 
   return (
@@ -462,7 +462,7 @@ export function TableEditor({
           }
         />
 
-        <PropertyCheckbox
+        <PropertySwitch
           icon={Table}
           label="헤더 고정"
           isSelected={
