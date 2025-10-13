@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Binary, FileText, PointerOff, PenOff } from 'lucide-react';
-import { PropertyInput } from '../components/PropertyInput';
-import { PropertyCheckbox } from '../components/PropertyCheckbox';
+import { PropertyInput } from '../../components/PropertyInput';
+import { PropertyCheckbox } from '../../components/PropertyCheckbox';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 

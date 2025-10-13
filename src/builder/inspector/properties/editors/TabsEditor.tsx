@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AppWindow, Plus, Ratio, PointerOff } from 'lucide-react';
-import { PropertyInput, PropertySelect } from '../components';
+import { PropertyInput, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';

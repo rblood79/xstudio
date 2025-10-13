@@ -11,7 +11,7 @@ import {
   Binary,
   FileText,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
+import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";

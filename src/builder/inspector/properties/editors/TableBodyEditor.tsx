@@ -1,5 +1,5 @@
 import { useStore } from '../../../stores';
-import { PropertySelect } from '../components';
+import { PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
 

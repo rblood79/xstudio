@@ -1,4 +1,4 @@
-import { PropertyInput, PropertyCheckbox } from '../components';
+import { PropertyInput, PropertyCheckbox } from '../../components';
 import type { ColumnElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';

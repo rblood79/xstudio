@@ -1,5 +1,5 @@
 import { Type, PointerOff, Parentheses } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox, PropertySelect } from '../components';
+import { PropertyInput, PropertyCheckbox, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 

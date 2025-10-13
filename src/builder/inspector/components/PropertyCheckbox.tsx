@@ -1,6 +1,6 @@
 import React from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
-import { Checkbox } from '../../../components/list';
+import { Checkbox } from '../../components/list';
 
 interface PropertyCheckboxProps {
     label: string;

@@ -1,5 +1,5 @@
 import { AppWindow, Type, Menu } from 'lucide-react';
-import { PropertyInput, PropertySelect } from '../components';
+import { PropertyInput, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 

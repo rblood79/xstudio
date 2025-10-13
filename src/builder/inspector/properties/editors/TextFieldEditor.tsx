@@ -1,5 +1,5 @@
 import { Tag, Binary, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText, SpellCheck2 } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../components';
+import { PropertyInput, PropertyCheckbox } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 

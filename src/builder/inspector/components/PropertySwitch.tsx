@@ -1,6 +1,6 @@
 import React from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
-import { Switch } from '../../../components/list';
+import { Switch } from '../../components/list';
 
 interface PropertySwitchProps {
   label: string;

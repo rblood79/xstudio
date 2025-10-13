@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../components';
+import { PropertyInput, PropertyCheckbox } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
