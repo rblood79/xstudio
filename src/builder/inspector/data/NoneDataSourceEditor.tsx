@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "react-aria-components";
+import { Button } from "../../components/list";
 import { useStore } from "../../stores/elements";
 import { elementsApi } from "../../../services";
 
@@ -87,12 +87,11 @@ export function NoneDataSourceEditor({ elementId }: NoneDataSourceEditorProps) {
 
         <div className="button-group">
           <Button
-            className="apply-button"
+            size="xs"
             onPress={handleApply}
             isDisabled={isApplying}
-          >
-            {isApplying ? "적용 중..." : "Apply"}
-          </Button>
+            children={isApplying ? "적용 중..." : "Apply"}
+          />
         </div>
       </fieldset>
     </div>
