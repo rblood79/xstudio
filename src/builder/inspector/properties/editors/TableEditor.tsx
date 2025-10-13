@@ -7,6 +7,9 @@ import {
   Tag,
   List,
   Layers,
+  Mouse,
+  BookOpen,
+  RulerDimensionLine,
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -330,7 +333,7 @@ export function TableEditor({
         </legend>
 
         <PropertySelect
-          icon={Settings}
+          icon={currentProps?.paginationMode === "infinite" ? Mouse : BookOpen}
           label="페이지네이션 모드"
           value={
             (currentProps as TableElementProps)?.paginationMode || "infinite"
@@ -376,7 +379,7 @@ export function TableEditor({
         </legend>
 
         <PropertySelect
-          icon={Settings}
+          icon={RulerDimensionLine}
           label="테이블 높이 모드"
           value={(currentProps as TableElementProps)?.heightMode || "fixed"}
           options={[
