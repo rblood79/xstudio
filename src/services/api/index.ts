@@ -26,6 +26,12 @@ import {
   mockRoles,
   mockEngines,
   mockComponents,
+  mockJsonPlaceholderUsers,
+  mockPosts,
+  mockComments,
+  mockAlbums,
+  mockPhotos,
+  mockTodos,
   buildComponentTree,
   getProjectEnginesSummary,
   getComponentTreeDepth,
@@ -44,6 +50,12 @@ import {
   type MockUserData,
   type MockEngine,
   type MockComponent,
+  type MockJsonPlaceholderUser,
+  type MockPost,
+  type MockComment,
+  type MockAlbum,
+  type MockPhoto,
+  type MockTodo,
 } from "./mockLargeDataV2";
 
 // 확장된 CMS 목업 데이터 export
@@ -60,6 +72,12 @@ export {
   mockRoles,
   mockEngines,
   mockComponents,
+  mockJsonPlaceholderUsers,
+  mockPosts,
+  mockComments,
+  mockAlbums,
+  mockPhotos,
+  mockTodos,
   buildComponentTree,
   getProjectEnginesSummary,
   getComponentTreeDepth,
@@ -81,6 +99,12 @@ export type {
   MockUserData,
   MockEngine,
   MockComponent,
+  MockJsonPlaceholderUser,
+  MockPost,
+  MockComment,
+  MockAlbum,
+  MockPhoto,
+  MockTodo,
 };
 
 // Import the instances for the ApiService class
@@ -198,7 +222,14 @@ const handleUsersEndpoint = (path: string, params?: Record<string, unknown>) => 
 
   // 특정 엔드포인트 경로에 대한 데이터 필터링
   if (path === "/users" || path === "/api/users") {
-    // 사용자 데이터만 반환 (프론트엔드, 백엔드, 풀스택 개발자 등)
+    // JSONPlaceholder 스타일 Users (username, website, address.geo 등 포함)
+    console.log(`📊 /users 엔드포인트: JSONPlaceholder 형식 사용자 ${mockJsonPlaceholderUsers.length}개 반환`);
+    return applyPagination(mockJsonPlaceholderUsers as unknown as MockUserData[], params);
+  } else if (
+    path === "/cms-users" ||
+    path === "/api/cms-users"
+  ) {
+    // CMS 내부용 상세 사용자 데이터 (기존 largeMockData)
     filteredData = largeMockData.filter(
       (user) =>
         user.role.includes("개발자") ||
@@ -206,7 +237,7 @@ const handleUsersEndpoint = (path: string, params?: Record<string, unknown>) => 
         user.role.includes("분석가")
     );
     console.log(
-      `📊 /users 엔드포인트: 사용자 데이터 ${filteredData.length}개 반환`
+      `📊 /cms-users 엔드포인트: CMS 사용자 데이터 ${filteredData.length}개 반환`
     );
   } else if (
     path === "/admins" ||
@@ -281,6 +312,26 @@ const handleUsersEndpoint = (path: string, params?: Record<string, unknown>) => 
     console.log(
       `📊 /products 엔드포인트: 제품 관련 데이터 ${filteredData.length}개 반환`
     );
+  } else if (path === "/posts" || path === "/api/posts") {
+    // JSONPlaceholder 스타일: Posts
+    console.log(`📊 /posts 엔드포인트: 게시글 목록 ${mockPosts.length}개 반환`);
+    return applyPagination(mockPosts as unknown as MockUserData[], params);
+  } else if (path === "/comments" || path === "/api/comments") {
+    // JSONPlaceholder 스타일: Comments
+    console.log(`📊 /comments 엔드포인트: 댓글 목록 ${mockComments.length}개 반환`);
+    return applyPagination(mockComments as unknown as MockUserData[], params);
+  } else if (path === "/albums" || path === "/api/albums") {
+    // JSONPlaceholder 스타일: Albums
+    console.log(`📊 /albums 엔드포인트: 앨범 목록 ${mockAlbums.length}개 반환`);
+    return applyPagination(mockAlbums as unknown as MockUserData[], params);
+  } else if (path === "/photos" || path === "/api/photos") {
+    // JSONPlaceholder 스타일: Photos
+    console.log(`📊 /photos 엔드포인트: 사진 목록 ${mockPhotos.length}개 반환`);
+    return applyPagination(mockPhotos as unknown as MockUserData[], params);
+  } else if (path === "/todos" || path === "/api/todos") {
+    // JSONPlaceholder 스타일: Todos
+    console.log(`📊 /todos 엔드포인트: 할일 목록 ${mockTodos.length}개 반환`);
+    return applyPagination(mockTodos as unknown as MockUserData[], params);
   } else {
     // 기본적으로 모든 데이터 반환 (기존 동작 유지)
     console.log(

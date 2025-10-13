@@ -1282,6 +1282,199 @@ export const mockEngines = cmsMockData.engines;
 export const mockComponents = cmsMockData.components;
 
 // ============================================
+// JSONPlaceholder 스타일 Mock Data
+// ============================================
+
+export interface MockPost {
+  id: number;
+  userId: number;
+  title: string;
+  body: string;
+}
+
+export interface MockComment {
+  id: number;
+  postId: number;
+  name: string;
+  email: string;
+  body: string;
+}
+
+export interface MockAlbum {
+  id: number;
+  userId: number;
+  title: string;
+}
+
+export interface MockPhoto {
+  id: number;
+  albumId: number;
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+}
+
+export interface MockTodo {
+  id: number;
+  userId: number;
+  title: string;
+  completed: boolean;
+}
+
+// JSONPlaceholder User 형식 (실제 API와 동일)
+export interface MockJsonPlaceholderUser {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  address: {
+    street: string;
+    suite: string;
+    city: string;
+    zipcode: string;
+    geo: {
+      lat: string;
+      lng: string;
+    };
+  };
+  phone: string;
+  website: string;
+  company: {
+    name: string;
+    catchPhrase: string;
+    bs: string;
+  };
+}
+
+// JSONPlaceholder 스타일 Users 생성 (기존 MockUserData를 변환)
+const generateJsonPlaceholderUsers = (): MockJsonPlaceholderUser[] => {
+  return largeMockData.slice(0, 100).map((user, index) => ({
+    id: index + 1,
+    name: user.name,
+    username: user.name.replace(/\s+/g, '').toLowerCase() + (index + 1),
+    email: user.email,
+    address: {
+      street: user.address.split(' ')[0] + ' ' + (user.address.split(' ')[1] || ''),
+      suite: `Apt. ${randomInt(100, 999)}`,
+      city: user.address.includes('시') ? user.address.split(' ')[0] : '서울시',
+      zipcode: `${randomInt(10000, 99999)}`,
+      geo: {
+        lat: (37.5 + Math.random() * 0.5).toFixed(4),
+        lng: (126.9 + Math.random() * 0.5).toFixed(4),
+      },
+    },
+    phone: user.phone,
+    website: `${user.name.toLowerCase().replace(/\s+/g, '')}.${randomFromArray(['com', 'net', 'org', 'io'])}`,
+    company: {
+      name: user.company,
+      catchPhrase: `${randomFromArray(['혁신적인', '미래지향적인', '고객중심의', '글로벌'])} ${randomFromArray(['솔루션', '서비스', '플랫폼', '기술'])}`,
+      bs: `${randomFromArray(['e-commerce', 'cloud computing', 'AI-driven', 'blockchain'])} ${randomFromArray(['solutions', 'platforms', 'services', 'infrastructure'])}`,
+    },
+  }));
+};
+
+// Posts 생성 (100개)
+const generateMockPosts = (): MockPost[] => {
+  const titles = [
+    '새로운 프로젝트 시작',
+    '팀 미팅 결과',
+    '기술 블로그 포스팅',
+    '제품 업데이트 안내',
+    '고객 피드백 분석',
+    '다음 분기 계획',
+    '성과 리뷰',
+    '신기술 도입 검토',
+  ];
+  
+  return Array.from({ length: 100 }, (_, i) => ({
+    id: i + 1,
+    userId: (i % 10) + 1,
+    title: `${randomFromArray(titles)} - ${i + 1}`,
+    body: `이것은 ${i + 1}번째 게시글입니다. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+    Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`,
+  }));
+};
+
+// Comments 생성 (500개)
+const generateMockComments = (): MockComment[] => {
+  const commentPrefixes = [
+    '좋은 의견입니다',
+    '동의합니다',
+    '추가로 제안하자면',
+    '흥미로운 관점이네요',
+    '잘 읽었습니다',
+  ];
+  
+  return Array.from({ length: 500 }, (_, i) => ({
+    id: i + 1,
+    postId: (i % 100) + 1,
+    name: `${randomFromArray(commentPrefixes)} - 댓글 ${i + 1}`,
+    email: `commenter${i + 1}@example.com`,
+    body: `${randomFromArray(commentPrefixes)}. 이것은 ${i + 1}번째 댓글입니다. 
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.`,
+  }));
+};
+
+// Albums 생성 (100개)
+const generateMockAlbums = (): MockAlbum[] => {
+  const albumTypes = [
+    '여행 사진',
+    '프로젝트 기록',
+    '팀 이벤트',
+    '제품 사진',
+    '회사 행사',
+  ];
+  
+  return Array.from({ length: 100 }, (_, i) => ({
+    id: i + 1,
+    userId: (i % 10) + 1,
+    title: `${randomFromArray(albumTypes)} ${Math.floor(i / 10) + 1}`,
+  }));
+};
+
+// Photos 생성 (300개)
+const generateMockPhotos = (): MockPhoto[] => {
+  const colors = ['92c952', '771796', 'd32776', 'f66b97', '24f355', 'e8a838'];
+  
+  return Array.from({ length: 300 }, (_, i) => ({
+    id: i + 1,
+    albumId: (i % 100) + 1,
+    title: `사진 ${i + 1}`,
+    url: `https://via.placeholder.com/600/${randomFromArray(colors)}`,
+    thumbnailUrl: `https://via.placeholder.com/150/${randomFromArray(colors)}`,
+  }));
+};
+
+// Todos 생성 (200개)
+const generateMockTodos = (): MockTodo[] => {
+  const todoTasks = [
+    '문서 작성',
+    '코드 리뷰',
+    '회의 준비',
+    '이메일 답장',
+    '보고서 제출',
+    '테스트 실행',
+    '배포 준비',
+  ];
+  
+  return Array.from({ length: 200 }, (_, i) => ({
+    id: i + 1,
+    userId: (i % 10) + 1,
+    title: `${randomFromArray(todoTasks)} - ${i + 1}`,
+    completed: Math.random() > 0.5,
+  }));
+};
+
+// Mock 데이터 생성 (함수 호출은 export 후에)
+export const mockJsonPlaceholderUsers = generateJsonPlaceholderUsers();
+export const mockPosts = generateMockPosts();
+export const mockComments = generateMockComments();
+export const mockAlbums = generateMockAlbums();
+export const mockPhotos = generateMockPhotos();
+export const mockTodos = generateMockTodos();
+
+// ============================================
 // Utility Functions for Tree Structure
 // ============================================
 

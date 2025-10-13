@@ -1953,6 +1953,30 @@ function Preview() {
         console.log("✅ Supabase 컬럼 생성 완료:", mappedColumns.length, mappedColumns);
       }
 
+      // API의 컬럼 매핑 (props.columns에서 가져옴)
+      if (el.dataBinding?.type === "collection" &&
+        el.dataBinding?.source === "api" &&
+        (el.props as { columns?: string[] }).columns) {
+        const apiColumns = (el.props as { columns: string[] }).columns;
+
+        console.log("🔍 API 컬럼 매핑 발견:", apiColumns);
+
+        mappedColumns = apiColumns.map((columnName) => {
+          console.log("📝 API 컬럼 생성:", columnName);
+          return {
+            key: columnName as keyof { id: string | number },
+            label: columnName.charAt(0).toUpperCase() + columnName.slice(1), // 첫 글자 대문자
+            allowsSorting: true,
+            enableResizing: true,
+            width: 150,
+            align: 'left' as "left" | "center" | "right",
+            elementId: ElementUtils.generateId(),
+          };
+        });
+
+        console.log("✅ API 컬럼 생성 완료:", mappedColumns.length, mappedColumns);
+      }
+
       // Column Element가 있으면 해당 컬럼 사용, 
       // 없으면 매핑된 컬럼 사용 (Static/Supabase),
       // 그것도 없으면 빈 배열로 자동 감지 활성화

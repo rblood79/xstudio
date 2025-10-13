@@ -307,8 +307,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
           maxSize: c.maxWidth,
           enableSorting: c.allowsSorting ?? true,
           enableResizing: c.enableResizing ?? true,
-          cell: (info: { getValue: () => unknown }) =>
-            info.getValue() as React.ReactNode,
+          cell: (info: { getValue: () => unknown }) => {
+            const value = info.getValue();
+            // 중첩 객체는 JSON 문자열로 변환
+            if (value && typeof value === "object" && !React.isValidElement(value)) {
+              return JSON.stringify(value);
+            }
+            return value as React.ReactNode;
+          },
         })
       );
       return basicColumns;
@@ -355,8 +361,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
             maxSize: c.maxWidth,
             enableSorting: c.allowsSorting ?? true,
             enableResizing: c.enableResizing ?? true,
-            cell: (info: { getValue: () => unknown }) =>
-              info.getValue() as React.ReactNode,
+            cell: (info: { getValue: () => unknown }) => {
+              const value = info.getValue();
+              // 중첩 객체는 JSON 문자열로 변환
+              if (value && typeof value === "object" && !React.isValidElement(value)) {
+                return JSON.stringify(value);
+              }
+              return value as React.ReactNode;
+            },
           })
         );
 
@@ -419,8 +431,14 @@ export default React.memo(function Table<T extends { id: string | number }>(
             maxSize: c.maxWidth,
             enableSorting: c.allowsSorting ?? true,
             enableResizing: c.enableResizing ?? true,
-            cell: (info: { getValue: () => unknown }) =>
-              info.getValue() as React.ReactNode,
+            cell: (info: { getValue: () => unknown }) => {
+              const value = info.getValue();
+              // 중첩 객체는 JSON 문자열로 변환
+              if (value && typeof value === "object" && !React.isValidElement(value)) {
+                return JSON.stringify(value);
+              }
+              return value as React.ReactNode;
+            },
           })
         );
       }

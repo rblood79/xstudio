@@ -3,10 +3,12 @@ import type { Element } from "../../../types/unified";
 
 interface APICollectionConfig {
   baseUrl: string;
+  customUrl?: string;
   endpoint: string;
   method: string;
   params: Record<string, unknown>;
   headers: Record<string, string>;
+  columns?: string[]; // 표시할 컬럼 목록
   dataMapping: {
     resultPath: string;
     idKey: string;
@@ -65,12 +67,20 @@ export function useDataBinding(element: Element): DataBindingResult {
       // API 호출
       const fetchData = async () => {
         try {
-          // MOCK_DATA URL 매핑
-          const apiUrls: Record<string, string> = {
-            MOCK_DATA: "https://jsonplaceholder.typicode.com",
-          };
+          // Base URL 결정
+          let baseUrl = "";
+          switch (config.baseUrl) {
+            case "MOCK_DATA":
+            case "JSONPLACEHOLDER":
+              baseUrl = "https://jsonplaceholder.typicode.com";
+              break;
+            case "CUSTOM":
+              baseUrl = config.customUrl || "";
+              break;
+            default:
+              baseUrl = config.baseUrl;
+          }
 
-          const baseUrl = apiUrls[config.baseUrl] || config.baseUrl;
           const url = new URL(config.endpoint, baseUrl);
 
           // Query params 추가
@@ -109,6 +119,20 @@ export function useDataBinding(element: Element): DataBindingResult {
           // 배열이 아니면 배열로 감싸기
           if (!Array.isArray(items)) {
             items = [items];
+          }
+
+          // columns 필터링 적용
+          if (config.columns && config.columns.length > 0) {
+            items = items.map((item: Record<string, unknown>) => {
+              const filteredItem: Record<string, unknown> = {};
+              config.columns!.forEach((col) => {
+                if (col in item) {
+                  filteredItem[col] = item[col];
+                }
+              });
+              return filteredItem;
+            });
+            console.log("📊 컬럼 필터링 적용:", config.columns);
           }
 
           console.log("📊 추출된 데이터:", items.length, "개");

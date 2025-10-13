@@ -218,6 +218,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                       endpointPath: config.endpoint,
                       dataMapping: config.dataMapping,
                       apiParams: config.params,
+                      columns: config.columns, // 선택된 컬럼 정보 추가
                     });
                     console.log("🔄 APICollectionEditor - Table props 업데이트:", config);
                   }
