@@ -210,7 +210,26 @@ export function APICollectionEditor({
             selectedKey={config.baseUrl || "MOCK_DATA"}
             onSelectionChange={(key) => {
               console.log("🔄 Base URL 변경:", key);
-              onChange({ ...config, baseUrl: key as string });
+
+              // Base URL이 실제로 변경되었는지 확인
+              if (key !== config.baseUrl) {
+                // Base URL이 변경되면 endpoint와 관련 데이터 초기화
+                setLocalEndpoint("");
+                setAvailableColumns([]);
+                setLocalColumns([]);
+                setLoadError(null);
+
+                onChange({
+                  ...config,
+                  baseUrl: key as string,
+                  endpoint: "", // endpoint 초기화
+                  columns: [], // 컬럼 초기화
+                  availableColumns: [], // 전체 컬럼 목록 초기화
+                  customUrl: key === "CUSTOM" ? config.customUrl : undefined, // CUSTOM이 아니면 customUrl 제거
+                });
+
+                console.log("✅ Base URL 변경으로 Endpoint와 컬럼 초기화됨");
+              }
             }}
           >
             <Button>
@@ -272,9 +291,28 @@ export function APICollectionEditor({
                 className="control-input"
                 placeholder="https://api.example.com"
                 value={config.customUrl || ""}
-                onChange={(e) =>
-                  onChange({ ...config, customUrl: e.target.value })
-                }
+                onChange={(e) => {
+                  const newCustomUrl = e.target.value;
+
+                  // Custom URL이 실제로 변경되었는지 확인
+                  if (newCustomUrl !== config.customUrl) {
+                    // Custom URL이 변경되면 endpoint와 관련 데이터 초기화
+                    setLocalEndpoint("");
+                    setAvailableColumns([]);
+                    setLocalColumns([]);
+                    setLoadError(null);
+
+                    onChange({
+                      ...config,
+                      customUrl: newCustomUrl,
+                      endpoint: "", // endpoint 초기화
+                      columns: [], // 컬럼 초기화
+                      availableColumns: [], // 전체 컬럼 목록 초기화
+                    });
+
+                    console.log("✅ Custom URL 변경으로 Endpoint와 컬럼 초기화됨");
+                  }
+                }}
               />
             </TextField>
           </div>

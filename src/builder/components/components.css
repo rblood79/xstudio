@@ -1107,6 +1107,8 @@
     }
 
     .react-aria-SelectValue {
+      flex:1;
+      text-align: left;
       &[data-placeholder] {
         font-style: italic;
         color: var(--color-gray-400);
