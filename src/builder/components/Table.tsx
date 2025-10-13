@@ -243,7 +243,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- Static 데이터 자동 감지 ----------
   React.useEffect(() => {
     // Static 데이터이고, 컬럼이 제공되지 않았고, 데이터가 있으면 자동 감지
-    if (!isAsync && columns.length === 0 && staticData && staticData.length > 0) {
+    // 단, 이미 자동 감지된 컬럼이 있으면 건너뛰기 (중복 방지)
+    if (!isAsync && columns.length === 0 && staticData && staticData.length > 0 && detectedColumns.length === 0) {
       const detected = detectColumnsFromData(staticData);
       setDetectedColumns(detected);
       console.log("🔍 Static 데이터 컬럼 자동 감지:", detected);
@@ -253,7 +254,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         onColumnsDetected(detected);
       }
     }
-  }, [staticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected]);
+  }, [staticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
 
   // ---------- Column Definitions with Groups ----------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -453,7 +454,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- API 데이터 자동 감지 ----------
   React.useEffect(() => {
     // API 데이터이고, 컬럼이 제공되지 않았고, 페이지 데이터가 있으면 자동 감지
-    if (isAsync && columns.length === 0 && pageRows && pageRows.length > 0) {
+    // 단, 이미 자동 감지된 컬럼이 있으면 건너뛰기 (중복 방지)
+    if (isAsync && columns.length === 0 && pageRows && pageRows.length > 0 && detectedColumns.length === 0) {
       const detected = detectColumnsFromData(pageRows);
       setDetectedColumns(detected);
       console.log("🔍 API 데이터 컬럼 자동 감지:", detected);
@@ -463,7 +465,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         onColumnsDetected(detected);
       }
     }
-  }, [pageRows, columns.length, isAsync, detectColumnsFromData, onColumnsDetected]);
+  }, [pageRows, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
 
   // ---------- API 어댑터 (더미 배열 응답 기반) ----------
   const isFetchingRef = React.useRef(false);
@@ -692,6 +694,16 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const initialLoadRef = React.useRef(false);
   const prevModeRef = React.useRef<PaginationMode>(mode);
   const prevApiConfigRef = React.useRef({ apiUrlKey, endpointPath, isAsync });
+  const prevStaticDataRef = React.useRef(staticData);
+
+  // Static 데이터 변경 감지 - 데이터 소스가 변경되면 detectedColumns 초기화
+  React.useEffect(() => {
+    if (prevStaticDataRef.current !== staticData) {
+      prevStaticDataRef.current = staticData;
+      setDetectedColumns([]);
+      console.log("🔄 Static 데이터 변경 감지 - 자동 감지 컬럼 초기화");
+    }
+  }, [staticData]);
 
   React.useEffect(() => {
     // 모드 변경 또는 API 설정 변경 감지
@@ -714,6 +726,10 @@ export default React.memo(function Table<T extends { id: string | number }>(
       setPageCount(null);
       setCursor(undefined);
       setHasNext(true);
+
+      // 자동 감지된 컬럼도 초기화 (데이터 소스 변경 시 새로 감지)
+      setDetectedColumns([]);
+      console.log("🔄 데이터 소스 변경 감지 - 자동 감지 컬럼 초기화");
     }
 
     if (!isAsync) return;
