@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import {
+  TextField,
+  Input,
   Select,
   SelectValue,
-  Button,
   ListBox,
   ListBoxItem,
   Popover,
-  Label,
-  TextField,
-  Input,
 } from "react-aria-components";
+import { Button } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
 
@@ -98,149 +97,244 @@ export function SupabaseCollectionEditor({
   return (
     <div className="supabase-collection-editor component-props">
       {/* 테이블 선택 */}
-      <Select
-        className="table-select"
-        selectedKey={config.table || ""}
-        onSelectionChange={(key) => handleTableChange(key as string)}
-      >
-        <Label className="field-label">Table</Label>
-        <Button className="select-trigger">
-          <SelectValue />
-          <span className="select-arrow">▼</span>
-        </Button>
-        <Popover className="select-popover">
-          <ListBox className="select-list">
-            {loading && (
-              <ListBoxItem id="loading" className="select-item" isDisabled>
-                Loading tables...
-              </ListBoxItem>
-            )}
-            {!loading && tables.length === 0 && (
-              <ListBoxItem id="empty" className="select-item" isDisabled>
-                No tables found
-              </ListBoxItem>
-            )}
-            {!loading &&
-              tables.length > 0 &&
-              tables.map((table) => (
-                <ListBoxItem key={table} id={table} className="select-item">
-                  {table}
-                </ListBoxItem>
-              ))}
-          </ListBox>
-        </Popover>
-      </Select>
+      <fieldset className="properties-aria">
+        <legend className="fieldset-legend">Table</legend>
+        <div className="react-aria-control react-aria-Group">
+          <label className="control-label">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--color-gray-400)"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-table"
+              aria-hidden="true"
+            >
+              <path d="M12 3v18" />
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M3 15h18" />
+            </svg>
+          </label>
+          <Select
+            selectedKey={config.table || ""}
+            onSelectionChange={(key) => handleTableChange(key as string)}
+          >
+            <Button>
+              <SelectValue />
+              <span aria-hidden="true" className="select-chevron">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-chevron-down"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </Button>
+            <Popover>
+              <ListBox>
+                {loading && (
+                  <ListBoxItem id="loading" isDisabled>
+                    Loading tables...
+                  </ListBoxItem>
+                )}
+                {!loading && tables.length === 0 && (
+                  <ListBoxItem id="empty" isDisabled>
+                    No tables found
+                  </ListBoxItem>
+                )}
+                {!loading &&
+                  tables.length > 0 &&
+                  tables.map((table) => (
+                    <ListBoxItem key={table} id={table}>
+                      {table}
+                    </ListBoxItem>
+                  ))}
+              </ListBox>
+            </Popover>
+          </Select>
+        </div>
+      </fieldset>
 
       {/* 컬럼 선택 */}
       {config.table && columns.length > 0 && (
-        <div className="column-selection">
-          <Label className="field-label">Columns to Display</Label>
-          <div className="column-list">
-            {columns.map((column) => {
-              const isSelected = config.columns.includes(column);
-              return (
-                <button
-                  key={column}
-                  type="button"
-                  className={`column-item ${isSelected ? "selected" : ""}`}
-                  onClick={() => handleColumnToggle(column)}
-                >
-                  <span className="column-checkbox">
-                    {isSelected ? "☑" : "☐"}
-                  </span>
-                  <span className="column-name">{column}</span>
-                </button>
-              );
-            })}
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Columns to Display</legend>
+          <div className="column-selection">
+            <div className="column-list">
+              {columns.map((column) => {
+                const isSelected = config.columns.includes(column);
+                return (
+                  <button
+                    key={column}
+                    type="button"
+                    className={`column-item ${isSelected ? "selected" : ""}`}
+                    onClick={() => handleColumnToggle(column)}
+                  >
+                    <span className="column-checkbox">
+                      {isSelected ? "☑" : "☐"}
+                    </span>
+                    <span className="column-name">{column}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* 정렬 설정 */}
       {config.table && (
-        <div className="order-section">
-          <Label className="field-label">Order By (Optional)</Label>
-          <div className="order-controls">
-            <Select
-              className="order-select"
-              selectedKey={config.orderBy?.column || ""}
-              onSelectionChange={(key) => {
-                if (key) {
-                  onChange({
-                    ...config,
-                    orderBy: {
-                      column: key as string,
-                      ascending: config.orderBy?.ascending ?? true,
-                    },
-                  });
-                } else {
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  const { orderBy: _orderBy, ...rest } = config;
-                  onChange(rest);
-                }
-              }}
-            >
-              <Button className="select-trigger">
-                <SelectValue />
-                <span className="select-arrow">▼</span>
-              </Button>
-              <Popover className="select-popover">
-                <ListBox className="select-list">
-                  <ListBoxItem id="" className="select-item">
-                    No sorting
-                  </ListBoxItem>
-                  {columns.map((column) => (
-                    <ListBoxItem
-                      key={column}
-                      id={column}
-                      className="select-item"
-                    >
-                      {column}
-                    </ListBoxItem>
-                  ))}
-                </ListBox>
-              </Popover>
-            </Select>
-
-            {config.orderBy && (
-              <Button
-                className="order-direction"
-                onPress={() => {
-                  if (config.orderBy) {
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Order By (Optional)</legend>
+          <div className="react-aria-control react-aria-Group">
+            <label className="control-label">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--color-gray-400)"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-arrow-up-down"
+                aria-hidden="true"
+              >
+                <path d="m21 16-4 4-4-4" />
+                <path d="M17 20V4" />
+                <path d="m3 8 4-4 4 4" />
+                <path d="M7 4v16" />
+              </svg>
+            </label>
+            <div className="order-controls">
+              <Select
+                selectedKey={config.orderBy?.column || ""}
+                onSelectionChange={(key) => {
+                  if (key) {
                     onChange({
                       ...config,
                       orderBy: {
-                        column: config.orderBy.column,
-                        ascending: !config.orderBy.ascending,
+                        column: key as string,
+                        ascending: config.orderBy?.ascending ?? true,
                       },
                     });
+                  } else {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { orderBy: _orderBy, ...rest } = config;
+                    onChange(rest);
                   }
                 }}
               >
-                {config.orderBy.ascending ? "↑ ASC" : "↓ DESC"}
-              </Button>
-            )}
+                <Button>
+                  <SelectValue />
+                  <span aria-hidden="true" className="select-chevron">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-chevron-down"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </Button>
+                <Popover>
+                  <ListBox>
+                    <ListBoxItem id="">No sorting</ListBoxItem>
+                    {columns.map((column) => (
+                      <ListBoxItem key={column} id={column}>
+                        {column}
+                      </ListBoxItem>
+                    ))}
+                  </ListBox>
+                </Popover>
+              </Select>
+
+              {config.orderBy && (
+                <Button
+                  className="order-direction"
+                  onPress={() => {
+                    if (config.orderBy) {
+                      onChange({
+                        ...config,
+                        orderBy: {
+                          column: config.orderBy.column,
+                          ascending: !config.orderBy.ascending,
+                        },
+                      });
+                    }
+                  }}
+                >
+                  {config.orderBy.ascending ? "↑ ASC" : "↓ DESC"}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* 제한 설정 */}
       {config.table && (
-        <TextField
-          className="limit-field"
-          type="number"
-          value={config.limit?.toString() || ""}
-          onChange={(value) => {
-            const limit = value ? parseInt(value, 10) : undefined;
-            onChange({
-              ...config,
-              limit,
-            });
-          }}
-        >
-          <Label className="field-label">Limit (Optional)</Label>
-          <Input className="field-input" placeholder="No limit" />
-        </TextField>
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Limit (Optional)</legend>
+          <div className="react-aria-control react-aria-Group">
+            <label className="control-label">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--color-gray-400)"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-hash"
+                aria-hidden="true"
+              >
+                <line x1="4" x2="20" y1="9" y2="9" />
+                <line x1="4" x2="20" y1="15" y2="15" />
+                <line x1="10" x2="8" y1="3" y2="21" />
+                <line x1="16" x2="14" y1="3" y2="21" />
+              </svg>
+            </label>
+            <TextField
+              type="number"
+              value={config.limit?.toString() || ""}
+              onChange={(value) => {
+                const limit = value ? parseInt(value, 10) : undefined;
+                onChange({
+                  ...config,
+                  limit,
+                });
+              }}
+            >
+              <Input className="control-input" placeholder="No limit" />
+            </TextField>
+          </div>
+        </fieldset>
       )}
     </div>
   );
