@@ -367,7 +367,20 @@
         background-color: var(--color-gray-100);
         border-radius: var(--radius-md);
         width: 100%;
-
+        .react-aria-Select{
+          width: 100%;
+          padding: 0;
+          .react-aria-Button{
+            padding: 0 3px 0 6px;
+            background-color: transparent;
+            border-color: transparent;
+            span[aria-hidden]{
+              width: var(--text-lg);
+              height: var(--text-lg);
+              border-radius: var(--radius-sm);
+            }
+          }
+        }
       }
 
       .react-aria-control {
@@ -421,8 +434,12 @@
         color: var(--color-gray-700);
       }
 
+      input.control-input{
+        height: 27px;
+      }
       .control-input {
         width: 100%;
+        
         background-color: transparent;
         border: 1px solid transparent;
         border-left-width: 0px;
@@ -432,6 +449,7 @@
         padding: calc(var(--spacing) * 1.378);
         padding-inline-start: 27px;
         transition: all 0.2s ease;
+        
 
         &:focus {
           outline: none;
