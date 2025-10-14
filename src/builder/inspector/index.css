@@ -368,21 +368,10 @@
         border-radius: var(--radius-md);
         width: 100%;
 
-        .react-aria-Select {
-          width: 100%;
-          .react-aria-Button {
-            padding: 0 0 0 var(--spacing);
-            background-color: transparent;
-            border-color: transparent;
-          }
-          .react-aria-SelectValue {
-            font-size: var(--text-xs);
-            color: var(--color-black);
-          }
-        }
       }
 
       .react-aria-control {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -397,17 +386,27 @@
         .react-aria-Select {
           width: 100%;
           .react-aria-Button {
-            padding: 0;
+            padding: 0 3px 0 0;
             background-color: transparent;
             border-color: transparent;
+            .control-label {
+              position: static;
+            }
+            span[aria-hidden]{
+              width: var(--text-xl);
+              height: var(--text-xl);
+              border-radius: var(--radius-sm);
+            }
           }
           .react-aria-SelectValue {
             font-size: var(--text-xs);
+            color: var(--color-black);
           }
         }
       }
 
       .control-label {
+        position: absolute;
         display: block;
         width: 27px;
         min-width: 27px;
@@ -426,9 +425,17 @@
         background-color: transparent;
         border: 1px solid transparent;
         border-left-width: 0px;
-        border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        border-radius: var(--radius-md);
         font-size: var(--text-xs);
-        padding: 0 var(--spacing);
+        line-height: var(--text-xs--line-height);
+        padding: calc(var(--spacing) * 1.378);
+        padding-inline-start: 27px;
+        transition: all 0.2s ease;
+
+        &:focus {
+          outline: none;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
       }
 
       .react-aria-ToggleButtonGroup {
