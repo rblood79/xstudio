@@ -231,8 +231,17 @@
       }
     }
     .api-endpoint-path {
+      position: relative;
       display: flex;
       flex: 1;
+      padding-right: 3px;
+      align-items: center;
+      .react-aria-Button {
+        position: absolute;
+        border-radius: var(--radius-sm);
+        padding: var(--spacing-2xs);
+        right: 3px;
+      }
     }
     /* APICollectionEditor 변경 감지 스타일 */
     .api-collection-editor {
