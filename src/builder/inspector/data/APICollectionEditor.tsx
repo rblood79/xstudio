@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { TextField, Input } from "react-aria-components";
-import { Database, Send, Link, Settings, Lock, Map } from "lucide-react";
-import { PropertySelect, PropertyInput } from "../components";
+import { Database, Send, Link, Settings, Lock, Map, Route, Download } from "lucide-react";
+import { iconProps } from '../../../utils/uiConstants';
+import { PropertySelect, PropertyInput, PropertyFieldset } from "../components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import type { APICollectionConfig } from "../types";
@@ -243,59 +244,30 @@ export function APICollectionEditor({
       )}
 
       {/* Endpoint Path */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Endpoint Path</legend>
-        <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-route"
-              aria-hidden="true"
-            >
-              <circle cx="6" cy="19" r="3" />
-              <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
-              <circle cx="18" cy="5" r="3" />
-            </svg>
-          </label>
-          <TextField className={"api-endpoint-path"}>
-            <Input
-              className={`control-input ${endpointChanged ? "field-modified" : ""}`}
-              placeholder={
-                config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA"
-                  ? "/users, /posts, /comments, /albums, /photos, /todos"
-                  : "/api/v1/items"
-              }
-              value={localEndpoint}
-              onChange={(e) => {
-                console.log("🔄 Endpoint 입력 중:", e.target.value);
-                setLocalEndpoint(e.target.value);
-              }}
-            />
+      <PropertyFieldset legend="Endpoint Path" icon={Route}>
+        <TextField className="api-endpoint-path">
+          <Input
+            className={`control-input ${endpointChanged ? "field-modified" : ""}`}
+            placeholder={
+              config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA"
+                ? "/users, /posts, /comments, /albums, /photos, /todos"
+                : "/api/v1/items"
+            }
+            value={localEndpoint}
+            onChange={(e) => {
+              console.log("🔄 Endpoint 입력 중:", e.target.value);
+              setLocalEndpoint(e.target.value);
+            }}
+          />
 
-            <Button
-              size="xs"
-              onClick={handleLoadData}
-              isDisabled={!localEndpoint || loading}
-              style={{
-                backgroundColor: localEndpoint && !loading ? "var(--color-primary-700)" : "var(--color-gray-300)",
-                color: localEndpoint && !loading ? "white" : "var(--color-gray-500)",
-                cursor: localEndpoint && !loading ? "pointer" : "not-allowed",
-                opacity: localEndpoint && !loading ? 1 : 0.6,
-              }}
-            >
-              {loading ? "Loading..." : "Load"}
-            </Button>
-          </TextField>
-        </div>
-      </fieldset>
+          <Button
+            size="xs"
+            onClick={handleLoadData}
+            isDisabled={!localEndpoint || loading}
+            children={<Download size={iconProps.size} />}
+          />
+        </TextField>
+      </PropertyFieldset>
 
       {/* 로드 에러 표시 */}
       {loadError && (
