@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { TextField, Input } from "react-aria-components";
+import { Database, Columns, Type } from "lucide-react";
 import { Button } from "../../components/list";
+import { PropertyInput } from "../components";
 import type {
   DataBindingType,
   StaticCollectionConfig,
@@ -338,68 +339,58 @@ export function StaticDataEditor({
       {isCollection ? (
         <>
           {/* Static Data (JSON Array) */}
-          <fieldset className="properties-aria">
-            <legend className="fieldset-legend">Static Data (JSON Array)</legend>
-            <div className="react-aria-control react-aria-Group">
-              <div style={{ flex: 1 }}>
-                <textarea
-                  className={`control-input ${pendingData ? "field-modified" : ""}`}
-                  value={localJsonInput}
-                  onChange={(e) => handleJSONInput(e.target.value)}
-                  placeholder={`[
+          <PropertyInput
+            label="Static Data (JSON Array)"
+            icon={Database}
+            value={localJsonInput}
+            onChange={(value) => handleJSONInput(value)}
+            placeholder={`[
   { "id": 1, "name": "Item 1", "active": "true" },
   { "id": 2, "name": "Item 2", "active": "false" },
   { "id": 3, "name": "Item 3", "active": "true" }
 ]`}
-                  rows={10}
-                />
-              </div>
-            </div>
-          </fieldset>
+            multiline
+            className={pendingData ? "field-modified" : ""}
+          />
 
           {/* Column Mapping */}
-          <fieldset className="properties-aria">
-            <legend className="fieldset-legend">Column Mapping (JSON)</legend>
-            <div className="react-aria-control react-aria-Group">
-              <div style={{ flex: 1 }}>
-                <textarea
-                  className={`control-input ${pendingColumnMapping ? "field-modified" : ""}`}
-                  value={localColumnMapping}
-                  onChange={(e) => handleColumnMappingInput(e.target.value)}
-                  placeholder={(() => {
-                    // 데이터가 있으면 실제 키를 기반으로 placeholder 생성
-                    if (pendingData && pendingData.length > 0) {
-                      const firstItem = pendingData[0] as Record<string, unknown>;
-                      const keys = Object.keys(firstItem);
-                      const exampleMapping: ColumnMapping = {};
+          <PropertyInput
+            label="Column Mapping (JSON)"
+            icon={Columns}
+            value={localColumnMapping}
+            onChange={(value) => handleColumnMappingInput(value)}
+            placeholder={(() => {
+              // 데이터가 있으면 실제 키를 기반으로 placeholder 생성
+              if (pendingData && pendingData.length > 0) {
+                const firstItem = pendingData[0] as Record<string, unknown>;
+                const keys = Object.keys(firstItem);
+                const exampleMapping: ColumnMapping = {};
 
-                      keys.slice(0, 3).forEach((key) => { // 처음 3개 키만 예제로 사용
-                        exampleMapping[key] = {
-                          key: key,
-                          label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
-                          type: typeof firstItem[key] === 'number' ? 'number' :
-                            typeof firstItem[key] === 'boolean' ? 'boolean' :
-                              typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
-                          sortable: true,
-                          width: 150
-                        };
-                      });
+                keys.slice(0, 3).forEach((key) => { // 처음 3개 키만 예제로 사용
+                  exampleMapping[key] = {
+                    key: key,
+                    label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                    type: typeof firstItem[key] === 'number' ? 'number' :
+                      typeof firstItem[key] === 'boolean' ? 'boolean' :
+                        typeof firstItem[key] === 'object' && firstItem[key] instanceof Date ? 'date' : 'string',
+                    sortable: true,
+                    width: 150
+                  };
+                });
 
-                      return JSON.stringify(exampleMapping, null, 2);
-                    }
+                return JSON.stringify(exampleMapping, null, 2);
+              }
 
-                    // 기본 placeholder
-                    return `{
+              // 기본 placeholder
+              return `{
   "id": { "key": "id", "label": "ID", "type": "number", "width": 150 },
   "name": { "key": "name", "label": "이름", "type": "string", "width": 150 },
   "active": { "key": "active", "label": "활성", "type": "boolean", "width": 150 }
 }`;
-                  })()}
-                  rows={8}
-                />
-              </div>
-            </div>
-          </fieldset>
+            })()}
+            multiline
+            className={pendingColumnMapping ? "field-modified" : ""}
+          />
 
           {/* Status Messages */}
           {error && <div className="error-message">⚠️ {error}</div>}
@@ -443,38 +434,13 @@ export function StaticDataEditor({
           </div>
         </>
       ) : (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Static Value</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-text"
-                aria-hidden="true"
-              >
-                <path d="M17 6.1H3" />
-                <path d="M21 12.1H3" />
-                <path d="M15.1 18H3" />
-              </svg>
-            </label>
-            <TextField>
-              <Input
-                className="control-input"
-                placeholder="정적 값 입력"
-                value={(config as StaticValueConfig).value?.toString() || ""}
-                onChange={(e) => handleValueChange(e.target.value)}
-              />
-            </TextField>
-          </div>
-        </fieldset>
+        <PropertyInput
+          label="Static Value"
+          icon={Type}
+          value={(config as StaticValueConfig).value?.toString() || ""}
+          placeholder="정적 값 입력"
+          onChange={(value) => handleValueChange(value)}
+        />
       )}
     </div>
   );
