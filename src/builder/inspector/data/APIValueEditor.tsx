@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { TextField, Label, Input } from "react-aria-components";
+import { Link, Route, Send, Map, Settings, Lock } from "lucide-react";
+import { PropertyInput, PropertySelect } from "../components";
 import { APIValueConfig } from "../types";
 
 interface APIValueEditorProps {
@@ -38,84 +39,78 @@ export function APIValueEditor({ config, onChange }: APIValueEditorProps) {
 
   return (
     <div className="api-value-editor component-props">
-      <TextField className="field">
-        <Label>Base URL</Label>
-        <Input
-          type="text"
-          placeholder="https://api.example.com"
-          value={config.baseUrl || ""}
-          onChange={(e) => onChange({ ...config, baseUrl: e.target.value })}
-        />
-      </TextField>
+      {/* Base URL */}
+      <PropertyInput
+        label="Base URL"
+        icon={Link}
+        value={config.baseUrl || ""}
+        placeholder="https://api.example.com"
+        onChange={(value) => onChange({ ...config, baseUrl: value })}
+      />
 
-      <TextField className="field">
-        <Label>Endpoint</Label>
-        <Input
-          type="text"
-          placeholder="/users/123"
-          value={config.endpoint || ""}
-          onChange={(e) => onChange({ ...config, endpoint: e.target.value })}
-        />
-      </TextField>
+      {/* Endpoint */}
+      <PropertyInput
+        label="Endpoint"
+        icon={Route}
+        value={config.endpoint || ""}
+        placeholder="/users/123"
+        onChange={(value) => onChange({ ...config, endpoint: value })}
+      />
 
-      <TextField className="field">
-        <Label>Method</Label>
-        <Input
-          type="text"
-          placeholder="GET"
-          value={config.method || "GET"}
-          onChange={(e) =>
-            onChange({
-              ...config,
-              method: (e.target.value as "GET" | "POST") || "GET",
-            })
-          }
-        />
-      </TextField>
+      {/* HTTP Method */}
+      <PropertySelect
+        label="HTTP Method"
+        icon={Send}
+        value={config.method || "GET"}
+        options={[
+          { value: "GET", label: "GET" },
+          { value: "POST", label: "POST" },
+        ]}
+        onChange={(key: string) =>
+          onChange({ ...config, method: key as "GET" | "POST" })
+        }
+      />
 
-      <TextField className="field">
-        <Label>Result Path</Label>
-        <Input
-          type="text"
-          placeholder="data.user"
-          value={resultPathText}
-          onChange={(e) => setResultPathText(e.target.value)}
-          onBlur={() =>
-            onChange({
-              ...config,
-              dataMapping: { resultPath: resultPathText },
-            })
-          }
-        />
-      </TextField>
+      {/* Result Path */}
+      <PropertyInput
+        label="Result Path"
+        icon={Map}
+        value={resultPathText}
+        placeholder="data.user"
+        onChange={(value) => {
+          setResultPathText(value);
+          onChange({
+            ...config,
+            dataMapping: { resultPath: value },
+          });
+        }}
+      />
 
-      <div className="json-field">
-        <Label>Request Parameters (JSON)</Label>
-        <textarea
-          className="json-textarea"
-          placeholder='{"page": 1, "limit": 10}'
-          value={paramsText}
-          onChange={(e) => setParamsText(e.target.value)}
-          rows={4}
-        />
-        <button onClick={handleConfirmParams} className="confirm-button">
-          ✓ Confirm Params
-        </button>
-      </div>
+      {/* Request Parameters (JSON) */}
+      <PropertyInput
+        label="Request Parameters (JSON)"
+        icon={Settings}
+        value={paramsText}
+        placeholder='{"page": 1, "limit": 10}'
+        multiline
+        onChange={(value) => {
+          setParamsText(value);
+          handleConfirmParams();
+        }}
+      />
 
-      <div className="json-field">
-        <Label>Request Headers (JSON)</Label>
-        <textarea
-          className="json-textarea"
-          placeholder='{"Authorization": "Bearer token"}'
-          value={headersText}
-          onChange={(e) => setHeadersText(e.target.value)}
-          rows={4}
-        />
-        <button onClick={handleConfirmHeaders} className="confirm-button">
-          ✓ Confirm Headers
-        </button>
-      </div>
+      {/* Request Headers (JSON) */}
+      <PropertyInput
+        label="Request Headers (JSON)"
+        icon={Lock}
+        value={headersText}
+        placeholder='{"Authorization": "Bearer token"}'
+        multiline
+        onChange={(value) => {
+          setHeadersText(value);
+          handleConfirmHeaders();
+        }}
+      />
     </div>
   );
 }

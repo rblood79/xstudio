@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { TextField, Input } from "react-aria-components";
-import { Table as TableIcon, ArrowUpDown } from "lucide-react";
-import { PropertySelect } from "../components";
+import { Table as TableIcon, ArrowUpDown, Hash } from "lucide-react";
+import { PropertySelect, PropertyInput } from "../components";
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
@@ -278,41 +277,15 @@ export function SupabaseCollectionEditor({
 
       {/* 제한 설정 */}
       {localTable && (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Limit (Optional)</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-hash"
-                aria-hidden="true"
-              >
-                <line x1="4" x2="20" y1="9" y2="9" />
-                <line x1="4" x2="20" y1="15" y2="15" />
-                <line x1="10" x2="8" y1="3" y2="21" />
-                <line x1="16" x2="14" y1="3" y2="21" />
-              </svg>
-            </label>
-            <TextField
-              type="number"
-              value={localLimit}
-              onChange={(value) => setLocalLimit(value)}
-            >
-              <Input
-                className={`control-input ${limitChanged ? "field-modified" : ""}`}
-                placeholder="No limit"
-              />
-            </TextField>
-          </div>
-        </fieldset>
+        <PropertyInput
+          label="Limit (Optional)"
+          icon={Hash}
+          type="number"
+          value={localLimit}
+          placeholder="No limit"
+          onChange={(value) => setLocalLimit(value)}
+          className={limitChanged ? "field-modified" : ""}
+        />
       )}
 
       {/* Status Messages */}

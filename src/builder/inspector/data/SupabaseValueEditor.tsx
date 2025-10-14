@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  Select,
-  SelectValue,
-  ListBox,
-  ListBoxItem,
-  Popover,
-} from "react-aria-components";
-import { Button } from "../../components/list";
+import { Table as TableIcon, Columns } from "lucide-react";
+import { PropertySelect } from "../components";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseValueConfig } from "../types";
 
@@ -89,138 +83,32 @@ export function SupabaseValueEditor({
   return (
     <div className="supabase-value-editor component-props">
       {/* 테이블 선택 */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Table</legend>
-        <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-table"
-              aria-hidden="true"
-            >
-              <path d="M12 3v18" />
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M3 9h18" />
-              <path d="M3 15h18" />
-            </svg>
-          </label>
-          <Select
-            selectedKey={config.table || ""}
-            onSelectionChange={(key) => handleTableChange(key as string)}
-          >
-            <Button>
-              <SelectValue />
-              <span aria-hidden="true" className="select-chevron">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-down"
-                  aria-hidden="true"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </span>
-            </Button>
-            <Popover>
-              <ListBox>
-                {loading && (
-                  <ListBoxItem id="loading" isDisabled>
-                    Loading tables...
-                  </ListBoxItem>
-                )}
-                {!loading && tables.length === 0 && (
-                  <ListBoxItem id="empty" isDisabled>
-                    No tables found
-                  </ListBoxItem>
-                )}
-                {!loading &&
-                  tables.length > 0 &&
-                  tables.map((table) => (
-                    <ListBoxItem key={table} id={table}>
-                      {table}
-                    </ListBoxItem>
-                  ))}
-              </ListBox>
-            </Popover>
-          </Select>
-        </div>
-      </fieldset>
+      <PropertySelect
+        icon={TableIcon}
+        label="Table"
+        value={config.table || ""}
+        options={
+          loading
+            ? [{ value: "loading", label: "Loading tables..." }]
+            : tables.length === 0
+              ? [{ value: "empty", label: "No tables found" }]
+              : tables.map((table) => ({ value: table, label: table }))
+        }
+        onChange={(key: string) => handleTableChange(key)}
+      />
 
       {/* 컬럼 선택 */}
       {config.table && columns.length > 0 && (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Column</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-columns"
-                aria-hidden="true"
-              >
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M12 3v18" />
-              </svg>
-            </label>
-            <Select
-              selectedKey={config.column || ""}
-              onSelectionChange={(key) => handleColumnChange(key as string)}
-            >
-              <Button>
-                <SelectValue />
-                <span aria-hidden="true" className="select-chevron">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-chevron-down"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </span>
-              </Button>
-              <Popover>
-                <ListBox>
-                  <ListBoxItem id="">Select column...</ListBoxItem>
-                  {columns.map((column) => (
-                    <ListBoxItem key={column} id={column}>
-                      {column}
-                    </ListBoxItem>
-                  ))}
-                </ListBox>
-              </Popover>
-            </Select>
-          </div>
-        </fieldset>
+        <PropertySelect
+          icon={Columns}
+          label="Column"
+          value={config.column || ""}
+          options={[
+            { value: "", label: "Select column..." },
+            ...columns.map((column) => ({ value: column, label: column })),
+          ]}
+          onChange={(key: string) => handleColumnChange(key)}
+        />
       )}
     </div>
   );
