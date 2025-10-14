@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { TextField, Input } from "react-aria-components";
-import { Database, Send, Link } from "lucide-react";
+import { Database, Send, Link, Settings, Lock, Map } from "lucide-react";
 import { PropertySelect, PropertyInput } from "../components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
@@ -365,63 +365,48 @@ export function APICollectionEditor({
       />
 
       {/* API Parameters */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">API Parameters (JSON)</legend>
-        <div className="react-aria-control react-aria-Group">
-          <div style={{ flex: 1 }}>
-            <textarea
-              className={`control-input ${paramsChanged ? "field-modified" : ""}`}
-              value={localParams}
-              onChange={(e) => setLocalParams(e.target.value)}
-              placeholder={`{
+      <PropertyInput
+        label="API Parameters (JSON)"
+        icon={Settings}
+        value={localParams}
+        onChange={(value) => setLocalParams(value)}
+        placeholder={`{
   "page": 1,
   "limit": 10,
   "sort": "createdAt"
 }`}
-              rows={6}
-            />
-          </div>
-        </div>
-      </fieldset>
+        multiline
+        className={paramsChanged ? "field-modified" : ""}
+      />
 
       {/* Headers */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Headers (JSON)</legend>
-        <div className="react-aria-control react-aria-Group">
-          <div style={{ flex: 1 }}>
-            <textarea
-              className={`control-input ${headersChanged ? "field-modified" : ""}`}
-              value={localHeaders}
-              onChange={(e) => setLocalHeaders(e.target.value)}
-              placeholder={`{
+      <PropertyInput
+        label="Headers (JSON)"
+        icon={Lock}
+        value={localHeaders}
+        onChange={(value) => setLocalHeaders(value)}
+        placeholder={`{
   "Authorization": "Bearer token",
   "Content-Type": "application/json"
 }`}
-              rows={4}
-            />
-          </div>
-        </div>
-      </fieldset>
+        multiline
+        className={headersChanged ? "field-modified" : ""}
+      />
 
       {/* Data Mapping */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Data Mapping (JSON)</legend>
-        <div className="react-aria-control react-aria-Group">
-          <div style={{ flex: 1 }}>
-            <textarea
-              className={`control-input ${dataMappingChanged ? "field-modified" : ""}`}
-              value={localDataMapping}
-              onChange={(e) => setLocalDataMapping(e.target.value)}
-              placeholder={`{
+      <PropertyInput
+        label="Data Mapping (JSON)"
+        icon={Map}
+        value={localDataMapping}
+        onChange={(value) => setLocalDataMapping(value)}
+        placeholder={`{
   "resultPath": "data.items",
   "idKey": "id",
   "totalKey": "data.total"
 }`}
-              rows={6}
-            />
-          </div>
-        </div>
-      </fieldset>
+        multiline
+        className={dataMappingChanged ? "field-modified" : ""}
+      />
 
       {/* Action Buttons */}
       <div className="action-buttons">
