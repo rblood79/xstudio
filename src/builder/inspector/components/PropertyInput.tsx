@@ -1,6 +1,7 @@
 import React from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
 
+
 interface PropertyInputProps {
     label: string;
     value: string | number;
@@ -34,7 +35,7 @@ export function PropertyInput({
         <PropertyFieldset legend={label} icon={icon} className={className}>
             {multiline ? (
                 <textarea
-                    className='control-input resize-y' // Added resize-y for vertical resizing
+                    className='react-aria-Textarea resize-y' // Added resize-y for vertical resizing
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
@@ -42,7 +43,7 @@ export function PropertyInput({
                 />
             ) : (
                 <input
-                    className='control-input'
+                    className='react-aria-Input'
                     type={type}
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}

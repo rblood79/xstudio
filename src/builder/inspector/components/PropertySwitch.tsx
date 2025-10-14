@@ -1,6 +1,7 @@
 import React from 'react';
-import { PropertyFieldset } from './PropertyFieldset';
+
 import { Switch } from '../../components/list';
+import { PropertyFieldset } from './PropertyFieldset';
 
 interface PropertySwitchProps {
   label: string;
@@ -24,6 +25,7 @@ export function PropertySwitch({
   return (
     <PropertyFieldset legend={label} icon={icon} className={className}>
       <Switch
+        className={"react-aria-Switch"}
         isSelected={isSelected}
         onChange={(val) => onChange(val)}
       >
