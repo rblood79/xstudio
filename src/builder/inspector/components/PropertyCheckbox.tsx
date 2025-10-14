@@ -24,6 +24,7 @@ export function PropertyCheckbox({
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
             <Checkbox
+                className={"react-aria-Checkbox"}
                 isSelected={isSelected}
                 onChange={(val) => onChange(val)}
             >

@@ -1,6 +1,6 @@
 import { Type, PointerOff, Parentheses } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
+import { PropertyInput, PropertySwitch, PropertySelect } from '../../components';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
@@ -21,7 +21,7 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 icon={Type}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
                 isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}

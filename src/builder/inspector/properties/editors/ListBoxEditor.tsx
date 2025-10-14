@@ -11,7 +11,7 @@ import {
   Binary,
   FileText,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components";
+import { PropertyInput, PropertySelect, PropertyCheckbox, PropertySwitch } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
@@ -214,7 +214,7 @@ export function ListBoxEditor({
         />
 
         {/* 빈 선택 허용 안함 설정 */}
-        <PropertyCheckbox
+        <PropertySwitch
           label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
           isSelected={Boolean(currentProps.disallowEmptySelection)}
           onChange={(checked) => updateProp("disallowEmptySelection", checked)}
@@ -222,7 +222,7 @@ export function ListBoxEditor({
         />
 
         {/* 비활성화 설정 */}
-        <PropertyCheckbox
+        <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
           onChange={(checked) => updateProp("isDisabled", checked)}
@@ -230,7 +230,7 @@ export function ListBoxEditor({
         />
 
         {/* 자동 포커스 설정 */}
-        <PropertyCheckbox
+        <PropertySwitch
           label={PROPERTY_LABELS.AUTO_FOCUS}
           isSelected={Boolean(currentProps.autoFocus)}
           onChange={(checked) => updateProp("autoFocus", checked)}
@@ -259,7 +259,7 @@ export function ListBoxEditor({
                 <span className="tab-title">
                   {String(
                     (item.props as Record<string, unknown>).label ||
-                      `Item ${index + 1}`
+                    `Item ${index + 1}`
                   )}
                 </span>
                 <button
