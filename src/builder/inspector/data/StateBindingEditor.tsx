@@ -1,5 +1,7 @@
 import React from "react";
-import { TextField, Input, Button } from "react-aria-components";
+import { Database, Filter, Workflow } from "lucide-react";
+import { Button } from "../../components/list";
+import { PropertyInput } from "../components";
 import type {
   DataBindingType,
   StateCollectionConfig,
@@ -48,122 +50,49 @@ export function StateBindingEditor({
   return (
     <div className="state-binding-editor component-props">
       {/* Store Path */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Store Path</legend>
-        <div className="react-aria-control react-aria-Group">
-          <label className="control-label">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-gray-400)"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-database"
-              aria-hidden="true"
-            >
-              <ellipse cx="12" cy="5" rx="9" ry="3" />
-              <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-              <path d="M3 12A9 3 0 0 0 21 12" />
-            </svg>
-          </label>
-          <TextField
-            value={localConfig.storePath || ""}
-            onChange={(value) => {
-              setLocalConfig({
-                ...localConfig,
-                storePath: value,
-              });
-            }}
-          >
-            <Input className="control-input" placeholder="예: userStore.users" />
-          </TextField>
-        </div>
-      </fieldset>
+      <PropertyInput
+        label="Store Path"
+        icon={Database}
+        value={localConfig.storePath || ""}
+        placeholder="예: userStore.users"
+        onChange={(value) => {
+          setLocalConfig({
+            ...localConfig,
+            storePath: value,
+          });
+        }}
+      />
 
       {/* Selector for Collection */}
       {isCollection && collectionConfig && (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Selector (Optional)</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-filter"
-                aria-hidden="true"
-              >
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-            </label>
-            <TextField
-              value={collectionConfig.selector || ""}
-              onChange={(value) => {
-                setLocalConfig({
-                  ...collectionConfig,
-                  selector: value,
-                });
-              }}
-            >
-              <Input
-                className="control-input"
-                placeholder="예: (users) => users.filter(u => u.active)"
-              />
-            </TextField>
-          </div>
-        </fieldset>
+        <PropertyInput
+          label="Selector (Optional)"
+          icon={Filter}
+          value={collectionConfig.selector || ""}
+          placeholder="예: (users) => users.filter(u => u.active)"
+          onChange={(value) => {
+            setLocalConfig({
+              ...collectionConfig,
+              selector: value,
+            });
+          }}
+        />
       )}
 
       {/* Transform for Value */}
       {!isCollection && valueConfig && (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Transform (Optional)</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-workflow"
-                aria-hidden="true"
-              >
-                <rect width="8" height="8" x="3" y="3" rx="2" />
-                <path d="M7 11v4a2 2 0 0 0 2 2h4" />
-                <rect width="8" height="8" x="13" y="13" rx="2" />
-              </svg>
-            </label>
-            <TextField
-              value={valueConfig.transform || ""}
-              onChange={(value) => {
-                setLocalConfig({
-                  ...valueConfig,
-                  transform: value,
-                });
-              }}
-            >
-              <Input
-                className="control-input"
-                placeholder="예: (value) => value.toUpperCase()"
-              />
-            </TextField>
-          </div>
-        </fieldset>
+        <PropertyInput
+          label="Transform (Optional)"
+          icon={Workflow}
+          value={valueConfig.transform || ""}
+          placeholder="예: (value) => value.toUpperCase()"
+          onChange={(value) => {
+            setLocalConfig({
+              ...valueConfig,
+              transform: value,
+            });
+          }}
+        />
       )}
 
       {/* Helper Text */}
