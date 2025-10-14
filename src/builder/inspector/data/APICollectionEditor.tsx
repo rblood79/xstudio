@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { TextField, Input } from "react-aria-components";
-import { Database, Send } from "lucide-react";
-import { PropertySelect } from "../components";
+import { Database, Send, Link } from "lucide-react";
+import { PropertySelect, PropertyInput } from "../components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import type { APICollectionConfig } from "../types";
@@ -214,58 +214,32 @@ export function APICollectionEditor({
 
       {/* Custom URL */}
       {config.baseUrl === "CUSTOM" && (
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Custom Base URL</legend>
-          <div className="react-aria-control react-aria-Group">
-            <label className="control-label">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-400)"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-link"
-                aria-hidden="true"
-              >
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-            </label>
-            <TextField>
-              <Input
-                className="control-input"
-                placeholder="https://api.example.com"
-                value={config.customUrl || ""}
-                onChange={(e) => {
-                  const newCustomUrl = e.target.value;
+        <PropertyInput
+          label="Custom Base URL"
+          icon={Link}
+          value={config.customUrl || ""}
+          placeholder="https://api.example.com"
+          onChange={(value) => {
+            // Custom URL이 실제로 변경되었는지 확인
+            if (value !== config.customUrl) {
+              // Custom URL이 변경되면 endpoint와 관련 데이터 초기화
+              setLocalEndpoint("");
+              setAvailableColumns([]);
+              setLocalColumns([]);
+              setLoadError(null);
 
-                  // Custom URL이 실제로 변경되었는지 확인
-                  if (newCustomUrl !== config.customUrl) {
-                    // Custom URL이 변경되면 endpoint와 관련 데이터 초기화
-                    setLocalEndpoint("");
-                    setAvailableColumns([]);
-                    setLocalColumns([]);
-                    setLoadError(null);
+              onChange({
+                ...config,
+                customUrl: value,
+                endpoint: "", // endpoint 초기화
+                columns: [], // 컬럼 초기화
+                availableColumns: [], // 전체 컬럼 목록 초기화
+              });
 
-                    onChange({
-                      ...config,
-                      customUrl: newCustomUrl,
-                      endpoint: "", // endpoint 초기화
-                      columns: [], // 컬럼 초기화
-                      availableColumns: [], // 전체 컬럼 목록 초기화
-                    });
-
-                    console.log("✅ Custom URL 변경으로 Endpoint와 컬럼 초기화됨");
-                  }
-                }}
-              />
-            </TextField>
-          </div>
-        </fieldset>
+              console.log("✅ Custom URL 변경으로 Endpoint와 컬럼 초기화됨");
+            }
+          }}
+        />
       )}
 
       {/* Endpoint Path */}

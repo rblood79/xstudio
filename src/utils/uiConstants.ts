@@ -7,7 +7,7 @@
  * 대부분의 UI 아이콘에 적용되는 기본 스타일
  */
 export const iconProps = {
-    color: 'var(--color-gray-400)',
+    color: 'var(--color-gray-500)',
     stroke: 1,
     size: 16
 };
@@ -37,7 +37,7 @@ export const iconEditProps = {
  * 인스펙터 관련 아이콘에 적용되는 스타일
  */
 export const iconInspector = {
-    color: 'var(--color-gray-300)',
+    color: 'var(--color-gray-400)',
     stroke: 1,
     size: 14
 };
