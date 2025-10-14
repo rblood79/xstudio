@@ -3,9 +3,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Button,
-  Select,
-  SelectItem,
 } from "../../components/list";
+import { PropertySelect } from "../components";
 import { SemanticClassPicker } from "../styles/SemanticClassPicker";
 import { CSSVariableEditor } from "../styles/CSSVariableEditor";
 import { PreviewPanel } from "../styles/PreviewPanel";
@@ -33,6 +32,7 @@ import {
   AlignEndVertical,
   AlignStartHorizontal,
   AlignEndHorizontal,
+  Type,
 } from "lucide-react";
 
 export interface StyleSectionProps {
@@ -428,32 +428,23 @@ export function StyleSection({ element }: StyleSectionProps) {
       </div>
 
       <div className="section-content">
-        <fieldset className="typography-font">
-          <legend className="fieldset-legend">Font</legend>
-          <div className="font-select-control react-aria-Group">
-            <Select
-              items={[
-                { id: "Arial", label: "Arial" },
-                { id: "Helvetica", label: "Helvetica" },
-                { id: "Times New Roman", label: "Times New Roman" },
-                { id: "Georgia", label: "Georgia" },
-                { id: "Courier New", label: "Courier New" },
-                { id: "Verdana", label: "Verdana" },
-              ]}
-            >
-              {(item) => <SelectItem>{item.label}</SelectItem>}
-            </Select>
-          </div>
-          <div className="fieldset-actions">
-            <Button>
-              <EllipsisVertical
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
-          </div>
-        </fieldset>
+        <PropertySelect
+          icon={Type}
+          label="Font"
+          value="Arial"
+          options={[
+            { value: "Arial", label: "Arial" },
+            { value: "Helvetica", label: "Helvetica" },
+            { value: "Times New Roman", label: "Times New Roman" },
+            { value: "Georgia", label: "Georgia" },
+            { value: "Courier New", label: "Courier New" },
+            { value: "Verdana", label: "Verdana" },
+          ]}
+          onChange={(key: string) => {
+            console.log("Font 변경:", key);
+            // TODO: 폰트 변경 로직 추가
+          }}
+        />
       </div>
 
       <PreviewPanel

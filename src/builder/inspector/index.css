@@ -367,6 +367,8 @@
         background-color: var(--color-gray-100);
         border-radius: var(--radius-md);
         width: 100%;
+
+        
         .react-aria-Select{
           width: 100%;
           padding: 0;
@@ -375,8 +377,8 @@
             background-color: transparent;
             border-color: transparent;
             span[aria-hidden]{
-              width: var(--text-lg);
-              height: var(--text-lg);
+              width: var(--text-xl);
+              height: var(--text-xl);
               border-radius: var(--radius-sm);
             }
           }
