@@ -86,3 +86,112 @@
 .footer {
     grid-area: footer;
 }
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+
+    #root {
+        height: 100dvh;
+    }
+}
+
+.dashboard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    .header {
+        width: 100%;
+    }
+
+    .main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        max-width: var(--container-6xl);
+        min-width: var(--container-3xl);
+
+        gap: var(--spacing-md);
+
+        .add-project-form {
+            width: 200px;
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+        }
+
+        .projects-grid {
+
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: var(--spacing-md);
+
+            .project-card {
+                border: 1px solid var(--color-border);
+                border-radius: var(--radius-2xl);
+                padding: var(--spacing-md);
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--spacing-sm);
+
+                .icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 32px;
+                    height: 32px;
+                    border: 1px solid var(--color-border);
+                    border-radius: var(--radius-3xl);
+                }
+
+                .content {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+
+                    .title {
+                        font-size: var(--text-sm);
+                        line-height: var(--text-sm--line-height);
+                        font-weight: var(--font-weight-medium);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    .description {
+                        font-size: var(--text-xs);
+                        line-height: var(--text-xs--line-height);
+                        color: var(--color-gray-500);
+                    }
+                }
+
+                .project-actions {
+                    display: flex;
+                    flex-direction: row;
+                    gap: var(--spacing-2xs);
+                    flex-shrink: 0;
+
+                    button {
+                        padding: 0 var(--spacing-sm);
+                        font-size: var(--text-2xs);
+                    }
+                }
+            }
+        }
+    }
+
+    .footer {
+        width: 100%;
+    }
+
+
+
+}

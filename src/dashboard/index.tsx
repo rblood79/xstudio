@@ -4,6 +4,9 @@ import { projectsApi, pagesApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
 import { ElementUtils } from '../utils/elementUtils';
 import { Button, TextField } from '../builder/components/list';
+import {
+  SquarePlus,
+} from "lucide-react";
 import "./index.css";
 
 function Dashboard() {
@@ -116,50 +119,61 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <h1>XStudio Dashboard</h1>
+      <header className="header"><h1>XStudio Dashboard</h1></header>
+
 
       {error && (
         <div className="error-message">
           {error}
         </div>
       )}
+      <main className="main">
+        <form onSubmit={handleAddProject} className="add-project-form">
+          <TextField
+            type="text"
+            value={newProjectName}
+            onChange={(value) => setNewProjectName(value)}
+            placeholder="New Project"
+            isDisabled={loading}
+          />
+          <Button
+            type="submit"
+            isDisabled={loading || !newProjectName.trim()}
+            children={loading ? 'Creating...' : 'Add Project'}
+          />
+        </form>
 
-      <form onSubmit={handleAddProject} className="add-project-form">
-        <TextField
-          label="새 프로젝트 이름"
-          type="text"
-          value={newProjectName}
-          onChange={(value) => setNewProjectName(value)}
-          placeholder="새 프로젝트 이름"
-          isDisabled={loading}
-        />
-        <Button
-          type="submit"
-          isDisabled={loading || !newProjectName.trim()}
-          children={loading ? '생성 중...' : '프로젝트 추가'}
-        />
-      </form>
-
-      <div className="projects-grid">
-        {projects.map((project) => (
-          <div key={project.id} className="project-card">
-            <h3>{project.name}</h3>
-            <p>생성일: {new Date(project.created_at).toLocaleDateString()}</p>
-            <div className="project-actions">
-              <Button
-                onPress={() => navigate(`/builder/${project.id}`)}
-                isDisabled={loading}
-                children="편집"
-              />
-              <Button
-                onPress={() => handleDeleteProject(project.id)}
-                isDisabled={loading}
-                children="삭제"
-              />
+        <div className="projects-grid">
+          {projects.map((project) => (
+            <div key={project.id} className="project-card">
+              <div className="icon">
+                <SquarePlus size={16} color="var(--color-primary-600)" />
+              </div>
+              <div className="content">
+                <h3 className="title">{project.name}</h3>
+                <p className="description">생성일: {new Date(project.created_at).toLocaleDateString()}</p>
+              </div>
+              <div className="project-actions">
+                <Button
+                  onPress={() => navigate(`/builder/${project.id}`)}
+                  isDisabled={loading}
+                  children="Edit"
+                  variant="surface"
+                />
+                <Button
+                  onPress={() => handleDeleteProject(project.id)}
+                  isDisabled={loading}
+                  children="Del"
+                  variant="ghost"
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </main>
+      <footer className="footer">
+        <p>footer</p>
+      </footer>
     </div>
   );
 }
