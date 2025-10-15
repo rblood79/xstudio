@@ -390,7 +390,6 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        max-height: 29px;
 
         .react-aria-Checkbox {
           width: 100%;

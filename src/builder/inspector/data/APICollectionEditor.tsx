@@ -247,7 +247,7 @@ export function APICollectionEditor({
       <PropertyFieldset legend="Endpoint Path" icon={Route}>
         <TextField className="api-endpoint-path">
           <Input
-            className={`control-input ${endpointChanged ? "field-modified" : ""}`}
+            className={`react-aria-Input ${endpointChanged ? "field-modified" : ""}`}
             placeholder={
               config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA"
                 ? "/users, /posts, /comments, /albums, /photos, /todos"

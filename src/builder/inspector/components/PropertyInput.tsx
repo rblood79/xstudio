@@ -35,7 +35,7 @@ export function PropertyInput({
         <PropertyFieldset legend={label} icon={icon} className={className}>
             {multiline ? (
                 <textarea
-                    className='react-aria-Textarea resize-y' // Added resize-y for vertical resizing
+                    className='react-aria-TextArea resize-y' // Added resize-y for vertical resizing
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}

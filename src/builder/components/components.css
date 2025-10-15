@@ -119,24 +119,29 @@
     margin: 0;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    background: var(--color-white);
+    background: var(--color-gray-50);
     font-size: var(--text-sm);
     color: var(--field-text-color);
     line-height: calc(var(--text-2xs) * 2.2);
+    width: 100%;
+    padding-inline-start: 27px;
 
     &[data-focused] {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: -1px;
     }
-  }
 
-  /* Input 컴포넌트 스타일 종료 */
-  .react-aria-Input,
-  .react-aria-TextArea {
     &[data-invalid] {
       border-color: var(--invalid-color);
     }
+
+    &[data-disabled] {
+      border-color: var(--border-color-disabled);
+      color: var(--text-color-disabled);
+    }
+    
   }
+
 
   /* FieldError 컴포넌트 스타일 시작 */
   .react-aria-FieldError {
@@ -147,15 +152,6 @@
   /* FieldError 컴포넌트 스타일 종료 */
   [slot="description"] {
     font-size: 12px;
-  }
-
-  /* Input 컴포넌트 스타일 시작 */
-  .react-aria-Input,
-  .react-aria-TextArea {
-    &[data-disabled] {
-      border-color: var(--border-color-disabled);
-      color: var(--text-color-disabled);
-    }
   }
 
   /* Label 컴포넌트 스타일 시작 */
@@ -1997,29 +1993,7 @@
       width: fit-content;
     }
 
-    /*.react-aria-Input,
-        .react-aria-TextArea {
-            padding: var(--spacing-2xs);
-            margin: 0;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            background: var(--field-background);
-            font-size: var(--text-sm);
-            color: var(--field-text-color);
-            flex: auto;
-
-            &[data-focused] {
-                outline: 2px solid var(--focus-ring-color);
-                outline-offset: -1px;
-            }
-        }
-
-        .react-aria-Input,
-        .react-aria-TextArea {
-            &[data-invalid] {
-                border-color: var(--invalid-color);
-            }
-        }*/
+    
 
     .react-aria-FieldError {
       font-size: var(--text-xs);
@@ -2028,15 +2002,7 @@
 
     [slot="description"] {
       font-size: var(--text-xs);
-    }
-
-    .react-aria-Input,
-    .react-aria-TextArea {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
-      }
-    }
+    } 
   }
 
   /* ListBoxItem 확장 스타일 */

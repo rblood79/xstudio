@@ -124,11 +124,11 @@ export function StyleSection({ element }: StyleSectionProps) {
           <legend className="fieldset-legend">Size</legend>
           <div className="size-control-width react-aria-Group">
             <label className="control-label">W</label>
-            <input className="control-input" type="text" placeholder="auto" />
+            <input className="react-aria-Input" type="text" placeholder="auto" />
           </div>
           <div className="size-control-height react-aria-Group">
             <label className="control-label">H</label>
-            <input className="control-input" type="text" placeholder="auto" />
+            <input className="react-aria-Input" type="text" placeholder="auto" />
           </div>
           <div className="fieldset-actions">
             <Button>
@@ -145,11 +145,11 @@ export function StyleSection({ element }: StyleSectionProps) {
           <legend className="fieldset-legend">Position</legend>
           <div className="position-control-x react-aria-Group">
             <label className="control-label">X</label>
-            <input className="control-input"></input>
+            <input className="react-area-Input" type="text" placeholder="auto" />
           </div>
           <div className="position-control-y react-aria-Group">
             <label className="control-label">Y</label>
-            <input className="control-input"></input>
+            <input className="react-area-Input" type="text" placeholder="auto" />
           </div>
           <div className="fieldset-actions">
             <Button>
@@ -277,7 +277,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                 strokeWidth={iconProps.stroke}
               />
             </label>
-            <input className="control-input"></input>
+            <input className="react=area-Input"></input>
           </div>
         </fieldset>
 
@@ -292,7 +292,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                   strokeWidth={iconProps.stroke}
                 />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <fieldset className="spacing-margin">
@@ -305,7 +305,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                   strokeWidth={iconProps.stroke}
                 />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <div className="fieldset-actions">
@@ -340,7 +340,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             <label className="control-label">
               <Square color={iconProps.color} size={18} strokeWidth={0} />
             </label>
-            <input className="control-input" />
+            <input className="react-area-Input" />
           </div>
           <div className="fieldset-actions">
             <Button>
@@ -359,7 +359,7 @@ export function StyleSection({ element }: StyleSectionProps) {
               <label className="control-label">
                 <Square color={iconProps.color} size={18} strokeWidth={0} />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <fieldset className="style-border-width">
@@ -373,7 +373,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                   size={iconProps.size}
                 />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <fieldset className="style-border-radius">
@@ -386,7 +386,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                   size={iconProps.size}
                 />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <fieldset className="style-border-style">
@@ -399,7 +399,7 @@ export function StyleSection({ element }: StyleSectionProps) {
                   size={iconProps.size}
                 />
               </label>
-              <input className="control-input" />
+              <input className="react-area-Input" />
             </div>
           </fieldset>
           <div className="fieldset-actions">
