@@ -3,7 +3,7 @@ import { PropertyFieldset } from './PropertyFieldset';
 
 
 interface PropertyInputProps {
-    label: string;
+    label?: string;
     value: string | number;
     onChange: (value: string) => void;
     type?: 'text' | 'number' | 'color';

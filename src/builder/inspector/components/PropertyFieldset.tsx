@@ -2,7 +2,7 @@ import React from 'react';
 import { iconProps } from '../../../utils/uiConstants';
 
 interface PropertyFieldsetProps {
-    legend: string;
+    legend?: string;
     icon?: React.ComponentType<{
         color?: string;
         size?: number;
@@ -15,7 +15,7 @@ interface PropertyFieldsetProps {
 export function PropertyFieldset({ legend, icon: Icon, children, className = '' }: PropertyFieldsetProps) {
     return (
         <fieldset className={`properties-aria ${className}`}>
-            <legend className='fieldset-legend'>{legend}</legend>
+            {legend && <legend className='fieldset-legend'>{legend}</legend>}
             <div className='react-aria-control react-aria-Group'>
                 {Icon && (
                     <label className='control-label'>

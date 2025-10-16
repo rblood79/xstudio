@@ -4,7 +4,7 @@ import {
   ToggleButtonGroup,
   Button,
 } from "../../components/list";
-import { PropertySelect } from "../components";
+import { PropertySelect, PropertyInput } from "../components";
 import { SemanticClassPicker } from "../styles/SemanticClassPicker";
 import { CSSVariableEditor } from "../styles/CSSVariableEditor";
 import { PreviewPanel } from "../styles/PreviewPanel";
@@ -120,37 +120,22 @@ export function StyleSection({ element }: StyleSectionProps) {
           </div>
         </fieldset>
 
-        <fieldset className="transform-size">
-          <legend className="fieldset-legend">Size</legend>
-          <div className="size-control-width react-aria-Group">
-            <label className="control-label">W</label>
-            <input className="react-aria-Input" type="text" placeholder="auto" />
-          </div>
-          <div className="size-control-height react-aria-Group">
-            <label className="control-label">H</label>
-            <input className="react-aria-Input" type="text" placeholder="auto" />
-          </div>
-          <div className="fieldset-actions">
-            <Button>
-              <EllipsisVertical
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
-          </div>
-        </fieldset>
+        <div className="transform-size">
 
-        <fieldset className="transform-position">
-          <legend className="fieldset-legend">Position</legend>
-          <div className="position-control-x react-aria-Group">
-            <label className="control-label">X</label>
-            <input className="react-area-Input" type="text" placeholder="auto" />
-          </div>
-          <div className="position-control-y react-aria-Group">
-            <label className="control-label">Y</label>
-            <input className="react-area-Input" type="text" placeholder="auto" />
-          </div>
+          <PropertyInput
+            icon={Square}
+            label="Width"
+            value={element.cssVariables?.width || 'auto'}
+            onChange={(value) => updateCSSVariables({ width: value })}
+            placeholder="auto"
+          />
+          <PropertyInput
+            icon={Square}
+            label="Height"
+            value={element.cssVariables?.['height'] || 'auto'}
+            onChange={(value) => updateCSSVariables({ height: value })}
+            placeholder="auto"
+          />
           <div className="fieldset-actions">
             <Button>
               <EllipsisVertical
@@ -160,7 +145,33 @@ export function StyleSection({ element }: StyleSectionProps) {
               />
             </Button>
           </div>
-        </fieldset>
+        </div>
+
+        <div className="transform-position">
+          <PropertyInput
+            icon={Square}
+            label="Left"
+            value={element.cssVariables?.['x'] || 'auto'}
+            onChange={(value) => updateCSSVariables({ x: value })}
+            placeholder="auto"
+          />
+          <PropertyInput
+            icon={Square}
+            label="Top"
+            value={element.cssVariables?.['y'] || 'auto'}
+            onChange={(value) => updateCSSVariables({ y: value })}
+            placeholder="auto"
+          />
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="section-header">
@@ -178,7 +189,6 @@ export function StyleSection({ element }: StyleSectionProps) {
 
       <div className="section-content">
         <fieldset className="layout-direction">
-          <legend className="fieldset-legend">Direction</legend>
           <div className="direction-controls">
             <ToggleButtonGroup aria-label="Flex direction">
               <ToggleButton id="reset">
@@ -269,45 +279,33 @@ export function StyleSection({ element }: StyleSectionProps) {
               </ToggleButton>
             </ToggleButtonGroup>
           </div>
-          <div className="gap-control react-aria-Group">
-            <label className="control-label">
-              <LayoutGrid
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </label>
-            <input className="react=area-Input"></input>
-          </div>
+          <PropertyInput
+            icon={LayoutGrid}
+            //label="Gap"
+            className="gap-control"
+            value={element.cssVariables?.['gap'] || '0'}
+            onChange={(value) => updateCSSVariables({ gap: value })}
+            placeholder="0"
+          />
         </fieldset>
 
         <div className="spacing-controls-container">
-          <fieldset className="spacing-padding">
-            <legend className="fieldset-legend">Padding</legend>
-            <div className="spacing-control react-aria-Group">
-              <label className="control-label">
-                <SquareSquare
-                  color={iconProps.color}
-                  size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
-                />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
-          <fieldset className="spacing-margin">
-            <legend className="fieldset-legend">Margin</legend>
-            <div className="spacing-control react-aria-Group">
-              <label className="control-label">
-                <Frame
-                  color={iconProps.color}
-                  size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
-                />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
+          <PropertyInput
+            icon={SquareSquare}
+            label="Padding"
+            className="spacing-control"
+            value={element.cssVariables?.['padding'] || '0'}
+            onChange={(value) => updateCSSVariables({ padding: value })}
+            placeholder="0"
+          />
+          <PropertyInput
+            icon={Frame}
+            label="Margin"
+            className="spacing-control"
+            value={element.cssVariables?.['margin'] || '0'}
+            onChange={(value) => updateCSSVariables({ margin: value })}
+            placeholder="0"
+          />
           <div className="fieldset-actions">
             <Button>
               <EllipsisVertical
@@ -334,14 +332,14 @@ export function StyleSection({ element }: StyleSectionProps) {
       </div>
 
       <div className="section-content">
-        <fieldset className="style-background">
-          <legend className="fieldset-legend">Background</legend>
-          <div className="color-control react-aria-Group">
-            <label className="control-label">
-              <Square color={iconProps.color} size={18} strokeWidth={0} />
-            </label>
-            <input className="react-area-Input" />
-          </div>
+        <div className="style-background">
+          <PropertyInput
+            icon={Square}
+            label="Background Color"
+            value={element.cssVariables?.['background-color'] || '#FFFFFF'}
+            onChange={(value) => updateCSSVariables({ 'background-color': value })}
+            placeholder="#FFFFFF"
+          />
           <div className="fieldset-actions">
             <Button>
               <EllipsisVertical
@@ -351,57 +349,40 @@ export function StyleSection({ element }: StyleSectionProps) {
               />
             </Button>
           </div>
-        </fieldset>
+        </div>
         <div className="border-controls-container">
-          <fieldset className="style-border">
-            <legend className="fieldset-legend">Border Color</legend>
-            <div className="color-control react-aria-Group">
-              <label className="control-label">
-                <Square color={iconProps.color} size={18} strokeWidth={0} />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
-          <fieldset className="style-border-width">
-            <legend className="fieldset-legend">Border Width</legend>
-
-            <div className="border-width-control react-aria-Group">
-              <label className="control-label">
-                <SquareDashed
-                  color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
-                  size={iconProps.size}
-                />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
-          <fieldset className="style-border-radius">
-            <legend className="fieldset-legend">Border Radius</legend>
-            <div className="border-radius-control react-aria-Group">
-              <label className="control-label">
-                <SquareRoundCorner
-                  color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
-                  size={iconProps.size}
-                />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
-          <fieldset className="style-border-style">
-            <legend className="fieldset-legend">Border Style</legend>
-            <div className="border-style-control react-aria-Group">
-              <label className="control-label">
-                <SquareDashedBottom
-                  color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
-                  size={iconProps.size}
-                />
-              </label>
-              <input className="react-area-Input" />
-            </div>
-          </fieldset>
+          <PropertyInput
+            icon={Square}
+            label="Border Color"
+            className="style-border"
+            value={element.cssVariables?.['border-color'] || '#000000'}
+            onChange={(value) => updateCSSVariables({ 'border-color': value })}
+            placeholder="#000000"
+          />
+          <PropertyInput
+            icon={SquareDashed}
+            label="Border Width"
+            className="style-border-width"
+            value={element.cssVariables?.['border-width'] || '0'}
+            onChange={(value) => updateCSSVariables({ 'border-width': value })}
+            placeholder="0"
+          />
+          <PropertyInput
+            icon={SquareRoundCorner}
+            label="Border Radius"
+            className="style-border-radius"
+            value={element.cssVariables?.['border-radius'] || '0'}
+            onChange={(value) => updateCSSVariables({ 'border-radius': value })}
+            placeholder="0"
+          />
+          <PropertyInput
+            icon={SquareDashedBottom}
+            label="Border Style"
+            className="style-border-style"
+            value={element.cssVariables?.['border-style'] || 'solid'}
+            onChange={(value) => updateCSSVariables({ 'border-style': value })}
+            placeholder="solid"
+          />
           <div className="fieldset-actions">
             <Button>
               <EllipsisVertical

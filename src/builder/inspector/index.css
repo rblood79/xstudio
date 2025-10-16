@@ -17,16 +17,18 @@
         align-items: center;
         justify-content: center;
       }
-      .react-aria-Tabs{
-        .react-aria-TabList{
+
+      .react-aria-Tabs {
+        .react-aria-TabList {
           padding: var(--spacing) var(--spacing-sm) 0 var(--spacing-sm);
           gap: var(--spacing-md);
-          .react-aria-Tab{
+
+          .react-aria-Tab {
             padding: var(--spacing) 0;
           }
         }
       }
-      
+
     }
 
     .empty-state {
@@ -123,6 +125,7 @@
     .style-section,
     .data-section,
     .event-section {
+
       &.empty,
       &.loading {
         display: flex;
@@ -145,6 +148,7 @@
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+
         .section-title {
           padding-left: calc(var(--spacing-sm));
           border-bottom: 0px;
@@ -161,7 +165,7 @@
       }
 
       .section-content {
-        padding: calc(var(--spacing-sm));
+        padding: var(--spacing-md) var(--spacing-sm);
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -173,6 +177,7 @@
         }
 
         .properties-aria {
+          flex: 1;
           display: flex;
           flex-direction: column;
           gap: var(--spacing-sm);
@@ -190,9 +195,6 @@
         }
 
         .transform-alignment,
-        .transform-size,
-        .transform-position,
-        .layout-direction,
         .spacing-controls-container {
           display: grid;
           grid-template-rows: auto 27px;
@@ -210,6 +212,7 @@
             grid-area: input1;
             display: flex;
           }
+
           .alignment-controls-vertical,
           .size-control-height,
           .position-control-y {
@@ -217,7 +220,23 @@
             display: flex;
           }
         }
-        .style-background,
+
+
+        .style-border,
+        .style-border-width,
+        .style-border-radius,
+        .style-border-style,
+        .typography-font {
+          display: grid;
+          grid-template-rows: 12px auto;
+          grid-template-columns: 1fr 1fr 27px;
+          grid-template-areas:
+            "label label label"
+            "input1 input2 icon";
+          gap: 0px;
+        }
+
+
         .typography-font {
           display: grid;
           grid-template-rows: auto 27px;
@@ -233,12 +252,17 @@
           }
         }
 
-        .spacing-controls-container {
+        .spacing-controls-container,
+        .style-background,
+        .transform-size,
+        .transform-position {
           display: flex;
           flex-direction: row;
           gap: 8px;
           align-items: flex-end;
+          justify-content: space-between;
         }
+
         .spacing-padding,
         .spacing-margin {
           display: grid;
@@ -252,11 +276,11 @@
 
         .border-controls-container {
           display: grid;
-          grid-template-rows: repeat(2, 1fr);
+          grid-template-rows: auto auto;
           grid-template-columns: 1fr 1fr 27px;
           grid-template-areas:
-            "input1 input2 icon"
-            "input3 input4 empty";
+            "input1 input2 ."
+            "input3 input4 icon";
           gap: 8px;
 
           .color-control,
@@ -265,9 +289,6 @@
           .border-style-control {
             grid-area: input1;
             display: flex;
-          }
-          .fieldset-actions {
-            align-items: flex-end;
           }
         }
 
@@ -282,29 +303,36 @@
           grid-template-areas:
             "label"
             "input1";
-          gap: 4px 8px;
+          gap: 0px;
         }
+
         .style-border,
         .font-select-control {
           grid-area: input1;
         }
+
         .style-border-width {
           grid-area: input2;
         }
+
         .style-border-radius {
           grid-area: input3;
         }
+
         .style-border-style {
           grid-area: input4;
         }
+
         .fieldset-legend {
           grid-area: label;
           font-size: var(--text-2xs);
           color: var(--color-gray-400);
         }
+
         .fieldset-actions {
           grid-area: icon;
           display: flex;
+
           .react-aria-Button {
             background-color: var(--color-gray-100);
             border-color: transparent;
@@ -329,6 +357,7 @@
             grid-area: input1;
             display: flex;
           }
+
           .direction-alignment-grid {
             grid-area: input2;
 
@@ -342,6 +371,7 @@
               .react-aria-ToggleButton {
                 margin-inline-start: 0;
                 height: 27px;
+
                 .alignment-dot {
                   width: 4px;
                   height: 4px;
@@ -368,15 +398,17 @@
         border-radius: var(--radius-md);
         width: 100%;
 
-        
-        .react-aria-Select{
+
+        .react-aria-Select {
           width: 100%;
           padding: 0;
-          .react-aria-Button{
+
+          .react-aria-Button {
             padding: 0 3px 0 6px;
             background-color: transparent;
             border-color: transparent;
-            span[aria-hidden]{
+
+            span[aria-hidden] {
               width: var(--text-xl);
               height: var(--text-xl);
               border-radius: var(--radius-sm);
@@ -400,24 +432,29 @@
 
         .react-aria-Select {
           width: 100%;
+
           .react-aria-Button {
             padding: 0 3px 0 0;
             background-color: transparent;
             border-color: transparent;
+
             .control-label {
               position: static;
             }
-            span[aria-hidden]{
+
+            span[aria-hidden] {
               width: var(--text-xl);
               height: var(--text-xl);
               border-radius: var(--radius-sm);
             }
           }
+
           .react-aria-SelectValue {
             font-size: var(--text-xs);
             color: var(--color-black);
           }
         }
+
         .react-aria-Switch {
           width: 100%;
           background-color: transparent;
@@ -430,7 +467,8 @@
           padding-inline-start: 27px;
           flex-direction: row-reverse;
           transition: all 0.2s ease;
-          .indicator{
+
+          .indicator {
             width: calc(var(--text-3xl) * 1.25);
             height: var(--text-xl);
             border: var(--spacing-2xs) solid var(--color-gray-200);
@@ -445,8 +483,7 @@
         position: absolute;
         display: block;
         width: 27px;
-        min-width: 27px;
-        height: 27px;
+        height: 25px;
         padding: var(--spacing) var(--spacing);
         text-align: center;
         background-color: transparent;
@@ -457,22 +494,21 @@
         color: var(--color-gray-700);
       }
 
-      input.control-input{
+      input.control-input {
         height: 27px;
       }
-      .react-aria-Input{
-        width: 100%;
-        
+
+      .react-aria-Input {
         background-color: transparent;
         border: 1px solid transparent;
         border-left-width: 0px;
         border-radius: var(--radius-md);
         font-size: var(--text-xs);
         line-height: var(--text-xs--line-height);
-        padding: calc(var(--spacing) * 1.378);
+        padding: calc(var(--spacing) * 1.125);
         padding-inline-start: 27px;
         transition: all 0.2s ease;
-        
+
 
         &:focus {
           outline: none;
@@ -493,6 +529,7 @@
           justify-content: center;
           background-color: transparent;
           border-color: transparent;
+
           &[data-selected] {
             background: var(--color-white);
             border-radius: var(--radius-md);
@@ -506,9 +543,11 @@
         background-color: var(--color-gray-100);
         border-radius: var(--radius-md);
         gap: 0;
+
         .react-aria-Checkbox {
           padding-left: calc(var(--spacing) * 1.5);
-          .checkbox{
+
+          .checkbox {
             width: var(--spacing-lg);
             height: var(--spacing-lg);
             border-color: var(--color-gray-400);
