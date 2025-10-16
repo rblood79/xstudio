@@ -13,6 +13,7 @@ export const PROPERTY_LABELS = {
     READONLY: 'Read Only',
     REQUIRED: 'Required',
     AUTO_FOCUS: 'Auto Focus',
+    INDICATOR: 'Show Selection Indicator',
 
     // Text and content
     TEXT: 'Text',

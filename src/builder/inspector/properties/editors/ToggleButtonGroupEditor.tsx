@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -181,6 +181,14 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     checked={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
+                />
+
+                {/* Indicator 설정 */}
+                <PropertyCheckbox
+                    label={PROPERTY_LABELS.INDICATOR}
+                    checked={Boolean(currentProps.indicator)}
+                    onChange={(checked) => updateProp('indicator', checked)}
+                    icon={Target}
                 />
             </fieldset>
 

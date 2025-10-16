@@ -33,6 +33,9 @@ import {
   AlignStartHorizontal,
   AlignEndHorizontal,
   Type,
+  RulerDimensionLine,
+  ArrowRightFromLine,
+  ArrowDownFromLine,
 } from "lucide-react";
 
 export interface StyleSectionProps {
@@ -60,7 +63,7 @@ export function StyleSection({ element }: StyleSectionProps) {
         <fieldset className="transform-alignment">
           <legend className="fieldset-legend">Alignment</legend>
           <div className="alignment-controls-horizontal">
-            <ToggleButtonGroup aria-label="Flex alignment-vertical">
+            <ToggleButtonGroup aria-label="Flex alignment-vertical" indicator>
               <ToggleButton id="align-vertical-start">
                 <AlignStartVertical
                   color={iconProps.color}
@@ -85,7 +88,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             </ToggleButtonGroup>
           </div>
           <div className="alignment-controls-vertical">
-            <ToggleButtonGroup aria-label="Flex alignment-horizontal">
+            <ToggleButtonGroup aria-label="Flex alignment-horizontal" indicator>
               <ToggleButton id="align-horizontal-start">
                 <AlignStartHorizontal
                   color={iconProps.color}
@@ -121,17 +124,18 @@ export function StyleSection({ element }: StyleSectionProps) {
         </fieldset>
 
         <div className="transform-size">
-
           <PropertyInput
-            icon={Square}
+            icon={RulerDimensionLine}
             label="Width"
+            className="transform-size-width"
             value={element.cssVariables?.width || 'auto'}
             onChange={(value) => updateCSSVariables({ width: value })}
             placeholder="auto"
           />
           <PropertyInput
-            icon={Square}
+            icon={RulerDimensionLine}
             label="Height"
+            className="transform-size-height"
             value={element.cssVariables?.['height'] || 'auto'}
             onChange={(value) => updateCSSVariables({ height: value })}
             placeholder="auto"
@@ -149,15 +153,17 @@ export function StyleSection({ element }: StyleSectionProps) {
 
         <div className="transform-position">
           <PropertyInput
-            icon={Square}
+            icon={ArrowRightFromLine}
             label="Left"
+            className="transform-position-left"
             value={element.cssVariables?.['x'] || 'auto'}
             onChange={(value) => updateCSSVariables({ x: value })}
             placeholder="auto"
           />
           <PropertyInput
-            icon={Square}
+            icon={ArrowDownFromLine}
             label="Top"
+            className="transform-position-top"
             value={element.cssVariables?.['y'] || 'auto'}
             onChange={(value) => updateCSSVariables({ y: value })}
             placeholder="auto"
@@ -190,7 +196,7 @@ export function StyleSection({ element }: StyleSectionProps) {
       <div className="section-content">
         <fieldset className="layout-direction">
           <div className="direction-controls">
-            <ToggleButtonGroup aria-label="Flex direction">
+            <ToggleButtonGroup aria-label="Flex direction" indicator>
               <ToggleButton id="reset">
                 <Square
                   color={iconProps.color}
