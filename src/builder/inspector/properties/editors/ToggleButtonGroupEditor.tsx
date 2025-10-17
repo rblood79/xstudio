@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -80,14 +80,13 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     />
 
                     {/* 버튼 비활성화 상태 편집 */}
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentButton.props as Record<string, unknown>).isDisabled)}
-                        onChange={(checked) => {
-                            // 실제 ToggleButton 컴포넌트의 props 업데이트
-                            const updatedProps = {
+                        isSelected={Boolean((currentButton.props as Record<string, unknown>).isDisabled)}
+                        onChange={(isSelected: boolean) => {
+                            const updatedProps: any = {
                                 ...currentButton.props,
-                                isDisabled: checked
+                                isDisabled: isSelected
                             };
                             updateElementProps(currentButton.id, updatedProps);
                         }}
@@ -105,7 +104,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentButton.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedButton(null);
                                 } catch (error) {
                                     console.error('ToggleButton 삭제 중 오류:', error);
@@ -184,26 +183,33 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                 />
 
                 {/* 비활성화 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 {/* 자동 포커스 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
-                    checked={Boolean(currentProps.autoFocus)}
+                    isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
 
                 {/* Indicator 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.INDICATOR}
-                    checked={Boolean(currentProps.indicator)}
-                    onChange={(checked) => updateProp('indicator', checked)}
+                    isSelected={currentProps.indicator === true}
+                    onChange={(checked) => {
+                        console.log('Indicator switch changed:', {
+                            checked,
+                            currentProps,
+                            currentIndicator: currentProps.indicator
+                        });
+                        updateProp('indicator', checked);
+                    }}
                     icon={Target}
                 />
             </fieldset>

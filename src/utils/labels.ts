@@ -12,8 +12,8 @@ export const PROPERTY_LABELS = {
     DISABLED: 'Disabled',
     READONLY: 'Read Only',
     REQUIRED: 'Required',
-    AUTO_FOCUS: 'Auto Focus',
-    INDICATOR: 'Show Selection Indicator',
+    AUTO_FOCUS: 'Focus',
+    INDICATOR: 'Indicator',
 
     // Text and content
     TEXT: 'Text',
@@ -34,7 +34,7 @@ export const PROPERTY_LABELS = {
     DISALLOW_EMPTY_SELECTION: 'Disallow Empty Selection',
 
     // Selection mode
-    SELECTION_MODE: 'Selection Mode',
+    SELECTION_MODE: 'Selection',
     SELECTION_BEHAVIOR: 'Selection Behavior',
 
     // Orientation

@@ -303,6 +303,13 @@ function Preview() {
       const orientation = el.props.orientation as "horizontal" | "vertical";
       const indicator = Boolean(el.props.indicator);
 
+      console.log('ToggleButtonGroup Preview Rendering:', {
+        elementId: el.id,
+        orientation,
+        indicator,
+        elementProps: el.props
+      });
+
       // 실제 ToggleButton 자식 요소들을 찾기
       const toggleButtonChildren = elements
         .filter(
