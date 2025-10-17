@@ -63,7 +63,7 @@ export function StyleSection({ element }: StyleSectionProps) {
         <fieldset className="transform-alignment">
           <legend className="fieldset-legend">Alignment</legend>
           <div className="alignment-controls-horizontal">
-            <ToggleButtonGroup aria-label="Flex alignment-vertical" indicator>
+            <ToggleButtonGroup aria-label="Flex alignment-vertical" data-indicator="true">
               <ToggleButton id="align-vertical-start">
                 <AlignStartVertical
                   color={iconProps.color}

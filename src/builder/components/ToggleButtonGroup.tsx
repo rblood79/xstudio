@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ToggleButtonGroup as RACToggleButtonGroup, ToggleButtonGroupProps } from 'react-aria-components';
 import { clsx } from 'clsx';
 import './components.css';
@@ -8,15 +8,42 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
 }
 
 export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonGroupExtendedProps) {
+  console.log('ToggleButtonGroup rendered with indicator:', indicator, 'Full props:', props);
   const groupRef = useRef<HTMLDivElement>(null);
 
+  // Memoize the indicator value to prevent unnecessary re-renders
+  const memoizedIndicator = useMemo(() => {
+    console.log('Memoizing indicator:', indicator);
+    return indicator;
+  }, [indicator]);
+
   useEffect(() => {
-    if (!indicator) return;
+    console.log('Indicator effect triggered', {
+      indicator: memoizedIndicator,
+      selectedKeys: props.selectedKeys,
+      defaultSelectedKeys: props.defaultSelectedKeys
+    });
+    if (!memoizedIndicator) return;
 
     const group = groupRef.current;
-    if (!group) return;
+    if (!group) {
+      console.log('Group ref is null');
+      return;
+    }
 
     const updateIndicator = () => {
+      console.log('Updating indicator');
+
+      const children = group.children;
+      console.log('Group children:', children.length);
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        console.log(`Child ${i}:`, {
+          selected: child.hasAttribute('data-selected'),
+          attributes: Array.from(child.attributes).map(attr => attr.name)
+        });
+      }
+
       const selectedButton = group.querySelector('[data-selected]') as HTMLElement;
       if (selectedButton) {
         const groupRect = group.getBoundingClientRect();
@@ -26,9 +53,13 @@ export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonG
         const width = buttonRect.width;
         const height = buttonRect.height;
 
+        console.log('Indicator details:', { left, width, height });
+
         group.style.setProperty('--indicator-left', `${left}px`);
         group.style.setProperty('--indicator-width', `${width}px`);
         group.style.setProperty('--indicator-height', `${height}px`);
+      } else {
+        console.log('No selected button found');
       }
     };
 
@@ -44,15 +75,15 @@ export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonG
     });
 
     return () => observer.disconnect();
-  }, [indicator, props.selectedKeys, props.defaultSelectedKeys]);
+  }, [memoizedIndicator, props.selectedKeys, props.defaultSelectedKeys]);
 
   return (
     <RACToggleButtonGroup
       {...props}
       ref={groupRef}
+      data-indicator={memoizedIndicator ? 'true' : 'false'}
       className={clsx(
         'react-aria-ToggleButtonGroup',
-        indicator && 'segmented-control',
         props.className
       )}
     />

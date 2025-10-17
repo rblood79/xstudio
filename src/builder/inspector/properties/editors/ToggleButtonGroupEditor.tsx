@@ -26,10 +26,26 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     }, [elementId]);
 
     const updateProp = (key: string, value: unknown) => {
+        console.log('Updating prop:', {
+            key,
+            value,
+            currentProps,
+            stringifiedProps: JSON.stringify(currentProps)
+        });
+
+        // 디버깅용 스택 트레이스 추가
+        console.trace('Prop update stack trace');
+
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
+
+        console.log('Updated props:', {
+            updatedProps,
+            stringifiedUpdatedProps: JSON.stringify(updatedProps)
+        });
+
         onUpdate(updatedProps);
     };
 

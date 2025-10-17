@@ -301,6 +301,7 @@ function Preview() {
     // ⚠️ defaultSelectedKeys로 uncontrolled 방식 사용
     if (el.tag === "ToggleButtonGroup") {
       const orientation = el.props.orientation as "horizontal" | "vertical";
+      const indicator = Boolean(el.props.indicator);
 
       // 실제 ToggleButton 자식 요소들을 찾기
       const toggleButtonChildren = elements
@@ -317,6 +318,7 @@ function Preview() {
           className={el.props.className}
           orientation={orientation}
           selectionMode={el.props.selectionMode as "single" | "multiple"}
+          indicator={indicator}
           defaultSelectedKeys={
             Array.isArray(el.props.value) ? el.props.value : []
           }

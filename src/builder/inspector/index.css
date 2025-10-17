@@ -45,14 +45,14 @@
       &::before {
         content: '';
         position: absolute;
-        top: 2px;
-        left: 2px;
+        top: 1px;
+        left: 0px;
         z-index: 0;
         width: var(--indicator-width);
         height: var(--indicator-height);
         transform: translateX(var(--indicator-left));
-        border-radius: 6px;
-        background: white;
+        border-radius: var(--radius-md);
+        background: var(--color-white);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: transform 200ms ease-out, width 200ms ease-out, height 200ms ease-out;
         pointer-events: none;
