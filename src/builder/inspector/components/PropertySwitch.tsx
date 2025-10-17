@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Switch } from '../../components/list';
+import { Switch as AriaSwitch } from 'react-aria-components';
 import { PropertyFieldset } from './PropertyFieldset';
 
 interface PropertySwitchProps {
@@ -24,13 +24,14 @@ export function PropertySwitch({
 }: PropertySwitchProps) {
   return (
     <PropertyFieldset legend={label} icon={icon} className={className}>
-      <Switch
+      <AriaSwitch
         className={"react-aria-Switch"}
         isSelected={isSelected}
         onChange={(val) => onChange(val)}
       >
+        <div className="indicator" />
         {label}
-      </Switch>
+      </AriaSwitch>
     </PropertyFieldset>
   );
 }
