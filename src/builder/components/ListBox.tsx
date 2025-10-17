@@ -6,7 +6,6 @@ import {
   ListBoxProps,
 } from "react-aria-components";
 import type { DataBinding } from "../../types/unified";
-import { apiConfig } from "../../services/api";
 
 import "./components.css";
 
@@ -22,7 +21,7 @@ export function ListBox<T extends object>({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiData, setApiData] = useState<any[]>([]);
+  const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     // API Collection 데이터 바인딩 처리
