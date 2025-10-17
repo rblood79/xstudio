@@ -392,6 +392,7 @@
     --indicator-left: 0px;
     --indicator-width: 0px;
     --indicator-height: 0px;
+    --indicator-top: 0px;
 
     &::before {
       content: '';
@@ -401,7 +402,7 @@
       z-index: 0;
       width: var(--indicator-width);
       height: var(--indicator-height);
-      transform: translateX(var(--indicator-left));
+      transform: translateX(var(--indicator-left)) translateY(var(--indicator-top));
       border-radius: var(--radius-md);
       background: var(--color-primary-600);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);

@@ -50,12 +50,14 @@ export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonG
         const buttonRect = selectedButton.getBoundingClientRect();
 
         const left = buttonRect.left - groupRect.left;
+        const top = buttonRect.top - groupRect.top;
         const width = buttonRect.width;
         const height = buttonRect.height;
 
-        console.log('Indicator details:', { left, width, height });
+        console.log('Indicator details:', { left, top, width, height });
 
         group.style.setProperty('--indicator-left', `${left}px`);
+        group.style.setProperty('--indicator-top', `${top}px`);
         group.style.setProperty('--indicator-width', `${width}px`);
         group.style.setProperty('--indicator-height', `${height}px`);
       } else {

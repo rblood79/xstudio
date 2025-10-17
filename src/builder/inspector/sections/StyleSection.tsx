@@ -221,7 +221,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             </ToggleButtonGroup>
           </div>
           <div className="direction-alignment-grid">
-            <ToggleButtonGroup aria-label="Flex alignment">
+            <ToggleButtonGroup aria-label="Flex alignment" indicator>
               <ToggleButton id="leftTop">
                 <span className="alignment-dot" />
               </ToggleButton>
