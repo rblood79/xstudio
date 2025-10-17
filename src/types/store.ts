@@ -6,7 +6,6 @@ export type {
     DesignToken,
     ElementsState,
     ThemeState,
-    HistoryState,
     SelectionState,
     Store,
     getDefaultProps,

@@ -200,7 +200,7 @@
       }
 
       .section-content {
-        padding: var(--spacing-md) var(--spacing-sm);
+        padding: var(--spacing-sm);
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -519,11 +519,7 @@
           transition: all 0.2s ease;
 
           .indicator {
-            width: calc(var(--text-3xl) * 1.25);
-            height: var(--text-xl);
-            border: var(--spacing-2xs) solid var(--color-gray-200);
-            background: var(--background-color);
-            border-radius: var(--text-xl);
+            
             transition: all 200ms;
           }
         }

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
 import { ToggleButton } from '../builder/components/ToggleButton';
 import { ToggleButtonGroup } from '../builder/components/ToggleButtonGroup';
 
@@ -26,20 +25,16 @@ const meta: Meta<typeof ToggleButtonGroup> = {
       description: '버튼 선택 모드 (단일 또는 다중)',
     },
     selectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 버튼들의 키 배열',
     },
     defaultSelectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 버튼들의 키 배열 (비제어)',
     },
     isDisabled: {
       control: 'boolean',
       description: '토글 버튼 그룹 비활성화 여부',
-    },
-    isReadOnly: {
-      control: 'boolean',
-      description: '토글 버튼 그룹 읽기 전용 여부',
     },
     orientation: {
       control: 'radio',
@@ -51,7 +46,6 @@ const meta: Meta<typeof ToggleButtonGroup> = {
   args: {
     selectionMode: 'multiple',
     isDisabled: false,
-    isReadOnly: false,
     orientation: 'horizontal',
     defaultSelectedKeys: ['bold'],
     children: (

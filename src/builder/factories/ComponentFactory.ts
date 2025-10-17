@@ -1,1783 +1,205 @@
-import { Element, ComponentElementProps } from "../../types/store"; // 통합된 타입 사용
-//import { elementsApi } from '../../services/api';
-import { HierarchyManager } from "../utils/HierarchyManager";
-import { ElementUtils } from "../../utils/elementUtils"; // ElementUtils 추가
-import { useStore } from "../stores"; // useStore import 추가
+import { Element } from "../../types/store";
 import {
-  createDefaultTableProps,
-  createDefaultTableHeaderProps,
-  //createDefaultTableBodyProps,
-  //createDefaultColumnProps,
-  createDefaultColumnGroupProps,
-  //createDefaultRowProps,
-  //createDefaultCellProps
-} from "../../types/unified";
+  ComponentCreationResult,
+  ComponentCreationContext,
+  ComponentCreator,
+  ComponentDefinition,
+} from "./types";
+import {
+  createElementsFromDefinition,
+  addElementsToStore,
+} from "./utils/elementCreation";
+import { saveElementsInBackground } from "./utils/dbPersistence";
 
-export interface ComponentCreationResult {
-  parent: Element;
-  children: Element[];
-  allElements: Element[];
-}
+// 컴포넌트 정의 임포트
+import { createTextFieldDefinition } from "./definitions/FormComponents";
+import {
+  createSelectDefinition,
+  createComboBoxDefinition,
+  createListBoxDefinition,
+  createGridListDefinition,
+} from "./definitions/SelectionComponents";
+import {
+  createToggleButtonGroupDefinition,
+  createCheckboxGroupDefinition,
+  createRadioGroupDefinition,
+  createTagGroupDefinition,
+} from "./definitions/GroupComponents";
+import {
+  createTabsDefinition,
+  createTreeDefinition,
+} from "./definitions/LayoutComponents";
+import {
+  createTable,
+  createColumnGroup,
+} from "./definitions/TableComponents";
 
+/**
+ * 통합 컴포넌트 팩토리
+ * - 모든 복합 컴포넌트 생성을 관리
+ * - 공통 로직 추출로 중복 코드 제거
+ */
 export class ComponentFactory {
   /**
-   * 복합 컴포넌트 생성
+   * 컴포넌트 생성자 맵
+   */
+  private static creators: Record<string, ComponentCreator> = {
+    TextField: ComponentFactory.createTextField,
+    ToggleButtonGroup: ComponentFactory.createToggleButtonGroup,
+    CheckboxGroup: ComponentFactory.createCheckboxGroup,
+    RadioGroup: ComponentFactory.createRadioGroup,
+    Select: ComponentFactory.createSelect,
+    ComboBox: ComponentFactory.createComboBox,
+    Tabs: ComponentFactory.createTabs,
+    Tree: ComponentFactory.createTree,
+    TagGroup: ComponentFactory.createTagGroup,
+    ListBox: ComponentFactory.createListBox,
+    GridList: ComponentFactory.createGridList,
+    Table: ComponentFactory.createTable,
+  };
+
+  /**
+   * 복합 컴포넌트 생성 (메인 메서드)
    */
   static async createComplexComponent(
     tag: string,
     parentElement: Element | null,
     pageId: string,
-    elements: Element[] // addElement 매개변수 제거
+    elements: Element[]
   ): Promise<ComponentCreationResult> {
-    const creators = {
-      TextField: this.createTextField,
-      ToggleButtonGroup: this.createToggleButtonGroup,
-      CheckboxGroup: this.createCheckboxGroup,
-      RadioGroup: this.createRadioGroup,
-      Select: this.createSelect,
-      ComboBox: this.createComboBox,
-      Tabs: this.createTabs,
-      Tree: this.createTree,
-      TagGroup: this.createTagGroup,
-      ListBox: this.createListBox,
-      GridList: this.createGridList,
-      Table: this.createTable,
-    };
-
-    const creator = creators[tag as keyof typeof creators];
+    const creator = this.creators[tag];
     if (!creator) {
       throw new Error(`No creator found for component type: ${tag}`);
     }
 
-    return await creator(parentElement, pageId, elements);
+    const context: ComponentCreationContext = {
+      parentElement,
+      pageId,
+      elements,
+    };
+
+    return await creator.call(this, context);
   }
 
   /**
-   * TextField 컴포넌트 생성
+   * 공통 컴포넌트 생성 로직
    */
+  private static async createComponent(
+    definitionCreator: (context: ComponentCreationContext) => ComponentDefinition,
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    const { parentElement, pageId } = context;
+    const parentId = parentElement?.id || null;
+
+    // 1. 컴포넌트 정의 생성
+    const definition = definitionCreator(context);
+
+    // 2. Element 데이터 생성
+    const { parent, children } = createElementsFromDefinition(definition);
+
+    // 3. 스토어에 추가 (즉시 UI 업데이트)
+    addElementsToStore(parent, children);
+
+    // 4. DB에 저장 (백그라운드)
+    saveElementsInBackground(parent, children, parentId, pageId);
+
+    return {
+      parent,
+      children,
+      allElements: [parent, ...children],
+    };
+  }
+
+  // ==================== 각 컴포넌트 생성 메서드 ====================
+
   private static async createTextField(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "TextField",
-      props: {
-        label: "Text Field",
-        placeholder: "Enter text...",
-        value: "",
-        type: "text",
-        isRequired: false,
-        isDisabled: false,
-        isReadOnly: false,
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (DB 저장하지 않고 로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    // 자식 요소들 생성 - order_num을 동적으로 계산
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Label",
-        props: { children: "Label" } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Input",
-        props: {
-          type: "text",
-          placeholder: "Enter text...",
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Description",
-        props: { children: "Description" } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 3,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "FieldError",
-        props: { children: "Error message" } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 4,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (setTimeout으로 비동기 처리)
-    setTimeout(async () => {
-      try {
-        //console.log(' 부모 저장 시작 - parentData:', parentData);
-        //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-        // 부모 먼저 저장 (parentData를 직접 사용)
-        const parentToSave = {
-          ...parentData, // parentData 사용 (id 포함)
-          order_num: HierarchyManager.calculateNextOrderNum(
-            parentId,
-            await ElementUtils.getElementsByPageId(pageId)
-          ),
-        };
-
-        //console.log('🔍 parentToSave:', parentToSave);
-        //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-        const savedParent = await ElementUtils.createElement(parentToSave);
-
-        //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-        // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-        const store = useStore.getState();
-        const updatedElements = store.elements.map((el) =>
-          el.id === parentData.id ? { ...el, id: savedParent.id } : el
-        );
-        store.setElements(updatedElements);
-        //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-        // 자식들 순차 저장 (부모 ID 업데이트)
-        for (let i = 0; i < childrenData.length; i++) {
-          const childToSave = {
-            ...childrenData[i], // childrenData 사용 (임시 ID 포함)
-            parent_id: savedParent.id,
-          };
-          const savedChild = await ElementUtils.createElement(childToSave);
-
-          // 스토어에서 자식 요소 ID 업데이트
-          const updatedElements2 = store.elements.map((el) =>
-            el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
-          );
-          store.setElements(updatedElements2);
-        }
-
-        //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
-      } catch (error) {
-        console.error("Background save failed:", error);
-      }
-    }, 0);
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createTextFieldDefinition, context);
   }
 
-  /**
-   * ToggleButtonGroup 컴포넌트 생성
-   */
   private static async createToggleButtonGroup(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "ToggleButtonGroup",
-      props: {
-        tag: "ToggleButtonGroup",
-        orientation: "horizontal",
-        selectionMode: "single",
-        value: [],
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "ToggleButton",
-        props: {
-          children: "Toggle 1",
-          isSelected: false,
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "ToggleButton",
-        props: {
-          children: "Toggle 2",
-          isSelected: false,
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createToggleButtonGroupDefinition, context);
   }
 
-  /**
-   * CheckboxGroup 컴포넌트 생성
-   */
   private static async createCheckboxGroup(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "CheckboxGroup",
-      props: {
-        tag: "CheckboxGroup",
-        label: "Checkbox Group",
-        orientation: "vertical",
-        value: [],
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Checkbox",
-        props: {
-          children: "Option 1",
-          isSelected: false,
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Checkbox",
-        props: {
-          children: "Option 2",
-          isSelected: false,
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createCheckboxGroupDefinition, context);
   }
 
-  /**
-   * RadioGroup 컴포넌트 생성
-   */
   private static async createRadioGroup(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "RadioGroup",
-      props: {
-        label: "Radio Group",
-        orientation: "vertical",
-        value: "",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Radio",
-        props: {
-          children: "Option 1",
-          value: "option1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Radio",
-        props: {
-          children: "Option 2",
-          value: "option2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createRadioGroupDefinition, context);
   }
 
-  /**
-   * Select 컴포넌트 생성
-   */
   private static async createSelect(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "Select",
-      props: {
-        label: "Select",
-        placeholder: "Choose an option...",
-        selectedKey: undefined,
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "SelectItem",
-        props: {
-          label: "Option 1",
-          value: "option1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "SelectItem",
-        props: {
-          label: "Option 2",
-          value: "option2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "SelectItem",
-        props: {
-          label: "Option 3",
-          value: "option3",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 3,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createSelectDefinition, context);
   }
 
-  /**
-   * ComboBox 컴포넌트 생성
-   */
   private static async createComboBox(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "ComboBox",
-      props: {
-        label: "Combo Box",
-        placeholder: "Type or select...",
-        inputValue: "",
-        allowsCustomValue: true,
-        selectedKey: undefined,
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "ComboBoxItem",
-        props: {
-          label: "Option 1",
-          value: "option1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "ComboBoxItem",
-        props: {
-          label: "Option 2",
-          value: "option2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createComboBoxDefinition, context);
   }
 
-  /**
-   * Tabs 컴포넌트 생성
-   */
   private static async createTabs(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    // 초기 Tab들을 위한 UUID 생성
-    const tab1Id = ElementUtils.generateId();
-    const tab2Id = ElementUtils.generateId();
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "Tabs",
-      props: {
-        defaultSelectedKey: tab1Id,
-        orientation: "horizontal",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Tab",
-        props: {
-          title: "Tab 1",
-          tabId: tab1Id,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Panel",
-        props: {
-          //tag: 'Panel',
-          title: "Panel 1",
-          variant: "tab",
-          tabId: tab1Id,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Tab",
-        props: {
-          title: "Tab 2",
-          tabId: tab2Id,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 3,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Panel",
-        props: {
-          //tag: 'Panel',
-          title: "Panel 2",
-          variant: "tab",
-          tabId: tab2Id,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 4,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createTabsDefinition, context);
   }
 
-  /**
-   * Tree 컴포넌트 생성
-   */
   private static async createTree(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "Tree",
-      props: {
-        "aria-label": "Tree",
-        selectionMode: "single",
-        selectionBehavior: "replace",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "TreeItem",
-        props: {
-          title: "Node 1",
-          hasChildren: true,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "TreeItem",
-        props: {
-          title: "Node 2",
-          hasChildren: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      // console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createTreeDefinition, context);
   }
 
-  /**
-   * TagGroup 컴포넌트 생성
-   */
   private static async createTagGroup(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "TagGroup",
-      props: {
-        label: "Tag Group",
-        allowsRemoving: false,
-        selectionMode: "multiple",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "Tag",
-        props: {
-          children: "Tag 1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "Tag",
-        props: {
-          children: "Tag 2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < children.length; i++) {
-        const childToSave = {
-          ...children[i],
-          parent_id: savedParent.id,
-        };
-        await ElementUtils.createElement(childToSave);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${children.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createTagGroupDefinition, context);
   }
 
-  /**
-   * ListBox 컴포넌트 생성
-   */
   private static async createListBox(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "ListBox",
-      props: {
-        orientation: "vertical",
-        selectionMode: "single",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "ListBoxItem",
-        props: {
-          label: "Item 1",
-          value: "item1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "ListBoxItem",
-        props: {
-          label: "Item 2",
-          value: "item2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < childrenData.length; i++) {
-        const childToSave = {
-          ...childrenData[i], // childrenData 사용 (임시 ID 포함)
-          parent_id: savedParent.id,
-        };
-        const savedChild = await ElementUtils.createElement(childToSave);
-
-        // 스토어에서 자식 요소 ID 업데이트
-        const updatedElements2 = store.elements.map((el) =>
-          el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
-        );
-        store.setElements(updatedElements2);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createListBoxDefinition, context);
   }
 
-  /**
-   * GridList 컴포넌트 생성
-   */
   private static async createGridList(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[] // 현재 요소들을 받아서 전달
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "GridList",
-      props: {
-        selectionMode: "none",
-      } as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    const children = [
-      {
-        id: ElementUtils.generateId(),
-        tag: "GridListItem",
-        props: {
-          label: `Item 1`,
-          value: "item1",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 1,
-      },
-      {
-        id: ElementUtils.generateId(),
-        tag: "GridListItem",
-        props: {
-          label: `Item 2`,
-          value: "item2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        parent_id: parentData.id,
-        page_id: pageId,
-        order_num: 2,
-      },
-    ];
-
-    // 자식 요소들 생성 - 모든 데이터를 먼저 준비
-    const childrenData: Element[] = [];
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childData = {
-        ...child,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Element;
-      childrenData.push(childData);
-    }
-
-    // 모든 요소(부모 + 자식들)를 한 번에 UI에 추가 (프리뷰에 한 번만 전송)
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장 (단순화)
-    try {
-      //console.log(' 부모 저장 시작 - parentData:', parentData);
-      //console.log(' 부모 저장 시작 - parentData.id:', parentData.id);
-
-      // 부모 먼저 저장 (parentData를 직접 사용)
-      const parentToSave = {
-        ...parentData, // parentData 사용 (id 포함)
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      //console.log('🔍 parentToSave:', parentToSave);
-      //console.log('🔍 parentToSave.id:', parentToSave.id);
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      //console.log('✅ 부모 저장 완료 - 저장된 ID:', savedParent.id, '원본 ID:', parentData.id);
-
-      // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
-      const store = useStore.getState();
-      const updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-      //console.log('🔄 스토어 ID 업데이트 완료:', parentData.id, '→', savedParent.id);
-
-      // 자식들 순차 저장 (부모 ID 업데이트)
-      for (let i = 0; i < childrenData.length; i++) {
-        const childToSave = {
-          ...childrenData[i], // childrenData 사용 (임시 ID 포함)
-          parent_id: savedParent.id,
-        };
-        const savedChild = await ElementUtils.createElement(childToSave);
-
-        // 스토어에서 자식 요소 ID 업데이트
-        const updatedElements2 = store.elements.map((el) =>
-          el.id === childrenData[i].id ? { ...el, id: savedChild.id } : el
-        );
-        store.setElements(updatedElements2);
-      }
-
-      //console.log(`Elements saved to DB: 1 parent + ${childrenData.length} children`);
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return this.createComponent(createGridListDefinition, context);
   }
 
   /**
-   * Table 컴포넌트 생성
+   * Table 컴포넌트 (특수 처리)
    */
   private static async createTable(
-    parentElement: Element | null,
-    pageId: string,
-    elements: Element[]
+    context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const parentId = parentElement?.id || null;
-    const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
-
-    const defaultProps = createDefaultTableProps();
-    
-    // REST API 설정 여부 확인
-    const hasApiConfig = 
-      defaultProps.enableAsyncLoading === true &&
-      defaultProps.apiUrlKey &&
-      defaultProps.endpointPath;
-
-    const parent: Omit<Element, "id" | "created_at" | "updated_at"> = {
-      tag: "Table",
-      props: defaultProps as ComponentElementProps,
-      page_id: pageId,
-      parent_id: parentId,
-      order_num: orderNum,
-    };
-
-    // 부모 요소 생성 (로컬 데이터로만)
-    const parentData = {
-      ...parent,
-      id: ElementUtils.generateId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Element;
-
-    // TableHeader 생성
-    const tableHeaderId = ElementUtils.generateId();
-    const tableHeader: Element = {
-      id: tableHeaderId,
-      tag: "TableHeader",
-      props: createDefaultTableHeaderProps() as ComponentElementProps,
-      parent_id: parentData.id,
-      page_id: pageId,
-      order_num: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    // 조건부 컬럼 생성: 데이터 소스가 설정되지 않은 경우 빈 테이블로 시작
-    // 사용자가 데이터 소스를 선택하면 자동으로 컬럼이 생성됨
-    const columns: Element[] = [];
-
-    const childrenData: Element[] = [tableHeader, ...columns];
-
-    // 모든 요소를 한 번에 UI에 추가
-    const store = useStore.getState();
-    const currentElements = store.elements;
-    const newElements = [...currentElements, parentData, ...childrenData];
-
-    console.log("🏗️ Table 구조 생성:", {
-      parentId: parentData.id,
-      parentTag: parentData.tag,
-      tableHeaderId: tableHeader.id,
-      hasApiConfig,
-      columns: columns.length,
-      note: "빈 테이블로 시작 - 데이터 소스 선택 시 컬럼 자동 생성",
-      children: childrenData.map((child) => ({
-        id: child.id,
-        tag: child.tag,
-        parent_id: child.parent_id,
-        order_num: child.order_num,
-      })),
-    });
-
-    store.setElements(newElements);
-
-    // 히스토리 기록 - 복합 컴포넌트 생성
-    const { saveSnapshot } = store as unknown as {
-      saveSnapshot: (elements: Element[], description: string) => void;
-    };
-    if (saveSnapshot) {
-      saveSnapshot(newElements, "복합 컴포넌트 생성");
-    }
-
-    // 백그라운드에서 DB에 순차 저장
-    try {
-      // 부모 먼저 저장
-      const parentToSave = {
-        ...parentData,
-        order_num: HierarchyManager.calculateNextOrderNum(
-          parentId,
-          await ElementUtils.getElementsByPageId(pageId)
-        ),
-      };
-
-      const savedParent = await ElementUtils.createElement(parentToSave);
-
-      // 스토어에서 부모 요소 ID 업데이트
-      const store = useStore.getState();
-      let updatedElements = store.elements.map((el) =>
-        el.id === parentData.id ? { ...el, id: savedParent.id } : el
-      );
-      store.setElements(updatedElements);
-
-      // TableHeader 저장
-      const tableHeaderToSave = {
-        ...tableHeader,
-        parent_id: savedParent.id,
-      };
-      const savedTableHeader = await ElementUtils.createElement(
-        tableHeaderToSave
-      );
-
-      updatedElements = store.elements.map((el) =>
-        el.id === tableHeader.id ? { ...el, id: savedTableHeader.id } : el
-      );
-      store.setElements(updatedElements);
-
-      // Column들 저장
-      for (let i = 0; i < columns.length; i++) {
-        const columnToSave = {
-          ...columns[i],
-          parent_id: savedTableHeader.id,
-        };
-        const savedColumn = await ElementUtils.createElement(columnToSave);
-
-        updatedElements = store.elements.map((el) =>
-          el.id === columns[i].id ? { ...el, id: savedColumn.id } : el
-        );
-        store.setElements(updatedElements);
-      }
-
-      console.log(
-        `🎯 Table elements saved to DB: ${savedParent.id} (TableHeader + ${columns.length} Columns)`
-      );
-    } catch (error) {
-      console.error("Background save failed:", error);
-    }
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return await createTable(context);
   }
 
   /**
-   * ColumnGroup 생성
+   * ColumnGroup 생성 (공개 메서드)
    */
   static async createColumnGroup(
     parentElement: Element | null,
     pageId: string,
     elements: Element[] = []
   ): Promise<ComponentCreationResult> {
-    // 기존 Column Group들의 order_num 중 최대값 찾기
-    const existingColumnGroups = elements.filter(
-      (el) => el.parent_id === parentElement?.id && el.tag === "ColumnGroup"
-    );
-    const maxOrderNum =
-      existingColumnGroups.length > 0
-        ? Math.max(...existingColumnGroups.map((group) => group.order_num || 0))
-        : -1;
-
-    const parentData: Element = {
-      id: ElementUtils.generateId(),
-      tag: "ColumnGroup",
-      props: createDefaultColumnGroupProps(),
-      parent_id: parentElement?.id || null,
-      page_id: pageId,
-      order_num: maxOrderNum + 1, // 중복 방지를 위해 최대값 + 1
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    const context: ComponentCreationContext = {
+      parentElement,
+      pageId,
+      elements,
     };
-
-    const childrenData: Element[] = [];
-
-    return {
-      parent: parentData,
-      children: childrenData,
-      allElements: [parentData, ...childrenData],
-    };
+    return await createColumnGroup(context);
   }
 }

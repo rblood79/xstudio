@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
 import { Form } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
 import { TextField } from '../builder/components/TextField';

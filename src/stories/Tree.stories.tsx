@@ -25,23 +25,23 @@ const meta: Meta<typeof Tree> = {
       description: '항목 선택 모드 (없음, 단일, 다중)',
     },
     selectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 항목들의 키 배열',
     },
     defaultSelectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 항목들의 키 배열 (비제어)',
     },
     expandedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 확장된 항목들의 키 배열',
     },
     defaultExpandedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 확장된 항목들의 키 배열 (비제어)',
     },
     disabledKeys: {
-      control: 'array',
+      control: 'object',
       description: '비활성화된 항목들의 키 배열',
     },
     onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 변경 시 호출되는 콜백' },

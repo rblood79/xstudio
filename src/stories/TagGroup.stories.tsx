@@ -49,15 +49,15 @@ const meta: Meta<typeof TagGroup> = {
       description: '태그 선택 모드 (없음, 단일, 다중)',
     },
     selectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 태그들의 키 배열',
     },
     defaultSelectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 태그들의 키 배열 (비제어)',
     },
     disabledKeys: {
-      control: 'array',
+      control: 'object',
       description: '비활성화된 태그들의 키 배열',
     },
     onSelectionChange: { action: 'onSelectionChange', description: '선택된 태그가 변경될 때 호출되는 콜백' },
@@ -76,7 +76,7 @@ type Story = StoryObj<typeof TagGroup>;
 
 export const BasicTagGroup: Story = {
   render: (args) => (
-    <TagGroup {...args}>
+    <TagGroup {...args} items={tags}>
       {(item: TagItem) => <Tag key={item.id}>{item.name}</Tag>}
     </TagGroup>
   )
@@ -84,7 +84,7 @@ export const BasicTagGroup: Story = {
 
 export const RemovableTagGroup: Story = {
   render: (args) => (
-    <TagGroup {...args} allowsRemoving onRemove={action('remove')}>
+    <TagGroup {...args} items={tags} allowsRemoving onRemove={action('remove')}>
       {(item: TagItem) => <Tag key={item.id}>{item.name}</Tag>}
     </TagGroup>
   ),
@@ -98,6 +98,7 @@ export const SelectableTagGroup: Story = {
   render: (args) => (
     <TagGroup
       {...args}
+      items={tags}
       selectionMode="multiple"
       defaultSelectedKeys={['design']}
     >
