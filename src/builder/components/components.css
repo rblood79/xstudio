@@ -2676,8 +2676,8 @@
   forced-color-adjust: none;
 
   .indicator {
-    width: calc(var(--spacing-2xl) * 1.25);
-    height: var(--spacing-xl);
+    width: var(--text-4xl);
+    height: var(--text-xl);
     border: var(--spacing-2xs) solid var(--color-gray-200);
     background: var(--background-color);
     border-radius: var(--radius-xl);
@@ -2686,9 +2686,9 @@
     &:before {
       content: "";
       display: block;
-      margin: var(--spacing-2xs);
-      width: var(--spacing-lg);
-      height: var(--spacing-lg);
+      margin: 0;
+      width: var(--text-base);
+      height: var(--text-base);
       background: var(--color-primary-500);
       border-radius: var(--radius-lg);
       transition: all 200ms;
