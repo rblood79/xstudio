@@ -111,7 +111,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentRadio.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedRadio(null);
                                 } catch (error) {
                                     console.error('Radio 삭제 중 오류:', error);

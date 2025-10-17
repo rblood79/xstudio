@@ -141,7 +141,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentCheckbox.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedCheckbox(null);
                                 } catch (error) {
                                     console.error('Checkbox 삭제 중 오류:', error);

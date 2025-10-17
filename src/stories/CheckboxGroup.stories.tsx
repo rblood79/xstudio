@@ -45,11 +45,11 @@ const meta: Meta<typeof CheckboxGroup> = {
       description: '체크박스 항목의 레이아웃 방향',
     },
     value: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 값 배열',
     },
     defaultValue: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 값 배열 (비제어)',
     },
     onChange: { action: 'onChange', description: '선택된 값 변경 시 호출되는 콜백' },

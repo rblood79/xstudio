@@ -29,8 +29,7 @@ const meta: Meta<typeof GridList> = {
   tags: ['autodocs'],
   argTypes: {
     items: {
-      control: 'object',
-      description: '그리드 목록에 표시될 항목들의 배열',
+      table: { disable: true }
     },
     children: {
       control: 'text',
@@ -42,15 +41,15 @@ const meta: Meta<typeof GridList> = {
       description: '항목 선택 모드 (단일, 다중 또는 없음)',
     },
     selectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 항목들의 키 배열',
     },
     defaultSelectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 항목들의 키 배열 (비제어)',
     },
     disabledKeys: {
-      control: 'array',
+      control: 'object',
       description: '비활성화된 항목들의 키 배열',
     },
     onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 변경 시 호출되는 콜백' },
@@ -69,7 +68,12 @@ type Story = StoryObj<typeof GridList>;
 
 export const BasicGridList: Story = {
   render: (args) => (
-    <GridList {...args} className="max-w-md w-full">
+    <GridList<FileItem>
+      items={files}
+      selectionMode={args.selectionMode}
+      aria-label={args['aria-label']}
+      className="max-w-md w-full"
+    >
       {(item: FileItem) => (
         <GridListItem key={item.id}>
           <div className="flex flex-col gap-1">
@@ -84,9 +88,10 @@ export const BasicGridList: Story = {
 
 export const SingleSelection: Story = {
   render: (args) => (
-    <GridList
-      {...args}
+    <GridList<FileItem>
+      items={files}
       selectionMode="single"
+      aria-label={args['aria-label']}
       className="max-w-md w-full"
     >
       {(item: FileItem) => (

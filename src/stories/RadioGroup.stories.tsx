@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
-import { Form, Radio } from 'react-aria-components'; // Radio 추가
+import { Form, Radio } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
 import { RadioGroup } from '../builder/components/RadioGroup';
 

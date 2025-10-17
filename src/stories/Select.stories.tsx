@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
-import { Form, SelectSection } from 'react-aria-components'; // SelectSection 추가
+import { Form, Section, Header } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
 import { Select, SelectItem } from '../builder/components/Select';
 
@@ -33,10 +32,6 @@ const meta: Meta<typeof Select> = {
       control: 'boolean',
       description: '선택 상자 비활성화 여부',
     },
-    isReadOnly: {
-      control: 'boolean',
-      description: '선택 상자 읽기 전용 여부',
-    },
     isInvalid: {
       control: 'boolean',
       description: '유효성 검사 실패 상태인지 여부',
@@ -59,7 +54,6 @@ const meta: Meta<typeof Select> = {
   args: {
     label: '아이스크림 맛',
     isDisabled: false,
-    isReadOnly: false,
     isInvalid: false,
     isRequired: false,
     children: (
@@ -95,16 +89,18 @@ export const SelectWithSections: Story = {
     label: '섹션이 있는 선택 상자',
     children: (
       <>
-        <SelectSection title="과일">
+        <Section>
+          <Header>과일</Header>
           <SelectItem id="apple">사과</SelectItem>
           <SelectItem id="banana">바나나</SelectItem>
           <SelectItem id="orange">오렌지</SelectItem>
-        </SelectSection>
-        <SelectSection title="채소">
+        </Section>
+        <Section>
+          <Header>채소</Header>
           <SelectItem id="carrot">당근</SelectItem>
           <SelectItem id="broccoli">브로콜리</SelectItem>
           <SelectItem id="spinach">시금치</SelectItem>
-        </SelectSection>
+        </Section>
       </>
     ),
   },

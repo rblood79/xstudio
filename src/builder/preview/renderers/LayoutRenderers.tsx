@@ -56,12 +56,7 @@ export const renderTabs = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      <TabList
-        orientation={
-          (element.props.orientation as "horizontal" | "vertical") ||
-          "horizontal"
-        }
-      >
+      <TabList>
         {tabChildren.map((tab) => (
           <Tab key={tab.id} id={tab.id}>
             {tab.props.title}

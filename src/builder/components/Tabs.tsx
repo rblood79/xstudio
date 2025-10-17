@@ -14,7 +14,7 @@ export function Tabs(props: TabsProps) {
   return <RACTabs {...props} className='react-aria-Tabs' />;
 }
 
-export function TabList(props: TabListProps) {
+export function TabList(props: TabListProps<object>) {
   return <RACTabList {...props} className='react-aria-TabList' />;
 }
 

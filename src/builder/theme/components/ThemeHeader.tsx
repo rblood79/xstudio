@@ -1,4 +1,3 @@
-import React from 'react';
 import { DesignTheme } from '../../../types/theme';
 
 interface ThemeHeaderProps {

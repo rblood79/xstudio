@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import type { ComponentProps } from 'react';
 import { ComboBox, ComboBoxItem } from '../builder/components/ComboBox';
 
 const fruits = [
@@ -11,12 +10,12 @@ const fruits = [
   { id: 'orange', name: 'Orange' }
 ];
 
-function ControlledComboBox(props: ComponentProps<typeof ComboBox>) {
+function ControlledComboBox(props: { label?: string }) {
   const [inputValue, setInputValue] = useState('');
 
   return (
     <ComboBox
-      {...props}
+      label={props.label}
       inputValue={inputValue}
       onInputChange={setInputValue}
       items={fruits}
@@ -85,6 +84,12 @@ const meta: Meta<typeof ComboBox> = {
       control: 'text',
       description: '초기 입력 필드의 값 (비제어)',
     },
+    defaultItems: {
+      table: { disable: true }
+    },
+    items: {
+      table: { disable: true }
+    },
     onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 시 호출되는 콜백' },
     onInputChange: { action: 'onInputChange', description: '입력 필드 값 변경 시 호출되는 콜백' },
   },
@@ -103,8 +108,8 @@ type Story = StoryObj<typeof ComboBox>;
 
 export const Basic: Story = {
   render: (args) => (
-    <ComboBox {...args} items={fruits}>
-      {(item) => <ComboBoxItem key={item.id}>{item.name}</ComboBoxItem>}
+    <ComboBox label={args.label} placeholder={args.placeholder} items={fruits}>
+      {(item: { id: string; name: string }) => <ComboBoxItem key={item.id}>{item.name}</ComboBoxItem>}
     </ComboBox>
   )
 };

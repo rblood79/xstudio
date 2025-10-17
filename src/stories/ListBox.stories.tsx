@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
 import { ListBox, ListBoxItem } from '../builder/components/ListBox';
 
 const meta: Meta<typeof ListBox> = {
@@ -25,15 +24,15 @@ const meta: Meta<typeof ListBox> = {
       description: '항목 선택 모드 (단일, 다중 또는 없음)',
     },
     selectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '제어되는 선택된 항목들의 키 배열',
     },
     defaultSelectedKeys: {
-      control: 'array',
+      control: 'object',
       description: '초기 선택된 항목들의 키 배열 (비제어)',
     },
     disabledKeys: {
-      control: 'array',
+      control: 'object',
       description: '비활성화된 항목들의 키 배열',
     },
     onSelectionChange: { action: 'onSelectionChange', description: '항목 선택 변경 시 호출되는 콜백' },

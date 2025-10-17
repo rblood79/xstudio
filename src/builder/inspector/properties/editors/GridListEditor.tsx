@@ -141,7 +141,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentItem.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedItem(null);
                                 } catch (error) {
                                     console.error('GridListItem 삭제 중 오류:', error);

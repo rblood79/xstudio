@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { HelpCircle } from 'lucide-react';
-import React from 'react';
 import { DialogTrigger, Heading } from 'react-aria-components';
 import { Button } from '../builder/components/Button';
 import { Dialog } from '../builder/components/Dialog';
@@ -40,10 +39,6 @@ const meta: Meta<typeof Popover> = {
       control: 'number',
       description: '팝오버와 트리거 요소 사이의 거리',
     },
-    showArrow: {
-      control: 'boolean',
-      description: '팝오버에 화살표를 표시할지 여부',
-    },
     isOpen: {
       control: 'boolean',
       description: '팝오버가 열려있는지 여부 (제어용)',
@@ -55,7 +50,6 @@ const meta: Meta<typeof Popover> = {
     onOpenChange: { action: 'onOpenChange', description: '팝오버의 열림 상태가 변경될 때 호출되는 콜백' },
   },
   args: {
-    showArrow: true,
     placement: 'bottom',
     offset: 10,
   }
@@ -68,7 +62,7 @@ type Story = StoryObj<typeof Popover>;
 export const BasicPopover: Story = {
   render: (args) => (
     <DialogTrigger>
-      <Button variant="icon" aria-label="도움말"><HelpCircle className="w-4 h-4" /></Button>
+      <Button variant="ghost" aria-label="도움말"><HelpCircle className="w-4 h-4" /></Button>
       <Popover {...args} className="max-w-[250px] p-4 bg-white shadow-lg rounded-md">
         <Dialog>
           <Heading slot="title" className="text-lg font-semibold mb-2">도움말</Heading>
