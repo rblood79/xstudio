@@ -1,5 +1,5 @@
 import { Tag, Binary, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText, SpellCheck2 } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -50,23 +50,23 @@ export function TextFieldEditor({ currentProps, onUpdate }: PropertyEditorProps)
                     icon={AlertTriangle}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
-                    checked={Boolean(currentProps.isRequired)}
+                    isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
-                    checked={Boolean(currentProps.isReadOnly)}
+                    isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />

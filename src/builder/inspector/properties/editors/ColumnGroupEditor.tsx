@@ -1,5 +1,5 @@
 import { Settings, Type, Grid, Pin } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/unified';
 
@@ -75,7 +75,7 @@ export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProp
                     Advanced Settings
                 </legend>
 
-                <PropertyCheckbox
+                <PropertySwitch
                     icon={Pin}
                     label="헤더 고정"
                     isSelected={(currentProps as ColumnGroupElementProps)?.sticky || false}

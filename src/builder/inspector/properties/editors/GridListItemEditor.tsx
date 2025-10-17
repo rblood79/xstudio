@@ -1,5 +1,5 @@
 import { Tag, Binary, PointerOff, PenOff } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -28,16 +28,16 @@ export function GridListItemEditor({ currentProps, onUpdate }: PropertyEditorPro
                 icon={Binary}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(currentProps.isDisabled)}
+                isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.READONLY}
-                checked={Boolean(currentProps.isReadOnly)}
+                isSelected={Boolean(currentProps.isReadOnly)}
                 onChange={(checked) => updateProp('isReadOnly', checked)}
                 icon={PenOff}
             />

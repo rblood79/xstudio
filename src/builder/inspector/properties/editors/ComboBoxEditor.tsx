@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -109,9 +109,9 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     />
 
                     {/* 옵션 비활성화 상태 편집 */}
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -208,37 +208,37 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     placeholder="선택된 값이 여기에 표시됩니다"
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
-                    checked={Boolean(currentProps.allowsCustomValue)}
+                    isSelected={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                     icon={Binary}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
-                    checked={Boolean(currentProps.isRequired)}
+                    isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
-                    checked={Boolean(currentProps.isReadOnly)}
+                    isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
-                    checked={Boolean(currentProps.autoFocus)}
+                    isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />

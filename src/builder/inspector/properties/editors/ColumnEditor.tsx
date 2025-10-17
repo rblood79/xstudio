@@ -1,4 +1,4 @@
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import type { ColumnElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
@@ -60,7 +60,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 />
 
                 {/* Is Row Header */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label="행 헤더로 사용"
                     isSelected={!!(currentProps as ColumnElementProps)?.isRowHeader}
                     onChange={(isSelected) => updateProps({ isRowHeader: isSelected })}
@@ -68,7 +68,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 />
 
                 {/* Allows Sorting */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label="정렬 가능"
                     isSelected={(currentProps as ColumnElementProps)?.allowsSorting !== false}
                     onChange={(isSelected) => updateProps({ allowsSorting: isSelected })}
@@ -80,7 +80,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 <legend className='fieldset-legend'>Column Sizing</legend>
 
                 {/* Enable Resizing */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label="크기 조절 가능"
                     isSelected={(currentProps as ColumnElementProps)?.enableResizing !== false}
                     onChange={(isSelected) => updateProps({ enableResizing: isSelected })}

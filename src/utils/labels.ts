@@ -31,7 +31,7 @@ export const PROPERTY_LABELS = {
     DEFAULT_INPUT_VALUE: 'Default Input Value',
     ALLOWS_CUSTOM_VALUE: 'Allows Custom Value',
     MENU_TRIGGER: 'Menu Trigger',
-    DISALLOW_EMPTY_SELECTION: 'Disallow Empty Selection',
+    DISALLOW_EMPTY_SELECTION: 'Empty Selection',
 
     // Selection mode
     SELECTION_MODE: 'Selection',
@@ -109,8 +109,6 @@ export const PROPERTY_LABELS = {
 
     // Panel specific
     STYLE: 'Style',
-    IS_OPEN: 'Is Open',
-    IS_DISMISSABLE: 'Is Dismissable',
     TAB_INDEX: 'Tab Index',
 
     // Tab specific
@@ -132,10 +130,6 @@ export const PROPERTY_LABELS = {
 
     // Card specific
     SIZE: 'Size',
-    IS_QUIET: 'Is Quiet',
-    IS_FOCUSED: 'Is Focused',
-
-    // Card variants
     CARD_VARIANT_DEFAULT: 'Default',
     CARD_VARIANT_ELEVATED: 'Elevated',
     CARD_VARIANT_OUTLINED: 'Outlined',
@@ -147,8 +141,6 @@ export const PROPERTY_LABELS = {
 
     // Grid specific
     TEXT_VALUE: 'Text Value',
-    ALLOWS_DRAGGING: 'Allows Dragging',
-    RENDER_EMPTY_STATE: 'Render Empty State',
     ITEM_PROPERTIES: 'Item Properties',
     BACK_TO_GRID_LIST_SETTINGS: 'Back to GridList Settings',
 
@@ -157,4 +149,12 @@ export const PROPERTY_LABELS = {
     PANEL_VARIANT_CARD: 'Card',
     PANEL_VARIANT_BORDERED: 'Bordered',
     PANEL_VARIANT_SHADOW: 'Shadow',
+    ALLOWS_REMOVING: 'Allows Removing',
+    TAG_MANAGEMENT: 'Tag Management',
+    ALLOWS_DRAGGING: 'Allows Dragging',
+    RENDER_EMPTY_STATE: 'Render Empty State',
+    IS_FOCUSED: 'Is Focused',
+    IS_QUIET: 'Is Quiet',
+    IS_OPEN: 'Is Open',
+    IS_DISMISSABLE: 'Is Dismissable',
 } as const;

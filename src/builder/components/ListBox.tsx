@@ -19,135 +19,76 @@ export function ListBox<T extends object>({
   dataBinding,
   ...props
 }: ExtendedListBoxProps<T>) {
-  const [apiData, setApiData] = useState<Array<Record<string, unknown>>>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiData, setApiData] = useState<any[]>([]);
 
   useEffect(() => {
     // API Collection 데이터 바인딩 처리
-    if (dataBinding?.type === "collection" && dataBinding.source === "api") {
-      const config = dataBinding.config as {
-        baseUrl: string;
-        customUrl?: string;
-        endpoint: string;
-        method: string;
-        params: Record<string, unknown>;
-        headers: Record<string, string>;
-        dataMapping: {
-          resultPath: string;
-          idKey: string;
-          totalKey: string;
-        };
-      };
-
-      if (!config.baseUrl || !config.endpoint) {
-        console.warn("⚠️ ListBox: API 설정 불완전");
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      console.log("🌐 ListBox API 호출:", {
-        baseUrl: config.baseUrl,
-        endpoint: config.endpoint,
-        params: config.params,
-      });
-
-      const fetchData = async () => {
-        try {
-          // Mock API 시스템 통합
-          const useMockApi = config.baseUrl === "MOCK_DATA";
-
-          if (useMockApi) {
-            // 자체 Mock API 시스템 사용 (정적 import)
-            const mockFetcher = apiConfig[config.baseUrl];
-
-            if (mockFetcher) {
-              const result = await mockFetcher(config.endpoint, config.params);
-              const items = Array.isArray(result) ? result : [result];
-
-              console.log("✅ Mock API 응답:", items.length, "개");
-              console.log("📋 첫 번째 아이템:", items[0]); // 데이터 구조 확인
-              setApiData(items);
-              setLoading(false);
-              return;
-            }
-          }
-
-          // 외부 API 호출 (JSONPlaceholder 등)
-          const apiUrls: Record<string, string> = {
-            JSONPLACEHOLDER: "https://jsonplaceholder.typicode.com",
-            CUSTOM: config.customUrl || "", // Custom URL 지원
+    const fetchData = async () => {
+      if (dataBinding?.type === "collection" && dataBinding.source === "api") {
+        const config = dataBinding.config as {
+          baseUrl: string;
+          customUrl?: string;
+          endpoint: string;
+          method: string;
+          params: Record<string, unknown>;
+          headers: Record<string, string>;
+          dataMapping: {
+            resultPath: string;
+            idKey: string;
+            totalKey: string;
           };
+        };
 
-          const baseUrl = apiUrls[config.baseUrl] || config.baseUrl;
+        if (!config.baseUrl || !config.endpoint) {
+          console.warn("⚠️ ListBox: API 설정 불완전");
+          return;
+        }
 
-          // JSONPlaceholder는 underscore prefix 사용: _limit, _page
-          const isJSONPlaceholder = baseUrl.includes(
-            "jsonplaceholder.typicode.com"
+        setLoading(true);
+        setError(null);
+
+        console.log("🌐 ListBox API 호출:", {
+          baseUrl: config.baseUrl,
+          endpoint: config.endpoint,
+          params: config.params,
+        });
+
+        try {
+          const response = await fetch(
+            `${config.baseUrl}${config.customUrl || config.endpoint}`,
+            {
+              method: config.method || "GET",
+              headers: {
+                ...config.headers,
+                "Content-Type": "application/json",
+              },
+              body: config.method !== "GET" ? JSON.stringify(config.params) : undefined,
+            }
           );
-          const url = new URL(config.endpoint, baseUrl);
-
-          if (config.params) {
-            Object.entries(config.params).forEach(([key, value]) => {
-              // JSONPlaceholder API인 경우 파라미터 이름 변환
-              const paramKey =
-                isJSONPlaceholder && (key === "limit" || key === "page")
-                  ? `_${key}` // limit → _limit, page → _page
-                  : key;
-              url.searchParams.append(paramKey, String(value));
-            });
-          }
-
-          console.log("📡 ListBox 최종 URL:", url.toString());
-
-          const response = await fetch(url.toString(), {
-            method: config.method || "GET",
-            headers: {
-              "Content-Type": "application/json",
-              ...config.headers,
-            },
-          });
 
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          const responseData = await response.json();
-          console.log("✅ ListBox API 응답:", responseData);
+          const data = await response.json();
+          const resultData = config.dataMapping.resultPath
+            ? data[config.dataMapping.resultPath]
+            : data;
 
-          const resultPath = config.dataMapping?.resultPath || "data";
-          let items = responseData;
-
-          if (resultPath && resultPath !== "data" && responseData[resultPath]) {
-            items = responseData[resultPath];
-          }
-
-          if (!Array.isArray(items)) {
-            items = [items];
-          }
-
-          console.log("📊 ListBox 데이터:", items.length, "개");
-
-          setApiData(items);
-          setLoading(false);
+          setApiData(resultData);
         } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          console.error("❌ ListBox API 실패:", errorMessage);
-          setError(errorMessage);
-          setApiData([]);
+          console.error("ListBox API 호출 오류:", err);
+          setError(err instanceof Error ? err.message : String(err));
+        } finally {
           setLoading(false);
         }
-      };
+      }
+    };
 
-      fetchData();
-    } else {
-      // 데이터 바인딩이 없으면 초기화
-      setApiData([]);
-      setLoading(false);
-      setError(null);
-    }
+    fetchData();
   }, [dataBinding]);
 
   return (

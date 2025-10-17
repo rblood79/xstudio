@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -73,9 +73,9 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     />
 
                     {/* 옵션 비활성화 상태 편집 */}
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentOption.props,
@@ -198,41 +198,41 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                     icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 {/* 필수 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
-                    checked={Boolean(currentProps.isRequired)}
+                    isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
 
                 {/* 읽기 전용 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
-                    checked={Boolean(currentProps.isReadOnly)}
+                    isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
 
                 {/* 자동 포커스 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
-                    checked={Boolean(currentProps.autoFocus)}
+                    isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />

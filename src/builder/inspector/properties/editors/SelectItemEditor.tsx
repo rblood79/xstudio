@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Binary, FileText, PointerOff, PenOff } from 'lucide-react';
 import { PropertyInput } from '../../components/PropertyInput';
-import { PropertyCheckbox } from '../../components/PropertyCheckbox';
+import { PropertySwitch } from '../../components/PropertySwitch';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -72,16 +72,16 @@ export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps
                 icon={FileText}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(localProps.isDisabled)}
+                isSelected={Boolean(localProps.isDisabled)}
                 onChange={(checked) => handlePropertyChange('isDisabled', checked)}
                 icon={PointerOff}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.READONLY}
-                checked={Boolean(localProps.isReadOnly)}
+                isSelected={Boolean(localProps.isReadOnly)}
                 onChange={(checked) => handlePropertyChange('isReadOnly', checked)}
                 icon={PenOff}
             />

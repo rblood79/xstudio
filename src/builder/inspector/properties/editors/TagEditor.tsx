@@ -1,5 +1,5 @@
 import { Type, PointerOff } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -21,9 +21,9 @@ export function TagEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 icon={Type}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(currentProps.isDisabled)}
+                isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />

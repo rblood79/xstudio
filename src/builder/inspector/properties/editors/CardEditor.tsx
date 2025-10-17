@@ -1,5 +1,5 @@
 import { Type, FileText, Layout, Eye, EyeOff, PointerOff, Focus, PencilRuler } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox, PropertySelect } from '../../components';
+import { PropertyInput, PropertySwitch, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -52,30 +52,30 @@ export function CardEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 icon={PencilRuler}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.IS_QUIET}
-                checked={Boolean(currentProps.isQuiet)}
+                isSelected={Boolean(currentProps.isQuiet)}
                 onChange={(checked) => updateProp('isQuiet', checked)}
                 icon={EyeOff}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.SELECTED}
-                checked={Boolean(currentProps.isSelected)}
+                isSelected={Boolean(currentProps.isSelected)}
                 onChange={(checked) => updateProp('isSelected', checked)}
                 icon={Eye}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(currentProps.isDisabled)}
+                isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.IS_FOCUSED}
-                checked={Boolean(currentProps.isFocused)}
+                isSelected={Boolean(currentProps.isFocused)}
                 onChange={(checked) => updateProp('isFocused', checked)}
                 icon={Focus}
             />

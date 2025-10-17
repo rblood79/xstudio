@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -108,9 +108,9 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     />
 
                     {/* 아이템 비활성화 상태 편집 */}
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentItem.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentItem.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 GridListItem 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -220,41 +220,41 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 />
 
                 {/* 빈 선택 허용 안함 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                     icon={SquareX}
                 />
 
                 {/* 비활성화 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 {/* 자동 포커스 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
-                    checked={Boolean(currentProps.autoFocus)}
+                    isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
 
                 {/* 드래그 허용 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.ALLOWS_DRAGGING}
-                    checked={Boolean(currentProps.allowsDragging)}
+                    isSelected={Boolean(currentProps.allowsDragging)}
                     onChange={(checked) => updateProp('allowsDragging', checked)}
                     icon={MoveHorizontal}
                 />
 
                 {/* 빈 상태 렌더링 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.RENDER_EMPTY_STATE}
-                    checked={Boolean(currentProps.renderEmptyState)}
+                    isSelected={Boolean(currentProps.renderEmptyState)}
                     onChange={(checked) => updateProp('renderEmptyState', checked)}
                     icon={Square}
                 />

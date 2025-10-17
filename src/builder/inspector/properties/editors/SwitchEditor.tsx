@@ -1,5 +1,5 @@
 import { ToggleLeft, Eye, EyeOff, PenOff, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -22,30 +22,30 @@ export function SwitchEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                     icon={ToggleLeft}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.SELECTED}
-                    checked={Boolean(currentProps.isSelected)}
+                    isSelected={Boolean(currentProps.isSelected)}
                     onChange={(checked) => updateProp('isSelected', checked)}
                     icon={Eye}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={EyeOff}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
-                    checked={Boolean(currentProps.isReadOnly)}
+                    isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
-                    checked={Boolean(currentProps.isRequired)}
+                    isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />

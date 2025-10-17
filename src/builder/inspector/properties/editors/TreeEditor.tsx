@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ListTree, FolderTree, Workflow, Plus } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
@@ -109,9 +109,9 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Workflow}
                 />
 
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    checked={Boolean(currentProps.disallowEmptySelection)}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                 />
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight } from 'lucide-react';
-import { PropertyInput, PropertyCheckbox, PropertySelect } from '../../components';
+import { PropertyInput, PropertySwitch, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -55,9 +55,9 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         icon={Type}
                     />
 
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentTag.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentTag.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             const updatedProps = {
                                 ...currentTag.props,
@@ -84,7 +84,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     }
 
                                     const updatedElements = storeElements.filter(el => el.id !== currentTag.id);
-                                    setElements(updatedElements, { skipHistory: true });
+                                    setElements(updatedElements);
                                     setSelectedTag(null);
                                 } catch (error) {
                                     console.error('Tag 삭제 중 오류:', error);
@@ -133,16 +133,16 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={AlertTriangle}
                 />
 
-                <PropertyCheckbox
-                    label="Allows Removing"
-                    checked={Boolean(currentProps.allowsRemoving)}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.ALLOWS_REMOVING}
+                    isSelected={Boolean(currentProps.allowsRemoving)}
                     onChange={(checked) => updateProp('allowsRemoving', checked)}
                     icon={Trash}
                 />
 
-                <PropertyCheckbox
-                    label="Allows Custom Value"
-                    checked={Boolean(currentProps.allowsCustomValue)}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
+                    isSelected={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                     icon={PenOff}
                 />
@@ -152,7 +152,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <legend className='fieldset-legend'>Selection Settings</legend>
 
                 <PropertySelect
-                    label="Selection Mode"
+                    label={PROPERTY_LABELS.SELECTION_MODE}
                     value={String(currentProps.selectionMode || 'none')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
@@ -164,7 +164,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 />
 
                 <PropertySelect
-                    label="Selection Behavior"
+                    label={PROPERTY_LABELS.SELECTION_BEHAVIOR}
                     value={String(currentProps.selectionBehavior || 'toggle')}
                     onChange={(value) => updateProp('selectionBehavior', value)}
                     options={[
@@ -174,16 +174,16 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={ToggleLeft}
                 />
 
-                <PropertyCheckbox
-                    label="Disallow Empty Selection"
-                    checked={Boolean(currentProps.disallowEmptySelection)}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                     icon={ToggleRight}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tag Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TAG_MANAGEMENT}</legend>
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>

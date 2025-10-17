@@ -11,7 +11,7 @@ import {
   Binary,
   FileText,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertyCheckbox, PropertySwitch } from "../../components";
+import { PropertyInput, PropertySelect, PropertySwitch } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
@@ -103,7 +103,7 @@ export function ListBoxEditor({
           />
 
           {/* 아이템 비활성화 상태 편집 */}
-          <PropertyCheckbox
+          <PropertySwitch
             label={PROPERTY_LABELS.DISABLED}
             isSelected={Boolean(
               (currentItem.props as Record<string, unknown>).isDisabled

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -78,9 +78,9 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     />
 
                     {/* 라디오 버튼 비활성화 상태 편집 */}
-                    <PropertyCheckbox
+                    <PropertySwitch
                         label={PROPERTY_LABELS.DISABLED}
-                        checked={Boolean((currentRadio.props as Record<string, unknown>).isDisabled)}
+                        isSelected={Boolean((currentRadio.props as Record<string, unknown>).isDisabled)}
                         onChange={(checked) => {
                             // 실제 Radio 컴포넌트의 props 업데이트
                             const updatedProps = {
@@ -196,25 +196,25 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                 />
 
                 {/* 비활성화 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
-                    checked={Boolean(currentProps.isDisabled)}
+                    isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
 
                 {/* 필수 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
-                    checked={Boolean(currentProps.isRequired)}
+                    isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
 
                 {/* 읽기 전용 설정 */}
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
-                    checked={Boolean(currentProps.isReadOnly)}
+                    isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />

@@ -1,5 +1,5 @@
 import { Type, Layout, ToggleLeft, X } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -41,9 +41,9 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
 
             {/* 열림 상태 설정 (Tab 패널이 아닌 경우에만) */}
             {!isTabPanel && (
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.IS_OPEN}
-                    checked={Boolean(currentProps.isOpen)}
+                    isSelected={Boolean(currentProps.isOpen)}
                     onChange={(checked) => updateProp('isOpen', checked)}
                     icon={ToggleLeft}
                 />
@@ -51,9 +51,9 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
 
             {/* 닫기 가능 설정 (Tab 패널이 아닌 경우에만) */}
             {!isTabPanel && (
-                <PropertyCheckbox
+                <PropertySwitch
                     label={PROPERTY_LABELS.IS_DISMISSABLE}
-                    checked={Boolean(currentProps.isDismissable)}
+                    isSelected={Boolean(currentProps.isDismissable)}
                     onChange={(checked) => updateProp('isDismissable', checked)}
                     icon={X}
                 />

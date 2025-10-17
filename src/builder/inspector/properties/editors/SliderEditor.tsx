@@ -1,5 +1,5 @@
 import { Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCheckbox } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 
@@ -70,9 +70,9 @@ export function SliderEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 icon={Layout}
             />
 
-            <PropertyCheckbox
+            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
-                checked={Boolean(currentProps.isDisabled)}
+                isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={ToggleLeft}
             />
