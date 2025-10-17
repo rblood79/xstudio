@@ -415,6 +415,7 @@
 
     .react-aria-ToggleButton {
       background-color: transparent;
+      border-color: transparent;
 
       &[data-pressed] {
         background: transparent;

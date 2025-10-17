@@ -261,7 +261,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             </Button>
           </div>
           <div className="justify-control">
-            <ToggleButtonGroup aria-label="Justify content alignment">
+            <ToggleButtonGroup aria-label="Justify content alignment" indicator>
               <ToggleButton id="space-around">
                 <AlignHorizontalSpaceAround
                   color={iconProps.color}

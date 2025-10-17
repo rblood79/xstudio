@@ -26,25 +26,10 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     }, [elementId]);
 
     const updateProp = (key: string, value: unknown) => {
-        console.log('Updating prop:', {
-            key,
-            value,
-            currentProps,
-            stringifiedProps: JSON.stringify(currentProps)
-        });
-
-        // 디버깅용 스택 트레이스 추가
-        console.trace('Prop update stack trace');
-
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
-
-        console.log('Updated props:', {
-            updatedProps,
-            stringifiedUpdatedProps: JSON.stringify(updatedProps)
-        });
 
         onUpdate(updatedProps);
     };
@@ -84,10 +69,10 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         label={PROPERTY_LABELS.DISABLED}
                         isSelected={Boolean((currentButton.props as Record<string, unknown>).isDisabled)}
                         onChange={(isSelected: boolean) => {
-                            const updatedProps: any = {
+                            const updatedProps = {
                                 ...currentButton.props,
                                 isDisabled: isSelected
-                            };
+                            } as Record<string, unknown>;
                             updateElementProps(currentButton.id, updatedProps);
                         }}
                         icon={PointerOff}
@@ -203,11 +188,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     label={PROPERTY_LABELS.INDICATOR}
                     isSelected={currentProps.indicator === true}
                     onChange={(checked) => {
-                        console.log('Indicator switch changed:', {
-                            checked,
-                            currentProps,
-                            currentIndicator: currentProps.indicator
-                        });
                         updateProp('indicator', checked);
                     }}
                     icon={Target}
