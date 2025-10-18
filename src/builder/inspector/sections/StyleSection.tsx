@@ -120,13 +120,25 @@ export function StyleSection({ element }: StyleSectionProps) {
         </fieldset>
 
         <div className="transform-size">
-          <PropertyInput
+          <PropertySelect
             icon={RulerDimensionLine}
             label="Width"
-            className="transform-size-width"
             value={element.cssVariables?.width || "auto"}
-            onChange={(value) => updateCSSVariables({ width: value })}
-            placeholder="auto"
+            options={[
+              { value: "auto", label: "auto" },
+              { value: "100%", label: "100%" },
+              { value: "50%", label: "50%" },
+              { value: "25%", label: "25%" },
+              { value: "100vw", label: "100vw" },
+              { value: "100dvw", label: "100dvw" },
+              { value: "100lvw", label: "100lvw" },
+              { value: "100svw", label: "100svw" },
+              { value: "100cqw", label: "100cqw" },
+            ]}
+            onChange={(key: string) => {
+              console.log("Width 변경:", key);
+              updateCSSVariables({ width: key });
+            }}
           />
           <PropertyInput
             icon={RulerDimensionLine}
