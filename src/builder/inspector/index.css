@@ -451,20 +451,23 @@
         width: 100%;
         min-height: var(--inspector-control-size);
 
-        .react-aria-Select {
+        .react-aria-Select,
+        .react-aria-ComboBox {
           width: 100%;
           padding: 0;
 
           .react-aria-Button {
-            padding: 0 3px 0 6px;
-            background-color: transparent;
-            border-color: transparent;
-
             span[aria-hidden] {
               width: var(--text-xl);
               height: var(--text-xl);
               border-radius: var(--radius-sm);
             }
+          }
+        }
+        .react-aria-UnitComboBox {
+          .react-aria-Button {
+            width: 20px;
+            height: 20px;
           }
         }
       }

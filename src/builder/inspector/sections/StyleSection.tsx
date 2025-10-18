@@ -1,6 +1,6 @@
 import { DisclosureGroup, Disclosure } from "react-aria-components";
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components/list";
-import { PropertySelect, PropertyInput } from "../components";
+import { PropertySelect, PropertyInput, PropertyUnitInput } from "../components";
 import { SemanticClassPicker } from "../styles/SemanticClassPicker";
 import { CSSVariableEditor } from "../styles/CSSVariableEditor";
 import { PreviewPanel } from "../styles/PreviewPanel";
@@ -120,33 +120,27 @@ export function StyleSection({ element }: StyleSectionProps) {
         </fieldset>
 
         <div className="transform-size">
-          <PropertySelect
+          <PropertyUnitInput
             icon={RulerDimensionLine}
             label="Width"
             value={element.cssVariables?.width || "auto"}
-            options={[
-              { value: "auto", label: "auto" },
-              { value: "100%", label: "100%" },
-              { value: "50%", label: "50%" },
-              { value: "25%", label: "25%" },
-              { value: "100vw", label: "100vw" },
-              { value: "100dvw", label: "100dvw" },
-              { value: "100lvw", label: "100lvw" },
-              { value: "100svw", label: "100svw" },
-              { value: "100cqw", label: "100cqw" },
-            ]}
-            onChange={(key: string) => {
-              console.log("Width 변경:", key);
-              updateCSSVariables({ width: key });
+            units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
+            onChange={(value) => {
+              console.log("Width 변경:", value);
+              updateCSSVariables({ width: value });
             }}
+            min={0}
+            max={9999}
           />
-          <PropertyInput
+          <PropertyUnitInput
             icon={RulerDimensionLine}
             label="Height"
             className="transform-size-height"
             value={element.cssVariables?.["height"] || "auto"}
+            units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
             onChange={(value) => updateCSSVariables({ height: value })}
-            placeholder="auto"
+            min={0}
+            max={9999}
           />
           <div className="fieldset-actions">
             <Button>
