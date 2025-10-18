@@ -99,7 +99,9 @@ src/
 │   ├── 📚 library/              # 컴포넌트 라이브러리
 │   ├── 🏠 main/                 # 메인 빌더 컴포넌트
 │   ├── 👁️ preview/              # iframe 프리뷰
-│   ├── 📊 stores/               # Zustand 상태 관리
+│   ├── 📊 stores/               # Zustand 상태 관리 (모듈화됨)
+│   │   ├── utils/               # Store 유틸리티 모듈
+│   │   └── history/             # Undo/Redo 히스토리 모듈
 │   ├── 🎨 theme/                # 테마 및 디자인 토큰
 │   └── 🛠️ utils/                # 빌더 유틸리티
 ├── 📊 dashboard/                # 프로젝트 대시보드
@@ -131,12 +133,32 @@ UI 액션 → Zustand Store → Supabase API → Real-time Update
          iframe 프리뷰 동기화
 ```
 
-### 상태 관리
+### 상태 관리 (Zustand)
 
-- **Elements Store**: 페이지 요소 및 계층 구조
+**모듈화된 Store 아키텍처:**
+
+- **Elements Store** (`elements.ts` - 470줄)
+  - Factory pattern으로 리팩토링됨 (기존 1,851줄에서 74.6% 감소)
+  - 모듈: `utils/elementHelpers`, `utils/elementSanitizer`, `utils/elementReorder`, `utils/elementRemoval`, `history/historyActions`
+
 - **Selection Store**: 선택된 요소 관리
 - **History Store**: Undo/Redo 기능
 - **Theme Store**: 디자인 토큰 및 테마
+
+**Elements Store 모듈 구조:**
+```
+📊 stores/
+├── elements.ts              → 메인 스토어 (470줄)
+├── utils/
+│   ├── elementHelpers.ts    → 핵심 유틸리티
+│   ├── elementSanitizer.ts  → 안전한 직렬화
+│   ├── elementReorder.ts    → 순서 관리 (391줄)
+│   └── elementRemoval.ts    → 삭제 로직 (393줄)
+└── history/
+    └── historyActions.ts    → Undo/Redo (570줄)
+```
+
+자세한 내용은 [`CLAUDE.md`](./CLAUDE.md)를 참고하세요.
 
 ## 🔧 개발 스크립트
 

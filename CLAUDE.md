@@ -66,11 +66,65 @@ The builder consists of four main areas:
 
 The application uses Zustand stores located in `src/builder/stores/`:
 
-- **elements.ts** - Page elements, hierarchy, CRUD operations, undo/redo
+- **elements.ts** - Main element store (470 lines, refactored with factory pattern)
 - **selection.ts** - Currently selected element tracking
 - **history.ts** - Undo/redo history management
 - **theme.ts** - Design tokens and theme state
 - **saveMode.ts** - Auto-save vs manual save mode
+
+#### Store Module Architecture
+
+The `elements.ts` store has been refactored into focused, reusable modules using the factory pattern:
+
+**Utility Modules** (`src/builder/stores/utils/`):
+- **elementHelpers.ts** - Core helper functions (`findElementById`, `createCompleteProps`)
+- **elementSanitizer.ts** - Safe serialization (removes Immer proxies for postMessage/DB)
+- **elementReorder.ts** - Automatic order_num re-sequencing with special sorting logic
+- **elementRemoval.ts** - Element deletion with cascade logic (393 lines)
+
+**History Modules** (`src/builder/stores/history/`):
+- **historyActions.ts** - Undo/redo factory functions (570 lines)
+
+**Factory Pattern Example:**
+```typescript
+// Factory functions receive Zustand's set/get
+export const createUndoAction = (set: SetState, get: GetState) => async () => {
+  // ... undo logic
+};
+
+// Main store uses factories
+export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
+  const undo = createUndoAction(set, get);
+  const redo = createRedoAction(set, get);
+  const removeElement = createRemoveElementAction(set, get);
+
+  return {
+    elements: [],
+    undo,
+    redo,
+    removeElement,
+    // ... other methods
+  };
+};
+```
+
+This architecture provides:
+- **Separation of concerns** - Each module has a single responsibility
+- **Testability** - Functions can be tested in isolation
+- **Reusability** - Factory pattern allows flexible composition
+- **Maintainability** - 74.6% reduction in main store file size
+
+**Module Dependency Graph:**
+```
+elements.ts (470 lines)
+├── utils/
+│   ├── elementHelpers.ts      → Core utilities (findElementById, etc.)
+│   ├── elementSanitizer.ts    → Safe serialization
+│   ├── elementReorder.ts      → Order management (391 lines)
+│   └── elementRemoval.ts      → Deletion logic (393 lines)
+└── history/
+    └── historyActions.ts      → Undo/redo (570 lines)
+```
 
 ### Data Flow
 
@@ -153,6 +207,44 @@ Then define styles in CSS using `@apply`:
 - **DTOs location:** Type definitions go in `src/types/`
 - **Import paths:** Use absolute imports (configured in tsconfig)
 - Keep components and hooks thin, delegate logic to services/utilities
+
+**Store Module Pattern:**
+
+When creating new store modules or utilities, follow the factory pattern:
+
+```typescript
+// 1. Import StateCreator from zustand for proper typing
+import type { StateCreator } from "zustand";
+import type { YourStoreState } from "../yourStore";
+
+// 2. Extract set/get types from StateCreator
+type SetState = Parameters<StateCreator<YourStoreState>>[0];
+type GetState = Parameters<StateCreator<YourStoreState>>[1];
+
+// 3. Create factory function that receives set/get
+export const createYourAction = (set: SetState, get: GetState) => async () => {
+  // Your logic here using set() and get()
+  set({ someField: newValue });
+  const currentState = get();
+};
+
+// 4. Use in main store
+export const createYourStoreSlice: StateCreator<YourStoreState> = (set, get) => {
+  const yourAction = createYourAction(set, get);
+
+  return {
+    // state
+    someField: initialValue,
+    // actions
+    yourAction,
+  };
+};
+```
+
+This pattern enables:
+- Proper type inference for Zustand's set/get functions
+- Modular, testable code
+- Separation of concerns while maintaining store access
 
 ### React Aria Components
 
@@ -238,7 +330,25 @@ Elements have an `order_num` field for rendering order. Special sorting rules ap
 - **Collection components** (ListBox, GridList, Menu, ComboBox, Select, Tree, ToggleButtonGroup): Items sorted by `order_num` then by text content
 - **Table components:** ColumnGroup and Column elements sorted by `order_num` then by label
 
-The `reorderElements()` function in `elements.ts` handles automatic re-sequencing after operations.
+The `reorderElements()` function in `src/builder/stores/utils/elementReorder.ts` handles automatic re-sequencing after operations. This module:
+- Groups elements by parent and page
+- Applies component-specific sorting logic
+- Batch updates to Supabase for performance
+- Includes detailed logging for debugging
+
+**Key Implementation Detail:**
+```typescript
+// Located in: src/builder/stores/utils/elementReorder.ts
+export const reorderElements = async (
+  elements: Element[],
+  pageId: string,
+  updateElementOrder: (elementId: string, orderNum: number) => void
+): Promise<void> => {
+  // Groups elements by parent
+  // Applies special sorting for Tabs, Collections, Tables
+  // Updates both memory state and database
+};
+```
 
 ## Testing Strategy
 
@@ -319,7 +429,25 @@ await updateElementProps(elementId, { newProp: 'value' });
 await updateElement(elementId, { props: {...}, dataBinding: {...} });
 
 // Remove element (cascades to children)
+// Implementation: src/builder/stores/utils/elementRemoval.ts
 await removeElement(elementId);
+```
+
+**Element Removal Special Handling:**
+
+The `removeElement` function (defined in `elementRemoval.ts`) handles complex cascade logic:
+- Recursively removes all child elements
+- **Table Column/Cell sync:** Deleting a Column removes all related Cells; deleting a Cell removes the Column
+- **Tab/Panel pairs:** Deleting a Tab removes its paired Panel (matched by `tabId`)
+- **Collection items:** Defers order_num reordering until after undo to prevent visual jumps
+- Triple-layer sync: memory → iframe → Supabase
+
+```typescript
+// Example: Deleting a Tab automatically removes its Panel
+const tab = { id: 'tab1', tag: 'Tab', props: { tabId: 'unique-id' } };
+const panel = { id: 'panel1', tag: 'Panel', props: { tabId: 'unique-id' } };
+
+await removeElement('tab1'); // Also removes 'panel1' automatically
 ```
 
 ### Save Service
