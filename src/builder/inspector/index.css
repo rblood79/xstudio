@@ -2,6 +2,14 @@
 @import "./data/data.css";
 @import "./events/events.css";
 
+@layer theme {
+  :root {
+    /* Inspector 전용 크기 토큰 */
+    --inspector-control-size: 27px;
+    --inspector-label-width: 27px;
+  }
+}
+
 @layer utilities {
   .inspector {
     border-left: 1px solid var(--color-border);
@@ -143,8 +151,8 @@
         &::before {
           top: 2px;
           left: 2px;
-          width: calc(var(--indicator-width) - 4px);
-          height: calc(var(--indicator-height) - 4px);
+          width: calc(var(--indicator-width) - var(--spacing));
+          height: calc(var(--indicator-height) - var(--spacing));
           border-radius: var(--radius-sm);
           background: var(--color-white);
           box-shadow: 0px 2px 1px rgba(0, 0, 0, 0.1);
@@ -203,7 +211,7 @@
         padding: var(--spacing-sm);
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: var(--spacing-sm);
 
         .component-props {
           display: flex;
@@ -242,12 +250,12 @@
         .transform-alignment,
         .spacing-controls-container {
           display: grid;
-          grid-template-rows: auto 27px;
-          grid-template-columns: 1fr 1fr 27px;
+          grid-template-rows: auto var(--inspector-control-size);
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
           grid-template-areas:
             "label label label"
             "input1 input2 icon";
-          gap: 4px 8px;
+          gap: var(--spacing) var(--spacing-sm);
 
           .alignment-controls-horizontal,
           .color-control,
@@ -274,22 +282,22 @@
         .typography-font {
           display: grid;
           grid-template-rows: 12px auto;
-          grid-template-columns: 1fr 1fr 27px;
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
           grid-template-areas:
             "label label label"
             "input1 input2 icon";
-          gap: 0px;
+          gap: 0;
         }
 
 
         .typography-font {
           display: grid;
-          grid-template-rows: auto 27px;
-          grid-template-columns: 1fr 1fr 27px;
+          grid-template-rows: auto var(--inspector-control-size);
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
           grid-template-areas:
             "label label label"
             "input1 input1 icon";
-          gap: 4px 8px;
+          gap: var(--spacing) var(--spacing-sm);
 
           .color-control {
             grid-area: input1;
@@ -297,13 +305,12 @@
           }
         }
 
-        .spacing-controls-container,
         .style-background,
         .transform-size,
         .transform-position {
           display: flex;
           flex-direction: row;
-          gap: 8px;
+          gap: var(--spacing-sm);
           align-items: flex-end;
           justify-content: space-between;
         }
@@ -316,17 +323,17 @@
           grid-template-areas:
             "label"
             "input1";
-          gap: 4px 8px;
+          gap: var(--spacing) var(--spacing-sm);
         }
 
         .border-controls-container {
           display: grid;
           grid-template-rows: auto auto;
-          grid-template-columns: 1fr 1fr 27px;
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
           grid-template-areas:
             "input1 input2 ."
             "input3 input4 icon";
-          gap: 8px;
+          gap: var(--spacing-sm);
 
           .color-control,
           .border-width-control,
@@ -386,21 +393,21 @@
             background-color: var(--color-gray-100);
             border-color: transparent;
             padding: var(--spacing);
-            height: 27px;
-            width: 27px;
+            height: var(--inspector-control-size);
+            width: var(--inspector-control-size);
           }
         }
 
         .layout-direction {
           display: grid;
-          grid-template-rows: auto 27px;
-          grid-template-columns: 1fr 1fr 27px;
+          grid-template-rows: auto var(--inspector-control-size);
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
           grid-template-areas:
             "label label label"
             "input1 input2 icon"
             "input3 input2 icon"
             "input4 input2 icon";
-          gap: 4px 8px;
+          gap: var(--spacing) var(--spacing-sm);
 
           .direction-controls {
             grid-area: input1;
@@ -419,11 +426,11 @@
 
               .react-aria-ToggleButton {
                 margin-inline-start: 0;
-                height: 27px;
+                height: var(--inspector-control-size);
 
                 .alignment-dot {
-                  width: 4px;
-                  height: 4px;
+                  width: var(--spacing);
+                  height: var(--spacing);
                   background-color: var(--color-gray-300);
                 }
               }
@@ -446,7 +453,7 @@
         background-color: var(--color-gray-100);
         border-radius: var(--radius-md);
         width: 100%;
-        min-height: 27px;
+        min-height: var(--inspector-control-size);
 
 
         .react-aria-Select {
@@ -514,7 +521,7 @@
           font-size: var(--text-xs);
           line-height: var(--text-xs--line-height);
           padding: var(--spacing-2xs) 0 var(--spacing-2xs) calc(var(--spacing) * 1.378);
-          padding-inline-start: 27px;
+          padding-inline-start: var(--inspector-label-width);
           flex-direction: row-reverse;
           transition: all 0.2s ease;
 
@@ -528,31 +535,31 @@
       .control-label {
         position: absolute;
         display: block;
-        width: 27px;
+        width: var(--inspector-label-width);
         height: 25px;
         padding: var(--spacing) var(--spacing);
         text-align: center;
         background-color: transparent;
         border: 1px solid transparent;
-        border-right-width: 0px;
+        border-right-width: 0;
         border-radius: var(--radius-md) 0 0 var(--radius-md);
         font-size: var(--text-xs);
         color: var(--color-gray-700);
       }
 
       input.control-input {
-        height: 27px;
+        height: var(--inspector-control-size);
       }
 
       .react-aria-Input {
         background-color: transparent;
         border: 1px solid transparent;
-        border-left-width: 0px;
+        border-left-width: 0;
         border-radius: var(--radius-md);
         font-size: var(--text-xs);
         line-height: var(--text-xs--line-height);
         padding: calc(var(--spacing) * 1.125);
-        padding-inline-start: 27px;
+        padding-inline-start: var(--inspector-label-width);
         transition: all 0.2s ease;
 
 
