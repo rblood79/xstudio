@@ -137,9 +137,9 @@ UI 액션 → Zustand Store → Supabase API → Real-time Update
 
 **모듈화된 Store 아키텍처:**
 
-- **Elements Store** (`elements.ts` - 470줄)
-  - Factory pattern으로 리팩토링됨 (기존 1,851줄에서 74.6% 감소)
-  - 모듈: `utils/elementHelpers`, `utils/elementSanitizer`, `utils/elementReorder`, `utils/elementRemoval`, `history/historyActions`
+- **Elements Store** (`elements.ts` - 213줄)
+  - Factory pattern으로 리팩토링됨 (기존 1,851줄에서 88.5% 감소)
+  - 모듈: `utils/elementHelpers`, `utils/elementSanitizer`, `utils/elementReorder`, `utils/elementRemoval`, `utils/elementCreation`, `utils/elementUpdate`, `history/historyActions`
 
 - **Selection Store**: 선택된 요소 관리
 - **History Store**: Undo/Redo 기능
@@ -148,12 +148,14 @@ UI 액션 → Zustand Store → Supabase API → Real-time Update
 **Elements Store 모듈 구조:**
 ```
 📊 stores/
-├── elements.ts              → 메인 스토어 (470줄)
+├── elements.ts              → 메인 스토어 (213줄) ⭐ 88.5% 감소
 ├── utils/
-│   ├── elementHelpers.ts    → 핵심 유틸리티
-│   ├── elementSanitizer.ts  → 안전한 직렬화
+│   ├── elementHelpers.ts    → 핵심 유틸리티 (20줄)
+│   ├── elementSanitizer.ts  → 안전한 직렬화 (36줄)
 │   ├── elementReorder.ts    → 순서 관리 (391줄)
-│   └── elementRemoval.ts    → 삭제 로직 (393줄)
+│   ├── elementRemoval.ts    → 삭제 로직 (393줄)
+│   ├── elementCreation.ts   → 생성 로직 (202줄)
+│   └── elementUpdate.ts     → 업데이트 로직 (160줄)
 └── history/
     └── historyActions.ts    → Undo/Redo (570줄)
 ```

@@ -66,7 +66,7 @@ The builder consists of four main areas:
 
 The application uses Zustand stores located in `src/builder/stores/`:
 
-- **elements.ts** - Main element store (470 lines, refactored with factory pattern)
+- **elements.ts** - Main element store (213 lines, refactored with factory pattern - 88.5% reduction)
 - **selection.ts** - Currently selected element tracking
 - **history.ts** - Undo/redo history management
 - **theme.ts** - Design tokens and theme state
@@ -79,8 +79,10 @@ The `elements.ts` store has been refactored into focused, reusable modules using
 **Utility Modules** (`src/builder/stores/utils/`):
 - **elementHelpers.ts** - Core helper functions (`findElementById`, `createCompleteProps`)
 - **elementSanitizer.ts** - Safe serialization (removes Immer proxies for postMessage/DB)
-- **elementReorder.ts** - Automatic order_num re-sequencing with special sorting logic
+- **elementReorder.ts** - Automatic order_num re-sequencing with special sorting logic (391 lines)
 - **elementRemoval.ts** - Element deletion with cascade logic (393 lines)
+- **elementCreation.ts** - Element creation logic (`addElement`, `addComplexElement`) (202 lines)
+- **elementUpdate.ts** - Element update logic (`updateElementProps`, `updateElement`) (160 lines)
 
 **History Modules** (`src/builder/stores/history/`):
 - **historyActions.ts** - Undo/redo factory functions (570 lines)
@@ -88,8 +90,11 @@ The `elements.ts` store has been refactored into focused, reusable modules using
 **Factory Pattern Example:**
 ```typescript
 // Factory functions receive Zustand's set/get
-export const createUndoAction = (set: SetState, get: GetState) => async () => {
-  // ... undo logic
+export const createAddElementAction = (set: SetState, get: GetState) => async (element: Element) => {
+  // 1. Memory state update
+  // 2. iframe postMessage
+  // 3. Supabase save
+  // 4. order_num reordering
 };
 
 // Main store uses factories
@@ -97,12 +102,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const undo = createUndoAction(set, get);
   const redo = createRedoAction(set, get);
   const removeElement = createRemoveElementAction(set, get);
+  const addElement = createAddElementAction(set, get);
+  const addComplexElement = createAddComplexElementAction(set, get);
+  const updateElementProps = createUpdateElementPropsAction(set, get);
+  const updateElement = createUpdateElementAction(set, get);
 
   return {
     elements: [],
     undo,
     redo,
     removeElement,
+    addElement,
+    addComplexElement,
+    updateElementProps,
+    updateElement,
     // ... other methods
   };
 };
@@ -112,16 +125,18 @@ This architecture provides:
 - **Separation of concerns** - Each module has a single responsibility
 - **Testability** - Functions can be tested in isolation
 - **Reusability** - Factory pattern allows flexible composition
-- **Maintainability** - 74.6% reduction in main store file size
+- **Maintainability** - 88.5% reduction in main store file size (1,851 → 213 lines)
 
 **Module Dependency Graph:**
 ```
-elements.ts (470 lines)
+elements.ts (213 lines) ⭐ 88.5% reduction
 ├── utils/
-│   ├── elementHelpers.ts      → Core utilities (findElementById, etc.)
-│   ├── elementSanitizer.ts    → Safe serialization
+│   ├── elementHelpers.ts      → Core utilities (20 lines)
+│   ├── elementSanitizer.ts    → Safe serialization (36 lines)
 │   ├── elementReorder.ts      → Order management (391 lines)
-│   └── elementRemoval.ts      → Deletion logic (393 lines)
+│   ├── elementRemoval.ts      → Deletion logic (393 lines)
+│   ├── elementCreation.ts     → Creation logic (202 lines)
+│   └── elementUpdate.ts       → Update logic (160 lines)
 └── history/
     └── historyActions.ts      → Undo/redo (570 lines)
 ```
@@ -422,10 +437,20 @@ await store.addComplexElement(parentElement, childElements);
 Always use store methods for element modifications:
 
 ```tsx
-// Update props
+// Add single element
+// Implementation: src/builder/stores/utils/elementCreation.ts
+await addElement(element);
+
+// Add complex element (parent + children)
+// Implementation: src/builder/stores/utils/elementCreation.ts
+await addComplexElement(parentElement, childElements);
+
+// Update props only
+// Implementation: src/builder/stores/utils/elementUpdate.ts
 await updateElementProps(elementId, { newProp: 'value' });
 
 // Update entire element (including dataBinding)
+// Implementation: src/builder/stores/utils/elementUpdate.ts
 await updateElement(elementId, { props: {...}, dataBinding: {...} });
 
 // Remove element (cascades to children)
@@ -433,9 +458,59 @@ await updateElement(elementId, { props: {...}, dataBinding: {...} });
 await removeElement(elementId);
 ```
 
-**Element Removal Special Handling:**
+**Element Creation (`elementCreation.ts`):**
 
-The `removeElement` function (defined in `elementRemoval.ts`) handles complex cascade logic:
+The `addElement` and `addComplexElement` functions follow a consistent triple-layer synchronization pattern:
+
+1. **Memory state update** (immediate UI reflection)
+2. **iframe postMessage** (preview synchronization)
+3. **Supabase save** (async, failures don't break memory state)
+4. **order_num reordering** (automatic sequencing)
+
+```typescript
+// Single element addition
+await addElement({
+  id: generateId(),
+  tag: 'Button',
+  props: { children: 'Click me' },
+  page_id: currentPageId,
+  parent_id: null,
+  order_num: getNextOrderNum(),
+});
+
+// Complex element (Tabs with Tab+Panel pairs)
+await addComplexElement(parentElement, [tab1, panel1, tab2, panel2]);
+```
+
+**Element Update (`elementUpdate.ts`):**
+
+Two update methods with different scopes:
+
+- **`updateElementProps`** - Updates only the `props` field, triggers history tracking
+- **`updateElement`** - Updates any element fields (`props`, `dataBinding`, etc.)
+
+Both methods:
+- Update memory state first (immediate UI)
+- Track changes in history (for undo/redo)
+- Delegate iframe/DB sync to external callers (prevents infinite loops)
+
+```typescript
+// Update props only
+await updateElementProps('element-id', {
+  children: 'New text',
+  variant: 'primary'
+});
+
+// Update with data binding
+await updateElement('element-id', {
+  props: { children: 'Dynamic content' },
+  dataBinding: { source: 'api', path: 'data.title' }
+});
+```
+
+**Element Removal (`elementRemoval.ts`):**
+
+The `removeElement` function handles complex cascade logic:
 - Recursively removes all child elements
 - **Table Column/Cell sync:** Deleting a Column removes all related Cells; deleting a Cell removes the Column
 - **Tab/Panel pairs:** Deleting a Tab removes its paired Panel (matched by `tabId`)
