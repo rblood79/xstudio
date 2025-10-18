@@ -1,9 +1,5 @@
 import { DisclosureGroup, Disclosure } from "react-aria-components";
-import {
-  ToggleButton,
-  ToggleButtonGroup,
-  Button,
-} from "../../components/list";
+import { ToggleButton, ToggleButtonGroup, Button } from "../../components/list";
 import { PropertySelect, PropertyInput } from "../components";
 import { SemanticClassPicker } from "../styles/SemanticClassPicker";
 import { CSSVariableEditor } from "../styles/CSSVariableEditor";
@@ -128,7 +124,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={RulerDimensionLine}
             label="Width"
             className="transform-size-width"
-            value={element.cssVariables?.width || 'auto'}
+            value={element.cssVariables?.width || "auto"}
             onChange={(value) => updateCSSVariables({ width: value })}
             placeholder="auto"
           />
@@ -136,7 +132,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={RulerDimensionLine}
             label="Height"
             className="transform-size-height"
-            value={element.cssVariables?.['height'] || 'auto'}
+            value={element.cssVariables?.["height"] || "auto"}
             onChange={(value) => updateCSSVariables({ height: value })}
             placeholder="auto"
           />
@@ -156,7 +152,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={ArrowRightFromLine}
             label="Left"
             className="transform-position-left"
-            value={element.cssVariables?.['x'] || 'auto'}
+            value={element.cssVariables?.["x"] || "auto"}
             onChange={(value) => updateCSSVariables({ x: value })}
             placeholder="auto"
           />
@@ -164,7 +160,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={ArrowDownFromLine}
             label="Top"
             className="transform-position-top"
-            value={element.cssVariables?.['y'] || 'auto'}
+            value={element.cssVariables?.["y"] || "auto"}
             onChange={(value) => updateCSSVariables({ y: value })}
             placeholder="auto"
           />
@@ -289,26 +285,26 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={LayoutGrid}
             //label="Gap"
             className="gap-control"
-            value={element.cssVariables?.['gap'] || '0'}
+            value={element.cssVariables?.["gap"] || "0"}
             onChange={(value) => updateCSSVariables({ gap: value })}
             placeholder="0"
           />
         </fieldset>
 
-        <div className="spacing-controls-container">
+        <div className="layout-container">
           <PropertyInput
             icon={SquareSquare}
             label="Padding"
-            className="spacing-control"
-            value={element.cssVariables?.['padding'] || '0'}
+            className="layout-padding"
+            value={element.cssVariables?.["padding"] || "0"}
             onChange={(value) => updateCSSVariables({ padding: value })}
             placeholder="0"
           />
           <PropertyInput
             icon={Frame}
             label="Margin"
-            className="spacing-control"
-            value={element.cssVariables?.['margin'] || '0'}
+            className="layout-margin"
+            value={element.cssVariables?.["margin"] || "0"}
             onChange={(value) => updateCSSVariables({ margin: value })}
             placeholder="0"
           />
@@ -342,8 +338,10 @@ export function StyleSection({ element }: StyleSectionProps) {
           <PropertyInput
             icon={Square}
             label="Background Color"
-            value={element.cssVariables?.['background-color'] || '#FFFFFF'}
-            onChange={(value) => updateCSSVariables({ 'background-color': value })}
+            value={element.cssVariables?.["background-color"] || "#FFFFFF"}
+            onChange={(value) =>
+              updateCSSVariables({ "background-color": value })
+            }
             placeholder="#FFFFFF"
           />
           <div className="fieldset-actions">
@@ -361,32 +359,32 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={Square}
             label="Border Color"
             className="style-border"
-            value={element.cssVariables?.['border-color'] || '#000000'}
-            onChange={(value) => updateCSSVariables({ 'border-color': value })}
+            value={element.cssVariables?.["border-color"] || "#000000"}
+            onChange={(value) => updateCSSVariables({ "border-color": value })}
             placeholder="#000000"
           />
           <PropertyInput
             icon={SquareDashed}
             label="Border Width"
             className="style-border-width"
-            value={element.cssVariables?.['border-width'] || '0'}
-            onChange={(value) => updateCSSVariables({ 'border-width': value })}
+            value={element.cssVariables?.["border-width"] || "0"}
+            onChange={(value) => updateCSSVariables({ "border-width": value })}
             placeholder="0"
           />
           <PropertyInput
             icon={SquareRoundCorner}
             label="Border Radius"
             className="style-border-radius"
-            value={element.cssVariables?.['border-radius'] || '0'}
-            onChange={(value) => updateCSSVariables({ 'border-radius': value })}
+            value={element.cssVariables?.["border-radius"] || "0"}
+            onChange={(value) => updateCSSVariables({ "border-radius": value })}
             placeholder="0"
           />
           <PropertyInput
             icon={SquareDashedBottom}
             label="Border Style"
             className="style-border-style"
-            value={element.cssVariables?.['border-style'] || 'solid'}
-            onChange={(value) => updateCSSVariables({ 'border-style': value })}
+            value={element.cssVariables?.["border-style"] || "solid"}
+            onChange={(value) => updateCSSVariables({ "border-style": value })}
             placeholder="solid"
           />
           <div className="fieldset-actions">
