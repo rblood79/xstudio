@@ -268,6 +268,56 @@ This pattern enables:
 - Use `tv()` from `tailwind-variants` for semantic class generation
 - Ship with `.stories.tsx` and `.test.tsx` for every new component
 
+#### CSS Class Naming Rules (CRITICAL)
+
+**ALWAYS follow React Aria standard class naming conventions:**
+
+1. **Use `react-aria-*` prefix for React Aria components:**
+   ```tsx
+   // ✅ CORRECT
+   <AriaComboBox className="react-aria-ComboBox react-aria-UnitComboBox">
+   <Input className="react-aria-Input" />
+   <Button className="react-aria-Button" />
+
+   // ❌ WRONG - Do not create custom prefixes
+   <AriaComboBox className="property-unit-input__combobox">
+   <Input className="property-unit-input__input" />
+   ```
+
+2. **Before creating new CSS classes, ALWAYS check existing patterns:**
+   - Read similar components in `src/builder/components/`
+   - Search for existing CSS in `src/builder/components/components.css`
+   - Reuse existing class names (e.g., `combobox-container`, `control-label`)
+
+3. **Workflow for new Inspector components:**
+   ```
+   Step 1: Find the closest React Aria component (ComboBox, Select, Input, etc.)
+   Step 2: Read its implementation in src/builder/components/
+   Step 3: Copy its className structure exactly
+   Step 4: Only add variant classes if needed (e.g., react-aria-UnitComboBox)
+   Step 5: Reuse existing CSS - avoid creating new CSS files
+   ```
+
+4. **Example - Correct Pattern:**
+   ```tsx
+   // Based on ComboBox.tsx structure
+   <AriaComboBox className="react-aria-ComboBox">
+     <div className="combobox-container">  {/* Existing class */}
+       <Input className="react-aria-Input" />
+       <Button className="react-aria-Button">
+         <ChevronDown />
+       </Button>
+     </div>
+   </AriaComboBox>
+   ```
+
+5. **When to create custom classes:**
+   - Only for component-specific variants (e.g., `react-aria-UnitComboBox`)
+   - Use existing base styles, add minimal overrides
+   - Never replace standard React Aria class names
+
+**Rule of thumb:** If you find yourself creating `component-name__element` BEM classes for React Aria components, you're doing it wrong. Use `react-aria-*` instead.
+
 ### Supabase
 
 - **Always use Row Level Security (RLS)**
@@ -283,6 +333,76 @@ When adding a new component:
 2. Create property editor in `src/builder/inspector/properties/editors/`
 3. Create Storybook story in `src/stories/`
 4. Write tests (Vitest for unit, Playwright for E2E)
+
+#### Inspector Property Components - Step-by-Step Workflow
+
+When adding a new Inspector property component (e.g., PropertyUnitInput, PropertyColorPicker):
+
+**Step 1: Identify the base React Aria component pattern**
+
+| Use Case | Base Component | Example File |
+|----------|----------------|--------------|
+| Value + unit inputs | ComboBox | `src/builder/components/ComboBox.tsx` |
+| Dropdowns/Lists | Select | `src/builder/inspector/components/PropertySelect.tsx` |
+| Text inputs | Input | `src/builder/inspector/components/PropertyInput.tsx` |
+| Toggles | Switch/Checkbox | React Aria Switch |
+| Color selection | ColorPicker | Custom with Popover |
+
+**Step 2: Read the existing implementation**
+
+```bash
+# Example: Creating a unit input component
+cat src/builder/components/ComboBox.tsx  # Read component structure
+grep "combobox-container" src/builder/components/components.css  # Check existing CSS
+grep "react-aria-ComboBox" src/builder/components/components.css  # Check React Aria styles
+```
+
+**Step 3: Copy the structure exactly**
+
+```tsx
+// ✅ CORRECT - Copy from ComboBox.tsx
+<AriaComboBox className="react-aria-ComboBox react-aria-UnitComboBox">
+  <div className="combobox-container">  {/* Reuse existing class */}
+    <Input className="react-aria-Input" />
+    <Button className="react-aria-Button">
+      <ChevronDown size={16} />
+    </Button>
+  </div>
+  <Popover className="react-aria-Popover">
+    <ListBox className="react-aria-ListBox">
+      {/* items */}
+    </ListBox>
+  </Popover>
+</AriaComboBox>
+
+// ❌ WRONG - Creating new structure
+<div className="property-unit-input__wrapper">
+  <input className="property-unit-input__field" />
+  <button className="property-unit-input__dropdown" />
+</div>
+```
+
+**Step 4: Add minimal component-specific styles only if needed**
+
+- Only add variant classes (e.g., `react-aria-UnitComboBox`)
+- Use existing base styles from `components.css`
+- Avoid creating new CSS files for simple variants
+
+**Step 5: Anti-patterns to avoid**
+
+❌ **DO NOT:**
+- Create new CSS files for simple component variants
+- Use BEM naming (`component__element`) for React Aria components
+- Duplicate existing CSS styles
+- Ignore existing component patterns in `src/builder/components/`
+- Add custom container classes when standard ones exist
+
+✅ **DO:**
+- Reuse `react-aria-*` class names
+- Reuse container classes (`combobox-container`, `control-label`, etc.)
+- Follow existing patterns from `src/builder/components/`
+- Check existing CSS before writing new styles
+- Import existing CSS files instead of creating new ones
 
 ### Preview iframe Communication
 
