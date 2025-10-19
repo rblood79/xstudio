@@ -60,7 +60,7 @@ The builder consists of four main areas:
 1. **BuilderHeader** - Top toolbar with save/undo/redo controls
 2. **Sidebar** - Page tree and element hierarchy navigation
 3. **Preview** - iframe-based real-time preview of the page
-4. **Inspector** - Property editor for selected elements
+4. **Inspector** - Property editor for selected elements with inline style management
 
 ### State Management (Zustand)
 
@@ -162,6 +162,64 @@ The preview runs in an isolated iframe (`src/builder/preview/index.tsx`):
 - Queues messages until `PREVIEW_READY` state
 - Renders React Aria Components dynamically based on element tree
 - Handles component-specific rendering (Tabs, Tables, Collections, etc.)
+- **Collects computed styles** from DOM elements and sends to Inspector
+
+### Inspector Style Management System
+
+The Inspector provides a comprehensive inline style editor with bidirectional synchronization:
+
+**Key Features:**
+- **Inline Styles** - Direct React `style` prop manipulation (not CSS variables)
+- **Computed Styles** - Reads actual browser-rendered styles from Preview iframe
+- **Style Priority** - Displays inline > computed > default values
+- **Bidirectional Sync** - Changes in Inspector update Preview, selections in Preview update Inspector
+- **History Integration** - All style changes tracked for undo/redo
+
+**Architecture** (`src/builder/inspector/`):
+- **useInspectorState.ts** - Manages local Inspector state with `updateInlineStyle` and `updateInlineStyles`
+- **useSyncWithBuilder.ts** - Syncs Inspector changes to Builder store, prevents duplicate history entries
+- **StyleSection.tsx** - Main style editor UI with intuitive Flexbox controls
+- **types.ts** - Extended with `style` and `computedStyle` properties
+
+**Data Flow:**
+```
+1. Element Selection (Preview) → Collect computed styles → Send to Builder
+2. Builder updates selection → Inspector receives style + computedStyle
+3. User edits style (Inspector) → updateInlineStyle → Sync to Builder
+4. Builder updates element → iframe postMessage → Preview re-renders
+```
+
+**Computed Style Collection** (`src/builder/preview/index.tsx:189-246`):
+```typescript
+const collectComputedStyle = (domElement: Element): Record<string, string> => {
+  const computed = window.getComputedStyle(domElement);
+  return {
+    // Layout
+    display: computed.display,
+    width: computed.width,
+    height: computed.height,
+    // Flexbox
+    flexDirection: computed.flexDirection,
+    justifyContent: computed.justifyContent,
+    alignItems: computed.alignItems,
+    // Typography, Colors, etc.
+    // ...
+  };
+};
+```
+
+**Flexbox Controls** (`StyleSection.tsx`):
+- **Vertical Alignment** (alignItems) - Auto-enables `display: flex`
+- **Horizontal Alignment** (justifyContent) - Auto-enables `display: flex`
+- **3x3 Grid Alignment** - Combined justifyContent + alignItems, adapts to flex-direction
+- **Flex Direction** - row/column/reset buttons
+- **Spacing Controls** - space-around/space-between/space-evenly (mutually exclusive with grid)
+
+**Critical Implementation Details:**
+- `getStyleValue()` helper enforces priority: inline style > computed style > default
+- ToggleButtonGroups use `selectedKeys` for controlled state synchronization
+- Spacing and grid alignment are mutually exclusive (automatically deselect each other)
+- flex-direction changes affect 3x3 grid mapping (row: horizontal=justifyContent, column: horizontal=alignItems)
 
 ### API Service Layer
 
@@ -333,6 +391,57 @@ When adding a new component:
 2. Create property editor in `src/builder/inspector/properties/editors/`
 3. Create Storybook story in `src/stories/`
 4. Write tests (Vitest for unit, Playwright for E2E)
+
+#### ToggleButtonGroup with Indicator
+
+The `ToggleButtonGroup` component (`src/builder/components/ToggleButtonGroup.tsx`) supports an animated indicator for selected buttons:
+
+**Usage:**
+```tsx
+<ToggleButtonGroup
+  indicator
+  selectionMode="single"
+  selectedKeys={["button-id"]}
+  onSelectionChange={(keys) => handleChange(keys)}
+>
+  <ToggleButton id="button-id">Content</ToggleButton>
+</ToggleButtonGroup>
+```
+
+**Indicator Behavior:**
+- Automatically positions itself behind the selected button using CSS custom properties
+- Smoothly animates position changes with CSS transitions (200ms ease-out)
+- **Fades out when no button is selected** (`--indicator-opacity: 0`)
+- Uses MutationObserver to track `data-selected` attribute changes
+
+**Implementation** (`ToggleButtonGroup.tsx:47-68`):
+```typescript
+if (selectedButton) {
+  // Position indicator behind selected button
+  group.style.setProperty('--indicator-left', `${left}px`);
+  group.style.setProperty('--indicator-top', `${top}px`);
+  group.style.setProperty('--indicator-width', `${width}px`);
+  group.style.setProperty('--indicator-height', `${height}px`);
+  group.style.setProperty('--indicator-opacity', '1');
+} else {
+  // Hide indicator when no selection (critical for mutually exclusive groups)
+  group.style.setProperty('--indicator-opacity', '0');
+}
+```
+
+**CSS** (`components.css:390-411`):
+```css
+.react-aria-ToggleButtonGroup[data-indicator="true"] {
+  --indicator-opacity: 0;  /* Default hidden */
+
+  &::before {
+    opacity: var(--indicator-opacity);
+    transition: transform 200ms ease-out, opacity 200ms ease-out;
+  }
+}
+```
+
+**Use Case:** Essential for mutually exclusive button groups (e.g., flex spacing vs. grid alignment) where indicator must disappear when switching groups.
 
 #### Inspector Property Components - Step-by-Step Workflow
 

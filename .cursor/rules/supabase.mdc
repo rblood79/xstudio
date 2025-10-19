@@ -4,13 +4,9 @@ alwaysApply: true
 
 # Supabase
 [globs]: ["**/*.{ts,tsx}"]
-- RLS assumption; never ship service keys
+- **Always use Row Level Security (RLS)**
+- Never expose secrets in client code
+- Use service modules (`src/services/api/*`) for all database operations
+- Use hooks for reactive queries (not direct Supabase calls in components)
 - After mutations, fetch fresh row with .select().single()
-- APIs under services/api/*.ts; consume via hooks
-- Separate toasts from logging; safe error serialization
-# Supabase
-[globs]: ["**/*.{ts,tsx}"]
-- RLS assumption; never ship service keys
-- After mutations, fetch fresh row with .select().single()
-- APIs under services/api/*.ts; consume via hooks
 - Separate toasts from logging; safe error serialization

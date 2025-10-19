@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+
+# React Aria Components
+[globs]: ["src/builder/components/**", "src/builder/inspector/**"]
+- All UI components must use React Aria for accessibility
+- Proper ARIA attributes, roles, and keyboard interactions
+- Use tv() from tailwind-variants for semantic class generation
+- Ship with .stories.tsx and .test.tsx for every new component
+
+## CSS Class Naming (CRITICAL)
+- **Always use `react-aria-*` prefix** (e.g., `react-aria-Button`, `react-aria-ComboBox`)
+- Before creating new CSS, check `src/builder/components/components.css`
+- Reuse existing wrapper classes (e.g., `combobox-container`, `control-label`)
+- Only add variant classes if needed (e.g., `react-aria-UnitComboBox`)
+
+## Workflow for new Inspector components
+1. Find closest React Aria component (ComboBox, Select, Input, etc.)
+2. Read implementation in `src/builder/components/`
+3. Copy className structure exactly
+4. Reuse existing CSS - avoid creating new CSS files

@@ -31,11 +31,23 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 
 - [INSPECTOR_REFACTORING.md](./features/INSPECTOR_REFACTORING.md) - Inspector 리팩토링
 - [INSPECTOR_INTEGRATION_TEST.md](./features/INSPECTOR_INTEGRATION_TEST.md) - Inspector 통합 테스트
+- [INSPECTOR_STYLE_SYSTEM.md](./features/INSPECTOR_STYLE_SYSTEM.md) - Inspector 스타일 관리 시스템 ✨
+  - Inline styles 기반 스타일 편집
+  - Computed styles 수집 및 표시
+  - 양방향 동기화 (Inspector ↔ Builder)
+  - 직관적인 Flexbox 컨트롤
 
 ### Preview
 
 - [PREVIEW_CHECKBOX_BEHAVIOR.md](./features/PREVIEW_CHECKBOX_BEHAVIOR.md) - Preview Checkbox 동작 방식
 - [PREVIEW_STATE_RESET_BUG.md](./features/PREVIEW_STATE_RESET_BUG.md) - Preview 상태 컴포넌트 리셋 버그 수정 ✅
+
+### Components
+
+- [TOGGLEBUTTONGROUP_INDICATOR.md](./features/TOGGLEBUTTONGROUP_INDICATOR.md) - ToggleButtonGroup Indicator 개선 ✨
+  - Opacity 기반 indicator 숨김
+  - Mutually exclusive groups 지원
+  - MutationObserver 활용
 
 ---
 

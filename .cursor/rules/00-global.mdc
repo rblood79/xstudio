@@ -5,15 +5,10 @@ alwaysApply: true
 [type]: Always
 - React 19 + TypeScript + RAC + Zustand + Tailwind v4 + Supabase
 - **No inline Tailwind** in .tsx; semantic classes + CSS @apply
+- **Inspector**: Inline styles (React style prop) + computed styles from Preview
+- **Preview**: Collects computed styles via getComputedStyle() + postMessage
 - Supabase: RLS + service modules + hooks; no secrets in client
 - Storybook CSF3 + Controls/Interactions
 - postMessage origin validation; queue until PREVIEW_READY
 - CSS variables for theming tokens
-# XStudio Global Rules
-[type]: Always
-- React 19 + TypeScript + RAC + Zustand + Tailwind v4 + Supabase
-- **No inline Tailwind** in .tsx; semantic classes + CSS @apply
-- Supabase: RLS + service modules + hooks; no secrets in client
-- Storybook CSF3 + Controls/Interactions
-- postMessage origin validation; queue until PREVIEW_READY
-- CSS variables for theming tokens
+- ToggleButtonGroup indicator: opacity-based hiding for mutually exclusive groups

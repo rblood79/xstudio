@@ -7,8 +7,9 @@ XStudio는 React 19, TypeScript, Supabase를 기반으로 한 현대적인 웹 �
 ## ✨ 주요 기능
 
 - 🖱️ **직관적인 빌더**: 드래그 앤 드롭으로 쉬운 UI 구성
-- 🔄 **실시간 프리뷰**: iframe 기반 즉시 미리보기
+- 🔄 **실시간 프리뷰**: iframe 기반 즉시 미리보기 + computed styles 수집
 - 🎨 **디자인 시스템**: 통합 디자인 토큰 및 테마 관리
+- ✏️ **인라인 스타일 편집기**: 직관적인 Flexbox 컨트롤과 양방향 동기화
 - ♿ **접근성 우선**: React Aria Components 기반 접근 가능한 UI
 - 🔗 **실시간 협업**: Supabase 기반 멀티 유저 지원
 - 📱 **반응형 디자인**: 모든 디바이스에 최적화
@@ -120,8 +121,8 @@ BuilderCore (메인)
 ├── BuilderHeader (툴바)
 ├── BuilderWorkspace (작업 영역)
 │   ├── Sidebar (페이지/요소 트리)
-│   ├── Preview (iframe 프리뷰)
-│   └── Inspector (속성 편집)
+│   ├── Preview (iframe 프리뷰 + computed styles 수집)
+│   └── Inspector (속성 편집 + 인라인 스타일 관리)
 └── BuilderViewport (레이아웃 컨테이너)
 ```
 
@@ -130,7 +131,9 @@ BuilderCore (메인)
 ```
 UI 액션 → Zustand Store → Supabase API → Real-time Update
                 ↓
-         iframe 프리뷰 동기화
+         iframe 프리뷰 동기화 (양방향)
+         ↓
+    Inspector ↔ Builder 스타일 동기화
 ```
 
 ### 상태 관리 (Zustand)

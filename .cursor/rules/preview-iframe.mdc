@@ -7,8 +7,6 @@ alwaysApply: true
 - Verify event.origin on message receive
 - Buffer messages until PREVIEW_READY; flush after ready
 - Supported types: UPDATE_ELEMENTS, ELEMENT_SELECTED, UPDATE_ELEMENT_PROPS
-# Preview (iframe Messaging)
-[globs]: ["src/builder/preview/**"]
-- Verify event.origin on message receive
-- Buffer messages until PREVIEW_READY; flush after ready
-- Supported types: UPDATE_ELEMENTS, ELEMENT_SELECTED, UPDATE_ELEMENT_PROPS
+- **Collect computed styles**: Use getComputedStyle() on DOM elements on selection
+- Send computed styles back to Builder via postMessage with element selection
+- Computed styles include: layout, flexbox, typography, colors, spacing, borders

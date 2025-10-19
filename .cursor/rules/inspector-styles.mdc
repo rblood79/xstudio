@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+
+# Inspector (Style Management)
+[globs]: ["src/builder/inspector/**"]
+- **Inline styles**: Manage via React style prop, NOT CSS variables
+- **Style priority**: inline style > computed style > default value
+- **Bidirectional sync**: Inspector ↔ Builder via useSyncWithBuilder
+- **History integration**: All style changes tracked for undo/redo
+- **Flexbox controls**: Auto-enable display:flex when using alignment buttons
+- **Mutually exclusive groups**: 3x3 grid vs spacing buttons (space-around/between/evenly)
+- **flex-direction aware**: Grid mapping changes between row/column
+- Use ToggleButtonGroup with selectedKeys for controlled state
+- Prevent duplicate history entries by comparing JSON before sync
