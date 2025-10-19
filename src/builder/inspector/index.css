@@ -466,8 +466,9 @@
         }
         .react-aria-UnitComboBox {
           .react-aria-Button {
-            width: 20px;
-            height: 20px;
+            width: var(--text-xl);
+            height: var(--text-xl);
+            border-radius: var(--radius-sm);
           }
         }
       }
@@ -523,10 +524,6 @@
           padding-inline-start: var(--inspector-label-width);
           flex-direction: row-reverse;
           transition: all 0.2s ease;
-
-          .indicator {
-            transition: all 200ms;
-          }
         }
       }
 
