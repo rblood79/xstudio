@@ -54,6 +54,11 @@ export function useSyncWithBuilder(): void {
     }
 
     // Inspector의 요소와 Builder store의 요소 비교
+    // Note: computedStyle은 읽기 전용이므로 비교에서 제외
+    // Store의 props에서 style과 computedStyle을 분리하여 비교
+    const { style: storeStyle, computedStyle: _storeComputedStyle, ...storeProps } =
+      currentElementInStore.props as Record<string, unknown>;
+
     const inspectorElementJson = JSON.stringify({
       properties: selectedElement.properties,
       style: selectedElement.style,
@@ -61,8 +66,8 @@ export function useSyncWithBuilder(): void {
     });
 
     const storeElementJson = JSON.stringify({
-      properties: currentElementInStore.props,
-      style: (currentElementInStore.props as { style?: React.CSSProperties }).style,
+      properties: storeProps,
+      style: storeStyle,
       dataBinding: currentElementInStore.dataBinding,
     });
 
