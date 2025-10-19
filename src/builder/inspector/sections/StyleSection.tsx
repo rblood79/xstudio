@@ -89,8 +89,22 @@ function getHorizontalAlignmentKeys(element: SelectedElement): string[] {
 function getFlexAlignmentKeys(element: SelectedElement): string[] {
   const justifyContent = getStyleValue(element, "justifyContent", "");
   const alignItems = getStyleValue(element, "alignItems", "");
+  const flexDirection = getStyleValue(element, "flexDirection", "row");
 
-  // Map combinations to button IDs
+  // For row (default): horizontal = justifyContent, vertical = alignItems
+  // For column: horizontal = alignItems, vertical = justifyContent
+  let horizontal: string, vertical: string;
+
+  if (flexDirection === "column") {
+    horizontal = alignItems;
+    vertical = justifyContent;
+  } else {
+    // row or default
+    horizontal = justifyContent;
+    vertical = alignItems;
+  }
+
+  // Map combinations to button IDs (horizontal:vertical)
   const combinationMap: Record<string, string> = {
     "flex-start:flex-start": "leftTop",
     "center:flex-start": "centerTop",
@@ -103,7 +117,7 @@ function getFlexAlignmentKeys(element: SelectedElement): string[] {
     "flex-end:flex-end": "rightBottom",
   };
 
-  const key = `${justifyContent}:${alignItems}`;
+  const key = `${horizontal}:${vertical}`;
   return combinationMap[key] ? [combinationMap[key]] : [];
 }
 
@@ -386,26 +400,40 @@ export function StyleSection({ element }: StyleSectionProps) {
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0] as string;
                 if (value) {
-                  // Map button ID to justifyContent and alignItems combination
-                  const alignmentMap: Record<string, { justifyContent: string; alignItems: string }> = {
-                    leftTop: { justifyContent: "flex-start", alignItems: "flex-start" },
-                    centerTop: { justifyContent: "center", alignItems: "flex-start" },
-                    rightTop: { justifyContent: "flex-end", alignItems: "flex-start" },
-                    leftCenter: { justifyContent: "flex-start", alignItems: "center" },
-                    centerCenter: { justifyContent: "center", alignItems: "center" },
-                    rightCenter: { justifyContent: "flex-end", alignItems: "center" },
-                    leftBottom: { justifyContent: "flex-start", alignItems: "flex-end" },
-                    centerBottom: { justifyContent: "center", alignItems: "flex-end" },
-                    rightBottom: { justifyContent: "flex-end", alignItems: "flex-end" },
+                  // Get current flex-direction to determine axis mapping
+                  const currentFlexDirection = getStyleValue(element, "flexDirection", "row");
+
+                  // Map button position to horizontal and vertical alignment values
+                  const positionMap: Record<string, { horizontal: string; vertical: string }> = {
+                    leftTop: { horizontal: "flex-start", vertical: "flex-start" },
+                    centerTop: { horizontal: "center", vertical: "flex-start" },
+                    rightTop: { horizontal: "flex-end", vertical: "flex-start" },
+                    leftCenter: { horizontal: "flex-start", vertical: "center" },
+                    centerCenter: { horizontal: "center", vertical: "center" },
+                    rightCenter: { horizontal: "flex-end", vertical: "center" },
+                    leftBottom: { horizontal: "flex-start", vertical: "flex-end" },
+                    centerBottom: { horizontal: "center", vertical: "flex-end" },
+                    rightBottom: { horizontal: "flex-end", vertical: "flex-end" },
                   };
 
-                  const alignment = alignmentMap[value];
-                  if (alignment) {
-                    updateInlineStyles({
-                      display: "flex",
-                      justifyContent: alignment.justifyContent,
-                      alignItems: alignment.alignItems,
-                    });
+                  const position = positionMap[value];
+                  if (position) {
+                    // For row: horizontal = justifyContent, vertical = alignItems
+                    // For column: horizontal = alignItems, vertical = justifyContent
+                    if (currentFlexDirection === "column") {
+                      updateInlineStyles({
+                        display: "flex",
+                        justifyContent: position.vertical,
+                        alignItems: position.horizontal,
+                      });
+                    } else {
+                      // row or default
+                      updateInlineStyles({
+                        display: "flex",
+                        justifyContent: position.horizontal,
+                        alignItems: position.vertical,
+                      });
+                    }
                   }
                 }
               }}
