@@ -56,11 +56,13 @@ export function useSyncWithBuilder(): void {
     // Inspector의 요소와 Builder store의 요소 비교
     const inspectorElementJson = JSON.stringify({
       properties: selectedElement.properties,
+      style: selectedElement.style,
       dataBinding: selectedElement.dataBinding,
     });
 
     const storeElementJson = JSON.stringify({
       properties: currentElementInStore.props,
+      style: (currentElementInStore.props as { style?: React.CSSProperties }).style,
       dataBinding: currentElementInStore.dataBinding,
     });
 

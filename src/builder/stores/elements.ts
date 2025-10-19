@@ -49,7 +49,9 @@ export interface ElementsState {
   ) => Promise<void>;
   setSelectedElement: (
     elementId: string | null,
-    props?: ComponentElementProps
+    props?: ComponentElementProps,
+    style?: React.CSSProperties,
+    computedStyle?: Partial<React.CSSProperties>
   ) => void;
   selectTabElement: (
     elementId: string,
@@ -131,17 +133,25 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // Factory 함수로 생성된 updateElement 사용
   updateElement,
 
-  setSelectedElement: (elementId, props) =>
+  setSelectedElement: (elementId, props, style, computedStyle) =>
     set(
       produce((state: ElementsState) => {
         state.selectedElementId = elementId;
 
         if (elementId && props) {
-          state.selectedElementProps = props;
+          state.selectedElementProps = {
+            ...props,
+            ...(style ? { style } : {}),
+            ...(computedStyle ? { computedStyle } : {}),
+          };
         } else if (elementId) {
           const element = findElementById(state.elements, elementId);
           if (element) {
-            state.selectedElementProps = createCompleteProps(element);
+            state.selectedElementProps = {
+              ...createCompleteProps(element),
+              ...(style ? { style } : {}),
+              ...(computedStyle ? { computedStyle } : {}),
+            };
           }
         } else {
           state.selectedElementProps = {};

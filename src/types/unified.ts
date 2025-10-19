@@ -8,6 +8,7 @@ export interface BaseElementProps {
   id?: string;
   className?: string;
   style?: React.CSSProperties;
+  computedStyle?: Partial<React.CSSProperties>; // Computed styles from browser
   "data-element-id"?: string;
   events?: ElementEvent[];
   children?: React.ReactNode; // children 속성 추가

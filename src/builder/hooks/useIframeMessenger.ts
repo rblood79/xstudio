@@ -271,7 +271,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
             //console.log('Element selected from preview:', event.data.elementId);
-            setSelectedElement(event.data.elementId, event.data.payload?.props);
+            setSelectedElement(
+                event.data.elementId,
+                event.data.payload?.props,
+                event.data.payload?.style,
+                event.data.payload?.computedStyle
+            );
         }
 
         // ELEMENT_UPDATED 메시지 처리는 제거 (무한 루프 방지)

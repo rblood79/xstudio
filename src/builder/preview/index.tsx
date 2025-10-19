@@ -186,6 +186,65 @@ function Preview() {
     }
   };
 
+  /**
+   * Collect computed styles from element
+   */
+  const collectComputedStyle = (domElement: Element): Record<string, string> => {
+    const computed = window.getComputedStyle(domElement);
+
+    // 주요 CSS 속성들만 수집 (string으로 반환)
+    return {
+      // Layout
+      display: computed.display,
+      width: computed.width,
+      height: computed.height,
+      position: computed.position,
+      top: computed.top,
+      left: computed.left,
+      right: computed.right,
+      bottom: computed.bottom,
+
+      // Flexbox
+      flexDirection: computed.flexDirection,
+      justifyContent: computed.justifyContent,
+      alignItems: computed.alignItems,
+      gap: computed.gap,
+
+      // Spacing
+      padding: computed.padding,
+      paddingTop: computed.paddingTop,
+      paddingRight: computed.paddingRight,
+      paddingBottom: computed.paddingBottom,
+      paddingLeft: computed.paddingLeft,
+      margin: computed.margin,
+      marginTop: computed.marginTop,
+      marginRight: computed.marginRight,
+      marginBottom: computed.marginBottom,
+      marginLeft: computed.marginLeft,
+
+      // Border
+      borderColor: computed.borderColor,
+      borderWidth: computed.borderWidth,
+      borderStyle: computed.borderStyle,
+      borderRadius: computed.borderRadius,
+
+      // Background
+      backgroundColor: computed.backgroundColor,
+
+      // Typography
+      color: computed.color,
+      fontSize: computed.fontSize,
+      fontFamily: computed.fontFamily,
+      fontWeight: computed.fontWeight,
+      fontStyle: computed.fontStyle,
+      lineHeight: computed.lineHeight,
+      letterSpacing: computed.letterSpacing,
+      textAlign: computed.textAlign,
+      textDecoration: computed.textDecoration,
+      textTransform: computed.textTransform,
+    };
+  };
+
   const handleGlobalClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const elementWithId = target.closest("[data-element-id]");
@@ -197,6 +256,9 @@ function Preview() {
 
     const element = elements.find((el) => el.id === elementId);
     if (!element) return;
+
+    // Collect computed styles
+    const computedStyle = collectComputedStyle(elementWithId);
 
     const rect = elementWithId.getBoundingClientRect();
     window.parent.postMessage(
@@ -212,6 +274,8 @@ function Preview() {
           },
           props: element.props,
           tag: element.tag,
+          style: element.props?.style || {},
+          computedStyle,
         },
       },
       window.location.origin
