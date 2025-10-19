@@ -25,6 +25,12 @@ export function useSyncWithBuilder(): void {
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    console.log("🔄 useSyncWithBuilder useEffect 실행:", {
+      hasSelectedElement: !!selectedElement,
+      selectedElementId: selectedElement?.id,
+      selectedElementStyle: selectedElement?.style,
+    });
+
     // 히스토리 작업 중이면 동기화 건너뛰기
     if (historyOperationInProgress) {
       console.log("⏸️ useSyncWithBuilder - 히스토리 작업 중, 동기화 건너뛰기");

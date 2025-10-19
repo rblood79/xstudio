@@ -136,11 +136,11 @@ export const useInspectorState = create<InspectorState>((set) => ({
     }),
 
   // Inline Styles
-  updateInlineStyle: (property, value) =>
+  updateInlineStyle: (property, value) => {
     set((state) => {
       if (!state.selectedElement) return state;
+      console.log("🎨 updateInlineStyle 호출:", { property, value });
       return {
-        isSyncingToBuilder: true, // 플래그 설정하여 역동기화 차단
         selectedElement: {
           ...state.selectedElement,
           style: {
@@ -149,13 +149,17 @@ export const useInspectorState = create<InspectorState>((set) => ({
           },
         },
       };
-    }),
+    });
 
-  updateInlineStyles: (styles) =>
+    // 동기화 플래그 설정 (별도 호출)
+    set({ isSyncingToBuilder: true });
+  },
+
+  updateInlineStyles: (styles) => {
     set((state) => {
       if (!state.selectedElement) return state;
+      console.log("🎨 updateInlineStyles 호출:", styles);
       return {
-        isSyncingToBuilder: true, // 플래그 설정하여 역동기화 차단
         selectedElement: {
           ...state.selectedElement,
           style: {
@@ -164,7 +168,11 @@ export const useInspectorState = create<InspectorState>((set) => ({
           },
         },
       };
-    }),
+    });
+
+    // 동기화 플래그 설정 (별도 호출)
+    set({ isSyncingToBuilder: true });
+  },
 
   // Data Binding
   updateDataBinding: (binding) =>

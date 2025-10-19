@@ -63,8 +63,30 @@ function getStyleValue(
 //   return display === "flex" || display === "inline-flex";
 // }
 
+// Helper function: Get selected vertical alignment button ID
+function getVerticalAlignmentKeys(element: SelectedElement): string[] {
+  const alignItems = getStyleValue(element, "alignItems", "");
+  const reverseMap: Record<string, string> = {
+    "flex-start": "align-vertical-start",
+    "center": "align-vertical-center",
+    "flex-end": "align-vertical-end",
+  };
+  return alignItems && reverseMap[alignItems] ? [reverseMap[alignItems]] : [];
+}
+
+// Helper function: Get selected horizontal alignment button ID
+function getHorizontalAlignmentKeys(element: SelectedElement): string[] {
+  const justifyContent = getStyleValue(element, "justifyContent", "");
+  const reverseMap: Record<string, string> = {
+    "flex-start": "align-horizontal-start",
+    "center": "align-horizontal-center",
+    "flex-end": "align-horizontal-end",
+  };
+  return justifyContent && reverseMap[justifyContent] ? [reverseMap[justifyContent]] : [];
+}
+
 export function StyleSection({ element }: StyleSectionProps) {
-  const { updateInlineStyle } = useInspectorState();
+  const { updateInlineStyle, updateInlineStyles } = useInspectorState();
 
   return (
     <div className="style-section">
@@ -84,7 +106,28 @@ export function StyleSection({ element }: StyleSectionProps) {
         <fieldset className="transform-alignment">
           <legend className="fieldset-legend">Alignment</legend>
           <div className="alignment-controls-horizontal">
-            <ToggleButtonGroup aria-label="Flex alignment-vertical" indicator>
+            <ToggleButtonGroup
+              aria-label="Flex alignment-vertical"
+              indicator
+              selectedKeys={getVerticalAlignmentKeys(element)}
+              onSelectionChange={(keys) => {
+                console.log("🎯 Flex alignment-vertical 선택 변경:", keys);
+                const value = Array.from(keys)[0] as string;
+                if (value) {
+                  console.log("✅ display: flex + alignItems 설정 시작");
+                  // Auto-enable display: flex and set alignItems
+                  const alignItemsMap: Record<string, string> = {
+                    "align-vertical-start": "flex-start",
+                    "align-vertical-center": "center",
+                    "align-vertical-end": "flex-end",
+                  };
+                  updateInlineStyles({
+                    display: "flex",
+                    alignItems: alignItemsMap[value] || "flex-start",
+                  });
+                }
+              }}
+            >
               <ToggleButton id="align-vertical-start">
                 <AlignStartVertical
                   color={iconProps.color}
@@ -109,7 +152,28 @@ export function StyleSection({ element }: StyleSectionProps) {
             </ToggleButtonGroup>
           </div>
           <div className="alignment-controls-vertical">
-            <ToggleButtonGroup aria-label="Flex alignment-horizontal" indicator>
+            <ToggleButtonGroup
+              aria-label="Flex alignment-horizontal"
+              indicator
+              selectedKeys={getHorizontalAlignmentKeys(element)}
+              onSelectionChange={(keys) => {
+                console.log("🎯 Flex alignment-horizontal 선택 변경:", keys);
+                const value = Array.from(keys)[0] as string;
+                if (value) {
+                  console.log("✅ display: flex + justifyContent 설정 시작");
+                  // Auto-enable display: flex and set justifyContent
+                  const justifyContentMap: Record<string, string> = {
+                    "align-horizontal-start": "flex-start",
+                    "align-horizontal-center": "center",
+                    "align-horizontal-end": "flex-end",
+                  };
+                  updateInlineStyles({
+                    display: "flex",
+                    justifyContent: justifyContentMap[value] || "flex-start",
+                  });
+                }
+              }}
+            >
               <ToggleButton id="align-horizontal-start">
                 <AlignStartHorizontal
                   color={iconProps.color}
