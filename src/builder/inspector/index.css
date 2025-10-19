@@ -331,11 +331,23 @@
             "input3 input4 icon";
           gap: var(--spacing-sm);
 
-          .color-control,
-          .border-width-control,
-          .border-radius-control,
-          .border-style-control {
+          .color-control {
             grid-area: input1;
+            display: flex;
+          }
+
+          .border-width-control {
+            grid-area: input2;
+            display: flex;
+          }
+
+          .border-radius-control {
+            grid-area: input3;
+            display: flex;
+          }
+
+          .border-style-control {
+            grid-area: input4;
             display: flex;
           }
 
@@ -524,6 +536,11 @@
           padding-inline-start: var(--inspector-label-width);
           flex-direction: row-reverse;
           transition: all 0.2s ease;
+        }
+
+        .react-aria-Input,
+        .react-aria-TextArea {
+          padding-inline-start: var(--inspector-label-width);
         }
       }
 

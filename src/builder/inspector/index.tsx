@@ -102,16 +102,16 @@ function Inspector() {
       <Tabs className="react-aria-Tabs">
         <TabList className="react-aria-TabList">
           <Tab id="properties" className="react-aria-Tab">
-            속성
+            Props
           </Tab>
           <Tab id="style" className="react-aria-Tab">
-            스타일
+            Style
           </Tab>
           <Tab id="data" className="react-aria-Tab">
-            데이터
+            Data
           </Tab>
           <Tab id="events" className="react-aria-Tab">
-            이벤트
+            Events
           </Tab>
         </TabList>
 

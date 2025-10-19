@@ -190,21 +190,25 @@ export function StyleSection({ element }: StyleSectionProps) {
         </div>
 
         <div className="transform-position">
-          <PropertyInput
+          <PropertyUnitInput
             icon={ArrowRightFromLine}
             label="Left"
             className="transform-position-left"
             value={element.cssVariables?.["x"] || "auto"}
+            units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
             onChange={(value) => updateCSSVariables({ x: value })}
-            placeholder="auto"
+            min={-9999}
+            max={9999}
           />
-          <PropertyInput
+          <PropertyUnitInput
             icon={ArrowDownFromLine}
             label="Top"
             className="transform-position-top"
             value={element.cssVariables?.["y"] || "auto"}
+            units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
             onChange={(value) => updateCSSVariables({ y: value })}
-            placeholder="auto"
+            min={-9999}
+            max={9999}
           />
           <div className="fieldset-actions">
             <Button>
@@ -323,32 +327,38 @@ export function StyleSection({ element }: StyleSectionProps) {
               </ToggleButton>
             </ToggleButtonGroup>
           </div>
-          <PropertyInput
+          <PropertyUnitInput
             icon={LayoutGrid}
             //label="Gap"
             className="gap-control"
-            value={element.cssVariables?.["gap"] || "0"}
+            value={element.cssVariables?.["gap"] || "0px"}
+            units={["px", "rem", "em"]}
             onChange={(value) => updateCSSVariables({ gap: value })}
-            placeholder="0"
+            min={0}
+            max={500}
           />
         </fieldset>
 
         <div className="layout-container">
-          <PropertyInput
+          <PropertyUnitInput
             icon={SquareSquare}
             label="Padding"
             className="layout-padding"
-            value={element.cssVariables?.["padding"] || "0"}
+            value={element.cssVariables?.["padding"] || "0px"}
+            units={["px", "rem", "em"]}
             onChange={(value) => updateCSSVariables({ padding: value })}
-            placeholder="0"
+            min={0}
+            max={500}
           />
-          <PropertyInput
+          <PropertyUnitInput
             icon={Frame}
             label="Margin"
             className="layout-margin"
-            value={element.cssVariables?.["margin"] || "0"}
+            value={element.cssVariables?.["margin"] || "0px"}
+            units={["px", "rem", "em", "auto"]}
             onChange={(value) => updateCSSVariables({ margin: value })}
-            placeholder="0"
+            min={0}
+            max={500}
           />
           <div className="fieldset-actions">
             <Button>
@@ -400,34 +410,48 @@ export function StyleSection({ element }: StyleSectionProps) {
           <PropertyInput
             icon={Square}
             label="Border Color"
-            className="style-border"
+            className="color-control"
             value={element.cssVariables?.["border-color"] || "#000000"}
             onChange={(value) => updateCSSVariables({ "border-color": value })}
             placeholder="#000000"
           />
-          <PropertyInput
+          <PropertyUnitInput
             icon={SquareDashed}
             label="Border Width"
-            className="style-border-width"
-            value={element.cssVariables?.["border-width"] || "0"}
+            className="border-width-control"
+            value={element.cssVariables?.["border-width"] || "0px"}
+            units={["px"]}
             onChange={(value) => updateCSSVariables({ "border-width": value })}
-            placeholder="0"
+            min={0}
+            max={100}
           />
-          <PropertyInput
+          <PropertyUnitInput
             icon={SquareRoundCorner}
             label="Border Radius"
-            className="style-border-radius"
-            value={element.cssVariables?.["border-radius"] || "0"}
+            className="border-radius-control"
+            value={element.cssVariables?.["border-radius"] || "0px"}
+            units={["px", "%", "rem", "em"]}
             onChange={(value) => updateCSSVariables({ "border-radius": value })}
-            placeholder="0"
+            min={0}
+            max={500}
           />
-          <PropertyInput
+          <PropertySelect
             icon={SquareDashedBottom}
             label="Border Style"
-            className="style-border-style"
+            className="border-style-control"
             value={element.cssVariables?.["border-style"] || "solid"}
+            options={[
+              { value: "none", label: "none" },
+              { value: "solid", label: "solid" },
+              { value: "dashed", label: "dashed" },
+              { value: "dotted", label: "dotted" },
+              { value: "double", label: "double" },
+              { value: "groove", label: "groove" },
+              { value: "ridge", label: "ridge" },
+              { value: "inset", label: "inset" },
+              { value: "outset", label: "outset" },
+            ]}
             onChange={(value) => updateCSSVariables({ "border-style": value })}
-            placeholder="solid"
           />
           <div className="fieldset-actions">
             <Button>
