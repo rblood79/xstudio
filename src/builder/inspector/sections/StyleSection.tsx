@@ -107,6 +107,29 @@ function getFlexAlignmentKeys(element: SelectedElement): string[] {
   return combinationMap[key] ? [combinationMap[key]] : [];
 }
 
+// Helper function: Get selected flex direction button ID
+function getFlexDirectionKeys(element: SelectedElement): string[] {
+  const flexDirection = getStyleValue(element, "flexDirection", "");
+
+  // Map flex-direction values to button IDs
+  if (flexDirection === "row") return ["row"];
+  if (flexDirection === "column") return ["column"];
+
+  // If no flex-direction or "row" (default), show reset
+  return ["reset"];
+}
+
+// Helper function: Get selected justify content spacing (space-around/between/evenly)
+function getJustifyContentSpacingKeys(element: SelectedElement): string[] {
+  const justifyContent = getStyleValue(element, "justifyContent", "");
+
+  if (justifyContent === "space-around") return ["space-around"];
+  if (justifyContent === "space-between") return ["space-between"];
+  if (justifyContent === "space-evenly") return ["space-evenly"];
+
+  return [];
+}
+
 export function StyleSection({ element }: StyleSectionProps) {
   const { updateInlineStyle, updateInlineStyles } = useInspectorState();
 
@@ -310,7 +333,28 @@ export function StyleSection({ element }: StyleSectionProps) {
       <div className="section-content">
         <fieldset className="layout-direction">
           <div className="direction-controls">
-            <ToggleButtonGroup aria-label="Flex direction" indicator>
+            <ToggleButtonGroup
+              aria-label="Flex direction"
+              indicator
+              selectedKeys={getFlexDirectionKeys(element)}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value === "reset") {
+                  // Remove flex-direction (or set to default)
+                  updateInlineStyle("flexDirection", "");
+                } else if (value === "row") {
+                  updateInlineStyles({
+                    display: "flex",
+                    flexDirection: "row",
+                  });
+                } else if (value === "column") {
+                  updateInlineStyles({
+                    display: "flex",
+                    flexDirection: "column",
+                  });
+                }
+              }}
+            >
               <ToggleButton id="reset">
                 <Square
                   color={iconProps.color}
@@ -405,7 +449,20 @@ export function StyleSection({ element }: StyleSectionProps) {
             </Button>
           </div>
           <div className="justify-control">
-            <ToggleButtonGroup aria-label="Justify content alignment" indicator>
+            <ToggleButtonGroup
+              aria-label="Justify content alignment"
+              indicator
+              selectedKeys={getJustifyContentSpacingKeys(element)}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) {
+                  updateInlineStyles({
+                    display: "flex",
+                    justifyContent: value, // space-around, space-between, space-evenly
+                  });
+                }
+              }}
+            >
               <ToggleButton id="space-around">
                 <AlignHorizontalSpaceAround
                   color={iconProps.color}
