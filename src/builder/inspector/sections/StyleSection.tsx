@@ -91,6 +91,13 @@ function getFlexAlignmentKeys(element: SelectedElement): string[] {
   const alignItems = getStyleValue(element, "alignItems", "");
   const flexDirection = getStyleValue(element, "flexDirection", "row");
 
+  // Exclude spacing values (space-around, space-between, space-evenly)
+  // These don't map to 3x3 grid positions
+  const spacingValues = ["space-around", "space-between", "space-evenly"];
+  if (spacingValues.includes(justifyContent)) {
+    return []; // No selection in 3x3 grid when using spacing
+  }
+
   // For row (default): horizontal = justifyContent, vertical = alignItems
   // For column: horizontal = alignItems, vertical = justifyContent
   let horizontal: string, vertical: string;
@@ -102,6 +109,12 @@ function getFlexAlignmentKeys(element: SelectedElement): string[] {
     // row or default
     horizontal = justifyContent;
     vertical = alignItems;
+  }
+
+  // Only select if both values are valid alignment values (flex-start, center, flex-end)
+  const validAlignmentValues = ["flex-start", "center", "flex-end"];
+  if (!validAlignmentValues.includes(horizontal) || !validAlignmentValues.includes(vertical)) {
+    return []; // No selection if values don't match grid
   }
 
   // Map combinations to button IDs (horizontal:vertical)
@@ -396,6 +409,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             <ToggleButtonGroup
               aria-label="Flex alignment"
               indicator
+              selectionMode="single"
               selectedKeys={getFlexAlignmentKeys(element)}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0] as string;
@@ -480,6 +494,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             <ToggleButtonGroup
               aria-label="Justify content alignment"
               indicator
+              selectionMode="single"
               selectedKeys={getJustifyContentSpacingKeys(element)}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0] as string;

@@ -60,8 +60,11 @@ export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonG
         group.style.setProperty('--indicator-top', `${top}px`);
         group.style.setProperty('--indicator-width', `${width}px`);
         group.style.setProperty('--indicator-height', `${height}px`);
+        group.style.setProperty('--indicator-opacity', '1');
       } else {
-        console.log('No selected button found');
+        console.log('No selected button found - hiding indicator');
+        // Hide indicator when no button is selected
+        group.style.setProperty('--indicator-opacity', '0');
       }
     };
 
