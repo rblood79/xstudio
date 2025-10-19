@@ -20,6 +20,10 @@ interface InspectorState {
   updateCSSVariables: (variables: Record<string, string>) => void;
   updateCSSVariable: (key: string, value: string) => void;
 
+  // Inline Style 업데이트
+  updateInlineStyle: (property: string, value: string) => void;
+  updateInlineStyles: (styles: Record<string, string>) => void;
+
   // DataSection - 데이터 바인딩 업데이트
   updateDataBinding: (binding: DataBinding | undefined) => void;
 
@@ -126,6 +130,37 @@ export const useInspectorState = create<InspectorState>((set) => ({
           cssVariables: {
             ...(state.selectedElement.cssVariables || {}),
             [key]: value,
+          },
+        },
+      };
+    }),
+
+  // Inline Styles
+  updateInlineStyle: (property, value) =>
+    set((state) => {
+      if (!state.selectedElement) return state;
+      return {
+        isSyncingToBuilder: true, // 플래그 설정하여 역동기화 차단
+        selectedElement: {
+          ...state.selectedElement,
+          style: {
+            ...(state.selectedElement.style || {}),
+            [property]: value,
+          },
+        },
+      };
+    }),
+
+  updateInlineStyles: (styles) =>
+    set((state) => {
+      if (!state.selectedElement) return state;
+      return {
+        isSyncingToBuilder: true, // 플래그 설정하여 역동기화 차단
+        selectedElement: {
+          ...state.selectedElement,
+          style: {
+            ...(state.selectedElement.style || {}),
+            ...styles,
           },
         },
       };

@@ -1,13 +1,9 @@
-import { DisclosureGroup, Disclosure } from "react-aria-components";
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components/list";
 import {
   PropertySelect,
   PropertyInput,
   PropertyUnitInput,
 } from "../components";
-import { SemanticClassPicker } from "../styles/SemanticClassPicker";
-import { CSSVariableEditor } from "../styles/CSSVariableEditor";
-import { PreviewPanel } from "../styles/PreviewPanel";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { iconProps } from "../../../utils/uiConstants";
 import type { SelectedElement } from "../types";
@@ -42,43 +38,36 @@ export interface StyleSectionProps {
   element: SelectedElement;
 }
 
+// Helper function: Get style value with priority (inline > computed > default)
+function getStyleValue(
+  element: SelectedElement,
+  property: keyof React.CSSProperties,
+  defaultValue: string
+): string {
+  // Priority 1: Inline style
+  if (element.style && element.style[property] !== undefined) {
+    return String(element.style[property]);
+  }
+  // Priority 2: Computed style
+  if (element.computedStyle && element.computedStyle[property] !== undefined) {
+    return String(element.computedStyle[property]);
+  }
+  // Priority 3: Default value
+  return defaultValue;
+}
+
+// Helper function: Check if element is flex container
+// TODO: Implement this for conditional rendering of flex properties
+// function isFlexContainer(element: SelectedElement): boolean {
+//   const display = getStyleValue(element, "display", "block");
+//   return display === "flex" || display === "inline-flex";
+// }
+
 export function StyleSection({ element }: StyleSectionProps) {
-  const { updateSemanticClasses, updateCSSVariables } = useInspectorState();
+  const { updateInlineStyle } = useInspectorState();
 
   return (
     <div className="style-section">
-      <PreviewPanel
-        semanticClasses={element.semanticClasses}
-        cssVariables={element.cssVariables}
-      />
-
-      <DisclosureGroup className="style-accordion">
-        <Disclosure id="semantic" className="style-disclosure">
-          <Button slot="trigger" className="disclosure-trigger">
-            <span className="disclosure-title">의미 클래스</span>
-            <span className="disclosure-icon">▼</span>
-          </Button>
-          <div className="disclosure-panel">
-            <SemanticClassPicker
-              selectedClasses={element.semanticClasses || []}
-              onChange={updateSemanticClasses}
-            />
-          </div>
-        </Disclosure>
-
-        <Disclosure id="variables" className="style-disclosure">
-          <Button slot="trigger" className="disclosure-trigger">
-            <span className="disclosure-title">CSS 변수</span>
-            <span className="disclosure-icon">▼</span>
-          </Button>
-          <div className="disclosure-panel">
-            <CSSVariableEditor
-              variables={element.cssVariables || {}}
-              onChange={updateCSSVariables}
-            />
-          </div>
-        </Disclosure>
-      </DisclosureGroup>
       <div className="section-header">
         <h3 className="section-title">Transform</h3>
         <div className="header-actions">
@@ -159,12 +148,9 @@ export function StyleSection({ element }: StyleSectionProps) {
           <PropertyUnitInput
             icon={RulerDimensionLine}
             label="Width"
-            value={element.cssVariables?.width || "auto"}
+            value={getStyleValue(element, "width", "auto")}
             units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
-            onChange={(value) => {
-              console.log("Width 변경:", value);
-              updateCSSVariables({ width: value });
-            }}
+            onChange={(value) => updateInlineStyle("width", value)}
             min={0}
             max={9999}
           />
@@ -172,9 +158,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={RulerDimensionLine}
             label="Height"
             className="transform-size-height"
-            value={element.cssVariables?.["height"] || "auto"}
+            value={getStyleValue(element, "height", "auto")}
             units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
-            onChange={(value) => updateCSSVariables({ height: value })}
+            onChange={(value) => updateInlineStyle("height", value)}
             min={0}
             max={9999}
           />
@@ -194,9 +180,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={ArrowRightFromLine}
             label="Left"
             className="transform-position-left"
-            value={element.cssVariables?.["x"] || "auto"}
+            value={getStyleValue(element, "left", "auto")}
             units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
-            onChange={(value) => updateCSSVariables({ x: value })}
+            onChange={(value) => updateInlineStyle("left", value)}
             min={-9999}
             max={9999}
           />
@@ -204,9 +190,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={ArrowDownFromLine}
             label="Top"
             className="transform-position-top"
-            value={element.cssVariables?.["y"] || "auto"}
+            value={getStyleValue(element, "top", "auto")}
             units={["px", "%", "rem", "em", "vh", "vw", "auto"]}
-            onChange={(value) => updateCSSVariables({ y: value })}
+            onChange={(value) => updateInlineStyle("top", value)}
             min={-9999}
             max={9999}
           />
@@ -331,9 +317,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={LayoutGrid}
             //label="Gap"
             className="gap-control"
-            value={element.cssVariables?.["gap"] || "0px"}
+            value={getStyleValue(element, "gap", "0px")}
             units={["px", "rem", "em"]}
-            onChange={(value) => updateCSSVariables({ gap: value })}
+            onChange={(value) => updateInlineStyle("gap", value)}
             min={0}
             max={500}
           />
@@ -344,9 +330,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={SquareSquare}
             label="Padding"
             className="layout-padding"
-            value={element.cssVariables?.["padding"] || "0px"}
+            value={getStyleValue(element, "padding", "0px")}
             units={["px", "rem", "em"]}
-            onChange={(value) => updateCSSVariables({ padding: value })}
+            onChange={(value) => updateInlineStyle("padding", value)}
             min={0}
             max={500}
           />
@@ -354,9 +340,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={Frame}
             label="Margin"
             className="layout-margin"
-            value={element.cssVariables?.["margin"] || "0px"}
+            value={getStyleValue(element, "margin", "0px")}
             units={["px", "rem", "em", "auto"]}
-            onChange={(value) => updateCSSVariables({ margin: value })}
+            onChange={(value) => updateInlineStyle("margin", value)}
             min={0}
             max={500}
           />
@@ -390,10 +376,8 @@ export function StyleSection({ element }: StyleSectionProps) {
           <PropertyInput
             icon={Square}
             label="Background Color"
-            value={element.cssVariables?.["background-color"] || "#FFFFFF"}
-            onChange={(value) =>
-              updateCSSVariables({ "background-color": value })
-            }
+            value={getStyleValue(element, "backgroundColor", "#FFFFFF")}
+            onChange={(value) => updateInlineStyle("backgroundColor", value)}
             placeholder="#FFFFFF"
           />
           <div className="fieldset-actions">
@@ -411,17 +395,17 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={Square}
             label="Border Color"
             className="color-control"
-            value={element.cssVariables?.["border-color"] || "#000000"}
-            onChange={(value) => updateCSSVariables({ "border-color": value })}
+            value={getStyleValue(element, "borderColor", "#000000")}
+            onChange={(value) => updateInlineStyle("borderColor", value)}
             placeholder="#000000"
           />
           <PropertyUnitInput
             icon={SquareDashed}
             label="Border Width"
             className="border-width-control"
-            value={element.cssVariables?.["border-width"] || "0px"}
+            value={getStyleValue(element, "borderWidth", "0px")}
             units={["px"]}
-            onChange={(value) => updateCSSVariables({ "border-width": value })}
+            onChange={(value) => updateInlineStyle("borderWidth", value)}
             min={0}
             max={100}
           />
@@ -429,9 +413,9 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={SquareRoundCorner}
             label="Border Radius"
             className="border-radius-control"
-            value={element.cssVariables?.["border-radius"] || "0px"}
+            value={getStyleValue(element, "borderRadius", "0px")}
             units={["px", "%", "rem", "em"]}
-            onChange={(value) => updateCSSVariables({ "border-radius": value })}
+            onChange={(value) => updateInlineStyle("borderRadius", value)}
             min={0}
             max={500}
           />
@@ -439,7 +423,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={SquareDashedBottom}
             label="Border Style"
             className="border-style-control"
-            value={element.cssVariables?.["border-style"] || "solid"}
+            value={getStyleValue(element, "borderStyle", "solid")}
             options={[
               { value: "none", label: "none" },
               { value: "solid", label: "solid" },
@@ -451,7 +435,7 @@ export function StyleSection({ element }: StyleSectionProps) {
               { value: "inset", label: "inset" },
               { value: "outset", label: "outset" },
             ]}
-            onChange={(value) => updateCSSVariables({ "border-style": value })}
+            onChange={(value) => updateInlineStyle("borderStyle", value)}
           />
           <div className="fieldset-actions">
             <Button>
@@ -481,8 +465,8 @@ export function StyleSection({ element }: StyleSectionProps) {
       <div className="section-content">
         <PropertySelect
           icon={Type}
-          label="Font"
-          value="Arial"
+          label="Font Family"
+          value={getStyleValue(element, "fontFamily", "Arial")}
           options={[
             { value: "Arial", label: "Arial" },
             { value: "Helvetica", label: "Helvetica" },
@@ -491,10 +475,126 @@ export function StyleSection({ element }: StyleSectionProps) {
             { value: "Courier New", label: "Courier New" },
             { value: "Verdana", label: "Verdana" },
           ]}
-          onChange={(key: string) => {
-            console.log("Font 변경:", key);
-            // TODO: 폰트 변경 로직 추가
-          }}
+          onChange={(value) => updateInlineStyle("fontFamily", value)}
+        />
+
+        <PropertyInput
+          icon={Type}
+          label="Color"
+          type="color"
+          value={getStyleValue(element, "color", "#000000")}
+          onChange={(value) => updateInlineStyle("color", value)}
+          placeholder="#000000"
+        />
+
+        <PropertyUnitInput
+          icon={Type}
+          label="Font Size"
+          value={getStyleValue(element, "fontSize", "16px")}
+          units={["px", "rem", "em", "pt"]}
+          onChange={(value) => updateInlineStyle("fontSize", value)}
+          min={8}
+          max={200}
+        />
+
+        <PropertySelect
+          icon={Type}
+          label="Font Weight"
+          value={getStyleValue(element, "fontWeight", "normal")}
+          options={[
+            { value: "100", label: "100 - Thin" },
+            { value: "200", label: "200 - Extra Light" },
+            { value: "300", label: "300 - Light" },
+            { value: "400", label: "400 - Normal" },
+            { value: "500", label: "500 - Medium" },
+            { value: "600", label: "600 - Semi Bold" },
+            { value: "700", label: "700 - Bold" },
+            { value: "800", label: "800 - Extra Bold" },
+            { value: "900", label: "900 - Black" },
+            { value: "normal", label: "Normal" },
+            { value: "bold", label: "Bold" },
+          ]}
+          onChange={(value) => updateInlineStyle("fontWeight", value)}
+        />
+
+        <PropertyUnitInput
+          icon={Type}
+          label="Line Height"
+          value={getStyleValue(element, "lineHeight", "normal")}
+          units={["px", "rem", "em", ""]}
+          onChange={(value) => updateInlineStyle("lineHeight", value)}
+          min={0}
+          max={10}
+          allowKeywords
+        />
+
+        <PropertyUnitInput
+          icon={Type}
+          label="Letter Spacing"
+          value={getStyleValue(element, "letterSpacing", "normal")}
+          units={["px", "rem", "em"]}
+          onChange={(value) => updateInlineStyle("letterSpacing", value)}
+          min={-10}
+          max={10}
+          allowKeywords
+        />
+
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Text Align</legend>
+          <ToggleButtonGroup
+            aria-label="Text alignment"
+            selectedKeys={[getStyleValue(element, "textAlign", "left")]}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0] as string;
+              if (value) updateInlineStyle("textAlign", value);
+            }}
+          >
+            <ToggleButton id="left">Left</ToggleButton>
+            <ToggleButton id="center">Center</ToggleButton>
+            <ToggleButton id="right">Right</ToggleButton>
+            <ToggleButton id="justify">Justify</ToggleButton>
+          </ToggleButtonGroup>
+        </fieldset>
+
+        <fieldset className="properties-aria">
+          <legend className="fieldset-legend">Text Decoration</legend>
+          <ToggleButtonGroup
+            aria-label="Text decoration"
+            selectedKeys={[getStyleValue(element, "textDecoration", "none")]}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0] as string;
+              if (value) updateInlineStyle("textDecoration", value);
+            }}
+          >
+            <ToggleButton id="none">None</ToggleButton>
+            <ToggleButton id="underline">Underline</ToggleButton>
+            <ToggleButton id="line-through">Line Through</ToggleButton>
+          </ToggleButtonGroup>
+        </fieldset>
+
+        <PropertySelect
+          icon={Type}
+          label="Text Transform"
+          value={getStyleValue(element, "textTransform", "none")}
+          options={[
+            { value: "none", label: "None" },
+            { value: "uppercase", label: "UPPERCASE" },
+            { value: "lowercase", label: "lowercase" },
+            { value: "capitalize", label: "Capitalize" },
+          ]}
+          onChange={(value) => updateInlineStyle("textTransform", value)}
+        />
+
+        <PropertySelect
+          icon={Type}
+          label="Font Style"
+          value={getStyleValue(element, "fontStyle", "normal")}
+          options={[
+            { value: "normal", label: "Normal" },
+            { value: "italic", label: "Italic" },
+            { value: "oblique", label: "Oblique" },
+          ]}
+          onChange={(value) => updateInlineStyle("fontStyle", value)}
         />
       </div>
     </div>

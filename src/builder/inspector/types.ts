@@ -12,7 +12,11 @@ export interface SelectedElement {
     [key: string]: unknown;
   };
 
-  // StyleSection - 의미 클래스 + CSS 변수
+  // StyleSection - Inline Styles + Computed Styles
+  style?: React.CSSProperties; // Inline styles (사용자가 직접 설정)
+  computedStyle?: Partial<React.CSSProperties>; // Computed styles (브라우저 계산값)
+
+  // StyleSection - 의미 클래스 + CSS 변수 (deprecated - inline style로 마이그레이션 중)
   semanticClasses?: string[];
   cssVariables?: Record<string, string>;
 
