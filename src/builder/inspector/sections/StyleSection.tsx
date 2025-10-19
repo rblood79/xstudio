@@ -85,6 +85,28 @@ function getHorizontalAlignmentKeys(element: SelectedElement): string[] {
   return justifyContent && reverseMap[justifyContent] ? [reverseMap[justifyContent]] : [];
 }
 
+// Helper function: Get selected flex alignment button ID (3x3 grid)
+function getFlexAlignmentKeys(element: SelectedElement): string[] {
+  const justifyContent = getStyleValue(element, "justifyContent", "");
+  const alignItems = getStyleValue(element, "alignItems", "");
+
+  // Map combinations to button IDs
+  const combinationMap: Record<string, string> = {
+    "flex-start:flex-start": "leftTop",
+    "center:flex-start": "centerTop",
+    "flex-end:flex-start": "rightTop",
+    "flex-start:center": "leftCenter",
+    "center:center": "centerCenter",
+    "flex-end:center": "rightCenter",
+    "flex-start:flex-end": "leftBottom",
+    "center:flex-end": "centerBottom",
+    "flex-end:flex-end": "rightBottom",
+  };
+
+  const key = `${justifyContent}:${alignItems}`;
+  return combinationMap[key] ? [combinationMap[key]] : [];
+}
+
 export function StyleSection({ element }: StyleSectionProps) {
   const { updateInlineStyle, updateInlineStyles } = useInspectorState();
 
@@ -313,7 +335,37 @@ export function StyleSection({ element }: StyleSectionProps) {
             </ToggleButtonGroup>
           </div>
           <div className="direction-alignment-grid">
-            <ToggleButtonGroup aria-label="Flex alignment" indicator>
+            <ToggleButtonGroup
+              aria-label="Flex alignment"
+              indicator
+              selectedKeys={getFlexAlignmentKeys(element)}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) {
+                  // Map button ID to justifyContent and alignItems combination
+                  const alignmentMap: Record<string, { justifyContent: string; alignItems: string }> = {
+                    leftTop: { justifyContent: "flex-start", alignItems: "flex-start" },
+                    centerTop: { justifyContent: "center", alignItems: "flex-start" },
+                    rightTop: { justifyContent: "flex-end", alignItems: "flex-start" },
+                    leftCenter: { justifyContent: "flex-start", alignItems: "center" },
+                    centerCenter: { justifyContent: "center", alignItems: "center" },
+                    rightCenter: { justifyContent: "flex-end", alignItems: "center" },
+                    leftBottom: { justifyContent: "flex-start", alignItems: "flex-end" },
+                    centerBottom: { justifyContent: "center", alignItems: "flex-end" },
+                    rightBottom: { justifyContent: "flex-end", alignItems: "flex-end" },
+                  };
+
+                  const alignment = alignmentMap[value];
+                  if (alignment) {
+                    updateInlineStyles({
+                      display: "flex",
+                      justifyContent: alignment.justifyContent,
+                      alignItems: alignment.alignItems,
+                    });
+                  }
+                }
+              }}
+            >
               <ToggleButton id="leftTop">
                 <span className="alignment-dot" />
               </ToggleButton>
