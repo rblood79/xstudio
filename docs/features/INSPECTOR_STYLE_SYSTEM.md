@@ -277,6 +277,189 @@ if (inspectorJson !== storeJson) {
    → Cycle complete
 ```
 
+## UI/UX 개선사항 (2025-10)
+
+### 1. 컴팩트한 레이아웃
+
+여러 관련 컨트롤을 한 줄로 배치하여 공간 효율성 향상:
+
+```typescript
+// Font Size + Line Height를 한 줄로
+<div className="text-size">
+  <PropertyUnitInput label="Font Size" />
+  <PropertyUnitInput label="Line Height" />
+  <div className="fieldset-actions">...</div>
+</div>
+
+// Text Align + Vertical Align을 한 줄로
+<div className="text-alignment">
+  <fieldset>Text Align</fieldset>
+  <fieldset>Vertical Align</fieldset>
+  <div className="fieldset-actions">...</div>
+</div>
+```
+
+### 2. 아이콘 기반 컨트롤
+
+텍스트 버튼을 아이콘으로 교체하여 시각적 일관성 및 공간 절약:
+
+#### Text Alignment
+```typescript
+<ToggleButtonGroup indicator>
+  <ToggleButton id="left"><AlignLeft /></ToggleButton>
+  <ToggleButton id="center"><AlignCenter /></ToggleButton>
+  <ToggleButton id="right"><AlignRight /></ToggleButton>
+</ToggleButtonGroup>
+```
+
+#### Text Decoration
+```typescript
+<ToggleButtonGroup indicator>
+  <ToggleButton id="none"><RemoveFormatting /></ToggleButton>
+  <ToggleButton id="underline"><Underline /></ToggleButton>
+  <ToggleButton id="line-through"><Strikethrough /></ToggleButton>
+</ToggleButtonGroup>
+```
+
+#### Font Style
+```typescript
+<ToggleButtonGroup indicator>
+  <ToggleButton id="normal"><RemoveFormatting /></ToggleButton>
+  <ToggleButton id="italic"><Italic /></ToggleButton>
+  <ToggleButton id="oblique"><Type style={{ transform: 'skewX(-10deg)' }} /></ToggleButton>
+</ToggleButtonGroup>
+```
+
+#### Text Transform
+```typescript
+<ToggleButtonGroup indicator>
+  <ToggleButton id="none"><RemoveFormatting /></ToggleButton>
+  <ToggleButton id="uppercase"><CaseUpper /></ToggleButton>
+  <ToggleButton id="lowercase"><CaseLower /></ToggleButton>
+  <ToggleButton id="capitalize"><CaseSensitive /></ToggleButton>
+</ToggleButtonGroup>
+```
+
+### 3. Auto 옵션으로 스타일 초기화
+
+모든 스타일 속성에 "auto" 옵션 추가하여 inline style 제거 및 class 스타일로 폴백:
+
+```typescript
+// PropertyUnitInput - "auto" 선택 시 빈 문자열 전달
+const handleUnitChange = (selectedUnit: string) => {
+  if (selectedUnit === "auto") {
+    onChange(""); // inline style 제거
+  } else {
+    onChange(selectedUnit);
+  }
+};
+
+// PropertySelect - "auto" 선택 시 빈 문자열 전달
+const handleChange = (key: React.Key | null) => {
+  const selectedValue = key as string;
+  if (selectedValue === "auto") {
+    onChange(""); // inline style 제거
+  } else {
+    onChange(selectedValue);
+  }
+};
+
+// useInspectorState - 빈 문자열이면 속성 제거
+updateInlineStyle: (property, value) => {
+  const currentStyle = { ...state.selectedElement.style };
+
+  if (value === "" || value === null || value === undefined) {
+    delete currentStyle[property]; // 속성 제거 → class로 폴백
+  } else {
+    currentStyle[property] = value;
+  }
+}
+```
+
+**적용된 속성들:**
+- Width, Height, Left, Top, Gap, Padding, Margin
+- Border Width, Border Radius, Border Style
+- Font Size, Line Height, Font Family, Font Weight, Letter Spacing
+
+### 4. 입력 컨트롤 개선
+
+#### 즉시 입력 vs Blur 입력
+```typescript
+// 입력 중: 로컬 상태만 업데이트
+const handleInputChange = (newValue: string) => {
+  setInputValue(newValue);
+};
+
+// Blur/Enter 시: 실제 스타일 변경 적용
+const handleInputBlur = () => {
+  const num = parseFloat(inputValue);
+  if (!isNaN(num) && num >= min && num <= max) {
+    onChange(`${num}${unit}`);
+  }
+};
+```
+
+#### PropertySelect ellipsis 처리
+```typescript
+// CSS - SelectValue 너비 제한
+.react-aria-SelectValue {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+// CSS - 부모 Button flex 레이아웃
+.react-aria-Button {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+```
+
+### 5. 동기화 개선
+
+#### Element 전환 시 스타일 업데이트
+```typescript
+// Inspector/index.tsx - style, computedStyle 비교 추가
+const currentStyleJson = JSON.stringify(
+  selectedElement.style,
+  Object.keys(selectedElement.style || {}).sort()
+);
+const newStyleJson = JSON.stringify(
+  mappedElement.style,
+  Object.keys(mappedElement.style || {}).sort()
+);
+
+if (currentStyleJson !== newStyleJson ||
+    currentComputedStyleJson !== newComputedStyleJson) {
+  setSelectedElement(mappedElement); // 스타일 변경 감지 및 업데이트
+}
+```
+
+#### 빈 객체도 Builder로 전달
+```typescript
+// elementMapper.ts - 스타일 제거 반영
+export function mapSelectedToElementUpdate(selected: SelectedElement) {
+  return {
+    props: {
+      ...selected.properties,
+      // style이 undefined가 아니면 항상 포함 (빈 객체 {} 도 포함)
+      ...(selected.style !== undefined ? { style: selected.style } : {}),
+    }
+  };
+}
+
+// 초기화 시 빈 객체로 설정
+export function mapElementToSelected(element: Element) {
+  return {
+    style: (style as React.CSSProperties) || {}, // undefined 방지
+  };
+}
+```
+
 ## 결과
 
 ### ✅ 구현 완료
@@ -292,6 +475,7 @@ if (inspectorJson !== storeJson) {
 3. **양방향 동기화**
    - Inspector ↔ Builder 완전 동기화
    - 중복 history 방지 로직
+   - Element 전환 시 style/computedStyle 비교 및 업데이트
 
 4. **직관적인 Flexbox 컨트롤**
    - Alignment 버튼 자동으로 `display: flex` 활성화
@@ -302,6 +486,13 @@ if (inspectorJson !== storeJson) {
 5. **History 통합**
    - 모든 스타일 변경 추적
    - Undo/Redo 완벽 지원
+
+6. **개선된 UI/UX (2025-10)**
+   - 컴팩트한 한 줄 레이아웃 (Font Size/Line Height, Text Align/Vertical Align 등)
+   - 아이콘 기반 컨트롤로 일관성 향상
+   - "auto" 옵션으로 inline style 제거 및 class 폴백
+   - PropertySelect ellipsis 처리로 긴 텍스트 대응
+   - 즉시 입력 vs Blur 입력 분리
 
 ### 📊 성능 개선
 
