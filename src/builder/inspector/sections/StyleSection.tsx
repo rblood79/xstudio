@@ -3,6 +3,7 @@ import {
   PropertySelect,
   PropertyInput,
   PropertyUnitInput,
+  PropertyColor,
 } from "../components";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { iconProps } from "../../../utils/uiConstants";
@@ -621,7 +622,7 @@ export function StyleSection({ element }: StyleSectionProps) {
 
       <div className="section-content">
         <div className="style-background">
-          <PropertyInput
+          <PropertyColor
             icon={Square}
             label="Background Color"
             value={getStyleValue(element, "backgroundColor", "#FFFFFF")}
@@ -639,7 +640,7 @@ export function StyleSection({ element }: StyleSectionProps) {
           </div>
         </div>
         <div className="border-controls-container">
-          <PropertyInput
+          <PropertyColor
             icon={Square}
             label="Border Color"
             className="color-control"
@@ -728,10 +729,9 @@ export function StyleSection({ element }: StyleSectionProps) {
           onChange={(value) => updateInlineStyle("fontFamily", value)}
         />
 
-        <PropertyInput
+        <PropertyColor
           icon={Type}
           label="Color"
-          type="color"
           value={getStyleValue(element, "color", "#000000")}
           onChange={(value) => updateInlineStyle("color", value)}
           placeholder="#000000"

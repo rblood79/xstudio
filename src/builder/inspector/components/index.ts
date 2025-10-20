@@ -4,5 +4,6 @@ export { PropertyCheckbox } from './PropertyCheckbox';
 export { PropertySelect } from './PropertySelect';
 export { PropertySwitch } from './PropertySwitch';
 export { PropertyUnitInput } from './PropertyUnitInput';
+export { PropertyColor } from './PropertyColor';
 
 

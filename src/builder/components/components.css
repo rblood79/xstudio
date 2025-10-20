@@ -2445,22 +2445,6 @@
     border-radius: 0.5rem;
   }
 
-  /* Card 컴포넌트 스타일 시작 */
-  .react-aria-Card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-2xl);
-    padding: var(--spacing-md);
-    background-color: var(--color-background);
-    box-shadow: var(--shadow-xs);
-    transition: box-shadow 0.2s ease;
-
-    min-height: 96px;
-  }
-
-  .react-aria-Card:hover {
-    box-shadow: var(--shadow-sm);
-  }
-
   /* Table 컴포넌트 스타일 */
   .react-aria-Table {
     padding: 0;
@@ -2757,13 +2741,15 @@
   /* Card 컴포넌트 스타일 */
   .react-aria-Card {
     display: block;
-    border-radius: var(--spacing-sm);
-    background-color: var(--spectrum-global-color-gray-50);
-    border: 1px solid var(--spectrum-global-color-gray-200);
-    transition: all 0.2s ease-in-out;
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-md);
     cursor: pointer;
     position: relative;
     overflow: hidden;
+
+    min-height: 96px;
 
     .card-header {
       display: flex;
@@ -2778,90 +2764,13 @@
 
     .card-description {
       font-size: var(--text-sm);
-      color: var(--spectrum-global-color-gray-600);
+      color: var(--color-gray-600);
     }
 
     .card-content {
       font-size: var(--text-sm);
-      color: var(--spectrum-global-color-gray-600);
+      color: var(--color-gray-600);
     }
-  }
-
-  .react-aria-Card:hover {
-    border-color: var(--spectrum-global-color-gray-300);
-    box-shadow: var(--drop-shadow-md);
-  }
-
-  .react-aria-Card:focus {
-    outline: 2px solid var(--spectrum-global-color-blue-400);
-    outline-offset: 2px;
-  }
-
-  /* Variants */
-  .react-aria-Card--default {
-    background-color: var(--spectrum-global-color-gray-50);
-    border-color: var(--spectrum-global-color-gray-200);
-  }
-
-  .react-aria-Card--elevated {
-    background-color: var(--spectrum-global-color-gray-50);
-    border: none;
-    box-shadow: var(--drop-shadow-lg);
-  }
-
-  .react-aria-Card--outlined {
-    background-color: transparent;
-    border: 2px solid var(--spectrum-global-color-gray-300);
-  }
-
-  /* Sizes */
-  .react-aria-Card--small {
-    padding: 12px;
-    min-height: 60px;
-  }
-
-  .react-aria-Card--medium {
-    padding: 16px;
-    min-height: 80px;
-  }
-
-  .react-aria-Card--large {
-    padding: 24px;
-    min-height: 120px;
-  }
-
-  /* States */
-  .react-aria-Card--quiet {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-  }
-
-  .react-aria-Card--quiet:hover {
-    background-color: var(--spectrum-global-color-gray-100);
-    border: none;
-    box-shadow: none;
-  }
-
-  .react-aria-Card--selected {
-    border-color: var(--spectrum-global-color-blue-400);
-    background-color: var(--spectrum-global-color-blue-50);
-  }
-
-  .react-aria-Card--selected:hover {
-    border-color: var(--spectrum-global-color-blue-500);
-    background-color: var(--spectrum-global-color-blue-100);
-  }
-
-  .react-aria-Card--disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
-  .react-aria-Card--disabled:hover {
-    border-color: var(--spectrum-global-color-gray-200);
-    box-shadow: none;
   }
 
   /* Enhanced Pagination Styles */
@@ -3335,6 +3244,134 @@
 
   [slot="description"] {
     font-size: 12px;
+  }
+}
+
+/* ColorSwatch */
+.react-aria-ColorSwatch {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ColorArea */
+.react-aria-ColorArea {
+  width: 192px;
+  height: 192px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-300);
+
+  &[data-focus-visible] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+}
+
+.react-aria-ColorThumb {
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-sizing: border-box;
+
+  &[data-focus-visible] {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ColorSlider */
+.react-aria-ColorSlider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--spacing-2);
+  align-items: center;
+
+  .react-aria-SliderTrack {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    border-radius: var(--radius-md);
+
+    &:before {
+      content: "";
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-md);
+      background: linear-gradient(
+        to right,
+        rgb(255, 0, 0),
+        rgb(255, 255, 0),
+        rgb(0, 255, 0),
+        rgb(0, 255, 255),
+        rgb(0, 0, 255),
+        rgb(255, 0, 255),
+        rgb(255, 0, 0)
+      );
+    }
+  }
+
+  &[data-orientation="vertical"] {
+    grid-template-columns: auto;
+    grid-template-rows: 1fr auto;
+
+    .react-aria-SliderTrack {
+      height: 100%;
+      width: 28px;
+    }
+  }
+}
+
+/* ColorPicker Popover */
+.color-picker-popover {
+  padding: var(--spacing-4);
+
+  .color-picker-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+}
+
+/* ColorPicker Trigger Button */
+.color-picker-trigger {
+  padding: var(--spacing-2);
+  min-width: auto;
+
+  .react-aria-ColorSwatch {
+    margin: 0;
+  }
+}
+
+/* Color Swatch Button in control-label position */
+.color-swatch-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    background: var(--color-gray-100);
+  }
+
+  &:active {
+    background: var(--color-gray-200);
+  }
+
+  &[data-focus-visible] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  .react-aria-ColorSwatch {
+    width: 16px;
+    height: 16px;
   }
 }
 
