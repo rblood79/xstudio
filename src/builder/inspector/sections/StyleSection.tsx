@@ -56,14 +56,34 @@ function getStyleValue(
   property: keyof React.CSSProperties,
   defaultValue: string
 ): string {
+  // Properties that should only show inline styles (not computed)
+  // Reason: computedStyle.width/height always returns pixel values, even when not explicitly set
+  const inlineOnlyProperties: string[] = [
+    'width',
+    'height',
+    'top',
+    'left',
+    'right',
+    'bottom',
+    'padding',
+    'margin',
+    'gap',
+  ];
+
   // Priority 1: Inline style
   if (element.style && element.style[property] !== undefined) {
     return String(element.style[property]);
   }
-  // Priority 2: Computed style
-  if (element.computedStyle && element.computedStyle[property] !== undefined) {
+
+  // Priority 2: Computed style (skip for inline-only properties)
+  if (
+    !inlineOnlyProperties.includes(property as string) &&
+    element.computedStyle &&
+    element.computedStyle[property] !== undefined
+  ) {
     return String(element.computedStyle[property]);
   }
+
   // Priority 3: Default value
   return defaultValue;
 }

@@ -139,6 +139,11 @@ export function PropertyUnitInput({
     }
   };
 
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Select all text on focus for easier editing
+    e.target.select();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -195,6 +200,7 @@ export function PropertyUnitInput({
               type="text"
               value={inputValue}
               onChange={(e) => handleInputChange(e.target.value)}
+              onFocus={handleInputFocus}
               onBlur={handleInputBlur}
               onKeyDown={handleKeyDown}
               aria-label={label || "Value"}

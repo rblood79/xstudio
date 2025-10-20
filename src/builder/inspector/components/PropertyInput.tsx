@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
 
 
@@ -31,13 +31,53 @@ export function PropertyInput({
     min,
     max
 }: PropertyInputProps) {
+    // Local state for input value (debounced save)
+    const [inputValue, setInputValue] = useState<string>(String(value || ''));
+
+    // Sync local state with prop value when it changes externally
+    useEffect(() => {
+        setInputValue(String(value || ''));
+    }, [value]);
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        // Select all text on focus for easier editing
+        e.target.select();
+    };
+
+    const handleChange = (newValue: string) => {
+        // Update local state immediately for responsive UI
+        setInputValue(newValue);
+    };
+
+    const handleBlur = () => {
+        // Save to parent only on blur (reduces DB calls)
+        if (inputValue !== String(value || '')) {
+            onChange(inputValue);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !multiline) {
+            // Save on Enter (only for single-line inputs)
+            e.preventDefault();
+            if (inputValue !== String(value || '')) {
+                onChange(inputValue);
+            }
+            // Blur the input to confirm the change
+            (e.target as HTMLInputElement | HTMLTextAreaElement).blur();
+        }
+    };
+
     return (
         <PropertyFieldset legend={label} icon={icon} className={className}>
             {multiline ? (
                 <textarea
                     className='react-aria-TextArea resize-y' // Added resize-y for vertical resizing
-                    value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => handleChange(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     rows={4} // Default rows for textarea
                 />
@@ -45,8 +85,11 @@ export function PropertyInput({
                 <input
                     className='react-aria-Input'
                     type={type}
-                    value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => handleChange(e.target.value)}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     min={min}
                     max={max}
