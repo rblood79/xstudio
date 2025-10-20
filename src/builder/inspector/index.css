@@ -303,7 +303,8 @@
         .style-background,
         .layout-container,
         .transform-size,
-        .transform-position {
+        .transform-position,
+        .text-size {
           display: flex;
           flex-direction: row;
           gap: var(--spacing-sm);

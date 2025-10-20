@@ -27,7 +27,7 @@ interface PropertyUnitInputProps {
 }
 
 const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "auto"];
-const KEYWORDS = ["auto", "inherit", "initial", "unset"];
+const KEYWORDS = ["auto", "inherit", "initial", "unset", "normal"];
 
 function parseUnitValue(value: string): {
   numericValue: number | null;
@@ -42,7 +42,7 @@ function parseUnitValue(value: string): {
   const match = trimmed.match(/^(-?\d+\.?\d*)([a-z%]+)?$/i);
   if (match) {
     const numericValue = parseFloat(match[1]);
-    const unit = match[2] || "px";
+    const unit = match[2] || "";
     return { numericValue, unit };
   }
 
@@ -77,37 +77,51 @@ export function PropertyUnitInput({
 
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
+  };
 
-    if (allowKeywords && KEYWORDS.includes(newValue.toLowerCase())) {
-      onChange(newValue.toLowerCase());
+  const handleInputBlur = () => {
+    const trimmed = inputValue.trim();
+
+    if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
+      onChange(trimmed.toLowerCase());
       return;
     }
 
-    const num = parseFloat(newValue);
+    const num = parseFloat(trimmed);
     if (isNaN(num)) {
+      // Invalid input, revert to previous value
+      if (numericValue !== null) {
+        setInputValue(String(numericValue));
+      } else {
+        setInputValue("");
+      }
       return;
     }
 
     if (num < min || num > max) {
+      // Out of range, revert to previous value
+      if (numericValue !== null) {
+        setInputValue(String(numericValue));
+      } else {
+        setInputValue("");
+      }
       return;
     }
 
     onChange(`${num}${unit}`);
   };
 
-  const handleInputBlur = () => {
-    if (numericValue !== null) {
-      setInputValue(String(numericValue));
-    }
-  };
-
-  const handleUnitSelect = (selectedUnit: string) => {
+  const handleUnitChange = (selectedUnit: string) => {
     if (KEYWORDS.includes(selectedUnit)) {
       onChange(selectedUnit);
       return;
     }
 
-    if (numericValue !== null) {
+    // Use the current input value, not the state numericValue
+    const currentNum = parseFloat(inputValue);
+    if (!isNaN(currentNum)) {
+      onChange(`${currentNum}${selectedUnit}`);
+    } else if (numericValue !== null) {
       onChange(`${numericValue}${selectedUnit}`);
     } else {
       onChange(`0${selectedUnit}`);
@@ -115,6 +129,12 @@ export function PropertyUnitInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleInputBlur();
+      return;
+    }
+
     if (isKeyword) return;
 
     const step = e.shiftKey ? 10 : 1;
@@ -148,10 +168,14 @@ export function PropertyUnitInput({
         )}
         <AriaComboBox
           className="react-aria-ComboBox react-aria-UnitComboBox"
-          inputValue={unit}
-          onInputChange={handleUnitSelect}
-          onSelectionChange={(key) => key && handleUnitSelect(key as string)}
-          selectedKey={unit}
+          inputValue={unit === "" ? "—" : unit}
+          onSelectionChange={(key) => {
+            if (key !== null) {
+              const selectedUnit = key === "—" ? "" : (key as string);
+              handleUnitChange(selectedUnit);
+            }
+          }}
+          selectedKey={unit === "" ? "—" : unit}
           aria-label="Unit"
         >
           <div className="combobox-container">
@@ -172,8 +196,8 @@ export function PropertyUnitInput({
           <Popover className="react-aria-Popover">
             <ListBox className="react-aria-ListBox">
               {units.map((u) => (
-                <ListBoxItem key={u} id={u} className="react-aria-ListBoxItem">
-                  {u}
+                <ListBoxItem key={u === "" ? "—" : u} id={u === "" ? "—" : u} className="react-aria-ListBoxItem">
+                  {u === "" ? "—" : u}
                 </ListBoxItem>
               ))}
             </ListBox>

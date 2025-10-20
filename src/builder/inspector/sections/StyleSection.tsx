@@ -703,15 +703,37 @@ export function StyleSection({ element }: StyleSectionProps) {
           placeholder="#000000"
         />
 
-        <PropertyUnitInput
-          icon={Type}
-          label="Font Size"
-          value={getStyleValue(element, "fontSize", "16px")}
-          units={["px", "rem", "em", "pt"]}
-          onChange={(value) => updateInlineStyle("fontSize", value)}
-          min={8}
-          max={200}
-        />
+        <div className="text-size">
+          <PropertyUnitInput
+            icon={Type}
+            label="Font Size"
+            value={getStyleValue(element, "fontSize", "16px")}
+            units={["px", "rem", "em", "pt"]}
+            onChange={(value) => updateInlineStyle("fontSize", value)}
+            min={8}
+            max={200}
+          />
+          <PropertyUnitInput
+            icon={Type}
+            label="Line Height"
+            className="text-size-height"
+            value={getStyleValue(element, "lineHeight", "normal")}
+            units={["px", "rem", "em", ""]}
+            onChange={(value) => updateInlineStyle("lineHeight", value)}
+            min={0}
+            max={10}
+            allowKeywords
+          />
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
 
         <PropertySelect
           icon={Type}
@@ -731,17 +753,6 @@ export function StyleSection({ element }: StyleSectionProps) {
             { value: "bold", label: "Bold" },
           ]}
           onChange={(value) => updateInlineStyle("fontWeight", value)}
-        />
-
-        <PropertyUnitInput
-          icon={Type}
-          label="Line Height"
-          value={getStyleValue(element, "lineHeight", "normal")}
-          units={["px", "rem", "em", ""]}
-          onChange={(value) => updateInlineStyle("lineHeight", value)}
-          min={0}
-          max={10}
-          allowKeywords
         />
 
         <PropertyUnitInput
