@@ -140,13 +140,20 @@ export const useInspectorState = create<InspectorState>((set) => ({
     set((state) => {
       if (!state.selectedElement) return state;
       console.log("🎨 updateInlineStyle 호출:", { property, value });
+
+      const currentStyle = { ...(state.selectedElement.style || {}) };
+
+      // 빈 문자열이면 해당 속성 제거 (class 스타일로 폴백)
+      if (value === "" || value === null || value === undefined) {
+        delete currentStyle[property];
+      } else {
+        currentStyle[property] = value;
+      }
+
       return {
         selectedElement: {
           ...state.selectedElement,
-          style: {
-            ...(state.selectedElement.style || {}),
-            [property]: value,
-          },
+          style: currentStyle,
         },
       };
     });
@@ -159,13 +166,22 @@ export const useInspectorState = create<InspectorState>((set) => ({
     set((state) => {
       if (!state.selectedElement) return state;
       console.log("🎨 updateInlineStyles 호출:", styles);
+
+      const currentStyle = { ...(state.selectedElement.style || {}) };
+
+      // 각 속성에 대해 빈 문자열이면 제거, 아니면 추가
+      Object.entries(styles).forEach(([property, value]) => {
+        if (value === "" || value === null || value === undefined) {
+          delete currentStyle[property];
+        } else {
+          currentStyle[property] = value;
+        }
+      });
+
       return {
         selectedElement: {
           ...state.selectedElement,
-          style: {
-            ...(state.selectedElement.style || {}),
-            ...styles,
-          },
+          style: currentStyle,
         },
       };
     });

@@ -11,7 +11,8 @@ export function mapElementToSelected(element: Element): SelectedElement {
     id: element.id,
     type: element.tag,
     properties: otherProps,
-    style: style as React.CSSProperties | undefined,
+    // style이 없으면 빈 객체로 초기화 (undefined 방지)
+    style: (style as React.CSSProperties) || {},
     computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,
     semanticClasses: [],
     cssVariables: {},
@@ -31,7 +32,8 @@ export function mapSelectedToElementUpdate(
     tag: selected.type,
     props: {
       ...selected.properties,
-      ...(selected.style ? { style: selected.style } : {}),
+      // style이 undefined가 아니면 항상 포함 (빈 객체라도 포함하여 스타일 제거 반영)
+      ...(selected.style !== undefined ? { style: selected.style } : {}),
     } as Element["props"],
     dataBinding: selected.dataBinding as Element["dataBinding"],
   };

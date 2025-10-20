@@ -56,22 +56,42 @@ function Inspector() {
       return;
     }
 
-    // 같은 요소인 경우 props와 dataBinding 비교 (무한 루프 방지)
+    // 같은 요소인 경우 props, dataBinding, style, computedStyle 비교 (무한 루프 방지)
     const currentPropsJson = JSON.stringify(
       selectedElement.properties,
-      Object.keys(selectedElement.properties).sort()
+      Object.keys(selectedElement.properties || {}).sort()
     );
     const newPropsJson = JSON.stringify(
       mappedElement.properties,
-      Object.keys(mappedElement.properties).sort()
+      Object.keys(mappedElement.properties || {}).sort()
     );
 
     const currentDataBindingJson = JSON.stringify(selectedElement.dataBinding);
     const newDataBindingJson = JSON.stringify(mappedElement.dataBinding);
 
+    const currentStyleJson = JSON.stringify(
+      selectedElement.style,
+      Object.keys(selectedElement.style || {}).sort()
+    );
+    const newStyleJson = JSON.stringify(
+      mappedElement.style,
+      Object.keys(mappedElement.style || {}).sort()
+    );
+
+    const currentComputedStyleJson = JSON.stringify(
+      selectedElement.computedStyle,
+      Object.keys(selectedElement.computedStyle || {}).sort()
+    );
+    const newComputedStyleJson = JSON.stringify(
+      mappedElement.computedStyle,
+      Object.keys(mappedElement.computedStyle || {}).sort()
+    );
+
     if (
       currentPropsJson !== newPropsJson ||
-      currentDataBindingJson !== newDataBindingJson
+      currentDataBindingJson !== newDataBindingJson ||
+      currentStyleJson !== newStyleJson ||
+      currentComputedStyleJson !== newComputedStyleJson
     ) {
       // Builder에서 변경된 경우만 업데이트
       setSelectedElement(mappedElement);

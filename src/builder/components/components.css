@@ -1173,7 +1173,7 @@
       width: var(--spacing-xl);
       height: var(--spacing-xl);
       line-height: var(--spacing-lg);
-      margin-left: var(--spacing-sm);
+      margin-left: var(--spacing-2xs);
       display: flex;
       align-items: center;
       justify-content: center;

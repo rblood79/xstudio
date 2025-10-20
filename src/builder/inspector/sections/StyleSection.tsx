@@ -32,6 +32,18 @@ import {
   RulerDimensionLine,
   ArrowRightFromLine,
   ArrowDownFromLine,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyEnd,
+  Underline,
+  Strikethrough,
+  RemoveFormatting,
+  Italic,
+  CaseSensitive,
+  CaseLower,
+  CaseUpper,
 } from "lucide-react";
 
 export interface StyleSectionProps {
@@ -534,7 +546,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             //label="Gap"
             className="gap-control"
             value={getStyleValue(element, "gap", "0px")}
-            units={["px", "rem", "em"]}
+            units={["auto", "px", "rem", "em"]}
             onChange={(value) => updateInlineStyle("gap", value)}
             min={0}
             max={500}
@@ -547,7 +559,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             label="Padding"
             className="layout-padding"
             value={getStyleValue(element, "padding", "0px")}
-            units={["px", "rem", "em"]}
+            units={["auto", "px", "rem", "em"]}
             onChange={(value) => updateInlineStyle("padding", value)}
             min={0}
             max={500}
@@ -620,7 +632,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             label="Border Width"
             className="border-width-control"
             value={getStyleValue(element, "borderWidth", "0px")}
-            units={["px"]}
+            units={["auto", "px"]}
             onChange={(value) => updateInlineStyle("borderWidth", value)}
             min={0}
             max={100}
@@ -630,7 +642,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             label="Border Radius"
             className="border-radius-control"
             value={getStyleValue(element, "borderRadius", "0px")}
-            units={["px", "%", "rem", "em"]}
+            units={["auto", "px", "%", "rem", "em"]}
             onChange={(value) => updateInlineStyle("borderRadius", value)}
             min={0}
             max={500}
@@ -641,6 +653,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             className="border-style-control"
             value={getStyleValue(element, "borderStyle", "solid")}
             options={[
+              { value: "auto", label: "auto" },
               { value: "none", label: "none" },
               { value: "solid", label: "solid" },
               { value: "dashed", label: "dashed" },
@@ -684,6 +697,7 @@ export function StyleSection({ element }: StyleSectionProps) {
           label="Font Family"
           value={getStyleValue(element, "fontFamily", "Arial")}
           options={[
+            { value: "auto", label: "auto" },
             { value: "Arial", label: "Arial" },
             { value: "Helvetica", label: "Helvetica" },
             { value: "Times New Roman", label: "Times New Roman" },
@@ -708,7 +722,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             icon={Type}
             label="Font Size"
             value={getStyleValue(element, "fontSize", "16px")}
-            units={["px", "rem", "em", "pt"]}
+            units={["auto", "px", "rem", "em", "pt"]}
             onChange={(value) => updateInlineStyle("fontSize", value)}
             min={8}
             max={200}
@@ -718,7 +732,7 @@ export function StyleSection({ element }: StyleSectionProps) {
             label="Line Height"
             className="text-size-height"
             value={getStyleValue(element, "lineHeight", "normal")}
-            units={["px", "rem", "em", ""]}
+            units={["auto", "px", "rem", "em", ""]}
             onChange={(value) => updateInlineStyle("lineHeight", value)}
             min={0}
             max={10}
@@ -735,94 +749,255 @@ export function StyleSection({ element }: StyleSectionProps) {
           </div>
         </div>
 
-        <PropertySelect
-          icon={Type}
-          label="Font Weight"
-          value={getStyleValue(element, "fontWeight", "normal")}
-          options={[
-            { value: "100", label: "100 - Thin" },
-            { value: "200", label: "200 - Extra Light" },
-            { value: "300", label: "300 - Light" },
-            { value: "400", label: "400 - Normal" },
-            { value: "500", label: "500 - Medium" },
-            { value: "600", label: "600 - Semi Bold" },
-            { value: "700", label: "700 - Bold" },
-            { value: "800", label: "800 - Extra Bold" },
-            { value: "900", label: "900 - Black" },
-            { value: "normal", label: "Normal" },
-            { value: "bold", label: "Bold" },
-          ]}
-          onChange={(value) => updateInlineStyle("fontWeight", value)}
-        />
+        <div className="text-weight-spacing">
+          <PropertySelect
+            icon={Type}
+            label="Font Weight"
+            value={getStyleValue(element, "fontWeight", "normal")}
+            options={[
+              { value: "auto", label: "auto" },
+              { value: "100", label: "100 - Thin" },
+              { value: "200", label: "200 - Extra Light" },
+              { value: "300", label: "300 - Light" },
+              { value: "400", label: "400 - Normal" },
+              { value: "500", label: "500 - Medium" },
+              { value: "600", label: "600 - Semi Bold" },
+              { value: "700", label: "700 - Bold" },
+              { value: "800", label: "800 - Extra Bold" },
+              { value: "900", label: "900 - Black" },
+              { value: "normal", label: "Normal" },
+              { value: "bold", label: "Bold" },
+            ]}
+            onChange={(value) => updateInlineStyle("fontWeight", value)}
+          />
+          <PropertyUnitInput
+            icon={Type}
+            label="Letter Spacing"
+            className="text-weight-spacing-letter"
+            value={getStyleValue(element, "letterSpacing", "normal")}
+            units={["auto", "px", "rem", "em"]}
+            onChange={(value) => updateInlineStyle("letterSpacing", value)}
+            min={-10}
+            max={10}
+            allowKeywords
+          />
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
 
-        <PropertyUnitInput
-          icon={Type}
-          label="Letter Spacing"
-          value={getStyleValue(element, "letterSpacing", "normal")}
-          units={["px", "rem", "em"]}
-          onChange={(value) => updateInlineStyle("letterSpacing", value)}
-          min={-10}
-          max={10}
-          allowKeywords
-        />
+        <div className="text-alignment">
+          <fieldset className="properties-aria">
+            <legend className="fieldset-legend">Text Align</legend>
+            <ToggleButtonGroup
+              aria-label="Text alignment"
+              indicator
+              selectedKeys={[getStyleValue(element, "textAlign", "left")]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateInlineStyle("textAlign", value);
+              }}
+            >
+              <ToggleButton id="left">
+                <AlignLeft
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="center">
+                <AlignCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="right">
+                <AlignRight
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
+
+          <fieldset className="properties-aria text-alignment-vertical">
+            <legend className="fieldset-legend">Vertical Align</legend>
+            <ToggleButtonGroup
+              aria-label="Vertical alignment"
+              indicator
+              selectedKeys={[getStyleValue(element, "verticalAlign", "baseline")]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateInlineStyle("verticalAlign", value);
+              }}
+            >
+              <ToggleButton id="top">
+                <AlignVerticalJustifyStart
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="middle">
+                <AlignVerticalJustifyCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="bottom">
+                <AlignVerticalJustifyEnd
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
+
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
+
+        <div className="text-decoration-style">
+          <fieldset className="properties-aria">
+            <legend className="fieldset-legend">Text Decoration</legend>
+            <ToggleButtonGroup
+              aria-label="Text decoration"
+              indicator
+              selectedKeys={[getStyleValue(element, "textDecoration", "none")]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateInlineStyle("textDecoration", value);
+              }}
+            >
+              <ToggleButton id="none">
+                <RemoveFormatting
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="underline">
+                <Underline
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="line-through">
+                <Strikethrough
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
+
+          <fieldset className="properties-aria text-font-style">
+            <legend className="fieldset-legend">Font Style</legend>
+            <ToggleButtonGroup
+              aria-label="Font style"
+              indicator
+              selectedKeys={[getStyleValue(element, "fontStyle", "normal")]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                if (value) updateInlineStyle("fontStyle", value);
+              }}
+            >
+              <ToggleButton id="normal">
+                <RemoveFormatting
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="italic">
+                <Italic
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </ToggleButton>
+              <ToggleButton id="oblique">
+                <Type
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                  style={{ fontStyle: 'oblique', transform: 'skewX(-10deg)' }}
+                />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </fieldset>
+
+          <div className="fieldset-actions">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        </div>
 
         <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Text Align</legend>
+          <legend className="fieldset-legend">Text Transform</legend>
           <ToggleButtonGroup
-            aria-label="Text alignment"
-            selectedKeys={[getStyleValue(element, "textAlign", "left")]}
+            aria-label="Text transform"
+            indicator
+            selectedKeys={[getStyleValue(element, "textTransform", "none")]}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0] as string;
-              if (value) updateInlineStyle("textAlign", value);
+              if (value) updateInlineStyle("textTransform", value);
             }}
           >
-            <ToggleButton id="left">Left</ToggleButton>
-            <ToggleButton id="center">Center</ToggleButton>
-            <ToggleButton id="right">Right</ToggleButton>
-            <ToggleButton id="justify">Justify</ToggleButton>
+            <ToggleButton id="none">
+              <RemoveFormatting
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+            <ToggleButton id="uppercase">
+              <CaseUpper
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+            <ToggleButton id="lowercase">
+              <CaseLower
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+            <ToggleButton id="capitalize">
+              <CaseSensitive
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
           </ToggleButtonGroup>
         </fieldset>
-
-        <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Text Decoration</legend>
-          <ToggleButtonGroup
-            aria-label="Text decoration"
-            selectedKeys={[getStyleValue(element, "textDecoration", "none")]}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0] as string;
-              if (value) updateInlineStyle("textDecoration", value);
-            }}
-          >
-            <ToggleButton id="none">None</ToggleButton>
-            <ToggleButton id="underline">Underline</ToggleButton>
-            <ToggleButton id="line-through">Line Through</ToggleButton>
-          </ToggleButtonGroup>
-        </fieldset>
-
-        <PropertySelect
-          icon={Type}
-          label="Text Transform"
-          value={getStyleValue(element, "textTransform", "none")}
-          options={[
-            { value: "none", label: "None" },
-            { value: "uppercase", label: "UPPERCASE" },
-            { value: "lowercase", label: "lowercase" },
-            { value: "capitalize", label: "Capitalize" },
-          ]}
-          onChange={(value) => updateInlineStyle("textTransform", value)}
-        />
-
-        <PropertySelect
-          icon={Type}
-          label="Font Style"
-          value={getStyleValue(element, "fontStyle", "normal")}
-          options={[
-            { value: "normal", label: "Normal" },
-            { value: "italic", label: "Italic" },
-            { value: "oblique", label: "Oblique" },
-          ]}
-          onChange={(value) => updateInlineStyle("fontStyle", value)}
-        />
       </div>
     </div>
   );

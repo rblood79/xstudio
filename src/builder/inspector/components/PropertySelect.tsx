@@ -31,6 +31,16 @@ export function PropertySelect({
     icon: Icon,
     className
 }: PropertySelectProps) {
+    const handleChange = (key: React.Key | null) => {
+        const selectedValue = key as string;
+        // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
+        if (selectedValue === "auto") {
+            onChange("");
+        } else {
+            onChange(selectedValue);
+        }
+    };
+
     return (
         <fieldset className={`properties-aria ${className || ''}`}>
             <legend className='fieldset-legend'>{label}</legend>
@@ -38,7 +48,7 @@ export function PropertySelect({
                 <AriaSelect
                     className='react-aria-Select'
                     selectedKey={value}
-                    onSelectionChange={(key) => onChange(key as string)}
+                    onSelectionChange={handleChange}
                     aria-label={label}
                 >
                     <Button className="react-aria-Button">

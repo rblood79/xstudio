@@ -83,7 +83,13 @@ export function PropertyUnitInput({
     const trimmed = inputValue.trim();
 
     if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
-      onChange(trimmed.toLowerCase());
+      const keyword = trimmed.toLowerCase();
+      // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
+      if (keyword === "auto") {
+        onChange("");
+      } else {
+        onChange(keyword);
+      }
       return;
     }
 
@@ -113,7 +119,12 @@ export function PropertyUnitInput({
 
   const handleUnitChange = (selectedUnit: string) => {
     if (KEYWORDS.includes(selectedUnit)) {
-      onChange(selectedUnit);
+      // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
+      if (selectedUnit === "auto") {
+        onChange("");
+      } else {
+        onChange(selectedUnit);
+      }
       return;
     }
 
