@@ -12,7 +12,7 @@ import {
 import { InfoIcon, ChevronRightIcon, Minus } from 'lucide-react';
 import { MyCheckbox } from './Checkbox';
 
-import './components.css';
+import './styles/Tree.css';
 
 export function Tree<T extends object>(props: TreeProps<T>) {
   return <AriaTree {...props} className='react-aria-Tree' />;

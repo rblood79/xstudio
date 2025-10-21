@@ -7,7 +7,7 @@ import {
 } from "react-aria-components";
 import type { DataBinding } from "../../types/unified";
 
-import "./components.css";
+import "./styles/ListBox.css";
 
 interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   dataBinding?: DataBinding;

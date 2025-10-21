@@ -3,7 +3,7 @@ import {
     RadioProps as AriaRadioProps,
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/Radio.css';
 
 export interface RadioProps extends AriaRadioProps {
     children?: React.ReactNode;

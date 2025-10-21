@@ -3,7 +3,7 @@ import {
   CheckboxProps as AriaCheckboxProps
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
-import './components.css';
+import './styles/Checkbox.css';
 
 export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
   children?: React.ReactNode;

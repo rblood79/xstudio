@@ -1,0 +1,9 @@
+/* Design tokens 먼저 import */
+@import '../theme.css';
+
+/* 공통 스타일 카테고리별 import */
+@import './base.css';
+@import './animations.css';
+@import './forms.css';
+@import './overlays.css';
+@import './collections.css';

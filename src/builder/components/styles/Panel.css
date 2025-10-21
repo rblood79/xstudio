@@ -1,0 +1,40 @@
+@layer components {
+  .react-aria-Panel {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface, white);
+    border: 1px solid var(--color-border, var(--border-color));
+  }
+
+  .panel-title {
+    padding: var(--spacing-sm);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--color-text-heading, var(--text-color));
+    border-bottom: 1px solid var(--color-border, var(--border-color));
+  }
+
+  .panel-content {
+    padding: var(--spacing);
+    flex: 1;
+  }
+
+  /* Panel variants */
+  .panel-tab {
+    border: none;
+    border-radius: 0;
+  }
+
+  .panel-sidebar {
+    background: var(--color-gray-50, #f9fafb);
+  }
+
+  .panel-card {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .panel-modal {
+    max-width: 600px;
+  }
+}

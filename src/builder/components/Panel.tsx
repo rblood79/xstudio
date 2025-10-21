@@ -1,5 +1,5 @@
 import React from 'react';
-import './components.css';
+import './styles/Panel.css';
 
 export interface PanelProps {
     children?: React.ReactNode;

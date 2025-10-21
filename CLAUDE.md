@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding assistants (Claude Code, Cursor AI, GitHub Copilot) when working with code in this repository.
+
+> **Note:** This document is optimized for Claude Code but also serves as guidelines for other AI assistants like Cursor AI and GitHub Copilot.
 
 ## Project Overview
 
@@ -235,6 +237,90 @@ All API calls use the service layer pattern with proper error handling.
 
 ## Critical Coding Rules
 
+### CSS Architecture
+
+**Component CSS Organization:**
+
+All component CSS files are organized in `src/builder/components/styles/`:
+
+```
+src/builder/components/
+├── components.css          # Main compiled styles (do not edit directly)
+├── components.backup.css   # Backup copy
+├── index.css               # Entry point (imports from styles/)
+├── theme.css               # Design tokens
+└── styles/                 # 61 component CSS files
+    ├── Button.css
+    ├── Calendar.css
+    ├── ComboBox.css
+    └── ... (all component styles)
+```
+
+**CSS Layering Pattern:**
+
+All component CSS files MUST use the `@layer components` wrapper:
+
+```css
+/* src/builder/components/styles/Button.css */
+@import './base.css';
+
+@layer components {
+  .react-aria-Button {
+    /* component styles */
+  }
+}
+```
+
+**IMPORTANT - Tailwind v4 Constraints:**
+
+⚠️ **Tailwind v4.1.3 does NOT support the `@apply` directive.**
+
+```css
+/* ❌ WRONG - @apply is NOT supported in Tailwind v4 */
+.button {
+  @apply px-4 py-2 rounded transition-colors;
+}
+
+/* ✅ CORRECT - Use standard CSS with CSS variables */
+.button {
+  padding-left: var(--spacing-4);
+  padding-right: var(--spacing-4);
+  padding-top: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-radius: var(--radius-md);
+  transition: colors 200ms;
+}
+```
+
+**CSS Variables Usage:**
+
+Always use CSS variables for consistency. Common variables:
+
+```css
+/* Typography */
+font-size: var(--text-xs);      /* 12px */
+font-size: var(--text-sm);      /* 14px (1.143rem → standardized) */
+font-size: var(--text-base);    /* 16px */
+font-size: var(--text-lg);      /* 18px */
+line-height: var(--leading-normal);
+line-height: var(--leading-tight);
+
+/* Spacing */
+padding: var(--spacing-2);      /* 8px */
+padding: var(--spacing-4);      /* 16px */
+gap: var(--spacing-md);
+
+/* Colors */
+color: var(--color-primary-600);
+background: var(--color-gray-100);
+border-color: var(--color-border);
+
+/* Borders & Radius */
+border-radius: var(--radius-sm);
+border-radius: var(--radius-md);
+border-radius: var(--radius-lg);
+```
+
 ### Styling: NO Inline Tailwind
 
 **NEVER use inline Tailwind classes in .tsx files.** This is the most important rule.
@@ -259,16 +345,28 @@ const buttonStyles = tv({
 <button className={buttonStyles({ variant: 'primary' })}>Click</button>
 ```
 
-Then define styles in CSS using `@apply`:
+Then define styles in CSS files (located in `styles/` folder):
 
 ```css
-/* component.css */
-.button {
-  @apply px-4 py-2 rounded transition-colors;
-}
+/* src/builder/components/styles/Button.css */
+@layer components {
+  .button {
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+    padding-top: var(--spacing-2);
+    padding-bottom: var(--spacing-2);
+    border-radius: var(--radius-md);
+    transition: colors 200ms;
+  }
 
-.button-primary {
-  @apply bg-blue-500 text-white hover:bg-blue-600;
+  .button-primary {
+    background: var(--color-primary-500);
+    color: var(--color-white);
+  }
+
+  .button-primary:hover {
+    background: var(--color-primary-600);
+  }
 }
 ```
 
@@ -788,3 +886,186 @@ docs: Update API documentation
 test: Add tests for Table component
 style: Update button hover states
 ```
+
+## AI Coding Assistant Guidelines
+
+This project is designed to work with AI coding assistants. Follow these guidelines for the best experience:
+
+### For Claude Code (claude.ai/code)
+
+Claude Code has full context of this document and should follow all guidelines strictly.
+
+**Key workflows:**
+- Use Task tool for exploratory codebase searches
+- Follow the CSS Architecture rules (no @apply, use CSS variables)
+- Respect the factory pattern for Zustand stores
+- Always use React Aria component patterns
+
+### For Cursor AI
+
+Cursor AI can read this file for project context. When using Cursor:
+
+**Recommended settings (.cursorrules or similar):**
+```
+# XStudio Project Rules
+
+## Critical Rules
+1. NO inline Tailwind classes in .tsx files - use semantic classes with tv()
+2. NO @apply directive - Tailwind v4 doesn't support it
+3. All CSS in src/builder/components/styles/ with @layer components
+4. Use CSS variables (--text-sm, --spacing-4, --color-primary-600, etc.)
+5. Follow React Aria className conventions (react-aria-*)
+
+## File Organization
+- Component CSS: src/builder/components/styles/ComponentName.css
+- Store modules: src/builder/stores/utils/ and src/builder/stores/history/
+- Always import CSS from styles/ folder, not root
+
+## Pattern: Zustand Store Factory
+- Use StateCreator pattern for store modules
+- Extract set/get types from StateCreator
+- Create factory functions that receive set/get
+
+## Pattern: Element Updates
+- Use addElement() for single elements
+- Use addComplexElement() for parent+children
+- Use updateElementProps() for props only
+- Use updateElement() for full updates
+```
+
+**Common Cursor commands:**
+- `@CLAUDE.md` - Reference this file for context
+- When editing CSS, check existing patterns in styles/ folder first
+- When creating store actions, follow factory pattern from existing modules
+
+### For GitHub Copilot
+
+GitHub Copilot learns from code patterns. To help it suggest correct code:
+
+**Tips:**
+1. **Start with imports:** Write imports first, Copilot will suggest matching patterns
+   ```tsx
+   import { tv } from 'tailwind-variants';
+   import './styles/Button.css';
+   ```
+
+2. **Comment your intent:** Add comments before code blocks
+   ```tsx
+   // Create semantic button styles using tv() - NO inline Tailwind
+   const buttonStyles = tv({
+   ```
+
+3. **Use consistent naming:**
+   - Component CSS: `ComponentName.css` in styles/ folder
+   - Store utilities: `elementAction.ts` pattern
+   - Factory functions: `createActionName(set, get)`
+
+4. **CSS Variables:** Start typing `var(--` and Copilot will suggest available tokens
+   ```css
+   .my-component {
+     font-size: var(--text-sm);  /* Copilot suggests: text-xs, text-sm, text-base */
+     padding: var(--spacing-4);   /* Copilot suggests: spacing-2, spacing-4, etc. */
+   }
+   ```
+
+### Common Anti-Patterns to Reject
+
+All AI assistants should reject these suggestions:
+
+❌ **Inline Tailwind in TSX:**
+```tsx
+<div className="flex items-center gap-4 px-6">  // REJECT THIS
+```
+
+❌ **@apply in CSS:**
+```css
+.button {
+  @apply px-4 py-2 bg-blue-500;  // REJECT - Not supported in Tailwind v4
+}
+```
+
+❌ **BEM naming for React Aria components:**
+```tsx
+<ComboBox className="property-input__combobox">  // REJECT - Use react-aria-ComboBox
+```
+
+❌ **Hardcoded colors/sizes:**
+```css
+.component {
+  color: #3b82f6;        // REJECT - Use var(--color-primary-600)
+  padding: 16px;         // REJECT - Use var(--spacing-4)
+  font-size: 1.143rem;   // REJECT - Use var(--text-sm)
+}
+```
+
+❌ **Direct Zustand set/get in store files without factory pattern:**
+```tsx
+// REJECT - Missing factory pattern
+export const elementStore = create((set, get) => ({
+  addElement: async (element) => { /* ... */ }
+}));
+```
+
+### AI-Friendly Code Patterns
+
+✅ **Accepted patterns that AI should learn and replicate:**
+
+**1. Semantic CSS with tv():**
+```tsx
+import { tv } from 'tailwind-variants';
+import './styles/Button.css';
+
+const buttonStyles = tv({
+  base: 'button',
+  variants: { variant: { primary: 'button-primary' } }
+});
+```
+
+**2. CSS Variables in stylesheets:**
+```css
+@layer components {
+  .button {
+    padding: var(--spacing-4) var(--spacing-6);
+    font-size: var(--text-sm);
+    background: var(--color-primary-500);
+    border-radius: var(--radius-md);
+  }
+}
+```
+
+**3. Factory pattern for stores:**
+```tsx
+import type { StateCreator } from 'zustand';
+
+type SetState = Parameters<StateCreator<StoreState>>[0];
+type GetState = Parameters<StateCreator<StoreState>>[1];
+
+export const createMyAction = (set: SetState, get: GetState) => async () => {
+  // Action implementation
+};
+```
+
+**4. React Aria className conventions:**
+```tsx
+<ComboBox className="react-aria-ComboBox react-aria-UnitComboBox">
+  <div className="combobox-container">
+    <Input className="react-aria-Input" />
+    <Button className="react-aria-Button" />
+  </div>
+</ComboBox>
+```
+
+### Quick Reference for AI Assistants
+
+| Task | Correct Approach | File Location |
+|------|------------------|---------------|
+| Add component styles | Create/edit in `styles/` with `@layer components` | `src/builder/components/styles/` |
+| Style component in TSX | Use `tv()` with semantic class names | Import from `tailwind-variants` |
+| Create store action | Factory pattern with `createAction(set, get)` | `src/builder/stores/utils/` |
+| Update element | Use `updateElementProps()` or `updateElement()` | From Zustand store |
+| Add CSS value | Use CSS variable `var(--token-name)` | Defined in `theme.css` |
+| Name React Aria class | Use `react-aria-ComponentName` prefix | Follow existing patterns |
+
+---
+
+**Remember:** This project prioritizes accessibility (React Aria), maintainability (CSS variables, semantic classes), and type safety (strict TypeScript). AI suggestions should align with these values.

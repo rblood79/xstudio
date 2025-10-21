@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { ToggleButtonGroup as RACToggleButtonGroup, ToggleButtonGroupProps } from 'react-aria-components';
 import { clsx } from 'clsx';
-import './components.css';
+import './styles/ToggleButtonGroup.css';
 
 export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   indicator?: boolean;

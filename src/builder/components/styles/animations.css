@@ -1,0 +1,50 @@
+@layer components {
+  @keyframes modal-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes modal-zoom {
+    from {
+      transform: scale(0.8);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes toggle {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mymodal-blur {
+    from {
+      background: rgba(45 0 0 / 0);
+      -webkit-backdrop-filter: blur(0);
+      backdrop-filter: blur(0);
+    }
+    to {
+      background: rgba(45 0 0 / 0.3);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  @keyframes mymodal-slide {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+}

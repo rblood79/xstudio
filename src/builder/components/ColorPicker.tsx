@@ -11,7 +11,7 @@ import { ColorArea } from './ColorArea';
 import { ColorField } from './ColorField';
 import { Popover } from './Popover';
 
-import './components.css';
+import './styles/ColorPicker.css';
 
 export interface ColorPickerProps extends AriaColorPickerProps {
   label?: string;

@@ -7,7 +7,7 @@ import {
     SliderTrack
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/Slider.css';
 
 export interface SliderProps<T> extends AriaSliderProps<T> {
     label?: string;

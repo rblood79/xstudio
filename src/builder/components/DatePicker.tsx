@@ -21,7 +21,7 @@ import {
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
-import "./components.css";
+import "./styles/DatePicker.css";
 
 export interface DatePickerProps<T extends DateValue>
   extends AriaDatePickerProps<T> {

@@ -1,0 +1,67 @@
+@import './animations.css';
+
+@layer components {
+  .react-aria-ModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--visual-viewport-height);
+    background: rgba(0 0 0 / 0.5);
+    z-index: 100;
+
+    &[data-entering] {
+      animation: modal-fade 200ms;
+    }
+
+    &[data-exiting] {
+      animation: modal-fade 150ms reverse ease-in;
+    }
+  }
+
+  .react-aria-Modal {
+    border-radius: var(--radius-md);
+    outline: none;
+    box-shadow: var(--drop-shadow-md);
+    background: var(--overlay-background);
+    color: var(--text-color);
+    border: 1px solid var(--gray-400);
+    max-width: 300px;
+
+    &[data-entering] {
+      animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .react-aria-TextField {
+      margin-bottom: 8px;
+    }
+  }
+
+  .react-aria-Dialog {
+    outline: none;
+    box-sizing: border-box;
+    overflow: auto;
+    padding: var(--spacing-md);
+    max-height: inherit;
+
+    .react-aria-Heading[slot="title"] {
+      line-height: 1;
+      margin-top: 0;
+    }
+  }
+
+  .react-aria-Popover {
+    outline: none;
+    background: var(--overlay-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--drop-shadow-md);
+
+    &[data-entering] {
+      animation: modal-fade 200ms;
+    }
+  }
+}

@@ -5,7 +5,7 @@ import {
   ColorThumb,
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/ColorSlider.css';
 
 export interface ColorSliderProps extends AriaColorSliderProps {}
 

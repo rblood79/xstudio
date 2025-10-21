@@ -7,7 +7,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/CheckboxGroup.css';
 
 export interface CheckboxGroupProps
   extends Omit<AriaCheckboxGroupProps, 'children'> {

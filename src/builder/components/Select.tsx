@@ -14,7 +14,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
-import './components.css';
+import './styles/Select.css';
 
 export interface SelectProps<T extends object>
   extends Omit<AriaSelectProps<T>, 'children'> {

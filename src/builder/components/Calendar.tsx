@@ -11,7 +11,7 @@ import {
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-import './components.css';
+import './styles/Calendar.css';
 
 export interface CalendarProps<T extends DateValue>
   extends AriaCalendarProps<T> {

@@ -4,7 +4,7 @@ import {
   ColorThumb,
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/ColorArea.css';
 
 export interface ColorAreaProps extends AriaColorAreaProps {}
 

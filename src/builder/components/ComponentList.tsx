@@ -1,7 +1,7 @@
 import { useMemo, useCallback, memo } from 'react';
 import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
-import './ComponentList.css';
+import './styles/ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {

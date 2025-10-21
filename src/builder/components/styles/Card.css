@@ -1,0 +1,104 @@
+@import './base.css';
+
+@layer components {
+  .react-aria-Card {
+    /* Base styles */
+    display: block;
+    box-sizing: border-box;
+    background: var(--color-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all 150ms ease;
+
+    &[data-focused] {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: 2px;
+    }
+
+    &[data-hovered] {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-color-hover);
+    }
+
+    /* Variant styles */
+    &.elevated {
+      border: 0;
+      box-shadow: var(--shadow-md);
+
+      &[data-hovered] {
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+    }
+
+    &.outlined {
+      box-shadow: none;
+      border-width: 2px;
+
+      &[data-hovered] {
+        box-shadow: none;
+        border-color: var(--color-primary-400);
+      }
+    }
+
+    /* Size variants */
+    &.sm {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+    }
+
+    &.md {
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+    }
+
+    &.lg {
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-xl);
+    }
+
+    /* State variants */
+    &.selected {
+      border-color: var(--color-primary-500);
+      background: var(--color-primary-50);
+    }
+
+    &.quiet {
+      box-shadow: none;
+      border: 0;
+
+      &[data-hovered] {
+        box-shadow: none;
+        background: var(--color-gray-50);
+      }
+    }
+
+    &[data-disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      color: var(--text-color-disabled);
+    }
+  }
+
+  /* Card 내부 요소 */
+  .card-header {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .card-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .card-content {
+    color: var(--text-color-base);
+  }
+
+  .card-description {
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-color-base);
+  }
+}

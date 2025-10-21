@@ -1,0 +1,10 @@
+@import './base.css';
+
+@layer components {
+  /* FieldGroup for grouping form elements */
+  .react-aria-FieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+}

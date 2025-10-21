@@ -10,7 +10,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/TimeField.css';
 
 export interface TimeFieldProps<T extends TimeValue>
   extends AriaTimeFieldProps<T> {

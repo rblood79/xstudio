@@ -5,7 +5,7 @@ import {
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { focusRing } from "./utils";
-import "./components.css"; // 기존 CSS import 유지
+import "./styles/Button.css";
 
 export interface ButtonProps extends RACButtonProps {
   variant?: "primary" | "secondary" | "surface" | "outline" | "ghost";

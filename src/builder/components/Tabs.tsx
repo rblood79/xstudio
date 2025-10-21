@@ -8,7 +8,7 @@ import {
   TabPanel as RACTabPanel,
   TabPanelProps
 } from 'react-aria-components';
-import './components.css';
+import './styles/Tabs.css';
 
 export function Tabs(props: TabsProps) {
   return <RACTabs {...props} className='react-aria-Tabs' />;

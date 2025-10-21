@@ -8,7 +8,7 @@ import {
 import { Text } from "./Content";
 import { Label, FieldError } from "./Field";
 
-import "./components.css";
+import "./styles/ColorField.css";
 
 export interface ColorFieldProps extends AriaColorFieldProps {
   label?: string;

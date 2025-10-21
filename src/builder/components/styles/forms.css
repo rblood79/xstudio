@@ -1,0 +1,13 @@
+@import './base.css';
+
+@layer components {
+  .react-aria-TextField,
+  .react-aria-NumberField,
+  .react-aria-ColorField,
+  .react-aria-SearchField {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    color: var(--text-color);
+  }
+}

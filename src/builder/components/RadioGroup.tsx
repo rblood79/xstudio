@@ -7,7 +7,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
-import './components.css';
+import './styles/RadioGroup.css';
 
 export interface RadioGroupProps extends Omit<AriaRadioGroupProps, 'children'> {
   children?: React.ReactNode;

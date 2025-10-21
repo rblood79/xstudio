@@ -13,7 +13,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
-import './components.css';
+import './styles/ComboBox.css';
 
 export interface ComboBoxProps<T extends object>
   extends Omit<AriaComboBoxProps<T>, 'children'> {

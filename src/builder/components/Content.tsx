@@ -5,7 +5,7 @@ import {
   TextProps,
 } from "react-aria-components";
 
-import "./components.css";
+import './styles/Content.css';
 
 export function Heading(props: HeadingProps) {
   return <AriaHeading {...props} className="react-aria-Heading" />;

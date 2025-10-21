@@ -12,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { X } from 'lucide-react';
 import type { Key, Selection } from '@react-types/shared';
-import './components.css';
+import './styles/TagGroup.css';
 
 export interface TagGroupProps<T>
   extends
