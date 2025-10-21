@@ -1,5 +1,5 @@
 @import './NumberField.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

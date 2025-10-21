@@ -1,7 +1,7 @@
 @import './Button.css';
 @import './Dialog.css';
 @import './Switch.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

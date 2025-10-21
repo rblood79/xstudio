@@ -4,7 +4,7 @@
 @import './DateField.css';
 @import './RangeCalendar.css';
 @import './Form.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

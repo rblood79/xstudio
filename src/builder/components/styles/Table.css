@@ -4,7 +4,7 @@
 @import './Checkbox.css';
 @import './Popover.css';
 @import './Menu.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

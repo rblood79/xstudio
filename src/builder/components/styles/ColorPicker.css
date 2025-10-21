@@ -8,7 +8,7 @@
 @import './Dialog.css';
 @import './ListBox.css';
 @import './Select.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

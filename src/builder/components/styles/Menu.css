@@ -1,7 +1,7 @@
 @import './Button.css';
 @import './Popover.css';
 @import './SearchField.css';
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   

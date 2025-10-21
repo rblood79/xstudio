@@ -1,4 +1,4 @@
-@import "./theme.css";
+@import "../theme.css";
 @import './Button.css';
 
 @layer components {

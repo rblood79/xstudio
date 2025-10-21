@@ -1,7 +1,6 @@
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
-  
   .react-aria-Switch {
     display: flex;
     /* This is needed so the HiddenInput is positioned correctly */
@@ -11,46 +10,46 @@
     font-size: var(--text-sm);
     color: var(--text-color);
     forced-color-adjust: none;
-  
+
     .indicator {
-      width: 2rem;
-      height: 1.143rem;
+      width: var(--text-4xl);
+      height: var(--text-xl);
       border: 2px solid var(--border-color);
       background: var(--background-color);
-      border-radius: 1.143rem;
+      border-radius: var(--text-xl);
       transition: all 200ms;
-  
+
       &:before {
-        content: '';
+        content: "";
         display: block;
-        margin: 0.143rem;
-        width: 0.857rem;
-        height: 0.857rem;
+        margin: 0;
+        width: var(--text-base);
+        height: var(--text-base);
         background: var(--highlight-background);
-        border-radius: 16px;
+        border-radius: var(--text-base);
         transition: all 200ms;
       }
     }
-  
+
     &[data-pressed] .indicator {
       border-color: var(--border-color-pressed);
-  
+
       &:before {
         background: var(--highlight-background-pressed);
       }
     }
-  
+
     &[data-selected] {
       .indicator {
         border-color: var(--highlight-background);
         background: var(--highlight-background);
-  
+
         &:before {
           background: var(--field-background);
           transform: translateX(100%);
         }
       }
-  
+
       &[data-pressed] {
         .indicator {
           border-color: var(--highlight-background-pressed);
@@ -58,18 +57,18 @@
         }
       }
     }
-  
+
     &[data-focus-visible] .indicator {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: 2px;
     }
-  
+
     &[data-disabled] {
       color: var(--text-color-disabled);
-  
+
       .indicator {
         border-color: var(--border-color-disabled);
-  
+
         &:before {
           background: var(--border-color-disabled);
         }

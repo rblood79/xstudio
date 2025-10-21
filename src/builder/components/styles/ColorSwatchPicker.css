@@ -1,6 +1,6 @@
 @import "./ColorSwatch.css";
 @import "./ColorField.css";
-@import "./theme.css";
+@import "../theme.css";
 
 @layer components {
   
