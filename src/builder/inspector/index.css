@@ -574,10 +574,12 @@
 
       .control-label {
         position: absolute;
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: var(--inspector-label-width);
         height: 25px;
-        padding: var(--spacing) var(--spacing);
+        padding: var(--spacing-2xs) var(--spacing-2xs);
         text-align: center;
         background-color: transparent;
         border: 1px solid transparent;

@@ -5,7 +5,7 @@ import {
   ColorSwatchPickerProps
 } from 'react-aria-components';
 
-import {MyColorSwatch} from './ColorSwatch';
+import { ColorSwatch } from './ColorSwatch';
 
 import './styles/ColorSwatchPicker.css';
 
@@ -13,11 +13,9 @@ export function ColorSwatchPicker(
   { children, ...props }: ColorSwatchPickerProps
 ) {
   return (
-    (
-      <AriaColorSwatchPicker {...props}>
-        {children}
-      </AriaColorSwatchPicker>
-    )
+    <AriaColorSwatchPicker {...props}>
+      {children}
+    </AriaColorSwatchPicker>
   );
 }
 
@@ -25,11 +23,9 @@ export { ColorSwatchPicker as MyColorSwatchPicker };
 
 export function ColorSwatchPickerItem(props: ColorSwatchPickerItemProps) {
   return (
-    (
-      <AriaColorSwatchPickerItem {...props}>
-        <MyColorSwatch />
-      </AriaColorSwatchPickerItem>
-    )
+    <AriaColorSwatchPickerItem {...props}>
+      <ColorSwatch />
+    </AriaColorSwatchPickerItem>
   );
 }
 

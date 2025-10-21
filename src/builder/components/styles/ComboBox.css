@@ -76,7 +76,7 @@
       }
 
       &[data-selected] {
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
         background: unset;
         color: var(--text-color);
 
@@ -123,12 +123,12 @@
     }
 
     .react-aria-FieldError {
-      font-size: 12px;
+      font-size: var(--text-xs);
       color: var(--invalid-color);
     }
 
     [slot="description"] {
-      font-size: 12px;
+      font-size: var(--text-xs);
     }
   }
 }
