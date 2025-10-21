@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ColorPicker as AriaColorPicker,
   ColorField as AriaColorField,
@@ -31,11 +31,43 @@ export function PropertyColor({
   onChange,
   className,
 }: PropertyColorProps) {
+  const [inputValue, setInputValue] = useState<string>(value);
+
+  // Sync local state with prop value when it changes externally
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
   const handleChange = (color: Color | null) => {
     if (!color) return;
     // Convert Color object to hex string and save immediately
     const hexValue = color.toString('hex');
+    setInputValue(hexValue);
     onChange(hexValue);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Update local state immediately for responsive UI
+    setInputValue(e.target.value);
+  };
+
+  const handleBlur = () => {
+    // Save to parent only on blur (reduces DB calls)
+    if (inputValue !== value) {
+      onChange(inputValue);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // Save on Enter
+      e.preventDefault();
+      if (inputValue !== value) {
+        onChange(inputValue);
+      }
+      // Blur the input to confirm the change
+      (e.target as HTMLInputElement).blur();
+    }
   };
 
   return (
@@ -62,7 +94,13 @@ export function PropertyColor({
             className="react-aria-ColorField"
             aria-label={label || "Color"}
           >
-            <Input className="react-aria-Input" />
+            <Input
+              className="react-aria-Input"
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+            />
           </AriaColorField>
         </div>
       </AriaColorPicker>

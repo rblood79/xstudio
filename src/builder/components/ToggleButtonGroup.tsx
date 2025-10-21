@@ -8,42 +8,20 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
 }
 
 export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonGroupExtendedProps) {
-  console.log('ToggleButtonGroup rendered with indicator:', indicator, 'Full props:', props);
   const groupRef = useRef<HTMLDivElement>(null);
 
   // Memoize the indicator value to prevent unnecessary re-renders
   const memoizedIndicator = useMemo(() => {
-    console.log('Memoizing indicator:', indicator);
     return indicator;
   }, [indicator]);
 
   useEffect(() => {
-    console.log('Indicator effect triggered', {
-      indicator: memoizedIndicator,
-      selectedKeys: props.selectedKeys,
-      defaultSelectedKeys: props.defaultSelectedKeys
-    });
     if (!memoizedIndicator) return;
 
     const group = groupRef.current;
-    if (!group) {
-      console.log('Group ref is null');
-      return;
-    }
+    if (!group) return;
 
     const updateIndicator = () => {
-      console.log('Updating indicator');
-
-      const children = group.children;
-      console.log('Group children:', children.length);
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        console.log(`Child ${i}:`, {
-          selected: child.hasAttribute('data-selected'),
-          attributes: Array.from(child.attributes).map(attr => attr.name)
-        });
-      }
-
       const selectedButton = group.querySelector('[data-selected]') as HTMLElement;
       if (selectedButton) {
         const groupRect = group.getBoundingClientRect();
@@ -54,15 +32,12 @@ export function ToggleButtonGroup({ indicator = false, ...props }: ToggleButtonG
         const width = buttonRect.width;
         const height = buttonRect.height;
 
-        console.log('Indicator details:', { left, top, width, height });
-
         group.style.setProperty('--indicator-left', `${left}px`);
         group.style.setProperty('--indicator-top', `${top}px`);
         group.style.setProperty('--indicator-width', `${width}px`);
         group.style.setProperty('--indicator-height', `${height}px`);
         group.style.setProperty('--indicator-opacity', '1');
       } else {
-        console.log('No selected button found - hiding indicator');
         // Hide indicator when no button is selected
         group.style.setProperty('--indicator-opacity', '0');
       }

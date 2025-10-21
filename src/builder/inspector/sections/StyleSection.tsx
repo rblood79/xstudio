@@ -1,7 +1,7 @@
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components/list";
 import {
   PropertySelect,
-  PropertyInput,
+  //PropertyInput,
   PropertyUnitInput,
   PropertyColor,
 } from "../components";
