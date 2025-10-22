@@ -1,13 +1,7 @@
 :root {
-    --sidebar-nav-width: 48px;
-    --sidebar-width: 240px;
-    --element-padding: 8px;
-    --border-color: #eee;
     --hover-bg: #f5f5f5;
-    --active-bg: var(--color-sky-50);
-    --active-color: var(--color-sky-600);
-    --icon-button-size: 24px;
-    --component-button-size: 32px;
+    --sidebar-width: 240px;
+    --sidebar-nav-width: 48px;
 }
 
 
@@ -30,7 +24,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--element-padding);
+    gap: var(--spacing-sm);
     /* Updated gap to use --element-padding */
     padding: var(--spacing-sm);
     width: var(--sidebar-nav-width);

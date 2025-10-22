@@ -3,21 +3,32 @@
 @layer components {
   .react-aria-ListBox,
   .react-aria-GridList {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--overlay-background);
+    forced-color-adjust: none;
+    width: 100%;
     outline: none;
     overflow: auto;
     max-height: var(--container-6xl);
     padding: var(--spacing);
+
+    &[data-focus-visible] {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: -1px;
+    }
   }
 
   .react-aria-ListBoxItem,
   .react-aria-GridListItem {
     position: relative;
-    display: flex;
-    align-items: center;
+    
     gap: var(--gap);
     cursor: default;
     padding: var(--spacing) var(--spacing-md);
-    border-radius: var(--radius);
+    border-radius: var(--border-radius);
     font-size: var(--text-sm);
     color: var(--text-color);
 

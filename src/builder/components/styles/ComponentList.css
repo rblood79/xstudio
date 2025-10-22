@@ -25,8 +25,8 @@
   }
 
   .component-list button {
-    width: var(--component-button-size);
-    height: var(--component-button-size);
+    width: var(--text-3xl);
+    height: var(--text-3xl);
     display: flex;
     align-items: center;
     justify-content: center;

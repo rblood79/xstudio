@@ -1,74 +1,39 @@
+@import './collections.css';
 @import './Button.css';
 @import './Checkbox.css';
 @import './ToggleButton.css';
-@import "../theme.css";
 
 @layer components {
-  
   .react-aria-GridList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-    max-height: inherit;
-    overflow: auto;
-    padding: var(--spacing);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--overlay-background);
-    forced-color-adjust: none;
-    outline: none;
-    width: var(--container-2xs);
-    max-height: 100%;
-    min-height: 100px;
-    box-sizing: border-box;
-  
-    &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
-      outline-offset: -1px;
-    }
-  
+    
     .react-aria-GridListItem {
-      display: flex;
-      align-items: center;
-      gap: var(--gap);
       min-height: var(--text-base);
       padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-md);
       border-radius: var(--border-radius);
-      outline: none;
-      cursor: default;
-      color: var(--text-color);
-      font-size: var(--text-sm);
-      position: relative;
       transform: translateZ(0);
-  
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -2px;
       }
-  
+
       &[data-pressed] {
         background: var(--gray-100);
       }
-  
+
       &[data-selected] {
-        background: var(--highlight-background);
-        color: var(--highlight-foreground);
         --focus-ring-color: var(--highlight-foreground);
-  
+
         &[data-focus-visible] {
           outline-color: var(--highlight-foreground);
           outline-offset: -4px;
         }
-  
+
         .react-aria-Button {
           color: var(--highlight-foreground);
           --highlight-hover: rgb(255 255 255 / 0.1);
           --highlight-pressed: rgb(255 255 255 / 0.2);
         }
-      }
-  
-      &[data-disabled] {
-        color: var(--text-color-disabled);
       }
   
       .react-aria-Button:not([slot]) {

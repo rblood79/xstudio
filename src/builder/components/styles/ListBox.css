@@ -1,24 +1,9 @@
+@import "./collections.css";
 @import "./Checkbox.css";
-@import "../theme.css";
 
 @layer components {
   .react-aria-ListBox {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-    max-height: inherit;
-    overflow: auto;
-    padding: var(--spacing);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--overlay-background);
-    forced-color-adjust: none;
-    outline: none;
-    width: 100%;
-    max-height: inherit;
-    min-height: 100px;
-    box-sizing: border-box;
-
+    
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: -1px;
@@ -26,14 +11,7 @@
   }
 
   .react-aria-ListBoxItem {
-    padding: var(--spacing);
     border-radius: var(--border-radius);
-    outline: none;
-    cursor: default;
-    color: var(--text-color);
-    font-size: var(--text-sm);
-    position: relative;
-    display: flex;
     flex-direction: column;
     justify-content: center;
     min-height: var(--text-lg);
@@ -44,9 +22,6 @@
     }
 
     &[data-selected] {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
-
       &[data-focus-visible] {
         outline-color: var(--highlight-foreground);
         outline-offset: -4px;

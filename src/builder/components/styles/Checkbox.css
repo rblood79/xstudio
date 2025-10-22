@@ -11,17 +11,18 @@
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
     align-items: center;
-    gap: 0.571rem;
+    gap: var(--gap);
     font-size: var(--text-sm);
     color: var(--text-color);
     forced-color-adjust: none;
+    padding: var(--spacing);
   
     .checkbox {
-      width: 1.143rem;
-      height: 1.143rem;
+      width: var(--text-lg);
+      height: var(--text-lg);
       border: 2px solid var(--border-color);
-      border-radius: 4px;
-      transition: all 200ms;
+      border-radius: var(--border-radius);
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -29,14 +30,12 @@
     }
   
     svg {
-      width: 1rem;
-      height: 1rem;
+      width: var(--text-lg);
+      height: var(--text-lg);
       fill: none;
       stroke: var(--checkmark-color);
-      stroke-width: 3px;
-      stroke-dasharray: 22px;
-      stroke-dashoffset: 66;
-      transition: all 200ms;
+      
+      transition: all 0.2s ease;
     }
   
     &[data-pressed] .checkbox {

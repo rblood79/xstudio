@@ -5,25 +5,24 @@
     display: flex;
     position: relative;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--gap);
     font-size: var(--text-sm);
-    line-height: calc(var(--text-2xs) * 2.2);
-    color: var(--color-gray-800);
+    line-height: var(--text-sm--line-height);
+    color: var(--text-color);
     forced-color-adjust: none;
     padding: var(--spacing);
-    padding-left: var(--spacing);
     width: fit-content;
 
     &:before {
       content: "";
       display: block;
-      width: var(--spacing-lg);
-      height: var(--spacing-lg);
+      width: var(--text-lg);
+      height: var(--text-lg);
       box-sizing: border-box;
-      border: var(--spacing-2xs) solid var(--border-color);
+      border: 2px solid var(--border-color);
       background: var(--field-background);
-      border-radius: calc(var(--spacing-lg) * 1.25);
-      transition: all 200ms;
+      border-radius: var(--text-lg);
+      transition: all 0.2s ease;
     }
 
     &[data-pressed]:before {
