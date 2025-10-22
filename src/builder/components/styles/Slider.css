@@ -35,8 +35,8 @@
     }
 
     .react-aria-SliderThumb {
-      width: 1.429rem;
-      height: 1.429rem;
+      width: var(--text-lg);
+      height: var(--text-lg);
       border-radius: 50%;
       background: var(--highlight-background);
       border: 2px solid var(--background-color);
@@ -60,7 +60,7 @@
         width: 100%;
 
         &:before {
-          height: 3px;
+          height: 2px;
           width: 100%;
           top: 50%;
           transform: translateY(-50%);
@@ -86,7 +86,7 @@
         height: 100%;
 
         &:before {
-          width: 3px;
+          width: 2px;
           height: 100%;
           left: 50%;
           transform: translateX(-50%);
