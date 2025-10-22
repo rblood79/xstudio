@@ -336,8 +336,8 @@ const buttonStyles = tv({
   base: 'button',
   variants: {
     variant: {
-      primary: 'button-primary',
-      secondary: 'button-secondary',
+      primary: 'primary',
+      secondary: 'secondary',
     }
   }
 });
