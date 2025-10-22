@@ -4,7 +4,6 @@ import {
   ButtonProps as RACButtonProps,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import { focusRing } from "./utils";
 import "./styles/Button.css";
 
 export interface ButtonProps extends RACButtonProps {
@@ -13,7 +12,7 @@ export interface ButtonProps extends RACButtonProps {
 }
 
 const button = tv({
-  extend: focusRing,
+  //extend: focusRing,
   base: "react-aria-Button",
   variants: {
     variant: {

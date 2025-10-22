@@ -22,15 +22,13 @@ export function SearchField(
   { label, description, errorMessage, placeholder, ...props }: SearchFieldProps
 ) {
   return (
-    (
-      <AriaSearchField {...props}>
-        {label && <Label>{label}</Label>}
-        <Input placeholder={placeholder} />
-        <Button>✕</Button>
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-      </AriaSearchField>
-    )
+    <AriaSearchField {...props}>
+      {label && <Label>{label}</Label>}
+      <Input placeholder={placeholder} />
+      <Button>✕</Button>
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+    </AriaSearchField>
   );
 }
 

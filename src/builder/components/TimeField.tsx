@@ -23,15 +23,13 @@ export function TimeField<T extends TimeValue>(
   { label, description, errorMessage, ...props }: TimeFieldProps<T>
 ) {
   return (
-    (
-      <AriaTimeField {...props} className="react-aria-TimeField">
-        <Label>{label}</Label>
-        <DateInput>
-          {(segment) => <DateSegment segment={segment} />}
-        </DateInput>
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-      </AriaTimeField>
-    )
+    <AriaTimeField {...props} className="react-aria-TimeField">
+      <Label>{label}</Label>
+      <DateInput>
+        {(segment) => <DateSegment segment={segment} />}
+      </DateInput>
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+    </AriaTimeField>
   );
 }

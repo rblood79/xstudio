@@ -1,16 +1,16 @@
-@import './Button.css';
-@import './Popover.css';
-@import './Dialog.css';
-@import './DateField.css';
-@import './RangeCalendar.css';
-@import './Form.css';
+@import "./Button.css";
+@import "./Popover.css";
+@import "./Dialog.css";
+@import "./DateField.css";
+@import "./RangeCalendar.css";
+@import "./Form.css";
+@import "./DatePickerCommon.css";
 @import "../theme.css";
 
 @layer components {
-  
   .react-aria-DateRangePicker {
     color: var(--text-color);
-  
+
     .react-aria-Group {
       display: flex;
       align-items: center;
@@ -25,83 +25,96 @@
       border-radius: 6px;
       background: var(--field-background);
       white-space: nowrap;
-  
+
       &[data-pressed] {
         box-shadow: none;
         background: var(--highlight-background);
       }
-  
+
       &[data-focus-within] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -1px;
       }
     }
-  
-    [slot=start] + span {
+
+    [slot="start"] + span {
       padding: 0 4px;
     }
-  
-    [slot=end] {
+
+    [slot="end"] {
       margin-right: 2rem;
       flex: 1;
     }
-  
+
     .react-aria-Button {
       background: var(--highlight-background);
       color: var(--highlight-foreground);
-      border: 2px solid var(--field-background);
       forced-color-adjust: none;
-      border-radius: 4px;
       border: none;
-      margin-left: auto;
-      width: 1.429rem;
-      height: 1.429rem;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
       padding: 0;
-      font-size: 0.857rem;
-      box-sizing: content-box;
+      cursor: default;
       flex-shrink: 0;
-      position: sticky;
-      right: 0;
-  
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: var(--highlight-background);
+      }
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: 2px;
       }
     }
-  
+
     .react-aria-DateInput {
       width: unset;
       min-width: unset;
       padding: unset;
       border: unset;
       outline: unset;
+      font-size: var(--text-sm);
+      &[data-focus-within] {
+        outline: 0px solid var(--focus-ring-color);
+      }
     }
   }
-  
-  .react-aria-Popover[data-trigger=DateRangePicker] {
+
+  .react-aria-Popover[data-trigger="DateRangePicker"] {
     max-width: unset;
   }
-  
+
   .react-aria-DateRangePicker {
     &[data-invalid] {
-      [slot=end]:after {
-        content: '🚫' / '';
-        content: '🚫';
-        alt: ' ';
+      [slot="end"]:after {
+        content: "🚫" / "";
+        content: "🚫";
+        alt: " ";
         flex: 1;
         text-align: end;
         margin-left: 1.5rem;
         margin-right: -1.5rem;
       }
     }
-  
+
     .react-aria-FieldError {
       font-size: 12px;
       color: var(--invalid-color);
     }
-  
-    [slot=description] {
+
+    [slot="description"] {
       font-size: 12px;
     }
+  }
+
+  /* Component-specific styles (공통 스타일은 DatePickerCommon.css에서 import) */
+  .react-aria-DateRangePicker-start-time,
+  .react-aria-DateRangePicker-end-time {
+    width: 100%;
   }
 }

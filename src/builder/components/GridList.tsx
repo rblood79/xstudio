@@ -13,11 +13,9 @@ export function GridList<T extends object>(
   { children, ...props }: GridListProps<T>
 ) {
   return (
-    (
-      <AriaGridList {...props} className='react-aria-GridList'>
-        {children}
-      </AriaGridList>
-    )
+    <AriaGridList {...props} className='react-aria-GridList'>
+      {children}
+    </AriaGridList>
   );
 }
 
@@ -30,19 +28,17 @@ export function GridListItem(
 ) {
   const textValue = typeof children === 'string' ? children : undefined;
   return (
-    (
-      <AriaGridListItem textValue={textValue} {...props} className='react-aria-GridListItem'>
-        {({ selectionMode, selectionBehavior, allowsDragging }) => (
-          <>
-            {/* Add elements for drag and drop and selection. */}
-            {allowsDragging && <Button slot="drag">≡</Button>}
-            {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
-              <MyCheckbox slot="selection" />
-            )}
-            {children}
-          </>
-        )}
-      </AriaGridListItem>
-    )
+    <AriaGridListItem textValue={textValue} {...props} className='react-aria-GridListItem'>
+      {({ selectionMode, selectionBehavior, allowsDragging }) => (
+        <>
+          {/* Add elements for drag and drop and selection. */}
+          {allowsDragging && <Button slot="drag">≡</Button>}
+          {selectionMode === 'multiple' && selectionBehavior === 'toggle' && (
+            <MyCheckbox slot="selection" />
+          )}
+          {children}
+        </>
+      )}
+    </AriaGridListItem>
   );
 }

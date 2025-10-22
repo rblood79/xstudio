@@ -12,18 +12,16 @@ export interface ProgressBarProps extends AriaProgressBarProps {
 
 export function ProgressBar({ label, ...props }: ProgressBarProps) {
   return (
-    (
-      <AriaProgressBar {...props}>
-        {({ percentage, valueText }) => (
-          <>
-            <Label>{label}</Label>
-            <span className="value">{valueText}</span>
-            <div className="bar">
-              <div className="fill" style={{ width: percentage + '%' }} />
-            </div>
-          </>
-        )}
-      </AriaProgressBar>
-    )
+    <AriaProgressBar {...props}>
+      {({ percentage, valueText }) => (
+        <>
+          <Label>{label}</Label>
+          <span className="value">{valueText}</span>
+          <div className="bar">
+            <div className="fill" style={{ width: percentage + '%' }} />
+          </div>
+        </>
+      )}
+    </AriaProgressBar>
   );
 }

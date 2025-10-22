@@ -26,13 +26,11 @@ export function RadioGroup(
   }: RadioGroupProps
 ) {
   return (
-    (
-      <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
-        {label && <Label>{label}</Label>}
-        {children}
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-      </AriaRadioGroup>
-    )
+    <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
+      {label && <Label>{label}</Label>}
+      {children}
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+    </AriaRadioGroup>
   );
 }

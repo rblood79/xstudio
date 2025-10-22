@@ -23,7 +23,7 @@
 
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
-      outline-offset: -1px;
+      outline-offset: 2px;
     }
 
     &[data-disabled] {

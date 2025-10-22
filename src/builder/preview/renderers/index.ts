@@ -48,6 +48,8 @@ export const rendererMap: Record<
   Calendar: DateRenderers.renderCalendar,
   DatePicker: DateRenderers.renderDatePicker,
   DateRangePicker: DateRenderers.renderDateRangePicker,
+  DateField: DateRenderers.renderDateField,
+  TimeField: DateRenderers.renderTimeField,
 
   // Collection 컴포넌트
   Tree: CollectionRenderers.renderTree,

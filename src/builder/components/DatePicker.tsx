@@ -103,7 +103,7 @@ export function DatePicker<T extends DateValue>({
       <FieldError>{errorMessage}</FieldError>
       <Popover>
         <Dialog>
-          <div className="react-aria-DatePicker-popup">
+          <div className="date-picker-popup">
             <Calendar
               firstDayOfWeek={firstDayOfWeek}
               data-highlight-today={highlightToday}
@@ -124,9 +124,9 @@ export function DatePicker<T extends DateValue>({
             </Calendar>
 
             {includeTime && (
-              <div className="react-aria-DatePicker-time-section">
-                <div className="time-field-wrapper">
-                  <Label className="time-field-label">{timeLabel}</Label>
+              <div className="date-picker-time-section">
+                <div className="date-picker-time-field-wrapper">
+                  <Label className="date-picker-time-field-label">{timeLabel}</Label>
                   <TimeField
                     hourCycle={timeFormat === "12h" ? 12 : 24}
                     className="react-aria-DatePicker-time-field"

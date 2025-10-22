@@ -22,22 +22,20 @@ export function Calendar<T extends DateValue>(
   { errorMessage, ...props }: CalendarProps<T>
 ) {
   return (
-    (
-      <AriaCalendar {...props} className="react-aria-Calendar">
-        <header>
-          <Button slot="previous">
-            <ChevronLeft size={16} />
-          </Button>
-          <Heading />
-          <Button slot="next">
-            <ChevronRight size={16} />
-          </Button>
-        </header>
-        <CalendarGrid>
-          {(date) => <CalendarCell date={date} />}
-        </CalendarGrid>
-        {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
-      </AriaCalendar>
-    )
+    <AriaCalendar {...props} className="react-aria-Calendar">
+      <header>
+        <Button slot="previous">
+          <ChevronLeft size={16} />
+        </Button>
+        <Heading />
+        <Button slot="next">
+          <ChevronRight size={16} />
+        </Button>
+      </header>
+      <CalendarGrid>
+        {(date) => <CalendarCell date={date} />}
+      </CalendarGrid>
+      {errorMessage && <Text slot="errorMessage">{errorMessage}</Text>}
+    </AriaCalendar>
   );
 }

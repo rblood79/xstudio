@@ -22,17 +22,15 @@ export function NumberField(
   { label, description, errorMessage, ...props }: NumberFieldProps
 ) {
   return (
-    (
-      <AriaNumberField {...props}>
-        <Label>{label}</Label>
-        <Group>
-          <Button slot="decrement">-</Button>
-          <Input />
-          <Button slot="increment">+</Button>
-        </Group>
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-      </AriaNumberField>
-    )
+    <AriaNumberField {...props}>
+      <Label>{label}</Label>
+      <Group>
+        <Button slot="decrement">-</Button>
+        <Input />
+        <Button slot="increment">+</Button>
+      </Group>
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+    </AriaNumberField>
   );
 }

@@ -1,4 +1,4 @@
-@import './base.css';
+@import "./base.css";
 
 @layer components {
   .react-aria-ListBox,
@@ -24,7 +24,7 @@
   .react-aria-ListBoxItem,
   .react-aria-GridListItem {
     position: relative;
-    
+
     gap: var(--gap);
     cursor: default;
     padding: var(--spacing) var(--spacing-md);

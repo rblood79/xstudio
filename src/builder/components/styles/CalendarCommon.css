@@ -1,0 +1,115 @@
+@import "../theme.css";
+
+/**
+ * Calendar 및 RangeCalendar 공통 스타일
+ * - Container base styles
+ * - Header layout
+ * - CalendarCell base styles
+ * - CalendarCell state styles
+ */
+
+@layer components {
+  /* Container base styles - 공통 */
+  .react-aria-Calendar,
+  .react-aria-RangeCalendar {
+    width: fit-content;
+    max-width: 100%;
+    color: var(--text-color);
+  }
+
+  /* Header layout - 공통 */
+  .react-aria-Calendar header,
+  .react-aria-RangeCalendar header {
+    display: flex;
+    align-items: center;
+    margin: 0 0 var(--spacing) 0;
+  }
+
+  .react-aria-Calendar header .react-aria-Heading,
+  .react-aria-RangeCalendar header .react-aria-Heading {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-md);
+  }
+
+  .react-aria-Calendar .react-aria-Button,
+  .react-aria-RangeCalendar .react-aria-Button {
+    width: var(--text-3xl);
+    height: var(--text-3xl);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .react-aria-CalendarGridHeader th {
+    border: 0px solid #ff0;
+    background-color: var(--overlay-background);
+    color: var(--text-color-base);
+    text-align: center;
+    font-size: var(--text-sm);
+  }
+
+  .react-aria-CalendarGridBody td {
+    border: 1px solid var(--border-color);
+    .react-aria-CalendarCell {
+      width: 2rem;
+      line-height: 2rem;
+      margin: 1px;
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* CalendarCell base styles - 공통 */
+  .react-aria-Calendar .react-aria-CalendarCell,
+  .react-aria-RangeCalendar .react-aria-CalendarCell {
+    text-align: center;
+    border-radius: 6px;
+    cursor: default;
+    outline: none;
+    forced-color-adjust: none;
+  }
+
+  /* CalendarCell state styles - 공통 */
+  .react-aria-Calendar .react-aria-CalendarCell[data-outside-month],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-outside-month] {
+    display: none;
+  }
+
+  .react-aria-Calendar .react-aria-CalendarCell[data-pressed],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-pressed] {
+    background: var(--gray-100);
+  }
+
+  .react-aria-Calendar .react-aria-CalendarCell[data-selected],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-selected] {
+    background: var(--highlight-background);
+    color: var(--highlight-foreground);
+  }
+
+  .react-aria-Calendar .react-aria-CalendarCell[data-disabled],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-disabled] {
+    color: var(--text-color-disabled);
+  }
+
+  .react-aria-Calendar .react-aria-CalendarCell[data-unavailable],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-unavailable] {
+    text-decoration: line-through;
+    color: var(--invalid-color);
+  }
+
+  .react-aria-Calendar .react-aria-CalendarCell[data-invalid],
+  .react-aria-RangeCalendar .react-aria-CalendarCell[data-invalid] {
+    background: var(--invalid-color);
+    color: var(--highlight-foreground);
+  }
+
+  /* Error message - 공통 */
+  .react-aria-Calendar [slot="errorMessage"],
+  .react-aria-RangeCalendar [slot="errorMessage"] {
+    font-size: 12px;
+    color: var(--invalid-color);
+  }
+}

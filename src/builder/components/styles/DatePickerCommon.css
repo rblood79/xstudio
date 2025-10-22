@@ -1,0 +1,46 @@
+@import "../theme.css";
+
+/**
+ * DatePicker 및 DateRangePicker 공통 스타일
+ * - Popup container layout
+ * - Time section styles
+ * - Time field styles
+ */
+
+@layer components {
+  /* Popup container - 공통 레이아웃 */
+  .date-picker-popup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+  }
+
+  /* Time section - 공통 구분선 및 패딩 */
+  .date-picker-time-section {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-4);
+  }
+
+  /* Time field wrapper - 공통 레이아웃 */
+  .date-picker-time-field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  /* Time field label - 공통 타이포그래피 */
+  .date-picker-time-field-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  /* Time fields container (DateRangePicker용 - start/end 나란히) */
+  .date-picker-time-fields-container {
+    display: flex;
+    gap: var(--spacing-4);
+  }
+
+  .date-picker-time-fields-container .date-picker-time-field-wrapper {
+    flex: 1;
+  }
+}

@@ -1,13 +1,15 @@
 import React from "react";
-import { Calendar, DatePicker, DateRangePicker } from "../../components/list";
+import { Calendar, DatePicker, DateRangePicker, DateField, TimeField } from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
-import { today, getLocalTimeZone } from "@internationalized/date";
+import { today, getLocalTimeZone, now, Time } from "@internationalized/date";
 
 /**
  * Date 관련 컴포넌트 렌더러
  * - Calendar
  * - DatePicker
  * - DateRangePicker
+ * - DateField
+ * - TimeField
  */
 
 /**
@@ -198,6 +200,86 @@ export const renderDateRangePicker = (
         const updatedProps = {
           ...element.props,
           value: dateRange,
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+    />
+  );
+};
+
+/**
+ * DateField 렌더링
+ */
+export const renderDateField = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { updateElementProps } = context;
+
+  const getGranularity = () => {
+    const g = String(element.props.granularity || "");
+    return ["day", "hour", "minute", "second"].includes(g) ? g : "day";
+  };
+
+  return (
+    <DateField
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "Date")}
+      description={String(element.props.description || "")}
+      errorMessage={String(element.props.errorMessage || "")}
+      isDisabled={Boolean(element.props.isDisabled)}
+      isRequired={Boolean(element.props.isRequired)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      defaultValue={today(getLocalTimeZone())}
+      granularity={getGranularity() as "day" | "hour" | "minute" | "second"}
+      onChange={(date) => {
+        const updatedProps = {
+          ...element.props,
+          value: date,
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+    />
+  );
+};
+
+/**
+ * TimeField 렌더링
+ */
+export const renderTimeField = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { updateElementProps } = context;
+
+  const getGranularity = () => {
+    const g = String(element.props.granularity || "");
+    return ["hour", "minute", "second"].includes(g) ? g : "minute";
+  };
+
+  return (
+    <TimeField
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "Time")}
+      description={String(element.props.description || "")}
+      errorMessage={String(element.props.errorMessage || "")}
+      isDisabled={Boolean(element.props.isDisabled)}
+      isRequired={Boolean(element.props.isRequired)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      defaultValue={new Time(9, 0)}
+      granularity={getGranularity() as "hour" | "minute" | "second"}
+      onChange={(time) => {
+        const updatedProps = {
+          ...element.props,
+          value: time,
         };
         updateElementProps(element.id, updatedProps);
       }}

@@ -37,20 +37,18 @@ export function MenuItem(
   let textValue = props.textValue ||
     (typeof props.children === 'string' ? props.children : undefined);
   return (
-    (
-      <AriaMenuItem {...props} textValue={textValue}>
-        {({ hasSubmenu }) => (
-          <>
-            {props.children}
-            {hasSubmenu && (
-              <svg className="chevron" viewBox="0 0 24 24">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            )}
-          </>
-        )}
-      </AriaMenuItem>
-    )
+    <AriaMenuItem {...props} textValue={textValue}>
+      {({ hasSubmenu }) => (
+        <>
+          {props.children}
+          {hasSubmenu && (
+            <svg className="chevron" viewBox="0 0 24 24">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          )}
+        </>
+      )}
+    </AriaMenuItem>
   );
 }
 

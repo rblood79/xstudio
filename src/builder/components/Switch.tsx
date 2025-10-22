@@ -10,11 +10,9 @@ export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
 
 export function Switch({ children, ...props }: SwitchProps) {
   return (
-    (
-      <AriaSwitch {...props} className='react-aria-Switch'>
-        <div className="indicator" />
-        {children}
-      </AriaSwitch>
-    )
+    <AriaSwitch {...props} className='react-aria-Switch'>
+      <div className="indicator" />
+      {children}
+    </AriaSwitch>
   );
 }

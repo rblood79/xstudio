@@ -23,15 +23,13 @@ export function DateField<T extends DateValue>(
   { label, description, errorMessage, ...props }: DateFieldProps<T>
 ) {
   return (
-    (
-      <AriaDateField {...props} className="react-aria-DateField">
-        <Label>{label}</Label>
-        <DateInput>
-          {(segment) => <DateSegment segment={segment} />}
-        </DateInput>
-        {description && <Text slot="description">{description}</Text>}
-        <FieldError>{errorMessage}</FieldError>
-      </AriaDateField>
-    )
+    <AriaDateField {...props} className="react-aria-DateField">
+      <Label>{label}</Label>
+      <DateInput>
+        {(segment) => <DateSegment segment={segment} />}
+      </DateInput>
+      {description && <Text slot="description">{description}</Text>}
+      <FieldError>{errorMessage}</FieldError>
+    </AriaDateField>
   );
 }
