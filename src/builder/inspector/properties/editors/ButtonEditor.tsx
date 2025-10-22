@@ -59,9 +59,11 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
                 value={String(currentProps.size || 'sm')}
                 onChange={(value) => updateProp('size', value)}
                 options={[
+                    { value: 'xs', label: 'Extra Small' },
                     { value: 'sm', label: 'Small' },
                     { value: 'md', label: 'Medium' },
                     { value: 'lg', label: 'Large' },
+                    { value: 'xl', label: 'Extra Large' },
                 ]}
                 icon={Parentheses}
             />
