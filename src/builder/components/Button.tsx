@@ -32,7 +32,7 @@ const button = tv({
     },
   },
   defaultVariants: {
-    //variant: 'primary',
+    //variant: "primary",
     size: "sm",
   },
 });
