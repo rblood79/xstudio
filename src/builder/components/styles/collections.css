@@ -5,7 +5,7 @@
   .react-aria-GridList {
     outline: none;
     overflow: auto;
-    max-height: 16rem; /* max-h-64 = 256px = 16rem */
+    max-height: var(--container-6xl);
     padding: var(--spacing);
   }
 
@@ -14,10 +14,10 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem; /* gap-2 = 8px = 0.5rem */
+    gap: var(--gap);
     cursor: default;
     padding: var(--spacing) var(--spacing-md);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     font-size: var(--text-sm);
     color: var(--text-color);
 

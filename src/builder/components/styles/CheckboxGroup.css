@@ -8,16 +8,16 @@
   .react-aria-CheckboxGroup {
     display: flex;
     flex-direction: column;
-    gap: 0.571rem;
+    gap: var(--gap);
     color: var(--text-color);
   
     .react-aria-FieldError {
-      font-size: 12px;
+      font-size: var(--text-xs);
       color: var(--invalid-color);
     }
   
     [slot=description] {
-      font-size: 12px;
+      font-size: var(--text-xs);
     }
   }
 }

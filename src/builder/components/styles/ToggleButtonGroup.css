@@ -42,7 +42,7 @@
       height: var(--indicator-height);
       transform: translateX(var(--indicator-left)) translateY(var(--indicator-top));
       border-radius: var(--radius-md);
-      background: var(--color-primary-600);
+      background: var(--highlight-background);
       box-shadow: var(--shadow-sm);
       opacity: var(--indicator-opacity);
       transition: transform 200ms ease-out, width 200ms ease-out,

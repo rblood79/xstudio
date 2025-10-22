@@ -36,40 +36,34 @@
       outline: none;
       margin: 1px;
       forced-color-adjust: none;
-  
+
       &[data-outside-month] {
         display: none;
       }
-  
+
       &[data-pressed] {
         background: var(--gray-100);
       }
-  
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: 2px;
       }
-  
+
       &[data-selected] {
         background: var(--highlight-background);
         color: var(--highlight-foreground);
       }
-    }
-  
-    .react-aria-CalendarCell {
+
       &[data-disabled] {
         color: var(--text-color-disabled);
       }
-    }
-  
-    .react-aria-CalendarCell {
+
       &[data-unavailable] {
         text-decoration: line-through;
         color: var(--invalid-color);
       }
-    }
-  
-    .react-aria-CalendarCell {
+
       &[data-invalid] {
         background: var(--invalid-color);
         color: var(--highlight-foreground);

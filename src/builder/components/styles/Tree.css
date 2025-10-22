@@ -4,39 +4,59 @@
 @import './Checkbox.css';
 
 @layer components {
-  
   .react-aria-Tree {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--gap);
     overflow: auto;
-    padding: 4px;
+    padding: var(--spacing);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     background: var(--overlay-background);
     forced-color-adjust: none;
     outline: none;
-    width: 250px;
-    max-height: 300px;
+    width: var(--container-2xs);
+    max-height: 100%;
     box-sizing: border-box;
-  
+
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: -1px;
     }
-  
+
+    &[data-empty] {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+    }
+
+    &[data-selection-mode=multiple] {
+      --checkbox-width: var(--text-base);
+    }
+
+    &[data-allows-dragging] {
+      --drag-button-width: 23px;
+    }
+
+    &[data-drop-target] {
+      outline: 2px solid var(--highlight-background);
+      outline-offset: -1px;
+      background: var(--highlight-overlay);
+    }
+
     .react-aria-TreeItem {
       display: flex;
       align-items: center;
-      gap: 0.571rem;
-      min-height: 28px;
+      gap: var(--gap);
+      min-height: var(--text-base);
       padding: 0.286rem 0.286rem 0.286rem 0.571rem;
-      --padding: 16px;
-      border-radius: 6px;
+      --padding: var(--spacing);
+      border-radius: var(--border-radius);
       outline: none;
       cursor: default;
       color: var(--text-color);
-      font-size: 1.072rem;
+      font-size: var(--text-sm);
       position: relative;
       transform: translateZ(0);
   
@@ -140,56 +160,7 @@
       --checkmark-color: var(--highlight-background);
       --background-color: var(--highlight-background);
     }
-  }
-  
-  .react-aria-TreeItem[data-href] {
-    cursor: pointer;
-  }
-  
-  .react-aria-Tree {
-    &[data-empty] {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-style: italic;
-    }
-  }
-  
-  .react-aria-TreeItem {
-    &[data-allows-dragging] {
-      padding-left: 4px;
-    }
-  
-    &[data-dragging] {
-      opacity: 0.6;
-    }
-  
-    &[data-drop-target] {
-      outline: 2px solid var(--highlight-background);
-      background: var(--highlight-overlay);
-    }
-  
-    [slot=drag] {
-      all: unset;
-      width: 15px;
-      text-align: center;
-  
-      &[data-focus-visible] {
-        border-radius: 4px;
-        outline: 2px solid var(--focus-ring-color);
-      }
-    }
-  }
-  
-  .react-aria-Tree {
-    &[data-selection-mode=multiple] {
-      --checkbox-width: 28px;
-    }
-  
-    &[data-allows-dragging] {
-      --drag-button-width: 23px;
-    }
-  
+
     .react-aria-DropIndicator {
       &[data-drop-target] {
         outline: 1px solid var(--highlight-background);
@@ -197,10 +168,34 @@
       }
     }
   }
-  
-  .react-aria-Tree[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
-    outline-offset: -1px;
-    background: var(--highlight-overlay);
+
+  .react-aria-TreeItem {
+    &[data-href] {
+      cursor: pointer;
+    }
+
+    &[data-allows-dragging] {
+      padding-left: 4px;
+    }
+
+    &[data-dragging] {
+      opacity: 0.6;
+    }
+
+    &[data-drop-target] {
+      outline: 2px solid var(--highlight-background);
+      background: var(--highlight-overlay);
+    }
+
+    [slot=drag] {
+      all: unset;
+      width: 15px;
+      text-align: center;
+
+      &[data-focus-visible] {
+        border-radius: 4px;
+        outline: 2px solid var(--focus-ring-color);
+      }
+    }
   }
 }

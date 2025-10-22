@@ -219,4 +219,49 @@
   .react-aria-DropIndicator[data-drop-target] {
     outline: 1px solid var(--highlight-background);
   }
+
+  /* Popover context (ComboBox, Select) */
+  .react-aria-Popover[data-trigger="ComboBox"],
+  .react-aria-Popover[data-trigger="Select"] {
+    .react-aria-ListBox {
+      display: block;
+      width: unset;
+      max-height: inherit;
+      min-height: unset;
+      border: none;
+
+      .react-aria-Header {
+        padding-left: 1.571rem;
+      }
+    }
+
+    .react-aria-ListBoxItem {
+      padding: var(--spacing) var(--spacing) var(--spacing) var(--text-xl);
+
+      &[data-focus-visible] {
+        outline: none;
+      }
+
+      &[data-selected] {
+        font-weight: var(--font-weight-semibold);
+        background: unset;
+        color: var(--text-color);
+
+        &::before {
+          content: "✓";
+          content: "✓" / "";
+          alt: " ";
+          position: absolute;
+          top: 4px;
+          left: 4px;
+        }
+      }
+
+      &[data-focused],
+      &[data-pressed] {
+        background: var(--highlight-background);
+        color: var(--highlight-foreground);
+      }
+    }
+  }
 }

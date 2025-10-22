@@ -8,17 +8,17 @@
   .react-aria-GridList {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--gap);
     max-height: inherit;
     overflow: auto;
-    padding: 4px;
+    padding: var(--spacing);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--border-radius);
     background: var(--overlay-background);
     forced-color-adjust: none;
     outline: none;
-    width: 250px;
-    max-height: 300px;
+    width: var(--container-2xs);
+    max-height: 100%;
     min-height: 100px;
     box-sizing: border-box;
   
@@ -30,14 +30,14 @@
     .react-aria-GridListItem {
       display: flex;
       align-items: center;
-      gap: 0.571rem;
-      min-height: 28px;
-      padding: 0.286rem 0.286rem 0.286rem 0.571rem;
-      border-radius: 6px;
+      gap: var(--gap);
+      min-height: var(--text-base);
+      padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-md);
+      border-radius: var(--border-radius);
       outline: none;
       cursor: default;
       color: var(--text-color);
-      font-size: 1.072rem;
+      font-size: var(--text-sm);
       position: relative;
       transform: translateZ(0);
   
@@ -78,9 +78,9 @@
       .react-aria-Button {
         background: transparent;
         border: none;
-        font-size: 1.2rem;
-        line-height: 1.2em;
-        padding: 0.286rem 0.429rem;
+        font-size: var(--text-sm);
+        line-height: var(--text-sm--line-height);
+        padding: var(--spacing) var(--spacing-md);
         transition: background 200ms;
   
         &[data-hovered] {

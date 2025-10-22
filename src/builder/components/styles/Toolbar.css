@@ -4,45 +4,39 @@
 @import "../theme.css";
 
 @layer components {
-  
   .react-aria-Toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-  
+    width: fit-content;
+
     &[data-orientation=horizontal] {
       flex-direction: row;
     }
-  
-    .react-aria-Group {
-      display: contents;
-    }
-  
-    .react-aria-ToggleButton {
-      width: 32px;
-    }
-  }
-  
-  .react-aria-Separator {
-    align-self: stretch;
-    background-color: var(--border-color);
-  
-    &[aria-orientation=vertical] {
-      width: 1px;
-      margin: 0px 10px;
-    }
-  }
-  
-  .react-aria-Toolbar {
-    width: fit-content;
-  
+
     &[data-orientation=vertical] {
       flex-direction: column;
       align-items: start;
     }
+
+    .react-aria-Group {
+      display: contents;
+    }
+
+    .react-aria-ToggleButton {
+      width: 32px;
+    }
   }
-  
+
   .react-aria-Separator {
+    align-self: stretch;
+    background-color: var(--border-color);
+
+    &[aria-orientation=vertical] {
+      width: 1px;
+      margin: 0px 10px;
+    }
+
     &:not([aria-orientation=vertical]) {
       border: none;
       height: 1px;
