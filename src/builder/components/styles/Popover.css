@@ -5,13 +5,11 @@
 
 @layer components {
   
-  .react-aria-Popover {
-    --background-color: var(--overlay-background);
-  
+  .react-aria-Popover {  
     border: 1px solid var(--border-color);
-    box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
-    border-radius: 6px;
-    background: var(--background-color);
+    box-shadow: var(--drop-shadow-md);
+    border-radius: var(--border-radius);
+    background: var(--overlay-background);
     color: var(--text-color);
     outline: none;
     max-width: 250px;
@@ -19,7 +17,7 @@
   
     .react-aria-OverlayArrow svg {
       display: block;
-      fill: var(--background-color);
+      fill: var(--overlay-background);
       stroke: var(--border-color);
       stroke-width: 1px;
     }

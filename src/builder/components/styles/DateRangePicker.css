@@ -22,7 +22,7 @@
       position: relative;
       padding: 4px 4px 4px 8px;
       border: 1px solid var(--border-color);
-      border-radius: 6px;
+      border-radius: var(--border-radius);
       background: var(--field-background);
       white-space: nowrap;
 
@@ -103,12 +103,12 @@
     }
 
     .react-aria-FieldError {
-      font-size: 12px;
+      font-size: var(--text-xs);
       color: var(--invalid-color);
     }
 
     [slot="description"] {
-      font-size: 12px;
+      font-size: var(--text-xs);
     }
   }
 
