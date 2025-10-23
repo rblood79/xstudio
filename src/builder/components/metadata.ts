@@ -63,6 +63,30 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onChange"],
     },
   },
+  {
+    type: "Menu",
+    label: "Menu",
+    category: "Actions",
+    icon: "📋",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "MenuEditor",
+      dataBindingType: "collection",
+      supportedEvents: ["onAction", "onOpenChange"],
+    },
+  },
+  {
+    type: "Toolbar",
+    label: "Toolbar",
+    category: "Actions",
+    icon: "🛠️",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ToolbarEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Inputs
   {
@@ -75,6 +99,30 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "TextFieldEditor",
       dataBindingType: "value",
       supportedEvents: ["onChange", "onBlur", "onFocus", "onKeyDown"],
+    },
+  },
+  {
+    type: "NumberField",
+    label: "Number Field",
+    category: "Inputs",
+    icon: "#️⃣",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "NumberFieldEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onChange", "onBlur", "onFocus"],
+    },
+  },
+  {
+    type: "SearchField",
+    label: "Search Field",
+    category: "Inputs",
+    icon: "🔍",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SearchFieldEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onChange", "onSubmit", "onClear"],
     },
   },
   {
@@ -133,7 +181,7 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "SelectEditor",
-      dataBindingType: "value",
+      dataBindingType: "collection",
       supportedEvents: ["onSelectionChange", "onOpenChange"],
     },
   },
@@ -236,6 +284,44 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
+  // Feedback
+  {
+    type: "Tooltip",
+    label: "Tooltip",
+    category: "Feedback",
+    icon: "💬",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "TooltipEditor",
+      dataBindingType: null,
+      supportedEvents: ["onOpenChange"],
+    },
+  },
+  {
+    type: "ProgressBar",
+    label: "Progress Bar",
+    category: "Feedback",
+    icon: "📊",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ProgressBarEditor",
+      dataBindingType: "value",
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "Meter",
+    label: "Meter",
+    category: "Feedback",
+    icon: "📏",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "MeterEditor",
+      dataBindingType: "value",
+      supportedEvents: [],
+    },
+  },
+
   // Layout
   {
     type: "Panel",
@@ -310,6 +396,18 @@ export const componentMetadata: ComponentMeta[] = [
   },
 
   // Item Components (Collection children)
+  {
+    type: "MenuItem",
+    label: "Menu Item",
+    category: "Items",
+    icon: "•",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "MenuItemEditor",
+      dataBindingType: null,
+      supportedEvents: ["onAction"],
+    },
+  },
   {
     type: "SelectItem",
     label: "Select Item",

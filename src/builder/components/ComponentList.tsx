@@ -1,5 +1,5 @@
 import { useMemo, useCallback, memo } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight } from 'lucide-react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import './styles/ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -14,6 +14,8 @@ const basicComp = [
     { tag: 'Text', label: 'text', icon: Text },
     { tag: 'Button', label: 'button', icon: MousePointer },
     { tag: 'TextField', label: 'text field', icon: RectangleEllipsis },
+    { tag: 'NumberField', label: 'number field', icon: Hash },
+    { tag: 'SearchField', label: 'search field', icon: Search },
     { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
     { tag: 'Radio', label: 'radio', icon: GroupIcon },
     { tag: 'Select', label: 'select', icon: ChevronDown },
@@ -22,7 +24,9 @@ const basicComp = [
     { tag: 'Calendar', label: 'calendar', icon: Calendar },
     { tag: 'DatePicker', label: 'date picker', icon: CalendarCheck },
     { tag: 'TimeField', label: 'time field', icon: ChevronDown },
-    { tag: 'ComboBox', label: 'combo box', icon: Search },
+    { tag: 'ComboBox', label: 'combo box', icon: ChevronDown },
+    { tag: 'Menu', label: 'menu', icon: Menu },
+    { tag: 'MenuItem', label: 'menu item', icon: Dot },
     { tag: 'ListBox', label: 'list box', icon: ListIcon },
     { tag: 'GridList', label: 'grid list', icon: Grid },
     { tag: 'Tree', label: 'tree', icon: ListTree },
@@ -31,9 +35,13 @@ const basicComp = [
     { tag: 'Dialog', label: 'dialog', icon: AppWindowMac },
     { tag: 'Modal', label: 'modal', icon: InspectionPanel },
     { tag: 'Popover', label: 'popover', icon: AppWindowMac },
+    { tag: 'Tooltip', label: 'tooltip', icon: MessageSquare },
     { tag: 'ToggleButton', label: 'toggle button', icon: ToggleLeft },
     { tag: 'ToggleButtonGroup', label: 'toggle button group', icon: GroupIcon },
     { tag: 'TagGroup', label: 'tag group', icon: Tag },
+    { tag: 'ProgressBar', label: 'progress bar', icon: BarChart3 },
+    { tag: 'Meter', label: 'meter', icon: Gauge },
+    { tag: 'Toolbar', label: 'toolbar', icon: Settings },
     { tag: 'Form', label: 'form', icon: GroupIcon },
     { tag: 'Field', label: 'field', icon: GroupIcon },
     { tag: 'DateField', label: 'date field', icon: CalendarCheck },

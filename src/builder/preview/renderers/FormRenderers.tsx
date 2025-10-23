@@ -1,6 +1,8 @@
 import React from "react";
 import {
   TextField,
+  NumberField,
+  SearchField,
   Input,
   Label,
   Description,
@@ -59,6 +61,91 @@ export const renderTextField = (
         const updatedProps = {
           ...element.props,
           value: String(value),
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+    />
+  );
+};
+
+/**
+ * NumberField 렌더링
+ */
+export const renderNumberField = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { updateElementProps } = context;
+
+  return (
+    <NumberField
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "")}
+      description={String(element.props.description || "")}
+      errorMessage={String(element.props.errorMessage || "")}
+      placeholder={String(element.props.placeholder || "")}
+      defaultValue={Number(element.props.value || 0)}
+      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : undefined}
+      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : undefined}
+      step={element.props.step !== undefined ? Number(element.props.step) : undefined}
+      isDisabled={Boolean(element.props.isDisabled || false)}
+      isRequired={Boolean(element.props.isRequired || false)}
+      isReadOnly={Boolean(element.props.isReadOnly || false)}
+      onChange={(value) => {
+        const updatedProps = {
+          ...element.props,
+          value: Number(value),
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+    />
+  );
+};
+
+/**
+ * SearchField 렌더링
+ */
+export const renderSearchField = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { updateElementProps } = context;
+
+  return (
+    <SearchField
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "")}
+      description={String(element.props.description || "")}
+      errorMessage={String(element.props.errorMessage || "")}
+      placeholder={String(element.props.placeholder || "")}
+      defaultValue={String(element.props.value || "")}
+      isDisabled={Boolean(element.props.isDisabled || false)}
+      isRequired={Boolean(element.props.isRequired || false)}
+      isReadOnly={Boolean(element.props.isReadOnly || false)}
+      onChange={(value) => {
+        const updatedProps = {
+          ...element.props,
+          value: String(value),
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+      onSubmit={(value) => {
+        const updatedProps = {
+          ...element.props,
+          value: String(value),
+        };
+        updateElementProps(element.id, updatedProps);
+      }}
+      onClear={() => {
+        const updatedProps = {
+          ...element.props,
+          value: "",
         };
         updateElementProps(element.id, updatedProps);
       }}

@@ -19,6 +19,10 @@
       outline: 2px solid var(--focus-ring-color);
       outline-offset: -1px;
     }
+    &[data-focus-within] {
+      outline: 1px solid var(--focus-ring-color);
+      
+    }
   }
 
   .react-aria-ListBoxItem,
@@ -33,7 +37,7 @@
     color: var(--text-color);
 
     &[data-focused] {
-      outline: 2px solid;
+      outline: 0px solid;
       outline-offset: -2px;
       outline-color: var(--focus-ring-color);
     }

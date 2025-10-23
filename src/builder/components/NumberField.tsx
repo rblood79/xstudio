@@ -10,6 +10,8 @@ import {
   ValidationResult
 } from 'react-aria-components';
 
+import { Plus, Minus } from 'lucide-react';
+
 import './styles/NumberField.css';
 
 export interface NumberFieldProps extends AriaNumberFieldProps {
@@ -25,9 +27,9 @@ export function NumberField(
     <AriaNumberField {...props}>
       <Label>{label}</Label>
       <Group>
-        <Button slot="decrement">-</Button>
+        <Button slot="decrement"><Minus size={16}/></Button>
         <Input />
-        <Button slot="increment">+</Button>
+        <Button slot="increment"><Plus size={16}/></Button>
       </Group>
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

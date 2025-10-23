@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Button,
   Tree as AriaTree,
@@ -11,11 +12,89 @@ import {
 } from 'react-aria-components';
 import { InfoIcon, ChevronRightIcon, Minus } from 'lucide-react';
 import { MyCheckbox } from './Checkbox';
+import type { DataBinding } from '../../types/unified';
 
 import './styles/Tree.css';
 
-export function Tree<T extends object>(props: TreeProps<T>) {
-  return <AriaTree {...props} className='react-aria-Tree' />;
+export interface MyTreeProps<T extends object> extends TreeProps<T> {
+  dataBinding?: DataBinding;
+}
+
+export function Tree<T extends object>(props: MyTreeProps<T>) {
+  const { dataBinding, children, ...restProps } = props;
+  const [treeData, setTreeData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // DataBinding 처리
+  useEffect(() => {
+    if (dataBinding?.type === "collection" && dataBinding.source === "api") {
+      const config = dataBinding.config as {
+        baseUrl?: string;
+        endpoint?: string;
+        params?: Record<string, unknown>;
+      };
+
+      if (config.baseUrl === "MOCK_DATA") {
+        setLoading(true);
+
+        import('../../services/api').then(({ apiConfig }) => {
+          const mockFetch = apiConfig.MOCK_DATA;
+          if (mockFetch) {
+            mockFetch(config.endpoint || '/component-tree', config.params).then((data: any) => {
+              console.log("🌳 Tree 데이터 로드:", data);
+              setTreeData(Array.isArray(data) ? data : []);
+              setLoading(false);
+            }).catch((err: any) => {
+              console.error("Tree API 오류:", err);
+              setLoading(false);
+            });
+          } else {
+            setLoading(false);
+          }
+        }).catch((err) => {
+          console.error("Tree import 오류:", err);
+          setLoading(false);
+        });
+      }
+    }
+  }, [dataBinding]);
+
+  // DataBinding이 있고 데이터가 로드된 경우
+  if (dataBinding && treeData.length > 0) {
+    const renderTreeItemsRecursively = (items: any[]): React.ReactNode => {
+      return items.map((item) => {
+        const itemId = String(item.id || item.name || Math.random());
+        const displayTitle = String(item.name || item.label || item.title || itemId);
+        const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+
+        return (
+          <TreeItem
+            key={itemId}
+            id={itemId}
+            title={displayTitle}
+            hasChildren={hasChildren}
+            showInfoButton={false}
+            childItems={
+              hasChildren ? renderTreeItemsRecursively(item.children) : undefined
+            }
+          />
+        );
+      });
+    };
+
+    return (
+      <AriaTree {...restProps} className='react-aria-Tree'>
+        {loading ? (
+          <TreeItem key="loading" id="loading" title="Loading..." hasChildren={false} showInfoButton={false} />
+        ) : (
+          renderTreeItemsRecursively(treeData)
+        )}
+      </AriaTree>
+    );
+  }
+
+  // Static children
+  return <AriaTree {...restProps} className='react-aria-Tree'>{children}</AriaTree>;
 }
 
 export function TreeItemContent(

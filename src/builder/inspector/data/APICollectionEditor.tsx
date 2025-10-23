@@ -281,22 +281,22 @@ export function APICollectionEditor({
         }}>
           ⚠️ {loadError}
           {(config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA") && (
-            <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8 }}>
+            <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8, lineHeight: "1.4" }}>
               💡 Mock 데이터 사용 가능한 엔드포인트:
               <br />
-              • /users (100개) - JSONPlaceholder 스타일 사용자
+              <strong>📍 지리/위치:</strong> /countries (10), /cities (10), /timezones (8)
               <br />
-              &nbsp;&nbsp;컬럼: id, name, username, email, phone, website, address, company
+              <strong>🛍️ 상품:</strong> /categories (8), /products (8)
               <br />
-              • /posts (100개) - 게시글
+              <strong>📊 상태:</strong> /status (5), /priorities (4), /tags (8)
               <br />
-              • /comments (500개) - 댓글
+              <strong>🌐 국제화:</strong> /languages (8), /currencies (8)
               <br />
-              • /albums (100개) - 앨범
+              <strong>🌳 트리 구조:</strong> /component-tree (엔진 DOM 트리), /engine-summary (엔진 요약)
               <br />
-              • /photos (300개) - 사진
+              <strong>👥 조직:</strong> /users (10K), /departments (40+), /projects (60), /roles, /permissions
               <br />
-              • /todos (200개) - 할일
+              <strong>📝 콘텐츠:</strong> /posts (100), /comments (500), /albums (100), /photos (300), /todos (200)
             </div>
           )}
         </div>

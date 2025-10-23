@@ -56,6 +56,44 @@ export function ListBox<T extends object>({
         });
 
         try {
+          // MOCK_DATA 특별 처리
+          if (config.baseUrl === "MOCK_DATA") {
+            console.log("🎭 ListBox MOCK_DATA 모드 - Mock API 호출");
+
+            // Mock API를 실제 fetch처럼 호출
+            try {
+              const mockApiUrl = `MOCK_DATA${config.endpoint || '/countries'}`;
+              console.log("📡 ListBox Mock API 호출:", mockApiUrl);
+
+              // apiConfig의 MOCK_DATA 함수 호출
+              const { apiConfig } = await import('../../services/api');
+              const mockFetch = apiConfig.MOCK_DATA;
+
+              if (mockFetch) {
+                const data = await mockFetch(config.endpoint || '/countries', config.params);
+                const resultData = config.dataMapping.resultPath
+                  ? (data as any)[config.dataMapping.resultPath]
+                  : data;
+
+                setApiData(Array.isArray(resultData) ? resultData : []);
+              }
+            } catch (err) {
+              console.error("ListBox Mock API 오류:", err);
+              // Fallback: 기본 샘플 데이터
+              const mockData = Array.from({ length: 10 }, (_, i) => ({
+                id: i + 1,
+                name: `User ${i + 1}`,
+                email: `user${i + 1}@example.com`,
+                role: i % 2 === 0 ? "Admin" : "User",
+              }));
+              setApiData(mockData);
+            }
+
+            setLoading(false);
+            return;
+          }
+
+          // 일반 API 호출
           const response = await fetch(
             `${config.baseUrl}${config.customUrl || config.endpoint}`,
             {

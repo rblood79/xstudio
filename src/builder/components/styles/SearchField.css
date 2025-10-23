@@ -17,10 +17,10 @@
     .react-aria-Input {
       grid-area: input;
       width: 100%;
-      padding: 0.286rem 1.714rem 0.286rem 0.286rem;
+      padding: var(--spacing) var(--spacing-xl) var(--spacing) var(--spacing);
       margin: 0;
       border: 1px solid var(--border-color);
-      border-radius: 6px;
+      border-radius: var(--border-radius);
       background: var(--field-background);
       font-size: var(--text-sm);
       color: var(--field-text-color);
@@ -44,21 +44,21 @@
   
     .react-aria-Button {
       grid-area: button;
-      width: 1.143rem;
-      height: 1.143rem;
-      border-radius: 1.143rem;
+      width: var(--text-lg);
+      height: var(--text-lg);
+      border-radius: var(--text-lg);
       margin-left: -1.429rem;
-      font-size: 0.857rem;
-      line-height: 0.857rem;
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
       vertical-align: middle;
       text-align: center;
-      background: var(--gray-500);
-      color: var(--gray-50);
+      background: var(--color-gray-500);
+      color: var(--color-gray-50);
       border: none;
       padding: 0;
   
       &[data-pressed] {
-        background: var(--gray-600);
+        background: var(--color-gray-600);
       }
     }
   
@@ -74,13 +74,13 @@
   
     .react-aria-FieldError {
       grid-area: help;
-      font-size: 12px;
+      font-size: var(--text-xs);
       color: var(--invalid-color);
     }
   
     [slot=description] {
       grid-area: help;
-      font-size: 12px;
+      font-size: var(--text-xs);
     }
   
     .react-aria-Input {

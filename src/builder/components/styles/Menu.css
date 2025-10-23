@@ -7,28 +7,26 @@
   
   .react-aria-Menu {
     max-height: inherit;
-    box-sizing: border-box;
     overflow: auto;
-    padding: 2px;
+    padding: var(--spacing);
     min-width: 150px;
-    box-sizing: border-box;
     outline: none;
   }
   
   .react-aria-MenuItem {
-    margin: 2px;
-    padding: 0.286rem 0.571rem;
-    border-radius: 6px;
+    margin: var(--spacing);
+    padding: var(--spacing) var(--spacing-md);
+    border-radius: var(--border-radius);
     outline: none;
     cursor: default;
     color: var(--text-color);
-    font-size: 1.072rem;
+    font-size: var(--text-sm);
     position: relative;
     display: grid;
     grid-template-areas: "label kbd"
                         "desc  kbd";
     align-items: center;
-    column-gap: 20px;
+    column-gap: var(--gap);
     forced-color-adjust: none;
   
     &[data-focused] {
@@ -39,11 +37,11 @@
   
   .react-aria-MenuItem {
     &[data-selection-mode] {
-      padding-left: 24px;
+      padding-left: var(--spacing-xl);
   
       &::before {
         position: absolute;
-        left: 4px;
+        left: var(--spacing);
         font-weight: 600;
       }
   
@@ -52,7 +50,7 @@
         content: '✓' / '';
         alt: ' ';
         position: absolute;
-        left: 4px;
+        left: var(--spacing);
         font-weight: 600;
       }
   
@@ -77,13 +75,13 @@
     .react-aria-Header {
       font-size: var(--text-sm);
       font-weight: bold;
-      padding: 0 0.714rem;
+      padding: 0 var(--spacing-sm);
     }
   
     .react-aria-Separator {
       height: 1px;
       background: var(--border-color);
-      margin: 2px 4px;
+      margin: var(--spacing) var(--spacing-sm);
     }
   }
   
@@ -92,32 +90,88 @@
       font-weight: bold;
       grid-area: label;
     }
-  
+
     [slot=description] {
       font-size: small;
       grid-area: desc;
     }
-  
+
     kbd {
       grid-area: kbd;
       font-family: monospace;
       text-align: end;
     }
-  
+
     &[data-disabled] {
       color: var(--text-color-disabled);
     }
   }
-  
-  .react-aria-Popover[data-trigger=SubmenuTrigger][data-placement="right"] {
-    margin-left: -5px;
+
+  /* Dynamic Collection 스타일 */
+  .menu-item-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    grid-area: label;
+    width: 100%;
   }
-  
-  .react-aria-Popover[data-trigger=SubmenuTrigger][data-placement="left"] {
-    margin-right: -5px;
+
+  .menu-item-icon {
+    flex-shrink: 0;
+    font-size: var(--text-base);
   }
-  
-  .react-aria-Popover[data-trigger=SubmenuTrigger] .react-aria-SearchField {
-    margin: 4px 8px;
+
+  .menu-item-label {
+    flex: 1;
+  }
+
+  .menu-item-shortcut {
+    grid-area: kbd;
+    font-family: monospace;
+    font-size: var(--text-xs);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    margin-left: auto;
+  }
+
+  .menu-item-description {
+    grid-area: desc;
+    font-size: var(--text-xs);
+    color: var(--color-gray-600);
+  }
+
+  /* Submenu chevron 스타일 개선 */
+  .react-aria-MenuItem .chevron {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-left: var(--spacing-md);
+  }
+
+  /* Submenu Popover 위치 조정 */
+  .react-aria-Popover[data-trigger=SubmenuTrigger] {
+    &[data-placement="right"] {
+      margin-left: -5px;
+    }
+
+    &[data-placement="left"] {
+      margin-right: -5px;
+    }
+
+    /* Submenu 내부 Menu 스타일 */
+    .react-aria-Menu {
+      min-width: 150px;
+    }
+
+    /* Submenu 내 SearchField */
+    .react-aria-SearchField {
+      margin: 4px 8px;
+    }
   }
 }

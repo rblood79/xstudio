@@ -19,6 +19,8 @@ export const rendererMap: Record<
 > = {
   // Form 컴포넌트
   TextField: FormRenderers.renderTextField,
+  NumberField: FormRenderers.renderNumberField,
+  SearchField: FormRenderers.renderSearchField,
   Input: FormRenderers.renderInput,
   Label: FormRenderers.renderLabel,
   Description: FormRenderers.renderDescription,
@@ -43,6 +45,9 @@ export const rendererMap: Record<
   Card: LayoutRenderers.renderCard,
   Button: LayoutRenderers.renderButton,
   Text: LayoutRenderers.renderText,
+  Tooltip: LayoutRenderers.renderTooltip,
+  ProgressBar: LayoutRenderers.renderProgressBar,
+  Meter: LayoutRenderers.renderMeter,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,
@@ -58,6 +63,9 @@ export const rendererMap: Record<
   Tag: CollectionRenderers.renderTag,
   ToggleButtonGroup: CollectionRenderers.renderToggleButtonGroup,
   ToggleButton: CollectionRenderers.renderToggleButton,
+  Menu: CollectionRenderers.renderMenu,
+  MenuItem: CollectionRenderers.renderMenuItem,
+  Toolbar: CollectionRenderers.renderToolbar,
 
   // Table 컴포넌트
   Table: TableRenderer.renderTable,

@@ -235,6 +235,228 @@ Structured API services in `src/services/api/`:
 
 All API calls use the service layer pattern with proper error handling.
 
+### Mock Data API Endpoints
+
+The project includes a comprehensive Mock Data API system (`src/services/api/index.ts`) for component testing and development without requiring a backend server.
+
+#### Using Mock Data
+
+**Base URL**: `MOCK_DATA`
+
+Components with `dataBindingType: "collection"` can use Mock API endpoints:
+
+```typescript
+// Inspector → Data Section → API Collection
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/countries",  // Choose from available endpoints
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "name"
+  }
+}
+```
+
+#### Available Mock Endpoints
+
+**📍 Geography & Location**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/countries` | 10 | id, name, code, continent | Country selection dropdowns |
+| `/cities` | 10 | id, name, country, population | City selection, location pickers |
+| `/timezones` | 8 | id, name, label, timezone, offset | Timezone selection |
+
+**🛍️ E-commerce**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/categories` | 8 | id, name, icon, description | Category menus, filters |
+| `/products` | 8 | id, name, price, category, stock | Product lists, catalogs |
+
+**📊 Status & Priority**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/status` | 5 | id, name, label, color | Task status, workflow states |
+| `/priorities` | 4 | id, name, label, icon, level | Priority selection |
+| `/tags` | 8 | id, name, label, color | Tagging systems, filters |
+
+**🌐 Internationalization**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/languages` | 8 | id, name, label, nativeName, code | Language selection |
+| `/currencies` | 8 | id, name, label, code, symbol | Currency selection |
+
+**🌳 Tree Structures**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/component-tree` | Dynamic | id, name, type, parentId, children, level, ... | Hierarchical component trees for Tree component |
+| `/engine-summary` | Dynamic | engine, assembliesCount, totalPartsCount, ... | Engine statistics and summaries |
+| `/engines` | 120+ | id, name, projectId, type, status, ... | Engine lists |
+| `/components` | 5,000+ | id, name, engineId, parentId, type, level, ... | Flat component lists |
+
+**👥 Users & Organizations**
+
+| Endpoint | Records | Fields | Use Case |
+|----------|---------|--------|----------|
+| `/users` | 10,000 | id, name, email, role, company, ... | User lists, member selection |
+| `/departments` | 40+ | id, name, description, ... | Department selection |
+| `/projects` | 60 | id, name, status, ... | Project lists |
+| `/roles` | Various | id, name, permissions | Role selection |
+| `/permissions` | Various | id, name, description | Permission management |
+
+#### Component Default Endpoints
+
+When `baseUrl: "MOCK_DATA"` is used without specifying an endpoint:
+
+- **ListBox**: `/countries` (10 countries)
+- **Select**: `/status` (5 status options)
+- **Menu**: Static collection only (no default API)
+- **ComboBox**: `/users` (10,000 users)
+- **GridList**: `/products` (8 products)
+
+#### Example Usage
+
+**1. Country Selector (Select)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/countries",
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "name"
+  }
+}
+```
+**Result**: 대한민국, 미국, 일본, 중국, 영국, 프랑스, 독일, 캐나다, 호주, 싱가포르
+
+**2. Status Dropdown (Select)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/status",
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "label"
+  }
+}
+```
+**Result**: 할 일, 진행 중, 검토, 완료, 차단됨 (with colors)
+
+**3. Product List (ListBox)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/products",
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "name"
+  }
+}
+```
+**Result**: MacBook Pro 16", iPhone 15 Pro, AirPods Pro, Nike Air Max, ...
+
+**4. Priority Selection with Icons (Select)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/priorities",
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "label"
+  }
+}
+```
+**Result**: 낮음 ⬇️, 보통 ➡️, 높음 ⬆️, 긴급 🔥
+
+**5. Component Tree (Tree Component)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/component-tree",
+  "params": {
+    "engineId": "engine-123"
+  },
+  "dataMapping": {
+    "idField": "id",
+    "labelField": "name"
+  }
+}
+```
+**Result**: Hierarchical tree structure with assemblies, sub-assemblies, and parts
+- Each node has `id`, `name`, `type`, `children[]`, `level`, `orderIndex`
+- Supports nested rendering for Tree component
+- If `engineId` not specified, returns first engine's tree
+
+**6. Engine Summary (Data Visualization)**
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/engine-summary",
+  "params": {
+    "projectId": "project-456"
+  }
+}
+```
+**Result**: Array of engine summaries with:
+- `engine` object (id, name, type, status)
+- `assembliesCount`, `totalPartsCount`, `totalComponentsCount`
+- `estimatedTotalCost`, `maxTreeDepth`
+
+#### Implementation Details
+
+Mock endpoints are defined in `src/services/api/index.ts` with handler functions:
+
+```typescript
+const handleCountriesEndpoint = (params?: Record<string, unknown>) => {
+  const countries = [
+    { id: "kr", name: "대한민국", code: "KR", continent: "아시아" },
+    { id: "us", name: "미국", code: "US", continent: "북아메리카" },
+    // ...
+  ];
+  return applyPagination(countries, params);
+};
+```
+
+**Pagination Support**: All endpoints support `page` and `limit` query parameters via `applyPagination()`.
+
+**Component Integration**: Components with `dataBinding` prop call:
+```typescript
+const { apiConfig } = await import('../../../services/api');
+const data = await apiConfig.MOCK_DATA(endpoint, params);
+```
+
+#### Adding New Mock Endpoints
+
+To add a new mock endpoint:
+
+1. **Create handler function** in `src/services/api/index.ts`:
+```typescript
+const handleMyEndpoint = (params?: Record<string, unknown>) => {
+  const data = [/* your mock data */];
+  console.log(`📊 /my-endpoint: ${data.length}개 반환`);
+  return applyPagination(data, params);
+};
+```
+
+2. **Register in fetchMockData**:
+```typescript
+if (path === "/my-endpoint" || path === "/api/my-endpoint") {
+  return handleMyEndpoint(params);
+}
+```
+
+3. **Use in components**:
+```json
+{
+  "baseUrl": "MOCK_DATA",
+  "endpoint": "/my-endpoint"
+}
+```
+
 ## Critical Coding Rules
 
 ### CSS Architecture
@@ -540,6 +762,108 @@ if (selectedButton) {
 ```
 
 **Use Case:** Essential for mutually exclusive button groups (e.g., flex spacing vs. grid alignment) where indicator must disappear when switching groups.
+
+#### Tree Component with DataBinding
+
+The `Tree` component (`src/builder/components/Tree.tsx`) supports hierarchical data display with DataBinding for dynamic content loading:
+
+**Features:**
+- **Static Mode**: Manually add TreeItem children in Builder
+- **DataBinding Mode**: Automatically load hierarchical data from API
+- **Recursive Rendering**: Automatically renders nested `children` arrays
+- **MOCK_DATA Support**: Built-in support for mock tree endpoints
+
+**Usage - Static Mode:**
+```tsx
+<Tree>
+  <TreeItem id="1" title="Parent 1" hasChildren>
+    <TreeItem id="1-1" title="Child 1-1" />
+    <TreeItem id="1-2" title="Child 1-2" />
+  </TreeItem>
+  <TreeItem id="2" title="Parent 2" />
+</Tree>
+```
+
+**Usage - DataBinding Mode:**
+```tsx
+<Tree
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: {
+      baseUrl: "MOCK_DATA",
+      endpoint: "/component-tree",
+      params: { engineId: "engine-1" }
+    }
+  }}
+/>
+```
+
+**API Data Structure:**
+```json
+[
+  {
+    "id": "comp-1",
+    "name": "Root Component",
+    "type": "Container",
+    "parentId": null,
+    "level": 0,
+    "children": [
+      {
+        "id": "comp-2",
+        "name": "Child Component",
+        "type": "Button",
+        "parentId": "comp-1",
+        "level": 1,
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+**Implementation Details** (`Tree.tsx:64-82`):
+```typescript
+const renderTreeItemsRecursively = (items: any[]): React.ReactNode => {
+  return items.map((item) => {
+    const itemId = String(item.id || item.name || Math.random());
+    const displayTitle = String(item.name || item.label || item.title || itemId);
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+
+    return (
+      <TreeItem
+        key={itemId}
+        id={itemId}
+        title={displayTitle}
+        hasChildren={hasChildren}
+        childItems={hasChildren ? renderTreeItemsRecursively(item.children) : undefined}
+      />
+    );
+  });
+};
+```
+
+**Field Mapping:**
+- **Display Title**: Uses `name` → `label` → `title` → `id` (first available)
+- **Children Detection**: Checks for non-empty `children` array
+- **Recursive**: Automatically processes nested children at any depth
+
+**Renderer Integration** (`CollectionRenderers.tsx:82`):
+```typescript
+<Tree
+  dataBinding={element.dataBinding}  // Pass dataBinding prop
+  onSelectionChange={(selectedKeys) => { ... }}
+  onExpandedChange={(expandedKeys) => { ... }}
+>
+  {/* Static TreeItem children or dynamic rendering */}
+</Tree>
+```
+
+**Mock Endpoints for Tree:**
+- `/component-tree`: Engine DOM component hierarchy (requires `engineId` param)
+- `/engine-summary`: Engine statistics summary
+
+**Use Case:** Display component trees, file systems, organization charts, or any hierarchical data structure with unlimited nesting depth.
 
 #### Inspector Property Components - Step-by-Step Workflow
 
@@ -931,12 +1255,19 @@ Cursor AI can read this file for project context. When using Cursor:
 - Use addComplexElement() for parent+children
 - Use updateElementProps() for props only
 - Use updateElement() for full updates
+
+## Pattern: Collection Components with DataBinding
+- ListBox, GridList, Menu, Select: Support Static and API Collection
+- Tree: Supports hierarchical data with recursive children rendering
+- Always pass dataBinding prop from renderer to component
+- Use MOCK_DATA baseUrl for development/testing
 ```
 
 **Common Cursor commands:**
 - `@CLAUDE.md` - Reference this file for context
 - When editing CSS, check existing patterns in styles/ folder first
 - When creating store actions, follow factory pattern from existing modules
+- When adding DataBinding to components, check existing implementations (ListBox.tsx, Select.tsx, Tree.tsx)
 
 ### For GitHub Copilot
 
@@ -1055,6 +1386,38 @@ export const createMyAction = (set: SetState, get: GetState) => async () => {
 </ComboBox>
 ```
 
+**5. Collection Components with DataBinding:**
+```tsx
+// Tree with hierarchical data
+import type { DataBinding } from '../../types/unified';
+
+<Tree
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: {
+      baseUrl: "MOCK_DATA",
+      endpoint: "/component-tree"
+    }
+  }}
+/>
+
+// Recursive rendering for nested children
+const renderRecursively = (items: any[]): React.ReactNode => {
+  return items.map((item) => {
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    return (
+      <TreeItem
+        id={item.id}
+        title={item.name || item.label}
+        hasChildren={hasChildren}
+        childItems={hasChildren ? renderRecursively(item.children) : undefined}
+      />
+    );
+  });
+};
+```
+
 ### Quick Reference for AI Assistants
 
 | Task | Correct Approach | File Location |
@@ -1065,6 +1428,9 @@ export const createMyAction = (set: SetState, get: GetState) => async () => {
 | Update element | Use `updateElementProps()` or `updateElement()` | From Zustand store |
 | Add CSS value | Use CSS variable `var(--token-name)` | Defined in `theme.css` |
 | Name React Aria class | Use `react-aria-ComponentName` prefix | Follow existing patterns |
+| Add DataBinding to component | Add `dataBinding?: DataBinding` prop, implement useState/useEffect | Component file (see `ListBox.tsx`, `Select.tsx`, `Tree.tsx`) |
+| Pass DataBinding in renderer | Add `dataBinding={element.dataBinding}` prop | Renderer file in `src/builder/preview/renderers/` |
+| Test with mock data | Use `baseUrl: "MOCK_DATA"` with available endpoints | See Mock Data API section |
 
 ---
 

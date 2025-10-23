@@ -209,6 +209,7 @@ export const renderSelect = (
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
       autoFocus={Boolean(elementProps.autoFocus)}
+      dataBinding={element.dataBinding}
       onSelectionChange={async (selectedKey) => {
         // React Aria의 내부 ID를 실제 값으로 변환
         let actualValue = selectedKey;

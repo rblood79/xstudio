@@ -35,4 +35,11 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'Calendar': lazy(() => import('../components/Calendar').then(module => ({ default: module.Calendar }))),
     'Card': lazy(() => import('../components/Card').then(module => ({ default: module.Card }))),
     'Panel': lazy(() => import('../components/Panel').then(module => ({ default: module.Panel }))),
+    'NumberField': lazy(() => import('../components/NumberField').then(module => ({ default: module.NumberField }))),
+    'SearchField': lazy(() => import('../components/SearchField').then(module => ({ default: module.SearchField }))),
+    'Menu': lazy(() => import('../components/Menu').then(module => ({ default: module.Menu }))),
+    'Tooltip': lazy(() => import('../components/Tooltip').then(module => ({ default: module.Tooltip }))),
+    'ProgressBar': lazy(() => import('../components/ProgressBar').then(module => ({ default: module.ProgressBar }))),
+    'Meter': lazy(() => import('../components/Meter').then(module => ({ default: module.Meter }))),
+    'Toolbar': lazy(() => import('../components/Toolbar').then(module => ({ default: module.Toolbar }))),
 };

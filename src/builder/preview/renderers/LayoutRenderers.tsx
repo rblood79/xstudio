@@ -7,6 +7,9 @@ import {
   Panel,
   Card,
   Button,
+  Tooltip,
+  ProgressBar,
+  Meter,
 } from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
 import { createEventHandlerMap } from "../utils/eventHandlers";
@@ -18,6 +21,7 @@ import { createEventHandlerMap } from "../utils/eventHandlers";
  * - Card
  * - Button
  * - Text
+ * - Tooltip, ProgressBar, Meter
  */
 
 /**
@@ -257,5 +261,76 @@ export const renderText = (
     },
     element.props.children,
     ...children.map((child) => renderElement(child, child.id))
+  );
+};
+
+/**
+ * Tooltip 렌더링
+ */
+export const renderTooltip = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Tooltip
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
+      {children.map((child) => renderElement(child, child.id))}
+    </Tooltip>
+  );
+};
+
+/**
+ * ProgressBar 렌더링
+ */
+export const renderProgressBar = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  return (
+    <ProgressBar
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "")}
+      value={Number(element.props.value || 0)}
+      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : 0}
+      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : 100}
+      isIndeterminate={Boolean(element.props.isIndeterminate || false)}
+    />
+  );
+};
+
+/**
+ * Meter 렌더링
+ */
+export const renderMeter = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  return (
+    <Meter
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+      label={String(element.props.label || "")}
+      value={Number(element.props.value || 0)}
+      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : 0}
+      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : 100}
+    />
   );
 };
