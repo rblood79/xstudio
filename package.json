@@ -20,6 +20,7 @@
     "@tanstack/react-virtual": "^3.13.12",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
+    "groq-sdk": "^0.34.0",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.542.0",

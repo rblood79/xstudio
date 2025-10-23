@@ -12,6 +12,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import Inspector from "../inspector";
 import Sidebar from "../sidebar";
 import SelectionOverlay from "../overlay";
+import { ChatInterface } from "../chat/ChatInterface";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import { useElementCreator } from "../hooks/useElementCreator";
@@ -24,11 +25,13 @@ import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import { projectsApi, type Project } from "../../services/api";
 
 import "./index.css";
+import "./chat-panel.css";
 import { MessageService } from "../../utils/messaging";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [projectInfo, setProjectInfo] = useState<Project | null>(null);
+  const [showChatPanel, setShowChatPanel] = useState(false);
 
   // Store 상태
   const elements = useStore((state) => state.elements);
@@ -307,6 +310,7 @@ export const BuilderCore: React.FC = () => {
         target.closest(".selection-overlay") ||
         target.closest(".sidebar") ||
         target.closest(".inspector") ||
+        target.closest(".chat-panel") ||
         target.closest(".header") ||
         target.closest(".footer") ||
         target.closest("#previewFrame")
@@ -388,6 +392,24 @@ export const BuilderCore: React.FC = () => {
 
         <aside className="inspector">
           <Inspector />
+        </aside>
+
+        {/* AI Chat Panel */}
+        <aside className={`chat-panel ${showChatPanel ? 'chat-panel--open' : ''}`}>
+          <div className="chat-panel__toggle">
+            <button
+              className="chat-panel__toggle-button"
+              onClick={() => setShowChatPanel(!showChatPanel)}
+              title={showChatPanel ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
+            >
+              {showChatPanel ? '✕' : '💬'}
+            </button>
+          </div>
+          {showChatPanel && (
+            <div className="chat-panel__content">
+              <ChatInterface />
+            </div>
+          )}
         </aside>
 
         {/* 기존 footer 태그를 BuilderFooter 컴포넌트로 대체 */}
