@@ -18,7 +18,7 @@ export interface ColorPickerProps extends AriaColorPickerProps {
   children?: React.ReactNode;
 }
 
-export function ColorPicker({ label, children, ...props }: ColorPickerProps) {
+export function ColorPicker({ children, ...props }: ColorPickerProps) {
   return (
     <AriaColorPicker {...props}>
       <DialogTrigger>

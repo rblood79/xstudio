@@ -162,6 +162,8 @@ function Preview() {
       fallbackProps,
       content.length > 0 ? content : `Unknown: ${effectiveTag}`
     );
+    // elements와 fullContext는 순환 참조를 방지하기 위해 제외
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseContext]); // baseContext가 변경될 때만 renderElement 재생성
 
   // FullContext를 useMemo로 메모이제이션 (baseContext + renderElement)

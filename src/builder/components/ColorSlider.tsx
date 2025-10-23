@@ -7,7 +7,7 @@ import {
 
 import "./styles/ColorSlider.css";
 
-export interface ColorSliderProps extends AriaColorSliderProps {}
+export type ColorSliderProps = AriaColorSliderProps;
 
 export function ColorSlider(props: ColorSliderProps) {
   return (

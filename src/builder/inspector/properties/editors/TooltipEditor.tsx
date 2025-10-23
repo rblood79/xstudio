@@ -1,4 +1,4 @@
-import { Type, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { PropertyInput } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/labels";

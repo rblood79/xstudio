@@ -299,7 +299,7 @@ export const renderTooltip = (
  */
 export const renderProgressBar = (
   element: PreviewElement,
-  context: RenderContext
+  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
 ): React.ReactNode => {
   return (
     <ProgressBar
@@ -329,7 +329,7 @@ export const renderProgressBar = (
  */
 export const renderMeter = (
   element: PreviewElement,
-  context: RenderContext
+  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
 ): React.ReactNode => {
   return (
     <Meter

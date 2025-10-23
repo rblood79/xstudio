@@ -6,8 +6,8 @@ import {
 } from "react-aria-components";
 
 import "./styles/ColorWheel.css";
-export interface ColorWheelProps
-  extends Omit<AriaColorWheelProps, "outerRadius" | "innerRadius"> {}
+
+export type ColorWheelProps = Omit<AriaColorWheelProps, "outerRadius" | "innerRadius">;
 
 export function ColorWheel(props: ColorWheelProps) {
   return (

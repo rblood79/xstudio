@@ -6,7 +6,7 @@ import {
 
 import "./styles/ColorArea.css";
 
-export interface ColorAreaProps extends AriaColorAreaProps {}
+export type ColorAreaProps = AriaColorAreaProps;
 
 export function ColorArea(props: ColorAreaProps) {
   return (

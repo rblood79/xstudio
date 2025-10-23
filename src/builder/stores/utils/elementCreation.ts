@@ -132,6 +132,7 @@ export const createAddElementAction =
  * @returns addComplexElement 액션 함수
  */
 export const createAddComplexElementAction =
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- _get은 factory pattern 시그니처 통일을 위해 유지
   (set: SetState, _get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
     const allElements = [parentElement, ...childElements];

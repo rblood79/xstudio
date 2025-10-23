@@ -219,7 +219,7 @@ export function MenuButton<T extends object>({
       if (hasSubmenu) {
         // Convert children to same format as parent items
         const submenuItems = item.children!.map(
-          (child: any, childIndex: number) => ({
+          (child: Record<string, unknown>, childIndex: number) => ({
             id: String(child.id || `${item.id}-${childIndex}`),
             label: String(
               child.label ||
@@ -317,7 +317,7 @@ export function MenuButton<T extends object>({
 export function MenuItem(
   props: Omit<MenuItemProps, "children"> & { children?: React.ReactNode }
 ) {
-  let textValue =
+  const textValue =
     props.textValue ||
     (typeof props.children === "string" ? props.children : undefined);
   return (

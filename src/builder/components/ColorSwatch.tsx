@@ -5,7 +5,7 @@ import {
 
 import "./styles/ColorSwatch.css";
 
-export interface ColorSwatchProps extends AriaColorSwatchProps {}
+export type ColorSwatchProps = AriaColorSwatchProps;
 
 export function ColorSwatch(props: ColorSwatchProps) {
   return <AriaColorSwatch {...props} className="react-aria-ColorSwatch" />;

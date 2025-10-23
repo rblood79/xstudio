@@ -343,7 +343,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elements]);
+    }, [setSelectedElement, elements, isSyncingToBuilder]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;

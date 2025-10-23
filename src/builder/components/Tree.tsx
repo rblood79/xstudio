@@ -22,7 +22,7 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
 
 export function Tree<T extends object>(props: MyTreeProps<T>) {
   const { dataBinding, children, ...restProps } = props;
-  const [treeData, setTreeData] = useState<any[]>([]);
+  const [treeData, setTreeData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
 
   // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
@@ -48,12 +48,12 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
             const mockFetch = apiConfig.MOCK_DATA;
             if (mockFetch) {
               mockFetch(config.endpoint || "/component-tree", config.params)
-                .then((data: any) => {
+                .then((data: unknown) => {
                   console.log("🌳 Tree 데이터 로드:", data);
                   setTreeData(Array.isArray(data) ? data : []);
                   setLoading(false);
                 })
-                .catch((err: any) => {
+                .catch((err: unknown) => {
                   console.error("Tree API 오류:", err);
                   setLoading(false);
                 });
@@ -73,7 +73,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
 
   // DataBinding이 있고 데이터가 로드된 경우
   if (dataBinding && treeData.length > 0) {
-    const renderTreeItemsRecursively = (items: any[]): React.ReactNode => {
+    const renderTreeItemsRecursively = (items: Record<string, unknown>[]): React.ReactNode => {
       return items.map((item) => {
         const itemId = String(item.id || item.name || Math.random());
         const displayTitle = String(

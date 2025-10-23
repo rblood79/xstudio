@@ -80,7 +80,7 @@ export function ListBox<T extends object>({
                   config.params
                 );
                 const resultData = config.dataMapping.resultPath
-                  ? (data as any)[config.dataMapping.resultPath]
+                  ? (data as Record<string, unknown>)[config.dataMapping.resultPath]
                   : data;
 
                 setApiData(Array.isArray(resultData) ? resultData : []);

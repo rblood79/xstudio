@@ -64,7 +64,7 @@ export function useSyncWithBuilder(): void {
     // Store의 props에서 style과 computedStyle을 분리하여 비교
     const {
       style: storeStyle,
-      computedStyle: _storeComputedStyle,
+      computedStyle: _storeComputedStyle, // eslint-disable-line @typescript-eslint/no-unused-vars
       ...storeProps
     } = currentElementInStore.props as Record<string, unknown>;
 
