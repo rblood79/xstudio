@@ -1,17 +1,17 @@
-'use client';
+"use client";
 import {
   ColorPicker as AriaColorPicker,
   ColorPickerProps as AriaColorPickerProps,
   DialogTrigger,
-} from 'react-aria-components';
-import { Button } from './Button';
-import { ColorSwatch } from './ColorSwatch';
-import { ColorSlider } from './ColorSlider';
-import { ColorArea } from './ColorArea';
-import { ColorField } from './ColorField';
-import { Popover } from './Popover';
+} from "react-aria-components";
+import { Button } from "./Button";
+import { ColorSwatch } from "./ColorSwatch";
+import { ColorSlider } from "./ColorSlider";
+import { ColorArea } from "./ColorArea";
+import { ColorField } from "./ColorField";
+import { Popover } from "./Popover";
 
-import './styles/ColorPicker.css';
+import "./styles/ColorPicker.css";
 
 export interface ColorPickerProps extends AriaColorPickerProps {
   label?: string;

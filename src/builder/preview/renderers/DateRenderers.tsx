@@ -1,7 +1,13 @@
 import React from "react";
-import { Calendar, DatePicker, DateRangePicker, DateField, TimeField } from "../../components/list";
+import {
+  Calendar,
+  DatePicker,
+  DateRangePicker,
+  DateField,
+  TimeField,
+} from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
-import { today, getLocalTimeZone, now, Time } from "@internationalized/date";
+import { today, getLocalTimeZone, Time } from "@internationalized/date";
 
 /**
  * Date 관련 컴포넌트 렌더러
@@ -191,7 +197,9 @@ export const renderDateRangePicker = (
       autoFocus={Boolean(element.props.autoFocus)}
       shouldForceLeadingZeros={element.props.shouldForceLeadingZeros !== false}
       shouldCloseOnSelect={element.props.shouldCloseOnSelect !== false}
-      allowsNonContiguousRanges={Boolean(element.props.allowsNonContiguousRanges)}
+      allowsNonContiguousRanges={Boolean(
+        element.props.allowsNonContiguousRanges
+      )}
       includeTime={Boolean(element.props.includeTime)}
       timeFormat={(element.props.timeFormat as "12h" | "24h") || "24h"}
       startTimeLabel={(element.props.startTimeLabel as string) || "시작 시간"}

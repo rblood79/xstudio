@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Button,
   FieldError,
@@ -11,14 +11,14 @@ import {
   SelectProps as AriaSelectProps,
   SelectValue,
   Text,
-  ValidationResult
-} from 'react-aria-components';
-import { ChevronDown } from 'lucide-react';
-import type { DataBinding } from '../../types/unified';
-import './styles/Select.css';
+  ValidationResult,
+} from "react-aria-components";
+import { ChevronDown } from "lucide-react";
+import type { DataBinding } from "../../types/unified";
+import "./styles/Select.css";
 
 export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, 'children'> {
+  extends Omit<AriaSelectProps<T>, "children"> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -29,9 +29,16 @@ export interface SelectProps<T extends object>
   dataBinding?: DataBinding;
 }
 
-export function Select<T extends object>(
-  { label, description, errorMessage, children, items, placeholder, dataBinding, ...props }: SelectProps<T>
-) {
+export function Select<T extends object>({
+  label,
+  description,
+  errorMessage,
+  children,
+  items,
+  placeholder,
+  dataBinding,
+  ...props
+}: SelectProps<T>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
@@ -92,15 +99,18 @@ export function Select<T extends object>(
 
             // Mock API를 실제 fetch처럼 호출
             try {
-              const mockApiUrl = `MOCK_DATA${config.endpoint || '/status'}`;
+              const mockApiUrl = `MOCK_DATA${config.endpoint || "/status"}`;
               console.log("📡 Select Mock API 호출:", mockApiUrl);
 
               // apiConfig의 MOCK_DATA 함수 호출
-              const { apiConfig } = await import('../../services/api');
+              const { apiConfig } = await import("../../services/api");
               const mockFetch = apiConfig.MOCK_DATA;
 
               if (mockFetch) {
-                const data = await mockFetch(config.endpoint || '/status', config.params);
+                const data = await mockFetch(
+                  config.endpoint || "/status",
+                  config.params
+                );
                 const resultData = config.dataMapping.resultPath
                   ? (data as any)[config.dataMapping.resultPath]
                   : data;
@@ -123,17 +133,17 @@ export function Select<T extends object>(
           }
 
           // 일반 API 호출
-          const response = await fetch(
-            `${config.baseUrl}${config.endpoint}`,
-            {
-              method: config.method || "GET",
-              headers: {
-                ...config.headers,
-                "Content-Type": "application/json",
-              },
-              body: config.method !== "GET" ? JSON.stringify(config.params) : undefined,
-            }
-          );
+          const response = await fetch(`${config.baseUrl}${config.endpoint}`, {
+            method: config.method || "GET",
+            headers: {
+              ...config.headers,
+              "Content-Type": "application/json",
+            },
+            body:
+              config.method !== "GET"
+                ? JSON.stringify(config.params)
+                : undefined,
+          });
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -159,19 +169,21 @@ export function Select<T extends object>(
 
   // ComboBox와 동일한 방식으로 placeholder 처리
   const stableProps = useMemo(() => {
-    const processedPlaceholder = placeholder ? String(placeholder).trim() : undefined;
+    const processedPlaceholder = placeholder
+      ? String(placeholder).trim()
+      : undefined;
     return {
       label,
       description,
       errorMessage,
-      placeholder: processedPlaceholder
+      placeholder: processedPlaceholder,
     };
   }, [label, description, errorMessage, placeholder]);
 
   const hasVisibleLabel = stableProps.label && String(stableProps.label).trim();
   const ariaLabel = hasVisibleLabel
     ? undefined
-    : (props['aria-label'] || stableProps.placeholder || 'Select an option');
+    : props["aria-label"] || stableProps.placeholder || "Select an option";
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   const hasDataBinding = dataBinding?.type === "collection";
@@ -190,12 +202,16 @@ export function Select<T extends object>(
       };
     };
 
-    const idField = config.columnMapping?.id || config.dataMapping?.idField || "id";
-    const labelField = config.columnMapping?.label || config.dataMapping?.labelField || "label";
+    const idField =
+      config.columnMapping?.id || config.dataMapping?.idField || "id";
+    const labelField =
+      config.columnMapping?.label || config.dataMapping?.labelField || "label";
 
     const selectItems = boundData.map((item, index) => ({
       id: String(item[idField] || item.id || index),
-      label: String(item[labelField] || item.label || item.name || `Item ${index + 1}`),
+      label: String(
+        item[labelField] || item.label || item.name || `Item ${index + 1}`
+      ),
       ...item,
     }));
 
@@ -204,7 +220,7 @@ export function Select<T extends object>(
     return (
       <AriaSelect
         {...props}
-        className='react-aria-Select'
+        className="react-aria-Select"
         aria-label={ariaLabel}
         placeholder={stableProps.placeholder}
       >
@@ -229,14 +245,20 @@ export function Select<T extends object>(
 
         {stableProps.errorMessage && (
           <FieldError className="react-aria-FieldError">
-            {typeof stableProps.errorMessage === 'function'
-              ? stableProps.errorMessage({ isInvalid: true } as ValidationResult)
+            {typeof stableProps.errorMessage === "function"
+              ? stableProps.errorMessage({
+                  isInvalid: true,
+                } as ValidationResult)
               : String(stableProps.errorMessage)}
           </FieldError>
         )}
 
         <Popover className="react-aria-Popover">
-          <ListBox items={selectItems} className='react-aria-ListBox' selectionMode="single">
+          <ListBox
+            items={selectItems}
+            className="react-aria-ListBox"
+            selectionMode="single"
+          >
             {(item) => (
               <ListBoxItem
                 key={item.id}
@@ -258,7 +280,7 @@ export function Select<T extends object>(
     return (
       <AriaSelect
         {...props}
-        className='react-aria-Select'
+        className="react-aria-Select"
         aria-label={ariaLabel}
         placeholder={stableProps.placeholder}
         isDisabled
@@ -288,7 +310,7 @@ export function Select<T extends object>(
     return (
       <AriaSelect
         {...props}
-        className='react-aria-Select'
+        className="react-aria-Select"
         aria-label={ariaLabel}
         placeholder={stableProps.placeholder}
         isDisabled
@@ -317,14 +339,12 @@ export function Select<T extends object>(
   return (
     <AriaSelect
       {...props}
-      className='react-aria-Select'
+      className="react-aria-Select"
       aria-label={ariaLabel}
       placeholder={stableProps.placeholder}
     >
       {hasVisibleLabel && (
-        <Label className="react-aria-Label">
-          {String(stableProps.label)}
-        </Label>
+        <Label className="react-aria-Label">{String(stableProps.label)}</Label>
       )}
 
       <Button className="react-aria-Button">
@@ -342,14 +362,18 @@ export function Select<T extends object>(
 
       {stableProps.errorMessage && (
         <FieldError className="react-aria-FieldError">
-          {typeof stableProps.errorMessage === 'function'
+          {typeof stableProps.errorMessage === "function"
             ? stableProps.errorMessage({ isInvalid: true } as ValidationResult)
             : String(stableProps.errorMessage)}
         </FieldError>
       )}
 
       <Popover className="react-aria-Popover">
-        <ListBox items={items} className='react-aria-ListBox' selectionMode="single">
+        <ListBox
+          items={items}
+          className="react-aria-ListBox"
+          selectionMode="single"
+        >
           {children}
         </ListBox>
       </Popover>

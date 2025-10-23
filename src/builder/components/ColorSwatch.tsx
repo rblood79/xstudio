@@ -1,9 +1,9 @@
 import {
   ColorSwatch as AriaColorSwatch,
   ColorSwatchProps as AriaColorSwatchProps,
-} from 'react-aria-components';
+} from "react-aria-components";
 
-import './styles/ColorSwatch.css';
+import "./styles/ColorSwatch.css";
 
 export interface ColorSwatchProps extends AriaColorSwatchProps {}
 

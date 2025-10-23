@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Button,
   Tree as AriaTree,
@@ -8,13 +8,13 @@ import {
   TreeItemContentRenderProps,
   TreeItemProps as AriaTreeItemProps,
   TreeProps,
-  Collection
-} from 'react-aria-components';
-import { InfoIcon, ChevronRightIcon, Minus } from 'lucide-react';
-import { MyCheckbox } from './Checkbox';
-import type { DataBinding } from '../../types/unified';
+  Collection,
+} from "react-aria-components";
+import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
+import { MyCheckbox } from "./Checkbox";
+import type { DataBinding } from "../../types/unified";
 
-import './styles/Tree.css';
+import "./styles/Tree.css";
 
 export interface MyTreeProps<T extends object> extends TreeProps<T> {
   dataBinding?: DataBinding;
@@ -37,24 +37,28 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
       if (config.baseUrl === "MOCK_DATA") {
         setLoading(true);
 
-        import('../../services/api').then(({ apiConfig }) => {
-          const mockFetch = apiConfig.MOCK_DATA;
-          if (mockFetch) {
-            mockFetch(config.endpoint || '/component-tree', config.params).then((data: any) => {
-              console.log("🌳 Tree 데이터 로드:", data);
-              setTreeData(Array.isArray(data) ? data : []);
+        import("../../services/api")
+          .then(({ apiConfig }) => {
+            const mockFetch = apiConfig.MOCK_DATA;
+            if (mockFetch) {
+              mockFetch(config.endpoint || "/component-tree", config.params)
+                .then((data: any) => {
+                  console.log("🌳 Tree 데이터 로드:", data);
+                  setTreeData(Array.isArray(data) ? data : []);
+                  setLoading(false);
+                })
+                .catch((err: any) => {
+                  console.error("Tree API 오류:", err);
+                  setLoading(false);
+                });
+            } else {
               setLoading(false);
-            }).catch((err: any) => {
-              console.error("Tree API 오류:", err);
-              setLoading(false);
-            });
-          } else {
+            }
+          })
+          .catch((err) => {
+            console.error("Tree import 오류:", err);
             setLoading(false);
-          }
-        }).catch((err) => {
-          console.error("Tree import 오류:", err);
-          setLoading(false);
-        });
+          });
       }
     }
   }, [dataBinding]);
@@ -64,8 +68,11 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     const renderTreeItemsRecursively = (items: any[]): React.ReactNode => {
       return items.map((item) => {
         const itemId = String(item.id || item.name || Math.random());
-        const displayTitle = String(item.name || item.label || item.title || itemId);
-        const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+        const displayTitle = String(
+          item.name || item.label || item.title || itemId
+        );
+        const hasChildren =
+          Array.isArray(item.children) && item.children.length > 0;
 
         return (
           <TreeItem
@@ -75,7 +82,9 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
             hasChildren={hasChildren}
             showInfoButton={false}
             childItems={
-              hasChildren ? renderTreeItemsRecursively(item.children) : undefined
+              hasChildren
+                ? renderTreeItemsRecursively(item.children)
+                : undefined
             }
           />
         );
@@ -83,9 +92,15 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     };
 
     return (
-      <AriaTree {...restProps} className='react-aria-Tree'>
+      <AriaTree {...restProps} className="react-aria-Tree">
         {loading ? (
-          <TreeItem key="loading" id="loading" title="Loading..." hasChildren={false} showInfoButton={false} />
+          <TreeItem
+            key="loading"
+            id="loading"
+            title="Loading..."
+            hasChildren={false}
+            showInfoButton={false}
+          />
         ) : (
           renderTreeItemsRecursively(treeData)
         )}
@@ -94,11 +109,15 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
   }
 
   // Static children
-  return <AriaTree {...restProps} className='react-aria-Tree'>{children}</AriaTree>;
+  return (
+    <AriaTree {...restProps} className="react-aria-Tree">
+      {children}
+    </AriaTree>
+  );
 }
 
 export function TreeItemContent(
-  props: Omit<TreeItemContentProps, 'children'> & {
+  props: Omit<TreeItemContentProps, "children"> & {
     children?: React.ReactNode;
     hasChildren?: boolean;
   }
@@ -107,9 +126,10 @@ export function TreeItemContent(
     <AriaTreeItemContent {...props}>
       {(renderProps: TreeItemContentRenderProps) => (
         <>
-          {renderProps.selectionBehavior === 'toggle' && renderProps.selectionMode !== 'none' && (
-            <MyCheckbox slot="selection" />
-          )}
+          {renderProps.selectionBehavior === "toggle" &&
+            renderProps.selectionMode !== "none" && (
+              <MyCheckbox slot="selection" />
+            )}
           <Button slot="chevron">
             {props.hasChildren ? (
               <ChevronRightIcon size={16} data-chevron="true" />
@@ -124,7 +144,8 @@ export function TreeItemContent(
   );
 }
 
-export interface TreeItemProps extends Omit<Partial<AriaTreeItemProps>, 'value'> {
+export interface TreeItemProps
+  extends Omit<Partial<AriaTreeItemProps>, "value"> {
   title?: string;
   value?: string;
   label?: string;
@@ -148,14 +169,14 @@ export function TreeItem(props: TreeItemProps) {
     ...restProps
   } = props;
 
-  const displayTitle = String(title || label || value || '');
-  const actualHasChildren = hasChildren ?? (childItems != null);
+  const displayTitle = String(title || label || value || "");
+  const actualHasChildren = hasChildren ?? childItems != null;
 
   return (
     <AriaTreeItem
       textValue={displayTitle}
       {...restProps}
-      className='react-aria-TreeItem'
+      className="react-aria-TreeItem"
     >
       <TreeItemContent hasChildren={actualHasChildren}>
         <span className="tree-item-title">{displayTitle}</span>
@@ -170,13 +191,9 @@ export function TreeItem(props: TreeItemProps) {
           </Button>
         )}
       </TreeItemContent>
-      
+
       {/* 하위 TreeItem들을 Collection으로 래핑 */}
-      {childItems && (
-        <Collection items={[]}>
-          {childItems}
-        </Collection>
-      )}
+      {childItems && <Collection items={[]}>{childItems}</Collection>}
     </AriaTreeItem>
   );
 }

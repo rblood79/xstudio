@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Button,
   Menu,
@@ -8,21 +8,25 @@ import {
   MenuTrigger,
   MenuTriggerProps,
   Popover,
-  SubmenuTrigger
-} from 'react-aria-components';
-import type { DataBinding } from '../../types/unified';
+  SubmenuTrigger,
+} from "react-aria-components";
+import type { DataBinding } from "../../types/unified";
 
-import './styles/Menu.css';
+import "./styles/Menu.css";
 
 export interface MenuButtonProps<T>
-  extends MenuProps<T>, Omit<MenuTriggerProps, 'children'> {
+  extends MenuProps<T>,
+    Omit<MenuTriggerProps, "children"> {
   label?: string;
   dataBinding?: DataBinding;
 }
 
-export function MenuButton<T extends object>(
-  { label, children, dataBinding, ...props }: MenuButtonProps<T>
-) {
+export function MenuButton<T extends object>({
+  label,
+  children,
+  dataBinding,
+  ...props
+}: MenuButtonProps<T>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
@@ -39,11 +43,11 @@ export function MenuButton<T extends object>(
             icon: "📁",
             children: [
               { label: "New", shortcut: "⌘N" },
-              { label: "Open", shortcut: "⌘O" }
-            ]
+              { label: "Open", shortcut: "⌘O" },
+            ],
           },
-          { label: "Edit", icon: "✏️" }
-        ]
+          { label: "Edit", icon: "✏️" },
+        ],
       });
 
       // Static 데이터는 config.data에 저장됨
@@ -102,7 +106,10 @@ export function MenuButton<T extends object>(
                 ...config.headers,
                 "Content-Type": "application/json",
               },
-              body: config.method !== "GET" ? JSON.stringify(config.params) : undefined,
+              body:
+                config.method !== "GET"
+                  ? JSON.stringify(config.params)
+                  : undefined,
             }
           );
 
@@ -129,7 +136,9 @@ export function MenuButton<T extends object>(
   }, [dataBinding]);
 
   // 데이터 바인딩이 있는 경우
-  const hasDataBinding = dataBinding?.source && (dataBinding.source === "static" || dataBinding.source === "api");
+  const hasDataBinding =
+    dataBinding?.source &&
+    (dataBinding.source === "static" || dataBinding.source === "api");
 
   console.log("🎯 Menu 렌더링:", {
     hasDataBinding,
@@ -137,7 +146,7 @@ export function MenuButton<T extends object>(
     error,
     staticDataLength: staticData.length,
     staticData,
-    childrenExists: !!children
+    childrenExists: !!children,
   });
 
   // Dynamic Collection: items prop 사용
@@ -146,24 +155,41 @@ export function MenuButton<T extends object>(
       const itemId = String(item.id !== undefined ? item.id : index);
       const processedItem = {
         id: itemId, // 고유 ID
-        label: String(item.label || item.text || item.name || `Item ${index + 1}`),
+        label: String(
+          item.label || item.text || item.name || `Item ${index + 1}`
+        ),
         isDisabled: Boolean(item.isDisabled),
         icon: item.icon as string | undefined,
         shortcut: item.shortcut as string | undefined,
         description: item.description as string | undefined,
         children: Array.isArray(item.children) ? item.children : undefined, // 원본 children 유지
       };
-      console.log("🔸 메뉴 아이템 변환:", { index, originalItem: item, processedItem });
+      console.log("🔸 메뉴 아이템 변환:", {
+        index,
+        originalItem: item,
+        processedItem,
+      });
       return processedItem;
     });
 
     console.log("✅ Menu Dynamic Collection - items:", menuItems);
     console.log("✅ Menu items 개수:", menuItems.length);
-    console.log("✅ Menu items 상세:", menuItems.map(item => ({ id: item.id, label: item.label, hasChildren: !!item.children })));
+    console.log(
+      "✅ Menu items 상세:",
+      menuItems.map((item) => ({
+        id: item.id,
+        label: item.label,
+        hasChildren: !!item.children,
+      }))
+    );
 
     // Recursive render function for menu items with submenus
-    const renderMenuItem = (item: typeof menuItems[0]) => {
-      console.log("🔹 renderMenuItem 호출:", { id: item.id, label: item.label, hasChildren: !!item.children });
+    const renderMenuItem = (item: (typeof menuItems)[0]) => {
+      console.log("🔹 renderMenuItem 호출:", {
+        id: item.id,
+        label: item.label,
+        hasChildren: !!item.children,
+      });
 
       const hasSubmenu = item.children && item.children.length > 0;
 
@@ -172,7 +198,9 @@ export function MenuButton<T extends object>(
           <span className="menu-item-content">
             {item.icon && <span className="menu-item-icon">{item.icon}</span>}
             <span className="menu-item-label">{item.label}</span>
-            {item.shortcut && <kbd className="menu-item-shortcut">{item.shortcut}</kbd>}
+            {item.shortcut && (
+              <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
+            )}
           </span>
           {item.description && (
             <span className="menu-item-description">{item.description}</span>
@@ -182,25 +210,34 @@ export function MenuButton<T extends object>(
 
       if (hasSubmenu) {
         // Convert children to same format as parent items
-        const submenuItems = item.children!.map((child: any, childIndex: number) => ({
-          id: String(child.id || `${item.id}-${childIndex}`),
-          label: String(child.label || child.text || child.name || `Item ${childIndex + 1}`),
-          isDisabled: Boolean(child.isDisabled),
-          icon: child.icon as string | undefined,
-          shortcut: child.shortcut as string | undefined,
-          description: child.description as string | undefined,
-          children: Array.isArray(child.children) ? child.children : undefined,
-          ...child,
-        }));
+        const submenuItems = item.children!.map(
+          (child: any, childIndex: number) => ({
+            id: String(child.id || `${item.id}-${childIndex}`),
+            label: String(
+              child.label ||
+                child.text ||
+                child.name ||
+                `Item ${childIndex + 1}`
+            ),
+            isDisabled: Boolean(child.isDisabled),
+            icon: child.icon as string | undefined,
+            shortcut: child.shortcut as string | undefined,
+            description: child.description as string | undefined,
+            children: Array.isArray(child.children)
+              ? child.children
+              : undefined,
+            ...child,
+          })
+        );
 
-        console.log("🔹 서브메뉴 생성:", { parentId: item.id, submenuItemsCount: submenuItems.length });
+        console.log("🔹 서브메뉴 생성:", {
+          parentId: item.id,
+          submenuItemsCount: submenuItems.length,
+        });
 
         return (
           <SubmenuTrigger>
-            <AriaMenuItem
-              textValue={item.label}
-              isDisabled={item.isDisabled}
-            >
+            <AriaMenuItem textValue={item.label} isDisabled={item.isDisabled}>
               {content}
             </AriaMenuItem>
             <Popover>
@@ -220,10 +257,7 @@ export function MenuButton<T extends object>(
       console.log("🔹 일반 메뉴 아이템 생성:", item.id);
 
       return (
-        <AriaMenuItem
-          textValue={item.label}
-          isDisabled={item.isDisabled}
-        >
+        <AriaMenuItem textValue={item.label} isDisabled={item.isDisabled}>
           {content}
         </AriaMenuItem>
       );
@@ -237,7 +271,7 @@ export function MenuButton<T extends object>(
             items={menuItems}
             onAction={(key) => {
               console.log("Menu item selected:", key);
-              const selectedItem = menuItems.find(item => item.id === key);
+              const selectedItem = menuItems.find((item) => item.id === key);
               console.log("Selected item data:", selectedItem);
               // 이벤트 핸들러 실행 가능
             }}
@@ -273,10 +307,11 @@ export function MenuButton<T extends object>(
 }
 
 export function MenuItem(
-  props: Omit<MenuItemProps, 'children'> & { children?: React.ReactNode }
+  props: Omit<MenuItemProps, "children"> & { children?: React.ReactNode }
 ) {
-  let textValue = props.textValue ||
-    (typeof props.children === 'string' ? props.children : undefined);
+  let textValue =
+    props.textValue ||
+    (typeof props.children === "string" ? props.children : undefined);
   return (
     <AriaMenuItem {...props} textValue={textValue}>
       {({ hasSubmenu }) => (

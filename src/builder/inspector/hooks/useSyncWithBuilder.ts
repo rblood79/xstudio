@@ -62,8 +62,11 @@ export function useSyncWithBuilder(): void {
     // Inspector의 요소와 Builder store의 요소 비교
     // Note: computedStyle은 읽기 전용이므로 비교에서 제외
     // Store의 props에서 style과 computedStyle을 분리하여 비교
-    const { style: storeStyle, computedStyle: _storeComputedStyle, ...storeProps } =
-      currentElementInStore.props as Record<string, unknown>;
+    const {
+      style: storeStyle,
+      computedStyle: _storeComputedStyle,
+      ...storeProps
+    } = currentElementInStore.props as Record<string, unknown>;
 
     const inspectorElementJson = JSON.stringify({
       properties: selectedElement.properties,
@@ -174,12 +177,14 @@ export function useSyncWithBuilder(): void {
           // API 컬럼 변경 감지
           const currentApiColumns =
             selectedElement.dataBinding?.source === "api" &&
-            currentConfig && "columns" in currentConfig
+            currentConfig &&
+            "columns" in currentConfig
               ? currentConfig.columns
               : undefined;
           const newApiColumns =
             selectedElement.dataBinding?.source === "api" &&
-            newConfig && "columns" in newConfig
+            newConfig &&
+            "columns" in newConfig
               ? newConfig.columns
               : undefined;
           const apiColumnsChanged =
@@ -193,7 +198,9 @@ export function useSyncWithBuilder(): void {
             (selectedElement.dataBinding?.source === "static" &&
               columnMappingChanged) ||
             (selectedElement.dataBinding?.source === "supabase" &&
-              (supabaseTableChanged || supabaseColumnsChanged || columnMappingChanged))
+              (supabaseTableChanged ||
+                supabaseColumnsChanged ||
+                columnMappingChanged))
           ) {
             const childColumns = elements.filter(
               (el) =>
@@ -214,7 +221,10 @@ export function useSyncWithBuilder(): void {
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
                 columnMappingChanged,
-                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+                apiColumnsChanged:
+                  selectedElement.dataBinding?.source === "api"
+                    ? apiColumnsChanged
+                    : undefined,
                 currentApiColumns,
                 newApiColumns,
                 columnsToDelete: childColumns.map((c) => c.id),
@@ -247,15 +257,22 @@ export function useSyncWithBuilder(): void {
                 oldEndpoint: currentEndpoint,
                 newEndpoint: newEndpoint,
                 columnMappingChanged,
-                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+                apiColumnsChanged:
+                  selectedElement.dataBinding?.source === "api"
+                    ? apiColumnsChanged
+                    : undefined,
                 currentApiColumns,
                 newApiColumns,
               });
             }
           } else {
             console.log(
-              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지", {
-                apiColumnsChanged: selectedElement.dataBinding?.source === "api" ? apiColumnsChanged : undefined,
+              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지",
+              {
+                apiColumnsChanged:
+                  selectedElement.dataBinding?.source === "api"
+                    ? apiColumnsChanged
+                    : undefined,
                 currentApiColumns,
                 newApiColumns,
               }

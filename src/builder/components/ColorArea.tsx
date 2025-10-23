@@ -2,9 +2,9 @@ import {
   ColorArea as AriaColorArea,
   ColorAreaProps as AriaColorAreaProps,
   ColorThumb,
-} from 'react-aria-components';
+} from "react-aria-components";
 
-import './styles/ColorArea.css';
+import "./styles/ColorArea.css";
 
 export interface ColorAreaProps extends AriaColorAreaProps {}
 

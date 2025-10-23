@@ -18,7 +18,6 @@ export function ListBox<T extends object>({
   dataBinding,
   ...props
 }: ExtendedListBoxProps<T>) {
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
@@ -62,15 +61,18 @@ export function ListBox<T extends object>({
 
             // Mock API를 실제 fetch처럼 호출
             try {
-              const mockApiUrl = `MOCK_DATA${config.endpoint || '/countries'}`;
+              const mockApiUrl = `MOCK_DATA${config.endpoint || "/countries"}`;
               console.log("📡 ListBox Mock API 호출:", mockApiUrl);
 
               // apiConfig의 MOCK_DATA 함수 호출
-              const { apiConfig } = await import('../../services/api');
+              const { apiConfig } = await import("../../services/api");
               const mockFetch = apiConfig.MOCK_DATA;
 
               if (mockFetch) {
-                const data = await mockFetch(config.endpoint || '/countries', config.params);
+                const data = await mockFetch(
+                  config.endpoint || "/countries",
+                  config.params
+                );
                 const resultData = config.dataMapping.resultPath
                   ? (data as any)[config.dataMapping.resultPath]
                   : data;
@@ -102,7 +104,10 @@ export function ListBox<T extends object>({
                 ...config.headers,
                 "Content-Type": "application/json",
               },
-              body: config.method !== "GET" ? JSON.stringify(config.params) : undefined,
+              body:
+                config.method !== "GET"
+                  ? JSON.stringify(config.params)
+                  : undefined,
             }
           );
 

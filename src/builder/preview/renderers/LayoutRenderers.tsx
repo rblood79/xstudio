@@ -178,7 +178,9 @@ export const renderCard = (
       className={element.props.className}
       onClick={eventHandlers.onClick as unknown as () => void}
     >
-      {typeof element.props.children === "string" ? element.props.children : null}
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : null}
       {children.map((child) => renderElement(child, child.id))}
     </Card>
   );
@@ -229,8 +231,8 @@ export const renderButton = (
       {typeof element.props.children === "string"
         ? element.props.children
         : children.length === 0
-          ? "Button"
-          : null}
+        ? "Button"
+        : null}
       {children.map((child) => renderElement(child, child.id))}
     </Button>
   );
@@ -307,8 +309,16 @@ export const renderProgressBar = (
       className={element.props.className}
       label={String(element.props.label || "")}
       value={Number(element.props.value || 0)}
-      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : 0}
-      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : 100}
+      minValue={
+        element.props.minValue !== undefined
+          ? Number(element.props.minValue)
+          : 0
+      }
+      maxValue={
+        element.props.maxValue !== undefined
+          ? Number(element.props.maxValue)
+          : 100
+      }
       isIndeterminate={Boolean(element.props.isIndeterminate || false)}
     />
   );
@@ -329,8 +339,16 @@ export const renderMeter = (
       className={element.props.className}
       label={String(element.props.label || "")}
       value={Number(element.props.value || 0)}
-      minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : 0}
-      maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : 100}
+      minValue={
+        element.props.minValue !== undefined
+          ? Number(element.props.minValue)
+          : 0
+      }
+      maxValue={
+        element.props.maxValue !== undefined
+          ? Number(element.props.maxValue)
+          : 100
+      }
     />
   );
 };
