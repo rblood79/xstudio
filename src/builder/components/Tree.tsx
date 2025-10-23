@@ -1,4 +1,3 @@
-import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Tree as AriaTree,
@@ -13,6 +12,7 @@ import {
 import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
 import { MyCheckbox } from "./Checkbox";
 import type { DataBinding } from "../../types/unified";
+import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Tree.css";
 
@@ -22,54 +22,16 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
 
 export function Tree<T extends object>(props: MyTreeProps<T>) {
   const { dataBinding, children, ...restProps } = props;
-  const [treeData, setTreeData] = useState<Record<string, unknown>[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
-  const dataBindingKey = useMemo(
-    () => (dataBinding ? JSON.stringify(dataBinding) : null),
-    [dataBinding]
-  );
-
-  // DataBinding 처리
-  useEffect(() => {
-    if (dataBinding?.type === "collection" && dataBinding.source === "api") {
-      const config = dataBinding.config as {
-        baseUrl?: string;
-        endpoint?: string;
-        params?: Record<string, unknown>;
-      };
-
-      if (config.baseUrl === "MOCK_DATA") {
-        setLoading(true);
-
-        import("../../services/api")
-          .then(({ apiConfig }) => {
-            const mockFetch = apiConfig.MOCK_DATA;
-            if (mockFetch) {
-              mockFetch(config.endpoint || "/component-tree", config.params)
-                .then((data: unknown) => {
-                  console.log("🌳 Tree 데이터 로드:", data);
-                  setTreeData(Array.isArray(data) ? data : []);
-                  setLoading(false);
-                })
-                .catch((err: unknown) => {
-                  console.error("Tree API 오류:", err);
-                  setLoading(false);
-                });
-            } else {
-              setLoading(false);
-            }
-          })
-          .catch((err) => {
-            console.error("Tree import 오류:", err);
-            setLoading(false);
-          });
-      }
-    }
-    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataBindingKey]);
+  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  const {
+    data: treeData,
+    // loading, error는 Tree에서는 현재 사용하지 않음 (향후 로딩 UI 추가 시 사용 가능)
+  } = useCollectionData({
+    dataBinding,
+    componentName: "Tree",
+    fallbackData: [],
+  });
 
   // DataBinding이 있고 데이터가 로드된 경우
   if (dataBinding && treeData.length > 0) {

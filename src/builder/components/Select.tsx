@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React from "react";
 import {
   Button,
   FieldError,
@@ -15,6 +15,7 @@ import {
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
 import type { DataBinding } from "../../types/unified";
+import { useCollectionData } from "../hooks/useCollectionData";
 import "./styles/Select.css";
 
 export interface SelectProps<T extends object>
@@ -39,165 +40,28 @@ export function Select<T extends object>({
   dataBinding,
   ...props
 }: SelectProps<T>) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
-  const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
+  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  const {
+    data: boundData,
+    loading,
+    error,
+  } = useCollectionData({
+    dataBinding,
+    componentName: "Select",
+    fallbackData: [
+      { id: 1, name: "Option 1", value: "option-1" },
+      { id: 2, name: "Option 2", value: "option-2" },
+    ],
+  });
 
-  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
-  const dataBindingKey = useMemo(
-    () => (dataBinding ? JSON.stringify(dataBinding) : null),
-    [dataBinding]
-  );
-
-  // Static Collection 데이터 바인딩
-  useEffect(() => {
-    if (dataBinding?.type === "collection" && dataBinding.source === "static") {
-      console.log("📋 Select Static 데이터 바인딩:", dataBinding);
-
-      const staticConfig = dataBinding.config as { data?: unknown[] };
-      const data = staticConfig.data;
-
-      if (data && Array.isArray(data)) {
-        console.log("✅ Select Static 데이터 설정:", data);
-        setStaticData(data as Record<string, unknown>[]);
-      } else {
-        console.warn("⚠️ Select Static 데이터가 배열이 아님 또는 없음");
-        setStaticData([]);
-      }
-    }
-    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataBindingKey]);
-
-  // API Collection 데이터 바인딩
-  useEffect(() => {
-    const fetchData = async () => {
-      if (dataBinding?.type === "collection" && dataBinding.source === "api") {
-        const config = dataBinding.config as {
-          baseUrl?: string;
-          endpoint?: string;
-          method?: string;
-          headers?: Record<string, string>;
-          params?: Record<string, unknown>;
-          dataMapping: {
-            resultPath?: string;
-            idField: string;
-            labelField: string;
-          };
-        };
-
-        if (!config.baseUrl || !config.endpoint) {
-          console.warn("⚠️ Select: API 설정 불완전");
-          return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        console.log("🌐 Select API 호출:", {
-          baseUrl: config.baseUrl,
-          endpoint: config.endpoint,
-        });
-
-        try {
-          // MOCK_DATA 특별 처리
-          if (config.baseUrl === "MOCK_DATA") {
-            console.log("🎭 Select MOCK_DATA 모드 - Mock API 호출");
-
-            // Mock API를 실제 fetch처럼 호출
-            try {
-              const mockApiUrl = `MOCK_DATA${config.endpoint || "/status"}`;
-              console.log("📡 Select Mock API 호출:", mockApiUrl);
-
-              // apiConfig의 MOCK_DATA 함수 호출
-              const { apiConfig } = await import("../../services/api");
-              const mockFetch = apiConfig.MOCK_DATA;
-
-              if (mockFetch) {
-                const data = await mockFetch(
-                  config.endpoint || "/status",
-                  config.params
-                );
-                const resultData = config.dataMapping.resultPath
-                  ? (data as Record<string, unknown>)[config.dataMapping.resultPath]
-                  : data;
-
-                setApiData(Array.isArray(resultData) ? resultData : []);
-              }
-            } catch (err) {
-              console.error("Select Mock API 오류:", err);
-              // Fallback: 기본 샘플 데이터
-              const mockData = Array.from({ length: 10 }, (_, i) => ({
-                id: i + 1,
-                name: `Option ${i + 1}`,
-                value: `option-${i + 1}`,
-              }));
-              setApiData(mockData);
-            }
-
-            setLoading(false);
-            return;
-          }
-
-          // 일반 API 호출
-          const response = await fetch(`${config.baseUrl}${config.endpoint}`, {
-            method: config.method || "GET",
-            headers: {
-              ...config.headers,
-              "Content-Type": "application/json",
-            },
-            body:
-              config.method !== "GET"
-                ? JSON.stringify(config.params)
-                : undefined,
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const resultData = config.dataMapping.resultPath
-            ? data[config.dataMapping.resultPath]
-            : data;
-
-          setApiData(resultData);
-        } catch (err) {
-          console.error("Select API 호출 오류:", err);
-          setError(err instanceof Error ? err.message : String(err));
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataBindingKey]);
-
-  // ComboBox와 동일한 방식으로 placeholder 처리
-  const stableProps = useMemo(() => {
-    const processedPlaceholder = placeholder
-      ? String(placeholder).trim()
-      : undefined;
-    return {
-      label,
-      description,
-      errorMessage,
-      placeholder: processedPlaceholder,
-    };
-  }, [label, description, errorMessage, placeholder]);
-
-  const hasVisibleLabel = stableProps.label && String(stableProps.label).trim();
+  // Label 및 ARIA 처리
+  const hasVisibleLabel = label && String(label).trim();
   const ariaLabel = hasVisibleLabel
     ? undefined
-    : props["aria-label"] || stableProps.placeholder || "Select an option";
+    : props["aria-label"] || placeholder || "Select an option";
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   const hasDataBinding = dataBinding?.type === "collection";
-  const boundData = dataBinding?.source === "static" ? staticData : apiData;
 
   // Dynamic Collection: items prop 사용
   if (hasDataBinding && !loading && !error && boundData.length > 0) {
@@ -232,12 +96,10 @@ export function Select<T extends object>({
         {...props}
         className="react-aria-Select"
         aria-label={ariaLabel}
-        placeholder={stableProps.placeholder}
+        placeholder={placeholder}
       >
         {hasVisibleLabel && (
-          <Label className="react-aria-Label">
-            {String(stableProps.label)}
-          </Label>
+          <Label className="react-aria-Label">{String(label)}</Label>
         )}
 
         <Button className="react-aria-Button">
@@ -247,19 +109,19 @@ export function Select<T extends object>({
           </span>
         </Button>
 
-        {stableProps.description && String(stableProps.description).trim() && (
+        {description && String(description).trim() && (
           <Text slot="description" className="react-aria-Description">
-            {String(stableProps.description)}
+            {String(description)}
           </Text>
         )}
 
-        {stableProps.errorMessage && (
+        {errorMessage && (
           <FieldError className="react-aria-FieldError">
-            {typeof stableProps.errorMessage === "function"
-              ? stableProps.errorMessage({
+            {typeof errorMessage === "function"
+              ? errorMessage({
                   isInvalid: true,
                 } as ValidationResult)
-              : String(stableProps.errorMessage)}
+              : String(errorMessage)}
           </FieldError>
         )}
 
@@ -292,13 +154,11 @@ export function Select<T extends object>({
         {...props}
         className="react-aria-Select"
         aria-label={ariaLabel}
-        placeholder={stableProps.placeholder}
+        placeholder={placeholder}
         isDisabled
       >
         {hasVisibleLabel && (
-          <Label className="react-aria-Label">
-            {String(stableProps.label)}
-          </Label>
+          <Label className="react-aria-Label">{String(label)}</Label>
         )}
 
         <Button className="react-aria-Button">
@@ -322,13 +182,11 @@ export function Select<T extends object>({
         {...props}
         className="react-aria-Select"
         aria-label={ariaLabel}
-        placeholder={stableProps.placeholder}
+        placeholder={placeholder}
         isDisabled
       >
         {hasVisibleLabel && (
-          <Label className="react-aria-Label">
-            {String(stableProps.label)}
-          </Label>
+          <Label className="react-aria-Label">{String(label)}</Label>
         )}
 
         <Button className="react-aria-Button">
@@ -351,10 +209,10 @@ export function Select<T extends object>({
       {...props}
       className="react-aria-Select"
       aria-label={ariaLabel}
-      placeholder={stableProps.placeholder}
+      placeholder={placeholder}
     >
       {hasVisibleLabel && (
-        <Label className="react-aria-Label">{String(stableProps.label)}</Label>
+        <Label className="react-aria-Label">{String(label)}</Label>
       )}
 
       <Button className="react-aria-Button">
@@ -364,17 +222,17 @@ export function Select<T extends object>({
         </span>
       </Button>
 
-      {stableProps.description && String(stableProps.description).trim() && (
+      {description && String(description).trim() && (
         <Text slot="description" className="react-aria-Description">
-          {String(stableProps.description)}
+          {String(description)}
         </Text>
       )}
 
-      {stableProps.errorMessage && (
+      {errorMessage && (
         <FieldError className="react-aria-FieldError">
-          {typeof stableProps.errorMessage === "function"
-            ? stableProps.errorMessage({ isInvalid: true } as ValidationResult)
-            : String(stableProps.errorMessage)}
+          {typeof errorMessage === "function"
+            ? errorMessage({ isInvalid: true } as ValidationResult)
+            : String(errorMessage)}
         </FieldError>
       )}
 

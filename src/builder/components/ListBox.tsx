@@ -1,4 +1,3 @@
-import { useState, useEffect, useMemo } from "react";
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -6,6 +5,7 @@ import {
   ListBoxProps,
 } from "react-aria-components";
 import type { DataBinding } from "../../types/unified";
+import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/ListBox.css";
 
@@ -18,169 +18,90 @@ export function ListBox<T extends object>({
   dataBinding,
   ...props
 }: ExtendedListBoxProps<T>) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
+  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  const {
+    data: boundData,
+    loading,
+    error,
+  } = useCollectionData({
+    dataBinding,
+    componentName: "ListBox",
+    fallbackData: [
+      { id: 1, name: "User 1", email: "user1@example.com", role: "Admin" },
+      { id: 2, name: "User 2", email: "user2@example.com", role: "User" },
+    ],
+  });
 
-  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
-  const dataBindingKey = useMemo(
-    () => (dataBinding ? JSON.stringify(dataBinding) : null),
-    [dataBinding]
-  );
+  // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
+  const hasDataBinding = dataBinding?.type === "collection";
 
-  useEffect(() => {
-    // API Collection 데이터 바인딩 처리
-    const fetchData = async () => {
-      if (dataBinding?.type === "collection" && dataBinding.source === "api") {
-        const config = dataBinding.config as {
-          baseUrl: string;
-          customUrl?: string;
-          endpoint: string;
-          method: string;
-          params: Record<string, unknown>;
-          headers: Record<string, string>;
-          dataMapping: {
-            resultPath: string;
-            idKey: string;
-            totalKey: string;
-          };
-        };
-
-        if (!config.baseUrl || !config.endpoint) {
-          console.warn("⚠️ ListBox: API 설정 불완전");
-          return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        console.log("🌐 ListBox API 호출:", {
-          baseUrl: config.baseUrl,
-          endpoint: config.endpoint,
-          params: config.params,
-        });
-
-        try {
-          // MOCK_DATA 특별 처리
-          if (config.baseUrl === "MOCK_DATA") {
-            console.log("🎭 ListBox MOCK_DATA 모드 - Mock API 호출");
-
-            // Mock API를 실제 fetch처럼 호출
-            try {
-              const mockApiUrl = `MOCK_DATA${config.endpoint || "/countries"}`;
-              console.log("📡 ListBox Mock API 호출:", mockApiUrl);
-
-              // apiConfig의 MOCK_DATA 함수 호출
-              const { apiConfig } = await import("../../services/api");
-              const mockFetch = apiConfig.MOCK_DATA;
-
-              if (mockFetch) {
-                const data = await mockFetch(
-                  config.endpoint || "/countries",
-                  config.params
-                );
-                const resultData = config.dataMapping.resultPath
-                  ? (data as Record<string, unknown>)[config.dataMapping.resultPath]
-                  : data;
-
-                setApiData(Array.isArray(resultData) ? resultData : []);
-              }
-            } catch (err) {
-              console.error("ListBox Mock API 오류:", err);
-              // Fallback: 기본 샘플 데이터
-              const mockData = Array.from({ length: 10 }, (_, i) => ({
-                id: i + 1,
-                name: `User ${i + 1}`,
-                email: `user${i + 1}@example.com`,
-                role: i % 2 === 0 ? "Admin" : "User",
-              }));
-              setApiData(mockData);
-            }
-
-            setLoading(false);
-            return;
-          }
-
-          // 일반 API 호출
-          const response = await fetch(
-            `${config.baseUrl}${config.customUrl || config.endpoint}`,
-            {
-              method: config.method || "GET",
-              headers: {
-                ...config.headers,
-                "Content-Type": "application/json",
-              },
-              body:
-                config.method !== "GET"
-                  ? JSON.stringify(config.params)
-                  : undefined,
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const resultData = config.dataMapping.resultPath
-            ? data[config.dataMapping.resultPath]
-            : data;
-
-          setApiData(resultData);
-        } catch (err) {
-          console.error("ListBox API 호출 오류:", err);
-          setError(err instanceof Error ? err.message : String(err));
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataBindingKey]);
-
-  return (
-    <AriaListBox {...props} className="react-aria-ListBox">
-      {loading && (
-        <AriaListBoxItem
-          key="loading"
-          value={{}}
-          isDisabled
-          className="react-aria-ListBoxItem"
-        >
-          ⏳ 데이터 로딩 중...
-        </AriaListBoxItem>
-      )}
-      {error && (
-        <AriaListBoxItem
-          key="error"
-          value={{}}
-          isDisabled
-          className="react-aria-ListBoxItem"
-        >
-          ❌ 오류: {error}
-        </AriaListBoxItem>
-      )}
-      {!loading &&
-        !error &&
-        apiData.length > 0 &&
-        apiData.map((item, index) => (
+  // Dynamic Collection: items prop 사용
+  if (hasDataBinding) {
+    // Loading 상태
+    if (loading) {
+      return (
+        <AriaListBox {...props} className="react-aria-ListBox">
           <AriaListBoxItem
-            key={String(item.id || index)}
-            value={{ id: item.id || index } as object}
+            key="loading"
+            value={{}}
+            isDisabled
             className="react-aria-ListBoxItem"
           >
-            {String(
-              item.name || item.title || item.label || `Item ${index + 1}`
-            )}
+            ⏳ 데이터 로딩 중...
           </AriaListBoxItem>
-        ))}
-      {!loading &&
-        !error &&
-        apiData.length === 0 &&
-        (typeof children === "function" ? null : children)}
+        </AriaListBox>
+      );
+    }
+
+    // Error 상태
+    if (error) {
+      return (
+        <AriaListBox {...props} className="react-aria-ListBox">
+          <AriaListBoxItem
+            key="error"
+            value={{}}
+            isDisabled
+            className="react-aria-ListBoxItem"
+          >
+            ❌ 오류: {error}
+          </AriaListBoxItem>
+        </AriaListBox>
+      );
+    }
+
+    // 데이터가 로드되었을 때
+    if (boundData.length > 0) {
+      const items = boundData.map((item, index) => ({
+        id: String(item.id || index),
+        label: String(
+          item.name || item.title || item.label || `Item ${index + 1}`
+        ),
+        ...item,
+      }));
+
+      console.log("✅ ListBox Dynamic Collection - items:", items);
+
+      return (
+        <AriaListBox {...props} className="react-aria-ListBox" items={items}>
+          {(item) => (
+            <AriaListBoxItem
+              key={item.id}
+              id={item.id}
+              textValue={item.label}
+              className="react-aria-ListBoxItem"
+            >
+              {item.label}
+            </AriaListBoxItem>
+          )}
+        </AriaListBox>
+      );
+    }
+  }
+
+  // Static Children (기존 방식)
+  return (
+    <AriaListBox {...props} className="react-aria-ListBox">
+      {children}
     </AriaListBox>
   );
 }

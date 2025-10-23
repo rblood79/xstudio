@@ -1,4 +1,3 @@
-import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Menu,
@@ -11,6 +10,7 @@ import {
   SubmenuTrigger,
 } from "react-aria-components";
 import type { DataBinding } from "../../types/unified";
+import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Menu.css";
 
@@ -27,139 +27,42 @@ export function MenuButton<T extends object>({
   dataBinding,
   ...props
 }: MenuButtonProps<T>) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
-
-  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
-  const dataBindingKey = useMemo(
-    () => (dataBinding ? JSON.stringify(dataBinding) : null),
-    [dataBinding]
-  );
-
-  useEffect(() => {
-    // Static Collection 데이터 바인딩 처리
-    if (dataBinding?.type === "collection" && dataBinding.source === "static") {
-      console.log("📋 Menu Static 데이터 바인딩:", dataBinding);
-      console.log("📋 Menu dataBinding.config:", dataBinding.config);
-      console.log("💡 서브메뉴 예시 구조:", {
-        example: [
-          {
-            label: "File",
-            icon: "📁",
-            children: [
-              { label: "New", shortcut: "⌘N" },
-              { label: "Open", shortcut: "⌘O" },
-            ],
-          },
-          { label: "Edit", icon: "✏️" },
+  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  const {
+    data: boundData,
+    loading,
+    error,
+  } = useCollectionData({
+    dataBinding,
+    componentName: "Menu",
+    fallbackData: [
+      {
+        label: "File",
+        icon: "📁",
+        children: [
+          { label: "New", shortcut: "⌘N" },
+          { label: "Open", shortcut: "⌘O" },
         ],
-      });
-
-      // Static 데이터는 config.data에 저장됨
-      const staticConfig = dataBinding.config as { data?: unknown[] };
-      const data = staticConfig.data;
-
-      console.log("📋 Menu config.data:", data);
-      console.log("📋 Menu Array.isArray(data):", Array.isArray(data));
-
-      if (data && Array.isArray(data)) {
-        console.log("✅ Menu Static 데이터 설정:", data);
-        setStaticData(data as Record<string, unknown>[]);
-      } else {
-        console.warn("⚠️ Menu Static 데이터가 배열이 아님 또는 없음");
-        setStaticData([]);
-      }
-    }
-
-    // API Collection 데이터 바인딩 처리
-    const fetchData = async () => {
-      if (dataBinding?.type === "collection" && dataBinding.source === "api") {
-        const config = dataBinding.config as {
-          baseUrl: string;
-          customUrl?: string;
-          endpoint: string;
-          method: string;
-          params: Record<string, unknown>;
-          headers: Record<string, string>;
-          dataMapping: {
-            resultPath: string;
-            idKey: string;
-            totalKey: string;
-          };
-        };
-
-        if (!config.baseUrl || !config.endpoint) {
-          console.warn("⚠️ Menu: API 설정 불완전");
-          return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        console.log("🌐 Menu API 호출:", {
-          baseUrl: config.baseUrl,
-          endpoint: config.endpoint,
-          params: config.params,
-        });
-
-        try {
-          const response = await fetch(
-            `${config.baseUrl}${config.customUrl || config.endpoint}`,
-            {
-              method: config.method || "GET",
-              headers: {
-                ...config.headers,
-                "Content-Type": "application/json",
-              },
-              body:
-                config.method !== "GET"
-                  ? JSON.stringify(config.params)
-                  : undefined,
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const resultData = config.dataMapping.resultPath
-            ? data[config.dataMapping.resultPath]
-            : data;
-
-          setStaticData(resultData);
-        } catch (err) {
-          console.error("Menu API 호출 오류:", err);
-          setError(err instanceof Error ? err.message : String(err));
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataBindingKey]);
+      },
+      { label: "Edit", icon: "✏️" },
+    ],
+  });
 
   // 데이터 바인딩이 있는 경우
-  const hasDataBinding =
-    dataBinding?.source &&
-    (dataBinding.source === "static" || dataBinding.source === "api");
+  const hasDataBinding = dataBinding?.type === "collection";
 
   console.log("🎯 Menu 렌더링:", {
     hasDataBinding,
     loading,
     error,
-    staticDataLength: staticData.length,
-    staticData,
+    boundDataLength: boundData.length,
+    boundData,
     childrenExists: !!children,
   });
 
   // Dynamic Collection: items prop 사용
-  if (hasDataBinding && !loading && !error && staticData.length > 0) {
-    const menuItems = staticData.map((item, index) => {
+  if (hasDataBinding && !loading && !error && boundData.length > 0) {
+    const menuItems = boundData.map((item, index) => {
       const itemId = String(item.id !== undefined ? item.id : index);
       const processedItem = {
         id: itemId, // 고유 ID
