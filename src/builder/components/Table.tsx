@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
+import './styles/Table.css';
 import {
   ChevronDown,
   ChevronUp,

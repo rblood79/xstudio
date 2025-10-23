@@ -7,266 +7,444 @@
 @import "../theme.css";
 
 @layer components {
-  
+
   .react-aria-Table {
-    padding: 0.286rem;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--overlay-background);
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--spacing-sm);
+    background: var(--color-background);
     outline: none;
     border-spacing: 0;
-    min-height: 100px;
+    min-height: var(--spacing-xl);
     align-self: start;
+    width: 100%;
     max-width: 100%;
     word-break: break-word;
     forced-color-adjust: none;
-  
+    overflow: hidden;
+
+    table {
+      display: grid;
+    }
+
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: -1px;
     }
-  
+
+    .react-aria-TableVirtualizer {
+      overflow: auto;
+      position: relative;
+      overflow-anchor: none;
+    }
+
+    .react-aria-Sticky {
+      display: grid;
+      position: sticky;
+      top: 0px;
+      z-index: 1;
+    }
+
     .react-aria-TableHeader {
-      color: var(--text-color);
-  
-      &:after {
-        content: '';
-        display: table-row;
-        height: 2px;
-      }
-  
+      font-size: var(--text-sm);
+      color: var(--color-primary-600);
+      background: var(--color-gray-200);
+
+      /*  &:after {
+            content: '';
+            display: table-row;
+            height: var(--spacing-2xs);
+        }*/
+
       & tr:last-child .react-aria-Column {
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--color-gray-300);
         cursor: default;
       }
+
+      .react-aria-Column {
+        border-right: 1px solid var(--color-gray-300);
+
+        &:last-child {
+          border-right: none;
+        }
+
+        .cursor-pointer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--spacing-sm);
+        }
+      }
+
+      .column-group-header {
+        display: flex;
+        align-items: center;
+      }
     }
-  
+
+    .react-aria-Resizable {
+      .react-aria-ColumnResizer {
+        position: absolute;
+        right: 0;
+        top: 10%;
+        bottom: 10%;
+        width: var(--spacing-2xs);
+        background-color: var(--color-sky-500);
+        height: 80%;
+        flex: 0 0 auto;
+        touch-action: none;
+        box-sizing: border-box;
+        border: var(--spacing-2xs);
+        border-style: none solid;
+        border-color: transparent;
+        background-clip: content-box;
+        cursor: col-resize;
+
+        &[data-focus-visible] {
+          background-color: var(--focus-ring-color);
+        }
+
+        &[data-resizing] {
+          border-color: var(--focus-ring-color);
+          background-color: transparent;
+        }
+      }
+    }
+
     .react-aria-Row {
-      --radius-top: 6px;
-      --radius-bottom: 6px;
-      --radius: var(--radius-top) var(--radius-top) var(--radius-bottom) var(--radius-bottom);
-      border-radius: var(--radius);
-      clip-path: inset(0 round var(--radius)); /* firefox */
+      /*--radius-top: var(--spacing-sm);
+        --radius-bottom: var(--spacing-sm);
+        --radius: var(--radius-top) var(--radius-top) var(--radius-bottom) var(--radius-bottom);
+        border-radius: var(--radius);
+        clip-path: inset(0 round var(--radius));*/
+      /* firefox */
+      display: flex;
       outline: none;
       cursor: default;
       color: var(--text-color);
-      font-size: 1.072rem;
+      font-size: var(--text-sm);
       position: relative;
       transform: scale(1);
-  
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -2px;
       }
-  
+
       &[data-pressed] {
-        background: var(--gray-100);
+        background: var(--color-gray-100);
       }
-  
+
       &[data-selected] {
         background: var(--highlight-background);
         color: var(--highlight-foreground);
         --focus-ring-color: var(--highlight-foreground);
-  
+
         &[data-focus-visible],
         .react-aria-Cell[data-focus-visible] {
           outline-offset: -4px;
         }
       }
-  
+
       &[data-disabled] {
         color: var(--text-color-disabled);
       }
     }
-  
+
     .react-aria-Cell,
     .react-aria-Column {
-      padding: 4px 8px;
+      padding: var(--spacing-sm) var(--spacing-sm);
       text-align: left;
       outline: none;
-  
+      position: relative;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      border-right: 1px solid var(--border-color);
+
+      &:last-child {
+        flex: 1;
+        border-right: none;
+      }
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -2px;
       }
     }
-  
+
     .react-aria-Cell {
       transform: translateZ(0);
-  
+
       &:first-child {
         border-radius: var(--radius-top) 0 0 var(--radius-bottom);
       }
-  
+
       &:last-child {
         border-radius: 0 var(--radius-top) var(--radius-bottom) 0;
       }
     }
-  
+
     /* join selected items if :has selector is supported */
     @supports selector(:has(.foo)) {
+
       .react-aria-Row[data-selected]:has(+ [data-selected]),
       .react-aria-Row[data-selected]:has(+ .react-aria-DropIndicator + [data-selected]) {
         --radius-bottom: 0px;
       }
-  
-      .react-aria-Row[data-selected] + [data-selected],
-      .react-aria-Row[data-selected] + .react-aria-DropIndicator + [data-selected]{
+
+      .react-aria-Row[data-selected]+[data-selected],
+      .react-aria-Row[data-selected]+.react-aria-DropIndicator+[data-selected] {
         --radius-top: 0px;
       }
     }
   }
-  
+
   :where(.react-aria-Row) .react-aria-Checkbox {
     --selected-color: var(--highlight-foreground);
     --selected-color-pressed: var(--highlight-foreground-pressed);
     --checkmark-color: var(--highlight-background);
     --background-color: var(--highlight-background);
   }
-  
+
   .react-aria-Row[data-href] {
     cursor: pointer;
   }
-  
+
   .react-aria-Column {
     .sort-indicator {
-      padding: 0 2px;
+      padding: 0 var(--spacing-2xs);
     }
-  
+
     &:not([data-sort-direction]) .sort-indicator {
       visibility: hidden;
     }
   }
-  
+
   .react-aria-TableBody {
+    position: relative;
+
     &[data-empty] {
       text-align: center;
       font-style: italic;
     }
-  }
-  
-  .react-aria-ResizableTableContainer {
-    max-width: 400px;
-    overflow: auto;
-    position: relative;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--background-color);
-  
-    .react-aria-Table {
-      border: none;
-    }
-  
-    .column-name,
-    .react-aria-Button {
-      --background-color: var(--overlay-background);
-      flex: 1;
-      font: inherit;
-      text-align: start;
-      color: inherit;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border-color: transparent;
-      transition: background 200ms;
-      &[data-hovered] {
-        background: var(--highlight-hover);
-      }
-  
-      &[data-pressed] {
-        background: var(--highlight-pressed);
-        box-shadow: none;
-      }
-  
-      &:focus-visible {
-        outline: 2px solid var(--focus-ring-color);
-      }
-    }
-  
-    .react-aria-ColumnResizer {
-      width: 15px;
-      background-color: grey;
-      height: 25px;
-      flex: 0 0 auto;
-      touch-action: none;
-      box-sizing: border-box;
-      border: 5px;
-      border-style: none solid;
-      border-color: transparent;
-      background-clip: content-box;
-  
-      &[data-resizable-direction=both] {
-        cursor: ew-resize;
-      }
-  
-      &[data-resizable-direction=left] {
-        cursor: e-resize;
-      }
-  
-      &[data-resizable-direction=right] {
-        cursor: w-resize;
-      }
-  
-      &[data-focus-visible] {
-        background-color: var(--focus-ring-color);
-      }
-  
-      &[data-resizing] {
-        border-color: var(--focus-ring-color);
-        background-color: transparent;
-      }
-    }
-  
-    .react-aria-Column,
-    .react-aria-Cell {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+
+    .react-aria-Row {
+      position: absolute;
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+      top: 0;
+      left: 0;
+      border-bottom: 1px solid var(--border-color);
     }
   }
-  
+
   .react-aria-Row {
     &[data-dragging] {
       opacity: 0.6;
       transform: translateZ(0);
     }
-  
-    [slot=drag] {
+
+    [slot="drag"] {
       all: unset;
-      width: 15px;
+      width: var(--spacing-sm);
       text-align: center;
-  
+
       &[data-focus-visible] {
-        border-radius: 4px;
+        border-radius: var(--spacing-sm);
         outline: 2px solid var(--focus-ring-color);
       }
     }
   }
-  
+
   .react-aria-DropIndicator[data-drop-target] {
     outline: 1px solid var(--highlight-background);
     transform: translateZ(0);
   }
-  
+
   .react-aria-Table[data-drop-target] {
     outline: 2px solid var(--highlight-background);
     outline-offset: -1px;
-    background: var(--highlight-overlay)
+    background: var(--highlight-overlay);
   }
-  
+
   .react-aria-Row[data-drop-target] {
     outline: 2px solid var(--highlight-background);
-    background: var(--highlight-overlay)
+    background: var(--highlight-overlay);
   }
-  
+
   .react-aria-DropIndicator[data-drop-target] {
     outline: 1px solid var(--highlight-background);
     transform: translateZ(0);
   }
-  
+
   .react-aria-Cell img {
-    height: 30px;
-    width: 30px;
+    height: var(--spacing-xl);
+    width: var(--spacing-xl);
     object-fit: cover;
     display: block;
+  }
+
+  /* Pagination 컴포넌트 스타일 */
+  .react-aria-Pagination {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: var(--text-sm);
+    gap: var(--spacing-sm);
+  }
+
+  /* Card 컴포넌트 스타일 */
+  .react-aria-Card {
+    display: block;
+    border-radius: var(--radius-2xl);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    min-height: 96px;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .card-title {
+        font-size: var(--text-md);
+        font-weight: 600;
+      }
+    }
+
+    .card-description {
+      font-size: var(--text-sm);
+      color: var(--color-gray-600);
+    }
+
+    .card-content {
+      font-size: var(--text-sm);
+      color: var(--color-gray-600);
+    }
+  }
+
+  /* Enhanced Pagination Styles */
+  .react-aria-Pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .react-aria-PageSizeSelector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .react-aria-PageSizeLabel {
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .react-aria-PageSizeSelect {
+    background-color: #ffffff;
+  }
+
+  .react-aria-PageSizeSelect:focus {
+    outline: none;
+  }
+
+  .react-aria-PageSizeText {
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .react-aria-PageNavigation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+  }
+
+  .react-aria-PageNumbers {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+  }
+
+  .react-aria-PageButton {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: calc(var(--spacing-xl) * 1.125);
+    height: calc(var(--spacing-xl) * 1.125);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 calc(var(--spacing-2xs) * 2);
+  }
+
+  .react-aria-PageButton:hover:not(:disabled) {
+    background-color: var(--color-primary-500);
+  }
+
+  .react-aria-PageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .react-aria-PageButton.active {
+    background-color: var(--color-primary-900);
+    color: var(--color-white);
+  }
+
+  .react-aria-PageButton.active:hover {
+    background-color: var(--color-primary-950);
+  }
+
+  .react-aria-GoToPage {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+  }
+
+  .react-aria-GoToPageLabel {
+    white-space: nowrap;
+  }
+
+  .react-aria-GoToPageInput {
+    width: var(--spacing-xl);
+    text-align: center;
+  }
+
+  .react-aria-GoToPageInput:focus {
+    outline: none;
+    border-color: var(--color-primary-700);
+    box-shadow: var(--drop-shadow-md);
+  }
+
+  .react-aria-GoToPageButton:hover:not(:disabled) {
+    background-color: var(--color-primary-900);
+  }
+
+  .react-aria-GoToPageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .react-aria-PageInfo {
+    color: #6b7280;
+    white-space: nowrap;
+    font-size: var(--text-xs);
+  }
+
+  .react-aria-LoadingText {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
   }
 }
