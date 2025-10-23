@@ -16,7 +16,8 @@
       align-items: center;
       max-width: 250px;
 
-      &[data-focus-visible] {
+      &[data-focus-visible],
+      &[data-pressed] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -1px;
       }

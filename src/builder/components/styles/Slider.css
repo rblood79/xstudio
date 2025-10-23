@@ -44,6 +44,7 @@
 
       &[data-dragging] {
         background: var(--highlight-background-pressed);
+        outline: 2px solid var(--focus-ring-color);
       }
 
       &[data-focus-visible] {
