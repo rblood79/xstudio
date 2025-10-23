@@ -7,6 +7,7 @@ import { Element } from '../../types/store';
 // ElementUtils는 현재 사용되지 않음
 import { MessageService } from '../../utils/messaging';
 import { elementsApi } from '../../services/api';
+import { useInspectorState } from '../inspector/hooks/useInspectorState';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -28,6 +29,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     const elements = useStore((state) => state.elements);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const isSyncingToBuilder = useInspectorState((state) => state.isSyncingToBuilder);
     // updateElementProps는 useZundoActions에서 가져옴
 
     // 기존 히스토리 시스템에서 필요한 함수들만 가져오기
@@ -271,6 +273,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
             //console.log('Element selected from preview:', event.data.elementId);
+
+            // Inspector → Builder 동기화 중이면 Preview의 업데이트 무시 (무한 루프 방지)
+            if (isSyncingToBuilder) {
+                console.log('⏸️ Inspector 동기화 중 - Preview 업데이트 무시');
+                return;
+            }
+
             setSelectedElement(
                 event.data.elementId,
                 event.data.payload?.props,

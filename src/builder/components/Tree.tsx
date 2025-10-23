@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Tree as AriaTree,
@@ -24,6 +24,12 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
   const { dataBinding, children, ...restProps } = props;
   const [treeData, setTreeData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
+  const dataBindingKey = useMemo(
+    () => (dataBinding ? JSON.stringify(dataBinding) : null),
+    [dataBinding]
+  );
 
   // DataBinding 처리
   useEffect(() => {
@@ -61,7 +67,9 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
           });
       }
     }
-  }, [dataBinding]);
+    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBindingKey]);
 
   // DataBinding이 있고 데이터가 로드된 경우
   if (dataBinding && treeData.length > 0) {

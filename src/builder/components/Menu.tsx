@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Menu,
@@ -30,6 +30,12 @@ export function MenuButton<T extends object>({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
+
+  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
+  const dataBindingKey = useMemo(
+    () => (dataBinding ? JSON.stringify(dataBinding) : null),
+    [dataBinding]
+  );
 
   useEffect(() => {
     // Static Collection 데이터 바인딩 처리
@@ -133,7 +139,9 @@ export function MenuButton<T extends object>({
     };
 
     fetchData();
-  }, [dataBinding]);
+    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBindingKey]);
 
   // 데이터 바인딩이 있는 경우
   const hasDataBinding =

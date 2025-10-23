@@ -44,6 +44,12 @@ export function Select<T extends object>({
   const [staticData, setStaticData] = useState<Record<string, unknown>[]>([]);
   const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
 
+  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
+  const dataBindingKey = useMemo(
+    () => (dataBinding ? JSON.stringify(dataBinding) : null),
+    [dataBinding]
+  );
+
   // Static Collection 데이터 바인딩
   useEffect(() => {
     if (dataBinding?.type === "collection" && dataBinding.source === "static") {
@@ -60,7 +66,9 @@ export function Select<T extends object>({
         setStaticData([]);
       }
     }
-  }, [dataBinding]);
+    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBindingKey]);
 
   // API Collection 데이터 바인딩
   useEffect(() => {
@@ -165,7 +173,9 @@ export function Select<T extends object>({
     };
 
     fetchData();
-  }, [dataBinding]);
+    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBindingKey]);
 
   // ComboBox와 동일한 방식으로 placeholder 처리
   const stableProps = useMemo(() => {

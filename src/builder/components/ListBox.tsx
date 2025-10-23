@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -21,6 +21,12 @@ export function ListBox<T extends object>({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiData, setApiData] = useState<Record<string, unknown>[]>([]);
+
+  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
+  const dataBindingKey = useMemo(
+    () => (dataBinding ? JSON.stringify(dataBinding) : null),
+    [dataBinding]
+  );
 
   useEffect(() => {
     // API Collection 데이터 바인딩 처리
@@ -131,7 +137,9 @@ export function ListBox<T extends object>({
     };
 
     fetchData();
-  }, [dataBinding]);
+    // dataBinding 대신 dataBindingKey 사용 (객체 참조 비교 대신 JSON 문자열 비교)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBindingKey]);
 
   return (
     <AriaListBox {...props} className="react-aria-ListBox">

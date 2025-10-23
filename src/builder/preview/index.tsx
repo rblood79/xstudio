@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useStore } from "../stores";
 import styles from "./index.module.css";
@@ -74,28 +74,28 @@ function Preview() {
 
   document.documentElement.classList.add(styles.root);
 
+  // Context를 useMemo로 메모이제이션 (renderElement 제외)
+  const baseContext = useMemo(() => ({
+    elements,
+    updateElementProps,
+    setElements,
+    eventEngine,
+    projectId,
+  }), [elements, updateElementProps, setElements, eventEngine, projectId]);
+
   /**
-   * Element 렌더링 함수 (리팩토링 완료 - 렌더러 맵 사용)
+   * Element 렌더링 함수 (useCallback으로 메모이제이션)
    */
-  const renderElement = (el: PreviewElement, key?: string): React.ReactNode => {
+  const renderElement = useCallback((el: PreviewElement, key?: string): React.ReactNode => {
     // body 태그는 div로 렌더링
     const effectiveTag = el.tag === "body" ? "div" : el.tag;
-
-    // RenderContext 생성
-    const context = {
-      elements,
-      updateElementProps,
-      setElements,
-      eventEngine,
-      projectId,
-      renderElement,
-    };
 
     // 렌더러 맵에서 해당 태그의 렌더러 찾기
     const renderer = rendererMap[effectiveTag];
 
     if (renderer) {
-      return renderer(el, context);
+      // fullContext는 외부에서 메모이제이션됨
+      return renderer(el, fullContext);
     }
 
     // HTML 요소 목록
@@ -162,7 +162,13 @@ function Preview() {
       fallbackProps,
       content.length > 0 ? content : `Unknown: ${effectiveTag}`
     );
-  };
+  }, [baseContext]); // baseContext가 변경될 때만 renderElement 재생성
+
+  // FullContext를 useMemo로 메모이제이션 (baseContext + renderElement)
+  const fullContext = useMemo(() => ({
+    ...baseContext,
+    renderElement,
+  }), [baseContext, renderElement]);
 
   const renderElementsTree = (): React.ReactNode => {
     // body 태그 확인

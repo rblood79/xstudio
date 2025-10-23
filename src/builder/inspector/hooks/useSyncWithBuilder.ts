@@ -326,12 +326,16 @@ export function useSyncWithBuilder(): void {
         clearTimeout(pendingTimeoutRef.current);
       }
     };
+    // Note: elements를 의존성 배열에 포함하지 않음
+    // - useStore는 항상 최신 상태를 반환하므로 useEffect 내에서 최신 elements 참조 가능
+    // - elements 변경으로 인한 불필요한 재실행 방지 (무한 루프 방지)
+    // - selectedElement가 변경될 때만 동기화 필요
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedElement,
     updateElement,
     setElements,
     setSyncingToBuilder,
     historyOperationInProgress,
-    elements,
   ]);
 }
