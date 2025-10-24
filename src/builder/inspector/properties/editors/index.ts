@@ -31,5 +31,6 @@ export { TagGroupEditor } from './TagGroupEditor';
 export { TagEditor } from './TagEditor';
 export { TreeEditor } from './TreeEditor';
 export { TreeItemEditor } from './TreeItemEditor';
+export { FieldEditor } from './FieldEditor';
 
 

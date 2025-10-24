@@ -41,29 +41,29 @@ export function ButtonEditor({ currentProps, onUpdate }: PropertyEditorProps) {
             />
 
             <PropertySelect
-                label="Variant"
+                label={PROPERTY_LABELS.VARIANT}
                 value={String(currentProps.variant || 'primary')}
                 onChange={(value) => updateProp('variant', value)}
                 options={[
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'secondary', label: 'Secondary' },
-                    { value: 'surface', label: 'Surface' },
-                    { value: 'outline', label: 'Outline' },
-                    { value: 'ghost', label: 'Ghost' },
+                    { value: 'primary', label: PROPERTY_LABELS.VARIANT_PRIMARY },
+                    { value: 'secondary', label: PROPERTY_LABELS.VARIANT_SECONDARY },
+                    { value: 'surface', label: PROPERTY_LABELS.VARIANT_SURFACE },
+                    { value: 'outline', label: PROPERTY_LABELS.VARIANT_OUTLINE },
+                    { value: 'ghost', label: PROPERTY_LABELS.VARIANT_GHOST },
                 ]}
                 icon={Parentheses}
             />
 
             <PropertySelect
-                label="Size"
+                label={PROPERTY_LABELS.SIZE}
                 value={String(currentProps.size || 'sm')}
                 onChange={(value) => updateProp('size', value)}
                 options={[
-                    { value: 'xs', label: 'Extra Small' },
-                    { value: 'sm', label: 'Small' },
-                    { value: 'md', label: 'Medium' },
-                    { value: 'lg', label: 'Large' },
-                    { value: 'xl', label: 'Extra Large' },
+                    { value: 'xs', label: PROPERTY_LABELS.SIZE_XS },
+                    { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                    { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                    { value: 'lg', label: PROPERTY_LABELS.SIZE_LG },
+                    { value: 'xl', label: PROPERTY_LABELS.SIZE_XL },
                 ]}
                 icon={Parentheses}
             />

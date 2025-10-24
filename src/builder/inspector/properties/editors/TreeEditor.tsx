@@ -10,14 +10,14 @@ import { ElementUtils } from '../../../../utils/elementUtils';
 
 // 상수 정의
 const SELECTION_MODES: Array<{ value: string; label: string }> = [
-    { value: 'none', label: 'None' },
-    { value: 'single', label: 'Single' },
-    { value: 'multiple', label: 'Multiple' }
+    { value: 'none', label: PROPERTY_LABELS.NONE },
+    { value: 'single', label: PROPERTY_LABELS.SINGLE },
+    { value: 'multiple', label: PROPERTY_LABELS.MULTIPLE }
 ];
 
 const SELECTION_BEHAVIORS: Array<{ value: string; label: string }> = [
-    { value: 'replace', label: 'Replace' },
-    { value: 'toggle', label: 'Toggle' }
+    { value: 'replace', label: PROPERTY_LABELS.REPLACE },
+    { value: 'toggle', label: PROPERTY_LABELS.TOGGLE }
 ];
 
 export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
@@ -157,7 +157,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Tree Items</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TREE_ITEMS}</legend>
 
                 <div className='tree-overview'>
                     <p className='tree-overview-text'>

@@ -67,12 +67,17 @@ export const renderListBox = (
     console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
   }
 
-  // columnMapping이 있으면 render function으로 children 전달
-  const renderChildren = columnMapping
+  // columnMapping이 있고 ListBoxItem 템플릿이 있으면 render function 사용
+  const hasValidTemplate = columnMapping && listBoxChildren.length > 0;
+
+  if (columnMapping && listBoxChildren.length === 0) {
+    console.warn("⚠️ columnMapping이 있지만 ListBoxItem 템플릿이 없습니다. Layer Tree에서 ListBoxItem을 추가하세요.");
+  }
+
+  const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
         // ListBoxItem 템플릿을 각 데이터 항목에 대해 렌더링
         const listBoxItemTemplate = listBoxChildren[0];
-        if (!listBoxItemTemplate) return null;
 
         // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
         const fieldChildren = context.elements

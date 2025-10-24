@@ -149,16 +149,16 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Selection Settings</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.SELECTION_SETTINGS}</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
                     value={String(currentProps.selectionMode || 'none')}
                     onChange={(value) => updateProp('selectionMode', value)}
                     options={[
-                        { value: 'none', label: 'None' },
-                        { value: 'single', label: 'Single' },
-                        { value: 'multiple', label: 'Multiple' }
+                        { value: 'none', label: PROPERTY_LABELS.NONE },
+                        { value: 'single', label: PROPERTY_LABELS.SINGLE },
+                        { value: 'multiple', label: PROPERTY_LABELS.MULTIPLE }
                     ]}
                     icon={MousePointer}
                 />
@@ -168,8 +168,8 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     value={String(currentProps.selectionBehavior || 'toggle')}
                     onChange={(value) => updateProp('selectionBehavior', value)}
                     options={[
-                        { value: 'toggle', label: 'Toggle' },
-                        { value: 'replace', label: 'Replace' }
+                        { value: 'toggle', label: PROPERTY_LABELS.TOGGLE },
+                        { value: 'replace', label: PROPERTY_LABELS.REPLACE }
                     ]}
                     icon={ToggleLeft}
                 />

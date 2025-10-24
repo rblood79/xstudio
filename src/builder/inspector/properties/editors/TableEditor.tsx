@@ -247,9 +247,9 @@ export function TableEditor({
           label={PROPERTY_LABELS.SELECTION_MODE}
           value={(currentProps as TableElementProps)?.selectionMode || "none"}
           options={[
-            { value: "none", label: "선택 없음" },
-            { value: "single", label: "단일 선택" },
-            { value: "multiple", label: "다중 선택" },
+            { value: "none", label: PROPERTY_LABELS.NONE },
+            { value: "single", label: PROPERTY_LABELS.SINGLE },
+            { value: "multiple", label: PROPERTY_LABELS.MULTIPLE },
           ]}
           onChange={(key) =>
             updateTableProps({
@@ -261,12 +261,12 @@ export function TableEditor({
 
         {/* Table Size */}
         <PropertySelect
-          label="크기"
+          label={PROPERTY_LABELS.TABLE_SIZE}
           value={(currentProps as TableElementProps)?.size || "md"}
           options={[
-            { value: "sm", label: "작게" },
-            { value: "md", label: "보통" },
-            { value: "lg", label: "크게" },
+            { value: "sm", label: PROPERTY_LABELS.SIZE_SM },
+            { value: "md", label: PROPERTY_LABELS.SIZE_MD },
+            { value: "lg", label: PROPERTY_LABELS.SIZE_LG },
           ]}
           onChange={(key) =>
             updateTableProps({ size: key as "sm" | "md" | "lg" })
@@ -276,12 +276,12 @@ export function TableEditor({
 
         {/* Table Variant */}
         <PropertySelect
-          label="스타일"
+          label={PROPERTY_LABELS.TABLE_STYLE}
           value={(currentProps as TableElementProps)?.variant || "default"}
           options={[
-            { value: "default", label: "기본" },
-            { value: "striped", label: "줄무늬" },
-            { value: "bordered", label: "테두리" },
+            { value: "default", label: PROPERTY_LABELS.TABLE_STYLE_DEFAULT },
+            { value: "striped", label: PROPERTY_LABELS.TABLE_STYLE_STRIPED },
+            { value: "bordered", label: PROPERTY_LABELS.TABLE_STYLE_BORDERED },
           ]}
           onChange={(key) =>
             updateTableProps({
@@ -293,14 +293,14 @@ export function TableEditor({
 
         {/* Table Header Variant */}
         <PropertySelect
-          label="헤더 스타일"
+          label={PROPERTY_LABELS.HEADER_STYLE}
           value={
             (currentProps as TableElementProps)?.headerVariant || "default"
           }
           options={[
-            { value: "default", label: "기본" },
-            { value: "dark", label: "어둡게" },
-            { value: "primary", label: "주요" },
+            { value: "default", label: PROPERTY_LABELS.HEADER_STYLE_DEFAULT },
+            { value: "dark", label: 'Dark' },
+            { value: "primary", label: 'Primary' },
           ]}
           onChange={(key) =>
             updateTableProps({
@@ -312,11 +312,11 @@ export function TableEditor({
 
         {/* Table Cell Variant */}
         <PropertySelect
-          label="셀 스타일"
+          label={PROPERTY_LABELS.CELL_STYLE}
           value={(currentProps as TableElementProps)?.cellVariant || "default"}
           options={[
-            { value: "default", label: "기본" },
-            { value: "striped", label: "줄무늬" },
+            { value: "default", label: PROPERTY_LABELS.CELL_STYLE_DEFAULT },
+            { value: "striped", label: 'Striped' },
           ]}
           onChange={(key) =>
             updateTableProps({ cellVariant: key as "default" | "striped" })
@@ -329,18 +329,18 @@ export function TableEditor({
       <fieldset className="component-fieldset">
         <legend className="component-legend">
           <List className="legend-icon" />
-          Pagination Mode
+          {PROPERTY_LABELS.PAGINATION_MODE}
         </legend>
 
         <PropertySelect
           icon={currentProps?.paginationMode === "infinite" ? Mouse : BookOpen}
-          label="페이지네이션 모드"
+          label={PROPERTY_LABELS.PAGINATION_MODE}
           value={
             (currentProps as TableElementProps)?.paginationMode || "infinite"
           }
           options={[
-            { value: "infinite", label: "scroll" },
-            { value: "pagination", label: "pagination" },
+            { value: "infinite", label: "Scroll" },
+            { value: "pagination", label: "Pagination" },
           ]}
           onChange={(paginationMode) =>
             updateTableProps({
@@ -352,8 +352,8 @@ export function TableEditor({
         <div className="tab-overview">
           <span className="help-text">
             {currentProps?.paginationMode === "pagination"
-              ? "페이지 번호로 네비게이션하는 전통적인 방식"
-              : "스크롤 시 자동으로 더 많은 데이터를 로드하는 방식"}
+              ? "Traditional navigation with page numbers"
+              : "Automatically load more data on scroll"}
           </span>
         </div>
 
@@ -361,7 +361,7 @@ export function TableEditor({
         {currentProps?.paginationMode === "pagination" && (
           <PropertyInput
             icon={Settings}
-            label="페이지당 행 수"
+            label={PROPERTY_LABELS.ITEMS_PER_PAGE}
             value={(currentProps as TableElementProps)?.itemsPerPage || 10}
             onChange={(itemsPerPage) =>
               updateTableProps({ itemsPerPage: parseInt(itemsPerPage) || 10 })
@@ -375,18 +375,18 @@ export function TableEditor({
       <fieldset className="component-fieldset">
         <legend className="component-legend">
           <Grid className="legend-icon" />
-          Virtualization Settings
+          {PROPERTY_LABELS.VIRTUALIZATION_SETTINGS}
         </legend>
 
         <PropertySelect
           icon={RulerDimensionLine}
-          label="테이블 높이 모드"
+          label={PROPERTY_LABELS.TABLE_HEIGHT_MODE}
           value={(currentProps as TableElementProps)?.heightMode || "fixed"}
           options={[
-            { value: "auto", label: "자동 (내용에 따라)" },
-            { value: "fixed", label: "고정 높이" },
-            { value: "viewport", label: "뷰포트 기준" },
-            { value: "full", label: "전체 화면" },
+            { value: "auto", label: PROPERTY_LABELS.HEIGHT_AUTO },
+            { value: "fixed", label: PROPERTY_LABELS.HEIGHT_FIXED },
+            { value: "viewport", label: PROPERTY_LABELS.HEIGHT_VIEWPORT },
+            { value: "full", label: "Full Screen" },
           ]}
           onChange={(heightMode) =>
             updateTableProps({
@@ -400,7 +400,7 @@ export function TableEditor({
           <div className="flex gap-2">
             <PropertyInput
               icon={Settings}
-              label="높이 값"
+              label={PROPERTY_LABELS.HEIGHT_VALUE}
               value={String((currentProps as TableElementProps)?.height || 400)}
               onChange={(height) =>
                 updateTableProps({ height: parseInt(height) || 400 })
@@ -410,11 +410,11 @@ export function TableEditor({
             />
             <PropertySelect
               icon={Settings}
-              label="단위"
+              label={PROPERTY_LABELS.UNIT}
               value={(currentProps as TableElementProps)?.heightUnit || "px"}
               options={[
-                { value: "px", label: "픽셀 (px)" },
-                { value: "vh", label: "뷰포트 높이 (%)" },
+                { value: "px", label: "px" },
+                { value: "vh", label: "vh" },
                 { value: "rem", label: "rem" },
                 { value: "em", label: "em" },
               ]}
@@ -432,7 +432,7 @@ export function TableEditor({
         {(currentProps as TableElementProps)?.heightMode === "viewport" && (
           <PropertyInput
             icon={Settings}
-            label="뷰포트 높이 비율 (%)"
+            label={PROPERTY_LABELS.VIEWPORT_HEIGHT_RATIO}
             value={String(
               (currentProps as TableElementProps)?.viewportHeight || 50
             )}
@@ -449,7 +449,7 @@ export function TableEditor({
 
         <PropertyInput
           icon={Settings}
-          label="행 높이 (px)"
+          label={PROPERTY_LABELS.ROW_HEIGHT}
           value={(currentProps as TableElementProps)?.itemHeight || 50}
           onChange={(itemHeight) =>
             updateTableProps({ itemHeight: parseInt(itemHeight) || 50 })
@@ -458,7 +458,7 @@ export function TableEditor({
 
         <PropertyInput
           icon={Settings}
-          label="미리 렌더링 행 수"
+          label={PROPERTY_LABELS.OVERSCAN}
           value={(currentProps as TableElementProps)?.overscan || 5}
           onChange={(overscan) =>
             updateTableProps({ overscan: parseInt(overscan) || 5 })
@@ -467,7 +467,7 @@ export function TableEditor({
 
         <PropertySwitch
           icon={Table}
-          label="헤더 고정"
+          label={PROPERTY_LABELS.STICKY_HEADER}
           isSelected={
             (currentProps as TableElementProps)?.stickyHeader || false
           }
@@ -476,7 +476,7 @@ export function TableEditor({
 
         <PropertyInput
           icon={Settings}
-          label="헤더 고정 오프셋 (px)"
+          label={PROPERTY_LABELS.STICKY_HEADER_OFFSET}
           value={(currentProps as TableElementProps)?.stickyHeaderOffset || 0}
           onChange={(stickyHeaderOffset) =>
             updateTableProps({
@@ -491,26 +491,25 @@ export function TableEditor({
       <fieldset className="component-fieldset">
         <legend className="component-legend">
           <List className="legend-icon" />
-          Sorting Settings
+          {PROPERTY_LABELS.SORTING_SETTINGS}
         </legend>
 
         <div className="tab-overview">
           <span className="help-text">
-            💡 기본 정렬을 설정하거나 API 순서를 그대로 유지할 수 있습니다.
-            사용자는 헤더를 클릭하여 언제든지 정렬을 변경할 수 있습니다.
+            💡 Set default sorting or maintain API order. Users can change sorting by clicking headers.
           </span>
         </div>
 
         <PropertySelect
           icon={Tag}
-          label="기본 정렬 컬럼"
+          label={PROPERTY_LABELS.DEFAULT_SORT_COLUMN}
           value={(currentProps as TableElementProps)?.sortColumn || ""}
           options={[
-            { value: "", label: "정렬 안함 (API 순서 유지)" },
+            { value: "", label: "No Sorting (Keep API Order)" },
             { value: "id", label: "ID" },
-            { value: "name", label: "이름" },
-            { value: "email", label: "이메일" },
-            { value: "jobTitle", label: "직업" },
+            { value: "name", label: "Name" },
+            { value: "email", label: "Email" },
+            { value: "jobTitle", label: "Job Title" },
           ]}
           onChange={(sortColumn) =>
             updateTableProps({ sortColumn: sortColumn || undefined })
@@ -519,13 +518,13 @@ export function TableEditor({
 
         <PropertySelect
           icon={List}
-          label="기본 정렬 방향"
+          label={PROPERTY_LABELS.DEFAULT_SORT_DIRECTION}
           value={
             (currentProps as TableElementProps)?.sortDirection || "ascending"
           }
           options={[
-            { value: "ascending", label: "오름차순" },
-            { value: "descending", label: "내림차순" },
+            { value: "ascending", label: PROPERTY_LABELS.SORT_ASCENDING },
+            { value: "descending", label: PROPERTY_LABELS.SORT_DESCENDING },
           ]}
           onChange={(sortDirection) =>
             updateTableProps({
@@ -536,7 +535,7 @@ export function TableEditor({
       </fieldset>
 
       <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Column Management</legend>
+        <legend className="fieldset-legend">{PROPERTY_LABELS.COLUMN_MANAGEMENT}</legend>
 
         {/* 컬럼 개수 표시 */}
         <div className="tab-overview">
@@ -544,7 +543,7 @@ export function TableEditor({
             Total columns: {actualColumns.length || 0}
           </p>
           <p className="tab-overview-help">
-            💡 컬럼을 추가/삭제하려면 <strong>TableHeader</strong>를 선택하세요
+            💡 Select <strong>TableHeader</strong> to add/remove columns
           </p>
         </div>
 

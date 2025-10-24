@@ -17,6 +17,7 @@ interface PropertyInputProps {
     multiline?: boolean; // New prop for multiline input
     min?: string | number; // 최소값
     max?: string | number; // 최대값
+    disabled?: boolean; // Disable input (read-only)
 }
 
 export function PropertyInput({
@@ -29,7 +30,8 @@ export function PropertyInput({
     className,
     multiline, // Destructure the new prop
     min,
-    max
+    max,
+    disabled
 }: PropertyInputProps) {
     // Local state for input value (debounced save)
     const [inputValue, setInputValue] = useState<string>(String(value || ''));
@@ -80,6 +82,7 @@ export function PropertyInput({
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     rows={4} // Default rows for textarea
+                    disabled={disabled}
                 />
             ) : (
                 <input
@@ -93,6 +96,7 @@ export function PropertyInput({
                     placeholder={placeholder}
                     min={min}
                     max={max}
+                    disabled={disabled}
                 />
             )}
         </PropertyFieldset>

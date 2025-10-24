@@ -191,8 +191,8 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     value={String(currentProps.menuTrigger || 'click')}
                     onChange={(value) => updateProp('menuTrigger', value)}
                     options={[
-                        { value: 'click', label: 'Click' },
-                        { value: 'hover', label: 'Hover' }
+                        { value: 'click', label: PROPERTY_LABELS.CLICK },
+                        { value: 'hover', label: PROPERTY_LABELS.HOVER }
                     ]}
                     icon={Menu}
                 />
@@ -239,7 +239,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Item Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
 
                 {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>

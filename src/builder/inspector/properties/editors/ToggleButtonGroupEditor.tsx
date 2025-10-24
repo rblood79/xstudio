@@ -195,7 +195,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Button Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.BUTTON_MANAGEMENT}</legend>
 
                 {/* 버튼 개수 표시 */}
                 <div className='tab-overview'>

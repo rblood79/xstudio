@@ -566,6 +566,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Field",
+    label: "Field",
+    category: "Data Display",
+    icon: "",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "FieldEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 ];
 
 /**

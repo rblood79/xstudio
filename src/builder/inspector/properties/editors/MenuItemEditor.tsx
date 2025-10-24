@@ -23,7 +23,7 @@ export function MenuItemEditor({ currentProps, onUpdate }: PropertyEditorProps) 
                 />
 
                 <PropertyInput
-                    label="Text Value"
+                    label={PROPERTY_LABELS.TEXT_VALUE}
                     value={String(currentProps.textValue || '')}
                     onChange={(value) => updateProp('textValue', value)}
                     icon={Type}

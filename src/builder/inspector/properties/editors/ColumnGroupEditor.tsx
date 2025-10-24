@@ -2,6 +2,7 @@ import { Settings, Type, Grid, Pin } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/unified';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProps) {
     const updateGroupProps = (newProps: Partial<ColumnGroupElementProps>) => {
@@ -17,19 +18,19 @@ export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProp
             <fieldset className="component-fieldset">
                 <legend className="component-legend">
                     <Grid className="legend-icon" />
-                    Column Group Properties
+                    {PROPERTY_LABELS.COLUMN_GROUP_PROPERTIES}
                 </legend>
 
                 <PropertyInput
                     icon={Type}
-                    label="그룹 라벨"
+                    label={PROPERTY_LABELS.GROUP_LABEL}
                     value={(currentProps as ColumnGroupElementProps)?.label || ''}
                     onChange={(label) => updateGroupProps({ label })}
                 />
 
                 <PropertyInput
                     icon={Grid}
-                    label="컬럼 범위 (span)"
+                    label={PROPERTY_LABELS.COLUMN_SPAN}
                     value={(currentProps as ColumnGroupElementProps)?.span || 2}
                     onChange={(span) => updateGroupProps({ span: parseInt(span) || 2 })}
                     type="number"
@@ -40,29 +41,29 @@ export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProp
             <fieldset className="component-fieldset">
                 <legend className="component-legend">
                     <Settings className="legend-icon" />
-                    Style & Alignment
+                    {PROPERTY_LABELS.STYLE_AND_ALIGNMENT}
                 </legend>
 
                 <PropertySelect
                     icon={Pin}
-                    label="정렬"
+                    label={PROPERTY_LABELS.ALIGNMENT}
                     value={(currentProps as ColumnGroupElementProps)?.align || 'center'}
                     options={[
-                        { value: 'left', label: '왼쪽' },
-                        { value: 'center', label: '가운데' },
-                        { value: 'right', label: '오른쪽' },
+                        { value: 'left', label: PROPERTY_LABELS.ALIGN_LEFT },
+                        { value: 'center', label: PROPERTY_LABELS.ALIGN_CENTER },
+                        { value: 'right', label: PROPERTY_LABELS.ALIGN_RIGHT },
                     ]}
                     onChange={(align) => updateGroupProps({ align: align as 'left' | 'center' | 'right' })}
                 />
 
                 <PropertySelect
                     icon={Settings}
-                    label="스타일 변형"
+                    label={PROPERTY_LABELS.STYLE_VARIANT}
                     value={(currentProps as ColumnGroupElementProps)?.variant || 'default'}
                     options={[
-                        { value: 'default', label: '기본' },
-                        { value: 'primary', label: '주요' },
-                        { value: 'secondary', label: '보조' },
+                        { value: 'default', label: PROPERTY_LABELS.TAB_VARIANT_DEFAULT },
+                        { value: 'primary', label: PROPERTY_LABELS.VARIANT_PRIMARY },
+                        { value: 'secondary', label: PROPERTY_LABELS.VARIANT_SECONDARY },
                     ]}
                     onChange={(variant) => updateGroupProps({ variant: variant as 'default' | 'primary' | 'secondary' })}
                 />
@@ -72,19 +73,19 @@ export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProp
             <fieldset className="component-fieldset">
                 <legend className="component-legend">
                     <Pin className="legend-icon" />
-                    Advanced Settings
+                    {PROPERTY_LABELS.ADVANCED_SETTINGS}
                 </legend>
 
                 <PropertySwitch
                     icon={Pin}
-                    label="헤더 고정"
+                    label={PROPERTY_LABELS.STICKY_HEADER}
                     isSelected={(currentProps as ColumnGroupElementProps)?.sticky || false}
                     onChange={(sticky) => updateGroupProps({ sticky })}
                 />
 
                 <div className="tab-overview">
                     <span className="help-text">
-                        💡 Column Group은 관련된 컬럼들을 시각적으로 그룹화하여 더 명확한 테이블 구조를 제공합니다.
+                        💡 Column Group visually groups related columns for clearer table structure.
                     </span>
                 </div>
             </fieldset>

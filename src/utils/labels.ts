@@ -157,4 +157,174 @@ export const PROPERTY_LABELS = {
     IS_QUIET: 'Is Quiet',
     IS_OPEN: 'Is Open',
     IS_DISMISSABLE: 'Is Dismissable',
+
+    // Field specific
+    DATA_KEY: 'Data Key',
+    VISIBLE: 'Visible',
+    FIELD_CONFIGURATION: 'Field Configuration',
+    VISIBILITY: 'Visibility',
+    FIELD_LABEL_PLACEHOLDER: 'Enter field label',
+
+    // Data types
+    STRING: 'String',
+    NUMBER: 'Number',
+    EMAIL: 'Email',
+    URL: 'URL',
+    DATE: 'Date',
+    BOOLEAN: 'Boolean',
+    IMAGE: 'Image',
+
+    // Button variants
+    VARIANT_PRIMARY: 'Primary',
+    VARIANT_SECONDARY: 'Secondary',
+    VARIANT_SURFACE: 'Surface',
+    VARIANT_OUTLINE: 'Outline',
+    VARIANT_GHOST: 'Ghost',
+
+    // Component sizes
+    SIZE_XS: 'Extra Small',
+    SIZE_SM: 'Small',
+    SIZE_MD: 'Medium',
+    SIZE_LG: 'Large',
+    SIZE_XL: 'Extra Large',
+
+    // Text alignment
+    ALIGN_LEFT: 'Left',
+    ALIGN_CENTER: 'Center',
+    ALIGN_RIGHT: 'Right',
+
+    // Vertical alignment
+    ALIGN_TOP: 'Top',
+    ALIGN_MIDDLE: 'Middle',
+    ALIGN_BOTTOM: 'Bottom',
+
+    // Colors
+    BACKGROUND_COLOR: 'Background Color',
+    TEXT_COLOR: 'Text Color',
+
+    // Menu trigger options (additional)
+    CLICK: 'Click',
+    HOVER: 'Hover',
+
+    // Selection options (standalone)
+    NONE: 'None',
+    SINGLE: 'Single',
+    MULTIPLE: 'Multiple',
+    TOGGLE: 'Toggle',
+    REPLACE: 'Replace',
+
+    // ARIA
+    ARIA_LABEL: 'Aria Label',
+
+    // Fieldset legends - General
+    CONTENT: 'Content',
+    STYLING: 'Styling',
+    SETTINGS: 'Settings',
+    ADVANCED_SETTINGS: 'Advanced Settings',
+    SELECTION_SETTINGS: 'Selection Settings',
+
+    // Fieldset legends - Table related
+    TABLE_PROPERTIES: 'Table Properties',
+    TABLE_HEADER_PROPERTIES: 'Table Header Properties',
+    TABLE_BODY_PROPERTIES: 'Table Body Properties',
+    COLUMN_MANAGEMENT: 'Column Management',
+    COLUMN_GROUP_MANAGEMENT: 'Column Group Management',
+    ROW_MANAGEMENT: 'Row Management',
+    COLUMN_PROPERTIES: 'Column Properties',
+    COLUMN_CONTENT: 'Column Content',
+    COLUMN_SIZING: 'Column Sizing',
+    COLUMN_GROUP_PROPERTIES: 'Column Group Properties',
+    ROW_PROPERTIES: 'Row Properties',
+    ROW_INFORMATION: 'Row Information',
+    CELL_PROPERTIES: 'Cell Properties',
+    CELL_CONTENT: 'Cell Content',
+    CELL_OVERVIEW: 'Cell Overview',
+
+    // Table-specific labels
+    PAGINATION_MODE: 'Pagination Mode',
+    VIRTUALIZATION_SETTINGS: 'Virtualization Settings',
+    SORTING_SETTINGS: 'Sorting Settings',
+    TABLE_SIZE: 'Table Size',
+    TABLE_STYLE: 'Table Style',
+    HEADER_STYLE: 'Header Style',
+    CELL_STYLE: 'Cell Style',
+    BODY_STYLE: 'Body Style',
+    ROW_STYLE: 'Row Style',
+    ITEMS_PER_PAGE: 'Items Per Page',
+    TABLE_HEIGHT_MODE: 'Table Height Mode',
+    HEIGHT_VALUE: 'Height Value',
+    UNIT: 'Unit',
+    VIEWPORT_HEIGHT_RATIO: 'Viewport Height Ratio (%)',
+    ROW_HEIGHT: 'Row Height (px)',
+    OVERSCAN: 'Overscan',
+    STICKY_HEADER: 'Sticky Header',
+    STICKY_HEADER_OFFSET: 'Sticky Header Offset (px)',
+    DEFAULT_SORT_COLUMN: 'Default Sort Column',
+    DEFAULT_SORT_DIRECTION: 'Default Sort Direction',
+    ROW_SELECTION: 'Row Selection',
+
+    // Pagination mode options
+    PAGINATION_NONE: 'None',
+    PAGINATION_CLIENT: 'Client',
+    PAGINATION_SERVER: 'Server',
+
+    // Height mode options
+    HEIGHT_AUTO: 'Auto',
+    HEIGHT_FIXED: 'Fixed',
+    HEIGHT_VIEWPORT: 'Viewport',
+
+    // Sort direction options
+    SORT_ASCENDING: 'Ascending',
+    SORT_DESCENDING: 'Descending',
+
+    // Table style options
+    TABLE_STYLE_DEFAULT: 'Default',
+    TABLE_STYLE_STRIPED: 'Striped',
+    TABLE_STYLE_BORDERED: 'Bordered',
+    TABLE_STYLE_COMPACT: 'Compact',
+
+    // Header style options
+    HEADER_STYLE_DEFAULT: 'Default',
+    HEADER_STYLE_BOLD: 'Bold',
+    HEADER_STYLE_HIGHLIGHT: 'Highlight',
+
+    // Cell style options
+    CELL_STYLE_DEFAULT: 'Default',
+    CELL_STYLE_COMPACT: 'Compact',
+    CELL_STYLE_COMFORTABLE: 'Comfortable',
+
+    // Body style options
+    BODY_STYLE_DEFAULT: 'Default',
+    BODY_STYLE_STRIPED: 'Striped',
+    BODY_STYLE_HOVER: 'Hover',
+
+    // Row style options
+    ROW_STYLE_DEFAULT: 'Default',
+    ROW_STYLE_COMPACT: 'Compact',
+    ROW_STYLE_COMFORTABLE: 'Comfortable',
+
+    // Column-specific labels
+    COLUMN_TITLE: 'Column Title',
+    COLUMN_WIDTH: 'Column Width (px)',
+    MIN_WIDTH: 'Min Width (px)',
+    MAX_WIDTH: 'Max Width (px)',
+    USE_AS_ROW_HEADER: 'Use as Row Header',
+    SORTABLE: 'Sortable',
+    RESIZABLE: 'Resizable',
+
+    // Column group labels
+    GROUP_LABEL: 'Group Label',
+    COLUMN_SPAN: 'Column Span',
+    ALIGNMENT: 'Alignment',
+    STYLE_VARIANT: 'Style Variant',
+
+    // Text alignment options
+    TEXT_ALIGNMENT: 'Text Alignment',
+    VERTICAL_ALIGNMENT: 'Vertical Alignment',
+
+    // Style and alignment legend
+    STYLE_AND_ALIGNMENT: 'Style & Alignment',
+
+    // Tree-specific
+    TREE_ITEMS: 'Tree Items',
 } as const;

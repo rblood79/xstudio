@@ -3,6 +3,7 @@ import type { ColumnElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
 import { Type, Crown, Ruler, ArrowLeft, ArrowRight, ArrowUpDown, Key, Move } from 'lucide-react';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 // interface ColumnEditorProps {
 //     // element: Element;
@@ -33,35 +34,35 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Column Content</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_CONTENT}</legend>
 
                 {/* Data Key */}
                 <PropertyInput
-                    label="데이터 키"
+                    label={PROPERTY_LABELS.DATA_KEY}
                     value={(currentProps as ColumnElementProps)?.key || ''}
                     onChange={(value) => updateProps({ key: value })}
-                    placeholder="데이터 필드명 (예: id, name, email)"
+                    placeholder="Data field name (e.g. id, name, email)"
                     icon={Key}
                 />
 
                 <div className="tab-overview">
                     <span className="help-text">
-                        💡 API 또는 데이터의 필드명과 정확히 일치해야 합니다
+                        💡 Must match exactly with the field name from API or data source
                     </span>
                 </div>
 
                 {/* Column Title */}
                 <PropertyInput
-                    label="컬럼 제목"
+                    label={PROPERTY_LABELS.COLUMN_TITLE}
                     value={(currentProps as ColumnElementProps)?.children as string || ''}
                     onChange={(value) => updateProps({ children: value })}
-                    placeholder="화면에 표시될 제목"
+                    placeholder="Display title"
                     icon={Type}
                 />
 
                 {/* Is Row Header */}
                 <PropertySwitch
-                    label="행 헤더로 사용"
+                    label={PROPERTY_LABELS.USE_AS_ROW_HEADER}
                     isSelected={!!(currentProps as ColumnElementProps)?.isRowHeader}
                     onChange={(isSelected) => updateProps({ isRowHeader: isSelected })}
                     icon={Crown}
@@ -69,7 +70,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 {/* Allows Sorting */}
                 <PropertySwitch
-                    label="정렬 가능"
+                    label={PROPERTY_LABELS.SORTABLE}
                     isSelected={(currentProps as ColumnElementProps)?.allowsSorting !== false}
                     onChange={(isSelected) => updateProps({ allowsSorting: isSelected })}
                     icon={ArrowUpDown}
@@ -77,11 +78,11 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Column Sizing</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_SIZING}</legend>
 
                 {/* Enable Resizing */}
                 <PropertySwitch
-                    label="크기 조절 가능"
+                    label={PROPERTY_LABELS.RESIZABLE}
                     isSelected={(currentProps as ColumnElementProps)?.enableResizing !== false}
                     onChange={(isSelected) => updateProps({ enableResizing: isSelected })}
                     icon={Move}
@@ -89,36 +90,36 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 <div className="tab-overview">
                     <span className="help-text">
-                        💡 사용자가 컬럼 헤더를 드래그하여 너비를 조절할 수 있습니다
+                        💡 Users can drag column header to adjust width
                     </span>
                 </div>
 
                 {/* Column Width */}
                 <PropertyInput
-                    label="컬럼 너비 (px)"
+                    label={PROPERTY_LABELS.COLUMN_WIDTH}
                     value={(currentProps as ColumnElementProps)?.width || ''}
                     onChange={(value) => updateProps({ width: parseInt(value) || undefined })}
-                    placeholder="예: 200"
+                    placeholder="e.g. 200"
                     type="number"
                     icon={Ruler}
                 />
 
                 {/* Min Width */}
                 <PropertyInput
-                    label="최소 너비 (px)"
+                    label={PROPERTY_LABELS.MIN_WIDTH}
                     value={(currentProps as ColumnElementProps)?.minWidth || ''}
                     onChange={(value) => updateProps({ minWidth: parseInt(value) || undefined })}
-                    placeholder="예: 100"
+                    placeholder="e.g. 100"
                     type="number"
                     icon={ArrowLeft}
                 />
 
                 {/* Max Width */}
                 <PropertyInput
-                    label="최대 너비 (px)"
+                    label={PROPERTY_LABELS.MAX_WIDTH}
                     value={(currentProps as ColumnElementProps)?.maxWidth || ''}
                     onChange={(value) => updateProps({ maxWidth: parseInt(value) || undefined })}
-                    placeholder="예: 400"
+                    placeholder="e.g. 400"
                     type="number"
                     icon={ArrowRight}
                 />

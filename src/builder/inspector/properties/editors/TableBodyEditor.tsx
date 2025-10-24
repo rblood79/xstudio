@@ -2,6 +2,7 @@ import { useStore } from '../../../stores';
 import { PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 interface TableBodyElementProps {
     variant?: 'default' | 'striped' | 'bordered' | 'hover';
@@ -50,7 +51,7 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Table Body Properties</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_BODY_PROPERTIES}</legend>
 
                 {/* Body Info */}
                 <div className='tab-overview'>
@@ -64,13 +65,13 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
 
                 {/* Body Variant */}
                 <PropertySelect
-                    label="바디 스타일"
+                    label={PROPERTY_LABELS.BODY_STYLE}
                     value={(currentProps as TableBodyElementProps)?.variant || 'default'}
                     options={[
-                        { value: 'default', label: '기본' },
-                        { value: 'striped', label: '줄무늬' },
-                        { value: 'bordered', label: '테두리' },
-                        { value: 'hover', label: '호버 효과' },
+                        { value: 'default', label: PROPERTY_LABELS.BODY_STYLE_DEFAULT },
+                        { value: 'striped', label: PROPERTY_LABELS.BODY_STYLE_STRIPED },
+                        { value: 'bordered', label: 'Bordered' },
+                        { value: 'hover', label: PROPERTY_LABELS.BODY_STYLE_HOVER },
                     ]}
                     onChange={(key) => updateProps({ variant: key as 'default' | 'striped' | 'bordered' | 'hover' })}
                     icon={Table}
@@ -78,11 +79,11 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
 
                 {/* Row Selection */}
                 <PropertySelect
-                    label="행 선택"
+                    label={PROPERTY_LABELS.ROW_SELECTION}
                     value={(currentProps as TableBodyElementProps)?.selectable ? 'true' : 'false'}
                     options={[
-                        { value: 'false', label: '선택 불가' },
-                        { value: 'true', label: '선택 가능' },
+                        { value: 'false', label: 'Not Selectable' },
+                        { value: 'true', label: 'Selectable' },
                     ]}
                     onChange={(key) => updateProps({ selectable: key === 'true' })}
                     icon={Grid}
@@ -117,7 +118,7 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
                 {rows.length === 0 && (
                     <div className='tab-overview'>
                         <p className='tab-overview-help'>
-                            행이 없습니다. Table 편집기에서 행을 추가하세요.
+                            No rows found. Add rows from the Table editor.
                         </p>
                     </div>
                 )}

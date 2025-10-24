@@ -4,6 +4,7 @@ import type { CellElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
 import { Type, AlignLeft, Palette, Grid } from 'lucide-react';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 // interface CellEditorProps {
 //     // element: Element;
@@ -34,29 +35,29 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Cell Content</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.CELL_CONTENT}</legend>
 
                 {/* Cell Content */}
                 <PropertyInput
-                    label="셀 내용"
+                    label={PROPERTY_LABELS.CHILDREN}
                     value={(currentProps as CellElementProps)?.children as string || ''}
                     onChange={(value) => updateProps({ children: value })}
-                    placeholder="셀 내용을 입력하세요"
+                    placeholder="Enter cell content"
                     icon={Type}
                 />
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Text Alignment</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TEXT_ALIGNMENT}</legend>
 
                 {/* Text Alignment */}
                 <PropertySelect
-                    label="텍스트 정렬"
+                    label={PROPERTY_LABELS.TEXT_ALIGNMENT}
                     value={(currentProps as CellElementProps)?.textAlign || 'left'}
                     options={[
-                        { value: 'left', label: '왼쪽' },
-                        { value: 'center', label: '가운데' },
-                        { value: 'right', label: '오른쪽' },
+                        { value: 'left', label: PROPERTY_LABELS.ALIGN_LEFT },
+                        { value: 'center', label: PROPERTY_LABELS.ALIGN_CENTER },
+                        { value: 'right', label: PROPERTY_LABELS.ALIGN_RIGHT },
                     ]}
                     onChange={(key) => updateProps({ textAlign: key as 'left' | 'center' | 'right' })}
                     icon={AlignLeft}
@@ -64,12 +65,12 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
                 {/* Vertical Alignment */}
                 <PropertySelect
-                    label="수직 정렬"
+                    label={PROPERTY_LABELS.VERTICAL_ALIGNMENT}
                     value={(currentProps as CellElementProps)?.verticalAlign || 'middle'}
                     options={[
-                        { value: 'top', label: '위' },
-                        { value: 'middle', label: '가운데' },
-                        { value: 'bottom', label: '아래' },
+                        { value: 'top', label: PROPERTY_LABELS.ALIGN_TOP },
+                        { value: 'middle', label: PROPERTY_LABELS.ALIGN_MIDDLE },
+                        { value: 'bottom', label: PROPERTY_LABELS.ALIGN_BOTTOM },
                     ]}
                     onChange={(key) => updateProps({ verticalAlign: key as 'top' | 'middle' | 'bottom' })}
                     icon={Grid}
@@ -77,11 +78,11 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Styling</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.STYLING}</legend>
 
                 {/* Background Color */}
                 <PropertyInput
-                    label="배경색"
+                    label={PROPERTY_LABELS.BACKGROUND_COLOR}
                     type="color"
                     value={(currentProps as CellElementProps)?.backgroundColor || '#ffffff'}
                     onChange={(value) => updateProps({ backgroundColor: value })}
@@ -90,7 +91,7 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
                 {/* Text Color */}
                 <PropertyInput
-                    label="텍스트 색상"
+                    label={PROPERTY_LABELS.TEXT_COLOR}
                     type="color"
                     value={(currentProps as CellElementProps)?.color || '#000000'}
                     onChange={(value) => updateProps({ color: value })}

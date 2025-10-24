@@ -228,14 +228,14 @@ export function APICollectionEditor({
     console.log("➖ 삭제할 Field:", fieldsToRemove.map(f => (f.props as { key?: string }).key));
 
     // 6. Field Elements 생성
-    const columnMapping = config.columnMapping as ColumnMapping;
-    if (!columnMapping) {
-      console.warn("⚠️ columnMapping이 없습니다");
+    // localColumnMapping 사용 (config는 아직 업데이트되지 않음)
+    if (!localColumnMapping) {
+      console.warn("⚠️ localColumnMapping이 없습니다");
       return;
     }
 
     const newFieldElements: Element[] = fieldsToAdd.map((colKey, index) => {
-      const columnDef = columnMapping[colKey];
+      const columnDef = localColumnMapping[colKey];
       const existingCount = existingFields.length - fieldsToRemove.length;
 
       return {
@@ -300,6 +300,13 @@ export function APICollectionEditor({
         availableColumns: availableColumns,
       });
 
+      // 1. Field Elements 먼저 생성 (onChange 전에)
+      // 이유: onChange가 Preview를 re-render하기 전에 Field Elements가 존재해야 함
+      console.log("📋 Field Elements 생성 중...");
+      await syncFieldElements(localColumns);
+      console.log("✅ Field Elements 생성 완료");
+
+      // 2. 모든 설정 적용 (Field Elements 생성 완료 후)
       onChange({
         ...config,
         endpoint: localEndpoint,
@@ -310,9 +317,6 @@ export function APICollectionEditor({
         columnMapping: localColumnMapping, // columnMapping 포함
         availableColumns: availableColumns, // 전체 컬럼 목록도 저장
       });
-
-      // Field Elements 동기화 (ListBox인 경우에만)
-      await syncFieldElements(localColumns);
 
     } catch (error) {
       alert("JSON 파싱 오류: " + (error as Error).message);

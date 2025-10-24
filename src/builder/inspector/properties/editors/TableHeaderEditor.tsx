@@ -7,6 +7,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
 import { supabase } from '../../../../env/supabase.client';
 import { ElementUtils } from '../../../../utils/elementUtils';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 interface TableHeaderElementProps {
     variant?: 'default' | 'dark' | 'light' | 'bordered';
@@ -145,7 +146,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Table Header Properties</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}</legend>
 
                 {/* Header Info */}
                 <div className='tab-overview'>
@@ -159,13 +160,13 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
                 {/* Header Variant */}
                 <PropertySelect
-                    label="헤더 스타일"
+                    label={PROPERTY_LABELS.HEADER_STYLE}
                     value={(currentProps as TableHeaderElementProps)?.variant || 'default'}
                     options={[
-                        { value: 'default', label: '기본' },
-                        { value: 'dark', label: '어두운 테마' },
-                        { value: 'light', label: '밝은 테마' },
-                        { value: 'bordered', label: '테두리' },
+                        { value: 'default', label: PROPERTY_LABELS.HEADER_STYLE_DEFAULT },
+                        { value: 'dark', label: 'Dark' },
+                        { value: 'light', label: 'Light' },
+                        { value: 'bordered', label: 'Bordered' },
                     ]}
                     onChange={(key) => updateProps({ variant: key as 'default' | 'dark' | 'light' | 'bordered' })}
                     icon={Table}
@@ -173,11 +174,11 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
                 {/* Sticky Header */}
                 <PropertySelect
-                    label="헤더 고정"
+                    label={PROPERTY_LABELS.STICKY_HEADER}
                     value={(currentProps as TableHeaderElementProps)?.sticky ? 'true' : 'false'}
                     options={[
-                        { value: 'false', label: '일반' },
-                        { value: 'true', label: '상단 고정' },
+                        { value: 'false', label: 'Normal' },
+                        { value: 'true', label: 'Fixed to Top' },
                     ]}
                     onChange={(key) => updateProps({ sticky: key === 'true' })}
                     icon={Pin}
@@ -185,7 +186,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Column Management</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_MANAGEMENT}</legend>
 
                 {/* 컬럼 개수 표시 */}
                 <div className='tab-overview'>
@@ -201,17 +202,17 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                 {isAddingColumn && (
                     <div className="space-y-2">
                         <PropertyInput
-                            label="데이터 키"
+                            label={PROPERTY_LABELS.DATA_KEY}
                             value={newColumnKey}
                             onChange={setNewColumnKey}
-                            placeholder="데이터 필드명 (예: id, name)"
+                            placeholder="Data field name (e.g. id, name)"
                             icon={Tag}
                         />
                         <PropertyInput
-                            label="컬럼 제목"
+                            label={PROPERTY_LABELS.COLUMN_TITLE}
                             value={newColumnLabel}
                             onChange={setNewColumnLabel}
-                            placeholder="화면에 표시될 제목"
+                            placeholder="Display title"
                             icon={Type}
                         />
                     </div>

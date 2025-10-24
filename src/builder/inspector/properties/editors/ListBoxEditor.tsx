@@ -239,7 +239,7 @@ export function ListBoxEditor({
       </fieldset>
 
       <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Item Management</legend>
+        <legend className="fieldset-legend">{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
 
         {/* 아이템 개수 표시 */}
         <div className="tab-overview">

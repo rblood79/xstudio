@@ -53,7 +53,7 @@ export function ProgressBarEditor({ currentProps, onUpdate }: PropertyEditorProp
                 />
 
                 <PropertySwitch
-                    label="Indeterminate"
+                    label={PROPERTY_LABELS.INDETERMINATE}
                     isSelected={Boolean(currentProps.isIndeterminate)}
                     onChange={(checked) => updateProp('isIndeterminate', checked)}
                     icon={ToggleLeft}

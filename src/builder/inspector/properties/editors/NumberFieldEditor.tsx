@@ -30,21 +30,21 @@ export function NumberFieldEditor({ currentProps, onUpdate }: PropertyEditorProp
                 />
 
                 <PropertyInput
-                    label="Min Value"
+                    label={PROPERTY_LABELS.MIN_VALUE}
                     value={String(currentProps.minValue ?? '')}
                     onChange={(value) => updateProp('minValue', value ? Number(value) : undefined)}
                     icon={ArrowDown}
                 />
 
                 <PropertyInput
-                    label="Max Value"
+                    label={PROPERTY_LABELS.MAX_VALUE}
                     value={String(currentProps.maxValue ?? '')}
                     onChange={(value) => updateProp('maxValue', value ? Number(value) : undefined)}
                     icon={ArrowUp}
                 />
 
                 <PropertyInput
-                    label="Step"
+                    label={PROPERTY_LABELS.STEP}
                     value={String(currentProps.step ?? '')}
                     onChange={(value) => updateProp('step', value ? Number(value) : undefined)}
                     icon={Move}

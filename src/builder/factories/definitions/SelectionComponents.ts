@@ -143,16 +143,6 @@ export function createListBoxDefinition(
         page_id: pageId,
         order_num: 1,
       },
-      {
-        tag: "ListBoxItem",
-        props: {
-          label: "Item 2",
-          value: "item2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        page_id: pageId,
-        order_num: 2,
-      },
     ],
   };
 }

@@ -3,6 +3,7 @@ import { useStore } from '../../../stores';
 import { PropertyInput, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Ruler, Palette, Grid } from 'lucide-react';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
 
 interface RowElementProps {
     height?: string;
@@ -44,7 +45,7 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Row Information</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.ROW_INFORMATION}</legend>
 
                 {/* Row Info */}
                 <div className='tab-overview'>
@@ -58,16 +59,16 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
 
                 {/* Row Height */}
                 <PropertyInput
-                    label="행 높이"
+                    label={PROPERTY_LABELS.ROW_HEIGHT}
                     value={(currentProps as RowElementProps)?.height || ''}
                     onChange={(value) => updateProps({ height: value })}
-                    placeholder="예: 40px, auto"
+                    placeholder="e.g. 40px, auto"
                     icon={Ruler}
                 />
 
                 {/* Background Color */}
                 <PropertyInput
-                    label="배경색"
+                    label={PROPERTY_LABELS.BACKGROUND_COLOR}
                     type="color"
                     value={(currentProps as RowElementProps)?.backgroundColor || '#ffffff'}
                     onChange={(value) => updateProps({ backgroundColor: value })}
@@ -76,12 +77,12 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
 
                 {/* Row Variant */}
                 <PropertySelect
-                    label="행 스타일"
+                    label={PROPERTY_LABELS.ROW_STYLE}
                     value={(currentProps as RowElementProps)?.variant || 'default'}
                     options={[
-                        { value: 'default', label: '기본' },
-                        { value: 'striped', label: '줄무늬' },
-                        { value: 'hover', label: '호버 효과' },
+                        { value: 'default', label: PROPERTY_LABELS.ROW_STYLE_DEFAULT },
+                        { value: 'striped', label: 'Striped' },
+                        { value: 'hover', label: 'Hover' },
                     ]}
                     onChange={(key) => updateProps({ variant: key as 'default' | 'striped' | 'hover' })}
                     icon={Grid}
@@ -89,7 +90,7 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
             </fieldset>
 
             <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Cell Overview</legend>
+                <legend className='fieldset-legend'>{PROPERTY_LABELS.CELL_OVERVIEW}</legend>
 
                 {/* 셀 목록 */}
                 {rowCells.length > 0 && (
@@ -97,7 +98,7 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                         {rowCells.map((cell, index) => (
                             <div key={cell.id} className='tab-list-item'>
                                 <span className='tab-title'>
-                                    Cell {index + 1}: {(cell.props as CellElementProps)?.children as string || '내용 없음'}
+                                    Cell {index + 1}: {(cell.props as CellElementProps)?.children as string || 'No content'}
                                 </span>
                                 <span className="text-gray-400 text-xs">
                                     ID: {cell.id.slice(0, 8)}...
