@@ -1,4 +1,4 @@
-@import './base.css';
+@import "./base.css";
 
 @layer components {
   /* FieldGroup for grouping form elements */
@@ -9,61 +9,56 @@
   }
 
   /* DataField - Collection 데이터 표시 컴포넌트 */
-  .data-field {
+  .react-aria-DataField {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
     font-size: var(--text-sm);
   }
 
-  .data-field-label {
+  .react-aria-DataField .label {
     font-weight: 500;
-    color: var(--color-gray-700);
   }
 
-  .data-field-value {
-    color: var(--color-gray-900);
+  .react-aria-DataField .value {
   }
 
   /* Empty value */
-  .data-field-value-empty {
-    color: var(--color-gray-400);
+  .react-aria-DataField .value-empty {
     font-style: italic;
   }
 
   /* Boolean value */
-  .data-field-value-boolean {
+  .react-aria-DataField .value-boolean {
     font-weight: 600;
     font-size: var(--text-base);
   }
 
   /* Number value */
-  .data-field-value-number {
+  .react-aria-DataField .value-number {
     font-variant-numeric: tabular-nums;
   }
 
   /* Email value */
-  .data-field-value-email {
-    color: var(--color-primary-600);
+  .react-aria-DataField .value-email {
     text-decoration: none;
   }
 
-  .data-field-value-email:hover {
+  .react-aria-DataField .value-email:hover {
     text-decoration: underline;
   }
 
   /* URL value */
-  .data-field-value-url {
-    color: var(--color-primary-600);
+  .react-aria-DataField .value-url {
     text-decoration: none;
   }
 
-  .data-field-value-url:hover {
+  .react-aria-DataField .value-url:hover {
     text-decoration: underline;
   }
 
   /* Image value */
-  .data-field-value-image {
+  .react-aria-DataField .value-image {
     width: 40px;
     height: 40px;
     border-radius: var(--radius-sm);

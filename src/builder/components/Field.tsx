@@ -77,12 +77,12 @@ export function DataField({
   if (children) {
     return (
       <div
-        className={`data-field data-field-custom ${className}`}
+        className={`react-aria-DataField custom ${className}`}
         style={style}
         data-field-key={fieldKey}
       >
-        {showLabel && label && <span className="data-field-label">{label}</span>}
-        <div className="data-field-value">{children}</div>
+        {showLabel && label && <span className="label">{label}</span>}
+        <div className="value">{children}</div>
       </div>
     );
   }
@@ -91,27 +91,27 @@ export function DataField({
   const renderValue = () => {
     // null/undefined 처리
     if (value === null || value === undefined) {
-      return <span className="data-field-value-empty">-</span>;
+      return <span className="value-empty">-</span>;
     }
 
     switch (type) {
       case "boolean":
         return (
-          <span className="data-field-value-boolean">
+          <span className="value-boolean">
             {value ? "✓" : "✗"}
           </span>
         );
 
       case "number":
         return (
-          <span className="data-field-value-number">
+          <span className="value-number">
             {typeof value === "number" ? value.toLocaleString() : String(value)}
           </span>
         );
 
       case "date":
         return (
-          <span className="data-field-value-date">
+          <span className="value-date">
             {value instanceof Date
               ? value.toLocaleDateString()
               : String(value)}
@@ -122,7 +122,7 @@ export function DataField({
         return (
           <a
             href={`mailto:${value}`}
-            className="data-field-value-email"
+            className="value-email"
             onClick={(e) => e.stopPropagation()}
           >
             {String(value)}
@@ -135,7 +135,7 @@ export function DataField({
             href={String(value)}
             target="_blank"
             rel="noopener noreferrer"
-            className="data-field-value-url"
+            className="value-url"
             onClick={(e) => e.stopPropagation()}
           >
             {String(value)}
@@ -147,25 +147,25 @@ export function DataField({
           <img
             src={String(value)}
             alt={label || fieldKey || "image"}
-            className="data-field-value-image"
+            className="value-image"
             loading="lazy"
           />
         );
 
       case "string":
       default:
-        return <span className="data-field-value-string">{String(value)}</span>;
+        return <span className="value-string">{String(value)}</span>;
     }
   };
 
   return (
     <div
-      className={`data-field data-field-${type} ${className}`}
+      className={`react-aria-DataField ${type} ${className}`}
       style={style}
       data-field-key={fieldKey}
     >
-      {showLabel && label && <span className="data-field-label">{label}:</span>}
-      <div className="data-field-value">{renderValue()}</div>
+      {showLabel && label && <span className="label">{label}:</span>}
+      <div className="value">{renderValue()}</div>
     </div>
   );
 }
