@@ -83,7 +83,7 @@ export function ListBox<T extends object>({
       const items = boundData.map((item, index) => ({
         id: String(item.id || index),
         ...item,
-      }));
+      })) as T[];
 
       console.log("✅ ListBox with columnMapping - items:", items);
 

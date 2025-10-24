@@ -210,7 +210,7 @@ export function MenuButton<T extends object>({
               ❌ 오류: {error}
             </AriaMenuItem>
           )}
-          {!loading && !error && children}
+          {!loading && !error && (children as React.ReactNode)}
         </Menu>
       </Popover>
     </MenuTrigger>

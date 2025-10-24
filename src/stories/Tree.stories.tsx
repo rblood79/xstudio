@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+// import { action } from '@storybook/addon-actions';
+const action = (name: string) => (...args: any[]) => console.log(name, ...args);
 import { Tree, TreeItem } from '../builder/components/Tree';
 
 const meta: Meta<typeof Tree> = {

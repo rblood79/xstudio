@@ -86,7 +86,6 @@ export const renderNumberField = (
       label={String(element.props.label || "")}
       description={String(element.props.description || "")}
       errorMessage={String(element.props.errorMessage || "")}
-      placeholder={String(element.props.placeholder || "")}
       defaultValue={Number(element.props.value || 0)}
       minValue={element.props.minValue !== undefined ? Number(element.props.minValue) : undefined}
       maxValue={element.props.maxValue !== undefined ? Number(element.props.maxValue) : undefined}

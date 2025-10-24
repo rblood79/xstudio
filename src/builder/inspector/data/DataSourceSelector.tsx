@@ -256,29 +256,13 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
                   // ListBox 컴포넌트인 경우 columnMapping 동기화
                   if (element.type === "ListBox") {
-                    // columns 배열을 ColumnMapping 객체로 변환
-                    const columnMapping: Record<string, {
-                      key: string;
-                      label?: string;
-                      type?: string;
-                      visible?: boolean;
-                      order?: number;
-                    }> = {};
-
-                    config.columns?.forEach((col, index) => {
-                      columnMapping[col.key] = {
-                        key: col.key,
-                        label: col.label,
-                        type: col.type,
-                        visible: true,
-                        order: index,
-                      };
-                    });
-
-                    updateProperties({
-                      columnMapping,
-                    });
-                    console.log("🔄 APICollectionEditor - ListBox columnMapping 업데이트:", columnMapping);
+                    // APICollectionEditor에서 이미 생성된 columnMapping 사용
+                    if (config.columnMapping) {
+                      updateProperties({
+                        columnMapping: config.columnMapping,
+                      });
+                      console.log("🔄 APICollectionEditor - ListBox columnMapping 업데이트:", config.columnMapping);
+                    }
                   }
                 });
               }}

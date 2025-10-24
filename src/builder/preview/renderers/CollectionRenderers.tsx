@@ -475,7 +475,6 @@ export const renderMenu = (
       label={String(element.props.label || "Menu")}
       style={element.props.style}
       className={element.props.className}
-      isDisabled={Boolean(element.props.isDisabled)}
       dataBinding={element.dataBinding}
     >
       {/* Static 방법: MenuItem 자식 렌더링 (dataBinding이 없을 때만) */}

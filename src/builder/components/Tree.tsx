@@ -26,7 +26,8 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: treeData,
-    // loading, error는 Tree에서는 현재 사용하지 않음 (향후 로딩 UI 추가 시 사용 가능)
+    loading,
+    // error, // TODO: Add error handling UI
   } = useCollectionData({
     dataBinding,
     componentName: "Tree",
@@ -53,7 +54,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
             showInfoButton={false}
             childItems={
               hasChildren
-                ? renderTreeItemsRecursively(item.children)
+                ? renderTreeItemsRecursively(item.children as Record<string, unknown>[])
                 : undefined
             }
           />

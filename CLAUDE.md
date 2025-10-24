@@ -935,6 +935,186 @@ grep "react-aria-ComboBox" src/builder/components/components.css  # Check React 
 - Check existing CSS before writing new styles
 - Import existing CSS files instead of creating new ones
 
+#### Field Component (DataField) - Dynamic Data Display
+
+The `Field` component (`src/builder/components/Field.tsx`) is a type-aware data display component used within Collection components (ListBox, GridList, Menu, etc.) to render dynamic data from APIs or databases.
+
+**Key Features:**
+- **Type-aware rendering** - Automatically formats data based on type (email, url, image, date, number, boolean, string)
+- **Shortened className pattern** - Uses `react-aria-DataField` with concise child classes
+- **Flexible layout** - Supports label display toggle and custom styling
+- **Collection-ready** - Designed for use within ListBoxItem, GridListItem, MenuItem, etc.
+
+**ClassName Pattern:**
+```tsx
+// Base component
+<div className="react-aria-DataField email">
+  {/* Type modifier as separate class */}
+
+  {/* Child elements with short names */}
+  <span className="label">Email:</span>
+  <div className="value">
+    <a className="value-email">user@example.com</a>
+  </div>
+</div>
+```
+
+**CSS Scoping** (`src/builder/components/styles/Field.css`):
+```css
+.react-aria-DataField {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.react-aria-DataField .label {
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.react-aria-DataField .value-email {
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+```
+
+**Type-Specific Rendering:**
+- **email** → `<a href="mailto:...">`
+- **url** → `<a href="..." target="_blank">`
+- **image** → `<img src="..." />`
+- **date** → Formatted date string
+- **boolean** → ✓ or ✗
+- **number** → Formatted with toLocaleString()
+- **string** → Plain text
+
+**Usage Example:**
+```tsx
+<ListBoxItem>
+  <Field fieldKey="name" label="Name" type="string" value={item.name} />
+  <Field fieldKey="email" label="Email" type="email" value={item.email} />
+  <Field fieldKey="avatar" label="Avatar" type="image" value={item.avatar} showLabel={false} />
+</ListBoxItem>
+```
+
+#### Collection Components + Field Pattern
+
+Collection components (ListBox, GridList, Select, ComboBox, Menu, Tree) support dynamic data rendering using the **Item + Field** pattern.
+
+**Architecture - 3 Layers:**
+
+**1. Data Loading Layer** (`useCollectionData` Hook)
+```typescript
+// Already implemented in src/builder/hooks/useCollectionData.ts
+const { data, loading, error } = useCollectionData({
+  dataBinding,
+  componentName: "ListBox",
+  fallbackData: []
+});
+```
+
+**2. Rendering Layer** (Item + Field combination)
+```tsx
+// Element tree structure:
+ListBox (with dataBinding + columnMapping)
+  └─ ListBoxItem (template, single item in tree)
+       ├─ Field (key="name", type="string")
+       ├─ Field (key="email", type="email")
+       └─ Field (key="role", type="string")
+
+// Preview renders this for each data item:
+<ListBox items={data}>
+  {(item) => (
+    <ListBoxItem>
+      <Field fieldKey="name" value={item.name} />
+      <Field fieldKey="email" value={item.email} />
+      <Field fieldKey="role" value={item.role} />
+    </ListBoxItem>
+  )}
+</ListBox>
+```
+
+**3. Management Layer** (ItemEditor with Field Management)
+
+Each Collection's ItemEditor (e.g., `ListBoxItemEditor`, `GridListItemEditor`) automatically detects Field children and provides Field management UI:
+
+**ListBoxItemEditor Pattern:**
+```typescript
+export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  const { setSelectedElement } = useStore();
+  const storeElements = useStore((state) => state.elements);
+
+  // Detect Field children
+  const fieldChildren = useMemo(() => {
+    return storeElements
+      .filter((child) => child.parent_id === elementId && child.tag === 'Field')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [storeElements, elementId]);
+
+  const hasFieldChildren = fieldChildren.length > 0;
+
+  // Mode 1: Field Management UI (if has Field children)
+  if (hasFieldChildren) {
+    return (
+      <div className="component-props">
+        <fieldset className="properties-aria">
+          <legend>Field Management</legend>
+
+          {/* Field List */}
+          <div className="react-aria-ListBox">
+            {fieldChildren.map((field) => (
+              <div key={field.id} className="react-aria-ListBoxItem">
+                <span>{field.props.key} ({field.props.type})</span>
+                <button onClick={() => {
+                  // Navigate to FieldEditor (reuse existing editor)
+                  setSelectedElement(field.id, field.props, field.props.style);
+                }}>
+                  Edit
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add Field Button */}
+          <button onClick={addNewField}>Add Field</button>
+        </fieldset>
+      </div>
+    );
+  }
+
+  // Mode 2: Static Item Properties (no Field children)
+  return (
+    <div className="component-props">
+      {/* label, value, isDisabled, isReadOnly */}
+
+      {/* Convert to Dynamic Item */}
+      <fieldset>
+        <legend>Convert to Dynamic Item</legend>
+        <button onClick={addFirstField}>Add First Field</button>
+      </fieldset>
+    </div>
+  );
+}
+```
+
+**Key Benefits:**
+- **No component duplication** - Reuses FieldEditor for Field editing
+- **No code duplication** - Edit button calls `setSelectedElement()` to navigate to FieldEditor
+- **Consistent UX** - All Field elements edited the same way
+- **Layer Tree integration** - Selecting Field in Inspector also selects in Layer Tree
+
+**Applicable to All Collection Components:**
+- ✅ **ListBox + ListBoxItem** (implemented)
+- 🔄 **GridList + GridListItem** (same pattern)
+- 🔄 **Select + SelectItem** (same pattern)
+- 🔄 **ComboBox + ComboBoxItem** (same pattern)
+- 🔄 **Menu + MenuItem** (same pattern)
+- 🔄 **Tree + TreeItem** (same pattern)
+
+**Implementation Pattern (3 steps):**
+1. Add `useCollectionData` to component for data loading
+2. Support `Item + Field` structure in Preview renderer
+3. Add Field management UI to ItemEditor (detect Field children, Edit → setSelectedElement)
+
 ### Preview iframe Communication
 
 **Always validate postMessage origins:**
@@ -1261,6 +1441,19 @@ Cursor AI can read this file for project context. When using Cursor:
 - Tree: Supports hierarchical data with recursive children rendering
 - Always pass dataBinding prop from renderer to component
 - Use MOCK_DATA baseUrl for development/testing
+
+## Pattern: Field Component for Dynamic Data
+- Field (DataField) component: Type-aware data display (email, url, image, date, etc.)
+- ClassName: react-aria-DataField with short child classes (label, value, value-email, etc.)
+- CSS scoping: .react-aria-DataField .label, .react-aria-DataField .value-email
+- Usage: Inside Collection Items (ListBoxItem, GridListItem, MenuItem, etc.)
+
+## Pattern: Collection Item + Field Management
+- ItemEditors detect Field children automatically
+- If hasFieldChildren → Show Field management UI
+- Edit button → setSelectedElement(field.id) → Reuse FieldEditor
+- Add Field button → Create new Field element
+- NO custom Field editing UI (reuse FieldEditor)
 ```
 
 **Common Cursor commands:**
@@ -1268,6 +1461,7 @@ Cursor AI can read this file for project context. When using Cursor:
 - When editing CSS, check existing patterns in styles/ folder first
 - When creating store actions, follow factory pattern from existing modules
 - When adding DataBinding to components, check existing implementations (ListBox.tsx, Select.tsx, Tree.tsx)
+- When adding Field management to ItemEditors, follow ListBoxItemEditor.tsx pattern
 
 ### For GitHub Copilot
 
@@ -1297,6 +1491,27 @@ GitHub Copilot learns from code patterns. To help it suggest correct code:
      font-size: var(--text-sm);  /* Copilot suggests: text-xs, text-sm, text-base */
      padding: var(--spacing-4);   /* Copilot suggests: spacing-2, spacing-4, etc. */
    }
+   ```
+
+5. **Field Component Pattern:** For dynamic data display in Collections
+   ```tsx
+   // Import Field component
+   import { DataField } from './Field';
+
+   // Use in ListBoxItem, MenuItem, etc.
+   <ListBoxItem>
+     <Field fieldKey="email" label="Email" type="email" value={item.email} />
+   </ListBoxItem>
+
+   // ItemEditor: Detect Field children
+   const fieldChildren = useMemo(() => {
+     return storeElements
+       .filter((child) => child.parent_id === elementId && child.tag === 'Field')
+       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+   }, [storeElements, elementId]);
+
+   // Edit button: Navigate to FieldEditor
+   onClick={() => setSelectedElement(field.id, field.props, field.props.style)}
    ```
 
 ### Common Anti-Patterns to Reject
@@ -1418,6 +1633,68 @@ const renderRecursively = (items: any[]): React.ReactNode => {
 };
 ```
 
+**6. Field Component for Dynamic Data Display:**
+```tsx
+// Use Field in Collection Items
+import { DataField } from './Field';
+
+<ListBoxItem>
+  <Field fieldKey="name" label="Name" type="string" value={item.name} />
+  <Field fieldKey="email" label="Email" type="email" value={item.email} />
+  <Field fieldKey="avatar" type="image" value={item.avatar} showLabel={false} />
+</ListBoxItem>
+
+// Field CSS pattern - short child classes
+.react-aria-DataField {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.react-aria-DataField .label {
+  font-weight: 500;
+}
+
+.react-aria-DataField .value-email {
+  color: var(--color-primary-600);
+}
+```
+
+**7. ItemEditor with Field Management:**
+```tsx
+export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  const { setSelectedElement } = useStore();
+  const storeElements = useStore((state) => state.elements);
+
+  // Detect Field children
+  const fieldChildren = useMemo(() => {
+    return storeElements
+      .filter((child) => child.parent_id === elementId && child.tag === 'Field')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [storeElements, elementId]);
+
+  // Mode 1: Field Management UI
+  if (fieldChildren.length > 0) {
+    return (
+      <div>
+        {fieldChildren.map((field) => (
+          <div key={field.id}>
+            <span>{field.props.key} ({field.props.type})</span>
+            {/* Navigate to FieldEditor - NO custom editing UI */}
+            <button onClick={() => setSelectedElement(field.id, field.props, field.props.style)}>
+              Edit
+            </button>
+          </div>
+        ))}
+        <button onClick={addNewField}>Add Field</button>
+      </div>
+    );
+  }
+
+  // Mode 2: Static Item Properties
+  return <div>{/* label, value, isDisabled, etc. */}</div>;
+}
+```
+
 ### Quick Reference for AI Assistants
 
 | Task | Correct Approach | File Location |
@@ -1431,6 +1708,9 @@ const renderRecursively = (items: any[]): React.ReactNode => {
 | Add DataBinding to component | Add `dataBinding?: DataBinding` prop, implement useState/useEffect | Component file (see `ListBox.tsx`, `Select.tsx`, `Tree.tsx`) |
 | Pass DataBinding in renderer | Add `dataBinding={element.dataBinding}` prop | Renderer file in `src/builder/preview/renderers/` |
 | Test with mock data | Use `baseUrl: "MOCK_DATA"` with available endpoints | See Mock Data API section |
+| Display dynamic data in Collection | Use Field component inside ListBoxItem/GridListItem/MenuItem | `src/builder/components/Field.tsx` |
+| Add Field management to ItemEditor | Detect Field children, Edit → setSelectedElement() | Follow `ListBoxItemEditor.tsx` pattern |
+| Edit Field properties | Click Edit button → Navigate to FieldEditor (reuse, NO custom UI) | Field auto-selected in Layer Tree + Inspector |
 
 ---
 
