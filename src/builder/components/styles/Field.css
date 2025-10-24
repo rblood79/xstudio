@@ -7,4 +7,66 @@
     flex-direction: column;
     gap: var(--spacing-sm);
   }
+
+  /* DataField - Collection 데이터 표시 컴포넌트 */
+  .data-field {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--text-sm);
+  }
+
+  .data-field-label {
+    font-weight: 500;
+    color: var(--color-gray-700);
+  }
+
+  .data-field-value {
+    color: var(--color-gray-900);
+  }
+
+  /* Empty value */
+  .data-field-value-empty {
+    color: var(--color-gray-400);
+    font-style: italic;
+  }
+
+  /* Boolean value */
+  .data-field-value-boolean {
+    font-weight: 600;
+    font-size: var(--text-base);
+  }
+
+  /* Number value */
+  .data-field-value-number {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Email value */
+  .data-field-value-email {
+    color: var(--color-primary-600);
+    text-decoration: none;
+  }
+
+  .data-field-value-email:hover {
+    text-decoration: underline;
+  }
+
+  /* URL value */
+  .data-field-value-url {
+    color: var(--color-primary-600);
+    text-decoration: none;
+  }
+
+  .data-field-value-url:hover {
+    text-decoration: underline;
+  }
+
+  /* Image value */
+  .data-field-value-image {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+  }
 }

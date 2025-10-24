@@ -10,8 +10,11 @@ import {
   ComboBoxItem,
   Slider,
 } from "../../components/list";
+import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
 import { ElementUtils } from "../../../utils/elementUtils";
+import { getVisibleColumns } from "../../../utils/columnTypeInference";
+import type { ColumnMapping } from "../../../types/unified";
 
 /**
  * Selection 관련 컴포넌트 렌더러
@@ -21,6 +24,13 @@ import { ElementUtils } from "../../../utils/elementUtils";
  * - ComboBox, ComboBoxItem
  * - Slider
  */
+
+// Field Elements 생성 요청 추적 (중복 방지)
+const fieldCreationRequestedRef = React.createRef<Set<string>>();
+if (!fieldCreationRequestedRef.current) {
+  (fieldCreationRequestedRef as React.MutableRefObject<Set<string>>).current =
+    new Set();
+}
 
 /**
  * ListBox 렌더링
@@ -35,6 +45,94 @@ export const renderListBox = (
   const listBoxChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "ListBoxItem")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
+  const columnMapping = (element.props as { columnMapping?: ColumnMapping })
+    .columnMapping;
+
+  if (columnMapping) {
+    const visibleColumns = getVisibleColumns(columnMapping);
+
+    console.log("🔍 ListBox ColumnMapping 발견:", {
+      listBoxId: element.id,
+      columnMapping,
+      visibleColumnsCount: visibleColumns.length,
+      visibleColumns,
+      listBoxChildrenCount: listBoxChildren.length,
+    });
+
+    // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
+    // 이유: APICollectionEditor에서 사용자가 명시적으로 컬럼을 선택할 때 Field Elements를 생성하므로
+    // Preview에서 자동 생성하면 충돌이 발생할 수 있음
+    console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
+  }
+
+  // columnMapping이 있으면 render function으로 children 전달
+  const renderChildren = columnMapping
+    ? (item: Record<string, unknown>) => {
+        // ListBoxItem 템플릿을 각 데이터 항목에 대해 렌더링
+        const listBoxItemTemplate = listBoxChildren[0];
+        if (!listBoxItemTemplate) return null;
+
+        // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
+        const fieldChildren = context.elements
+          .filter(
+            (child) =>
+              child.parent_id === listBoxItemTemplate.id && child.tag === "Field"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        console.log("🎨 ListBox render function - Field 자식 찾기:", {
+          listBoxItemTemplateId: listBoxItemTemplate.id,
+          totalElementsInContext: context.elements.length,
+          fieldChildrenFound: fieldChildren.length,
+          fieldChildren: fieldChildren.map((f) => ({
+            id: f.id,
+            key: (f.props as { key?: string }).key,
+            label: (f.props as { label?: string }).label,
+          })),
+        });
+
+        return (
+          <ListBoxItem
+            key={String(item.id)}
+            data-element-id={listBoxItemTemplate.id}
+            value={item}
+            isDisabled={Boolean(listBoxItemTemplate.props.isDisabled)}
+            style={listBoxItemTemplate.props.style}
+            className={listBoxItemTemplate.props.className}
+          >
+            {fieldChildren.length > 0
+              ? fieldChildren.map((field) => {
+                  const fieldKey = (field.props as { key?: string }).key;
+                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                  return (
+                    <DataField
+                      key={field.id}
+                      fieldKey={fieldKey || ""}
+                      label={(field.props as { label?: string }).label}
+                      type={
+                        (field.props as { type?: string }).type as
+                          | "string"
+                          | "number"
+                          | "boolean"
+                          | "date"
+                          | "image"
+                          | "url"
+                          | "email"
+                      }
+                      value={fieldValue}
+                      style={field.props.style}
+                      className={field.props.className}
+                    />
+                  );
+                })
+              : String(listBoxItemTemplate.props.label || "")}
+          </ListBoxItem>
+        );
+      }
+    : listBoxChildren.map((item) => context.renderElement(item));
 
   return (
     <ListBox
@@ -54,6 +152,7 @@ export const renderListBox = (
           : []
       }
       dataBinding={element.dataBinding}
+      columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
           ...element.props,
@@ -62,19 +161,103 @@ export const renderListBox = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      {listBoxChildren.map((item) => (
-        <ListBoxItem
-          key={item.id}
-          data-element-id={item.id}
-          value={item.props.value as object}
-          isDisabled={Boolean(item.props.isDisabled)}
-          style={item.props.style}
-          className={item.props.className}
-        >
-          {String(item.props.label || "")}
-        </ListBoxItem>
-      ))}
+      {renderChildren}
     </ListBox>
+  );
+};
+
+/**
+ * ListBoxItem 렌더링 (독립적으로 렌더링될 때)
+ */
+export const renderListBoxItem = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements } = context;
+
+  // DataField 자식 요소들을 찾기
+  const fieldChildren = elements
+    .filter((child) => child.parent_id === element.id && child.tag === "Field")
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <ListBoxItem
+      key={element.id}
+      data-element-id={element.id}
+      value={element.props.value as object}
+      isDisabled={Boolean(element.props.isDisabled)}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {fieldChildren.length > 0
+        ? fieldChildren.map((child) => context.renderElement(child))
+        : String(element.props.label || "")}
+    </ListBoxItem>
+  );
+};
+
+/**
+ * DataField 렌더링
+ *
+ * Collection 컴포넌트 내에서 데이터를 표시하는 Field Element를 렌더링합니다.
+ * dataBinding.source="parent"인 경우 부모의 데이터 context에서 값을 추출합니다.
+ */
+export const renderDataField = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements } = context;
+
+  // dataBinding이 있고 source가 "parent"인 경우 부모 데이터에서 값 추출
+  let value = element.props.value;
+
+  if (
+    element.dataBinding?.type === "field" &&
+    element.dataBinding?.source === "parent"
+  ) {
+    const path = element.dataBinding.config?.path as string | undefined;
+
+    // 부모 element 찾기 (ListBoxItem, GridListItem 등)
+    const parent = elements.find((el) => el.id === element.parent_id);
+
+    if (parent && path) {
+      // 부모의 value에서 데이터 추출
+      const parentValue = parent.props.value as Record<string, unknown> | undefined;
+
+      if (parentValue && typeof parentValue === "object") {
+        value = parentValue[path];
+        console.log("🔍 DataField 데이터 바인딩:", {
+          fieldId: element.id,
+          fieldKey: element.props.key,
+          path,
+          parentValue,
+          extractedValue: value,
+        });
+      }
+    }
+  }
+
+  // 자식 요소가 있으면 렌더링
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <DataField
+      key={element.id}
+      data-element-id={element.id}
+      fieldKey={element.props.key as string | undefined}
+      label={element.props.label as string | undefined}
+      type={element.props.type as typeof element.props.type}
+      value={value}
+      showLabel={element.props.showLabel !== false}
+      className={element.props.className as string | undefined}
+      style={element.props.style}
+    >
+      {children.length > 0
+        ? children.map((child) => context.renderElement(child))
+        : null}
+    </DataField>
   );
 };
 

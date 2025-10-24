@@ -1,66 +1,69 @@
-
 .overlay-element {
-    /*transition: var(--default-transition-duration) var(--default-transition-timing-function);*/
-    position: absolute;
-    pointer-events: none;
-    z-index: 1;
-    border: 1px solid var(--color-sky-500);
-    display: none;
-
+  /*transition: var(--default-transition-duration) var(--default-transition-timing-function);*/
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  border: 1px solid var(--color-sky-500);
 }
 
 .overlay-info {
-    pointer-events: auto;
-    bottom: 100%;
-    position: absolute;
-    display: flex;
+  pointer-events: auto;
+  bottom: 100%;
+  position: absolute;
+  display: flex;
 }
 
 .overlay-tag {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    padding: var(--spacing) var(--spacing-sm);
-    background-color: var(--color-sky-500);
-    color: var(--color-neutral-100);
-    cursor: default;
-    -webkit-user-select: none;
-    user-select: none;
-    /*margin-left: -0.05rem;*/
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  padding: var(--spacing) var(--spacing-sm);
+  background-color: var(--color-sky-500);
+  color: var(--color-neutral-100);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  /*margin-left: -0.05rem;*/
 }
 
 .overlay-tag-parent {
-    padding: var(--spacing);
-    background: var(--color-sky-200);
-    margin-left: -25px;
+  padding: var(--spacing);
+  background: var(--color-sky-200);
+  margin-left: -25px;
 }
 
 .overlay-background {
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    width: 100%;
-    background-color: var(--color-sky-500);
-    opacity: 0.05;
-    box-shadow: var(--inset-shadow-sm);
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+  background-color: var(--color-sky-500);
+  opacity: 0.05;
+  box-shadow: var(--inset-shadow-sm);
 }
 
 .overlay-pattern {
-    position: absolute;
-    inset: 0;
-    display: none;
+  position: absolute;
+  inset: 0;
+  display: none;
 }
 
 .overlay-pattern-inner {
-    height: 100%;
-    color: rgba(0, 0, 0, 0.1);
-    background-size: 8px 8px;
-    background-position: left top;
-    background-image: repeating-linear-gradient(315deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%);
+  height: 100%;
+  color: rgba(0, 0, 0, 0.1);
+  background-size: 8px 8px;
+  background-position: left top;
+  background-image: repeating-linear-gradient(
+    315deg,
+    currentColor 0,
+    currentColor 1px,
+    transparent 0,
+    transparent 50%
+  );
 }
 
 .resize-handle {
-    /*position: absolute;
+  /*position: absolute;
     bottom: 0;
     right: 0;
     width: 6px;

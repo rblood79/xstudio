@@ -18,9 +18,31 @@ export interface BaseElementProps {
 
 // Inspector 데이터 바인딩 타입 (export)
 export interface DataBinding {
-  type: "collection" | "value";
-  source: "supabase" | "api" | "state" | "static";
+  type: "collection" | "value" | "field";
+  source: "supabase" | "api" | "state" | "static" | "parent";
   config: Record<string, unknown>;
+}
+
+// === 컬럼 매핑 타입 (ListBox, Select 등 Collection 컴포넌트용) ===
+export type FieldType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "date"
+  | "image"
+  | "url"
+  | "email";
+
+export interface FieldDefinition {
+  key: string;           // 데이터 키 (예: "name")
+  label?: string;        // 표시 레이블 (예: "Full Name")
+  type?: FieldType;      // 데이터 타입
+  visible?: boolean;     // 선택 여부 (기본 true)
+  order?: number;        // 표시 순서
+}
+
+export interface ColumnMapping {
+  [fieldKey: string]: FieldDefinition;
 }
 
 export interface Element {
@@ -366,12 +388,21 @@ export interface ListBoxElementProps extends BaseElementProps {
   onSelectionChange?: (keys: string[]) => void;
   isDisabled?: boolean;
   selectionMode?: "single" | "multiple";
+  columnMapping?: ColumnMapping;  // 컬럼 매핑 정보 (자동 감지된 컬럼)
+  autoDetectColumns?: boolean;    // 자동 컬럼 감지 활성화
 }
 
 export interface ListBoxItemElementProps extends BaseElementProps {
   children?: React.ReactNode;
   id?: string;
   isDisabled?: boolean;
+}
+
+export interface FieldElementProps extends BaseElementProps {
+  key?: string;          // 데이터 키 (예: "name", "email")
+  label?: string;        // 표시 레이블
+  type?: FieldType;      // 데이터 타입
+  value?: unknown;       // 데이터 값 (런타임에서 바인딩)
 }
 
 export interface GridListElementProps extends BaseElementProps {
@@ -445,6 +476,7 @@ export type ComponentElementProps =
   | TagElementProps
   | ListBoxElementProps
   | ListBoxItemElementProps
+  | FieldElementProps
   | GridListElementProps
   | GridListItemElementProps
   | TextElementProps
@@ -794,6 +826,14 @@ export function createDefaultListBoxItemProps(): ListBoxItemElementProps {
   };
 }
 
+export function createDefaultFieldProps(): FieldElementProps {
+  return {
+    key: "field",
+    label: "Field",
+    type: "string",
+  };
+}
+
 export function createDefaultGridListProps(): GridListElementProps {
   return {
     items: [],
@@ -861,6 +901,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Tag: createDefaultTagProps,
     ListBox: createDefaultListBoxProps,
     ListBoxItem: createDefaultListBoxItemProps,
+    Field: createDefaultFieldProps,
     GridList: createDefaultGridListProps,
     GridListItem: createDefaultGridListItemProps,
     Text: createDefaultTextProps,

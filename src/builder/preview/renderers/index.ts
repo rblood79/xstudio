@@ -33,11 +33,13 @@ export const rendererMap: Record<
 
   // Selection 컴포넌트
   ListBox: SelectionRenderers.renderListBox,
+  ListBoxItem: SelectionRenderers.renderListBoxItem,
   GridList: SelectionRenderers.renderGridList,
   GridListItem: SelectionRenderers.renderGridListItem,
   Select: SelectionRenderers.renderSelect,
   ComboBox: SelectionRenderers.renderComboBox,
   Slider: SelectionRenderers.renderSlider,
+  Field: SelectionRenderers.renderDataField,
 
   // Layout 컴포넌트
   Tabs: LayoutRenderers.renderTabs,

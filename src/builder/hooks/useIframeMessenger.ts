@@ -180,28 +180,28 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // Preview에서 Column Elements 일괄 추가 요청
         if (event.data.type === "ADD_COLUMN_ELEMENTS" && event.data.payload?.columns) {
             console.log("📥 Builder: Preview에서 Column Elements 일괄 추가 요청:", event.data.payload);
-            
+
             const { elements } = useStore.getState();
             const newColumns = event.data.payload.columns;
-            
+
             // 중복 제거 (이미 존재하는 Column은 제외)
-            const columnsToAdd = newColumns.filter((col: Element) => 
+            const columnsToAdd = newColumns.filter((col: Element) =>
                 !elements.some(el => el.id === col.id)
             );
-            
+
             if (columnsToAdd.length === 0) {
                 console.log("⚠️ 추가할 새로운 Column이 없습니다 (모두 중복)");
                 return;
             }
-            
+
             // 1. Store에 일괄 추가
             useStore.setState(state => ({
                 elements: [...state.elements, ...columnsToAdd]
             }));
-            
-            console.log(`✅ Builder Store에 ${columnsToAdd.length}개 Column Elements 추가 완료:`, 
+
+            console.log(`✅ Builder Store에 ${columnsToAdd.length}개 Column Elements 추가 완료:`,
                 columnsToAdd.map((c: Element) => c.id));
-            
+
             // 2. DB에도 저장
             (async () => {
                 try {
@@ -211,7 +211,45 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                     console.error("❌ Column Elements DB 저장 실패:", error);
                 }
             })();
-            
+
+            return;
+        }
+
+        // Preview에서 Field Elements 일괄 추가 요청 (ListBox column detection)
+        if (event.data.type === "ADD_FIELD_ELEMENTS" && event.data.payload?.fields) {
+            console.log("📥 Builder: Preview에서 Field Elements 일괄 추가 요청:", event.data.payload);
+
+            const { elements } = useStore.getState();
+            const newFields = event.data.payload.fields;
+
+            // 중복 제거 (이미 존재하는 Field는 제외)
+            const fieldsToAdd = newFields.filter((field: Element) =>
+                !elements.some(el => el.id === field.id)
+            );
+
+            if (fieldsToAdd.length === 0) {
+                console.log("⚠️ 추가할 새로운 Field가 없습니다 (모두 중복)");
+                return;
+            }
+
+            // 1. Store에 일괄 추가
+            useStore.setState(state => ({
+                elements: [...state.elements, ...fieldsToAdd]
+            }));
+
+            console.log(`✅ Builder Store에 ${fieldsToAdd.length}개 Field Elements 추가 완료:`,
+                fieldsToAdd.map((f: Element) => f.id));
+
+            // 2. DB에도 저장
+            (async () => {
+                try {
+                    await elementsApi.createMultipleElements(fieldsToAdd);
+                    console.log(`✅ DB에 ${fieldsToAdd.length}개 Field Elements 저장 완료`);
+                } catch (error) {
+                    console.error("❌ Field Elements DB 저장 실패:", error);
+                }
+            })();
+
             return;
         }
 
