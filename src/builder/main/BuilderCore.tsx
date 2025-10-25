@@ -12,6 +12,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import Inspector from "../inspector";
 import Sidebar from "../sidebar";
 import SelectionOverlay from "../overlay";
+import Grid from "../grid";
 import { ChatInterface } from "../chat/ChatInterface";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -379,6 +380,7 @@ export const BuilderCore: React.FC = () => {
           onIframeLoad={handleIframeLoad}
           onMessage={handleMessage}
         >
+          <Grid />
           {showOverlay && <SelectionOverlay />}
         </BuilderWorkspace>
 
