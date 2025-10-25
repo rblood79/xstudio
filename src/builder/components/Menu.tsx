@@ -9,7 +9,7 @@ import {
   Popover,
   SubmenuTrigger,
 } from "react-aria-components";
-import type { DataBinding } from "../../types/unified";
+import type { DataBinding, ColumnMapping } from "../../types/unified";
 import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Menu.css";
@@ -19,12 +19,14 @@ export interface MenuButtonProps<T>
     Omit<MenuTriggerProps, "children"> {
   label?: string;
   dataBinding?: DataBinding;
+  columnMapping?: ColumnMapping;
 }
 
 export function MenuButton<T extends object>({
   label,
   children,
   dataBinding,
+  columnMapping,
   ...props
 }: MenuButtonProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -58,9 +60,161 @@ export function MenuButton<T extends object>({
     boundDataLength: boundData.length,
     boundData,
     childrenExists: !!children,
+    hasColumnMapping: !!columnMapping,
   });
 
-  // Dynamic Collection: items prop 사용
+  // ColumnMapping이 있으면 각 데이터 항목마다 MenuItem 렌더링
+  // ListBox와 동일한 패턴: Element tree의 MenuItem 템플릿 + Field 자식 사용
+  if (hasDataBinding && columnMapping) {
+    console.log('🎯 Menu: columnMapping 감지 - 데이터로 아이템 렌더링', {
+      columnMapping,
+      hasChildren: !!children,
+      dataCount: boundData.length,
+    });
+
+    // Loading 상태
+    if (loading) {
+      return (
+        <MenuTrigger {...props}>
+          <Button>{label}</Button>
+          <Popover>
+            <Menu>
+              <AriaMenuItem key="loading" textValue="Loading">
+                ⏳ 데이터 로딩 중...
+              </AriaMenuItem>
+            </Menu>
+          </Popover>
+        </MenuTrigger>
+      );
+    }
+
+    // Error 상태
+    if (error) {
+      return (
+        <MenuTrigger {...props}>
+          <Button>{label}</Button>
+          <Popover>
+            <Menu>
+              <AriaMenuItem key="error" textValue="Error">
+                ❌ 오류: {error}
+              </AriaMenuItem>
+            </Menu>
+          </Popover>
+        </MenuTrigger>
+      );
+    }
+
+    // 데이터가 있을 때: items prop 사용
+    if (boundData.length > 0) {
+      const menuItems = boundData.map((item, index) => {
+        const itemId = String(item.id !== undefined ? item.id : index);
+        return {
+          id: itemId,
+          label: String(
+            item.label || item.text || item.name || `Item ${index + 1}`
+          ),
+          isDisabled: Boolean(item.isDisabled),
+          icon: item.icon as string | undefined,
+          shortcut: item.shortcut as string | undefined,
+          description: item.description as string | undefined,
+          children: Array.isArray(item.children) ? item.children : undefined,
+          ...item,
+        };
+      });
+
+      console.log('✅ Menu with columnMapping - items:', menuItems);
+
+      // Recursive render function for menu items with submenus
+      const renderMenuItem = (item: (typeof menuItems)[0]) => {
+        const hasSubmenu = item.children && item.children.length > 0;
+
+        if (hasSubmenu) {
+          const submenuItems = item.children!.map(
+            (child: Record<string, unknown>, childIndex: number) => ({
+              id: String(child.id || `${item.id}-${childIndex}`),
+              label: String(
+                child.label ||
+                  child.text ||
+                  child.name ||
+                  `Item ${childIndex + 1}`
+              ),
+              isDisabled: Boolean(child.isDisabled),
+              icon: child.icon as string | undefined,
+              shortcut: child.shortcut as string | undefined,
+              description: child.description as string | undefined,
+              children: Array.isArray(child.children)
+                ? child.children
+                : undefined,
+              ...child,
+            })
+          );
+
+          return (
+            <SubmenuTrigger>
+              <AriaMenuItem textValue={item.label} isDisabled={item.isDisabled}>
+                <span className="menu-item-content">
+                  {item.icon && <span className="menu-item-icon">{item.icon}</span>}
+                  <span className="menu-item-label">{item.label}</span>
+                  {item.shortcut && (
+                    <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
+                  )}
+                </span>
+                {item.description && (
+                  <span className="menu-item-description">{item.description}</span>
+                )}
+              </AriaMenuItem>
+              <Popover>
+                <Menu items={submenuItems}>
+                  {(subItem) => renderMenuItem(subItem)}
+                </Menu>
+              </Popover>
+            </SubmenuTrigger>
+          );
+        }
+
+        return (
+          <AriaMenuItem textValue={item.label} isDisabled={item.isDisabled}>
+            <span className="menu-item-content">
+              {item.icon && <span className="menu-item-icon">{item.icon}</span>}
+              <span className="menu-item-label">{item.label}</span>
+              {item.shortcut && (
+                <kbd className="menu-item-shortcut">{item.shortcut}</kbd>
+              )}
+            </span>
+            {item.description && (
+              <span className="menu-item-description">{item.description}</span>
+            )}
+          </AriaMenuItem>
+        );
+      };
+
+      return (
+        <MenuTrigger {...props}>
+          <Button>{label}</Button>
+          <Popover>
+            <Menu items={menuItems}>
+              {/* children은 MenuItem 템플릿으로 사용 */}
+              {children}
+            </Menu>
+          </Popover>
+        </MenuTrigger>
+      );
+    }
+
+    // 데이터 없음
+    return (
+      <MenuTrigger {...props}>
+        <Button>{label}</Button>
+        <Popover>
+          <Menu>
+            {children}
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+    );
+  }
+
+  // Dynamic Collection: items prop 사용 (columnMapping 없을 때)
   if (hasDataBinding && !loading && !error && boundData.length > 0) {
     const menuItems = boundData.map((item, index) => {
       const itemId = String(item.id !== undefined ? item.id : index);
