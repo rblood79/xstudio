@@ -4,7 +4,7 @@
  * Main chat interface container with messages list and input
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { MessageCircle } from 'lucide-react';

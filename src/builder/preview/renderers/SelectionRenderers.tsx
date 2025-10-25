@@ -128,6 +128,7 @@ export const renderListBox = (
                           | "email"
                       }
                       value={fieldValue}
+                      visible={(field.props as { visible?: boolean }).visible !== false}
                       style={field.props.style}
                       className={field.props.className}
                     />
@@ -246,14 +247,6 @@ export const renderDataField = (
   const children = elements
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-  // 디버깅: element.props 확인
-  console.log("📦 renderDataField element.props:", {
-    elementId: element.id,
-    key: element.props.key,
-    visible: element.props.visible,
-    allProps: element.props
-  });
 
   return (
     <DataField

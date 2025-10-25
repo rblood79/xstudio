@@ -76,12 +76,8 @@ export function DataField({
   style,
   children,
 }: DataFieldProps): React.ReactElement | null {
-  // 디버깅: visible 값 확인
-  console.log(`🔍 DataField [${fieldKey}] visible:`, visible);
-
   // visible이 false면 렌더링하지 않음
   if (visible === false) {
-    console.log(`❌ DataField [${fieldKey}] 숨김 처리`);
     return null;
   }
 

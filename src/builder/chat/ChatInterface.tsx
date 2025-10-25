@@ -8,14 +8,14 @@
  * - Builder element store
  */
 
-import React, { useEffect, useCallback } from 'react';
-import { ChatContainer } from '../components/ChatContainer';
-import { useConversationStore } from '../stores/conversation';
-import { useStore } from '../stores';
-import { createGroqService } from '../../services/ai/GroqService';
-import { intentParser } from '../../services/ai/IntentParser';
-import type { ComponentIntent, BuilderContext } from '../../types/chat';
-import type { Element } from '../../types/store';
+import { useEffect, useCallback } from "react";
+import { ChatContainer } from "../components/ChatContainer";
+import { useConversationStore } from "../stores/conversation";
+import { useStore } from "../stores";
+import { createGroqService } from "../../services/ai/GroqService";
+import { intentParser } from "../../services/ai/IntentParser";
+import type { ComponentIntent, BuilderContext } from "../../types/chat";
+import type { Element } from "../../types/store";
 
 let groqService: ReturnType<typeof createGroqService> | null = null;
 
@@ -25,7 +25,7 @@ function getGroqService() {
     try {
       groqService = createGroqService();
     } catch (error) {
-      console.error('Failed to initialize Groq service:', error);
+      console.error("Failed to initialize Groq service:", error);
       return null;
     }
   }
@@ -57,13 +57,13 @@ export function ChatInterface() {
    */
   useEffect(() => {
     const context: BuilderContext = {
-      currentPageId: currentPageId || 'default',
+      currentPageId: currentPageId || "default",
       selectedElementId: selectedElementId || undefined,
       elements: elements.map((el) => ({
         id: el.id,
         tag: el.tag,
         props: el.props,
-        parent_id: el.parent_id,
+        parent_id: el.parent_id ?? null,
       })),
       recentChanges: [],
     };
@@ -76,13 +76,13 @@ export function ChatInterface() {
    */
   const executeIntent = useCallback(
     async (intent: ComponentIntent) => {
-      console.log('Executing intent:', intent);
+      console.log("Executing intent:", intent);
 
       try {
         switch (intent.action) {
-          case 'create': {
+          case "create": {
             if (!intent.componentType) {
-              console.warn('Missing componentType for create action');
+              console.warn("Missing componentType for create action");
               return;
             }
 
@@ -91,7 +91,7 @@ export function ChatInterface() {
               tag: intent.componentType,
               props: intent.props || {},
               parent_id: null,
-              page_id: currentPageId || 'default',
+              page_id: currentPageId || "default",
               order_num: elements.length,
               dataBinding: undefined,
             } as Element;
@@ -107,39 +107,39 @@ export function ChatInterface() {
             // Add dataBinding if provided
             if (intent.dataBinding) {
               (newElement as any).dataBinding = {
-                type: 'collection',
-                source: 'api',
+                type: "collection",
+                source: "api",
                 config: {
                   baseUrl: intent.dataBinding.baseUrl,
                   endpoint: intent.dataBinding.endpoint,
                   params: intent.dataBinding.params || {},
                   dataMapping: {
-                    idField: 'id',
-                    labelField: 'name',
+                    idField: "id",
+                    labelField: "name",
                   },
                 },
               };
             }
 
             await addElement(newElement);
-            console.log('Created element:', newElement);
+            console.log("Created element:", newElement);
             break;
           }
 
-          case 'modify':
-          case 'style': {
+          case "modify":
+          case "style": {
             if (!intent.targetElementId) {
-              console.warn('Missing targetElementId for modify/style action');
+              console.warn("Missing targetElementId for modify/style action");
               return;
             }
 
             const targetId =
-              intent.targetElementId === 'current'
+              intent.targetElementId === "current"
                 ? selectedElementId
                 : intent.targetElementId;
 
             if (!targetId) {
-              console.warn('No element selected for modify/style action');
+              console.warn("No element selected for modify/style action");
               return;
             }
 
@@ -153,47 +153,48 @@ export function ChatInterface() {
             // Merge styles into style prop
             if (intent.styles) {
               updates.style = {
-                ...(elements.find((el) => el.id === targetId)?.props.style || {}),
+                ...(elements.find((el) => el.id === targetId)?.props.style ||
+                  {}),
                 ...intent.styles,
               };
             }
 
             await updateElementProps(targetId, updates);
-            console.log('Updated element:', targetId, updates);
+            console.log("Updated element:", targetId, updates);
             break;
           }
 
-          case 'delete': {
+          case "delete": {
             if (!intent.targetElementId) {
-              console.warn('Missing targetElementId for delete action');
+              console.warn("Missing targetElementId for delete action");
               return;
             }
 
             const targetId =
-              intent.targetElementId === 'current'
+              intent.targetElementId === "current"
                 ? selectedElementId
                 : intent.targetElementId;
 
             if (!targetId) {
-              console.warn('No element selected for delete action');
+              console.warn("No element selected for delete action");
               return;
             }
 
             await removeElement(targetId);
-            console.log('Deleted element:', targetId);
+            console.log("Deleted element:", targetId);
             break;
           }
 
-          case 'query':
+          case "query":
             // Query actions don't modify elements, just provide information
-            console.log('Query action:', intent.description);
+            console.log("Query action:", intent.description);
             break;
 
           default:
-            console.warn('Unknown action:', intent.action);
+            console.warn("Unknown action:", intent.action);
         }
       } catch (error) {
-        console.error('Failed to execute intent:', error);
+        console.error("Failed to execute intent:", error);
         throw error;
       }
     },
@@ -213,7 +214,7 @@ export function ChatInterface() {
   const handleSendMessage = useCallback(
     async (message: string) => {
       if (!currentContext) {
-        console.warn('No context available');
+        console.warn("No context available");
         return;
       }
 
@@ -228,12 +229,15 @@ export function ChatInterface() {
           setStreamingStatus(true);
 
           // Add empty assistant message for streaming
-          addAssistantMessage('');
+          addAssistantMessage("");
 
-          let fullResponse = '';
+          let fullResponse = "";
 
           try {
-            for await (const chunk of service.chatStream(message, currentContext)) {
+            for await (const chunk of service.chatStream(
+              message,
+              currentContext
+            )) {
               fullResponse += chunk;
               updateLastMessage(fullResponse);
             }
@@ -244,7 +248,7 @@ export function ChatInterface() {
             const intent = service.parseIntent(fullResponse);
 
             if (intent) {
-              console.log('Parsed intent:', intent);
+              console.log("Parsed intent:", intent);
 
               // Execute the intent
               await executeIntent(intent);
@@ -257,24 +261,23 @@ export function ChatInterface() {
               }
             }
           } catch (streamError) {
-            console.error('Streaming failed:', streamError);
+            console.error("Streaming failed:", streamError);
             setStreamingStatus(false);
 
             // Fallback to rule-based parser
             throw streamError;
           }
         } else {
-          throw new Error('Groq service not available');
+          throw new Error("Groq service not available");
         }
       } catch (error) {
-        console.warn('AI service failed, using rule-based parser:', error);
+        console.warn("AI service failed, using rule-based parser:", error);
 
         // Fallback to rule-based parser
         const intent = intentParser.parse(message, currentContext);
 
         if (intent) {
-          const responseMessage =
-            intent.description || '요청을 처리했습니다.';
+          const responseMessage = intent.description || "요청을 처리했습니다.";
 
           addAssistantMessage(responseMessage, intent);
 
@@ -282,7 +285,7 @@ export function ChatInterface() {
           await executeIntent(intent);
         } else {
           addAssistantMessage(
-            '죄송합니다. 요청을 이해하지 못했습니다. 다시 시도해주세요.'
+            "죄송합니다. 요청을 이해하지 못했습니다. 다시 시도해주세요."
           );
         }
       }

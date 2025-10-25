@@ -4,7 +4,6 @@
  * Displays a single chat message with avatar and timestamp
  */
 
-import React from 'react';
 import type { ChatMessage as ChatMessageType } from '../../types/chat';
 import './styles/ChatMessage.css';
 

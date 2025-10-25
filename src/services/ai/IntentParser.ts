@@ -37,7 +37,7 @@ export class IntentParser {
   /**
    * Button creation patterns
    */
-  private parseButtonCreation(lowercased: string, original: string): ComponentIntent | null {
+  private parseButtonCreation(lowercased: string, original: string, _context?: BuilderContext): ComponentIntent | null {
     const buttonPatterns = ['버튼', 'button', '버튼을', '버튼 만'];
     const createPatterns = ['만들', '추가', '넣어', 'create', 'add'];
 
@@ -62,7 +62,7 @@ export class IntentParser {
   /**
    * Table creation patterns
    */
-  private parseTableCreation(lowercased: string, original: string): ComponentIntent | null {
+  private parseTableCreation(lowercased: string, _original: string, _context?: BuilderContext): ComponentIntent | null {
     const tablePatterns = ['테이블', 'table', '표', '목록'];
     const hasTable = tablePatterns.some((p) => lowercased.includes(p));
 
@@ -88,7 +88,7 @@ export class IntentParser {
   /**
    * Form creation patterns
    */
-  private parseFormCreation(lowercased: string): ComponentIntent | null {
+  private parseFormCreation(lowercased: string, _original: string, _context?: BuilderContext): ComponentIntent | null {
     const formPatterns = ['폼', 'form', '입력폼', '양식'];
     const hasForm = formPatterns.some((p) => lowercased.includes(p));
 
@@ -106,7 +106,7 @@ export class IntentParser {
   /**
    * Select/Dropdown creation patterns
    */
-  private parseSelectCreation(lowercased: string): ComponentIntent | null {
+  private parseSelectCreation(lowercased: string, _original: string, _context?: BuilderContext): ComponentIntent | null {
     const selectPatterns = ['선택', 'select', '드롭다운', 'dropdown'];
     const hasSelect = selectPatterns.some((p) => lowercased.includes(p));
 
@@ -132,7 +132,7 @@ export class IntentParser {
   /**
    * Style change patterns
    */
-  private parseStyleChange(lowercased: string, original: string, context?: BuilderContext): ComponentIntent | null {
+  private parseStyleChange(lowercased: string, _original: string, context?: BuilderContext): ComponentIntent | null {
     const stylePatterns = ['색', 'color', '크기', 'size', '스타일'];
     const changePatterns = ['바꿔', '변경', '수정', 'change'];
 
@@ -154,7 +154,7 @@ export class IntentParser {
   /**
    * Layout change patterns
    */
-  private parseLayoutChange(lowercased: string, context?: BuilderContext): ComponentIntent | null {
+  private parseLayoutChange(lowercased: string, _original: string, context?: BuilderContext): ComponentIntent | null {
     const layoutPatterns = ['정렬', 'align', 'layout', '배치'];
     const hasLayout = layoutPatterns.some((p) => lowercased.includes(p));
 
@@ -188,7 +188,7 @@ export class IntentParser {
   /**
    * Color change patterns
    */
-  private parseColorChange(lowercased: string, context?: BuilderContext): ComponentIntent | null {
+  private parseColorChange(lowercased: string, _original: string, context?: BuilderContext): ComponentIntent | null {
     const color = this.extractColor(lowercased);
 
     if (color && context?.selectedElementId) {
@@ -208,7 +208,7 @@ export class IntentParser {
   /**
    * Delete action patterns
    */
-  private parseDeleteAction(lowercased: string, context?: BuilderContext): ComponentIntent | null {
+  private parseDeleteAction(lowercased: string, _original: string, context?: BuilderContext): ComponentIntent | null {
     const deletePatterns = ['삭제', '지워', '제거', 'delete', 'remove'];
     const hasDelete = deletePatterns.some((p) => lowercased.includes(p));
 

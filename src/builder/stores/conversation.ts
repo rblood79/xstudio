@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import type { ConversationState, ChatMessage, ComponentIntent, BuilderContext } from '../../types/chat';
 
-export const useConversationStore = create<ConversationState>((set, get) => ({
+export const useConversationStore = create<ConversationState>((set) => ({
   messages: [],
   isStreaming: false,
   currentContext: null,
