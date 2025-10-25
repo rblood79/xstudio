@@ -247,6 +247,14 @@ export const renderDataField = (
     .filter((child) => child.parent_id === element.id)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // 디버깅: element.props 확인
+  console.log("📦 renderDataField element.props:", {
+    elementId: element.id,
+    key: element.props.key,
+    visible: element.props.visible,
+    allProps: element.props
+  });
+
   return (
     <DataField
       key={element.id}
@@ -256,6 +264,7 @@ export const renderDataField = (
       type={element.props.type as "string" | "number" | "boolean" | "date" | "image" | "url" | "email" | undefined}
       value={value}
       showLabel={element.props.showLabel !== false}
+      visible={element.props.visible !== false}
       className={element.props.className as string | undefined}
       style={element.props.style}
     >

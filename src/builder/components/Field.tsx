@@ -42,6 +42,8 @@ export interface DataFieldProps {
   value?: unknown;
   /** 레이블 표시 여부 (기본: true) */
   showLabel?: boolean;
+  /** 필드 표시 여부 (기본: true) */
+  visible?: boolean;
   /** 추가 CSS 클래스 */
   className?: string;
   /** 인라인 스타일 */
@@ -69,10 +71,20 @@ export function DataField({
   type = "string",
   value,
   showLabel = true,
+  visible = true,
   className = "",
   style,
   children,
-}: DataFieldProps): React.ReactElement {
+}: DataFieldProps): React.ReactElement | null {
+  // 디버깅: visible 값 확인
+  console.log(`🔍 DataField [${fieldKey}] visible:`, visible);
+
+  // visible이 false면 렌더링하지 않음
+  if (visible === false) {
+    console.log(`❌ DataField [${fieldKey}] 숨김 처리`);
+    return null;
+  }
+
   // 자식 요소가 있으면 우선 렌더링
   if (children) {
     return (

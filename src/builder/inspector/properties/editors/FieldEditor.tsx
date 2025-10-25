@@ -37,6 +37,12 @@ export function FieldEditor({
   const fieldProps = currentProps as FieldElementProps;
 
   const updateProps = (newProps: Partial<FieldElementProps>) => {
+    console.log("🔧 FieldEditor updateProps:", {
+      elementId,
+      currentProps,
+      newProps,
+      merged: { ...currentProps, ...newProps }
+    });
     onUpdate({
       ...currentProps,
       ...newProps,
