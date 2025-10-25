@@ -18,6 +18,8 @@ import {
   createUpdateElementPropsAction,
   createUpdateElementAction,
 } from "./utils/elementUpdate";
+import { ElementUtils } from "../../utils/elementUtils";
+import { elementsApi } from "../../services/api";
 
 interface Page {
   id: string;
@@ -107,9 +109,13 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     ),
 
   loadPageElements: (elements, pageId) => {
+    // orphan 요소들을 body로 마이그레이션
+    const { elements: migratedElements, updatedElements } =
+      ElementUtils.migrateOrphanElementsToBody(elements, pageId);
+
     set(
       produce((state: ElementsState) => {
-        state.elements = elements;
+        state.elements = migratedElements;
         state.currentPageId = pageId;
 
         // 페이지 변경 시 히스토리 초기화
@@ -117,10 +123,25 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       })
     );
 
+    // 마이그레이션된 요소가 있으면 DB에도 저장 (백그라운드)
+    if (updatedElements.length > 0) {
+      Promise.all(
+        updatedElements.map((el) => elementsApi.updateElement(el.id, el))
+      )
+        .then(() => {
+          console.log(
+            `✅ ${updatedElements.length}개 orphan 요소 DB 업데이트 완료`
+          );
+        })
+        .catch((error) => {
+          console.warn("⚠️ Orphan 요소 DB 업데이트 실패:", error);
+        });
+    }
+
     // 페이지 로드 직후 즉시 order_num 재정렬 (검증보다 먼저 실행)
     setTimeout(() => {
       const { updateElementOrder } = get();
-      reorderElements(elements, pageId, updateElementOrder);
+      reorderElements(migratedElements, pageId, updateElementOrder);
     }, 50); // 검증(300ms)보다 빠르게 실행
   },
 

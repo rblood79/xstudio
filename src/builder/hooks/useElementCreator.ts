@@ -242,7 +242,11 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                     } else {
                         console.log(`🔧 단순 컴포넌트 생성: ${tag}`);
                         // 단순 컴포넌트 생성 (캐시 활용)
-                        const parentId = selectedElementId || null;
+                        // parent_id가 없으면 body 요소를 parent로 설정
+                        let parentId = selectedElementId || null;
+                        if (!parentId) {
+                            parentId = ElementUtils.findBodyElement(elements, currentPageId);
+                        }
                         const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
                         const newElement: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {

@@ -1,0 +1,125 @@
+/* Settings Container */
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Settings Section - Inspector와 동일한 구조 */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--spacing-sm);
+}
+
+.settings-section .section-header {
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  background-color: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-gray-100);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-section .section-header .section-title {
+  padding-left: calc(var(--spacing-sm));
+  border-bottom: 0px;
+  padding: var(--spacing-sm);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+}
+
+.settings-section .section-header .header-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.settings-section .section-header .header-actions .iconButton {
+  padding: var(--spacing-sm);
+}
+
+.settings-section .section-content {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Component Props - Inspector와 동일 */
+.settings-section .section-content .component-props {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Properties ARIA - Inspector와 동일 */
+.settings-section .section-content .properties-aria {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Fieldset Legend */
+.settings-section .fieldset-legend {
+  font-size: var(--text-2xs);
+  color: var(--color-gray-400);
+}
+
+/* Control Group */
+.settings-section .react-aria-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-section .react-aria-Group {
+  background-color: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--inspector-control-size, 27px);
+}
+
+/* Control Label - Icon */
+.settings-section .control-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--inspector-label-width, 27px);
+  height: 25px;
+  padding: var(--spacing-2xs) var(--spacing-2xs);
+  text-align: center;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-right-width: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-gray-700);
+}
+
+/* Switch in Settings */
+.settings-section .react-aria-Switch {
+  width: 100%;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-left-width: 0px;
+  border-radius: var(--border-radius);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
+    calc(var(--spacing) * 1.378);
+  padding-inline-start: var(--inspector-label-width, 27px);
+  flex-direction: row-reverse;
+}
+
+.settings-section .react-aria-Switch[data-focused],
+.settings-section .react-aria-Switch[data-pressed] {
+  outline: 2px solid var(--focus-ring-color);
+  box-shadow: var(--inset-shadow-sm);
+}

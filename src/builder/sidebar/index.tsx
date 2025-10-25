@@ -618,16 +618,19 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     <button className="iconButton" aria-label="Settings">
                                         <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
                                     </button>
-                                    <button
-                                        className="iconButton"
-                                        aria-label={`Delete ${getLabel(item)}`}
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            await onDelete(item);
-                                        }}
-                                    >
-                                        <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
-                                    </button>
+                                    {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
+                                    {!(hasTag(item) && item.tag === 'body') && (
+                                        <button
+                                            className="iconButton"
+                                            aria-label={`Delete ${getLabel(item)}`}
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await onDelete(item);
+                                            }}
+                                        >
+                                            <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             {isExpanded && (

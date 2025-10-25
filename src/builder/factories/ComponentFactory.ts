@@ -10,6 +10,7 @@ import {
   addElementsToStore,
 } from "./utils/elementCreation";
 import { saveElementsInBackground } from "./utils/dbPersistence";
+import { ElementUtils } from "../../utils/elementUtils";
 
 // 컴포넌트 정의 임포트
 import { createTextFieldDefinition } from "./definitions/FormComponents";
@@ -88,8 +89,13 @@ export class ComponentFactory {
     definitionCreator: (context: ComponentCreationContext) => ComponentDefinition,
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const { parentElement, pageId } = context;
-    const parentId = parentElement?.id || null;
+    const { parentElement, pageId, elements } = context;
+    let parentId = parentElement?.id || null;
+
+    // parent_id가 없으면 body 요소를 parent로 설정
+    if (!parentId) {
+      parentId = ElementUtils.findBodyElement(elements, pageId);
+    }
 
     // 1. 컴포넌트 정의 생성
     const definition = definitionCreator(context);

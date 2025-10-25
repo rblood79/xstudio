@@ -3,13 +3,15 @@ import { createSelectionSlice, SelectionState } from "./selection";
 import { createThemeSlice, ThemeState } from "./theme";
 import { createElementsSlice, ElementsState } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
+import { createSettingsSlice, SettingsState } from "./settings";
 
 // 통합 스토어 타입
 interface Store
   extends ElementsState,
     SelectionState,
     ThemeState,
-    SaveModeState {}
+    SaveModeState,
+    SettingsState {}
 
 type UseStoreType = UseBoundStore<StoreApi<Store>>;
 
@@ -37,6 +39,7 @@ if (hasExistingStore) {
     ...createSelectionSlice(...args),
     ...createThemeSlice(...args),
     ...createSaveModeSlice(...args),
+    ...createSettingsSlice(...args),
   }));
 
   if (typeof window !== "undefined") {

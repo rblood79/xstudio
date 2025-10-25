@@ -38,6 +38,7 @@ export const BuilderCore: React.FC = () => {
   const currentPageId = useStore((state) => state.currentPageId);
   const selectedElementId = useStore((state) => state.selectedElementId);
   const setSelectedElement = useStore((state) => state.setSelectedElement);
+  const showOverlay = useStore((state) => state.showOverlay);
 
   // 새로운 히스토리 시스템 사용
   const [historyInfo, setHistoryInfo] = useState({
@@ -378,7 +379,7 @@ export const BuilderCore: React.FC = () => {
           onIframeLoad={handleIframeLoad}
           onMessage={handleMessage}
         >
-          <SelectionOverlay />
+          {showOverlay && <SelectionOverlay />}
         </BuilderWorkspace>
 
         <Sidebar

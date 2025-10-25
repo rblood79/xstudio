@@ -72,4 +72,55 @@ export class ElementUtils {
         // 자식 요소 생성
         return await this.createElement(childElement);
     }
+
+    /**
+     * 해당 page의 body 요소를 찾아 ID 반환
+     * parent_id가 없을 때 자동으로 body를 parent로 설정하기 위해 사용
+     */
+    static findBodyElement(elements: Element[], pageId: string): string | null {
+        const bodyElement = elements.find(
+            el => el.page_id === pageId && el.tag === 'body'
+        );
+        return bodyElement?.id || null;
+    }
+
+    /**
+     * 페이지의 모든 orphan 요소(parent_id가 null)를 body의 자식으로 마이그레이션
+     * body 요소 자체는 제외
+     *
+     * @param elements - 전체 요소 배열
+     * @param pageId - 대상 페이지 ID
+     * @returns 마이그레이션된 요소 배열과 업데이트가 필요한 요소 목록
+     */
+    static migrateOrphanElementsToBody(
+        elements: Element[],
+        pageId: string
+    ): { elements: Element[]; updatedElements: Element[] } {
+        const bodyElement = elements.find(
+            el => el.page_id === pageId && el.tag === 'body'
+        );
+
+        if (!bodyElement) {
+            console.warn(`⚠️ Body element not found for page: ${pageId}`);
+            return { elements, updatedElements: [] };
+        }
+
+        const updatedElements: Element[] = [];
+        const migratedElements = elements.map(el => {
+            // body가 아니면서 parent_id가 null인 요소를 body의 자식으로 변경
+            if (el.page_id === pageId && el.tag !== 'body' && el.parent_id === null) {
+                console.log(`📦 Migrating orphan element to body: ${el.tag} (${el.id})`);
+                const updated = { ...el, parent_id: bodyElement.id };
+                updatedElements.push(updated);
+                return updated;
+            }
+            return el;
+        });
+
+        if (updatedElements.length > 0) {
+            console.log(`✅ Migrated ${updatedElements.length} orphan elements to body`);
+        }
+
+        return { elements: migratedElements, updatedElements };
+    }
 }
