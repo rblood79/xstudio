@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useStore } from '../stores';
 
 export interface BuilderWorkspaceProps {
     projectId?: string;
@@ -23,6 +24,8 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
     children
 }) => {
     const currentBreakpoint = breakpoints.find(bp => bp.id === Array.from(breakpoint)[0]);
+    const showElementBorders = useStore((state) => state.showElementBorders);
+    const showElementLabels = useStore((state) => state.showElementLabels);
 
     // 메시지 이벤트 리스너 등록
     useEffect(() => {
@@ -36,6 +39,55 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
             window.removeEventListener('message', handleMessage);
         };
     }, [onMessage]);
+
+    // Element Borders 및 Labels 시각화
+    useEffect(() => {
+        const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+        if (!iframe || !iframe.contentDocument) return;
+
+        const iframeDoc = iframe.contentDocument;
+        let styleElement = iframeDoc.getElementById('element-visualization-styles') as HTMLStyleElement;
+
+        // 스타일 엘리먼트가 없으면 생성
+        if (!styleElement) {
+            styleElement = iframeDoc.createElement('style');
+            styleElement.id = 'element-visualization-styles';
+            iframeDoc.head.appendChild(styleElement);
+        }
+
+        // CSS 내용 생성
+        let css = '';
+
+        if (showElementBorders) {
+            css += `
+                [data-element-id] {
+                    outline: 1px dashed rgba(59, 130, 246, 0.5) !important;
+                    outline-offset: -1px !important;
+                }
+            `;
+        }
+
+        if (showElementLabels) {
+            css += `
+                [data-element-id]::before {
+                    content: attr(data-element-id);
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    background: rgba(59, 130, 246, 0.9);
+                    color: white;
+                    font-size: 10px;
+                    padding: 2px 4px;
+                    border-radius: 2px;
+                    z-index: 10000;
+                    pointer-events: none;
+                    font-family: monospace;
+                }
+            `;
+        }
+
+        styleElement.textContent = css;
+    }, [showElementBorders, showElementLabels]);
 
     return (
         <main>

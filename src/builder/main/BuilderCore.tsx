@@ -40,6 +40,8 @@ export const BuilderCore: React.FC = () => {
   const selectedElementId = useStore((state) => state.selectedElementId);
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const showOverlay = useStore((state) => state.showOverlay);
+  const themeMode = useStore((state) => state.themeMode);
+  const uiScale = useStore((state) => state.uiScale);
 
   // 새로운 히스토리 시스템 사용
   const [historyInfo, setHistoryInfo] = useState({
@@ -56,6 +58,40 @@ export const BuilderCore: React.FC = () => {
       setHistoryInfo(info);
     }
   }, [currentPageId, elements]);
+
+  // Theme Mode 적용 (전역)
+  useEffect(() => {
+    const applyTheme = (theme: 'light' | 'dark') => {
+      document.documentElement.setAttribute('data-theme', theme);
+    };
+
+    if (themeMode === 'auto') {
+      // 시스템 테마 감지
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+        applyTheme(e.matches ? 'dark' : 'light');
+      };
+
+      // 초기 테마 적용
+      handleChange(mediaQuery);
+
+      // 시스템 테마 변경 리스너
+      mediaQuery.addEventListener('change', handleChange);
+
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange);
+      };
+    } else {
+      // 명시적인 테마 적용
+      applyTheme(themeMode);
+    }
+  }, [themeMode]);
+
+  // UI Scale 적용 (전역)
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.fontSize = `${uiScale}%`;
+  }, [uiScale]);
 
   // Undo/Redo 조건
   const canUndo = historyInfo.canUndo;

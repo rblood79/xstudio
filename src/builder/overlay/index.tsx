@@ -15,6 +15,7 @@ export default function SelectionOverlay() {
     const selectedElementId = useStore((state) => state.selectedElementId);
     // elements 배열을 stores에서 가져옵니다
     const elements = useStore((state) => state.elements);
+    const overlayOpacity = useStore((state) => state.overlayOpacity);
     const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>("");
     const [dbTag, setDbTag] = useState<string>("");  // 데이터베이스의 tag를 저장할 상태
@@ -165,6 +166,7 @@ export default function SelectionOverlay() {
                     left: overlayRect.left,
                     width: overlayRect.width,
                     height: overlayRect.height,
+                    opacity: overlayOpacity / 100,
                 }}>
                 <div className="overlay-info">
                     <div className="overlay-tag-parent"><ChevronUp size={16} /></div>

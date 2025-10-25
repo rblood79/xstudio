@@ -87,6 +87,30 @@
   --invalid-color-pressed: var(--red-500);
 }
 
+/* Dark theme overrides */
+[data-theme="dark"] {
+  /* Semantic colors for dark mode */
+  --background-color: var(--color-gray-900);
+  --focus-ring-color: var(--color-purple-400);
+  --text-color: var(--color-gray-100);
+  --text-color-base: var(--color-gray-100);
+  --text-color-hover: var(--color-gray-50);
+  --text-color-disabled: var(--color-gray-500);
+  --text-color-placeholder: var(--color-gray-400);
+  --link-color: var(--color-sky-400);
+  --link-color-secondary: var(--color-gray-100);
+  --link-color-pressed: var(--color-sky-300);
+  --border-color: var(--color-gray-700);
+  --border-color-hover: var(--color-gray-600);
+  --border-color-pressed: var(--color-gray-500);
+  --border-color-disabled: var(--color-gray-800);
+  --button-background: var(--color-gray-800);
+  --button-background-pressed: var(--color-gray-700);
+  --field-background: var(--color-gray-800);
+  --field-text-color: var(--color-gray-100);
+  --overlay-background: var(--color-gray-800);
+}
+
 /* Windows high contrast mode overrides */
 @media (forced-colors: active) {
   :root {
