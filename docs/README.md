@@ -49,6 +49,16 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
   - Mutually exclusive groups 지원
   - MutationObserver 활용
 
+### Collection Components
+
+- [COLLECTION_COMPONENTS_DATA_BINDING.md](./features/COLLECTION_COMPONENTS_DATA_BINDING.md) - Collection Components 데이터 바인딩 시스템 ✨
+  - **ComboBox Filtering**: textValue 기반 자동완성 필터링
+  - **TagGroup ColumnMapping**: 동적 데이터 렌더링 지원
+  - **TagGroup Item Removal**: 비파괴적 항목 제거 (removedItemIds)
+  - **TagGroup Restore**: Inspector에서 제거된 항목 복구
+  - **Initial Component Creation**: 모든 Collection 컴포넌트 1개 child item 통일
+  - 구현 완료: ListBox, GridList, Select, ComboBox, TagGroup
+
 ---
 
 ## 📝 문서 작성 가이드

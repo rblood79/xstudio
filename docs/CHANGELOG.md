@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Collection Components Data Binding (2025-10-27)
+
+#### ComboBox Filtering Enhancement
+- **Added textValue support for auto-complete filtering** in ComboBox with Field-based rendering
+  - Calculates searchable text from all visible Field values
+  - Concatenates field values with spaces for partial matching
+  - Enables searching across multiple fields (e.g., "John" matches name OR email)
+  - Implementation: `SelectionRenderers.tsx:719-741`
+
+#### TagGroup ColumnMapping Support
+- **Added columnMapping support** for dynamic data rendering in TagGroup
+  - Renders Tag for each data item with Field children
+  - Supports REST API, MOCK_DATA, and Supabase data sources
+  - Consistent pattern with ListBox, GridList, Select, ComboBox
+  - Implementation: `CollectionRenderers.tsx:174-384`
+
+#### TagGroup Item Removal System
+- **Added non-destructive item removal** with `removedItemIds` tracking
+  - Tracks removed item IDs without modifying source data (REST API/MOCK_DATA)
+  - Items filtered out before rendering
+  - Persisted to database, survives page refresh
+  - Integrated with history system for undo/redo
+  - Implementation: `TagGroup.tsx:131-151`, `CollectionRenderers.tsx:321-365`
+
+#### TagGroup Restore Functionality
+- **Added Inspector UI for restoring removed items**
+  - Visual indicator showing count of removed items
+  - "♻️ Restore All Removed Items" button
+  - One-click restoration of all hidden items
+  - Implementation: `TagGroupEditor.tsx:197-214`
+
+#### Initial Component Creation Pattern
+- **Standardized initial child items** for all Collection components
+  - All components now create only **1 child item** as template for dynamic data
+  - **Select**: Changed from 3 SelectItems → 1 SelectItem
+  - **ComboBox**: Changed from 2 ComboBoxItems → 1 ComboBoxItem
+  - **GridList**: 1 GridListItem
+  - **ListBox**: 1 ListBoxItem
+  - Consistent template pattern for columnMapping mode
+  - Implementation: `SelectionComponents.ts`
+
+#### Collection Components Status Update
+- ✅ **ListBox + ListBoxItem**: columnMapping implemented
+- ✅ **GridList + GridListItem**: columnMapping implemented
+- ✅ **Select + SelectItem**: columnMapping implemented
+- ✅ **ComboBox + ComboBoxItem**: columnMapping + textValue filtering implemented
+- ✅ **TagGroup + Tag**: columnMapping + removedItemIds implemented
+- 🔄 **Menu + MenuItem**: pending
+- 🔄 **Tree + TreeItem**: hierarchical data supported, columnMapping pending
+- 🔄 **CheckboxGroup + Checkbox**: pending
+- 🔄 **RadioGroup + Radio**: pending
+- 🔄 **ToggleButtonGroup + ToggleButton**: pending
+
 ### Added - Inspector UI/UX Improvements (2025-10)
 
 #### Compact Layout

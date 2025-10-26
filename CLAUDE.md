@@ -1104,16 +1104,150 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
 
 **Applicable to All Collection Components:**
 - ✅ **ListBox + ListBoxItem** (implemented)
-- 🔄 **GridList + GridListItem** (same pattern)
-- 🔄 **Select + SelectItem** (same pattern)
-- 🔄 **ComboBox + ComboBoxItem** (same pattern)
+- ✅ **GridList + GridListItem** (implemented)
+- ✅ **Select + SelectItem** (implemented)
+- ✅ **ComboBox + ComboBoxItem** (implemented, with textValue for filtering)
+- ✅ **TagGroup + Tag** (implemented, with removedItemIds for item removal tracking)
 - 🔄 **Menu + MenuItem** (same pattern)
 - 🔄 **Tree + TreeItem** (same pattern)
+- 🔄 **CheckboxGroup + Checkbox** (same pattern)
+- 🔄 **RadioGroup + Radio** (same pattern)
+- 🔄 **ToggleButtonGroup + ToggleButton** (same pattern)
 
 **Implementation Pattern (3 steps):**
 1. Add `useCollectionData` to component for data loading
 2. Support `Item + Field` structure in Preview renderer
 3. Add Field management UI to ItemEditor (detect Field children, Edit → setSelectedElement)
+
+**Initial Component Creation Pattern:**
+All collection components create only **1 initial child item** as a template for dynamic data rendering:
+- **ListBox**: 1 ListBoxItem
+- **GridList**: 1 GridListItem
+- **Select**: 1 SelectItem (changed from 3)
+- **ComboBox**: 1 ComboBoxItem (changed from 2)
+- **TagGroup**: Multiple Tags for static mode, but templates use 1 Tag for columnMapping mode
+
+**File**: `src/builder/factories/definitions/SelectionComponents.ts`
+
+#### ComboBox Filtering with textValue
+
+ComboBox requires `textValue` prop on each ComboBoxItem for React Aria's auto-complete filtering to work. When using Field-based rendering with columnMapping, the renderer must calculate textValue from visible Field values.
+
+**Implementation** (`src/builder/preview/renderers/SelectionRenderers.tsx:719-741`):
+```typescript
+// In renderComboBox, for each data item:
+const textValue = fieldChildren
+  .filter((field) => (field.props as { visible?: boolean }).visible !== false)
+  .map((field) => {
+    const fieldKey = (field.props as { key?: string }).key;
+    const fieldValue = fieldKey ? item[fieldKey] : undefined;
+    return fieldValue != null ? String(fieldValue) : '';
+  })
+  .filter(Boolean)
+  .join(' ');
+
+<ComboBoxItem
+  key={String(item.id)}
+  textValue={textValue}  // Required for filtering!
+  value={item as object}
+  // ... other props
+>
+  {/* Field children */}
+</ComboBoxItem>
+```
+
+**How it works:**
+- Concatenates all visible Field values into a single searchable string
+- User types "John" → matches items with "John" in any visible field
+- Supports partial matching across multiple fields
+
+**Use Case**: Search users by name OR email in a single ComboBox.
+
+#### TagGroup with ColumnMapping and Item Removal
+
+TagGroup supports columnMapping for dynamic data rendering, plus a special `removedItemIds` feature for tracking removed items without modifying the source data.
+
+**Key Features:**
+- **ColumnMapping Mode**: Renders Tag for each data item with Field children
+- **removedItemIds**: Array of item IDs that should be hidden from display
+- **Restore Function**: Inspector UI to restore all removed items
+
+**Architecture:**
+
+**1. TagGroup Component** (`src/builder/components/TagGroup.tsx:42-43, 131-151`):
+```typescript
+export interface TagGroupProps<T> {
+  // ... other props
+  removedItemIds?: string[];  // Track removed items
+}
+
+// Filter out removed items before rendering
+const tagItems = boundData
+  .filter((item, index) => {
+    const itemId = String(item.id ?? index);
+    return !removedItemIds.includes(itemId);
+  })
+  .map((item, index) => ({
+    id: String(item.id || index),
+    ...item,
+  })) as T[];
+```
+
+**2. Preview Renderer** (`src/builder/preview/renderers/CollectionRenderers.tsx:321-365`):
+```typescript
+onRemove={async (keys) => {
+  const keysToRemove = Array.from(keys).map(String);
+
+  // ColumnMapping mode: Track removed IDs
+  if (hasValidTemplate) {
+    const updatedRemovedIds = [...currentRemovedIds, ...keysToRemove];
+
+    updateElementProps(element.id, {
+      removedItemIds: updatedRemovedIds,
+      selectedKeys: updatedSelectedKeys,
+    });
+
+    // Save to database
+    await ElementUtils.updateElementProps(element.id, updatedProps);
+    return;
+  }
+
+  // Static mode: Delete actual Tag elements
+  // ... existing deletion logic
+}}
+```
+
+**3. Inspector Recovery UI** (`src/builder/inspector/properties/editors/TagGroupEditor.tsx:197-214`):
+```tsx
+{/* Show recovery UI if items were removed */}
+{Array.isArray(currentProps.removedItemIds) && currentProps.removedItemIds.length > 0 && (
+  <div style={{ backgroundColor: 'var(--color-warning-bg)' }}>
+    <p>🗑️ Removed items: {currentProps.removedItemIds.length}</p>
+    <button onClick={() => updateProp('removedItemIds', [])}>
+      ♻️ Restore All Removed Items
+    </button>
+  </div>
+)}
+```
+
+**Data Flow:**
+```
+1. User clicks X button on Tag → onRemove fires
+2. Renderer adds item ID to removedItemIds array
+3. TagGroup component filters out removed IDs
+4. Tag disappears from screen
+5. Inspector shows "🗑️ Removed items: 3"
+6. User clicks "♻️ Restore" → removedItemIds = []
+7. All tags reappear
+```
+
+**Key Benefits:**
+- **Non-destructive**: Original data (REST API/MOCK_DATA) unchanged
+- **Persistent**: removedItemIds saved to database, survives refresh
+- **Undo-friendly**: Changes tracked in history system
+- **Restorable**: Simple UI to restore all removed items at once
+
+**Use Case**: Filter out unwanted items from API data without modifying the API response.
 
 ### Preview iframe Communication
 
@@ -1437,10 +1571,33 @@ Cursor AI can read this file for project context. When using Cursor:
 - Use updateElement() for full updates
 
 ## Pattern: Collection Components with DataBinding
-- ListBox, GridList, Menu, Select: Support Static and API Collection
+- ListBox, GridList, Select, ComboBox, TagGroup: Support Static and API Collection
 - Tree: Supports hierarchical data with recursive children rendering
 - Always pass dataBinding prop from renderer to component
 - Use MOCK_DATA baseUrl for development/testing
+
+## Pattern: Initial Component Creation
+- All collection components create only 1 child item as template
+- Select: 1 SelectItem (changed from 3)
+- ComboBox: 1 ComboBoxItem (changed from 2)
+- GridList: 1 GridListItem
+- ListBox: 1 ListBoxItem
+- Factory definitions: src/builder/factories/definitions/SelectionComponents.ts
+
+## Pattern: ComboBox Filtering (textValue)
+- ComboBox requires textValue prop on ComboBoxItem for auto-complete filtering
+- Calculate textValue from visible Field values (concatenate with spaces)
+- Example: textValue = fieldValues.join(' ') → "John Doe john@example.com"
+- User types "john" → matches items with "john" in any field
+- Implementation: src/builder/preview/renderers/SelectionRenderers.tsx:719-741
+
+## Pattern: TagGroup Item Removal (removedItemIds)
+- TagGroup uses removedItemIds array to track hidden items
+- Non-destructive: Original data (API) unchanged
+- Filter before rendering: items.filter(item => !removedItemIds.includes(item.id))
+- Inspector provides "♻️ Restore All" button to clear removedItemIds
+- Persisted: Saved to database, survives refresh
+- Implementation: TagGroup.tsx:131-151, CollectionRenderers.tsx:321-365
 
 ## Pattern: Field Component for Dynamic Data
 - Field (DataField) component: Type-aware data display (email, url, image, date, etc.)
@@ -1512,6 +1669,57 @@ GitHub Copilot learns from code patterns. To help it suggest correct code:
 
    // Edit button: Navigate to FieldEditor
    onClick={() => setSelectedElement(field.id, field.props, field.props.style)}
+   ```
+
+6. **ComboBox textValue Pattern:** For auto-complete filtering
+   ```tsx
+   // Calculate textValue from visible Field values
+   const textValue = fieldChildren
+     .filter(field => field.props.visible !== false)
+     .map(field => {
+       const fieldValue = item[field.props.key];
+       return fieldValue != null ? String(fieldValue) : '';
+     })
+     .filter(Boolean)
+     .join(' ');
+
+   <ComboBoxItem textValue={textValue} value={item}>
+     {/* Field children */}
+   </ComboBoxItem>
+   ```
+
+7. **TagGroup removedItemIds Pattern:** For non-destructive item removal
+   ```tsx
+   // In TagGroup component
+   const tagItems = boundData
+     .filter((item, index) => {
+       const itemId = String(item.id ?? index);
+       return !removedItemIds.includes(itemId);
+     })
+     .map((item) => ({ id: String(item.id), ...item }));
+
+   // In renderer onRemove
+   onRemove={async (keys) => {
+     const updatedRemovedIds = [...currentRemovedIds, ...keysToRemove];
+     updateElementProps(element.id, { removedItemIds: updatedRemovedIds });
+   }}
+
+   // In Inspector - restore button
+   <button onClick={() => updateProp('removedItemIds', [])}>
+     ♻️ Restore All Removed Items
+   </button>
+   ```
+
+8. **Initial Component Creation:** Only 1 child item as template
+   ```typescript
+   // In factory definitions (SelectionComponents.ts)
+   return {
+     tag: "Select",
+     parent: { /* ... */ },
+     children: [
+       { tag: "SelectItem", /* ... */ }, // Only 1 item, not 2 or 3
+     ],
+   };
    ```
 
 ### Common Anti-Patterns to Reject
@@ -1695,6 +1903,82 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
 }
 ```
 
+**8. ComboBox textValue for Filtering:**
+```tsx
+// Calculate textValue from visible Field values
+const textValue = fieldChildren
+  .filter((field) => (field.props as { visible?: boolean }).visible !== false)
+  .map((field) => {
+    const fieldKey = (field.props as { key?: string }).key;
+    const fieldValue = fieldKey ? item[fieldKey] : undefined;
+    return fieldValue != null ? String(fieldValue) : '';
+  })
+  .filter(Boolean)
+  .join(' ');
+
+<ComboBoxItem
+  key={String(item.id)}
+  textValue={textValue}  // Required for auto-complete filtering
+  value={item as object}
+>
+  {/* Field children */}
+</ComboBoxItem>
+```
+
+**9. TagGroup removedItemIds Pattern:**
+```tsx
+// In TagGroup component - filter out removed items
+const tagItems = boundData
+  .filter((item, index) => {
+    const itemId = String(item.id ?? index);
+    return !removedItemIds.includes(itemId);
+  })
+  .map((item, index) => ({
+    id: String(item.id || index),
+    ...item,
+  })) as T[];
+
+// In renderer onRemove - add to removedItemIds
+if (hasValidTemplate) {
+  const updatedRemovedIds = [...currentRemovedIds, ...keysToRemove];
+  updateElementProps(element.id, {
+    removedItemIds: updatedRemovedIds,
+    selectedKeys: updatedSelectedKeys,
+  });
+}
+
+// In Inspector - restore button
+<button onClick={() => updateProp('removedItemIds', [])}>
+  ♻️ Restore All Removed Items
+</button>
+```
+
+**10. Initial Component Creation (1 child item):**
+```typescript
+// In factory definitions (SelectionComponents.ts)
+export function createSelectDefinition(context: ComponentCreationContext): ComponentDefinition {
+  return {
+    tag: "Select",
+    parent: {
+      tag: "Select",
+      props: { label: "Select", placeholder: "Choose an option..." },
+      page_id: pageId,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "SelectItem",
+        props: { label: "Option 1", value: "option1" },
+        page_id: pageId,
+        order_num: 1,
+      },
+      // Only 1 item - not 2 or 3!
+    ],
+  };
+}
+```
+
 ### Quick Reference for AI Assistants
 
 | Task | Correct Approach | File Location |
@@ -1711,6 +1995,10 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
 | Display dynamic data in Collection | Use Field component inside ListBoxItem/GridListItem/MenuItem | `src/builder/components/Field.tsx` |
 | Add Field management to ItemEditor | Detect Field children, Edit → setSelectedElement() | Follow `ListBoxItemEditor.tsx` pattern |
 | Edit Field properties | Click Edit button → Navigate to FieldEditor (reuse, NO custom UI) | Field auto-selected in Layer Tree + Inspector |
+| Add ComboBox filtering | Calculate textValue from visible Field values, join with spaces | `SelectionRenderers.tsx:719-741` |
+| Create initial component | Only 1 child item as template (Select: 1 SelectItem, ComboBox: 1 ComboBoxItem) | `SelectionComponents.ts` |
+| Implement TagGroup removal | Use `removedItemIds` array to track hidden items non-destructively | `TagGroup.tsx:131-151`, `CollectionRenderers.tsx:321-365` |
+| Restore removed TagGroup items | Inspector button: `updateProp('removedItemIds', [])` | `TagGroupEditor.tsx:197-214` |
 
 ---
 
