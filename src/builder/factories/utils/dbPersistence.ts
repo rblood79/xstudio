@@ -16,6 +16,7 @@ export async function saveElementsToDb(
     // 부모 먼저 저장
     const parentToSave = {
       ...parent,
+      parent_id: parentId,
       order_num: HierarchyManager.calculateNextOrderNum(
         parentId,
         await ElementUtils.getElementsByPageId(pageId)

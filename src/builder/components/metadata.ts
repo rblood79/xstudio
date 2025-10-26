@@ -59,7 +59,7 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "ToggleButtonGroupEditor",
-      dataBindingType: null,
+      dataBindingType: "collection",
       supportedEvents: ["onChange"],
     },
   },
@@ -145,7 +145,7 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "CheckboxGroupEditor",
-      dataBindingType: "value",
+      dataBindingType: "collection",
       supportedEvents: ["onChange"],
     },
   },
@@ -169,7 +169,7 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "RadioGroupEditor",
-      dataBindingType: "value",
+      dataBindingType: "collection",
       supportedEvents: ["onChange"],
     },
   },
@@ -193,7 +193,7 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "ComboBoxEditor",
-      dataBindingType: "value",
+      dataBindingType: "collection",
       supportedEvents: ["onSelectionChange", "onInputChange"],
     },
   },

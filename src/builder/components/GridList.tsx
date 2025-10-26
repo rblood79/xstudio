@@ -45,7 +45,11 @@ export function GridList<T extends object>({
     console.log('🎯 GridList: columnMapping 감지 - 데이터로 아이템 렌더링', {
       columnMapping,
       hasChildren: !!children,
+      childrenType: typeof children,
+      isChildrenFunction: typeof children === 'function',
       dataCount: boundData.length,
+      loading,
+      error,
     });
 
     // Loading 상태

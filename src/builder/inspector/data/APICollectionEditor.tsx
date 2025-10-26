@@ -188,28 +188,45 @@ export function APICollectionEditor({
       return;
     }
 
-    // 1. ListBox Element 찾기
-    const listBoxElement = elements.find(el => el.id === elementId);
-    if (!listBoxElement) {
-      console.warn("⚠️ ListBox Element를 찾을 수 없습니다:", elementId);
+    // 1. Collection Element 찾기
+    const collectionElement = elements.find(el => el.id === elementId);
+    if (!collectionElement) {
+      console.warn("⚠️ Collection Element를 찾을 수 없습니다:", elementId);
       return;
     }
 
-    // 2. ListBoxItem 템플릿 찾기 (ListBox의 첫 번째 자식)
-    const listBoxItemTemplate = elements.find(
-      el => el.parent_id === listBoxElement.id && el.tag === 'ListBoxItem'
+    // 2. Item 템플릿 찾기 (Collection tag에 따라 다른 Item 타입 찾기)
+    // Collection 컴포넌트와 Item 타입 매핑
+    const getItemTagForCollection = (collectionTag: string): string => {
+      const mapping: Record<string, string> = {
+        'ListBox': 'ListBoxItem',
+        'GridList': 'GridListItem',
+        'Select': 'SelectItem',
+        'ComboBox': 'ComboBoxItem',
+        'Menu': 'MenuItem',
+        'TagGroup': 'Tag',
+        'ToggleButtonGroup': 'ToggleButton',
+        'CheckboxGroup': 'Checkbox',
+        'RadioGroup': 'Radio',
+      };
+      return mapping[collectionTag] || 'Item';
+    };
+
+    const itemTag = getItemTagForCollection(collectionElement.tag);
+    const itemTemplate = elements.find(
+      el => el.parent_id === collectionElement.id && el.tag === itemTag
     );
 
-    if (!listBoxItemTemplate) {
-      console.warn("⚠️ ListBoxItem 템플릿이 없습니다. Layer Tree에서 ListBoxItem을 먼저 추가하세요.");
+    if (!itemTemplate) {
+      console.warn(`⚠️ ${itemTag} 템플릿이 없습니다. Layer Tree에서 ${itemTag}을 먼저 추가하세요.`);
       return;
     }
 
-    console.log("📋 ListBoxItem 템플릿 발견:", listBoxItemTemplate.id);
+    console.log(`📋 ${itemTag} 템플릿 발견:`, itemTemplate.id);
 
     // 3. 기존 Field Elements 찾기
     const existingFields = elements.filter(
-      el => el.parent_id === listBoxItemTemplate.id && el.tag === 'Field'
+      el => el.parent_id === itemTemplate.id && el.tag === 'Field'
     );
 
     console.log("📊 기존 Field Elements:", existingFields.length, "개");
@@ -241,8 +258,8 @@ export function APICollectionEditor({
       return {
         id: ElementUtils.generateId(),
         tag: 'Field',
-        parent_id: listBoxItemTemplate.id,
-        page_id: listBoxElement.page_id!,
+        parent_id: itemTemplate.id,
+        page_id: collectionElement.page_id!,
         order_num: existingCount + index,
         props: {
           key: columnDef.key,

@@ -10,8 +10,11 @@ import {
   MenuItem,
   Toolbar,
 } from "../../components/list";
+import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
 import { ElementUtils } from "../../../utils/elementUtils";
+import { getVisibleColumns } from "../../../utils/columnTypeInference";
+import type { ColumnMapping } from "../../../types/unified";
 
 /**
  * Collection 관련 컴포넌트 렌더러
@@ -178,6 +181,89 @@ export const renderTagGroup = (
     .filter((child) => child.parent_id === element.id && child.tag === "Tag")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // ColumnMapping 추출
+  const columnMapping = (element.props as { columnMapping?: ColumnMapping })
+    .columnMapping;
+
+  if (columnMapping) {
+    const visibleColumns = getVisibleColumns(columnMapping);
+    console.log("🔍 TagGroup ColumnMapping 발견:", {
+      tagGroupId: element.id,
+      columnMapping,
+      visibleColumnsCount: visibleColumns.length,
+      visibleColumns,
+      tagChildrenCount: tagChildren.length,
+    });
+  }
+
+  const hasValidTemplate = columnMapping && tagChildren.length > 0;
+
+  // 제거된 항목 ID 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
+  const removedItemIds = Array.isArray(element.props.removedItemIds)
+    ? (element.props.removedItemIds as unknown as string[])
+    : [];
+
+  const renderChildren = hasValidTemplate
+    ? (item: Record<string, unknown>) => {
+        const tagTemplate = tagChildren[0];
+        const fieldChildren = context.elements
+          .filter(
+            (child) =>
+              child.parent_id === tagTemplate.id && child.tag === "Field"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        return (
+          <Tag
+            key={String(item.id)}
+            data-element-id={tagTemplate.id}
+            isDisabled={Boolean(tagTemplate.props.isDisabled)}
+            style={tagTemplate.props.style}
+            className={tagTemplate.props.className}
+          >
+            {fieldChildren.length > 0
+              ? fieldChildren.map((field) => {
+                  const fieldKey = (field.props as { key?: string }).key;
+                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                  return (
+                    <DataField
+                      key={field.id}
+                      fieldKey={fieldKey || ""}
+                      label={(field.props as { label?: string }).label}
+                      type={
+                        (field.props as { type?: string }).type as
+                          | "string"
+                          | "number"
+                          | "boolean"
+                          | "date"
+                          | "image"
+                          | "url"
+                          | "email"
+                      }
+                      value={fieldValue}
+                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      style={field.props.style}
+                      className={field.props.className}
+                    />
+                  );
+                })
+              : String(tagTemplate.props.children || "")}
+          </Tag>
+        );
+      }
+    : tagChildren.map((tag) => (
+        <Tag
+          key={tag.id}
+          data-element-id={tag.id}
+          isDisabled={Boolean(tag.props.isDisabled)}
+          style={tag.props.style}
+          className={tag.props.className}
+        >
+          {String(tag.props.children || "")}
+        </Tag>
+      ));
+
   return (
     <TagGroup
       key={element.id}
@@ -204,6 +290,9 @@ export const renderTagGroup = (
       }
       isDisabled={Boolean(element.props.isDisabled)}
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+      dataBinding={element.dataBinding}
+      columnMapping={columnMapping}
+      removedItemIds={removedItemIds}
       onSelectionChange={async (selectedKeys) => {
         const updatedProps = {
           ...element.props,
@@ -233,7 +322,55 @@ export const renderTagGroup = (
       onRemove={async (keys) => {
         console.log("Removing tags:", Array.from(keys));
 
-        const keysToRemove = Array.from(keys);
+        const keysToRemove = Array.from(keys).map(String);
+
+        // ColumnMapping 모드: 동적 데이터 항목 제거 (removedItemIds에 추가)
+        if (hasValidTemplate) {
+          const currentRemovedIds = Array.isArray(element.props.removedItemIds)
+            ? (element.props.removedItemIds as unknown as string[])
+            : [];
+
+          const updatedRemovedIds = [...currentRemovedIds, ...keysToRemove];
+
+          const currentSelectedKeys = Array.isArray(element.props.selectedKeys)
+            ? (element.props.selectedKeys as unknown as string[])
+            : [];
+          const updatedSelectedKeys = currentSelectedKeys.filter(
+            (key) => !keysToRemove.includes(String(key))
+          );
+
+          const updatedProps = {
+            ...element.props,
+            removedItemIds: updatedRemovedIds,
+            selectedKeys: updatedSelectedKeys,
+          };
+
+          updateElementProps(element.id, updatedProps);
+
+          try {
+            await ElementUtils.updateElementProps(element.id, updatedProps);
+            console.log("TagGroup removedItemIds updated:", updatedRemovedIds);
+          } catch (err) {
+            console.error("Error updating TagGroup removedItemIds:", err);
+          }
+
+          window.parent.postMessage(
+            {
+              type: "UPDATE_ELEMENT_PROPS",
+              elementId: element.id,
+              props: {
+                removedItemIds: updatedRemovedIds,
+                selectedKeys: updatedSelectedKeys,
+              },
+              merge: true,
+            },
+            window.location.origin
+          );
+
+          return;
+        }
+
+        // Static 모드: Element 삭제
         const deletedTagIds: string[] = [];
 
         for (const key of keysToRemove) {
@@ -264,7 +401,7 @@ export const renderTagGroup = (
           ? (element.props.selectedKeys as unknown as string[])
           : [];
         const updatedSelectedKeys = currentSelectedKeys.filter(
-          (key) => !keysToRemove.includes(key)
+          (key) => !keysToRemove.includes(String(key))
         );
 
         const updatedProps = {
@@ -295,23 +432,8 @@ export const renderTagGroup = (
           );
         }, 0);
       }}
-      items={tagChildren.map((tag) => ({
-        id: tag.id,
-        label: String(tag.props.children || ""),
-        value: tag.id,
-      }))}
     >
-      {tagChildren.map((tag) => (
-        <Tag
-          key={tag.id}
-          data-element-id={tag.id}
-          isDisabled={Boolean(tag.props.isDisabled)}
-          style={tag.props.style}
-          className={tag.props.className}
-        >
-          {String(tag.props.children || "")}
-        </Tag>
-      ))}
+      {renderChildren}
     </TagGroup>
   );
 };

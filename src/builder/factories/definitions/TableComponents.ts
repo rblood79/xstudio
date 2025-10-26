@@ -17,7 +17,13 @@ export async function createTable(
   context: ComponentCreationContext
 ): Promise<ComponentCreationResult> {
   const { parentElement, pageId, elements } = context;
-  const parentId = parentElement?.id || null;
+  let parentId = parentElement?.id || null;
+
+  // parent_id가 없으면 body 요소를 parent로 설정
+  if (!parentId) {
+    parentId = ElementUtils.findBodyElement(elements, pageId);
+  }
+
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   const defaultProps = createDefaultTableProps();

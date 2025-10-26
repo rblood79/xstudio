@@ -95,6 +95,11 @@ export class ComponentFactory {
     // parent_id가 없으면 body 요소를 parent로 설정
     if (!parentId) {
       parentId = ElementUtils.findBodyElement(elements, pageId);
+      // body element를 찾아서 context 업데이트
+      const bodyElement = elements.find(el => el.id === parentId);
+      if (bodyElement) {
+        context = { ...context, parentElement: bodyElement };
+      }
     }
 
     // 1. 컴포넌트 정의 생성

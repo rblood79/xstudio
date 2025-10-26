@@ -254,14 +254,27 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                     console.log("🔄 APICollectionEditor - Table props 업데이트:", config);
                   }
 
-                  // ListBox 컴포넌트인 경우 columnMapping 동기화
-                  if (element.type === "ListBox") {
+                  // Collection 컴포넌트 columnMapping 동기화
+                  // Field 패턴(Item + Field)을 사용하는 모든 컴포넌트
+                  const componentsSupportingColumnMapping = [
+                    "ListBox",
+                    "GridList",
+                    "Select",
+                    "ComboBox",
+                    "Menu",
+                    "TagGroup",
+                    "ToggleButtonGroup",
+                    "CheckboxGroup",
+                    "RadioGroup"
+                  ];
+
+                  if (componentsSupportingColumnMapping.includes(element.type)) {
                     // APICollectionEditor에서 이미 생성된 columnMapping 사용
                     if (config.columnMapping) {
                       updateProperties({
                         columnMapping: config.columnMapping,
                       });
-                      console.log("🔄 APICollectionEditor - ListBox columnMapping 업데이트:", config.columnMapping);
+                      console.log(`🔄 APICollectionEditor - ${element.type} columnMapping 업데이트:`, config.columnMapping);
                     }
                   }
                 });

@@ -282,6 +282,110 @@ export const renderGridList = (
     .filter((child) => child.parent_id === element.id && child.tag === "GridListItem")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // ColumnMapping이 있고 visible columns가 있으면 Field Elements 자동 생성
+  const columnMapping = (element.props as { columnMapping?: ColumnMapping })
+    .columnMapping;
+
+  if (columnMapping) {
+    const visibleColumns = getVisibleColumns(columnMapping);
+
+    console.log("🔍 GridList ColumnMapping 발견:", {
+      gridListId: element.id,
+      columnMapping,
+      visibleColumnsCount: visibleColumns.length,
+      visibleColumns,
+      gridListChildrenCount: gridListChildren.length,
+    });
+
+    // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
+    // 이유: APICollectionEditor에서 사용자가 명시적으로 컬럼을 선택할 때 Field Elements를 생성하므로
+    // Preview에서 자동 생성하면 충돌이 발생할 수 있음
+    console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
+  }
+
+  // columnMapping이 있고 GridListItem 템플릿이 있으면 render function 사용
+  const hasValidTemplate = columnMapping && gridListChildren.length > 0;
+
+  if (columnMapping && gridListChildren.length === 0) {
+    console.warn("⚠️ columnMapping이 있지만 GridListItem 템플릿이 없습니다. Layer Tree에서 GridListItem을 추가하세요.");
+  }
+
+  console.log("🔍 GridList 렌더링 상태:", {
+    gridListId: element.id,
+    hasColumnMapping: !!columnMapping,
+    hasValidTemplate,
+    gridListChildrenCount: gridListChildren.length,
+    hasDataBinding: !!element.dataBinding,
+  });
+
+  const renderChildren = hasValidTemplate
+    ? (item: Record<string, unknown>) => {
+        // GridListItem 템플릿을 각 데이터 항목에 대해 렌더링
+        const gridListItemTemplate = gridListChildren[0];
+
+        // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
+        const fieldChildren = context.elements
+          .filter(
+            (child) =>
+              child.parent_id === gridListItemTemplate.id && child.tag === "Field"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        console.log("🎨 GridList render function 실행 - 데이터 항목:", {
+          itemId: item.id,
+          itemData: item,
+          gridListItemTemplateId: gridListItemTemplate.id,
+          totalElementsInContext: context.elements.length,
+          fieldChildrenFound: fieldChildren.length,
+          fieldChildren: fieldChildren.map((f) => ({
+            id: f.id,
+            key: (f.props as { key?: string }).key,
+            label: (f.props as { label?: string }).label,
+          })),
+        });
+
+        return (
+          <GridListItem
+            key={String(item.id)}
+            data-element-id={gridListItemTemplate.id}
+            value={item}
+            isDisabled={Boolean(gridListItemTemplate.props.isDisabled)}
+            style={gridListItemTemplate.props.style}
+            className={gridListItemTemplate.props.className}
+          >
+            {fieldChildren.length > 0
+              ? fieldChildren.map((field) => {
+                  const fieldKey = (field.props as { key?: string }).key;
+                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                  return (
+                    <DataField
+                      key={field.id}
+                      fieldKey={fieldKey || ""}
+                      label={(field.props as { label?: string }).label}
+                      type={
+                        (field.props as { type?: string }).type as
+                          | "string"
+                          | "number"
+                          | "boolean"
+                          | "date"
+                          | "image"
+                          | "url"
+                          | "email"
+                      }
+                      value={fieldValue}
+                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      style={field.props.style}
+                      className={field.props.className}
+                    />
+                  );
+                })
+              : String(gridListItemTemplate.props.label || "")}
+          </GridListItem>
+        );
+      }
+    : gridListChildren.map((item) => context.renderElement(item));
+
   return (
     <GridList
       key={element.id}
@@ -296,6 +400,8 @@ export const renderGridList = (
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
+      dataBinding={element.dataBinding}
+      columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
           ...element.props,
@@ -304,18 +410,7 @@ export const renderGridList = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      {gridListChildren.map((item) => (
-        <GridListItem
-          key={item.id}
-          data-element-id={item.id}
-          value={item.props.value as object}
-          isDisabled={Boolean(item.props.isDisabled)}
-          style={item.props.style}
-          className={item.props.className}
-        >
-          {String(item.props.label || "")}
-        </GridListItem>
-      ))}
+      {renderChildren}
     </GridList>
   );
 };
@@ -324,10 +419,16 @@ export const renderGridList = (
  * GridListItem 렌더링 (독립적으로 렌더링될 때)
  */
 export const renderGridListItem = (
-  element: PreviewElement
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  , _context: RenderContext
+  element: PreviewElement,
+  context: RenderContext
 ): React.ReactNode => {
+  const { elements } = context;
+
+  // DataField 자식 요소들을 찾기
+  const fieldChildren = elements
+    .filter((child) => child.parent_id === element.id && child.tag === "Field")
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
   return (
     <GridListItem
       key={element.id}
@@ -337,7 +438,9 @@ export const renderGridListItem = (
       style={element.props.style}
       className={element.props.className}
     >
-      {String(element.props.label || "")}
+      {fieldChildren.length > 0
+        ? fieldChildren.map((child) => context.renderElement(child))
+        : String(element.props.label || "")}
     </GridListItem>
   );
 };
@@ -354,6 +457,29 @@ export const renderSelect = (
   const selectItemChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "SelectItem")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // ColumnMapping 추출
+  const columnMapping = (element.props as { columnMapping?: ColumnMapping })
+    .columnMapping;
+
+  if (columnMapping) {
+    const visibleColumns = getVisibleColumns(columnMapping);
+
+    console.log("🔍 Select ColumnMapping 발견:", {
+      selectId: element.id,
+      columnMapping,
+      visibleColumnsCount: visibleColumns.length,
+      visibleColumns,
+      selectItemChildrenCount: selectItemChildren.length,
+    });
+  }
+
+  // columnMapping이 있고 SelectItem 템플릿이 있으면 render function 사용
+  const hasValidTemplate = columnMapping && selectItemChildren.length > 0;
+
+  if (columnMapping && selectItemChildren.length === 0) {
+    console.warn("⚠️ columnMapping이 있지만 SelectItem 템플릿이 없습니다. Layer Tree에서 SelectItem을 추가하세요.");
+  }
 
   // props를 안전하게 보존
   const elementProps = { ...element.props };
@@ -373,6 +499,84 @@ export const renderSelect = (
     : elementProps["aria-label"] ||
       processedPlaceholder ||
       `Select ${element.id}`;
+
+  const renderChildren = hasValidTemplate
+    ? (item: Record<string, unknown>) => {
+        // SelectItem 템플릿을 각 데이터 항목에 대해 렌더링
+        const selectItemTemplate = selectItemChildren[0];
+
+        // Field 자식들 찾기
+        const fieldChildren = context.elements
+          .filter(
+            (child) =>
+              child.parent_id === selectItemTemplate.id && child.tag === "Field"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        console.log("🎨 Select render function 실행 - 데이터 항목:", {
+          itemId: item.id,
+          itemData: item,
+          selectItemTemplateId: selectItemTemplate.id,
+          fieldChildrenFound: fieldChildren.length,
+        });
+
+        return (
+          <SelectItem
+            key={String(item.id)}
+            data-element-id={selectItemTemplate.id}
+            value={item as object}
+            isDisabled={Boolean(selectItemTemplate.props.isDisabled)}
+            style={selectItemTemplate.props.style}
+            className={selectItemTemplate.props.className}
+          >
+            {fieldChildren.length > 0
+              ? fieldChildren.map((field) => {
+                  const fieldKey = (field.props as { key?: string }).key;
+                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                  return (
+                    <DataField
+                      key={field.id}
+                      fieldKey={fieldKey || ""}
+                      label={(field.props as { label?: string }).label}
+                      type={
+                        (field.props as { type?: string }).type as
+                          | "string"
+                          | "number"
+                          | "boolean"
+                          | "date"
+                          | "image"
+                          | "url"
+                          | "email"
+                      }
+                      value={fieldValue}
+                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      style={field.props.style}
+                      className={field.props.className}
+                    />
+                  );
+                })
+              : String(selectItemTemplate.props.label || "")}
+          </SelectItem>
+        );
+      }
+    : selectItemChildren.map((item, index) => {
+        const actualValue =
+          item.props.value || item.props.label || `option-${index + 1}`;
+
+        return (
+          <SelectItem
+            key={item.id}
+            data-element-id={item.id}
+            value={String(actualValue) as unknown as object}
+            isDisabled={Boolean(item.props.isDisabled)}
+            style={item.props.style}
+            className={item.props.className}
+          >
+            {String(item.props.label || item.id)}
+          </SelectItem>
+        );
+      });
 
   return (
     <Select
@@ -400,6 +604,7 @@ export const renderSelect = (
       isRequired={Boolean(elementProps.isRequired)}
       autoFocus={Boolean(elementProps.autoFocus)}
       dataBinding={element.dataBinding}
+      columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // React Aria의 내부 ID를 실제 값으로 변환
         let actualValue = selectedKey;
@@ -449,23 +654,7 @@ export const renderSelect = (
         );
       }}
     >
-      {selectItemChildren.map((item, index) => {
-        const actualValue =
-          item.props.value || item.props.label || `option-${index + 1}`;
-
-        return (
-          <SelectItem
-            key={item.id}
-            data-element-id={item.id}
-            value={String(actualValue) as unknown as object}
-            isDisabled={Boolean(item.props.isDisabled)}
-            style={item.props.style}
-            className={item.props.className}
-          >
-            {String(item.props.label || item.id)}
-          </SelectItem>
-        );
-      })}
+      {renderChildren}
     </Select>
   );
 };
@@ -483,6 +672,124 @@ export const renderComboBox = (
   const comboBoxItemChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "ComboBoxItem")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // ColumnMapping 추출
+  const columnMapping = (element.props as { columnMapping?: ColumnMapping })
+    .columnMapping;
+
+  if (columnMapping) {
+    const visibleColumns = getVisibleColumns(columnMapping);
+
+    console.log("🔍 ComboBox ColumnMapping 발견:", {
+      comboBoxId: element.id,
+      columnMapping,
+      visibleColumnsCount: visibleColumns.length,
+      visibleColumns,
+      comboBoxItemChildrenCount: comboBoxItemChildren.length,
+    });
+  }
+
+  // columnMapping이 있고 ComboBoxItem 템플릿이 있으면 render function 사용
+  const hasValidTemplate = columnMapping && comboBoxItemChildren.length > 0;
+
+  if (columnMapping && comboBoxItemChildren.length === 0) {
+    console.warn("⚠️ columnMapping이 있지만 ComboBoxItem 템플릿이 없습니다. Layer Tree에서 ComboBoxItem을 추가하세요.");
+  }
+
+  const renderChildren = hasValidTemplate
+    ? (item: Record<string, unknown>) => {
+        // ComboBoxItem 템플릿을 각 데이터 항목에 대해 렌더링
+        const comboBoxItemTemplate = comboBoxItemChildren[0];
+
+        // Field 자식들 찾기
+        const fieldChildren = context.elements
+          .filter(
+            (child) =>
+              child.parent_id === comboBoxItemTemplate.id && child.tag === "Field"
+          )
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        console.log("🎨 ComboBox render function 실행 - 데이터 항목:", {
+          itemId: item.id,
+          itemData: item,
+          comboBoxItemTemplateId: comboBoxItemTemplate.id,
+          fieldChildrenFound: fieldChildren.length,
+        });
+
+        // textValue 계산 - 보이는 Field 값들을 연결하여 검색 가능한 텍스트 생성
+        const textValue = fieldChildren
+          .filter((field) => (field.props as { visible?: boolean }).visible !== false)
+          .map((field) => {
+            const fieldKey = (field.props as { key?: string }).key;
+            const fieldValue = fieldKey ? item[fieldKey] : undefined;
+            return fieldValue != null ? String(fieldValue) : '';
+          })
+          .filter(Boolean)
+          .join(' ');
+
+        console.log("🔍 ComboBox textValue 생성:", {
+          itemId: item.id,
+          textValue,
+          visibleFieldsCount: fieldChildren.filter(f => (f.props as { visible?: boolean }).visible !== false).length,
+        });
+
+        return (
+          <ComboBoxItem
+            key={String(item.id)}
+            data-element-id={comboBoxItemTemplate.id}
+            value={item as object}
+            textValue={textValue}
+            isDisabled={Boolean(comboBoxItemTemplate.props.isDisabled)}
+            style={comboBoxItemTemplate.props.style}
+            className={comboBoxItemTemplate.props.className}
+          >
+            {fieldChildren.length > 0
+              ? fieldChildren.map((field) => {
+                  const fieldKey = (field.props as { key?: string }).key;
+                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                  return (
+                    <DataField
+                      key={field.id}
+                      fieldKey={fieldKey || ""}
+                      label={(field.props as { label?: string }).label}
+                      type={
+                        (field.props as { type?: string }).type as
+                          | "string"
+                          | "number"
+                          | "boolean"
+                          | "date"
+                          | "image"
+                          | "url"
+                          | "email"
+                      }
+                      value={fieldValue}
+                      visible={(field.props as { visible?: boolean }).visible !== false}
+                      style={field.props.style}
+                      className={field.props.className}
+                    />
+                  );
+                })
+              : String(comboBoxItemTemplate.props.label || "")}
+          </ComboBoxItem>
+        );
+      }
+    : comboBoxItemChildren.map((item, index) => {
+        const reactAriaId = `react-aria-${index + 1}`;
+
+        return (
+          <ComboBoxItem
+            key={item.id}
+            data-element-id={item.id}
+            value={reactAriaId as unknown as object}
+            isDisabled={Boolean(item.props.isDisabled)}
+            style={item.props.style}
+            className={item.props.className}
+          >
+            {String(item.props.label || item.id)}
+          </ComboBoxItem>
+        );
+      });
 
   return (
     <ComboBox
@@ -506,6 +813,8 @@ export const renderComboBox = (
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
+      dataBinding={element.dataBinding}
+      columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // selectedKey가 undefined이면 선택 해제로 처리
         if (selectedKey === undefined || selectedKey === null) {
@@ -601,22 +910,7 @@ export const renderComboBox = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      {comboBoxItemChildren.map((item, index) => {
-        const reactAriaId = `react-aria-${index + 1}`;
-
-        return (
-          <ComboBoxItem
-            key={item.id}
-            data-element-id={item.id}
-            value={reactAriaId as unknown as object}
-            isDisabled={Boolean(item.props.isDisabled)}
-            style={item.props.style}
-            className={item.props.className}
-          >
-            {String(item.props.label || item.id)}
-          </ComboBoxItem>
-        );
-      })}
+      {renderChildren}
     </ComboBox>
   );
 };

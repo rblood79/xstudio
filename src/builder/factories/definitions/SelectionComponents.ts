@@ -36,26 +36,6 @@ export function createSelectDefinition(
         page_id: pageId,
         order_num: 1,
       },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Option 2",
-          value: "option2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        page_id: pageId,
-        order_num: 2,
-      },
-      {
-        tag: "SelectItem",
-        props: {
-          label: "Option 3",
-          value: "option3",
-          isDisabled: false,
-        } as ComponentElementProps,
-        page_id: pageId,
-        order_num: 3,
-      },
     ],
   };
 }
@@ -95,16 +75,6 @@ export function createComboBoxDefinition(
         } as ComponentElementProps,
         page_id: pageId,
         order_num: 1,
-      },
-      {
-        tag: "ComboBoxItem",
-        props: {
-          label: "Option 2",
-          value: "option2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        page_id: pageId,
-        order_num: 2,
       },
     ],
   };
@@ -178,16 +148,6 @@ export function createGridListDefinition(
         } as ComponentElementProps,
         page_id: pageId,
         order_num: 1,
-      },
-      {
-        tag: "GridListItem",
-        props: {
-          label: "Item 2",
-          value: "item2",
-          isDisabled: false,
-        } as ComponentElementProps,
-        page_id: pageId,
-        order_num: 2,
       },
     ],
   };

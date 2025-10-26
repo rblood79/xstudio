@@ -194,6 +194,25 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     </p>
                 </div>
 
+                {/* Removed Items Recovery (ColumnMapping 모드) */}
+                {Array.isArray(currentProps.removedItemIds) && (currentProps.removedItemIds as string[]).length > 0 && (
+                    <div className='tab-overview' style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--color-warning-bg, #fff3cd)', borderRadius: 'var(--radius-md)' }}>
+                        <p className='tab-overview-text' style={{ color: 'var(--color-warning-text, #856404)' }}>
+                            🗑️ Removed items: {(currentProps.removedItemIds as string[]).length}
+                        </p>
+                        <button
+                            className='control-button secondary'
+                            style={{ marginTop: '8px', width: '100%' }}
+                            onClick={() => {
+                                updateProp('removedItemIds', []);
+                                console.log('✅ All removed items restored');
+                            }}
+                        >
+                            ♻️ Restore All Removed Items
+                        </button>
+                    </div>
+                )}
+
                 {tagChildren.length > 0 && (
                     <div className='tabs-list'>
                         {tagChildren.map((tag, index) => (

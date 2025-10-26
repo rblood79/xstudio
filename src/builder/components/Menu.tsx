@@ -125,7 +125,7 @@ export function MenuButton<T extends object>({
       console.log('✅ Menu with columnMapping - items:', menuItems);
 
       // Recursive render function for menu items with submenus
-      const renderMenuItem = (item: (typeof menuItems)[0]) => {
+      const renderMenuItem = (item: any) => {
         const hasSubmenu = item.children && item.children.length > 0;
 
         if (hasSubmenu) {
@@ -164,7 +164,7 @@ export function MenuButton<T extends object>({
                 )}
               </AriaMenuItem>
               <Popover>
-                <Menu items={submenuItems}>
+                <Menu items={submenuItems as Iterable<T>}>
                   {(subItem) => renderMenuItem(subItem)}
                 </Menu>
               </Popover>
@@ -192,7 +192,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu items={menuItems}>
+            <Menu items={menuItems as Iterable<T>}>
               {/* children은 MenuItem 템플릿으로 사용 */}
               {children}
             </Menu>
