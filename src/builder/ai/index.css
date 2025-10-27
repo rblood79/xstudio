@@ -1,0 +1,22 @@
+/**
+ * AI Panel Styles (Sidebar Integration)
+ *
+ * ChatInterface is rendered within the Sidebar's AI tab.
+ * This ensures proper layout within the sidebar container.
+ */
+
+.sidebar-section-ai {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Ensure ChatContainer fits within sidebar */
+.sidebar-section-ai > * {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

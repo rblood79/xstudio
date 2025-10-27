@@ -106,7 +106,7 @@ export function ChatInterface() {
 
             // Add dataBinding if provided
             if (intent.dataBinding) {
-              (newElement as any).dataBinding = {
+              newElement.dataBinding = {
                 type: "collection",
                 source: "api",
                 config: {
@@ -143,7 +143,7 @@ export function ChatInterface() {
               return;
             }
 
-            const updates: Record<string, any> = {};
+            const updates: Record<string, unknown> = {};
 
             // Merge props
             if (intent.props) {
@@ -199,7 +199,7 @@ export function ChatInterface() {
       }
     },
     [
-      currentContext,
+      currentPageId,
       elements,
       selectedElementId,
       addElement,

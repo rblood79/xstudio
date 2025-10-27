@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useRef, KeyboardEvent } from 'react';
+import { Button } from './list';
 import './styles/ChatInput.css';
 
 export interface ChatInputProps {
@@ -64,14 +65,14 @@ export function ChatInput({
         rows={1}
       />
 
-      <button
-        className="chat-input__send-button"
-        onClick={handleSend}
-        disabled={disabled || !value.trim()}
+      <Button
+        onPress={handleSend}
+        isDisabled={disabled || !value.trim()}
         type="button"
-      >
-        전송
-      </button>
+        variant="primary"
+        size="sm"
+        children="전송"
+      />
     </div>
   );
 }

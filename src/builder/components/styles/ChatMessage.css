@@ -5,8 +5,8 @@
 @layer components {
   .chat-message {
     display: flex;
-    gap: var(--spacing-3);
-    padding: var(--spacing-3) var(--spacing-4);
+    gap: var(--gap);
+    padding: var(--spacing);
     animation: fadeIn 200ms ease-out;
   }
 
@@ -22,7 +22,7 @@
   .chat-message__avatar {
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-full);
+    border-radius: var(--border-radius);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -47,8 +47,8 @@
   }
 
   .chat-message__bubble {
-    padding: var(--spacing-3) var(--spacing-4);
-    border-radius: var(--radius-lg);
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
     font-size: var(--text-sm);
     line-height: var(--leading-relaxed);
     word-wrap: break-word;
@@ -71,7 +71,7 @@
   .chat-message__timestamp {
     font-size: var(--text-xs);
     color: var(--color-gray-500);
-    margin-top: var(--spacing-1);
+    margin-top: var(--spacing);
     padding: 0 var(--spacing-2);
   }
 
