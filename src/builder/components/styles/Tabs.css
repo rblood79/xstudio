@@ -1,32 +1,33 @@
-@import './Button.css';
-@import './Link.css';
+@import "./Button.css";
+@import "./Link.css";
 @import "../theme.css";
 
 @layer components {
-  
   .react-aria-Tabs {
+    width: 100%;
     display: flex;
     color: var(--text-color);
-  
-    &[data-orientation=horizontal] {
+    font-size: var(--text-sm);
+    &[data-orientation="horizontal"] {
       flex-direction: column;
     }
   }
-  
+
   .react-aria-TabList {
     display: flex;
-  
-    &[data-orientation=horizontal] {
+
+    &[data-orientation="horizontal"] {
       border-bottom: 1px solid var(--border-color);
-  
+
       .react-aria-Tab {
         border-bottom: 3px solid var(--border-color);
       }
     }
   }
-  
+
   .react-aria-Tab {
-    padding: 10px;
+    font-size: var(--text-sm);
+    padding: var(--spacing) var(--spacing-sm);
     cursor: default;
     outline: none;
     position: relative;
@@ -53,7 +54,7 @@
     }
 
     &[data-focus-visible]:after {
-      content: '';
+      content: "";
       position: absolute;
       inset: 4px;
       border-radius: 4px;
@@ -65,26 +66,24 @@
       cursor: pointer;
     }
   }
-  
+
   .react-aria-TabPanel {
-    margin-top: 4px;
-    padding: 10px;
     border-radius: 4px;
     outline: none;
-  
+
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
     }
   }
-  
+
   .react-aria-Tabs {
-    &[data-orientation=vertical] {
+    &[data-orientation="vertical"] {
       flex-direction: row;
     }
   }
-  
+
   .react-aria-TabList {
-    &[data-orientation=vertical] {
+    &[data-orientation="vertical"] {
       flex-direction: column;
       border-inline-end: 1px solid gray;
 

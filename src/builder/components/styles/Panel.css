@@ -16,14 +16,15 @@
   }
 
   .panel-content {
-    padding: var(--spacing);
+    padding: var(--spacing-sm) 0 0 0;
     flex: 1;
   }
 
   /* Panel variants */
   .panel-tab {
-    border: none;
     border-radius: 0;
+    border: none;
+    padding: 0;
   }
 
   .panel-sidebar {
