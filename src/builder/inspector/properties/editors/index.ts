@@ -32,5 +32,6 @@ export { TagEditor } from './TagEditor';
 export { TreeEditor } from './TreeEditor';
 export { TreeItemEditor } from './TreeItemEditor';
 export { FieldEditor } from './FieldEditor';
-
-
+export { PanelGroupEditor } from './PanelGroupEditor';
+export { ResizablePanelEditor } from './ResizablePanelEditor';
+export { PanelResizeHandleEditor } from './PanelResizeHandleEditor';
