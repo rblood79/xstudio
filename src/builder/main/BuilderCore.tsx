@@ -127,8 +127,8 @@ export const BuilderCore: React.FC = () => {
     }
   }, []);
 
-  // 디버깅을 위한 로그 추가
-  if (import.meta.env.DEV) {
+  // 디버깅을 위한 로그 추가 (VITE_ENABLE_DEBUG_LOGS=true 일 때만)
+  if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
     console.log("🔍 히스토리 정보:", {
       historyInfo,
       canUndo,
@@ -235,11 +235,13 @@ export const BuilderCore: React.FC = () => {
     if (projectId && elements.length > 0 && iframeReadyState === "ready") {
       // 중복 전송 방지를 위한 디바운싱
       const timeoutId = setTimeout(() => {
-        console.log("🚀 프로젝트 초기화 후 프리뷰 전송:", {
-          projectId,
-          elementCount: elements.length,
-          elementIds: elements.map((el) => el.id),
-        });
+        if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
+          console.log("🚀 프로젝트 초기화 후 프리뷰 전송:", {
+            projectId,
+            elementCount: elements.length,
+            elementIds: elements.map((el) => el.id).slice(0, 5), // 처음 5개만
+          });
+        }
         sendElementsToIframe(elements);
       }, 100); // 100ms 디바운싱
 

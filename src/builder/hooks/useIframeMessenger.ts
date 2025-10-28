@@ -25,6 +25,7 @@ export interface UseIframeMessengerReturn {
 export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const [iframeReadyState, setIframeReadyState] = useState<IframeReadyState>('not_initialized');
     const isProcessingRef = useRef(false);
+    const isProcessingPreviewMessageRef = useRef(false); // Preview 메시지 처리 중 플래그
     const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
 
     const elements = useStore((state) => state.elements);
@@ -40,6 +41,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // 요소들을 iframe에 전송 (상태에 따라 큐잉)
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
+        // Preview 메시지 처리 중이면 다시 Preview로 보내지 않음 (순환 방지)
+        if (isProcessingPreviewMessageRef.current) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('⏸️ Preview 메시지 처리 중 - iframe 전송 건너뛰기');
+            }
+            return;
+        }
+
         const iframe = MessageService.getIframe();
 
         // iframe이 준비되지 않았으면 큐에 넣기
@@ -181,6 +190,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "ADD_COLUMN_ELEMENTS" && event.data.payload?.columns) {
             console.log("📥 Builder: Preview에서 Column Elements 일괄 추가 요청:", event.data.payload);
 
+            // 순환 참조 방지 플래그 설정
+            isProcessingPreviewMessageRef.current = true;
+
             const { elements } = useStore.getState();
             const newColumns = event.data.payload.columns;
 
@@ -191,6 +203,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
             if (columnsToAdd.length === 0) {
                 console.log("⚠️ 추가할 새로운 Column이 없습니다 (모두 중복)");
+                isProcessingPreviewMessageRef.current = false;
                 return;
             }
 
@@ -212,12 +225,20 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 }
             })();
 
+            // 300ms 후 플래그 해제
+            setTimeout(() => {
+                isProcessingPreviewMessageRef.current = false;
+            }, 300);
+
             return;
         }
 
         // Preview에서 Field Elements 일괄 추가 요청 (ListBox column detection)
         if (event.data.type === "ADD_FIELD_ELEMENTS" && event.data.payload?.fields) {
             console.log("📥 Builder: Preview에서 Field Elements 일괄 추가 요청:", event.data.payload);
+
+            // 순환 참조 방지 플래그 설정
+            isProcessingPreviewMessageRef.current = true;
 
             const { elements } = useStore.getState();
             const newFields = event.data.payload.fields;
@@ -229,6 +250,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
             if (fieldsToAdd.length === 0) {
                 console.log("⚠️ 추가할 새로운 Field가 없습니다 (모두 중복)");
+                isProcessingPreviewMessageRef.current = false;
                 return;
             }
 
@@ -250,29 +272,44 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 }
             })();
 
+            // 300ms 후 플래그 해제
+            setTimeout(() => {
+                isProcessingPreviewMessageRef.current = false;
+            }, 300);
+
             return;
         }
 
         // Preview에서 Column이 자동 생성되었을 때 Builder Store에도 추가
         if (event.data.type === "ELEMENT_ADDED" && event.data.payload?.element) {
             console.log("📥 Builder: Preview에서 Element 추가 메시지 수신:", event.data.payload.element);
-            
+
+            // 순환 참조 방지 플래그 설정
+            isProcessingPreviewMessageRef.current = true;
+
             // 무한 루프 방지: Store 배열에 직접 추가 (postMessage 없이)
             const { elements } = useStore.getState();
             const newElement = event.data.payload.element;
-            
+
             // 중복 체크
             if (elements.some(el => el.id === newElement.id)) {
                 console.log("⚠️ 이미 존재하는 Element, 추가 건너뛰기:", newElement.id);
+                isProcessingPreviewMessageRef.current = false;
                 return;
             }
-            
+
             // Store에 직접 추가 (postMessage 발생 안함)
             useStore.setState(state => ({
                 elements: [...state.elements, newElement]
             }));
-            
+
             console.log("✅ Builder Store에 Element 추가 완료 (postMessage 없이):", newElement.id);
+
+            // 300ms 후 플래그 해제 (Builder → Preview 동기화 재개)
+            setTimeout(() => {
+                isProcessingPreviewMessageRef.current = false;
+            }, 300);
+
             return;
         }
 
