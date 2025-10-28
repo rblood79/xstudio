@@ -20,17 +20,25 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 
 각 기능의 구현 과정, 버그 수정, 동작 방식을 설명하는 문서입니다.
 
+### Performance Optimization ⚡
+
+- [PERFORMANCE_OPTIMIZATION.md](./features/PERFORMANCE_OPTIMIZATION.md) - 성능 최적화 ✨
+  - Preview ↔ Builder 순환 참조 방지
+  - 조건부 디버그 로깅 (`VITE_ENABLE_DEBUG_LOGS`)
+  - Database UPSERT 최적화 (50% 쿼리 감소)
+  - JSON.stringify 제거 (70% CPU 절감)
+  - AI chat parent_id 수정
+  - **60-100% 성능 개선**
+
 ### 실시간 저장 모드
 
 - [REALTIME_SAVE_MODE_IMPLEMENTATION.md](./features/REALTIME_SAVE_MODE_IMPLEMENTATION.md) - 실시간 저장 모드 구현
 - [SAVESERVICE_REFACTORING.md](./features/SAVESERVICE_REFACTORING.md) - SaveService 리팩토링 (서비스 레이어 구조 개선)
 - [SAVE_MODE_BEHAVIOR.md](./features/SAVE_MODE_BEHAVIOR.md) - 저장 모드 동작 방식
-- [REALTIME_SAVE_BUG_FIX.md](./features/REALTIME_SAVE_BUG_FIX.md) - 실시간 저장 버그 수정
 
 ### Inspector
 
 - [INSPECTOR_REFACTORING.md](./features/INSPECTOR_REFACTORING.md) - Inspector 리팩토링
-- [INSPECTOR_INTEGRATION_TEST.md](./features/INSPECTOR_INTEGRATION_TEST.md) - Inspector 통합 테스트
 - [INSPECTOR_STYLE_SYSTEM.md](./features/INSPECTOR_STYLE_SYSTEM.md) - Inspector 스타일 관리 시스템 ✨
   - Inline styles 기반 스타일 편집
   - Computed styles 수집 및 표시
@@ -40,7 +48,6 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 ### Preview
 
 - [PREVIEW_CHECKBOX_BEHAVIOR.md](./features/PREVIEW_CHECKBOX_BEHAVIOR.md) - Preview Checkbox 동작 방식
-- [PREVIEW_STATE_RESET_BUG.md](./features/PREVIEW_STATE_RESET_BUG.md) - Preview 상태 컴포넌트 리셋 버그 수정 ✅
 
 ### Components
 

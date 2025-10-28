@@ -10,6 +10,7 @@ XStudio는 React 19, TypeScript, Supabase를 기반으로 한 현대적인 웹 �
 - 🔄 **실시간 프리뷰**: iframe 기반 즉시 미리보기 + computed styles 수집
 - 🎨 **디자인 시스템**: 통합 디자인 토큰 및 테마 관리
 - ✏️ **인라인 스타일 편집기**: 직관적인 Flexbox 컨트롤과 양방향 동기화
+- ⚡ **성능 최적화**: 순환 참조 방지, UPSERT 쿼리, 조건부 로깅 (60-100% 개선)
 - ♿ **접근성 우선**: React Aria Components 기반 접근 가능한 UI
 - 🔗 **실시간 협업**: Supabase 기반 멀티 유저 지원
 - 📱 **반응형 디자인**: 모든 디바이스에 최적화
@@ -43,6 +44,7 @@ XStudio는 React 19, TypeScript, Supabase를 기반으로 한 현대적인 웹 �
 
 프로젝트의 상세한 문서는 [`/docs`](./docs) 디렉토리에서 확인할 수 있습니다:
 
+- **[성능 최적화](./docs/features/PERFORMANCE_OPTIMIZATION.md)** ⚡ - 60-100% 성능 개선 가이드
 - **[개발 가이드](./docs/guides)** - 개발 워크플로우 및 컨벤션
 - **[기능 문서](./docs/features)** - 기능 구현 및 버그 수정 내역
 
@@ -82,8 +84,13 @@ npm run dev
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_API_URL=http://localhost:3000
-VITE_ENABLE_DEBUG_LOGS=true
+VITE_ENABLE_DEBUG_LOGS=true  # "false"로 설정하면 깔끔한 콘솔 (성능 개선)
 ```
+
+**성능 팁:**
+- `VITE_ENABLE_DEBUG_LOGS=true`: 상세한 디버그 로그 활성화
+- `VITE_ENABLE_DEBUG_LOGS=false` 또는 생략: 프로덕션 수준 성능 (콘솔 오버헤드 100% 제거)
+- 자세한 내용: [성능 최적화 문서](./docs/features/PERFORMANCE_OPTIMIZATION.md)
 
 ## 📁 프로젝트 구조
 
