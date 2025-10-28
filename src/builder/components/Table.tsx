@@ -7,6 +7,7 @@ import {
   flexRender,
   type SortingState,
   type Row as TableRow,
+  type ColumnDef,
   createColumnHelper,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -276,8 +277,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   }, [staticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
 
   // ---------- Column Definitions with Groups ----------
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const columnDefsWithGroups = React.useMemo<any[]>(() => {
+  const columnDefsWithGroups = React.useMemo<ColumnDef<T>[]>(() => {
     // 사용할 컬럼 결정: 제공된 컬럼이 있으면 사용, 없으면 자동 감지된 컬럼 사용
     const effectiveColumns = columns.length > 0 ? columns : detectedColumns;
 
@@ -286,8 +286,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
 
     // Column Helper 생성
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const columnHelper = createColumnHelper<any>();
+    const columnHelper = createColumnHelper<T>();
 
     if (columnGroups.length === 0) {
       // Column Group이 없으면 기본 컬럼 정의 반환
@@ -324,8 +323,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     }
 
     // Column Group이 있으면 span 개수만큼만 컬럼을 그룹으로 묶고, 나머지는 개별 컬럼으로 유지
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any[] = [];
+    const result: ColumnDef<T>[] = [];
     let columnIndex = 0;
 
     // Column Group들을 order_num 순서대로 정렬
@@ -936,8 +934,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   // ---------- React Table ----------
   const table = useReactTable({
     data,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    columns: columnDefsWithGroups as any,
+    columns: columnDefsWithGroups,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),

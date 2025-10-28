@@ -30,11 +30,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div className="chat-message" data-role={role} data-status={status}>
-      <div className="chat-message__avatar">{getAvatarLabel()}</div>
+      <div className="avatar">{getAvatarLabel()}</div>
 
-      <div className="chat-message__content">
-        <div className="chat-message__bubble">{content}</div>
-        <div className="chat-message__timestamp">{formatTimestamp(timestamp)}</div>
+      <div className="content">
+        <div className="bubble">{content}</div>
+        <div className="timestamp">{formatTimestamp(timestamp)}</div>
       </div>
     </div>
   );

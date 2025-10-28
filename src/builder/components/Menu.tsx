@@ -14,6 +14,16 @@ import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Menu.css";
 
+export interface MenuItem {
+  id: string;
+  label: string;
+  isDisabled?: boolean;
+  icon?: string;
+  shortcut?: string;
+  description?: string;
+  children?: MenuItem[];
+}
+
 export interface MenuButtonProps<T>
   extends MenuProps<T>,
     Omit<MenuTriggerProps, "children"> {
@@ -125,7 +135,7 @@ export function MenuButton<T extends object>({
       console.log('✅ Menu with columnMapping - items:', menuItems);
 
       // Recursive render function for menu items with submenus
-      const renderMenuItem = (item: any) => {
+      const renderMenuItem = (item: MenuItem) => {
         const hasSubmenu = item.children && item.children.length > 0;
 
         if (hasSubmenu) {

@@ -141,7 +141,7 @@ export const useInspectorState = create<InspectorState>((set) => ({
       if (!state.selectedElement) return state;
       console.log("🎨 updateInlineStyle 호출:", { property, value });
 
-      const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, any>;
+      const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, string | number>;
 
       // 빈 문자열이면 해당 속성 제거 (class 스타일로 폴백)
       if (value === "" || value === null || value === undefined) {
@@ -164,7 +164,7 @@ export const useInspectorState = create<InspectorState>((set) => ({
       if (!state.selectedElement) return state;
       console.log("🎨 updateInlineStyles 호출:", styles);
 
-      const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, any>;
+      const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, string | number>;
 
       // 각 속성에 대해 빈 문자열이면 제거, 아니면 추가
       Object.entries(styles).forEach(([property, value]) => {

@@ -56,7 +56,7 @@ export function ChatInput({
     <div className="chat-input">
       <textarea
         ref={textareaRef}
-        className="chat-input__textarea"
+        className="textarea"
         value={value}
         onChange={handleInput}
         onKeyDown={handleKeyDown}

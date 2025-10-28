@@ -21,6 +21,7 @@ import { Element } from "../../../../types/store";
 import { ElementUtils } from "../../../../utils/elementUtils";
 import { TableElementProps } from "../../../../types/unified";
 import { useCallback } from "react";
+import './styles/TableEditor.css';
 
 // interface TableEditorProps {
 //     // element: Element;
@@ -52,7 +53,7 @@ export function TableEditor({
   // element가 없는 경우 빈 화면 반환
   if (!element || !element.id) {
     return (
-      <div className="p-4 text-center text-gray-500">
+      <div className="table-editor-empty">
         Table 요소를 선택하세요
       </div>
     );
@@ -397,7 +398,7 @@ export function TableEditor({
 
         {/* 고정 높이 설정 - heightMode가 'fixed'일 때만 표시 */}
         {(currentProps as TableElementProps)?.heightMode === "fixed" && (
-          <div className="flex gap-2">
+          <div className="table-editor-height-controls">
             <PropertyInput
               icon={Settings}
               label={PROPERTY_LABELS.HEIGHT_VALUE}
@@ -559,7 +560,7 @@ export function TableEditor({
                       {index + 1}.{" "}
                       {(columnProps?.children as string) || "제목 없음"}
                       {columnProps?.key != null && (
-                        <span className="ml-2 text-gray-500 text-sm">
+                        <span className="table-editor-label-hint">
                           ({String(columnProps.key)})
                         </span>
                       )}
@@ -567,7 +568,7 @@ export function TableEditor({
                     <div className="tab-controls">
                       {columnProps?.allowsSorting !== false && (
                         <span
-                          className="text-xs text-gray-500"
+                          className="table-editor-hint-text"
                           title="정렬 가능"
                         >
                           📊
@@ -575,7 +576,7 @@ export function TableEditor({
                       )}
                       {columnProps?.enableResizing !== false && (
                         <span
-                          className="text-xs text-gray-500"
+                          className="table-editor-hint-text"
                           title="크기 조절 가능"
                         >
                           ↔️
@@ -624,13 +625,13 @@ export function TableEditor({
                   <div className="tab-content">
                     <span className="tab-title">
                       {index + 1}. {(groupProps?.label as string) || "Group"}
-                      <span className="ml-2 text-gray-500 text-sm">
+                      <span className="table-editor-label-hint">
                         (span: {(groupProps?.span as number) || 2})
                       </span>
                     </span>
                     <div className="tab-controls">
                       <span
-                        className="text-xs text-gray-500"
+                        className="table-editor-hint-text"
                         title="Column Group"
                       >
                         📊

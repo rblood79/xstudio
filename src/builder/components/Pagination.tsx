@@ -1,5 +1,7 @@
 import React from 'react';
 import { Button } from './Button';
+import './styles/Pagination.css';
+
 export interface PaginationProps {
     currentPage: number;
     totalPages: number;
@@ -53,7 +55,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     return (
         <div className={`react-aria-Pagination ${className}`}>
             {/* 페이지네이션 버튼들 */}
-            <div className="flex items-center gap-1">
+            <div className="pagination-controls">
                 {/* 이전 페이지 버튼 */}
                 <Button
                     onPress={handlePrevious}
@@ -67,10 +69,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                         key={pageNum}
                         onPress={() => handlePageClick(pageNum)}
                         isDisabled={isLoading}
-                        className={`transition-colors ${pageNum === currentPage
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            } disabled:opacity-50`}
+                        data-current={pageNum === currentPage}
                         aria-label={`페이지 ${pageNum}로 이동`}
                         aria-current={pageNum === currentPage ? 'page' : undefined}
                         children={pageNum}
@@ -79,7 +78,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
                 {/* 생략 표시 */}
                 {totalPages > 5 && currentPage < totalPages - 2 && (
-                    <span className="text-gray-500">...</span>
+                    <span className="pagination-ellipsis">...</span>
                 )}
 
                 {/* 마지막 페이지 */}
@@ -87,7 +86,6 @@ export const Pagination: React.FC<PaginationProps> = ({
                     <Button
                         onPress={() => handlePageClick(totalPages)}
                         isDisabled={isLoading}
-                        className="rounded hover:bg-gray-300 disabled:opacity-50 transition-colors"
                         aria-label={`페이지 ${totalPages}로 이동`}
                         children={totalPages}
                     />
@@ -97,7 +95,6 @@ export const Pagination: React.FC<PaginationProps> = ({
                 <Button
                     onPress={handleNext}
                     isDisabled={!hasNextPage || isLoading}
-                    className="disabled:opacity-50 hover:bg-gray-300 transition-colors"
                     aria-label="다음 페이지"
                     children="다음"
                 />

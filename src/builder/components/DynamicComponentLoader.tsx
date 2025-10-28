@@ -57,8 +57,7 @@ class ComponentErrorBoundary extends React.Component<
 // Dynamic Component Loader
 const DynamicComponentLoader: React.FC<{
     componentType: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    props?: any;
+    props?: Record<string, unknown>;
 }> = ({ componentType, props = {} }) => {
     const LazyComponent = componentMap[componentType];
 

@@ -1,54 +1,51 @@
-@import './Button.css';
+/**
+ * Pagination Component Styles
+ */
 
 @layer components {
   .react-aria-Pagination {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .pagination-controls {
+    display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    font-size: var(--text-sm);
-    gap: var(--spacing-sm);
+    gap: var(--spacing-1);
   }
 
   .pagination-info {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
     font-size: var(--text-sm);
-    color: var(--text-color-base);
+    color: var(--color-gray-600);
+    text-align: center;
   }
 
-  /* Page navigation controls */
-  .react-aria-PageNavigation {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
+  .pagination-ellipsis {
+    color: var(--color-gray-500);
   }
 
-  /* Page size selector */
-  .react-aria-PageSizeSelector {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
+  /* Page button states */
+  .react-aria-Pagination .react-aria-Button[data-current="true"] {
+    background-color: var(--color-primary-500);
+    color: var(--color-white);
   }
 
-  /* Go to page input */
-  .react-aria-GoToPage {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]) {
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-700);
   }
 
-  /* Page info display */
-  .react-aria-PageInfo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--text-sm);
-    color: var(--text-color-base);
+  .react-aria-Pagination .react-aria-Button:not([data-current="true"]):hover:not(:disabled) {
+    background-color: var(--color-gray-300);
+  }
+
+  .react-aria-Pagination .react-aria-Button:disabled {
+    opacity: 0.5;
+  }
+
+  .react-aria-Pagination .react-aria-Button {
+    border-radius: var(--radius-md);
+    transition: background-color 200ms, opacity 200ms;
   }
 }
