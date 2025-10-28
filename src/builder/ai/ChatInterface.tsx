@@ -90,7 +90,7 @@ export function ChatInterface() {
               id: crypto.randomUUID(),
               tag: intent.componentType,
               props: intent.props || {},
-              parent_id: null,
+              parent_id: selectedElementId || null, // 선택된 요소의 자식으로 추가 (없으면 루트)
               page_id: currentPageId || "default",
               order_num: elements.length,
               dataBinding: undefined,
