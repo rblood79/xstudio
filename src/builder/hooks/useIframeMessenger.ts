@@ -43,7 +43,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
         // Preview 메시지 처리 중이면 다시 Preview로 보내지 않음 (순환 방지)
         if (isProcessingPreviewMessageRef.current) {
-            if (process.env.NODE_ENV === 'development') {
+            if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
                 console.log('⏸️ Preview 메시지 처리 중 - iframe 전송 건너뛰기');
             }
             return;
@@ -53,7 +53,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // iframe이 준비되지 않았으면 큐에 넣기
         if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
-            if (process.env.NODE_ENV === 'development') {
+            if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
                 //console.log('🔄 Queue elements update, iframe not ready:', iframeReadyState);
             }
             messageQueueRef.current.push({
@@ -66,7 +66,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
         iframe.contentWindow.postMessage(message, window.location.origin);
 
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
             console.log(`📤 Sent ${elementsToSend.length} elements to iframe`);
         }
     }, [iframeReadyState]);
@@ -111,7 +111,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         const queue = [...messageQueueRef.current];
         messageQueueRef.current = [];
 
-        if (queue.length > 0 && process.env.NODE_ENV === 'development') {
+        if (queue.length > 0 && import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
             //console.log(`🔄 Processing ${queue.length} queued messages`);
         }
 
@@ -130,7 +130,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const handleIframeLoad = useCallback(() => {
         setIframeReadyState('loading');
 
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
             //console.log('🖼️ iframe loading started');
         }
 
@@ -140,7 +140,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             if (iframe?.contentDocument && iframe.contentDocument.readyState === 'complete') {
                 setIframeReadyState('ready');
 
-                if (process.env.NODE_ENV === 'development') {
+                if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
                     //console.log('✅ iframe ready, processing queued messages');
                 }
 
@@ -148,27 +148,23 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 setTimeout(() => {
                     processMessageQueue();
 
-                    // iframe 로드 후 현재 요소들을 전송 (초기 로드 시에도 전송)
+                    // iframe 로드 후 현재 요소들을 전송 (초기 로드 시에는 항상 전송)
                     const currentElements = useStore.getState().elements;
-                    if (!isSendingRef.current) {
-                        // 마지막 전송된 요소들과 다를 때만 전송 (ID와 프로퍼티 모두 비교)
-                        const currentElementsHash = currentElements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-                        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-
-                        if (currentElementsHash !== lastSentElementsHash) {
+                    if (!isSendingRef.current && currentElements.length > 0) {
+                        if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
                             console.log('🖼️ 초기 iframe 로드 - 요소 전송:', {
                                 elementCount: currentElements.length,
-                                elementIds: currentElements.map(el => el.id)
+                                elementIds: currentElements.map(el => el.id).slice(0, 5)
                             });
-
-                            isSendingRef.current = true;
-                            lastSentElementsRef.current = [...currentElements];
-                            sendElementsToIframe(currentElements);
-
-                            setTimeout(() => {
-                                isSendingRef.current = false;
-                            }, 100);
                         }
+
+                        isSendingRef.current = true;
+                        lastSentElementsRef.current = [...currentElements];
+                        sendElementsToIframe(currentElements);
+
+                        setTimeout(() => {
+                            isSendingRef.current = false;
+                        }, 100);
                     }
                 }, 100);
             } else {
@@ -472,19 +468,42 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 요소 ID와 프로퍼티 모두 비교하여 변경 감지
-        const currentElementsHash = elements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+        // 요소 변경 감지 (JSON.stringify 제거 - 성능 최적화)
+        // 1. 길이 비교 (O(1))
+        if (elements.length !== lastSentElementsRef.current.length) {
+            // 길이가 다르면 변경됨
+        } else {
+            // 2. 참조 비교 (O(n)) - props 객체의 참조 비교
+            let hasChanged = false;
+            for (let i = 0; i < elements.length; i++) {
+                const current = elements[i];
+                const last = lastSentElementsRef.current[i];
 
-        if (currentElementsHash === lastSentElementsHash) {
-            return;
+                // ID, tag, props 참조, order_num 비교
+                if (
+                    current.id !== last.id ||
+                    current.tag !== last.tag ||
+                    current.props !== last.props ||
+                    current.order_num !== last.order_num ||
+                    current.parent_id !== last.parent_id
+                ) {
+                    hasChanged = true;
+                    break;
+                }
+            }
+
+            if (!hasChanged) {
+                return; // 변경 없음
+            }
         }
 
-        console.log('🔄 요소 변경 감지 - iframe 전송:', {
-            elementCount: elements.length,
-            elementIds: elements.map(el => el.id),
-            iframeReadyState
-        });
+        if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS === "true") {
+            console.log('🔄 요소 변경 감지 - iframe 전송:', {
+                elementCount: elements.length,
+                elementIds: elements.map(el => el.id).slice(0, 5),
+                iframeReadyState
+            });
+        }
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
