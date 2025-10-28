@@ -33,6 +33,9 @@ export * from "./Tooltip";
 export * from "./ProgressBar";
 export * from "./Meter";
 export * from "./Toolbar";
+export * from "./Separator";
+export { PanelGroup, PanelResizeHandle } from "./ResizablePanel";
+export { Panel as ResizablePanel } from "./ResizablePanel";
 export * from "./types";
 export type { Key } from "react-aria-components";
 

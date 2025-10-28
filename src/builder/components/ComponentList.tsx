@@ -1,5 +1,5 @@
 import { useMemo, useCallback, memo } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot } from 'lucide-react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot, Columns2 } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import './styles/ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -53,6 +53,7 @@ const basicComp = [
 const widgetComp = [
     { tag: 'Card', label: 'card', icon: AppWindowMac },
     { tag: 'Panel', label: 'panel', icon: InspectionPanel },
+    { tag: 'PanelGroup', label: 'resizable panels', icon: Columns2 },
     { tag: 'Nav', label: 'navigation', icon: Menu },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
 ] as const;

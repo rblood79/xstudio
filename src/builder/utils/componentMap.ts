@@ -41,4 +41,8 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
     'ProgressBar': lazy(() => import('../components/ProgressBar').then(module => ({ default: module.ProgressBar }))),
     'Meter': lazy(() => import('../components/Meter').then(module => ({ default: module.Meter }))),
     'Toolbar': lazy(() => import('../components/Toolbar').then(module => ({ default: module.Toolbar }))),
+    'Separator': lazy(() => import('../components/Separator').then(module => ({ default: module.Separator }))),
+    'PanelGroup': lazy(() => import('../components/ResizablePanel').then(module => ({ default: module.PanelGroup }))),
+    'ResizablePanel': lazy(() => import('../components/ResizablePanel').then(module => ({ default: module.Panel }))),
+    'PanelResizeHandle': lazy(() => import('../components/ResizablePanel').then(module => ({ default: module.PanelResizeHandle }))),
 };

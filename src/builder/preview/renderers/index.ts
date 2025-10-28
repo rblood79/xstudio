@@ -50,6 +50,10 @@ export const rendererMap: Record<
   Tooltip: LayoutRenderers.renderTooltip,
   ProgressBar: LayoutRenderers.renderProgressBar,
   Meter: LayoutRenderers.renderMeter,
+  Separator: LayoutRenderers.renderSeparator,
+  PanelGroup: LayoutRenderers.renderPanelGroup,
+  ResizablePanel: LayoutRenderers.renderResizablePanel,
+  PanelResizeHandle: LayoutRenderers.renderPanelResizeHandle,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,

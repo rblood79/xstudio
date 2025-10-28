@@ -1,0 +1,86 @@
+/**
+ * Separator Component Styles
+ */
+
+@layer components {
+  .react-aria-Separator {
+    border: none;
+    background-color: var(--color-border);
+    flex-shrink: 0;
+  }
+
+  /* Orientation */
+  .react-aria-Separator[aria-orientation='horizontal'] {
+    width: 100%;
+    height: 1px;
+    margin: var(--spacing-4) 0;
+  }
+
+  .react-aria-Separator[aria-orientation='vertical'] {
+    height: 100%;
+    width: 1px;
+    margin: 0 var(--spacing-4);
+  }
+
+  /* Sizes - Horizontal */
+  .react-aria-Separator[aria-orientation='horizontal'][data-size='sm'] {
+    height: 1px;
+    margin: var(--spacing-2) 0;
+  }
+
+  .react-aria-Separator[aria-orientation='horizontal'][data-size='md'] {
+    height: 1px;
+    margin: var(--spacing-4) 0;
+  }
+
+  .react-aria-Separator[aria-orientation='horizontal'][data-size='lg'] {
+    height: 2px;
+    margin: var(--spacing-6) 0;
+  }
+
+  /* Sizes - Vertical */
+  .react-aria-Separator[aria-orientation='vertical'][data-size='sm'] {
+    width: 1px;
+    margin: 0 var(--spacing-2);
+  }
+
+  .react-aria-Separator[aria-orientation='vertical'][data-size='md'] {
+    width: 1px;
+    margin: 0 var(--spacing-4);
+  }
+
+  .react-aria-Separator[aria-orientation='vertical'][data-size='lg'] {
+    width: 2px;
+    margin: 0 var(--spacing-6);
+  }
+
+  /* Variants */
+  .react-aria-Separator[data-variant='dashed'] {
+    background-color: transparent;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .react-aria-Separator[aria-orientation='vertical'][data-variant='dashed'] {
+    border-top: none;
+    border-left: 1px dashed var(--color-border);
+  }
+
+  .react-aria-Separator[data-variant='dotted'] {
+    background-color: transparent;
+    border-top: 1px dotted var(--color-border);
+  }
+
+  .react-aria-Separator[aria-orientation='vertical'][data-variant='dotted'] {
+    border-top: none;
+    border-left: 1px dotted var(--color-border);
+  }
+
+  /* Dashed/Dotted thickness variants */
+  .react-aria-Separator[data-size='lg'][data-variant='dashed'] {
+    border-width: 2px;
+  }
+
+  .react-aria-Separator[data-size='lg'][data-variant='dotted'] {
+    border-width: 2px;
+  }
+}

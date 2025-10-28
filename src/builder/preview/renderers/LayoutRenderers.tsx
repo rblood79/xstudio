@@ -10,6 +10,10 @@ import {
   Tooltip,
   ProgressBar,
   Meter,
+  Separator,
+  PanelGroup,
+  ResizablePanel,
+  PanelResizeHandle,
 } from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
 import { createEventHandlerMap } from "../utils/eventHandlers";
@@ -349,6 +353,116 @@ export const renderMeter = (
           ? Number(element.props.maxValue)
           : 100
       }
+    />
+  );
+};
+
+/**
+ * Separator 렌더링
+ */
+export const renderSeparator = (
+  element: PreviewElement,
+  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+): React.ReactNode => {
+  return (
+    <Separator
+      key={element.id}
+      data-element-id={element.id}
+      orientation={
+        (element.props.orientation as "horizontal" | "vertical") || "horizontal"
+      }
+      variant={
+        (element.props.variant as "default" | "dashed" | "dotted") || "default"
+      }
+      size={(element.props.size as "sm" | "md" | "lg") || "md"}
+      style={element.props.style}
+      className={element.props.className}
+    />
+  );
+};
+
+/**
+ * PanelGroup 렌더링
+ */
+export const renderPanelGroup = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <PanelGroup
+      key={element.id}
+      data-element-id={element.id}
+      direction={
+        (element.props.direction as "horizontal" | "vertical") || "horizontal"
+      }
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </PanelGroup>
+  );
+};
+
+/**
+ * ResizablePanel 렌더링
+ */
+export const renderResizablePanel = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <ResizablePanel
+      key={element.id}
+      data-element-id={element.id}
+      id={element.id}
+      defaultSize={
+        element.props.defaultSize !== undefined
+          ? Number(element.props.defaultSize)
+          : 50
+      }
+      minSize={
+        element.props.minSize !== undefined
+          ? Number(element.props.minSize)
+          : 10
+      }
+      maxSize={
+        element.props.maxSize !== undefined
+          ? Number(element.props.maxSize)
+          : 90
+      }
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </ResizablePanel>
+  );
+};
+
+/**
+ * PanelResizeHandle 렌더링
+ */
+export const renderPanelResizeHandle = (
+  element: PreviewElement,
+  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+): React.ReactNode => {
+  return (
+    <PanelResizeHandle
+      key={element.id}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
     />
   );
 };

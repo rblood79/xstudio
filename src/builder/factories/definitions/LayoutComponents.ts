@@ -117,3 +117,61 @@ export function createTreeDefinition(
     ],
   };
 }
+
+/**
+ * PanelGroup 컴포넌트 정의 (크기 조정 가능한 패널)
+ */
+export function createPanelGroupDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // 패널 ID 생성
+  const panel1Id = ElementUtils.generateId();
+  const panel2Id = ElementUtils.generateId();
+
+  return {
+    tag: "PanelGroup",
+    parent: {
+      tag: "PanelGroup",
+      props: {
+        direction: "horizontal",
+      } as ComponentElementProps,
+      page_id: pageId,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "ResizablePanel",
+        props: {
+          id: panel1Id,
+          defaultSize: 50,
+          minSize: 20,
+          maxSize: 80,
+        } as ComponentElementProps,
+        page_id: pageId,
+        order_num: 1,
+      },
+      {
+        tag: "PanelResizeHandle",
+        props: {} as ComponentElementProps,
+        page_id: pageId,
+        order_num: 2,
+      },
+      {
+        tag: "ResizablePanel",
+        props: {
+          id: panel2Id,
+          defaultSize: 50,
+          minSize: 20,
+          maxSize: 80,
+        } as ComponentElementProps,
+        page_id: pageId,
+        order_num: 3,
+      },
+    ],
+  };
+}
