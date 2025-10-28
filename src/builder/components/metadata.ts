@@ -336,6 +336,42 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
   {
+    type: "PanelGroup",
+    label: "Panel Group",
+    category: "Layout",
+    icon: "📐",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "PanelGroupEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "ResizablePanel",
+    label: "Resizable Panel",
+    category: "Layout",
+    icon: "↔️",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ResizablePanelEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "PanelResizeHandle",
+    label: "Panel Resize Handle",
+    category: "Layout",
+    icon: "⋮",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "PanelResizeHandleEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
     type: "Card",
     label: "Card",
     category: "Layout",

@@ -39,6 +39,12 @@ export const PROPERTY_LABELS = {
 
     // Orientation
     ORIENTATION: 'Orientation',
+    DIRECTION: 'Direction',
+
+    // Panel Group & Resizable Panel
+    DEFAULT_SIZE: 'Default Size (%)',
+    MIN_SIZE: 'Min Size (%)',
+    MAX_SIZE: 'Max Size (%)',
 
     // Button types
     TYPE: 'Type',
