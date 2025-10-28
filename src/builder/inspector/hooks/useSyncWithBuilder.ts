@@ -324,7 +324,10 @@ export function useSyncWithBuilder(): void {
     return () => {
       if (pendingTimeoutRef.current) {
         clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
       }
+      // cleanup 시 동기화 플래그 해제 (다음 선택 시 정상 동작 보장)
+      setSyncingToBuilder(false);
     };
     // Note: elements를 의존성 배열에 포함하지 않음
     // - useStore는 항상 최신 상태를 반환하므로 useEffect 내에서 최신 elements 참조 가능
