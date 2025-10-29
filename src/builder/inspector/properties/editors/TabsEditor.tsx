@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AppWindow, Plus, Ratio, PointerOff } from 'lucide-react';
-import { PropertyInput, PropertySelect } from '../../components';
+import { PropertyInput, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -8,6 +8,7 @@ import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import type { Element } from '../../../../types/store'; // 통합된 타입 사용
 import { ElementUtils } from '../../../../utils/elementUtils';
+import { generateCustomId } from '../../../utils/idGeneration';
 
 // 상수 정의
 const ORIENTATIONS: Array<{ value: string; label: string }> = [
@@ -88,12 +89,24 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     const { addElement, elements: storeElements } = useStore();
     const { localPageId, storePageId } = usePageId();
 
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
@@ -122,6 +135,14 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="tabs_1"
+            />
+
             <fieldset className="properties-aria">
                 <PropertySelect
                     label={PROPERTY_LABELS.DEFAULT_TAB}
@@ -200,6 +221,7 @@ async function createNewTab(
     // 새로운 Tab 요소 생성
     const newTabElement = {
         id: ElementUtils.generateId(),
+        customId: generateCustomId('Tab', elements),
         page_id: pageId,
         tag: 'Tab',
         props: {
@@ -217,6 +239,7 @@ async function createNewTab(
     // 새로운 Panel 요소 생성
     const newPanelElement = {
         id: ElementUtils.generateId(),
+        customId: generateCustomId('Panel', elements),
         page_id: pageId,
         tag: 'Panel',
         props: {

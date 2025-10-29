@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ListTree, FolderTree, Workflow, Plus } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
@@ -24,12 +24,24 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     const { addElement } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // Tree의 실제 TreeItem 자식 요소들을 찾기
@@ -86,6 +98,14 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="tree_1"
+                />
+
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps['aria-label'] || '')}

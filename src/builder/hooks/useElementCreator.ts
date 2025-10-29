@@ -4,6 +4,7 @@ import { Element, ComponentElementProps } from '../../types/unified';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
+import { generateCustomId } from '../utils/idGeneration';
 import {
     createDefaultButtonProps,
     createDefaultTextFieldProps,
@@ -251,6 +252,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
 
                         const newElement: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
                             tag,
+                            customId: generateCustomId(tag, elements),
                             props: getDefaultProps(tag),
                             page_id: currentPageId,
                             parent_id: parentId,

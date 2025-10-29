@@ -46,6 +46,7 @@ export const renderCalendar = (
   return (
     <Calendar
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -98,6 +99,7 @@ export const renderDatePicker = (
   return (
     <DatePicker
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -165,6 +167,7 @@ export const renderDateRangePicker = (
   return (
     <DateRangePicker
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -232,6 +235,7 @@ export const renderDateField = (
   return (
     <DateField
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -272,6 +276,7 @@ export const renderTimeField = (
   return (
     <TimeField
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}

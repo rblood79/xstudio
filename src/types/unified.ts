@@ -47,6 +47,7 @@ export interface ColumnMapping {
 
 export interface Element {
   id: string;
+  customId?: string; // 사용자 정의 ID (예: button_1, input_2) - 이벤트 핸들링, CSS 선택자용
   tag: string;
   props: ComponentElementProps;
   parent_id?: string | null;

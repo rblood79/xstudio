@@ -36,6 +36,7 @@ export const renderTextField = (
   return (
     <TextField
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -80,6 +81,7 @@ export const renderNumberField = (
   return (
     <NumberField
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -116,6 +118,7 @@ export const renderSearchField = (
   return (
     <SearchField
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -164,6 +167,7 @@ export const renderInput = (
   return (
     <Input
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -208,6 +212,7 @@ export const renderLabel = (
   return (
     <Label
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -236,6 +241,7 @@ export const renderDescription = (
   return (
     <Description
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -262,6 +268,7 @@ export const renderFieldError = (
   return (
     <FieldError
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -288,6 +295,7 @@ export const renderCheckbox = (
   return (
     <Checkbox
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       defaultSelected={Boolean(element.props.isSelected)}
       isIndeterminate={Boolean(element.props.isIndeterminate)}
@@ -345,6 +353,7 @@ export const renderCheckboxGroup = (
   return (
     <CheckboxGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -419,6 +428,7 @@ export const renderRadio = (
     return (
       <Radio
         key={element.id}
+        id={element.customId}
         data-element-id={element.id}
         value={String(element.props.value || "")}
         isDisabled={Boolean(element.props.isDisabled || false)}
@@ -436,10 +446,12 @@ export const renderRadio = (
     return (
       <RadioGroup
         key={`group-${element.id}`}
+        id={`group-${element.customId}`}
         data-element-id={`group-${element.id}`}
       >
         <Radio
           key={element.id}
+          id={element.customId}
           data-element-id={element.id}
           value={String(element.props.value || "")}
           isDisabled={Boolean(element.props.isDisabled || false)}
@@ -473,6 +485,7 @@ export const renderRadioGroup = (
   return (
     <RadioGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -517,6 +530,7 @@ export const renderSwitch = (
   return (
     <Switch
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       defaultSelected={Boolean(element.props.isSelected)}
       isDisabled={Boolean(element.props.isDisabled)}

@@ -1,5 +1,5 @@
 
-import { PropertyInput, PropertySelect } from '../../components';
+import { PropertyInput, PropertySelect, PropertyCustomId } from '../../components';
 import type { CellElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
@@ -16,6 +16,15 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
+    const customId = element?.customId || '';
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
 
     if (!element || !element.id) {
         return (
@@ -34,6 +43,14 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="cell_1"
+            />
+
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.CELL_CONTENT}</legend>
 

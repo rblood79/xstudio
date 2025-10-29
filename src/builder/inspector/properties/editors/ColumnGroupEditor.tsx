@@ -1,10 +1,15 @@
 import { Settings, Type, Grid, Pin } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/unified';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
 
-export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProps) {
+export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     const updateGroupProps = (newProps: Partial<ColumnGroupElementProps>) => {
         onUpdate({
             ...currentProps,
@@ -12,8 +17,24 @@ export function ColumnGroupEditor({ currentProps, onUpdate }: PropertyEditorProp
         });
     };
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="columngroup_1"
+            />
+
             {/* 첫 번째 그룹: 기본 속성 */}
             <fieldset className="component-fieldset">
                 <legend className="component-legend">

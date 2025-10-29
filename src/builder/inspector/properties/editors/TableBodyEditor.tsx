@@ -1,5 +1,5 @@
 import { useStore } from '../../../stores';
-import { PropertySelect } from '../../components';
+import { PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -20,6 +20,9 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
 
+    // Get customId from element in store
+    const customId = element?.customId || '';
+
     if (!element || !element.id) {
         return (
             <div className="p-4 text-center text-gray-500">
@@ -33,6 +36,14 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
             ...currentProps,
             ...newProps
         });
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 현재 테이블 바디의 행들 찾기
@@ -52,6 +63,15 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
         <div className="component-props">
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_BODY_PROPERTIES}</legend>
+
+                {/* Custom ID */}
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="tablebody_1"
+                />
 
                 {/* Body Info */}
                 <div className='tab-overview'>

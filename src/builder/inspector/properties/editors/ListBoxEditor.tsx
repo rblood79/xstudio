@@ -11,7 +11,7 @@ import {
   Binary,
   FileText,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch } from "../../components";
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
@@ -38,6 +38,10 @@ export function ListBoxEditor({
   // 스토어에서 elements를 직접 구독하여 실시간 업데이트
   const storeElements = useStore((state) => state.elements);
 
+  // Get customId from element in store
+  const element = storeElements.find((el) => el.id === elementId);
+  const customId = element?.customId || '';
+
   useEffect(() => {
     // 아이템 선택 상태 초기화
     setSelectedItem(null);
@@ -49,6 +53,14 @@ export function ListBoxEditor({
       [key]: value,
     };
     onUpdate(updatedProps);
+  };
+
+  const updateCustomId = (newCustomId: string) => {
+    // Update customId in store (not in props)
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
   };
 
   // 실제 ListBoxItem 자식 요소들을 찾기 (useMemo로 최적화)
@@ -174,6 +186,15 @@ export function ListBoxEditor({
   return (
     <div className="component-props">
       <fieldset className="properties-aria">
+        {/* Custom ID */}
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="listbox_1"
+        />
+
         {/* 라벨 설정 */}
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}

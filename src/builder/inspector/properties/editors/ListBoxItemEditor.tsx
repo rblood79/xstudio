@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Tag, Binary, PointerOff, PenOff, SquarePlus, Database } from 'lucide-react';
-import { PropertyInput, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
@@ -11,12 +11,24 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
     const { addElement, currentPageId, setSelectedElement } = useStore();
     const storeElements = useStore((state) => state.elements);
 
+    // Get customId from element in store
+    const element = storeElements.find((el) => el.id === elementId);
+    const customId = element?.customId || '';
+
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // Field 자식 요소들을 찾기
@@ -124,6 +136,14 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
         <div className="component-props">
             <fieldset className="properties-aria">
                 <legend className="fieldset-legend">Static Item Properties</legend>
+
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="listboxitem_1"
+                />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}

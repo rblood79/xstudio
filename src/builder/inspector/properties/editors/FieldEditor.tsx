@@ -2,6 +2,7 @@ import {
   PropertyInput,
   PropertySelect,
   PropertySwitch,
+  PropertyCustomId,
 } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
@@ -26,6 +27,9 @@ export function FieldEditor({
   // elementId를 사용하여 현재 Element를 찾음
   const element = elements.find((el) => el.id === elementId);
 
+  // Get customId from element in store
+  const customId = element?.customId || '';
+
   if (!element || !element.id) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -41,9 +45,26 @@ export function FieldEditor({
     onUpdate(merged);
   };
 
+  const updateCustomId = (newCustomId: string) => {
+    // Update customId in store (not in props)
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  };
+
   return (
     <div className="component-props">
       <fieldset className="properties-aria">
+        {/* Custom ID */}
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="field_1"
+        />
+
         {/* Data Key (읽기 전용) */}
         <PropertyInput
           label={PROPERTY_LABELS.DATA_KEY}

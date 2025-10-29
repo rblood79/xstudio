@@ -1,9 +1,13 @@
 import { Layout } from 'lucide-react';
-import { PropertySelect } from '../../components';
+import { PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
 
-export function PanelGroupEditor({ currentProps, onUpdate }: PropertyEditorProps) {
+export function PanelGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
@@ -12,8 +16,24 @@ export function PanelGroupEditor({ currentProps, onUpdate }: PropertyEditorProps
         onUpdate(updatedProps);
     };
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="panelgroup_1"
+            />
+
             {/* Direction 설정 */}
             <PropertySelect
                 label={PROPERTY_LABELS.DIRECTION || 'Direction'}

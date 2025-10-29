@@ -83,8 +83,8 @@
   --highlight-foreground: white; /* 5.56:1 against highlight-background */
   --highlight-foreground-pressed: #ddd;
   --highlight-overlay: rgb(from #6f46ed r g b / 15%);
-  --invalid-color: var(--red-400);
-  --invalid-color-pressed: var(--red-500);
+  --invalid-color: var(--color-red-400);
+  --invalid-color-pressed: var(--color-red-500);
 }
 
 /* Dark theme overrides */

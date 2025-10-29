@@ -81,6 +81,7 @@ export const renderTree = (
   return (
     <Tree
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       dataBinding={element.dataBinding}
       style={element.props.style}
@@ -153,8 +154,8 @@ export const renderTreeItem = (
   return (
     <TreeItem
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
-      id={element.id}
       title={displayTitle}
       hasChildren={hasChildren}
       showInfoButton={true}
@@ -267,6 +268,7 @@ export const renderTagGroup = (
   return (
     <TagGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -449,6 +451,7 @@ export const renderTag = (
   return (
     <Tag
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
@@ -479,6 +482,7 @@ export const renderToggleButtonGroup = (
   return (
     <ToggleButtonGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -528,7 +532,7 @@ export const renderToggleButton = (
   return (
     <ToggleButton
       key={element.id}
-      id={element.id}
+      id={element.customId}
       data-element-id={element.id}
       isSelected={
         isInGroup
@@ -593,6 +597,7 @@ export const renderMenu = (
   return (
     <MenuButton
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       label={String(element.props.label || "Menu")}
       style={element.props.style}
@@ -621,6 +626,7 @@ export const renderMenuItem = (
   return (
     <MenuItem
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -651,6 +657,7 @@ export const renderToolbar = (
   return (
     <Toolbar
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}

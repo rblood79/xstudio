@@ -1,9 +1,13 @@
 import { Tag, Binary, PointerOff, PenOff } from 'lucide-react';
-import { PropertyInput, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
 
-export function GridListItemEditor({ currentProps, onUpdate }: PropertyEditorProps) {
+export function GridListItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
@@ -12,8 +16,24 @@ export function GridListItemEditor({ currentProps, onUpdate }: PropertyEditorPro
         onUpdate(updatedProps);
     };
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="gridlistitem_1"
+            />
+
             <PropertyInput
                 label={PROPERTY_LABELS.LABEL}
                 value={String(currentProps.label || '')}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ColumnElementProps, Element } from '../../../../types/store';
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyInput } from '../../components';
+import { PropertySelect, PropertyInput, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
@@ -29,6 +29,9 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
 
+    // Get customId from element in store
+    const customId = element?.customId || '';
+
     if (!element || !element.id) {
         return (
             <div className="p-4 text-center text-gray-500">
@@ -42,6 +45,14 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
             ...currentProps,
             ...newProps
         });
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 현재 테이블 헤더의 컬럼들 찾기
@@ -147,6 +158,15 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
         <div className="component-props">
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}</legend>
+
+                {/* Custom ID */}
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="tableheader_1"
+                />
 
                 {/* Header Info */}
                 <div className='tab-overview'>

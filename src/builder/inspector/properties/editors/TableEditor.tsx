@@ -11,7 +11,7 @@ import {
   BookOpen,
   RulerDimensionLine,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch } from "../../components";
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
@@ -36,6 +36,12 @@ export function TableEditor({
   const elements = useStore((state) => state.elements);
   const setElements = useStore((state) => state.setElements);
 
+  // elementId를 사용하여 현재 Element를 찾음
+  const element = elements.find((el) => el.id === elementId);
+
+  // Get customId from element in store
+  const customId = element?.customId || '';
+
   // Table 속성 업데이트 함수들
   const updateTableProps = useCallback(
     (newProps: Partial<TableElementProps>) => {
@@ -47,8 +53,13 @@ export function TableEditor({
     [currentProps, onUpdate]
   );
 
-  // elementId를 사용하여 현재 Element를 찾음
-  const element = elements.find((el) => el.id === elementId);
+  const updateCustomId = (newCustomId: string) => {
+    // Update customId in store (not in props)
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  };
 
   // element가 없는 경우 빈 화면 반환
   if (!element || !element.id) {
@@ -243,6 +254,15 @@ export function TableEditor({
   return (
     <div className="component-props">
       <fieldset className="properties-aria">
+        {/* Custom ID */}
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="table_1"
+        />
+
         {/* Selection Mode */}
         <PropertySelect
           label={PROPERTY_LABELS.SELECTION_MODE}

@@ -2,10 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Binary, FileText, PointerOff, PenOff } from 'lucide-react';
 import { PropertyInput } from '../../components/PropertyInput';
 import { PropertySwitch } from '../../components/PropertySwitch';
+import { PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
 
-export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps) {
+export function SelectItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
     // 로컬 상태로 프로퍼티 관리
     const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,8 +54,24 @@ export function SelectItemEditor({ currentProps, onUpdate }: PropertyEditorProps
         };
     }, []);
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     return (
         <div className="space-y-4">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="selectitem_1"
+            />
+
             <PropertyInput
                 label={PROPERTY_LABELS.LABEL}
                 value={String(localProps.label || '')}

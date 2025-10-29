@@ -48,6 +48,7 @@ export const renderTabs = (
   return (
     <Tabs
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -130,6 +131,7 @@ export const renderPanel = (
   return (
     <Panel
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       variant={
         (element.props.variant as
@@ -166,6 +168,7 @@ export const renderCard = (
   return (
     <Card
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       title={element.props.title}
       description={String(element.props.description || "")}
@@ -208,6 +211,7 @@ export const renderButton = (
   return (
     <Button
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       variant={
         element.props.variant as
@@ -286,6 +290,7 @@ export const renderTooltip = (
   return (
     <Tooltip
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -308,6 +313,7 @@ export const renderProgressBar = (
   return (
     <ProgressBar
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -338,6 +344,7 @@ export const renderMeter = (
   return (
     <Meter
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -367,6 +374,7 @@ export const renderSeparator = (
   return (
     <Separator
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
@@ -397,6 +405,7 @@ export const renderPanelGroup = (
   return (
     <PanelGroup
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       direction={
         (element.props.direction as "horizontal" | "vertical") || "horizontal"
@@ -425,8 +434,8 @@ export const renderResizablePanel = (
   return (
     <ResizablePanel
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
-      id={element.id}
       defaultSize={
         element.props.defaultSize !== undefined
           ? Number(element.props.defaultSize)
@@ -460,6 +469,7 @@ export const renderPanelResizeHandle = (
   return (
     <PanelResizeHandle
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}

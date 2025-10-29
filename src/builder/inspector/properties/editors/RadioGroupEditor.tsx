@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -17,6 +17,10 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
     const [selectedRadio, setSelectedRadio] = useState<SelectedRadioState | null>(null);
     const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     useEffect(() => {
         // 라디오 선택 상태 초기화
         setSelectedRadio(null);
@@ -28,6 +32,14 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 실제 Radio 자식 요소들을 찾기 (useMemo로 최적화)
@@ -140,6 +152,14 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
     // RadioGroup 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="radiogroup_1"
+            />
+
             <fieldset className="properties-aria">
 
 

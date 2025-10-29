@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus } from 'lucide-react';
-import { PropertyInput, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -16,6 +16,10 @@ interface SelectedOptionState {
 export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
     const { addElement, removeElement, elements: storeElements, currentPageId, updateElementProps } = useStore();
+
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
 
     // 디버깅을 위한 로그 추가
     /*useEffect(() => {
@@ -38,6 +42,14 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 실제 ComboBoxItem 자식 요소들을 찾기
@@ -170,6 +182,14 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     // ComboBox 컴포넌트 자체의 속성 편집 UI
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="combobox_1"
+            />
+
             <fieldset className="properties-aria">
                 {/* 기본 속성들 */}
                 <PropertyInput

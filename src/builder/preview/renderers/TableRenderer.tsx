@@ -379,6 +379,7 @@ export const renderTable = (
   return (
     <Table
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       tableHeaderElementId={tableHeaderElement?.id}
       className={element.props.className}

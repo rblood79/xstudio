@@ -19,8 +19,9 @@ export class ElementsApiService extends BaseApiService {
 
     // Supabase snake_case를 camelCase로 변환
     return elements.map(
-      (el: Element & { data_binding?: Element["dataBinding"] }) => ({
+      (el: any) => ({
         ...el,
+        customId: el.custom_id, // snake_case → camelCase
         dataBinding: el.data_binding, // snake_case → camelCase
       })
     ) as Element[];
@@ -33,13 +34,31 @@ export class ElementsApiService extends BaseApiService {
       "createElement"
     );
 
-    return this.handleApiCall("createElement", async () => {
+    // camelCase → snake_case 변환
+    const elementToSave: any = {
+      ...element,
+      custom_id: (element as any).customId,
+      data_binding: (element as any).dataBinding,
+    };
+
+    // camelCase 필드 제거 (snake_case로 변환되었으므로)
+    delete elementToSave.customId;
+    delete elementToSave.dataBinding;
+
+    const result = await this.handleApiCall("createElement", async () => {
       return await this.supabase
         .from("elements")
-        .insert([element])
+        .insert([elementToSave])
         .select("*")
         .single();
     });
+
+    // 응답을 camelCase로 변환
+    return {
+      ...result,
+      customId: result.custom_id,
+      dataBinding: result.data_binding,
+    } as Element;
   }
 
   async createMultipleElements(elements: Partial<Element>[]): Promise<Element[]> {
@@ -49,14 +68,34 @@ export class ElementsApiService extends BaseApiService {
       "createMultipleElements"
     );
 
+    // 각 element에 대해 camelCase → snake_case 변환
+    const elementsToSave = elements.map((element) => {
+      const converted: any = {
+        ...element,
+        custom_id: (element as any).customId,
+        data_binding: (element as any).dataBinding,
+      };
+      delete converted.customId;
+      delete converted.dataBinding;
+      return converted;
+    });
+
     const result = await this.handleApiCall("createMultipleElements", async () => {
       return await this.supabase
         .from("elements")
-        .insert(elements)
+        .insert(elementsToSave)
         .select("*");
     });
-    
-    return Array.isArray(result) ? result : [];
+
+    // 응답을 camelCase로 변환
+    if (Array.isArray(result)) {
+      return result.map((el: any) => ({
+        ...el,
+        customId: el.custom_id,
+        dataBinding: el.data_binding,
+      })) as Element[];
+    }
+    return [];
   }
 
   async updateElement(
@@ -74,14 +113,32 @@ export class ElementsApiService extends BaseApiService {
       "updateElement"
     );
 
-    return this.handleApiCall("updateElement", async () => {
+    // camelCase → snake_case 변환
+    const updatesToSave: any = { ...updates };
+    if ((updates as any).customId !== undefined) {
+      updatesToSave.custom_id = (updates as any).customId;
+      delete updatesToSave.customId;
+    }
+    if ((updates as any).dataBinding !== undefined) {
+      updatesToSave.data_binding = (updates as any).dataBinding;
+      delete updatesToSave.dataBinding;
+    }
+
+    const result = await this.handleApiCall("updateElement", async () => {
       return await this.supabase
         .from("elements")
-        .update(updates)
+        .update(updatesToSave)
         .eq("id", elementId)
         .select("*")
         .single();
     });
+
+    // 응답을 camelCase로 변환
+    return {
+      ...result,
+      customId: result.custom_id,
+      dataBinding: result.data_binding,
+    } as Element;
   }
 
   async updateElementProps(

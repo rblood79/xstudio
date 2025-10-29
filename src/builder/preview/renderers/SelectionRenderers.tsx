@@ -143,6 +143,7 @@ export const renderListBox = (
   return (
     <ListBox
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -189,6 +190,7 @@ export const renderListBoxItem = (
   return (
     <ListBoxItem
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       value={element.props.value as object}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -389,6 +391,7 @@ export const renderGridList = (
   return (
     <GridList
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -432,6 +435,7 @@ export const renderGridListItem = (
   return (
     <GridListItem
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       value={element.props.value as object}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -581,6 +585,7 @@ export const renderSelect = (
   return (
     <Select
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={elementProps.style}
       className={element.props.className}
@@ -794,6 +799,7 @@ export const renderComboBox = (
   return (
     <ComboBox
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -927,6 +933,7 @@ export const renderSlider = (
   return (
     <Slider
       key={element.id}
+      id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}

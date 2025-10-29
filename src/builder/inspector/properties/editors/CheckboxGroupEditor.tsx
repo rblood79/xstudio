@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -17,6 +17,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
     const [selectedCheckbox, setSelectedCheckbox] = useState<SelectedCheckboxState | null>(null);
     const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     useEffect(() => {
         // 체크박스 선택 상태 초기화
         setSelectedCheckbox(null);
@@ -28,6 +32,14 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 실제 Checkbox 자식 요소들을 찾기 (useMemo로 최적화)
@@ -170,6 +182,14 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
     // CheckboxGroup 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="checkboxgroup_1"
+            />
+
             <fieldset className="properties-aria">
 
 

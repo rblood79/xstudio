@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -17,12 +17,24 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
     const { addElement, removeElement, elements: storeElements, currentPageId } = useStore();
 
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
             [key]: value
         };
         onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
     };
 
     // 실제 SelectItem 자식 요소들을 찾기
@@ -134,6 +146,14 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     // Select 컴포넌트 전체 설정 UI
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="select_1"
+            />
+
             <fieldset className="properties-aria">
 
 

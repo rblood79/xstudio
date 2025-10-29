@@ -1,9 +1,14 @@
 import { Type, Layout, ToggleLeft, X } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
 
-export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
+export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,
@@ -12,11 +17,27 @@ export function PanelEditor({ currentProps, onUpdate }: PropertyEditorProps) {
         onUpdate(updatedProps);
     };
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     // Panel 컴포넌트가 Tabs의 자식인 경우 (tabIndex가 있는 경우) 특별한 처리
     const isTabPanel = currentProps.tabIndex !== undefined;
 
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="panel_1"
+            />
+
             {/* 제목 설정 */}
             <PropertyInput
                 label={PROPERTY_LABELS.TITLE}

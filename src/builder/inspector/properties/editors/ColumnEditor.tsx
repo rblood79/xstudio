@@ -1,4 +1,4 @@
-import { PropertyInput, PropertySwitch } from '../../components';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import type { ColumnElementProps } from '../../../../types/store';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
@@ -16,6 +16,9 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     // elementId를 사용하여 현재 Element를 찾음
     const element = elements.find(el => el.id === elementId);
 
+    // Get customId from element in store
+    const customId = element?.customId || '';
+
     if (!element || !element.id) {
         return (
             <div className="p-4 text-center text-gray-500">
@@ -31,10 +34,27 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         });
     };
 
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
     return (
         <div className="component-props">
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_CONTENT}</legend>
+
+                {/* Custom ID */}
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="column_1"
+                />
 
                 {/* Data Key */}
                 <PropertyInput
