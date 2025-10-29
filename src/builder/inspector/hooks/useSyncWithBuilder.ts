@@ -23,6 +23,8 @@ export function useSyncWithBuilder(): void {
   // 마지막으로 동기화한 element를 추적
   const lastSyncedElementRef = useRef<string | null>(null);
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // timeout의 고유 ID를 추적하여 레이스 컨디션 방지
+  const timeoutIdRef = useRef<number>(0);
 
   useEffect(() => {
     console.log("🔄 useSyncWithBuilder useEffect 실행:", {
@@ -100,6 +102,10 @@ export function useSyncWithBuilder(): void {
       clearTimeout(pendingTimeoutRef.current);
     }
 
+    // timeout에 고유 ID 할당 (레이스 컨디션 방지)
+    timeoutIdRef.current += 1;
+    const currentTimeoutId = timeoutIdRef.current;
+
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
 
@@ -109,6 +115,7 @@ export function useSyncWithBuilder(): void {
       hasDataBinding: !!selectedElement.dataBinding,
       dataBinding: selectedElement.dataBinding,
       elementUpdate,
+      timeoutId: currentTimeoutId,
     });
 
     // debounce를 통한 최적화 (100ms)
@@ -313,20 +320,29 @@ export function useSyncWithBuilder(): void {
       } catch (error) {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
       } finally {
-        pendingTimeoutRef.current = null;
-        // 동기화 완료 후 플래그 해제 (50ms 후 - Builder 상태 반영 대기)
-        setTimeout(() => {
-          setSyncingToBuilder(false);
-        }, 50);
+        // 레이스 컨디션 방지: 이 timeout이 최신인 경우에만 ref와 플래그 정리
+        // 다른 컴포넌트의 timeout이 이미 시작된 경우 무시
+        if (currentTimeoutId === timeoutIdRef.current) {
+          pendingTimeoutRef.current = null;
+          // 동기화 완료 후 플래그 해제 (50ms 후 - Builder 상태 반영 대기)
+          setTimeout(() => {
+            // 플래그 해제 시에도 다시 한 번 확인 (50ms 사이에 새 timeout 시작 가능)
+            if (currentTimeoutId === timeoutIdRef.current) {
+              setSyncingToBuilder(false);
+            }
+          }, 50);
+        }
       }
     }, 100);
 
     return () => {
       // ⚠️ IMPORTANT: timeout을 취소하지 않음 (대기 중인 변경사항 보존)
       // timeout은 클로저로 이전 selectedElement를 참조하므로 안전하게 완료됨
-      // ref들만 정리하여 다음 컴포넌트가 이전 상태를 참조하지 않도록 함
-      pendingTimeoutRef.current = null;
+      // ref 정리는 finally 블록에서 timeoutId 체크 후 안전하게 처리됨
+
+      // 새 컴포넌트 선택 시 추적 ref만 초기화 (다음 동기화가 이전 데이터 참조 방지)
       lastSyncedElementRef.current = null;
+
       // 플래그 해제하여 새로운 컴포넌트 선택이 차단되지 않도록 함
       setSyncingToBuilder(false);
     };
