@@ -322,11 +322,12 @@ export function useSyncWithBuilder(): void {
     }, 100);
 
     return () => {
-      if (pendingTimeoutRef.current) {
-        clearTimeout(pendingTimeoutRef.current);
-        pendingTimeoutRef.current = null;
-      }
-      // cleanup 시 동기화 플래그 해제 (다음 선택 시 정상 동작 보장)
+      // ⚠️ IMPORTANT: timeout을 취소하지 않음 (대기 중인 변경사항 보존)
+      // timeout은 클로저로 이전 selectedElement를 참조하므로 안전하게 완료됨
+      // ref들만 정리하여 다음 컴포넌트가 이전 상태를 참조하지 않도록 함
+      pendingTimeoutRef.current = null;
+      lastSyncedElementRef.current = null;
+      // 플래그 해제하여 새로운 컴포넌트 선택이 차단되지 않도록 함
       setSyncingToBuilder(false);
     };
     // Note: elements를 의존성 배열에 포함하지 않음
