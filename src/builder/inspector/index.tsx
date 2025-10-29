@@ -19,6 +19,9 @@ function Inspector() {
   const isSyncingToBuilder = useInspectorState(
     (state) => state.isSyncingToBuilder
   );
+  const setSyncingToBuilder = useInspectorState(
+    (state) => state.setSyncingToBuilder
+  );
 
   // Builder의 전역 상태와 동기화
   const selectedElementId = useStore((state) => state.selectedElementId);
@@ -52,6 +55,8 @@ function Inspector() {
 
     // 최초 선택이거나 ID가 변경된 경우
     if (!selectedElement || selectedElement.id !== selectedBuilderElement.id) {
+      // 새로운 요소 선택 시 동기화 플래그 초기화 (이전 요소의 플래그 상태 해제)
+      setSyncingToBuilder(false);
       setSelectedElement(mappedElement);
       return;
     }
@@ -101,6 +106,7 @@ function Inspector() {
     selectedElement,
     setSelectedElement,
     isSyncingToBuilder,
+    setSyncingToBuilder,
   ]);
 
   if (!selectedElement) {
