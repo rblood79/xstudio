@@ -91,4 +91,55 @@
     border-radius: var(--radius-sm);
     flex-shrink: 0;
   }
+
+  /* Empty state styles */
+  .component-search .search-empty-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+    cursor: default;
+    border: none;
+    background: transparent;
+  }
+
+  .component-search .search-empty-item:hover,
+  .component-search .search-empty-item[data-hovered],
+  .component-search .search-empty-item[data-focused] {
+    background: transparent;
+    outline: none;
+  }
+
+  .component-search .search-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-2);
+    text-align: center;
+    padding: var(--spacing-3);
+  }
+
+  .component-search .empty-icon {
+    color: var(--color-gray-400);
+    margin-bottom: var(--spacing-1);
+  }
+
+  .component-search .empty-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+
+  .component-search .empty-title {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+  }
+
+  .component-search .empty-suggestion {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+  }
 }
