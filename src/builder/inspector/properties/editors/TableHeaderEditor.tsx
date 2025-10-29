@@ -8,6 +8,7 @@ import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
 import { supabase } from '../../../../env/supabase.client';
 import { ElementUtils } from '../../../../utils/elementUtils';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { generateCustomId } from '../../../utils/idGeneration';
 
 interface TableHeaderElementProps {
     variant?: 'default' | 'dark' | 'light' | 'bordered';
@@ -74,6 +75,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
             // 먼저 모든 새 요소들을 준비
             const newColumnElement: Element = {
                 id: columnId,
+                customId: generateCustomId('Column', elements),
                 tag: 'Column',
                 props: {
                     key: newColumnKey.trim(),
@@ -101,10 +103,14 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                     el.parent_id === tableBodyElement.id && el.tag === 'Row'
                 );
 
+                // Track all elements for unique ID generation
+                const allElementsSoFar = [...elements, newColumnElement];
+
                 for (const row of rows) {
                     const cellId = ElementUtils.generateId();
                     const newCellElement: Element = {
                         id: cellId,
+                        customId: generateCustomId('Cell', allElementsSoFar),
                         tag: 'Cell',
                         props: {
                             children: ''
@@ -116,6 +122,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                         updated_at: new Date().toISOString()
                     };
                     newCellElements.push(newCellElement);
+                    allElementsSoFar.push(newCellElement);
                 }
             }
 

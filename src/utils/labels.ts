@@ -333,4 +333,27 @@ export const PROPERTY_LABELS = {
 
     // Tree-specific
     TREE_ITEMS: 'Tree Items',
+
+    // Calendar and Date/Time specific
+    DATE_RANGE: 'Date Range',
+    TIME_RANGE: 'Time Range',
+    TIME_SETTINGS: 'Time Settings',
+    CALENDAR_SETTINGS: 'Calendar Settings',
+    DISPLAY_SETTINGS: 'Display Settings',
+    FORM_INTEGRATION: 'Form Integration',
+    PAGE_BEHAVIOR: 'Page Behavior',
+    FIRST_DAY_OF_WEEK: 'First Day of Week',
+    SELECTION_ALIGNMENT: 'Selection Alignment',
+    VISIBLE_DURATION: 'Visible Duration',
+    GRANULARITY: 'Granularity',
+    HOUR_CYCLE: 'Hour Cycle',
+    HIDE_TIMEZONE: 'Hide Timezone',
+    FORCE_LEADING_ZEROS: 'Force Leading Zeros',
+    SHOULD_CLOSE_ON_SELECT: 'Close on Select',
+    VALIDATION_BEHAVIOR: 'Validation Behavior',
+    AUTOCOMPLETE: 'Auto Complete',
+    DEFAULT_FOCUSED_VALUE: 'Default Focused Value',
+    NAME: 'Name',
+    FORM: 'Form',
+    INVALID: 'Invalid',
 } as const;

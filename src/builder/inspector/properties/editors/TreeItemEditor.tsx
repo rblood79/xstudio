@@ -7,6 +7,7 @@ import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
 //import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/elementUtils';
+import { generateCustomId } from '../../../utils/idGeneration';
 
 export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, elements: storeElements } = useStore();
@@ -58,6 +59,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
             const newTreeItemIndex = childTreeItems.length || 0;
             const newTreeItemElement = {
                 id: ElementUtils.generateId(),
+                customId: generateCustomId('TreeItem', storeElements),
                 page_id: localPageId,
                 tag: 'TreeItem',
                 props: {

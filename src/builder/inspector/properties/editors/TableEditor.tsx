@@ -21,6 +21,7 @@ import { Element } from "../../../../types/store";
 import { ElementUtils } from "../../../../utils/elementUtils";
 import { TableElementProps } from "../../../../types/unified";
 import { useCallback } from "react";
+import { generateCustomId } from '../../../utils/idGeneration';
 import './styles/TableEditor.css';
 
 // interface TableEditorProps {
@@ -89,6 +90,7 @@ export function TableEditor({
       const rowId = ElementUtils.generateId();
       const newRowElement: Element = {
         id: rowId,
+        customId: generateCustomId("Row", elements),
         tag: "Row",
         props: {},
         parent_id: tableBody.id,
@@ -115,10 +117,14 @@ export function TableEditor({
       // TableElementProps에는 columns가 없으므로 실제 Column Element들을 사용
       const columnsFromProps = actualColumns;
 
+      // Track all elements so far for unique ID generation
+      const allElementsSoFar = [...elements, newRowElement];
+
       for (let i = 0; i < columnsFromProps.length; i++) {
         const cellId = ElementUtils.generateId();
         const newCellElement: Element = {
           id: cellId,
+          customId: generateCustomId("Cell", allElementsSoFar),
           tag: "Cell",
           props: {
             children: "",
@@ -130,6 +136,7 @@ export function TableEditor({
           updated_at: new Date().toISOString(),
         };
         cellsToCreate.push(newCellElement);
+        allElementsSoFar.push(newCellElement);
       }
 
       // 셀들 생성
@@ -179,6 +186,7 @@ export function TableEditor({
       const groupId = ElementUtils.generateId();
       const newGroupElement: Element = {
         id: groupId,
+        customId: generateCustomId("ColumnGroup", elements),
         tag: "ColumnGroup",
         props: {
           children: "New Group",

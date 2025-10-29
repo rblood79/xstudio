@@ -35,3 +35,6 @@ export { FieldEditor } from './FieldEditor';
 export { PanelGroupEditor } from './PanelGroupEditor';
 export { ResizablePanelEditor } from './ResizablePanelEditor';
 export { PanelResizeHandleEditor } from './PanelResizeHandleEditor';
+export { CalendarEditor } from './CalendarEditor';
+export { DatePickerEditor } from './DatePickerEditor';
+export { TimeFieldEditor } from './TimeFieldEditor';

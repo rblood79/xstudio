@@ -7,6 +7,7 @@ import { useStore } from '../../../stores';
 //import { elementsApi } from '../../../../services/api';
 import { iconProps } from '../../../../utils/uiConstants'; // 추가
 import { ElementUtils } from '../../../../utils/elementUtils';
+import { generateCustomId } from '../../../utils/idGeneration';
 
 // 상수 정의
 const SELECTION_MODES: Array<{ value: string; label: string }> = [
@@ -68,9 +69,11 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 return;
             }
 
+            const { elements } = useStore.getState();
             const newTreeItemIndex = treeItemChildren.length || 0;
             const newTreeItemElement = {
                 id: ElementUtils.generateId(),
+                customId: generateCustomId('TreeItem', elements),
                 page_id: localPageId,
                 tag: 'TreeItem',
                 props: {

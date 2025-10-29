@@ -403,7 +403,8 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: false,
+      hasCustomEditor: true,
+      editorName: "CalendarEditor",
       dataBindingType: "value",
       supportedEvents: ["onChange", "onFocusChange"],
     },
@@ -414,7 +415,8 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: false,
+      hasCustomEditor: true,
+      editorName: "DatePickerEditor",
       dataBindingType: "value",
       supportedEvents: ["onChange", "onOpenChange"],
     },
@@ -428,6 +430,18 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: false,
       dataBindingType: "value",
       supportedEvents: ["onChange", "onOpenChange"],
+    },
+  },
+  {
+    type: "TimeField",
+    label: "Time Field",
+    category: "Date & Time",
+    icon: "🕐",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "TimeFieldEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onChange", "onFocusChange"],
     },
   },
 

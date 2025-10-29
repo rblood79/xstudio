@@ -7,6 +7,7 @@ import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import { ElementUtils } from '../../../../utils/elementUtils';
+import { generateCustomId } from '../../../utils/idGeneration';
 
 interface SelectedTagState {
     parentId: string;
@@ -258,6 +259,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             try {
                                 const newTag = {
                                     id: ElementUtils.generateId(),
+                                    customId: generateCustomId('Tag', storeElements),
                                     page_id: currentPageId || '1',
                                     tag: 'Tag',
                                     props: {
