@@ -1,0 +1,180 @@
+@import './base.css';
+
+@layer components {
+  .component-search {
+    box-shadow: var(--inset-shadow-sm);
+    background-color: var(--color-gray-100);
+    outline: 1px solid var(--color-gray-200);
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .control-label {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--inspector-label-width);
+      height: 25px;
+      padding: var(--spacing-2xs) var(--spacing-2xs);
+      text-align: center;
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-right-width: 0;
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--color-gray-700);
+    }
+  }
+
+  .search-icon {
+    position: absolute;
+    left: var(--spacing-3);
+    color: var(--color-gray-500);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 32px;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-left-width: 0;
+    border-radius: var(--border-radius);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    padding: calc(var(--spacing) * 1.125);
+    padding-inline-start: var(--inspector-label-width);
+    color: var(--color-gray-900);
+    transition: all 200ms;
+  }
+
+  .search-input::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-radius: 0;
+    background-color: var(--color-gray-100);
+  }
+
+  .search-clear {
+    position: absolute;
+    right: var(--spacing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .search-clear:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+  }
+
+  .search-results {
+    position: absolute;
+    top: calc(100% + var(--spacing));
+    left: var(--spacing);
+    right: var(--spacing);
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+  }
+
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    width: 100%;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid var(--color-gray-100);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .search-result-item:hover,
+  .search-result-item.selected {
+    background: var(--color-primary-50);
+  }
+
+  .result-icon {
+    color: var(--color-gray-600);
+    flex-shrink: 0;
+  }
+
+  .result-label {
+    flex: 1;
+    font-size: var(--text-sm);
+    color: var(--color-gray-900);
+    font-weight: 500;
+  }
+
+  .result-category {
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+    padding: var(--spacing-1) var(--spacing);
+    background: var(--color-gray-100);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+
+  .search-empty {
+    padding: var(--spacing);
+    text-align: center;
+  }
+
+  .search-empty p {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+  }
+
+  .search-suggestion {
+    margin-top: var(--spacing);
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+  }
+
+  /* 스크롤바 스타일링 */
+  .search-results::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .search-results::-webkit-scrollbar-track {
+    background: var(--color-gray-50);
+  }
+
+  .search-results::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: var(--radius-sm);
+  }
+
+  .search-results::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-400);
+  }
+}

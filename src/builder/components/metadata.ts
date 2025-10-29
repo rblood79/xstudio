@@ -408,6 +408,44 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
+  // Overlays
+  {
+    type: "Dialog",
+    label: "Dialog",
+    category: "Overlays",
+    icon: "💬",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DialogEditor",
+      dataBindingType: null,
+      supportedEvents: ["onOpenChange"],
+    },
+  },
+  {
+    type: "Modal",
+    label: "Modal",
+    category: "Overlays",
+    icon: "🪟",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ModalEditor",
+      dataBindingType: null,
+      supportedEvents: ["onOpenChange"],
+    },
+  },
+  {
+    type: "Popover",
+    label: "Popover",
+    category: "Overlays",
+    icon: "💭",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "PopoverEditor",
+      dataBindingType: null,
+      supportedEvents: ["onOpenChange"],
+    },
+  },
+
   // Date & Time
   {
     type: "Calendar",
