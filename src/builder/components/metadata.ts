@@ -395,6 +395,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onSelectionChange"],
     },
   },
+  {
+    type: "Breadcrumbs",
+    label: "Breadcrumbs",
+    category: "Layout",
+    icon: "🗂️",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "BreadcrumbsEditor",
+      dataBindingType: null,
+      supportedEvents: ["onAction"],
+    },
+  },
 
   // Date & Time
   {
@@ -538,6 +550,18 @@ export const componentMetadata: ComponentMeta[] = [
     inspector: {
       hasCustomEditor: true,
       editorName: "TabEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "Breadcrumb",
+    label: "Breadcrumb",
+    category: "Items",
+    icon: "•",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "BreadcrumbEditor",
       dataBindingType: null,
       supportedEvents: [],
     },

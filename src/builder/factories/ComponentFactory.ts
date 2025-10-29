@@ -25,6 +25,7 @@ import {
   createCheckboxGroupDefinition,
   createRadioGroupDefinition,
   createTagGroupDefinition,
+  createBreadcrumbsDefinition,
 } from "./definitions/GroupComponents";
 import {
   createTabsDefinition,
@@ -55,6 +56,7 @@ export class ComponentFactory {
     Tabs: ComponentFactory.createTabs,
     Tree: ComponentFactory.createTree,
     TagGroup: ComponentFactory.createTagGroup,
+    Breadcrumbs: ComponentFactory.createBreadcrumbs,
     ListBox: ComponentFactory.createListBox,
     GridList: ComponentFactory.createGridList,
     Table: ComponentFactory.createTable,
@@ -177,6 +179,12 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTagGroupDefinition, context);
+  }
+
+  private static async createBreadcrumbs(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createBreadcrumbsDefinition, context);
   }
 
   private static async createListBox(

@@ -193,3 +193,57 @@ export function createTagGroupDefinition(
     ],
   };
 }
+
+/**
+ * Breadcrumbs 컴포넌트 정의
+ */
+export function createBreadcrumbsDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  return {
+    tag: "Breadcrumbs",
+    parent: {
+      tag: "Breadcrumbs",
+      props: {
+        "aria-label": "Breadcrumbs",
+        isDisabled: false,
+      } as ComponentElementProps,
+      page_id: pageId,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [
+      {
+        tag: "Breadcrumb",
+        props: {
+          children: "Home",
+          href: "/",
+        } as ComponentElementProps,
+        page_id: pageId,
+        order_num: 1,
+      },
+      {
+        tag: "Breadcrumb",
+        props: {
+          children: "Category",
+          href: "/category",
+        } as ComponentElementProps,
+        page_id: pageId,
+        order_num: 2,
+      },
+      {
+        tag: "Breadcrumb",
+        props: {
+          children: "Page",
+          href: "/category/page",
+        } as ComponentElementProps,
+        page_id: pageId,
+        order_num: 3,
+      },
+    ],
+  };
+}

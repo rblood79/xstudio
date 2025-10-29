@@ -38,3 +38,5 @@ export { PanelResizeHandleEditor } from './PanelResizeHandleEditor';
 export { CalendarEditor } from './CalendarEditor';
 export { DatePickerEditor } from './DatePickerEditor';
 export { TimeFieldEditor } from './TimeFieldEditor';
+export { BreadcrumbsEditor } from './BreadcrumbsEditor';
+export { BreadcrumbEditor } from './BreadcrumbEditor';

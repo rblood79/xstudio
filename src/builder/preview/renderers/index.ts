@@ -54,6 +54,8 @@ export const rendererMap: Record<
   PanelGroup: LayoutRenderers.renderPanelGroup,
   ResizablePanel: LayoutRenderers.renderResizablePanel,
   PanelResizeHandle: LayoutRenderers.renderPanelResizeHandle,
+  Breadcrumbs: LayoutRenderers.renderBreadcrumbs,
+  Breadcrumb: LayoutRenderers.renderBreadcrumb,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,

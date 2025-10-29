@@ -1,5 +1,5 @@
 import { useMemo, useCallback, memo } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot, Columns2 } from 'lucide-react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot, Columns2, Settings2, ChevronRight } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import './styles/ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
@@ -54,6 +54,7 @@ const widgetComp = [
     { tag: 'Card', label: 'card', icon: AppWindowMac },
     { tag: 'Panel', label: 'panel', icon: InspectionPanel },
     { tag: 'PanelGroup', label: 'resizable panels', icon: Columns2 },
+    { tag: 'Breadcrumbs', label: 'breadcrumbs', icon: ChevronRight },
     { tag: 'Nav', label: 'navigation', icon: Menu },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
 ] as const;
@@ -103,7 +104,17 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
     }), []);
 
     return (
-        <div className="sidebar-content components">
+        <div className="sidebar-content">
+            <div className="panel-header">
+                <h3 className='panel-title'>Components</h3>
+                <div className="header-actions">
+                    <button
+                        className='iconButton'
+                        aria-label="filter components"
+                    >
+                        <Settings2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} /></button>
+                </div>
+            </div>
             {Object.entries(componentGroups).map(([groupName, components]) => (
                 <div key={groupName} className='component_element'>
                     <div className="panel-header">

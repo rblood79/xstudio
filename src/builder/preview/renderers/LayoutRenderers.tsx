@@ -15,6 +15,8 @@ import {
   ResizablePanel,
   PanelResizeHandle,
 } from "../../components/list";
+import { Breadcrumbs } from "../../components/Breadcrumbs";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { PreviewElement, RenderContext } from "../types";
 import { createEventHandlerMap } from "../utils/eventHandlers";
 
@@ -474,5 +476,54 @@ export const renderPanelResizeHandle = (
       style={element.props.style}
       className={element.props.className}
     />
+  );
+};
+
+/**
+ * Breadcrumbs 렌더링
+ */
+export const renderBreadcrumbs = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+  const eventHandlers = createEventHandlerMap(element, context);
+
+  const breadcrumbChildren = elements
+    .filter((child) => child.parent_id === element.id && child.tag === "Breadcrumb")
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Breadcrumbs
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      aria-label={element.props["aria-label"]}
+      isDisabled={element.props.isDisabled}
+      style={element.props.style}
+      className={element.props.className}
+      {...eventHandlers}
+    >
+      {breadcrumbChildren.map((child) => renderElement(child))}
+    </Breadcrumbs>
+  );
+};
+
+/**
+ * Breadcrumb (아이템) 렌더링
+ */
+export const renderBreadcrumb = (
+  element: PreviewElement,
+  _context: RenderContext // eslint-disable-line @typescript-eslint/no-unused-vars
+): React.ReactNode => {
+  return (
+    <Breadcrumb
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      href={element.props.href}
+    >
+      {element.props.children}
+    </Breadcrumb>
   );
 };
