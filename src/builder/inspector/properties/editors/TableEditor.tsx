@@ -101,9 +101,13 @@ export function TableEditor({
       };
 
       // 행 생성
+      // Convert customId to custom_id for database
+      const rowForDB = { ...newRowElement, custom_id: newRowElement.customId };
+      delete rowForDB.customId;
+
       const { error: rowError } = await supabase
         .from("elements")
-        .upsert([newRowElement], {
+        .upsert([rowForDB], {
           onConflict: "id",
         });
 
@@ -140,9 +144,16 @@ export function TableEditor({
       }
 
       // 셀들 생성
+      // Convert customId to custom_id for database
+      const cellsForDB = cellsToCreate.map(cell => {
+        const cellForDB = { ...cell, custom_id: cell.customId };
+        delete cellForDB.customId;
+        return cellForDB;
+      });
+
       const { error: cellsError } = await supabase
         .from("elements")
-        .upsert(cellsToCreate, {
+        .upsert(cellsForDB, {
           onConflict: "id",
         });
 
@@ -203,9 +214,13 @@ export function TableEditor({
         updated_at: new Date().toISOString(),
       };
 
+      // Convert customId to custom_id for database
+      const groupForDB = { ...newGroupElement, custom_id: newGroupElement.customId };
+      delete groupForDB.customId;
+
       const { error } = await supabase
         .from("elements")
-        .upsert([newGroupElement], {
+        .upsert([groupForDB], {
           onConflict: "id",
         });
 

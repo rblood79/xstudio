@@ -256,9 +256,15 @@ async function createNewTab(
 
     try {
         // Tab과 Panel을 함께 upsert (중복 방지)
+        // Convert customId to custom_id for database
+        const tabForDB = { ...newTabElement, custom_id: newTabElement.customId };
+        const panelForDB = { ...newPanelElement, custom_id: newPanelElement.customId };
+        delete tabForDB.customId;
+        delete panelForDB.customId;
+
         const { data, error } = await supabase
             .from('elements')
-            .upsert([newTabElement, newPanelElement], {
+            .upsert([tabForDB, panelForDB], {
                 onConflict: 'id'
             })
             .select();

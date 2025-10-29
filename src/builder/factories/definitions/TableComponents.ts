@@ -9,6 +9,7 @@ import {
 } from "../../../types/unified";
 import { addElementsToStore } from "../utils/elementCreation";
 import { saveElementsToDb } from "../utils/dbPersistence";
+import { generateCustomId } from "../../utils/idGeneration";
 
 /**
  * Table 컴포넌트 생성 (특수 처리 필요)
@@ -31,6 +32,7 @@ export async function createTable(
   // 부모 요소 생성
   const parent: Element = {
     id: ElementUtils.generateId(),
+    customId: generateCustomId("Table", elements),
     tag: "Table",
     props: defaultProps as ComponentElementProps,
     page_id: pageId,
@@ -43,6 +45,7 @@ export async function createTable(
   // TableHeader 생성
   const tableHeader: Element = {
     id: ElementUtils.generateId(),
+    customId: generateCustomId("TableHeader", [...elements, parent]),
     tag: "TableHeader",
     props: createDefaultTableHeaderProps() as ComponentElementProps,
     parent_id: parent.id,
@@ -86,6 +89,7 @@ export async function createColumnGroup(
 
   const parent: Element = {
     id: ElementUtils.generateId(),
+    customId: generateCustomId("ColumnGroup", elements),
     tag: "ColumnGroup",
     props: createDefaultColumnGroupProps(),
     parent_id: parentElement?.id || null,

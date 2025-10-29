@@ -272,23 +272,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     order_num: (tagChildren.length || 0) + 1,
                                 };
 
-                                const { data, error } = await supabase
-                                    .from('elements')
-                                    .upsert(newTag, {
-                                        onConflict: 'id'
-                                    })
-                                    .select()
-                                    .single();
-
-                                if (error) {
-                                    console.error('Tag 추가 에러:', error);
-                                    return;
-                                }
-
-                                if (data) {
-                                    addElement(data);
-                                    console.log('새 Tag 추가됨:', data);
-                                }
+                                // Use ElementUtils.createElement to handle customId conversion
+                                const data = await ElementUtils.createElement(newTag);
+                                addElement(data);
+                                console.log('새 Tag 추가됨:', data);
                             } catch (error) {
                                 console.error('Tag 추가 중 오류:', error);
                             }

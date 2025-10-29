@@ -127,10 +127,17 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
             }
 
             // 모든 요소를 한 번에 데이터베이스에 추가
+            // Convert customId to custom_id for database
             const allNewElements = [newColumnElement, ...newCellElements];
+            const elementsForDB = allNewElements.map(el => {
+                const elForDB = { ...el, custom_id: el.customId };
+                delete elForDB.customId;
+                return elForDB;
+            });
+
             const { error } = await supabase
                 .from('elements')
-                .insert(allNewElements);
+                .insert(elementsForDB);
 
             if (error) {
                 console.error('컬럼 추가 실패:', error);
