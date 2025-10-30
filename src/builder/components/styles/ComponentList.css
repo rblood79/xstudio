@@ -22,7 +22,7 @@
   }
 
   .component-list {
-    padding: var(--spacing-md) 0;
+    padding: var(--spacing-md) var(--spacing-sm);
     display: grid;
     gap: var(--spacing-md) var(--spacing);
     grid-template-columns: repeat(3, minmax(30%, 1fr));
