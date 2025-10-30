@@ -8,4 +8,6 @@ export {
   useEventMetadata,
   useIsEventRecommended
 } from "./useRecommendedEvents";
+export { useApplyTemplate, generateEventHandlerIds } from "./useApplyTemplate";
 export type { RecommendedEvent } from "./useRecommendedEvents";
+export type { ApplyTemplateOptions } from "./useApplyTemplate";
