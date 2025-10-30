@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { SearchField } from './SearchField';
 import './styles/ComponentSearch.css';
 
@@ -10,13 +10,23 @@ interface ComponentSearchProps {
  * ComponentSearch - Simple search field for filtering ComponentList
  *
  * Features:
- * - Keyboard shortcut (cmd+K / ctrl+K)
+ * - Keyboard shortcut (cmd+K on Mac / ctrl+K on Windows)
  * - Real-time search query updates
  * - Filters ComponentList in real-time
  */
 export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
     const [query, setQuery] = useState('');
     const inputRef = useRef<HTMLInputElement | null>(null);
+
+    // Detect platform for keyboard shortcut display
+    const isMac = useMemo(() => {
+        if (typeof navigator === 'undefined') return false;
+        return /Mac|iPhone|iPad|iPod/.test(navigator.platform) ||
+               /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    }, []);
+
+    const shortcutKey = isMac ? '⌘K' : 'Ctrl+K';
+    const placeholder = `Search components... (${shortcutKey})`;
 
     // cmd+K / ctrl+K keyboard shortcut
     useEffect(() => {
@@ -46,7 +56,7 @@ export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
             <SearchField
                 value={query}
                 onChange={setQuery}
-                placeholder="Search components... (⌘K)"
+                placeholder={placeholder}
                 aria-label="Search components"
                 className="component-search-field"
             />
