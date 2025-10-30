@@ -179,97 +179,27 @@ export interface ComputedValueConfig {
 }
 
 /**
- * 이벤트 핸들러
+ * 이벤트 타입 - events/types/에서 통합 관리
+ * @deprecated 이 파일에서 직접 정의하지 않고 events/types/에서 import
  */
-export interface EventHandler {
-  id: string;
-  event: string;
-  actions: EventAction[];
-}
-
-/**
- * 이벤트 액션
- */
-export interface EventAction {
-  type:
-    | "navigate"
-    | "setState"
-    | "apiCall"
-    | "showModal"
-    | "showToast"
-    | "validateForm"
-    | "custom";
-  config:
-    | NavigateConfig
-    | SetStateConfig
-    | APICallConfig
-    | ShowModalConfig
-    | ShowToastConfig
-    | ValidateFormConfig
-    | CustomConfig;
-}
-
-/**
- * Navigate 액션 설정
- */
-export interface NavigateConfig {
-  path: string;
-  openInNewTab?: boolean;
-  replace?: boolean;
-}
-
-/**
- * SetState 액션 설정
- */
-export interface SetStateConfig {
-  storePath: string;
-  value: unknown;
-}
-
-/**
- * API Call 액션 설정
- */
-export interface APICallConfig {
-  endpoint: string;
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  headers?: Record<string, string>;
-  body?: unknown;
-  onSuccess?: EventAction;
-  onError?: EventAction;
-}
-
-/**
- * Show Modal 액션 설정
- */
-export interface ShowModalConfig {
-  modalId: string;
-  props?: Record<string, unknown>;
-}
-
-/**
- * Show Toast 액션 설정
- */
-export interface ShowToastConfig {
-  message: string;
-  type: "success" | "error" | "warning" | "info";
-  duration?: number;
-}
-
-/**
- * Validate Form 액션 설정
- */
-export interface ValidateFormConfig {
-  formId: string;
-  onValid?: EventAction;
-  onInvalid?: EventAction;
-}
-
-/**
- * Custom 액션 설정
- */
-export interface CustomConfig {
-  code: string;
-}
+export type {
+  EventHandler,
+  EventAction,
+  EventType,
+  ActionType,
+  ActionConfig,
+  NavigateConfig,
+  SetStateConfig,
+  APICallConfig,
+  ShowModalConfig,
+  HideModalConfig,
+  ShowToastConfig,
+  ValidateFormConfig,
+  CustomConfig,
+  ScrollToConfig,
+  ToggleVisibilityConfig,
+  CopyToClipboardConfig
+} from "./events/types";
 
 /**
  * 컴포넌트 에디터 Props (기존 PropertyEditorProps와 호환)

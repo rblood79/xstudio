@@ -111,6 +111,7 @@ export type ActionConfig =
   | SetStateConfig
   | APICallConfig
   | ShowModalConfig
+  | HideModalConfig
   | ShowToastConfig
   | ValidateFormConfig
   | CustomConfig
@@ -156,6 +157,13 @@ export interface ShowModalConfig {
   props?: Record<string, unknown>;
   backdrop?: boolean;
   closable?: boolean;
+}
+
+/**
+ * Hide Modal 액션 설정
+ */
+export interface HideModalConfig {
+  modalId?: string; // undefined면 모든 모달 닫기
 }
 
 /**
