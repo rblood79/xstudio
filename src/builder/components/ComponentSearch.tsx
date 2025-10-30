@@ -103,6 +103,7 @@ export function ComponentSearch({ components, onSelect, selectedElementId }: Com
                 aria-label="Search components"
                 items={items}
                 className="react-aria-ComboBox component-search-combobox"
+                popoverClassName="component-search-popover"
                 menuTrigger="manual"
                 isOpen={isOpen}
                 allowsEmptyCollection={true}

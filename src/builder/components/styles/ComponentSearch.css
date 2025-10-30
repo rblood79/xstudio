@@ -46,19 +46,19 @@
     display: none;
   }
 
-  /* ComponentSearch 전용 Popover 스타일 (다른 ComboBox와 충돌 방지) */
-  .component-search .react-aria-Popover {
+  /* ComponentSearch 전용 Popover 스타일 (Portal로 렌더링되므로 고유 className 사용) */
+  .component-search-popover {
     max-width: 100%;
     min-width: 300px;
   }
 
-  .component-search .react-aria-ListBox {
+  .component-search-popover .react-aria-ListBox {
     max-height: 400px;
     overflow-y: auto;
   }
 
-  /* 검색 결과 아이템 스타일 */
-  .component-search .search-result-item {
+  /* 검색 결과 아이템 스타일 (Popover 내부에 렌더링됨) */
+  .component-search-popover .search-result-item {
     display: flex;
     align-items: center;
     gap: var(--spacing);
@@ -72,29 +72,29 @@
     transition: background-color 150ms;
   }
 
-  .component-search .search-result-item:last-child {
+  .component-search-popover .search-result-item:last-child {
     border-bottom: none;
   }
 
-  .component-search .search-result-item[data-hovered],
-  .component-search .search-result-item[data-focused] {
+  .component-search-popover .search-result-item[data-hovered],
+  .component-search-popover .search-result-item[data-focused] {
     background: var(--color-primary-50);
     outline: none;
   }
 
-  .component-search .result-icon {
+  .component-search-popover .result-icon {
     color: var(--color-gray-600);
     flex-shrink: 0;
   }
 
-  .component-search .result-label {
+  .component-search-popover .result-label {
     flex: 1;
     font-size: var(--text-sm);
     color: var(--color-gray-900);
     font-weight: 500;
   }
 
-  .component-search .result-category {
+  .component-search-popover .result-category {
     font-size: var(--text-xs);
     color: var(--color-gray-500);
     padding: var(--spacing-1) var(--spacing);
@@ -103,8 +103,8 @@
     flex-shrink: 0;
   }
 
-  /* Empty state styles */
-  .component-search .search-empty-item {
+  /* Empty state styles (Popover 내부에 렌더링됨) */
+  .component-search-popover .search-empty-item {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,14 +114,14 @@
     background: transparent;
   }
 
-  .component-search .search-empty-item:hover,
-  .component-search .search-empty-item[data-hovered],
-  .component-search .search-empty-item[data-focused] {
+  .component-search-popover .search-empty-item:hover,
+  .component-search-popover .search-empty-item[data-hovered],
+  .component-search-popover .search-empty-item[data-focused] {
     background: transparent;
     outline: none;
   }
 
-  .component-search .search-empty {
+  .component-search-popover .search-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -130,25 +130,25 @@
     padding: var(--spacing-3);
   }
 
-  .component-search .empty-icon {
+  .component-search-popover .empty-icon {
     color: var(--color-gray-400);
     margin-bottom: var(--spacing-1);
   }
 
-  .component-search .empty-content {
+  .component-search-popover .empty-content {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-1);
   }
 
-  .component-search .empty-title {
+  .component-search-popover .empty-title {
     margin: 0;
     font-size: var(--text-sm);
     font-weight: 500;
     color: var(--color-gray-700);
   }
 
-  .component-search .empty-suggestion {
+  .component-search-popover .empty-suggestion {
     margin: 0;
     font-size: var(--text-xs);
     color: var(--color-gray-500);
