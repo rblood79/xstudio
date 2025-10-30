@@ -18,11 +18,13 @@ interface ComponentSearchProps {
  * - Fuzzy search with scoring algorithm
  * - Keyboard shortcut (cmd+K / ctrl+K)
  * - Empty state UI
+ * - Controlled popover (opens/closes based on query)
  * - Focus management after selection
  * - Accessible with React Aria
  */
 export function ComponentSearch({ components, onSelect, selectedElementId }: ComponentSearchProps) {
     const [query, setQuery] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
     const comboBoxRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -31,6 +33,11 @@ export function ComponentSearch({ components, onSelect, selectedElementId }: Com
 
     // Memoize items to prevent unnecessary re-renders
     const items = useMemo(() => results, [results]);
+
+    // Open popover when query has value, close when empty
+    useEffect(() => {
+        setIsOpen(query.trim().length > 0);
+    }, [query]);
 
     // cmd+K / ctrl+K keyboard shortcut
     useEffect(() => {
@@ -52,18 +59,34 @@ export function ComponentSearch({ components, onSelect, selectedElementId }: Com
         }
     }, []);
 
+    // Handle input change
+    const handleInputChange = useCallback((value: string) => {
+        setQuery(value);
+    }, []);
+
     // Handle component selection
     const handleSelectionChange = useCallback((key: Key | null) => {
-        if (key) {
+        if (key && key !== 'empty') {
             onSelect(String(key), selectedElementId || undefined);
             setQuery('');
+            setIsOpen(false);
 
-            // Maintain focus on input after selection for better UX
-            setTimeout(() => {
+            // Keep focus on input without setTimeout for better reliability
+            requestAnimationFrame(() => {
                 inputRef.current?.focus();
-            }, 0);
+            });
         }
     }, [onSelect, selectedElementId]);
+
+    // Handle popover open/close
+    const handleOpenChange = useCallback((open: boolean) => {
+        // Only allow opening if there's a query
+        if (open && query.trim().length === 0) {
+            setIsOpen(false);
+        } else {
+            setIsOpen(open);
+        }
+    }, [query]);
 
     const hasResults = items.length > 0;
     const hasQuery = query.trim().length > 0;
@@ -72,14 +95,16 @@ export function ComponentSearch({ components, onSelect, selectedElementId }: Com
         <div className="component-search" ref={comboBoxRef}>
             <ComboBox
                 inputValue={query}
-                onInputChange={setQuery}
+                onInputChange={handleInputChange}
                 onSelectionChange={handleSelectionChange}
+                onOpenChange={handleOpenChange}
                 onFocus={handleInputFocus}
                 placeholder="Search components... (⌘K)"
                 aria-label="Search components"
                 items={items}
                 className="react-aria-ComboBox component-search-combobox"
-                menuTrigger="input"
+                menuTrigger="manual"
+                isOpen={isOpen}
                 allowsEmptyCollection={true}
             >
                 {hasResults ? (

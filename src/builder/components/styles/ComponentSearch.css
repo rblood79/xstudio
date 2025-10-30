@@ -46,6 +46,17 @@
     display: none;
   }
 
+  /* ComponentSearch 전용 Popover 스타일 (다른 ComboBox와 충돌 방지) */
+  .component-search .react-aria-Popover {
+    max-width: 100%;
+    min-width: 300px;
+  }
+
+  .component-search .react-aria-ListBox {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
   /* 검색 결과 아이템 스타일 */
   .component-search .search-result-item {
     display: flex;
