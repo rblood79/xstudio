@@ -13,6 +13,7 @@ export type {
   SetStateConfig,
   APICallConfig,
   ShowModalConfig,
+  HideModalConfig,
   ShowToastConfig,
   ValidateFormConfig,
   CustomConfig,
