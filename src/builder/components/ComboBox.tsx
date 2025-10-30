@@ -29,6 +29,7 @@ export interface ComboBoxProps<T extends object>
   children?: React.ReactNode | ((item: T) => React.ReactNode);
   dataBinding?: DataBinding;
   columnMapping?: ColumnMapping;
+  popoverClassName?: string;
 }
 
 export function ComboBox<T extends object>({
@@ -41,6 +42,7 @@ export function ComboBox<T extends object>({
   onInputChange,
   dataBinding,
   columnMapping,
+  popoverClassName,
   ...props
 }: ComboBoxProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -92,7 +94,7 @@ export function ComboBox<T extends object>({
             </Button>
           </div>
           {description && <Text slot="description">{description}</Text>}
-          <Popover>
+          <Popover className={popoverClassName}>
             <ListBox className='react-aria-ListBox'>
               <ListBoxItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
@@ -120,7 +122,7 @@ export function ComboBox<T extends object>({
             </Button>
           </div>
           <FieldError>❌ 오류: {error}</FieldError>
-          <Popover>
+          <Popover className={popoverClassName}>
             <ListBox className='react-aria-ListBox'>
               <ListBoxItem key="error" textValue="Error">
                 ❌ 오류: {error}
@@ -157,7 +159,7 @@ export function ComboBox<T extends object>({
           </div>
           {description && <Text slot="description">{description}</Text>}
           {errorMessage && <FieldError>{errorMessage}</FieldError>}
-          <Popover>
+          <Popover className={popoverClassName}>
             <ListBox className='react-aria-ListBox' items={items}>
               {children}
             </ListBox>
@@ -184,7 +186,7 @@ export function ComboBox<T extends object>({
         </div>
         {description && <Text slot="description">{description}</Text>}
         {errorMessage && <FieldError>{errorMessage}</FieldError>}
-        <Popover>
+        <Popover className={popoverClassName}>
           <ListBox className='react-aria-ListBox'>
             {children}
           </ListBox>
@@ -238,7 +240,7 @@ export function ComboBox<T extends object>({
         </div>
         {description && <Text slot="description">{description}</Text>}
         {errorMessage && <FieldError>{errorMessage}</FieldError>}
-        <Popover>
+        <Popover className={popoverClassName}>
           <ListBox className='react-aria-ListBox' items={comboBoxItems}>
             {(item) => (
               <ListBoxItem
@@ -315,7 +317,7 @@ export function ComboBox<T extends object>({
       </div>
       {description && <Text slot="description">{description}</Text>}
       {errorMessage && <FieldError>{errorMessage}</FieldError>}
-      <Popover>
+      <Popover className={popoverClassName}>
         <ListBox className='react-aria-ListBox'>
           {children}
         </ListBox>

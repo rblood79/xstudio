@@ -1,36 +1,32 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ComboBox, ComboBoxItem } from './ComboBox';
-import { Key } from 'react-aria-components';
-import { useComponentSearch, Component } from '../hooks/useComponentSearch';
-import { Search } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { SearchField } from './SearchField';
 import './styles/ComponentSearch.css';
 
 interface ComponentSearchProps {
-    components: Component[];
-    onSelect: (tag: string, parentId?: string) => void;
-    selectedElementId?: string | null;
+    onSearchChange: (query: string) => void;
 }
 
 /**
- * ComponentSearch - Fuzzy search for components using React Aria ComboBox
+ * ComponentSearch - Simple search field for filtering ComponentList
  *
  * Features:
- * - Fuzzy search with scoring algorithm
- * - Keyboard shortcut (cmd+K / ctrl+K)
- * - Empty state UI
- * - Focus management after selection
- * - Accessible with React Aria
+ * - Keyboard shortcut (cmd+K on Mac / ctrl+K on Windows)
+ * - Real-time search query updates
+ * - Filters ComponentList in real-time
  */
-export function ComponentSearch({ components, onSelect, selectedElementId }: ComponentSearchProps) {
+export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
     const [query, setQuery] = useState('');
-    const comboBoxRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
-    // Use custom hook for fuzzy search logic
-    const results = useComponentSearch(components, query);
+    // Detect platform for keyboard shortcut display
+    const isMac = useMemo(() => {
+        if (typeof navigator === 'undefined') return false;
+        return /Mac|iPhone|iPad|iPod/.test(navigator.platform) ||
+               /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    }, []);
 
-    // Memoize items to prevent unnecessary re-renders
-    const items = useMemo(() => results, [results]);
+    const shortcutKey = isMac ? '⌘K' : 'Ctrl+K';
+    const placeholder = `Search components... (${shortcutKey})`;
 
     // cmd+K / ctrl+K keyboard shortcut
     useEffect(() => {
@@ -45,77 +41,25 @@ export function ComponentSearch({ components, onSelect, selectedElementId }: Com
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Store input ref for keyboard shortcut
-    const handleInputFocus = useCallback(() => {
-        if (!inputRef.current) {
-            inputRef.current = comboBoxRef.current?.querySelector('input') ?? null;
-        }
-    }, []);
+    // Notify parent of search query changes
+    useEffect(() => {
+        onSearchChange(query);
+    }, [query, onSearchChange]);
 
-    // Handle component selection
-    const handleSelectionChange = useCallback((key: Key | null) => {
-        if (key) {
-            onSelect(String(key), selectedElementId || undefined);
-            setQuery('');
-
-            // Maintain focus on input after selection for better UX
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 0);
-        }
-    }, [onSelect, selectedElementId]);
-
-    const hasResults = items.length > 0;
-    const hasQuery = query.trim().length > 0;
+    // Store input ref when SearchField mounts
+    const handleRef = (input: HTMLInputElement | null) => {
+        inputRef.current = input;
+    };
 
     return (
-        <div className="component-search" ref={comboBoxRef}>
-            <ComboBox
-                inputValue={query}
-                onInputChange={setQuery}
-                onSelectionChange={handleSelectionChange}
-                onFocus={handleInputFocus}
-                placeholder="Search components... (⌘K)"
+        <div className="component-search">
+            <SearchField
+                value={query}
+                onChange={setQuery}
+                placeholder={placeholder}
                 aria-label="Search components"
-                items={items}
-                className="react-aria-ComboBox component-search-combobox"
-                menuTrigger="input"
-                allowsEmptyCollection={true}
-            >
-                {hasResults ? (
-                    (item) => (
-                        <ComboBoxItem
-                            key={item.tag}
-                            id={item.tag}
-                            textValue={item.label}
-                            className="search-result-item"
-                        >
-                            <item.icon className="result-icon" size={16} />
-                            <span className="result-label">{item.label}</span>
-                            <span className="result-category">{item.category}</span>
-                        </ComboBoxItem>
-                    )
-                ) : hasQuery ? (
-                    () => (
-                        <ComboBoxItem
-                            key="empty"
-                            id="empty"
-                            textValue="No results"
-                            className="search-empty-item"
-                        >
-                            <div className="search-empty">
-                                <Search size={16} className="empty-icon" />
-                                <div className="empty-content">
-                                    <p className="empty-title">No components found</p>
-                                    <p className="empty-suggestion">Try 'button', 'input', or 'table'</p>
-                                </div>
-                            </div>
-                        </ComboBoxItem>
-                    )
-                ) : (
-                    () => null
-                )}
-            </ComboBox>
+                className="component-search-field"
+            />
         </div>
     );
 }

@@ -8,21 +8,16 @@
     border-bottom: 1px solid var(--color-gray-200);
   }
 
-  /* ComboBox 컨테이너 스타일 */
-  .component-search-combobox {
+  /* SearchField 스타일 */
+  .component-search-field {
     width: 100%;
   }
 
-  .component-search-combobox .combobox-container {
-    height: 32px;
-  }
-
-  .component-search-combobox .react-aria-Input {
+  .component-search-field .react-aria-Input {
     width: 100%;
     height: 32px;
     background-color: transparent;
     border: 1px solid transparent;
-    border-left-width: 0;
     border-radius: var(--border-radius);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
@@ -32,114 +27,35 @@
     transition: all 200ms;
   }
 
-  .component-search-combobox .react-aria-Input::placeholder {
+  .component-search-field .react-aria-Input::placeholder {
     color: var(--color-gray-400);
   }
 
-  .component-search-combobox .react-aria-Input:focus {
+  .component-search-field .react-aria-Input:focus {
     outline: none;
     background-color: var(--color-gray-100);
   }
 
-  /* 드롭다운 버튼 숨김 */
-  .component-search-combobox .react-aria-Button {
-    display: none;
-  }
-
-  /* 검색 결과 아이템 스타일 */
-  .component-search .search-result-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing);
-    padding: var(--spacing);
-    width: 100%;
-    text-align: left;
-    border: none;
-    border-bottom: 1px solid var(--color-gray-100);
-    background: transparent;
-    cursor: pointer;
-    transition: background-color 150ms;
-  }
-
-  .component-search .search-result-item:last-child {
-    border-bottom: none;
-  }
-
-  .component-search .search-result-item[data-hovered],
-  .component-search .search-result-item[data-focused] {
-    background: var(--color-primary-50);
-    outline: none;
-  }
-
-  .component-search .result-icon {
-    color: var(--color-gray-600);
-    flex-shrink: 0;
-  }
-
-  .component-search .result-label {
-    flex: 1;
-    font-size: var(--text-sm);
-    color: var(--color-gray-900);
-    font-weight: 500;
-  }
-
-  .component-search .result-category {
-    font-size: var(--text-xs);
-    color: var(--color-gray-500);
-    padding: var(--spacing-1) var(--spacing);
-    background: var(--color-gray-100);
-    border-radius: var(--radius-sm);
-    flex-shrink: 0;
-  }
-
-  /* Empty state styles */
-  .component-search .search-empty-item {
+  /* Clear 버튼 */
+  .component-search-field .react-aria-Button {
+    position: absolute;
+    right: var(--spacing);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--spacing-4);
-    cursor: default;
+    width: 20px;
+    height: 20px;
+    padding: 0;
     border: none;
+    border-radius: var(--radius-sm);
     background: transparent;
-  }
-
-  .component-search .search-empty-item:hover,
-  .component-search .search-empty-item[data-hovered],
-  .component-search .search-empty-item[data-focused] {
-    background: transparent;
-    outline: none;
-  }
-
-  .component-search .search-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-2);
-    text-align: center;
-    padding: var(--spacing-3);
-  }
-
-  .component-search .empty-icon {
-    color: var(--color-gray-400);
-    margin-bottom: var(--spacing-1);
-  }
-
-  .component-search .empty-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-1);
-  }
-
-  .component-search .empty-title {
-    margin: 0;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--color-gray-700);
-  }
-
-  .component-search .empty-suggestion {
-    margin: 0;
-    font-size: var(--text-xs);
     color: var(--color-gray-500);
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .component-search-field .react-aria-Button:hover {
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
   }
 }
