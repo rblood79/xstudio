@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig(({ command }) => {
   return {
     plugins: [react()],
-    base: command === 'build' ? '/xstudio/' : '/',
+    base: '/xstudio/',
     server: {
       // Note: Supabase client connects directly using VITE_SUPABASE_URL
       // No proxy needed for development environment
