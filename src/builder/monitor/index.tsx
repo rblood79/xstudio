@@ -4,12 +4,27 @@ import './index.css';
 import { useMemoryMonitor } from '../hooks/useMemoryMonitor';
 import { saveService } from '../../services/save/saveService';
 import type { PerformanceMetrics, ValidationError } from '../../services/save/saveService';
+import { useStore } from '../stores';
+
+interface HistoryLog {
+    timestamp: Date;
+    canUndo: boolean;
+    canRedo: boolean;
+    currentIndex: number;
+    totalEntries: number;
+    pageId: string | null;
+}
 
 export const Monitor: React.FC = () => {
     const { stats, optimizeMemory } = useMemoryMonitor();
     const [saveMetrics, setSaveMetrics] = useState<PerformanceMetrics | null>(null);
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-    const [activeTab, setActiveTab] = useState<'memory' | 'save'>('memory');
+    const [activeTab, setActiveTab] = useState<'memory' | 'save' | 'history'>('memory');
+    const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
+
+    // History state from store
+    const historyInfo = useStore((state) => state.historyInfo);
+    const currentPageId = useStore((state) => state.currentPageId);
 
     // SaveService 메트릭 업데이트
     useEffect(() => {
@@ -28,6 +43,25 @@ export const Monitor: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // History 정보 업데이트
+    useEffect(() => {
+        if (historyInfo) {
+            setHistoryLogs(prev => {
+                const newLog: HistoryLog = {
+                    timestamp: new Date(),
+                    canUndo: historyInfo.canUndo,
+                    canRedo: historyInfo.canRedo,
+                    currentIndex: historyInfo.currentIndex,
+                    totalEntries: historyInfo.totalEntries,
+                    pageId: currentPageId,
+                };
+                // 최근 50개만 유지
+                const updated = [...prev, newLog];
+                return updated.slice(-50);
+            });
+        }
+    }, [historyInfo, currentPageId]);
+
     const formatBytes = (bytes: number) => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -41,6 +75,10 @@ export const Monitor: React.FC = () => {
         saveService.clearValidationErrors();
         setSaveMetrics(saveService.getPerformanceMetrics());
         setValidationErrors([]);
+    };
+
+    const clearHistoryLogs = () => {
+        setHistoryLogs([]);
     };
 
     const totalSkips = saveMetrics ?
@@ -66,6 +104,12 @@ export const Monitor: React.FC = () => {
                     >
                         Save Monitor
                     </button>
+                    <button
+                        className={activeTab === 'history' ? 'tab active' : 'tab'}
+                        onClick={() => setActiveTab('history')}
+                    >
+                        History
+                    </button>
                 </div>
                 <div className="actions">
                     {activeTab === 'memory' && (
@@ -73,6 +117,9 @@ export const Monitor: React.FC = () => {
                     )}
                     {activeTab === 'save' && (
                         <button onClick={resetSaveMetrics}>reset metrics</button>
+                    )}
+                    {activeTab === 'history' && (
+                        <button onClick={clearHistoryLogs}>clear logs</button>
                     )}
                 </div>
             </div>
@@ -92,7 +139,7 @@ export const Monitor: React.FC = () => {
                             <li>Loading memory stats...</li>
                         )}
                     </div>
-                ) : (
+                ) : activeTab === 'save' ? (
                     <div className="monitor">
                         {saveMetrics ? (
                             <>
@@ -132,6 +179,45 @@ export const Monitor: React.FC = () => {
                             </>
                         ) : (
                             <li>Loading save metrics...</li>
+                        )}
+                    </div>
+                ) : (
+                    <div className="monitor">
+                        {historyLogs.length > 0 ? (
+                            <>
+                                <ul className="stats">
+                                    <li>Current Index: {historyInfo?.currentIndex ?? -1}</li>
+                                    <li>Total Entries: {historyInfo?.totalEntries ?? 0}</li>
+                                    <li>Can Undo: {historyInfo?.canUndo ? 'Yes' : 'No'}</li>
+                                    <li>Can Redo: {historyInfo?.canRedo ? 'Yes' : 'No'}</li>
+                                    <li>Page ID: {currentPageId ? currentPageId.slice(0, 8) + '...' : 'None'}</li>
+                                    <li>Log Entries: {historyLogs.length}</li>
+                                </ul>
+
+                                <div className="validation-errors">
+                                    <h4>Recent History Changes ({historyLogs.length})</h4>
+                                    <ul className="error-list">
+                                        {historyLogs.slice(-10).reverse().map((log, index) => (
+                                            <li key={index} className="error-item">
+                                                <strong>Index: {log.currentIndex}</strong> / Entries: {log.totalEntries}
+                                                <span className="history-status">
+                                                    {log.canUndo && '↶ Undo'} {log.canRedo && '↷ Redo'}
+                                                </span>
+                                                <span className="timestamp">
+                                                    {log.timestamp.toLocaleTimeString()}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    {historyLogs.length > 10 && (
+                                        <p className="more-errors">
+                                            ... and {historyLogs.length - 10} more logs
+                                        </p>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <p className="no-data">No history logs yet. Start editing to see history changes.</p>
                         )}
                     </div>
                 )}
