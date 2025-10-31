@@ -72,10 +72,12 @@ export function ActionList({
   });
 
   const handleEdit = (action: EventAction) => {
+    if (!action.id) return;
     setEditingActionId(action.id);
   };
 
   const handleSave = (updatedAction: EventAction) => {
+    if (!updatedAction.id) return;
     onUpdateAction(updatedAction.id, updatedAction);
     setEditingActionId(null);
   };

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "react-aria-components";
 import type { SelectedElement } from "../types";
-import type { EventHandler, EventType } from "../events/types";
+import type { EventHandler, EventType, ActionType } from "../events/types";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { EventHandlerManager } from "../events/components/EventHandlerManager";
 import { EventPalette } from "../events/components/listMode/EventPalette";
+import { ActionPalette } from "../events/components/listMode/ActionPalette";
+import { createDefaultActionConfig, generateActionId } from "../events/utils/actionHelpers";
 
 export interface EventSectionProps {
   element: SelectedElement;
@@ -16,6 +18,7 @@ export interface EventSectionProps {
 export function EventSection({ element }: EventSectionProps) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [selectedHandlerId, setSelectedHandlerId] = useState<string | null>(null);
+  const [showAddAction, setShowAddAction] = useState(false);
 
   // Use Inspector state methods for event management
   const addEventToInspector = useInspectorState((state) => state.addEvent);
@@ -67,20 +70,16 @@ export function EventSection({ element }: EventSectionProps) {
   };
 
   // Handle adding action to selected handler
-  const handleAddAction = () => {
+  const handleAddActionType = (actionType: ActionType) => {
     if (!selectedHandler) {
       return;
     }
 
-    // Create a simple default action (navigate)
+    // Create action with default config for the selected type
     const newAction = {
-      id: `action-${Date.now()}`,
-      type: "navigate" as const,
-      config: {
-        path: "/",
-        openInNewTab: false,
-        replace: false
-      }
+      id: generateActionId(actionType),
+      type: actionType,
+      config: createDefaultActionConfig(actionType)
     };
 
     const updatedHandler: EventHandler = {
@@ -89,6 +88,12 @@ export function EventSection({ element }: EventSectionProps) {
     };
 
     handleUpdateHandler(selectedHandler.id, updatedHandler);
+    setShowAddAction(false); // Hide ActionPalette after adding
+  };
+
+  // Show ActionPalette
+  const handleShowAddAction = () => {
+    setShowAddAction(true);
   };
 
   return (
@@ -141,13 +146,28 @@ export function EventSection({ element }: EventSectionProps) {
                   🗑️ Remove
                 </Button>
               </div>
-              <EventHandlerManager
-                eventHandler={selectedHandler}
-                onUpdateHandler={(updated) =>
-                  handleUpdateHandler(selectedHandler.id, updated)
-                }
-                onAddAction={handleAddAction}
-              />
+              {/* ActionPalette for selecting action type */}
+              {showAddAction ? (
+                <ActionPalette
+                  eventType={selectedHandler.event}
+                  componentType={element.type}
+                  previousAction={
+                    selectedHandler.actions.length > 0
+                      ? selectedHandler.actions[selectedHandler.actions.length - 1].type
+                      : undefined
+                  }
+                  onAddAction={handleAddActionType}
+                  onCancel={() => setShowAddAction(false)}
+                />
+              ) : (
+                <EventHandlerManager
+                  eventHandler={selectedHandler}
+                  onUpdateHandler={(updated) =>
+                    handleUpdateHandler(selectedHandler.id, updated)
+                  }
+                  onAddAction={handleShowAddAction}
+                />
+              )}
             </div>
           ) : (
             // Show list of handlers

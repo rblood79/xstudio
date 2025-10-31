@@ -259,6 +259,8 @@ export function useSyncWithBuilder(): void {
         }
       } catch (error) {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
+        // 저장 실패 시 lastSyncedElementRef 초기화하여 다음번에 다시 시도 가능하도록 함
+        lastSyncedElementRef.current = null;
       } finally {
         // 레이스 컨디션 방지: 이 timeout이 최신인 경우에만 ref와 플래그 정리
         // 다른 컴포넌트의 timeout이 이미 시작된 경우 무시
