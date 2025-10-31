@@ -251,6 +251,7 @@
   .tokens-view,
   .ai-generator-view,
   .figma-import-view,
+  .dark-mode-view,
   .settings-view {
     background: var(--color-white);
     border-radius: var(--radius-lg);
