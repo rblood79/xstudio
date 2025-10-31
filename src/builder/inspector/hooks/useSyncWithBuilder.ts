@@ -71,12 +71,14 @@ export function useSyncWithBuilder(): void {
     } = currentElementInStore.props as Record<string, unknown>;
 
     const inspectorElementJson = JSON.stringify({
+      customId: selectedElement.customId,
       properties: selectedElement.properties,
       style: selectedElement.style,
       dataBinding: selectedElement.dataBinding,
     });
 
     const storeElementJson = JSON.stringify({
+      customId: currentElementInStore.customId,
       properties: storeProps,
       style: storeStyle,
       dataBinding: currentElementInStore.dataBinding,

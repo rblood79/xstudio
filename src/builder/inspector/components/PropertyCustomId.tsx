@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Hash } from "lucide-react";
 import { PropertyFieldset } from "./PropertyFieldset";
 import { useStore } from "../../stores";
+import { useInspectorState } from "../hooks/useInspectorState";
 import { validateCustomId } from "../../utils/idValidation";
 
 interface PropertyCustomIdProps {
   label?: string;
   value: string;
   elementId: string; // Current element ID (to exclude from uniqueness check)
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void; // @deprecated - No longer used, kept for backward compatibility
   placeholder?: string;
   className?: string;
 }
@@ -17,7 +18,7 @@ export function PropertyCustomId({
   label = "ID",
   value,
   elementId,
-  onChange,
+  onChange: _onChange, // Renamed to indicate it's unused
   placeholder = "button_1",
   className,
 }: PropertyCustomIdProps) {
@@ -27,6 +28,9 @@ export function PropertyCustomId({
 
   // Get all elements from store for validation
   const elements = useStore((state) => state.elements);
+
+  // Use Inspector state to update customId (triggers useSyncWithBuilder)
+  const updateCustomIdInInspector = useInspectorState((state) => state.updateCustomId);
 
   // Sync local state with prop value when it changes externally
   useEffect(() => {
@@ -57,9 +61,12 @@ export function PropertyCustomId({
       return;
     }
 
-    // Save to parent only on blur if valid and changed
+    // Save to Inspector state (triggers useSyncWithBuilder) if valid and changed
     if (inputValue !== (value || "")) {
-      onChange(inputValue);
+      // IMPORTANT: Only update Inspector state, NOT calling onChange
+      // onChange would bypass Inspector state and directly update Builder store
+      // which prevents useSyncWithBuilder from detecting changes
+      updateCustomIdInInspector(inputValue);
       setError(undefined);
     }
   };
@@ -80,7 +87,10 @@ export function PropertyCustomId({
       }
 
       if (inputValue !== (value || "")) {
-        onChange(inputValue);
+        // IMPORTANT: Only update Inspector state, NOT calling onChange
+        // onChange would bypass Inspector state and directly update Builder store
+        // which prevents useSyncWithBuilder from detecting changes
+        updateCustomIdInInspector(inputValue);
         setError(undefined);
       }
 

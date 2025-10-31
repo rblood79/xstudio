@@ -9,6 +9,7 @@ export function mapElementToSelected(element: Element): SelectedElement {
 
   return {
     id: element.id,
+    customId: element.customId,
     type: element.tag,
     properties: otherProps,
     // style이 없으면 빈 객체로 초기화 (undefined 방지)
@@ -29,6 +30,7 @@ export function mapSelectedToElementUpdate(
 ): Partial<Element> {
   return {
     id: selected.id,
+    customId: selected.customId,
     tag: selected.type,
     props: {
       ...selected.properties,

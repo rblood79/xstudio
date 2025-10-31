@@ -1,10 +1,12 @@
 import type { ColumnMapping } from "../../types/unified";
+import type { EventHandler } from "./events/types";
 
 /**
  * Inspector에서 관리하는 선택된 요소
  */
 export interface SelectedElement {
   id: string;
+  customId?: string; // custom_id from database (user-defined ID)
   type: string;
 
   // PropertiesSection - tv() variants + 컴포넌트 고유 속성

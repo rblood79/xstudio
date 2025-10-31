@@ -214,10 +214,10 @@ All component CSS files MUST use the `@layer components` wrapper:
 
 /* ✅ CORRECT - Use standard CSS with CSS variables */
 .button {
-  padding-left: var(--spacing-4);
-  padding-right: var(--spacing-4);
-  padding-top: var(--spacing-2);
-  padding-bottom: var(--spacing-2);
+  padding-left: var(--spacing-sm);
+  padding-right: var(--spacing-sm);
+  padding-top: var(--spacing);
+  padding-bottom: var(--spacing);
   border-radius: var(--radius-md);
   transition: colors 200ms;
 }
@@ -281,10 +281,10 @@ Then define styles in CSS files (located in `styles/` folder):
 /* src/builder/components/styles/Button.css */
 @layer components {
   .button {
-    padding-left: var(--spacing-4);
-    padding-right: var(--spacing-4);
-    padding-top: var(--spacing-2);
-    padding-bottom: var(--spacing-2);
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+    padding-top: var(--spacing);
+    padding-bottom: var(--spacing);
     border-radius: var(--radius-md);
     transition: colors 200ms;
   }

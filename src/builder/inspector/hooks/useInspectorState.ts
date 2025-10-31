@@ -9,6 +9,9 @@ interface InspectorState {
   setSelectedElement: (element: SelectedElement | null) => void;
   setSyncingToBuilder: (syncing: boolean) => void;
 
+  // CustomId 업데이트
+  updateCustomId: (customId: string) => void;
+
   // PropertiesSection - 속성 업데이트
   updateProperty: (key: string, value: unknown) => void;
   updateProperties: (properties: Record<string, unknown>) => void;
@@ -40,6 +43,26 @@ export const useInspectorState = create<InspectorState>((set) => ({
 
   setSelectedElement: (element) => set({ selectedElement: element }),
   setSyncingToBuilder: (syncing) => set({ isSyncingToBuilder: syncing }),
+
+  // CustomId
+  updateCustomId: (customId) =>
+    set((state) => {
+      if (!state.selectedElement) return state;
+
+      console.log("🔖 updateCustomId 호출:", {
+        elementId: state.selectedElement.id,
+        oldCustomId: state.selectedElement.customId,
+        newCustomId: customId,
+      });
+
+      return {
+        isSyncingToBuilder: true, // 즉시 플래그 설정 (Builder → Inspector 동기화 차단)
+        selectedElement: {
+          ...state.selectedElement,
+          customId,
+        },
+      };
+    }),
 
   // Properties
   updateProperty: (key, value) =>

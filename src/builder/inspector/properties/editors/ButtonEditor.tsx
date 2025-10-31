@@ -17,21 +17,13 @@ export function ButtonEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <div className="component-props">
             <PropertyCustomId
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
+                onChange={() => {}} // No-op: PropertyCustomId handles Inspector state internally
                 placeholder="button_1"
             />
 

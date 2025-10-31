@@ -8,6 +8,7 @@ import { EventEngine } from "../../../utils/eventEngine";
  */
 export interface PreviewElement {
   id: string;
+  customId?: string; // custom_id from database (e.g., button_1, table_1)
   tag: string;
   props: ElementProps;
   text?: string;
