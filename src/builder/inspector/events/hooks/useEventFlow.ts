@@ -14,11 +14,11 @@ export function useEventFlow(eventHandler: EventHandler) {
 
     // Create trigger node
     const triggerNode: Node<TriggerNodeData> = {
-      id: `trigger-${eventHandler.type}`,
+      id: `trigger-${eventHandler.event}`,
       type: "trigger",
       position: { x: 250, y: 50 },
       data: {
-        eventType: eventHandler.type
+        eventType: eventHandler.event
       }
     };
     nodes.push(triggerNode);

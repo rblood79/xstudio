@@ -32,10 +32,10 @@ export function SimpleFlowView({
 
   // Add trigger node
   nodes.push({
-    id: `trigger-${eventHandler.type}`,
+    id: `trigger-${eventHandler.event}`,
     data: {
       type: "trigger",
-      eventType: eventHandler.type
+      eventType: eventHandler.event
     }
   });
 

@@ -23,6 +23,11 @@ export function EventHandlerManager({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedActionId, setSelectedActionId] = useState<string | null>(null);
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    console.log("🔄 ViewMode changed:", mode);
+    setViewMode(mode);
+  };
+
   // Handle action reordering
   const handleReorder = (reorderedActions: typeof eventHandler.actions) => {
     onUpdateHandler({
@@ -75,11 +80,13 @@ export function EventHandlerManager({
     // setViewMode("list");
   };
 
+  console.log("📊 Current viewMode:", viewMode);
+
   return (
     <div className="event-handler-manager">
       {/* View Mode Toggle */}
       <div className="manager-header">
-        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
       </div>
 
       {/* Content based on view mode */}

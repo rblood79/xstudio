@@ -284,12 +284,7 @@
   }
 
   .category-count {
-    font-size: var(--text-xs);
-    font-weight: 600;
     color: var(--color-gray-500);
-    padding: var(--spacing-1) var(--spacing-2);
-    background: var(--color-gray-200);
-    border-radius: var(--radius-full);
   }
 
   .category-toggle {
