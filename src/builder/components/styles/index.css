@@ -7,3 +7,12 @@
 @import './forms.css';
 @import './overlays.css';
 @import './collections.css';
+
+/* Inspector Event System */
+@import './EventPalette.css';
+@import './EventTemplateLibrary.css';
+@import './ActionList.css';
+@import './SimpleFlowView.css';
+@import './ReactFlowCanvas.css';
+@import './EventHandlerManager.css';
+@import './EventSection.css';
