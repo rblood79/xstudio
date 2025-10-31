@@ -10,6 +10,7 @@ export { FigmaService, createFigmaService } from './FigmaService';
 export { ExportService } from './ExportService';
 export { DarkModeService } from './DarkModeService';
 export { FigmaPluginService } from './FigmaPluginService';
+export { ThemeVersionService } from './ThemeVersionService';
 
 export type {
   CreateThemeInput,
