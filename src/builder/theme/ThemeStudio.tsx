@@ -15,7 +15,6 @@ import { TokenEditor } from './components/TokenEditor';
 import { ThemeExporter } from './components/ThemeExporter';
 import { DarkModeGenerator } from './components/DarkModeGenerator';
 import { FigmaPluginExporter } from './components/FigmaPluginExporter';
-import { VersionHistory } from './components/VersionHistory';
 
 const themeStudioStyles = tv({
   slots: {
@@ -31,7 +30,7 @@ interface ThemeStudioProps {
   projectId: string;
 }
 
-type ThemeStudioView = 'tokens' | 'ai-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'version-history' | 'settings';
+type ThemeStudioView = 'tokens' | 'ai-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
 
 export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const styles = themeStudioStyles();
@@ -117,16 +116,10 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               Figma Plugin
             </button>
             <button
-              className={currentView === 'version-history' ? 'active' : ''}
-              onClick={() => setCurrentView('version-history')}
-            >
-              버전 관리
-            </button>
-            <button
               className={currentView === 'settings' ? 'active' : ''}
               onClick={() => setCurrentView('settings')}
             >
-              설정
+              Export
             </button>
           </nav>
         </div>
@@ -211,15 +204,6 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
           {currentView === 'figma-plugin' && activeTheme && (
             <div className="figma-plugin-view">
               <FigmaPluginExporter
-                projectId={projectId}
-                themeId={activeTheme.id}
-              />
-            </div>
-          )}
-
-          {currentView === 'version-history' && activeTheme && (
-            <div className="version-history-view">
-              <VersionHistory
                 projectId={projectId}
                 themeId={activeTheme.id}
               />

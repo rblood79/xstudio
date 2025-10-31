@@ -253,7 +253,6 @@
   .figma-import-view,
   .dark-mode-view,
   .figma-plugin-view,
-  .version-history-view,
   .settings-view {
     background: var(--color-white);
     border-radius: var(--radius-lg);
