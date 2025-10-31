@@ -5,6 +5,7 @@
 
 export { ThemeService } from './ThemeService';
 export { TokenService } from './TokenService';
+export { ThemeGenerationService, createThemeGenerationService } from './ThemeGenerationService';
 
 export type {
   CreateThemeInput,
