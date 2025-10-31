@@ -27,15 +27,8 @@ export function useSyncWithBuilder(): void {
   const timeoutIdRef = useRef<number>(0);
 
   useEffect(() => {
-    console.log("🔄 useSyncWithBuilder useEffect 실행:", {
-      hasSelectedElement: !!selectedElement,
-      selectedElementId: selectedElement?.id,
-      selectedElementStyle: selectedElement?.style,
-    });
-
     // 히스토리 작업 중이면 동기화 건너뛰기
     if (historyOperationInProgress) {
-      console.log("⏸️ useSyncWithBuilder - 히스토리 작업 중, 동기화 건너뛰기");
       return;
     }
 
@@ -54,45 +47,45 @@ export function useSyncWithBuilder(): void {
     );
 
     if (!currentElementInStore) {
-      console.log(
-        "⚠️ useSyncWithBuilder - Builder에서 요소를 찾을 수 없음:",
-        selectedElement.id
-      );
       return;
     }
 
     // Inspector의 요소와 Builder store의 요소 비교
     // Note: computedStyle은 읽기 전용이므로 비교에서 제외
-    // Store의 props에서 style과 computedStyle을 분리하여 비교
+    // Store의 props에서 style, computedStyle, events를 분리하여 비교
     const {
       style: storeStyle,
       computedStyle: _storeComputedStyle, // eslint-disable-line @typescript-eslint/no-unused-vars
+      events: storeEvents,
       ...storeProps
     } = currentElementInStore.props as Record<string, unknown>;
 
-    const inspectorElementJson = JSON.stringify({
+    const inspectorData = {
       customId: selectedElement.customId,
       properties: selectedElement.properties,
       style: selectedElement.style,
       dataBinding: selectedElement.dataBinding,
-    });
+      events: selectedElement.events,
+    };
 
-    const storeElementJson = JSON.stringify({
+    const storeData = {
       customId: currentElementInStore.customId,
       properties: storeProps,
       style: storeStyle,
       dataBinding: currentElementInStore.dataBinding,
-    });
+      events: storeEvents, // Use events extracted from props, not from root level
+    };
+
+    const inspectorElementJson = JSON.stringify(inspectorData);
+    const storeElementJson = JSON.stringify(storeData);
 
     // 실제 변경사항이 있는지 확인
     if (inspectorElementJson === storeElementJson) {
-      console.log("🔄 useSyncWithBuilder - 변경사항 없음, 동기화 건너뛰기");
       return;
     }
 
     // 마지막 동기화와 비교
     if (inspectorElementJson === lastSyncedElementRef.current) {
-      console.log("🔄 useSyncWithBuilder - 이미 동기화됨, 건너뛰기");
       return;
     }
 
@@ -111,22 +104,8 @@ export function useSyncWithBuilder(): void {
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
 
-    console.log("🔄 useSyncWithBuilder - 동기화 시작:", {
-      elementId: selectedElement.id,
-      elementType: selectedElement.type,
-      hasDataBinding: !!selectedElement.dataBinding,
-      dataBinding: selectedElement.dataBinding,
-      elementUpdate,
-      timeoutId: currentTimeoutId,
-    });
-
     // debounce를 통한 최적화 (100ms)
     pendingTimeoutRef.current = setTimeout(async () => {
-      console.log("📤 useSyncWithBuilder - updateElement 호출:", {
-        elementId: selectedElement.id,
-        update: elementUpdate,
-      });
-
       try {
         // Table 요소에 API Collection, Static Data, Supabase의 설정이 변경되면 기존 Column 자식 삭제
         // (Parameters, Headers, DataMapping 변경 시에는 삭제하지 않음)
@@ -224,28 +203,12 @@ export function useSyncWithBuilder(): void {
             );
 
             if (childColumns.length > 0) {
-              console.log("🗑️ 컬럼 변경 감지 - 기존 Column 삭제:", {
-                tableId: selectedElement.id,
-                source: selectedElement.dataBinding?.source,
-                oldEndpoint: currentEndpoint,
-                newEndpoint: newEndpoint,
-                columnMappingChanged,
-                apiColumnsChanged:
-                  selectedElement.dataBinding?.source === "api"
-                    ? apiColumnsChanged
-                    : undefined,
-                currentApiColumns,
-                newApiColumns,
-                columnsToDelete: childColumns.map((c) => c.id),
-              });
-
               // 한 번에 모든 Column ID 수집
               const columnIdsToDelete = childColumns.map((c) => c.id);
 
               // 1. DB에서 일괄 삭제
               try {
                 await elementsApi.deleteMultipleElements(columnIdsToDelete);
-                console.log("✅ DB에서 Column 삭제 완료:", columnIdsToDelete);
               } catch (error) {
                 console.error("❌ DB Column 삭제 실패:", error);
               }
@@ -255,37 +218,7 @@ export function useSyncWithBuilder(): void {
                 (el) => !columnIdsToDelete.includes(el.id)
               );
               setElements(newElements);
-              console.log("✅ Store에서 Column 제거 완료:", {
-                삭제전: elements.length,
-                삭제후: newElements.length,
-                삭제된개수: elements.length - newElements.length,
-              });
-            } else {
-              console.log("ℹ️ 컬럼 변경되었으나 삭제할 Column 없음:", {
-                source: selectedElement.dataBinding?.source,
-                oldEndpoint: currentEndpoint,
-                newEndpoint: newEndpoint,
-                columnMappingChanged,
-                apiColumnsChanged:
-                  selectedElement.dataBinding?.source === "api"
-                    ? apiColumnsChanged
-                    : undefined,
-                currentApiColumns,
-                newApiColumns,
-              });
             }
-          } else {
-            console.log(
-              "ℹ️ Parameters/Headers/DataMapping만 변경됨 - Column 유지",
-              {
-                apiColumnsChanged:
-                  selectedElement.dataBinding?.source === "api"
-                    ? apiColumnsChanged
-                    : undefined,
-                currentApiColumns,
-                newApiColumns,
-              }
-            );
           }
         }
 

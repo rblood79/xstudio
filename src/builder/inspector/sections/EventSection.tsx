@@ -16,11 +16,17 @@ export interface EventSectionProps {
 export function EventSection({ element }: EventSectionProps) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [selectedHandlerId, setSelectedHandlerId] = useState<string | null>(null);
-  const { updateElement } = useInspectorState();
 
-  // Get registered event handlers from element
-  const eventHandlers: EventHandler[] = element.events || [];
-  const registeredEventTypes: EventType[] = eventHandlers.map((h) => h.type);
+  // Use Inspector state methods for event management
+  const addEventToInspector = useInspectorState((state) => state.addEvent);
+  const updateEventInInspector = useInspectorState((state) => state.updateEvent);
+  const removeEventFromInspector = useInspectorState((state) => state.removeEvent);
+
+  // IMPORTANT: Get events from Inspector state, not from element prop
+  // Inspector state is the source of truth for real-time updates
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+  const eventHandlers: EventHandler[] = selectedElement?.events || [];
+  const registeredEventTypes: EventType[] = eventHandlers.map((h) => h.event);
 
   // Get selected handler
   const selectedHandler = selectedHandlerId
@@ -31,13 +37,12 @@ export function EventSection({ element }: EventSectionProps) {
   const handleAddEvent = (eventType: EventType) => {
     const newHandler: EventHandler = {
       id: `event-${eventType}-${Date.now()}`,
-      type: eventType,
+      event: eventType,
       actions: []
     };
 
-    updateElement(element.id, {
-      events: [...eventHandlers, newHandler]
-    });
+    // Update Inspector state - useSyncWithBuilder will sync to Builder store
+    addEventToInspector(newHandler);
 
     // Automatically select the new handler
     setSelectedHandlerId(newHandler.id);
@@ -46,27 +51,44 @@ export function EventSection({ element }: EventSectionProps) {
 
   // Handle updating event handler
   const handleUpdateHandler = (handlerId: string, updated: EventHandler) => {
-    const updatedHandlers = eventHandlers.map((h) =>
-      h.id === handlerId ? updated : h
-    );
-
-    updateElement(element.id, {
-      events: updatedHandlers
-    });
+    // Update Inspector state - useSyncWithBuilder will sync to Builder store
+    updateEventInInspector(handlerId, updated);
   };
 
   // Handle removing event handler
   const handleRemoveHandler = (handlerId: string) => {
-    const updatedHandlers = eventHandlers.filter((h) => h.id !== handlerId);
-
-    updateElement(element.id, {
-      events: updatedHandlers
-    });
+    // Update Inspector state - useSyncWithBuilder will sync to Builder store
+    removeEventFromInspector(handlerId);
 
     // Clear selection if removed handler was selected
     if (selectedHandlerId === handlerId) {
       setSelectedHandlerId(null);
     }
+  };
+
+  // Handle adding action to selected handler
+  const handleAddAction = () => {
+    if (!selectedHandler) {
+      return;
+    }
+
+    // Create a simple default action (navigate)
+    const newAction = {
+      id: `action-${Date.now()}`,
+      type: "navigate" as const,
+      config: {
+        path: "/",
+        openInNewTab: false,
+        replace: false
+      }
+    };
+
+    const updatedHandler: EventHandler = {
+      ...selectedHandler,
+      actions: [...selectedHandler.actions, newAction]
+    };
+
+    handleUpdateHandler(selectedHandler.id, updatedHandler);
   };
 
   return (
@@ -111,7 +133,7 @@ export function EventSection({ element }: EventSectionProps) {
                 >
                   ← Back to List
                 </Button>
-                <span className="selected-handler-type">{selectedHandler.type}</span>
+                <span className="selected-handler-type">{selectedHandler.event}</span>
                 <Button
                   className="react-aria-Button remove-handler-button"
                   onPress={() => handleRemoveHandler(selectedHandler.id)}
@@ -124,6 +146,7 @@ export function EventSection({ element }: EventSectionProps) {
                 onUpdateHandler={(updated) =>
                   handleUpdateHandler(selectedHandler.id, updated)
                 }
+                onAddAction={handleAddAction}
               />
             </div>
           ) : (
@@ -136,7 +159,7 @@ export function EventSection({ element }: EventSectionProps) {
                   onClick={() => setSelectedHandlerId(handler.id)}
                 >
                   <div className="handler-info">
-                    <span className="handler-type">{handler.type}</span>
+                    <span className="handler-type">{handler.event}</span>
                     <span className="handler-action-count">
                       {handler.actions.length} action
                       {handler.actions.length !== 1 ? "s" : ""}
