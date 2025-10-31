@@ -14,6 +14,7 @@ import { FigmaImporter } from './components/FigmaImporter';
 import { TokenEditor } from './components/TokenEditor';
 import { ThemeExporter } from './components/ThemeExporter';
 import { DarkModeGenerator } from './components/DarkModeGenerator';
+import { FigmaPluginExporter } from './components/FigmaPluginExporter';
 
 const themeStudioStyles = tv({
   slots: {
@@ -29,7 +30,7 @@ interface ThemeStudioProps {
   projectId: string;
 }
 
-type ThemeStudioView = 'tokens' | 'ai-generator' | 'figma-import' | 'dark-mode' | 'settings';
+type ThemeStudioView = 'tokens' | 'ai-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
 
 export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const styles = themeStudioStyles();
@@ -107,6 +108,12 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               onClick={() => setCurrentView('dark-mode')}
             >
               다크 모드
+            </button>
+            <button
+              className={currentView === 'figma-plugin' ? 'active' : ''}
+              onClick={() => setCurrentView('figma-plugin')}
+            >
+              Figma Plugin
             </button>
             <button
               className={currentView === 'settings' ? 'active' : ''}
@@ -190,6 +197,15 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                   activateTheme(darkThemeId);
                   setCurrentView('tokens');
                 }}
+              />
+            </div>
+          )}
+
+          {currentView === 'figma-plugin' && activeTheme && (
+            <div className="figma-plugin-view">
+              <FigmaPluginExporter
+                projectId={projectId}
+                themeId={activeTheme.id}
               />
             </div>
           )}

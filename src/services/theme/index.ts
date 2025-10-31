@@ -9,6 +9,7 @@ export { ThemeGenerationService, createThemeGenerationService } from './ThemeGen
 export { FigmaService, createFigmaService } from './FigmaService';
 export { ExportService } from './ExportService';
 export { DarkModeService } from './DarkModeService';
+export { FigmaPluginService } from './FigmaPluginService';
 
 export type {
   CreateThemeInput,
