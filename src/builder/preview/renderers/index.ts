@@ -51,9 +51,6 @@ export const rendererMap: Record<
   ProgressBar: LayoutRenderers.renderProgressBar,
   Meter: LayoutRenderers.renderMeter,
   Separator: LayoutRenderers.renderSeparator,
-  PanelGroup: LayoutRenderers.renderPanelGroup,
-  ResizablePanel: LayoutRenderers.renderResizablePanel,
-  PanelResizeHandle: LayoutRenderers.renderPanelResizeHandle,
   Breadcrumbs: LayoutRenderers.renderBreadcrumbs,
   Breadcrumb: LayoutRenderers.renderBreadcrumb,
 

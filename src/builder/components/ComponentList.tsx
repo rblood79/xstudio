@@ -1,5 +1,5 @@
 import { useMemo, useCallback, memo, useState } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot, Columns2, Settings2, ChevronRight, Clock, Star } from 'lucide-react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Settings2, ChevronRight, Clock, Star } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import { ComponentSearch } from './ComponentSearch';
 import { useRecentComponents } from '../hooks/useRecentComponents';
@@ -18,7 +18,6 @@ const layoutComp = [
     { tag: 'Card', label: 'card', icon: AppWindowMac },
     { tag: 'Tabs', label: 'tabs', icon: AppWindow },
     { tag: 'Breadcrumbs', label: 'breadcrumbs', icon: ChevronRight },
-    { tag: 'PanelGroup', label: 'resizable panels', icon: Columns2 },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
     { tag: 'Nav', label: 'navigation', icon: Menu },
 ] as const;
@@ -29,7 +28,6 @@ const inputsComp = [
     { tag: 'SearchField', label: 'search field', icon: Search },
     { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
     { tag: 'CheckboxGroup', label: 'checkbox group', icon: GroupIcon },
-    { tag: 'Radio', label: 'radio', icon: GroupIcon },
     { tag: 'RadioGroup', label: 'radio group', icon: GroupIcon },
     { tag: 'Select', label: 'select', icon: ChevronDown },
     { tag: 'ComboBox', label: 'combo box', icon: ChevronDown },
@@ -82,7 +80,6 @@ const structureComp = [
 ] as const;
 
 const otherComp = [
-    { tag: 'MenuItem', label: 'menu item', icon: Dot },
     { tag: 'Form', label: 'form', icon: GroupIcon },
 ] as const;
 
