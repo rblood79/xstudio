@@ -3,6 +3,7 @@ import type { EventHandler } from "../types";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
 import { ActionList } from "./listMode/ActionList";
 import { SimpleFlowView } from "./visualMode/SimpleFlowView";
+import { ReactFlowCanvas } from "./visualMode/ReactFlowCanvas";
 
 export interface EventHandlerManagerProps {
   eventHandler: EventHandler;
@@ -12,7 +13,7 @@ export interface EventHandlerManagerProps {
 
 /**
  * EventHandlerManager - Unified component for managing event handlers
- * Supports both List and Visual modes
+ * Supports List, Simple Flow, and ReactFlow modes
  */
 export function EventHandlerManager({
   eventHandler,
@@ -67,7 +68,7 @@ export function EventHandlerManager({
     });
   };
 
-  // Handle action selection from visual mode
+  // Handle action selection from visual modes
   const handleSelectAction = (actionId: string) => {
     setSelectedActionId(actionId);
     // Optionally switch to list mode for editing
@@ -83,7 +84,7 @@ export function EventHandlerManager({
 
       {/* Content based on view mode */}
       <div className="manager-content">
-        {viewMode === "list" ? (
+        {viewMode === "list" && (
           <ActionList
             actions={eventHandler.actions}
             onReorder={handleReorder}
@@ -92,8 +93,17 @@ export function EventHandlerManager({
             onDuplicateAction={handleDuplicateAction}
             onAddAction={onAddAction}
           />
-        ) : (
+        )}
+
+        {viewMode === "simple" && (
           <SimpleFlowView
+            eventHandler={eventHandler}
+            onSelectAction={handleSelectAction}
+          />
+        )}
+
+        {viewMode === "reactflow" && (
+          <ReactFlowCanvas
             eventHandler={eventHandler}
             onSelectAction={handleSelectAction}
           />

@@ -13,4 +13,5 @@
 @import './EventTemplateLibrary.css';
 @import './ActionList.css';
 @import './SimpleFlowView.css';
+@import './ReactFlowCanvas.css';
 @import './EventHandlerManager.css';

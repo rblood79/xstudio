@@ -1,6 +1,6 @@
 import { ToggleButton, ToggleButtonGroup } from "react-aria-components";
 
-export type ViewMode = "list" | "visual";
+export type ViewMode = "list" | "simple" | "reactflow";
 
 export interface ViewModeToggleProps {
   value: ViewMode;
@@ -8,7 +8,7 @@ export interface ViewModeToggleProps {
 }
 
 /**
- * ViewModeToggle - Toggle between List and Visual modes
+ * ViewModeToggle - Toggle between List, Simple Flow, and ReactFlow modes
  */
 export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
   return (
@@ -26,11 +26,18 @@ export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
         <span className="mode-label">List</span>
       </ToggleButton>
       <ToggleButton
-        id="visual"
+        id="simple"
         className="react-aria-ToggleButton view-mode-button"
       >
         <span className="mode-icon">🔀</span>
-        <span className="mode-label">Visual</span>
+        <span className="mode-label">Simple</span>
+      </ToggleButton>
+      <ToggleButton
+        id="reactflow"
+        className="react-aria-ToggleButton view-mode-button"
+      >
+        <span className="mode-icon">🎯</span>
+        <span className="mode-label">ReactFlow</span>
       </ToggleButton>
     </ToggleButtonGroup>
   );
