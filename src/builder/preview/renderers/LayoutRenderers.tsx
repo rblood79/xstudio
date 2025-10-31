@@ -396,8 +396,8 @@ export const renderBreadcrumbs = (
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode => {
-  const { elements, renderElement } = context;
-  const eventHandlers = createEventHandlerMap(element, context);
+  const { elements, renderElement, eventEngine, projectId } = context;
+  const eventHandlers = createEventHandlerMap(element, eventEngine, projectId);
 
   const breadcrumbChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Breadcrumb")
