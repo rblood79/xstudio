@@ -12,6 +12,7 @@ import './styles/ThemeStudio.css';
 import { AIThemeGenerator } from './components/AIThemeGenerator';
 import { FigmaImporter } from './components/FigmaImporter';
 import { TokenEditor } from './components/TokenEditor';
+import { ThemeExporter } from './components/ThemeExporter';
 
 const themeStudioStyles = tv({
   slots: {
@@ -173,10 +174,9 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             </div>
           )}
 
-          {currentView === 'settings' && (
+          {currentView === 'settings' && activeTheme && (
             <div className="settings-view">
-              <h2>설정</h2>
-              <p>설정 UI 구현 예정</p>
+              <ThemeExporter themeId={activeTheme.id} projectId={projectId} />
             </div>
           )}
         </main>
