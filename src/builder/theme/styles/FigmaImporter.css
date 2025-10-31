@@ -1,0 +1,371 @@
+/**
+ * Figma Importer Styles
+ */
+
+@layer components {
+  .figma-importer-container {
+    max-width: 800px;
+  }
+
+  .figma-importer-container h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .figma-importer-container .subtitle {
+    font-size: var(--text-base);
+    color: var(--color-gray-600);
+    margin-bottom: var(--spacing-6);
+  }
+
+  /* Form */
+  .figma-import-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-5);
+  }
+
+  .figma-import-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .figma-import-form label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-700);
+  }
+
+  .figma-import-form .required {
+    color: var(--color-error-600);
+  }
+
+  .figma-import-form input[type="text"],
+  .figma-import-form input[type="password"],
+  .figma-import-form select {
+    padding: var(--spacing-3);
+    font-size: var(--text-base);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-gray-900);
+  }
+
+  .figma-import-form input:focus,
+  .figma-import-form select:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 0;
+    border-color: var(--color-primary-500);
+  }
+
+  .figma-import-form .field-hint {
+    font-size: var(--text-sm);
+    color: var(--color-gray-500);
+    margin: 0;
+  }
+
+  .figma-import-form .field-hint strong {
+    color: var(--color-gray-700);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Checkbox Group */
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--text-base);
+    color: var(--color-gray-700);
+    cursor: pointer;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  /* Import Button */
+  .import-btn {
+    padding: var(--spacing-3) var(--spacing-6);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-white);
+    background: var(--color-primary-600);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .import-btn:hover:not(:disabled) {
+    background: var(--color-primary-700);
+  }
+
+  .import-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Importing State */
+  .importing-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-12);
+    gap: var(--spacing-4);
+  }
+
+  .importing-state .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .importing-state p {
+    font-size: var(--text-base);
+    color: var(--color-gray-600);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Results */
+  .import-results {
+    padding: var(--spacing-6);
+    background: var(--color-primary-50);
+    border: 1px solid var(--color-primary-200);
+    border-radius: var(--radius-lg);
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-6);
+  }
+
+  .result-header h3 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-700);
+    margin: 0;
+  }
+
+  .reset-btn {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-600);
+    background: var(--color-white);
+    border: 1px solid var(--color-primary-300);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .reset-btn:hover {
+    background: var(--color-primary-50);
+    border-color: var(--color-primary-400);
+  }
+
+  /* Import Stats */
+  .import-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-4);
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+  }
+
+  .stat-card.total {
+    background: var(--color-primary-600);
+  }
+
+  .stat-number {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-900);
+  }
+
+  .stat-card.total .stat-number {
+    color: var(--color-white);
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+  }
+
+  .stat-card.total .stat-label {
+    color: var(--color-white);
+  }
+
+  /* Skipped Notice */
+  .skipped-notice {
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--color-warning-50);
+    border: 1px solid var(--color-warning-200);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .skipped-notice span {
+    font-size: var(--text-sm);
+    color: var(--color-warning-700);
+  }
+
+  /* Error List */
+  .error-list {
+    padding: var(--spacing-4);
+    background: var(--color-error-50);
+    border: 1px solid var(--color-error-200);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .error-list h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-error-700);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .error-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .error-list li {
+    font-size: var(--text-sm);
+    color: var(--color-error-600);
+    padding: var(--spacing-2) 0;
+    border-bottom: 1px solid var(--color-error-100);
+  }
+
+  .error-list li:last-child {
+    border-bottom: none;
+  }
+
+  .error-list li strong {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-error-700);
+  }
+
+  /* Token List Preview */
+  .token-list-preview {
+    padding: var(--spacing-4);
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+  }
+
+  .token-list-preview h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--spacing-3);
+  }
+
+  .token-list-preview ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .token-list-preview li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-2);
+    border-bottom: 1px solid var(--color-gray-100);
+  }
+
+  .token-list-preview li:last-child {
+    border-bottom: none;
+  }
+
+  .token-list-preview li.more {
+    justify-content: center;
+    color: var(--color-gray-500);
+    font-size: var(--text-sm);
+  }
+
+  .token-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-900);
+    font-family: var(--font-mono);
+  }
+
+  .token-type {
+    font-size: var(--text-xs);
+    padding: var(--spacing-1) var(--spacing-2);
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+  }
+
+  /* Error Message */
+  .figma-importer-container .error-message {
+    padding: var(--spacing-6);
+    background: var(--color-error-50);
+    border: 1px solid var(--color-error-200);
+    border-radius: var(--radius-lg);
+  }
+
+  .figma-importer-container .error-message h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-error-700);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .figma-importer-container .error-message p {
+    font-size: var(--text-base);
+    color: var(--color-error-600);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .figma-importer-container .error-message button {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-white);
+    background: var(--color-error-600);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  .figma-importer-container .error-message button:hover {
+    background: var(--color-error-700);
+  }
+}
