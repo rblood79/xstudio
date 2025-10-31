@@ -11,8 +11,7 @@ import './styles/ThemeStudio.css';
 // 하위 컴포넌트 import
 import { AIThemeGenerator } from './components/AIThemeGenerator';
 import { FigmaImporter } from './components/FigmaImporter';
-// TODO: 추가 컴포넌트
-// import { TokenEditor } from './components/TokenEditor';
+import { TokenEditor } from './components/TokenEditor';
 
 const themeStudioStyles = tv({
   slots: {
@@ -145,12 +144,8 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
         {/* Main Content */}
         <main className={styles.main()}>
-          {currentView === 'tokens' && (
-            <div className="tokens-view">
-              <h2>토큰 편집</h2>
-              <p>Token Editor 구현 예정</p>
-              {/* <TokenEditor themeId={activeTheme?.id || ''} /> */}
-            </div>
+          {currentView === 'tokens' && activeTheme && (
+            <TokenEditor themeId={activeTheme.id} projectId={projectId} />
           )}
 
           {currentView === 'ai-generator' && (
