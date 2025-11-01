@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { tv } from 'tailwind-variants';
-import { useTokens, useTokenSearch, useTokenStats } from '../../../hooks/theme';
+import { useTokens, useTokenStats } from '../../../hooks/theme';
 import type { DesignToken } from '../../../types/theme/token.types';
 import { parseTokenName } from '../../../utils/theme/tokenParser';
 import '../styles/TokenEditor.css';
@@ -35,8 +35,6 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
   // 토큰 데이터 로드
   const {
     tokens,
-    rawTokens,
-    semanticTokens,
     loading,
     createToken,
     updateToken,

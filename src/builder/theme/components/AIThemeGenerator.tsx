@@ -84,7 +84,7 @@ export function AIThemeGenerator({
 
         if (progressData.stage === 'complete' && progressData.data) {
           setResult(progressData.data);
-          if (onThemeGenerated) {
+          if (onThemeGenerated && progressData.data.themeId) {
             onThemeGenerated(progressData.data.themeId);
           }
         }

@@ -92,24 +92,25 @@ export function DarkModeGenerator({
 
     try {
       // 1. 다크 모드 토큰 생성
-      const result = await DarkModeService.generateDarkTheme(
+      await DarkModeService.generateDarkTheme(
         themeId,
         lightTokens,
         darkThemeName,
         customOptions
       );
+      // TODO: TokenService를 사용하여 토큰 일괄 저장
+      // const result = await DarkModeService.generateDarkTheme(...);
+      // await TokenService.bulkCreate(newTheme.id, result.darkTokens);
 
       // 2. 새 다크 테마 생성
-      const newThemeId = await createTheme(darkThemeName);
+      const newTheme = await createTheme(darkThemeName);
 
-      // 3. 다크 토큰 저장
-      // TODO: TokenService를 사용하여 토큰 일괄 저장
-      // await TokenService.bulkCreate(newThemeId, result.darkTokens);
+      // 3. 다크 토큰 저장은 추후 구현
 
       setSuccess(true);
 
-      if (onDarkThemeCreated) {
-        onDarkThemeCreated(newThemeId);
+      if (onDarkThemeCreated && newTheme) {
+        onDarkThemeCreated(newTheme.id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '다크 테마 생성 실패');

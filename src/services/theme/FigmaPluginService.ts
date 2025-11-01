@@ -41,6 +41,7 @@ export interface FigmaPluginExportResult {
     'manifest.json'?: string;
     'code.ts'?: string;
     'ui.html'?: string;
+    [key: string]: string | undefined;
   };
   metadata: {
     pluginName: string;
@@ -74,7 +75,7 @@ export class FigmaPluginService {
 
     // 3. ui.html (plugin UI) 생성
     if (options.includeFiles.ui !== false) {
-      files['ui.html'] = this.generateUI(options);
+      files['ui.html'] = this.generateUI(tokens, options);
     }
 
     return {
@@ -226,7 +227,10 @@ export class FigmaPluginService {
   /**
    * ui.html (plugin UI) 생성
    */
-  private static generateUI(options: FigmaPluginExportOptions): string {
+  private static generateUI(
+    tokens: DesignToken[],
+    options: FigmaPluginExportOptions
+  ): string {
     const html = `<!DOCTYPE html>
 <html>
 <head>
