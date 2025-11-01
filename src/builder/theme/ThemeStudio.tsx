@@ -3,8 +3,6 @@
  * 테마 생성, 편집, AI 생성, Figma Import 통합 인터페이스
  */
 
-
-
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../hooks/theme';
