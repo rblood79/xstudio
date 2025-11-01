@@ -1,5 +1,12 @@
 import { StateCreator } from "zustand";
 
+export interface HistoryInfo {
+  canUndo: boolean;
+  canRedo: boolean;
+  totalEntries: number;
+  currentIndex: number;
+}
+
 /**
  * Settings 상태 인터페이스
  * 빌더 환경 설정 관리
@@ -32,6 +39,9 @@ export interface SettingsState {
   /** UI 스케일 (기본값: 100, 범위: 80 | 100 | 120) */
   uiScale: 80 | 100 | 120;
 
+  /** History 정보 (Monitor에서 사용) */
+  historyInfo: HistoryInfo;
+
   /** Selection Overlay 표시 토글 */
   setShowOverlay: (show: boolean) => void;
 
@@ -58,6 +68,9 @@ export interface SettingsState {
 
   /** UI 스케일 설정 */
   setUiScale: (scale: 80 | 100 | 120) => void;
+
+  /** History 정보 업데이트 */
+  setHistoryInfo: (info: HistoryInfo) => void;
 }
 
 /**
@@ -73,6 +86,12 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
   overlayOpacity: 100,
   themeMode: 'auto',
   uiScale: 100,
+  historyInfo: {
+    canUndo: false,
+    canRedo: false,
+    totalEntries: 0,
+    currentIndex: -1,
+  },
 
   /**
    * Selection Overlay 표시 토글
@@ -135,5 +154,12 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
    */
   setUiScale: (scale: 80 | 100 | 120) => {
     set({ uiScale: scale });
+  },
+
+  /**
+   * History 정보 업데이트
+   */
+  setHistoryInfo: (info: HistoryInfo) => {
+    set({ historyInfo: info });
   },
 });

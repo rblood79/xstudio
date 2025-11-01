@@ -1,0 +1,368 @@
+@import "../theme.css";
+
+@layer components {
+  /* Action List Container */
+  .action-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  /* GridList for Actions */
+  .action-grid-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .action-grid-item {
+    display: flex;
+    border-radius: var(--radius-md);
+  }
+
+  /* Action Card */
+  .action-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: all 200ms;
+    width: 100%;
+  }
+
+  .action-card:hover {
+    border-color: var(--color-primary-300);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .action-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  .action-card.editing {
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+  }
+
+  /* Drag Handle */
+  .action-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 100%;
+    color: var(--color-gray-400);
+    cursor: grab;
+    transition: color 200ms;
+    flex-shrink: 0;
+  }
+
+  .action-drag-handle:hover {
+    color: var(--color-gray-600);
+  }
+
+  .action-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .action-drag-handle .drag-icon {
+    font-size: var(--text-sm);
+    font-weight: bold;
+  }
+
+  /* Action Content */
+  .action-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    min-width: 0;
+  }
+
+  .action-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .action-title-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
+  .action-icon {
+    font-size: var(--text-lg);
+    flex-shrink: 0;
+  }
+
+  .action-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-gray-900);
+  }
+
+  .action-index {
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+    font-weight: 500;
+  }
+
+  .action-config-summary {
+    font-size: var(--text-xs);
+    color: var(--color-gray-600);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Action Controls */
+  .action-controls {
+    display: flex;
+    gap: var(--spacing-1);
+    flex-shrink: 0;
+  }
+
+  .action-control-button {
+    padding: var(--spacing-1) var(--spacing-2);
+    background: transparent;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all 200ms;
+    line-height: 1;
+  }
+
+  .action-control-button:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+  }
+
+  .action-delete-button:hover {
+    background: var(--color-red-50);
+    border-color: var(--color-red-300);
+  }
+
+  /* Inline Action Editor */
+  .inline-action-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-primary-300);
+    border-radius: var(--radius-md);
+    width: 100%;
+  }
+
+  .editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--spacing-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .editor-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
+  .editor-icon {
+    font-size: var(--text-lg);
+  }
+
+  .editor-label {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-gray-900);
+  }
+
+  /* Editor Fields */
+  .editor-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  .editor-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+  }
+
+  .field-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+  }
+
+  .required-indicator {
+    color: var(--color-red-500);
+    margin-left: 2px;
+  }
+
+  .editor-field .react-aria-TextField {
+    width: 100%;
+  }
+
+  .editor-field .react-aria-TextField input,
+  .editor-field .react-aria-TextField textarea {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-gray-900);
+    transition: all 200ms;
+  }
+
+  .editor-field .react-aria-TextField input:focus,
+  .editor-field .react-aria-TextField textarea:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+  }
+
+  .editor-field .react-aria-TextField textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .field-select {
+    width: 100%;
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-gray-900);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .field-select:focus {
+    outline: none;
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 3px var(--color-primary-100);
+  }
+
+  .no-config-message {
+    padding: var(--spacing-4);
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-gray-500);
+  }
+
+  /* Editor Actions */
+  .editor-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    justify-content: flex-end;
+    padding-top: var(--spacing-2);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .editor-cancel-button {
+    padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .editor-cancel-button:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+  }
+
+  .editor-save-button {
+    padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-primary-500);
+    border: 1px solid var(--color-primary-600);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-white);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .editor-save-button:hover {
+    background: var(--color-primary-600);
+    border-color: var(--color-primary-700);
+  }
+
+  /* Empty State */
+  .empty-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-8) var(--spacing-4);
+    text-align: center;
+    background: var(--color-gray-50);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+
+  .empty-message {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+    margin: 0;
+  }
+
+  /* Add Action Button */
+  .add-action-button {
+    width: 100%;
+    padding: var(--spacing-3);
+    background: var(--color-primary-50);
+    border: 1px dashed var(--color-primary-300);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-primary-700);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .add-action-button:hover {
+    background: var(--color-primary-100);
+    border-color: var(--color-primary-400);
+    border-style: solid;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .action-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .action-controls {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+}

@@ -39,8 +39,6 @@ export * from "./Breadcrumb";
 export * from "./Dialog";
 export * from "./Modal";
 export * from "./Popover";
-export { PanelGroup, PanelResizeHandle } from "./ResizablePanel";
-export { Panel as ResizablePanel } from "./ResizablePanel";
 export * from "./types";
 export type { Key } from "react-aria-components";
 

@@ -39,14 +39,8 @@ export const BuilderCore: React.FC = () => {
   const showOverlay = useStore((state) => state.showOverlay);
   const themeMode = useStore((state) => state.themeMode);
   const uiScale = useStore((state) => state.uiScale);
-
-  // 새로운 히스토리 시스템 사용
-  const [historyInfo, setHistoryInfo] = useState({
-    canUndo: false,
-    canRedo: false,
-    totalEntries: 0,
-    currentIndex: -1,
-  });
+  const historyInfo = useStore((state) => state.historyInfo);
+  const setHistoryInfo = useStore((state) => state.setHistoryInfo);
 
   // 히스토리 정보 업데이트
   useEffect(() => {
@@ -54,7 +48,7 @@ export const BuilderCore: React.FC = () => {
       const info = historyManager.getCurrentPageHistory();
       setHistoryInfo(info);
     }
-  }, [currentPageId, elements]);
+  }, [currentPageId, elements, setHistoryInfo]);
 
   // Theme Mode 적용 (전역)
   useEffect(() => {
@@ -96,61 +90,22 @@ export const BuilderCore: React.FC = () => {
 
   // 새로운 히스토리 시스템의 Undo/Redo 핸들러
   const handleUndo = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log("🔄 BuilderCore Undo 실행");
-    }
     const { undo } = useStore.getState();
     undo();
 
     // 히스토리 정보 업데이트
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
-
-    if (import.meta.env.DEV) {
-      console.log("✅ BuilderCore Undo 완료", info);
-    }
   }, []);
 
   const handleRedo = useCallback(() => {
-    if (import.meta.env.DEV) {
-      console.log("🔄 BuilderCore Redo 실행");
-    }
     const { redo } = useStore.getState();
     redo();
 
     // 히스토리 정보 업데이트
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
-
-    if (import.meta.env.DEV) {
-      console.log("✅ BuilderCore Redo 완료", info);
-    }
   }, []);
-
-  // 디버깅을 위한 로그 추가
-  if (import.meta.env.DEV) {
-    console.log("🔍 히스토리 정보:", {
-      historyInfo,
-      canUndo,
-      canRedo,
-      currentPageId,
-      currentIndex: historyInfo.currentIndex,
-      totalEntries: historyInfo.totalEntries,
-    });
-
-    // 메모리 통계 로그 (5초마다)
-    if (Math.random() < 0.1) {
-      // 10% 확률로 로그
-      const memoryStats = memoryMonitor.getCurrentStats();
-      if (memoryStats) {
-        console.log("🧠 메모리 통계:", memoryStats);
-        const recommendations = memoryMonitor.getOptimizationRecommendations();
-        if (recommendations.length > 0) {
-          console.log("💡 최적화 권장사항:", recommendations);
-        }
-      }
-    }
-  }
 
   // 훅 사용
   const { error, isLoading, setError, setIsLoading, handleError, clearError } =

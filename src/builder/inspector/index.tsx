@@ -61,7 +61,7 @@ function Inspector() {
       return;
     }
 
-    // 같은 요소인 경우 props, dataBinding, style, computedStyle 비교 (무한 루프 방지)
+    // 같은 요소인 경우 props, dataBinding, style, computedStyle, events 비교 (무한 루프 방지)
     const currentPropsJson = JSON.stringify(
       selectedElement.properties,
       Object.keys(selectedElement.properties || {}).sort()
@@ -92,11 +92,15 @@ function Inspector() {
       Object.keys(mappedElement.computedStyle || {}).sort()
     );
 
+    const currentEventsJson = JSON.stringify(selectedElement.events);
+    const newEventsJson = JSON.stringify(mappedElement.events);
+
     if (
       currentPropsJson !== newPropsJson ||
       currentDataBindingJson !== newDataBindingJson ||
       currentStyleJson !== newStyleJson ||
-      currentComputedStyleJson !== newComputedStyleJson
+      currentComputedStyleJson !== newComputedStyleJson ||
+      currentEventsJson !== newEventsJson
     ) {
       // Builder에서 변경된 경우만 업데이트
       setSelectedElement(mappedElement);

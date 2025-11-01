@@ -5,10 +5,11 @@ import type { SelectedElement } from "../types";
  * Builder의 Element 타입을 Inspector의 SelectedElement 타입으로 변환
  */
 export function mapElementToSelected(element: Element): SelectedElement {
-  const { style, computedStyle, ...otherProps } = element.props as Record<string, unknown>;
+  const { style, computedStyle, events, ...otherProps } = element.props as Record<string, unknown>;
 
   return {
     id: element.id,
+    customId: element.customId,
     type: element.tag,
     properties: otherProps,
     // style이 없으면 빈 객체로 초기화 (undefined 방지)
@@ -17,7 +18,7 @@ export function mapElementToSelected(element: Element): SelectedElement {
     semanticClasses: [],
     cssVariables: {},
     dataBinding: element.dataBinding as SelectedElement["dataBinding"],
-    events: [],
+    events: (events as SelectedElement["events"]) || [],
   };
 }
 
@@ -27,14 +28,25 @@ export function mapElementToSelected(element: Element): SelectedElement {
 export function mapSelectedToElementUpdate(
   selected: SelectedElement
 ): Partial<Element> {
+  const props: Record<string, unknown> = {
+    ...selected.properties,
+  };
+
+  // style이 있으면 항상 포함 (빈 객체는 스타일 제거를 의미)
+  if (selected.style !== undefined) {
+    props.style = selected.style;
+  }
+
+  // events가 있으면 포함 (빈 배열은 모든 이벤트 제거를 의미)
+  if (selected.events !== undefined) {
+    props.events = selected.events;
+  }
+
   return {
     id: selected.id,
+    customId: selected.customId,
     tag: selected.type,
-    props: {
-      ...selected.properties,
-      // style이 undefined가 아니면 항상 포함 (빈 객체라도 포함하여 스타일 제거 반영)
-      ...(selected.style !== undefined ? { style: selected.style } : {}),
-    } as Element["props"],
+    props: props as Element["props"],
     dataBinding: selected.dataBinding as Element["dataBinding"],
   };
 }

@@ -130,6 +130,12 @@
     font-size: var(--text-xs);
 }
 
+.footer .error-item .history-status {
+    color: var(--color-green-400);
+    font-size: var(--text-xs);
+    margin-right: var(--spacing-sm);
+}
+
 .footer .more-errors {
     margin: var(--spacing-xs) 0 0 0;
     color: var(--text-color-secondary);

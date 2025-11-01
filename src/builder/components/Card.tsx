@@ -2,6 +2,7 @@ import React from "react";
 import './styles/Card.css';
 
 export interface CardProps {
+  id?: string;
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -17,6 +18,7 @@ export interface CardProps {
 }
 
 export function Card({
+  id,
   children,
   title = "Title",
   description = "This is a card description. You can edit this content.",
@@ -66,6 +68,7 @@ export function Card({
 
   return (
     <div
+      id={id}
       className={finalClassName}
       style={style}
       onClick={onClick}

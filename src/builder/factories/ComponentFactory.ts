@@ -30,7 +30,6 @@ import {
 import {
   createTabsDefinition,
   createTreeDefinition,
-  createPanelGroupDefinition,
 } from "./definitions/LayoutComponents";
 import {
   createTable,
@@ -60,7 +59,6 @@ export class ComponentFactory {
     ListBox: ComponentFactory.createListBox,
     GridList: ComponentFactory.createGridList,
     Table: ComponentFactory.createTable,
-    PanelGroup: ComponentFactory.createPanelGroup,
   };
 
   /**
@@ -197,12 +195,6 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createGridListDefinition, context);
-  }
-
-  private static async createPanelGroup(
-    context: ComponentCreationContext
-  ): Promise<ComponentCreationResult> {
-    return this.createComponent(createPanelGroupDefinition, context);
   }
 
   /**

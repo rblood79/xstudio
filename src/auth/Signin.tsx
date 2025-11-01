@@ -68,31 +68,26 @@ const Signin = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-field-group">
-            <TextField
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              isRequired={true}
-              //description="로그인에 사용할 이메일 주소입니다."
-              errorMessage={error ? error : undefined}
-            />
-          </div>
+          <TextField
+            className="auth-form-field"
+            label="Email Address"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            isRequired={true}
+            //description="로그인에 사용할 이메일 주소입니다."
+            errorMessage={error ? error : undefined}
+          />
 
-          <div className="form-field-group">
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={setPassword}
-              isRequired={true}
-              description={isSignUp ? "Enter a secure password with at least 8 characters." : "Enter your account password."}
-            />
-          </div>
-
-
-
+          <TextField
+            className="auth-form-field"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            isRequired={true}
+            description={isSignUp ? "Enter a secure password with at least 8 characters." : "Enter your account password."}
+          />
           {message && (
             <div className="success-message">
               <p className="success-text">
@@ -103,6 +98,7 @@ const Signin = () => {
 
           <Button
             type="submit"
+            variant="primary"
             isDisabled={loading}
             children={loading
               ? (isSignUp ? 'Signing Up...' : 'Signing In...')

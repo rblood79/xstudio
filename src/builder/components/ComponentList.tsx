@@ -1,5 +1,5 @@
-import { useMemo, useCallback, memo } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Dot, Columns2, Settings2, ChevronRight, Clock, Star } from 'lucide-react';
+import { useMemo, useCallback, memo, useState } from 'react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Settings2, ChevronRight, Clock, Star } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import { ComponentSearch } from './ComponentSearch';
 import { useRecentComponents } from '../hooks/useRecentComponents';
@@ -18,7 +18,6 @@ const layoutComp = [
     { tag: 'Card', label: 'card', icon: AppWindowMac },
     { tag: 'Tabs', label: 'tabs', icon: AppWindow },
     { tag: 'Breadcrumbs', label: 'breadcrumbs', icon: ChevronRight },
-    { tag: 'PanelGroup', label: 'resizable panels', icon: Columns2 },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
     { tag: 'Nav', label: 'navigation', icon: Menu },
 ] as const;
@@ -29,7 +28,6 @@ const inputsComp = [
     { tag: 'SearchField', label: 'search field', icon: Search },
     { tag: 'Checkbox', label: 'checkbox', icon: SquareCheck },
     { tag: 'CheckboxGroup', label: 'checkbox group', icon: GroupIcon },
-    { tag: 'Radio', label: 'radio', icon: GroupIcon },
     { tag: 'RadioGroup', label: 'radio group', icon: GroupIcon },
     { tag: 'Select', label: 'select', icon: ChevronDown },
     { tag: 'ComboBox', label: 'combo box', icon: ChevronDown },
@@ -82,7 +80,6 @@ const structureComp = [
 ] as const;
 
 const otherComp = [
-    { tag: 'MenuItem', label: 'menu item', icon: Dot },
     { tag: 'Form', label: 'form', icon: GroupIcon },
 ] as const;
 
@@ -128,6 +125,7 @@ ComponentItem.displayName = 'ComponentItem';
 const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentListProps) => {
     const { recentTags, addRecentComponent } = useRecentComponents();
     const { favoriteTags} = useFavoriteComponents();
+    const [searchQuery, setSearchQuery] = useState('');
 
     // 이벤트 핸들러를 메모이제이션
     const handleComponentAdd = useCallback((tag: string, parentId?: string) => {
@@ -154,10 +152,78 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
             const config = categoryConfig[categoryKey as keyof typeof categoryConfig];
             return components.map(comp => ({
                 ...comp,
-                category: config.label
+                category: config.label,
+                categoryKey
             }));
         });
     }, [componentGroups]);
+
+    // Fuzzy search results
+    const searchResults = useMemo(() => {
+        if (!searchQuery.trim()) return null;
+
+        const lowerQuery = searchQuery.toLowerCase();
+
+        const scored = allComponents.map(comp => {
+            const lowerLabel = comp.label.toLowerCase();
+            const lowerTag = comp.tag.toLowerCase();
+            const lowerCategory = comp.category.toLowerCase();
+
+            let score = 0;
+
+            // Exact match
+            if (lowerLabel === lowerQuery || lowerTag === lowerQuery) {
+                score += 100;
+            }
+
+            // Starts with query
+            if (lowerLabel.startsWith(lowerQuery) || lowerTag.startsWith(lowerQuery)) {
+                score += 50;
+            }
+
+            // Contains query
+            if (lowerLabel.includes(lowerQuery)) {
+                score += 30;
+            }
+            if (lowerTag.includes(lowerQuery)) {
+                score += 25;
+            }
+            if (lowerCategory.includes(lowerQuery)) {
+                score += 10;
+            }
+
+            // Multi-word matching
+            const words = lowerQuery.split(' ').filter(w => w.length > 0);
+            const allWordsMatch = words.every(word =>
+                lowerLabel.includes(word) || lowerTag.includes(word)
+            );
+            if (allWordsMatch && words.length > 1) {
+                score += 20;
+            }
+
+            return { ...comp, score };
+        });
+
+        return scored
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score);
+    }, [searchQuery, allComponents]);
+
+    // Group search results by category
+    const filteredGroups = useMemo(() => {
+        if (!searchResults) return null;
+
+        const groups: Record<string, typeof allComponents> = {};
+
+        searchResults.forEach(comp => {
+            if (!groups[comp.categoryKey]) {
+                groups[comp.categoryKey] = [];
+            }
+            groups[comp.categoryKey].push(comp);
+        });
+
+        return groups;
+    }, [searchResults]);
 
     // Recent 컴포넌트 가져오기
     const recentComponents = useMemo(() => {
@@ -189,13 +255,11 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
 
             {/* 검색바 */}
             <ComponentSearch
-                components={allComponents}
-                onSelect={handleComponentAdd}
-                selectedElementId={selectedElementId}
+                onSearchChange={setSearchQuery}
             />
 
-            {/* Recent 컴포넌트 */}
-            {recentComponents.length > 0 && (
+            {/* Recent 컴포넌트 - 검색 시 숨김 */}
+            {!searchQuery && recentComponents.length > 0 && (
                 <div className='component_element'>
                     <div className="panel-header">
                         <div className="category-info">
@@ -225,7 +289,7 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
                 </div>
             )}
 
-            {/* Favorites 컴포넌트 */}
+            {/* Favorites 컴포넌트 - 항상 표시 */}
             {favoriteComponents.length > 0 && (
                 <div className='component_element'>
                     <div className="panel-header">
@@ -249,39 +313,88 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
             )}
 
             {/* 카테고리별 컴포넌트 */}
-            {Object.entries(componentGroups).map(([groupName, components]) => {
-                const categoryKey = groupName as keyof typeof categoryConfig;
-                const config = categoryConfig[categoryKey];
+            {searchQuery && filteredGroups ? (
+                // 검색 모드: 필터링된 카테고리만 표시
+                Object.entries(filteredGroups).map(([groupName, components]) => {
+                    const categoryKey = groupName as keyof typeof categoryConfig;
+                    const config = categoryConfig[categoryKey];
 
-                return (
-                    <div key={groupName} className='component_element'>
-                        <div className="panel-header">
-                            <div className="category-info">
-                                <h3 className='panel-title'>{config.label}</h3>
-                                <span className="category-count">{components.length}</span>
+                    if (!components || components.length === 0) return null;
+
+                    return (
+                        <div key={groupName} className='component_element'>
+                            <div className="panel-header">
+                                <div className="category-info">
+                                    <h3 className='panel-title'>{config.label}</h3>
+                                    <span className="category-count">{components.length}</span>
+                                </div>
+                                <div className="header-actions">
+                                    <button
+                                        className='iconButton'
+                                        aria-label={`Toggle ${config.label}`}
+                                    >
+                                        <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="header-actions">
-                                <button
-                                    className='iconButton'
-                                    aria-label={`Toggle ${config.label}`}
-                                >
-                                    <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                                </button>
+                            <div className="component-list">
+                                {components.map((component) => (
+                                    <ComponentItem
+                                        key={component.tag}
+                                        component={component}
+                                        onAdd={handleComponentAdd}
+                                        selectedElementId={selectedElementId}
+                                    />
+                                ))}
                             </div>
                         </div>
-                        <div className="component-list">
-                            {components.map((component) => (
-                                <ComponentItem
-                                    key={component.tag}
-                                    component={component}
-                                    onAdd={handleComponentAdd}
-                                    selectedElementId={selectedElementId}
-                                />
-                            ))}
+                    );
+                })
+            ) : !searchQuery ? (
+                // 일반 모드: 모든 카테고리 표시
+                Object.entries(componentGroups).map(([groupName, components]) => {
+                    const categoryKey = groupName as keyof typeof categoryConfig;
+                    const config = categoryConfig[categoryKey];
+
+                    return (
+                        <div key={groupName} className='component_element'>
+                            <div className="panel-header">
+                                <div className="category-info">
+                                    <h3 className='panel-title'>{config.label}</h3>
+                                    <span className="category-count">{components.length}</span>
+                                </div>
+                                <div className="header-actions">
+                                    <button
+                                        className='iconButton'
+                                        aria-label={`Toggle ${config.label}`}
+                                    >
+                                        <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="component-list">
+                                {components.map((component) => (
+                                    <ComponentItem
+                                        key={component.tag}
+                                        component={component}
+                                        onAdd={handleComponentAdd}
+                                        selectedElementId={selectedElementId}
+                                    />
+                                ))}
+                            </div>
                         </div>
+                    );
+                })
+            ) : (
+                // 검색 결과 없음
+                <div className="component_element">
+                    <div className="search-no-results">
+                        <Search size={24} color={iconProps.color} />
+                        <p className="no-results-title">No components found</p>
+                        <p className="no-results-hint">Try 'button', 'input', or 'table'</p>
                     </div>
-                );
-            })}
+                </div>
+            )}
         </div>
     );
 });
