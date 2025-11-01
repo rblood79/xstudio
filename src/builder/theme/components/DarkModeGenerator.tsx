@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { tv } from 'tailwind-variants';
 import { DarkModeService } from '../../../services/theme/DarkModeService';
 import type { DarkModeOptions } from '../../../services/theme/DarkModeService';
+import { TokenService } from '../../../services/theme/TokenService';
 import { useTokens } from '../../../hooks/theme/useTokens';
 import { useThemes } from '../../../hooks/theme/useThemes';
 import type { DesignToken, ColorValueHSL } from '../../../types/theme/token.types';
@@ -91,25 +92,37 @@ export function DarkModeGenerator({
     setSuccess(false);
 
     try {
-      // 1. 다크 모드 토큰 생성
-      await DarkModeService.generateDarkTheme(
+      // 1. 새 다크 테마 생성
+      const newTheme = await createTheme(darkThemeName);
+      
+      if (!newTheme) {
+        throw new Error('테마 생성에 실패했습니다');
+      }
+
+      // 2. 다크 모드 토큰 생성
+      const result = await DarkModeService.generateDarkTheme(
         themeId,
         lightTokens,
         darkThemeName,
         customOptions
       );
-      // TODO: TokenService를 사용하여 토큰 일괄 저장
-      // const result = await DarkModeService.generateDarkTheme(...);
-      // await TokenService.bulkCreate(newTheme.id, result.darkTokens);
 
-      // 2. 새 다크 테마 생성
-      const newTheme = await createTheme(darkThemeName);
+      // 3. 토큰 일괄 저장
+      const tokensToSave = result.darkTokens.map(token => ({
+        project_id: projectId,
+        theme_id: newTheme.id,
+        name: token.name,
+        type: token.type,
+        value: token.value,
+        scope: token.scope,
+        css_variable: token.css_variable,
+      }));
 
-      // 3. 다크 토큰 저장은 추후 구현
+      await TokenService.bulkUpsertTokens(tokensToSave);
 
       setSuccess(true);
 
-      if (onDarkThemeCreated && newTheme) {
+      if (onDarkThemeCreated) {
         onDarkThemeCreated(newTheme.id);
       }
     } catch (err) {
