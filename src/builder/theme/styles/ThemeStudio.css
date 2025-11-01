@@ -1,0 +1,275 @@
+/**
+ * ThemeStudio Styles
+ * 테마 관리 UI 스타일
+ */
+
+@layer components {
+  /* Container */
+  .theme-studio-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--color-gray-50);
+  }
+
+  /* Header */
+  .theme-studio-header {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-4);
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-6);
+    width: 100%;
+  }
+
+  .studio-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-900);
+    margin: 0;
+  }
+
+  /* Active Theme Selector */
+  .active-theme-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
+  .active-theme-selector label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-700);
+  }
+
+  .active-theme-selector select {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    color: var(--color-gray-900);
+    cursor: pointer;
+  }
+
+  .active-theme-selector select:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+
+  /* View Tabs */
+  .view-tabs {
+    display: flex;
+    gap: var(--spacing-1);
+    margin-left: auto;
+  }
+
+  .view-tabs button {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-600);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .view-tabs button:hover {
+    color: var(--color-gray-900);
+    background: var(--color-gray-100);
+  }
+
+  .view-tabs button.active {
+    color: var(--color-primary-600);
+    background: var(--color-primary-50);
+  }
+
+  /* Body Layout */
+  .studio-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .theme-studio-sidebar {
+    width: 260px;
+    background: var(--color-white);
+    border-right: 1px solid var(--color-gray-200);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-4);
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .sidebar-header h2 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin: 0;
+  }
+
+  .create-theme-btn {
+    padding: var(--spacing-1) var(--spacing-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-600);
+    background: transparent;
+    border: 1px solid var(--color-primary-300);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .create-theme-btn:hover {
+    background: var(--color-primary-50);
+    border-color: var(--color-primary-400);
+  }
+
+  /* Theme List */
+  .theme-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-2);
+  }
+
+  .theme-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-3);
+    margin-bottom: var(--spacing-1);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .theme-item:hover {
+    background: var(--color-gray-50);
+  }
+
+  .theme-item.active {
+    background: var(--color-primary-50);
+    border: 1px solid var(--color-primary-200);
+  }
+
+  .theme-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-gray-900);
+  }
+
+  .theme-status {
+    font-size: var(--text-xs);
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+  }
+
+  .theme-item.active .theme-status {
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+  }
+
+  /* Main Content */
+  .theme-studio-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-6);
+  }
+
+  .theme-studio-main h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--spacing-4);
+  }
+
+  /* Right Panel */
+  .theme-studio-panel {
+    width: 320px;
+    background: var(--color-white);
+    border-left: 1px solid var(--color-gray-200);
+    padding: var(--spacing-4);
+    overflow-y: auto;
+  }
+
+  .theme-studio-panel h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--spacing-4);
+  }
+
+  /* Loading State */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: var(--spacing-4);
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-state p {
+    font-size: var(--text-base);
+    color: var(--color-gray-600);
+  }
+
+  /* Views */
+  .tokens-view,
+  .ai-generator-view,
+  .figma-import-view,
+  .dark-mode-view,
+  .figma-plugin-view,
+  .settings-view {
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-6);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  /* Token Preview */
+  .token-preview {
+    padding: var(--spacing-4);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-md);
+  }
+
+  .token-preview p {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+    margin: 0;
+  }
+}
