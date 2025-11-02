@@ -21,6 +21,8 @@ import {
 import { iconProps } from "../../utils/uiConstants";
 import { useStore } from "../stores";
 import { saveService } from "../../services/save";
+import { useThemes } from "../../hooks/theme/useThemes";
+import { ThemeService } from "../../services/theme";
 
 export interface Breakpoint {
   id: string;
@@ -72,6 +74,14 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   const setRealtimeMode = useStore((state) => state.setRealtimeMode);
   const pendingCount = pendingChanges.size;
 
+  // Theme 관련 상태
+  const activeTheme = useStore((state) => state.activeTheme);
+  const loadTheme = useStore((state) => state.loadTheme);
+  const { themes, loading: themesLoading } = useThemes({
+    projectId: projectId || "",
+    enableRealtime: false,
+  });
+
   const [isSaving, setIsSaving] = React.useState(false);
 
   const handleSave = (): void => {
@@ -98,6 +108,18 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     }
   };
 
+  const handleThemeChange = async (themeId: string): Promise<void> => {
+    if (!projectId) return;
+
+    try {
+      await ThemeService.activateTheme(themeId);
+      await loadTheme(projectId);
+      console.log("[BuilderHeader] Theme switched to:", themeId);
+    } catch (error) {
+      console.error("[BuilderHeader] Failed to switch theme:", error);
+    }
+  };
+
   return (
     <nav className="header">
       <div className="header_contents header_left">
@@ -113,6 +135,23 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           {/*projectId && <code className="project-id">ID: {projectId}</code>*/}
           {!projectId && !projectName && "No project loaded"}
         </div>
+        {projectId && themes.length > 0 && (
+          <div className="theme-selector">
+            <label htmlFor="theme-select">Theme:</label>
+            <select
+              id="theme-select"
+              value={activeTheme?.id || ""}
+              onChange={(e) => handleThemeChange(e.target.value)}
+              disabled={themesLoading}
+            >
+              {themes.map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="header_contents screen">

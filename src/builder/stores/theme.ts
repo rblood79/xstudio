@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import type { DesignTheme, DesignToken, TokenValue, NewTokenInput } from '../../types/theme';
 import { fetchActiveTheme, fetchTokensByTheme, bulkUpsertTokens, deleteDesignToken } from '../theme/themeApi';
 import { resolveTokens, injectCss } from '../theme/cssVars';
+import { TokenService } from '../../services/theme';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ThemeState {
@@ -22,40 +23,74 @@ export interface ThemeState {
     saveAll: () => Promise<void>;
     snapshotVersion: () => Promise<void>;
     clearError: () => void;
+    cleanup: () => void;
 }
 
-export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
-    activeTheme: null,
-    rawTokens: [],
-    semanticTokens: [],
-    loading: false,
-    dirty: false,
-    lastError: null,
+export const createThemeSlice: StateCreator<ThemeState> = (set, get) => {
+    let unsubscribeTokens: (() => void) | null = null;
 
-    loadTheme: async (projectId: string) => {
-        set({ loading: true, lastError: null });
-        try {
-            const theme = await fetchActiveTheme(projectId);
-            const tokens = await fetchTokensByTheme(theme.id);
-            const raw = tokens.filter(t => t.scope === 'raw');
-            const semantic = tokens.filter(t => t.scope === 'semantic');
+    return {
+        activeTheme: null,
+        rawTokens: [],
+        semanticTokens: [],
+        loading: false,
+        dirty: false,
+        lastError: null,
 
-            injectCss(resolveTokens(tokens));
-            set({
-                activeTheme: theme,
-                rawTokens: raw,
-                semanticTokens: semantic,
-                loading: false,
-                dirty: false
-            });
-        } catch (e) {
-            console.error('[theme] load failed', e);
-            set({
-                loading: false,
-                lastError: '테마 로드 실패: 서버 연결 오류'
-            });
-        }
-    },
+        loadTheme: async (projectId: string) => {
+            set({ loading: true, lastError: null });
+            try {
+                const theme = await fetchActiveTheme(projectId);
+                const tokens = await fetchTokensByTheme(theme.id);
+                const raw = tokens.filter(t => t.scope === 'raw');
+                const semantic = tokens.filter(t => t.scope === 'semantic');
+
+                injectCss(resolveTokens(tokens));
+                set({
+                    activeTheme: theme,
+                    rawTokens: raw,
+                    semanticTokens: semantic,
+                    loading: false,
+                    dirty: false
+                });
+
+                // 기존 구독 해제
+                if (unsubscribeTokens) {
+                    unsubscribeTokens();
+                }
+
+                // Realtime 토큰 변경 구독
+                unsubscribeTokens = TokenService.subscribeToTokenChanges(
+                    theme.id,
+                    async (payload) => {
+                        console.log('[Builder Theme] Token changed:', payload);
+
+                        // 토큰 변경 시 다시 로드 + CSS 재주입
+                        try {
+                            const updatedTokens = await fetchTokensByTheme(theme.id);
+                            const updatedRaw = updatedTokens.filter(t => t.scope === 'raw');
+                            const updatedSemantic = updatedTokens.filter(t => t.scope === 'semantic');
+
+                            injectCss(resolveTokens(updatedTokens));
+                            set({
+                                rawTokens: updatedRaw,
+                                semanticTokens: updatedSemantic
+                            });
+                        } catch (err) {
+                            console.error('[Builder Theme] Failed to reload tokens:', err);
+                        }
+                    }
+                );
+
+                console.log('[Builder Theme] Subscribed to token changes for theme:', theme.id);
+            } catch (e) {
+                console.error('[theme] load failed', e);
+                set({
+                    loading: false,
+                    lastError: '테마 로드 실패: 서버 연결 오류'
+                });
+            }
+        },
 
     updateTokenValue: (name, scope, value) => {
         set(
@@ -193,5 +228,15 @@ export const createThemeSlice: StateCreator<ThemeState> = (set, get) => ({
         }
     },
 
-    clearError: () => set({ lastError: null })
-});
+    clearError: () => set({ lastError: null }),
+
+        cleanup: () => {
+            // Builder 종료 시 구독 해제
+            if (unsubscribeTokens) {
+                unsubscribeTokens();
+                unsubscribeTokens = null;
+                console.log('[Builder Theme] Unsubscribed from token changes');
+            }
+        }
+    };
+};

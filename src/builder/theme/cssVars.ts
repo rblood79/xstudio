@@ -2,6 +2,7 @@
 import type { DesignToken, TokenValue } from '../../types/theme';
 import type { TokenType } from '../../types/theme';
 import { MessageService } from '../../utils/messaging';
+import { tokenToCSS } from '../../utils/theme/tokenToCss';
 
 interface CssPair { cssVar: string; value: string; }
 
@@ -17,33 +18,44 @@ function toCssVar(name: string, type: TokenType) {
     return `--${type}-${cleanName}`;
 }
 
-function normalize(val: TokenValue): string {
-    if (val == null) return '';
-    if (typeof val === 'string' || typeof val === 'number') return String(val);
-    if (typeof val === 'object' && 'r' in val && 'g' in val && 'b' in val) {
-        const color = val as { r: number; g: number; b: number; a?: number };
-        return color.a == null || color.a === 1
-            ? `rgb(${color.r} ${color.g} ${color.b})`
-            : `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
-    }
-    return JSON.stringify(val);
-}
-
 export function resolveTokens(tokens: DesignToken[]) {
     const raw = tokens.filter(t => t.scope === 'raw');
     const rawMap = new Map(raw.map(r => [r.name, r]));
     const out: { cssVar: string; value: string; name: string }[] = [];
 
+    // Raw 토큰 처리 - tokenToCSS 사용
     for (const r of raw) {
-        out.push({ name: r.name, cssVar: toCssVar(r.name, r.type), value: normalize(r.value) });
+        const cssVars = tokenToCSS(r);
+
+        // tokenToCSS는 여러 CSS 변수를 반환할 수 있음 (Typography 등)
+        for (const [cssVar, value] of Object.entries(cssVars)) {
+            out.push({ name: r.name, cssVar, value });
+        }
     }
+
+    // Semantic 토큰 처리
     for (const s of tokens.filter(t => t.scope === 'semantic')) {
         const referencedRaw = s.alias_of && rawMap.get(s.alias_of);
-        const value = referencedRaw
-            ? `var(${toCssVar(referencedRaw.name, referencedRaw.type)})`
-            : normalize(s.value);
-        out.push({ name: s.name, cssVar: toCssVar(s.name, s.type), value });
+
+        if (referencedRaw) {
+            // Alias가 있으면 raw 토큰의 CSS 변수를 참조
+            const rawCssVars = tokenToCSS(referencedRaw);
+            const primaryCssVar = Object.keys(rawCssVars)[0]; // 첫 번째 CSS 변수 사용
+            const semanticCssVar = s.css_variable || toCssVar(s.name, s.type);
+            out.push({
+                name: s.name,
+                cssVar: semanticCssVar,
+                value: `var(${primaryCssVar})`
+            });
+        } else {
+            // Alias가 없으면 자체 값 사용
+            const cssVars = tokenToCSS(s);
+            for (const [cssVar, value] of Object.entries(cssVars)) {
+                out.push({ name: s.name, cssVar, value });
+            }
+        }
     }
+
     return out;
 }
 
