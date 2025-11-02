@@ -55,60 +55,70 @@
   --color-surface-900: var(--color-stone-900);
   --color-surface-950: var(--color-stone-950);
 
-  /* Semantic colors */
-  --background-color: var(--color-white);
-  --focus-ring-color: var(--color-purple-400);
-  --text-color: var(--color-gray-900);
-  --text-color-base: var(--color-gray-900);
-  --text-color-hover: var(--color-gray-950);
-  --text-color-disabled: var(--color-gray-500);
-  --text-color-placeholder: var(--color-gray-700);
-  --link-color: var(--color-sky-500);
-  --link-color-secondary: var(--color-gray-900);
-  --link-color-pressed: var(--color-sky-600);
-  --border-color: var(--color-gray-300);
-  --border-color-hover: var(--color-gray-400);
-  --border-color-pressed: var(--color-gray-500);
-  --border-color-disabled: var(--color-gray-100);
-  --button-background: var(--color-gray-50);
-  --button-background-pressed: var(--color-gray-100);
-  --field-background: var(--color-gray-50);
-  --field-text-color: var(--color-gray-900);
-  --overlay-background: var(--color-gray-50);
-  /* these colors are the same between light and dark themes
-   * to ensure contrast with the foreground color */
-  --highlight-background: #6f46ed; /* purple-300 from dark theme, 3.03:1 against background-color */
-  --highlight-background-pressed: #522acd; /* purple-200 from dark theme */
-  --highlight-background-invalid: #cc2000; /* red-300 from dark theme */
-  --highlight-foreground: white; /* 5.56:1 against highlight-background */
-  --highlight-foreground-pressed: #ddd;
-  --highlight-overlay: rgb(from #6f46ed r g b / 15%);
-  --invalid-color: var(--color-red-400);
-  --invalid-color-pressed: var(--color-red-500);
+  /* Semantic colors - Integrated with Design Token System
+   * ThemeStudio tokens (e.g., color.background.base) will automatically
+   * override these fallback values when defined. */
+  --background-color: var(--color-background-base, var(--color-white));
+  --focus-ring-color: var(--color-focus-ring, var(--color-purple-400));
+  --text-color: var(--color-text-primary, var(--color-gray-900));
+  --text-color-base: var(--color-text-base, var(--color-gray-900));
+  --text-color-hover: var(--color-text-hover, var(--color-gray-950));
+  --text-color-disabled: var(--color-text-disabled, var(--color-gray-500));
+  --text-color-placeholder: var(--color-text-placeholder, var(--color-gray-700));
+  --link-color: var(--color-link, var(--color-sky-500));
+  --link-color-secondary: var(--color-link-secondary, var(--color-gray-900));
+  --link-color-pressed: var(--color-link-pressed, var(--color-sky-600));
+  --border-color: var(--color-border-base, var(--color-gray-300));
+  --border-color-hover: var(--color-border-hover, var(--color-gray-400));
+  --border-color-pressed: var(--color-border-pressed, var(--color-gray-500));
+  --border-color-disabled: var(--color-border-disabled, var(--color-gray-100));
+  --button-background: var(--color-button-background, var(--color-gray-50));
+  --button-background-pressed: var(--color-button-background-pressed, var(--color-gray-100));
+  --field-background: var(--color-field-background, var(--color-gray-50));
+  --field-text-color: var(--color-field-text, var(--color-gray-900));
+  --overlay-background: var(--color-overlay-background, var(--color-gray-50));
+  /* Highlight colors - Token integrated, based on theme primary colors */
+  --highlight-background: var(--color-highlight-background, var(--color-primary-600));
+  --highlight-background-pressed: var(--color-highlight-background-pressed, var(--color-primary-700));
+  --highlight-background-invalid: var(--color-highlight-background-invalid, var(--color-red-600));
+  --highlight-foreground: var(--color-highlight-foreground, var(--color-white));
+  --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-gray-100));
+  --highlight-overlay: var(--color-highlight-overlay, rgba(14, 165, 233, 0.15));
+  --invalid-color: var(--color-invalid, var(--color-red-400));
+  --invalid-color-pressed: var(--color-invalid-pressed, var(--color-red-500));
 }
 
-/* Dark theme overrides */
+/* Dark theme overrides - Token System Integration
+ * ThemeStudio dark mode tokens (e.g., color.background.base.dark) are automatically
+ * injected as overrides for the same CSS variable names via cssVars.ts.
+ * These semantic variables reference the token variables with dark mode Tailwind fallbacks. */
 [data-theme="dark"] {
-  /* Semantic colors for dark mode */
-  --background-color: var(--color-gray-900);
-  --focus-ring-color: var(--color-purple-400);
-  --text-color: var(--color-gray-100);
-  --text-color-base: var(--color-gray-100);
-  --text-color-hover: var(--color-gray-50);
-  --text-color-disabled: var(--color-gray-500);
-  --text-color-placeholder: var(--color-gray-400);
-  --link-color: var(--color-sky-400);
-  --link-color-secondary: var(--color-gray-100);
-  --link-color-pressed: var(--color-sky-300);
-  --border-color: var(--color-gray-700);
-  --border-color-hover: var(--color-gray-600);
-  --border-color-pressed: var(--color-gray-500);
-  --border-color-disabled: var(--color-gray-800);
-  --button-background: var(--color-gray-800);
-  --button-background-pressed: var(--color-gray-700);
-  --field-background: var(--color-gray-800);
-  --field-text-color: var(--color-gray-100);
-  --overlay-background: var(--color-gray-800);
+  --background-color: var(--color-background-base, var(--color-gray-900));
+  --focus-ring-color: var(--color-focus-ring, var(--color-purple-400));
+  --text-color: var(--color-text-primary, var(--color-gray-100));
+  --text-color-base: var(--color-text-base, var(--color-gray-100));
+  --text-color-hover: var(--color-text-hover, var(--color-gray-50));
+  --text-color-disabled: var(--color-text-disabled, var(--color-gray-500));
+  --text-color-placeholder: var(--color-text-placeholder, var(--color-gray-400));
+  --link-color: var(--color-link, var(--color-sky-400));
+  --link-color-secondary: var(--color-link-secondary, var(--color-gray-100));
+  --link-color-pressed: var(--color-link-pressed, var(--color-sky-300));
+  --border-color: var(--color-border-base, var(--color-gray-700));
+  --border-color-hover: var(--color-border-hover, var(--color-gray-600));
+  --border-color-pressed: var(--color-border-pressed, var(--color-gray-500));
+  --border-color-disabled: var(--color-border-disabled, var(--color-gray-800));
+  --button-background: var(--color-button-background, var(--color-gray-800));
+  --button-background-pressed: var(--color-button-background-pressed, var(--color-gray-700));
+  --field-background: var(--color-field-background, var(--color-gray-800));
+  --field-text-color: var(--color-field-text, var(--color-gray-100));
+  --overlay-background: var(--color-overlay-background, var(--color-gray-800));
+  /* Highlight colors for dark mode - Based on lighter primary shades */
+  --highlight-background: var(--color-highlight-background, var(--color-primary-500));
+  --highlight-background-pressed: var(--color-highlight-background-pressed, var(--color-primary-400));
+  --highlight-background-invalid: var(--color-highlight-background-invalid, var(--color-red-500));
+  --highlight-foreground: var(--color-highlight-foreground, var(--color-gray-900));
+  --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-gray-800));
+  --highlight-overlay: var(--color-highlight-overlay, rgba(56, 189, 248, 0.15));
 }
 
 /* Windows high contrast mode overrides */
