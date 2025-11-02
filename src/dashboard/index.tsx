@@ -161,6 +161,12 @@ function Dashboard() {
                   variant="surface"
                 />
                 <Button
+                  onPress={() => navigate(`/theme/${project.id}`)}
+                  isDisabled={loading}
+                  children="Theme"
+                  variant="surface"
+                />
+                <Button
                   onPress={() => handleDeleteProject(project.id)}
                   isDisabled={loading}
                   children="Del"
