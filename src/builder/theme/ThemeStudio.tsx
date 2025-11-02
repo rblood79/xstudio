@@ -38,17 +38,23 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const [currentView, setCurrentView] = useState<ThemeStudioView>('tokens');
 
   // Theme 데이터 로드
-  const { themes, loading: themesLoading, createTheme, activateTheme } = useThemes({
+  const { themes, loading: themesLoading, createTheme, activateTheme, deleteTheme } = useThemes({
     projectId,
     enableRealtime: true,
   });
 
-  const { activeTheme, loading: activeLoading } = useActiveTheme({
+  const { activeTheme, loading: activeLoading, refetch: refetchActiveTheme } = useActiveTheme({
     projectId,
     enableRealtime: true,
   });
 
   const loading = themesLoading || activeLoading;
+
+  // 테마 활성화 후 즉시 상태 업데이트
+  const handleActivateTheme = async (themeId: string) => {
+    await activateTheme(themeId);
+    await refetchActiveTheme(); // 활성 테마 즉시 리프레시
+  };
 
   if (loading) {
     return (
@@ -73,7 +79,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             <label>활성 테마:</label>
             <select
               value={activeTheme?.id || ''}
-              onChange={(e) => activateTheme(e.target.value)}
+              onChange={(e) => handleActivateTheme(e.target.value)}
             >
               {themes.map((theme) => (
                 <option key={theme.id} value={theme.id}>
@@ -148,10 +154,26 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               <div
                 key={theme.id}
                 className={`theme-item ${activeTheme?.id === theme.id ? 'active' : ''}`}
-                onClick={() => activateTheme(theme.id)}
               >
-                <span className="theme-name">{theme.name}</span>
-                <span className="theme-status">{theme.status}</span>
+                <div
+                  className="theme-info"
+                  onClick={() => handleActivateTheme(theme.id)}
+                >
+                  <span className="theme-name">{theme.name}</span>
+                  <span className="theme-status">{theme.status}</span>
+                </div>
+                <button
+                  className="delete-theme-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`"${theme.name}" 테마를 삭제하시겠습니까?`)) {
+                      deleteTheme(theme.id);
+                    }
+                  }}
+                  title="테마 삭제"
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
@@ -168,7 +190,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               <AIThemeGenerator
                 projectId={projectId}
                 onThemeGenerated={(themeId) => {
-                  activateTheme(themeId);
+                  handleActivateTheme(themeId);
                   setCurrentView('tokens');
                 }}
               />
@@ -194,7 +216,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                 projectId={projectId}
                 themeId={activeTheme.id}
                 onDarkThemeCreated={(darkThemeId) => {
-                  activateTheme(darkThemeId);
+                  handleActivateTheme(darkThemeId);
                   setCurrentView('tokens');
                 }}
               />

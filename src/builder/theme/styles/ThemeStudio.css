@@ -154,8 +154,8 @@
     padding: var(--spacing-3);
     margin-bottom: var(--spacing-1);
     border-radius: var(--radius-md);
-    cursor: pointer;
     transition: all 200ms;
+    gap: var(--spacing-2);
   }
 
   .theme-item:hover {
@@ -165,6 +165,14 @@
   .theme-item.active {
     background: var(--color-primary-50);
     border: 1px solid var(--color-primary-200);
+  }
+
+  .theme-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    flex: 1;
+    cursor: pointer;
   }
 
   .theme-name {
@@ -185,6 +193,33 @@
   .theme-item.active .theme-status {
     background: var(--color-primary-100);
     color: var(--color-primary-700);
+  }
+
+  .delete-theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    font-size: var(--text-lg);
+    line-height: 1;
+    color: var(--color-gray-400);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 200ms;
+    opacity: 0;
+  }
+
+  .theme-item:hover .delete-theme-btn {
+    opacity: 1;
+  }
+
+  .delete-theme-btn:hover {
+    color: var(--color-red-600);
+    background: var(--color-red-50);
   }
 
   /* Main Content */

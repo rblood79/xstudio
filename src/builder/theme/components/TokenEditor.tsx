@@ -339,6 +339,36 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                 />
               </div>
             </div>
+
+            {/* Token Preview */}
+            <div className="token-preview">
+              <h3>미리보기</h3>
+              {selectedToken.type === 'color' && selectedToken.value && (
+                <div className="preview-content">
+                  <div
+                    className="color-preview-large"
+                    style={{
+                      background: `hsl(${selectedToken.value.h || 0}, ${selectedToken.value.s || 0}%, ${selectedToken.value.l || 50}%)`,
+                    }}
+                  />
+                  <div className="preview-info">
+                    <p>
+                      <strong>HSL:</strong> hsl({selectedToken.value.h || 0}, {selectedToken.value.s || 0}%,{' '}
+                      {selectedToken.value.l || 50}%)
+                    </p>
+                    <p>
+                      <strong>CSS Variable:</strong> {selectedToken.css_variable || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedToken.type !== 'color' && (
+                <div className="preview-content">
+                  <pre>{JSON.stringify(selectedToken.value, null, 2)}</pre>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="empty-selection">
@@ -346,36 +376,6 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
           </div>
         )}
       </main>
-
-      {/* Panel - Token Preview */}
-      <aside className={styles.panel()}>
-        <h3>미리보기</h3>
-        {selectedToken && selectedToken.type === 'color' && selectedToken.value && (
-          <div className="preview-content">
-            <div
-              className="color-preview-large"
-              style={{
-                background: `hsl(${selectedToken.value.h || 0}, ${selectedToken.value.s || 0}%, ${selectedToken.value.l || 50}%)`,
-              }}
-            />
-            <div className="preview-info">
-              <p>
-                <strong>HSL:</strong> hsl({selectedToken.value.h || 0}, {selectedToken.value.s || 0}%,{' '}
-                {selectedToken.value.l || 50}%)
-              </p>
-              <p>
-                <strong>CSS Variable:</strong> {selectedToken.css_variable || 'N/A'}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {selectedToken && selectedToken.type !== 'color' && (
-          <div className="preview-content">
-            <pre>{JSON.stringify(selectedToken.value, null, 2)}</pre>
-          </div>
-        )}
-      </aside>
     </div>
   );
 }

@@ -199,6 +199,15 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
   const updateToken = useCallback(
     async (tokenId: string, updates: UpdateTokenInput): Promise<boolean> => {
       try {
+        // Optimistic update: 즉시 로컬 state 업데이트
+        setTokens((prevTokens) =>
+          prevTokens.map((token) =>
+            token.id === tokenId
+              ? { ...token, ...updates }
+              : token
+          )
+        );
+
         await TokenService.updateToken(tokenId, updates);
 
         // Realtime이 비활성화된 경우 수동으로 갱신
@@ -211,6 +220,10 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
         const message = err instanceof Error ? err.message : '토큰 업데이트 실패';
         setError(message);
         console.error('[useTokens] updateToken failed:', err);
+
+        // 에러 발생 시 서버에서 최신 데이터 다시 가져오기
+        await fetchTokens();
+
         return false;
       }
     },
