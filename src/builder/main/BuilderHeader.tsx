@@ -199,6 +199,14 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           aria-label="Toggle dark mode"
           onClick={handleDarkModeToggle}
           className="dark-mode-toggle"
+          disabled={!(activeTheme?.supports_dark_mode ?? true)}
+          title={
+            !(activeTheme?.supports_dark_mode ?? true)
+              ? "현재 테마는 다크모드를 지원하지 않습니다"
+              : isDarkMode
+              ? "라이트 모드로 전환"
+              : "다크 모드로 전환"
+          }
         >
           {isDarkMode ? (
             <Sun

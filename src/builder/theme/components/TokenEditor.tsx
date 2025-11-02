@@ -6,8 +6,9 @@
 import { useState, useMemo } from 'react';
 import { tv } from 'tailwind-variants';
 import { useTokens, useTokenStats } from '../../../hooks/theme';
-import type { DesignToken } from '../../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../../types/theme/token.types';
 import { parseTokenName } from '../../../utils/theme/tokenParser';
+import { generateDarkVariant } from '../../../utils/theme/colorUtils';
 import '../styles/TokenEditor.css';
 
 const tokenEditorStyles = tv({
@@ -95,6 +96,51 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
     await deleteToken(selectedTokenId);
     setSelectedTokenId(null);
   };
+
+  const handleGenerateDarkVariant = async () => {
+    if (!selectedToken) return;
+    if (selectedToken.type !== 'color') return;
+    if (selectedToken.name.endsWith('.dark')) {
+      alert('이미 다크모드 토큰입니다.');
+      return;
+    }
+
+    // Check if dark variant already exists
+    const darkName = `${selectedToken.name}.dark`;
+    const existingDark = tokens.find((t) => t.name === darkName);
+    if (existingDark) {
+      alert('이미 다크모드 변형이 존재합니다.');
+      return;
+    }
+
+    // Generate dark variant color
+    const lightColor = selectedToken.value as ColorValueHSL;
+    const darkColor = generateDarkVariant(lightColor);
+
+    // Create new dark token
+    await createToken({
+      project_id: projectId,
+      name: darkName,
+      type: 'color',
+      value: darkColor,
+      scope: selectedToken.scope,
+      css_variable: selectedToken.css_variable
+        ? `${selectedToken.css_variable.replace(/-dark$/, '')}`
+        : `--${darkName.replace(/\./g, '-')}`,
+    });
+
+    console.log(`[TokenEditor] Generated dark variant: ${darkName}`);
+  };
+
+  // Check if current token can generate dark variant
+  const canGenerateDarkVariant = useMemo(() => {
+    if (!selectedToken) return false;
+    if (selectedToken.type !== 'color') return false;
+    if (selectedToken.name.endsWith('.dark')) return false;
+
+    const darkName = `${selectedToken.name}.dark`;
+    return !tokens.some((t) => t.name === darkName);
+  }, [selectedToken, tokens]);
 
   if (loading) {
     return (
@@ -218,9 +264,20 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
           <div className="token-detail">
             <div className="detail-header">
               <h2>{selectedToken.name}</h2>
-              <button className="delete-btn" onClick={handleDeleteToken}>
-                삭제
-              </button>
+              <div className="detail-header-actions">
+                {canGenerateDarkVariant && (
+                  <button
+                    className="generate-dark-btn"
+                    onClick={handleGenerateDarkVariant}
+                    title="자동으로 다크모드 변형 생성"
+                  >
+                    Generate Dark Variant
+                  </button>
+                )}
+                <button className="delete-btn" onClick={handleDeleteToken}>
+                  삭제
+                </button>
+              </div>
             </div>
 
             <div className="detail-body">
@@ -320,7 +377,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                       try {
                         const value = JSON.parse(e.target.value);
                         handleUpdateToken({ value });
-                      } catch (err) {
+                      } catch {
                         // Invalid JSON, ignore
                       }
                     }}

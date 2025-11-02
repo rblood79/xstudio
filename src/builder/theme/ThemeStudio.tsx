@@ -3,9 +3,10 @@
  * 테마 생성, 편집, AI 생성, Figma Import 통합 인터페이스
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../hooks/theme';
+import { Moon, Sun } from 'lucide-react';
 import './styles/ThemeStudio.css';
 
 // 하위 컴포넌트 import
@@ -36,6 +37,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const styles = themeStudioStyles();
 
   const [currentView, setCurrentView] = useState<ThemeStudioView>('tokens');
+  const [isPreviewDarkMode, setIsPreviewDarkMode] = useState(false);
 
   // Theme 데이터 로드
   const { themes, loading: themesLoading, createTheme, activateTheme, deleteTheme } = useThemes({
@@ -50,10 +52,25 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
   const loading = themesLoading || activeLoading;
 
+  // 다크모드 미리보기 초기화 (로컬 스토리지에서 복원)
+  useEffect(() => {
+    const savedMode = localStorage.getItem('themestudio-preview-dark-mode');
+    const shouldBeDark = savedMode === 'dark';
+    setIsPreviewDarkMode(shouldBeDark);
+  }, []);
+
   // 테마 활성화 후 즉시 상태 업데이트
   const handleActivateTheme = async (themeId: string) => {
     await activateTheme(themeId);
     await refetchActiveTheme(); // 활성 테마 즉시 리프레시
+  };
+
+  // 다크모드 미리보기 토글
+  const handleTogglePreviewDarkMode = () => {
+    const newMode = !isPreviewDarkMode;
+    setIsPreviewDarkMode(newMode);
+    localStorage.setItem('themestudio-preview-dark-mode', newMode ? 'dark' : 'light');
+    console.log('[ThemeStudio] Preview dark mode:', newMode ? 'enabled' : 'disabled');
   };
 
   if (loading) {
@@ -68,7 +85,10 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
   }
 
   return (
-    <div className={styles.container()}>
+    <div
+      className={styles.container()}
+      data-theme={isPreviewDarkMode ? 'dark' : undefined}
+    >
       {/* Header */}
       <header className={styles.header()}>
         <div className="header-content">
@@ -88,6 +108,16 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               ))}
             </select>
           </div>
+
+          {/* Dark Mode Preview Toggle */}
+          <button
+            className="preview-dark-mode-toggle"
+            onClick={handleTogglePreviewDarkMode}
+            title={isPreviewDarkMode ? 'Light 모드로 전환' : 'Dark 모드로 전환'}
+          >
+            {isPreviewDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            <span>{isPreviewDarkMode ? 'Light' : 'Dark'}</span>
+          </button>
 
           {/* View Tabs */}
           <nav className="view-tabs">
@@ -125,7 +155,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
               className={currentView === 'settings' ? 'active' : ''}
               onClick={() => setCurrentView('settings')}
             >
-              Export
+              설정
             </button>
           </nav>
         </div>
@@ -159,7 +189,12 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                   className="theme-info"
                   onClick={() => handleActivateTheme(theme.id)}
                 >
-                  <span className="theme-name">{theme.name}</span>
+                  <div className="theme-name-row">
+                    <span className="theme-name">{theme.name}</span>
+                    {(theme.supports_dark_mode ?? true) && (
+                      <Moon size={14} className="dark-mode-indicator" title="다크모드 지원" />
+                    )}
+                  </div>
                   <span className="theme-status">{theme.status}</span>
                 </div>
                 <button
@@ -234,6 +269,37 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
           {currentView === 'settings' && activeTheme && (
             <div className="settings-view">
+              <div className="theme-settings-section">
+                <h3>테마 설정</h3>
+                <div className="setting-item">
+                  <label htmlFor="dark-mode-support">
+                    <Moon size={16} />
+                    <span>다크모드 지원</span>
+                  </label>
+                  <input
+                    type="checkbox"
+                    id="dark-mode-support"
+                    checked={activeTheme.supports_dark_mode ?? true}
+                    onChange={async (e) => {
+                      const newValue = e.target.checked;
+                      try {
+                        const { supabase } = await import('../../env/supabase.client');
+                        await supabase
+                          .from('design_themes')
+                          .update({ supports_dark_mode: newValue })
+                          .eq('id', activeTheme.id);
+                        await refetchActiveTheme();
+                        console.log('[ThemeStudio] Updated dark mode support:', newValue);
+                      } catch (error) {
+                        console.error('[ThemeStudio] Failed to update dark mode support:', error);
+                      }
+                    }}
+                  />
+                  <p className="setting-description">
+                    이 옵션을 비활성화하면 Builder에서 다크모드 토글이 비활성화됩니다.
+                  </p>
+                </div>
+              </div>
               <ThemeExporter themeId={activeTheme.id} projectId={projectId} />
             </div>
           )}

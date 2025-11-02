@@ -316,3 +316,24 @@ export function parseColorString(colorString: string): ColorValueHSL | null {
 
   return null;
 }
+
+/**
+ * 다크모드 색상 자동 생성
+ * Light 토큰 → Dark 변형 생성
+ * - Lightness 반전 (100 - L)
+ * - 채도 15% 감소 (더 차분한 다크모드)
+ */
+export function generateDarkVariant(hsl: ColorValueHSL): ColorValueHSL {
+  // Lightness 반전: 밝은 색 → 어두운 색, 어두운 색 → 밝은 색
+  const invertedL = 100 - hsl.l;
+
+  // 채도 15% 감소 (0 미만 방지)
+  const reducedS = Math.max(0, hsl.s - 15);
+
+  return {
+    h: hsl.h,        // 색상(Hue)은 동일 유지
+    s: reducedS,     // 채도 감소
+    l: invertedL,    // 명도 반전
+    a: hsl.a,        // 투명도 유지
+  };
+}

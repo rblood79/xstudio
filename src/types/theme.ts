@@ -6,6 +6,7 @@ export interface DesignTheme {
     status: 'active' | 'draft' | 'archived';
     version: number;
     parent_theme_id?: string | null;
+    supports_dark_mode?: boolean; // 다크모드 지원 여부 (기본값: true)
     created_at: string;
     updated_at: string;
 }
