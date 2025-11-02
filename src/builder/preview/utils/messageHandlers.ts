@@ -90,17 +90,39 @@ export const handleThemeVars = (data: MessageType) => {
       document.head.appendChild(styleEl);
     }
 
-    styleEl.textContent =
-      ":root {\n" +
-      data.vars
-        .map(
-          (v: { cssVar: string; value: string }) =>
-            `  ${v.cssVar}: ${v.value};`
-        )
-        .join("\n") +
-      "\n}";
+    // Light 모드 토큰 (isDark가 없거나 false인 것들)
+    const lightVars = data.vars.filter((v: any) => !v.isDark);
+    // Dark 모드 토큰 (isDark가 true인 것들)
+    const darkVars = data.vars.filter((v: any) => v.isDark);
 
-    console.log("[preview] applied THEME_VARS", data.vars.length);
+    let cssText = "";
+
+    // Light 모드 CSS 생성
+    if (lightVars.length > 0) {
+      cssText +=
+        ":root {\n" +
+        lightVars
+          .map((v: { cssVar: string; value: string }) => `  ${v.cssVar}: ${v.value};`)
+          .join("\n") +
+        "\n}\n";
+    }
+
+    // Dark 모드 CSS 생성
+    if (darkVars.length > 0) {
+      cssText +=
+        '\n[data-theme="dark"] {\n' +
+        darkVars
+          .map((v: { cssVar: string; value: string }) => `  ${v.cssVar}: ${v.value};`)
+          .join("\n") +
+        "\n}\n";
+    }
+
+    styleEl.textContent = cssText;
+
+    console.log(
+      "[preview] applied THEME_VARS",
+      `${lightVars.length} light, ${darkVars.length} dark`
+    );
   }
 };
 
@@ -134,6 +156,23 @@ export const handleUpdateThemeTokens = (data: MessageType) => {
 };
 
 /**
+ * SET_DARK_MODE 메시지 처리
+ */
+export const handleSetDarkMode = (data: MessageType) => {
+  if (data.type === "SET_DARK_MODE") {
+    const isDark = data.isDark;
+
+    if (isDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+
+    console.log("[preview] Dark mode:", isDark ? "enabled" : "disabled");
+  }
+};
+
+/**
  * 모든 메시지 타입 처리
  */
 export const handleMessage = (
@@ -152,4 +191,5 @@ export const handleMessage = (
   handleDeleteElement(data, elements, setElements);
   handleThemeVars(data);
   handleUpdateThemeTokens(data);
+  handleSetDarkMode(data);
 };

@@ -9,6 +9,8 @@ import {
   Tablet,
   Smartphone,
   Asterisk,
+  Moon,
+  Sun,
 } from "lucide-react";
 import {
   RadioGroup,
@@ -83,6 +85,19 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   });
 
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
+  // 다크모드 초기화 (로컬 스토리지에서 복원)
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+
+    if (shouldBeDark) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      setIsDarkMode(true);
+    }
+  }, []);
 
   const handleSave = (): void => {
     setIsSaving(true);
@@ -120,6 +135,34 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     }
   };
 
+  const handleDarkModeToggle = (): void => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+
+    // 부모 문서에 data-theme 속성 설정
+    if (newDarkMode) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
+    }
+
+    // Preview iframe에도 다크모드 메시지 전송
+    const previewIframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+    if (previewIframe?.contentWindow) {
+      previewIframe.contentWindow.postMessage(
+        {
+          type: "SET_DARK_MODE",
+          isDark: newDarkMode,
+        },
+        "*"
+      );
+    }
+
+    console.log("[BuilderHeader] Dark mode:", newDarkMode ? "enabled" : "disabled");
+  };
+
   return (
     <nav className="header">
       <div className="header_contents header_left">
@@ -152,6 +195,25 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             </select>
           </div>
         )}
+        <button
+          aria-label="Toggle dark mode"
+          onClick={handleDarkModeToggle}
+          className="dark-mode-toggle"
+        >
+          {isDarkMode ? (
+            <Sun
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          ) : (
+            <Moon
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          )}
+        </button>
       </div>
 
       <div className="header_contents screen">

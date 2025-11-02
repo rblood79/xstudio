@@ -118,7 +118,7 @@
     .inspector-tab-panel {
       flex: 1;
       overflow-y: auto;
-      padding: var(--spacing-4);
+      padding: 0;
       outline: none;
 
       &[data-focus-visible] {
