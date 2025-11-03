@@ -60,14 +60,18 @@ export function useThemes(options: UseThemesOptions): UseThemesReturn {
 
   /**
    * Initialize store with projectId
+   * Note: Zustand store functions are stable, but we only depend on projectId
+   * to avoid unnecessary re-runs
    */
   useEffect(() => {
     setProjectId(projectId);
     fetchThemes();
-  }, [projectId, setProjectId, fetchThemes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   /**
    * Setup Realtime subscription
+   * Note: Only depend on enableRealtime flag, not the function reference
    */
   useEffect(() => {
     if (!enableRealtime) return;
@@ -76,7 +80,8 @@ export function useThemes(options: UseThemesOptions): UseThemesReturn {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [enableRealtime, subscribeToThemes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableRealtime]);
 
   return {
     themes,

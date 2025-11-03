@@ -212,9 +212,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     try {
       await ThemeService.activateTheme(themeId);
 
-      // Refresh themes list (status changes for multiple themes)
-      await get().fetchThemes();
-      await get().fetchActiveTheme();
+      // Realtime subscription will automatically update themes and activeTheme
+      // No need to manually fetch - this prevents conflicts with realtime updates
 
       return true;
     } catch (err) {
@@ -264,17 +263,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
             get()._setActiveTheme(updatedTheme);
           }
 
-          // If active theme becomes inactive
+          // If active theme becomes inactive, clear it
           if (activeTheme && updatedTheme.id === activeTheme.id && updatedTheme.status !== 'active') {
-            get().fetchActiveTheme();
+            get()._setActiveTheme(null);
           }
         } else if (payload.eventType === 'DELETE') {
           get()._removeTheme(payload.old.id);
 
-          // If active theme is deleted, fetch new active theme
+          // If active theme is deleted, clear it
+          // The newly activated theme will be set via UPDATE realtime event
           const { activeTheme } = get();
           if (activeTheme && payload.old.id === activeTheme.id) {
-            get().fetchActiveTheme();
+            get()._setActiveTheme(null);
           }
         }
       }

@@ -289,7 +289,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                           .from('design_themes')
                           .update({ supports_dark_mode: newValue })
                           .eq('id', activeTheme.id);
-                        await refetchActiveTheme();
+                        // Realtime subscription will automatically update the state
                         console.log('[ThemeStudio] Updated dark mode support:', newValue);
                       } catch (error) {
                         console.error('[ThemeStudio] Failed to update dark mode support:', error);

@@ -43,15 +43,19 @@ export function useActiveTheme(
 
   /**
    * Initialize store with projectId
+   * Note: Zustand store functions are stable, but we only depend on projectId
+   * to avoid unnecessary re-runs
    */
   useEffect(() => {
     setProjectId(projectId);
     fetchActiveTheme();
-  }, [projectId, setProjectId, fetchActiveTheme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   /**
    * Setup Realtime subscription
    * The store handles all realtime logic internally
+   * Note: Only depend on enableRealtime flag, not the function reference
    */
   useEffect(() => {
     if (!enableRealtime) return;
@@ -60,7 +64,8 @@ export function useActiveTheme(
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [enableRealtime, subscribeToThemes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableRealtime]);
 
   /**
    * Alias for activateTheme (backward compatibility)
