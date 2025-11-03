@@ -347,12 +347,12 @@
   }
 
   .react-aria-PageSizeLabel {
-    color: #6b7280;
+    color: var(--color-gray-600);
     white-space: nowrap;
   }
 
   .react-aria-PageSizeSelect {
-    background-color: #ffffff;
+    background-color: var(--background-color);
   }
 
   .react-aria-PageSizeSelect:focus {
@@ -360,7 +360,7 @@
   }
 
   .react-aria-PageSizeText {
-    color: #6b7280;
+    color: var(--color-gray-600);
     white-space: nowrap;
   }
 
@@ -437,14 +437,14 @@
   }
 
   .react-aria-PageInfo {
-    color: #6b7280;
+    color: var(--color-gray-600);
     white-space: nowrap;
     font-size: var(--text-xs);
   }
 
   .react-aria-LoadingText {
-    font-size: 0.875rem;
-    color: #6b7280;
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
     font-style: italic;
   }
 }

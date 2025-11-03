@@ -34,7 +34,7 @@
   .component-search-field .react-aria-Input:focus {
     outline: none;
     background-color: var(--color-gray-200);
-    box-shadow: var(----inset-shadow-xs);
+    box-shadow: var(--inset-shadow-xs);
   }
 
   /* Clear 버튼 */

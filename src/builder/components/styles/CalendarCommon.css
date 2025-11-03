@@ -45,7 +45,7 @@
   }
 
   .react-aria-CalendarGridHeader th {
-    border: 0px solid #ff0;
+    border: 0;
     background-color: var(--overlay-background);
     color: var(--text-color-base);
     text-align: center;

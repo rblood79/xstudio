@@ -22,7 +22,7 @@
     gap: var(--gap);
     padding: var(--padding);
     padding: var(--spacing-sm);
-    background-color: #fff;
+    background-color: var(--background-color);
   }
 
   .chat-content::-webkit-scrollbar {

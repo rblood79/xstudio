@@ -28,7 +28,7 @@
       box-shadow: var(--shadow-md);
 
       &[data-hovered] {
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        box-shadow: var(--shadow-lg);
       }
     }
 

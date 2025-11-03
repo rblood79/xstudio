@@ -86,6 +86,35 @@
   --highlight-overlay: var(--color-highlight-overlay, rgba(14, 165, 233, 0.15));
   --invalid-color: var(--color-invalid, var(--color-red-400));
   --invalid-color-pressed: var(--color-invalid-pressed, var(--color-red-500));
+
+  /* Button semantic colors - Token integrated */
+  --button-primary-bg: var(--color-button-primary-bg, var(--color-primary-600));
+  --button-primary-text: var(--color-button-primary-text, var(--color-white));
+  --button-secondary-bg: var(--color-button-secondary-bg, var(--color-secondary-600));
+  --button-secondary-text: var(--color-button-secondary-text, var(--color-white));
+
+  /* Shadow System - AI Theme Integration Ready */
+  --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+  --shadow-md: var(--box-shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1));
+  --shadow-lg: var(--box-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1));
+  --shadow-xl: var(--box-shadow-xl, 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1));
+
+  /* Drop shadows (for filter property) */
+  --drop-shadow-sm: var(--filter-drop-shadow-sm, drop-shadow(0 1px 1px rgb(0 0 0 / 0.05)));
+  --drop-shadow-md: var(--filter-drop-shadow-md, drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06)));
+
+  /* Inset shadows */
+  --inset-shadow-xs: var(--inset-box-shadow-xs, inset 0 1px 1px 0 rgb(0 0 0 / 0.05));
+  --inset-shadow-sm: var(--inset-box-shadow-sm, inset 0 2px 4px 0 rgb(0 0 0 / 0.05));
+
+  /* Overlay backgrounds */
+  --overlay-backdrop: rgba(0 0 0 / 0.5);
+  --overlay-backdrop-light: rgba(255 255 255 / 0.8);
+  --highlight-hover-overlay: rgba(255 255 255 / 0.1);
+  --highlight-pressed-overlay: rgba(255 255 255 / 0.2);
+
+  /* Container sizes */
+  --container-6xl: 72rem;
 }
 
 /* Dark theme overrides - Token System Integration
@@ -119,6 +148,22 @@
   --highlight-foreground: var(--color-highlight-foreground, var(--color-gray-900));
   --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-gray-800));
   --highlight-overlay: var(--color-highlight-overlay, rgba(56, 189, 248, 0.15));
+
+  /* Button semantic colors - Dark mode */
+  --button-primary-bg: var(--color-button-primary-bg, var(--color-primary-500));
+  --button-primary-text: var(--color-button-primary-text, var(--color-gray-900));
+  --button-secondary-bg: var(--color-button-secondary-bg, var(--color-secondary-500));
+  --button-secondary-text: var(--color-button-secondary-text, var(--color-gray-900));
+
+  /* Shadow System - Dark mode (increased opacity for visibility) */
+  --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.2));
+  --shadow-md: var(--box-shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2));
+  --shadow-lg: var(--box-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3));
+  --shadow-xl: var(--box-shadow-xl, 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4));
+
+  /* Overlay backgrounds - Dark mode */
+  --highlight-hover-overlay: rgba(0 0 0 / 0.1);
+  --highlight-pressed-overlay: rgba(0 0 0 / 0.2);
 }
 
 /* Windows high contrast mode overrides */

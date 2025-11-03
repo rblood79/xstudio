@@ -4,8 +4,8 @@
 @layer components {
   
   .react-aria-Tooltip {
-    box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
-    border-radius: 4px;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-sm);
     background: var(--highlight-background);
     color: var(--highlight-foreground);
     forced-color-adjust: none;

@@ -504,7 +504,7 @@ export class ThemeGenerationService {
   }
 
   /**
-   * Shadow 스케일 생성 (최소 5개만)
+   * Shadow 스케일 생성 (Tailwind v4 표준값)
    */
   private async generateShadowScale(
     request: ThemeGenerationRequest
@@ -513,8 +513,11 @@ export class ThemeGenerationService {
       boxShadow: {
         sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
         md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
       },
       insetShadow: {
+        xs: 'inset 0 1px 1px 0 rgb(0 0 0 / 0.05)',
         sm: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
       },
       dropShadow: {

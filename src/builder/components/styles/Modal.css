@@ -10,7 +10,7 @@
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: rgba(0 0 0 / .5);
+    background: var(--overlay-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -26,8 +26,8 @@
   }
   
   .react-aria-Modal {
-    box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
-    border-radius: 6px;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-sm);
     background: var(--overlay-background);
     color: var(--text-color);
     border: 1px solid var(--gray-400);
