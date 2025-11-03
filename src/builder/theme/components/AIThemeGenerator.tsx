@@ -33,6 +33,8 @@ const stageLabels: Record<ThemeGenerationStage, string> = {
   colors: '색상 팔레트 생성 중',
   typography: '타이포그래피 생성 중',
   spacing: '간격 시스템 생성 중',
+  radius: 'Border radius 생성 중',
+  shadows: 'Shadow 생성 중',
   semantic: 'Semantic 토큰 생성 중',
   finalizing: '테마 저장 중',
   complete: '완료',

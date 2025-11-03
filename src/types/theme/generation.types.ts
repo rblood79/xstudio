@@ -59,6 +59,7 @@ export interface ThemeGenerationRequest {
 export interface ColorPaletteResponse {
   primary: ColorShades;
   secondary?: ColorShades;
+  surface?: ColorShades;  // tertiary → surface로 변경
   accent?: ColorShades;
   neutral: ColorShades;
   success: ColorShades;
@@ -93,6 +94,7 @@ export interface TypographyScaleResponse {
     mono: string;
   };
   fontSize: {
+    '2xs': string;
     xs: string;
     sm: string;
     base: string;
@@ -129,27 +131,49 @@ export interface TypographyScaleResponse {
 }
 
 /**
- * 간격 스케일 응답
+ * 간격 스케일 응답 (시맨틱 네이밍)
  */
 export interface SpacingScaleResponse {
-  0: string;
-  1: string;
-  2: string;
-  3: string;
-  4: string;
-  5: string;
-  6: string;
-  8: string;
-  10: string;
-  12: string;
-  16: string;
-  20: string;
-  24: string;
-  32: string;
-  40: string;
-  48: string;
-  56: string;
-  64: string;
+  0: string;       // "0"
+  '2xs': string;   // "0.125rem" (2px)
+  xs: string;      // "0.25rem" (4px) - base
+  sm: string;      // "0.5rem" (8px)
+  md: string;      // "0.75rem" (12px)
+  lg: string;      // "1rem" (16px)
+  xl: string;      // "1.5rem" (24px)
+  '2xl': string;   // "2rem" (32px)
+  '3xl': string;   // "2.5rem" (40px)
+}
+
+/**
+ * Border radius 스케일 응답
+ */
+export interface RadiusScaleResponse {
+  xs: string;      // "0.125rem" (2px)
+  sm: string;      // "0.25rem" (4px)
+  md: string;      // "0.375rem" (6px)
+  lg: string;      // "0.5rem" (8px)
+  xl: string;      // "0.75rem" (12px)
+  '2xl': string;   // "1rem" (16px)
+  '3xl': string;   // "1.5rem" (24px)
+  '4xl': string;   // "2rem" (32px)
+}
+
+/**
+ * Shadow 스케일 응답 (최소 5개만)
+ */
+export interface ShadowScaleResponse {
+  boxShadow: {
+    sm: string;    // "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+    md: string;    // "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+  };
+  insetShadow: {
+    sm: string;    // "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)"
+  };
+  dropShadow: {
+    sm: string;    // "0 1px 1px rgb(0 0 0 / 0.05)"
+    md: string;    // "0 4px 3px rgb(0 0 0 / 0.07), 0 2px 2px rgb(0 0 0 / 0.06)"
+  };
 }
 
 /**
@@ -180,6 +204,8 @@ export type ThemeGenerationStage =
   | 'colors' // 색상 팔레트 생성 중
   | 'typography' // 타이포그래피 생성 중
   | 'spacing' // 간격 생성 중
+  | 'radius' // Border radius 생성 중
+  | 'shadows' // Shadow 생성 중
   | 'semantic' // Semantic 토큰 생성 중
   | 'finalizing' // 마무리 중
   | 'complete'; // 완료

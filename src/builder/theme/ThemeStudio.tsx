@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../hooks/theme';
 import { Moon, Sun } from 'lucide-react';
+import '../components/index.css';
 import './styles/ThemeStudio.css';
 
 // 하위 컴포넌트 import
@@ -192,7 +193,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                   <div className="theme-name-row">
                     <span className="theme-name">{theme.name}</span>
                     {(theme.supports_dark_mode ?? true) && (
-                      <Moon size={14} className="dark-mode-indicator" title="다크모드 지원" />
+                      <Moon size={14} className="dark-mode-indicator" />
                     )}
                   </div>
                   <span className="theme-status">{theme.status}</span>

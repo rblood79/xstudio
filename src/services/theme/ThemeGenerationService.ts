@@ -13,6 +13,8 @@ import type {
   ColorShades,
   TypographyScaleResponse,
   SpacingScaleResponse,
+  RadiusScaleResponse,
+  ShadowScaleResponse,
   ThemeGenerationError,
 } from '../../types/theme/generation.types';
 import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
@@ -169,7 +171,7 @@ export class ThemeGenerationService {
       currentStageIndex = 3;
       yield {
         stage: 'spacing',
-        progress: 70,
+        progress: 60,
         message: '간격 시스템 생성 중...',
       };
 
@@ -177,13 +179,47 @@ export class ThemeGenerationService {
 
       yield {
         stage: 'spacing',
-        progress: 80,
+        progress: 65,
         message: '간격 시스템 생성 완료',
         data: { spacing },
       };
 
-      // Stage 5: Semantic tokens
+      // Stage 5: Radius
       currentStageIndex = 4;
+      yield {
+        stage: 'radius',
+        progress: 70,
+        message: 'Border radius 생성 중...',
+      };
+
+      const radius = await this.generateRadiusScale(request);
+
+      yield {
+        stage: 'radius',
+        progress: 75,
+        message: 'Border radius 생성 완료',
+        data: { radius },
+      };
+
+      // Stage 6: Shadows
+      currentStageIndex = 5;
+      yield {
+        stage: 'shadows',
+        progress: 78,
+        message: 'Shadow 생성 중...',
+      };
+
+      const shadows = await this.generateShadowScale(request);
+
+      yield {
+        stage: 'shadows',
+        progress: 82,
+        message: 'Shadow 생성 완료',
+        data: { shadows },
+      };
+
+      // Stage 7: Semantic tokens
+      currentStageIndex = 6;
       let semanticTokens: Partial<DesignToken>[] = [];
       if (request.includeSemanticTokens !== false) {
         yield {
@@ -219,7 +255,9 @@ export class ThemeGenerationService {
         theme.id,
         colorPalette,
         typography,
-        spacing
+        spacing,
+        radius,
+        shadows
       );
 
       // Add semantic tokens with correct theme_id
@@ -313,6 +351,9 @@ export class ThemeGenerationService {
     const [, secondary500] = getSplitComplementaryColors(primaryBase);
     const secondary = this.generateColorShades(secondary500);
 
+    // Surface: 따뜻한 중성 색상 (UI 표면용)
+    const surface = this.generateColorShades({ h: 30, s: 10, l: 50, a: 1 }); // Warm neutral
+
     // Neutral: Gray scale
     const neutral = this.generateColorShades({ h: 0, s: 0, l: 50, a: 1 });
 
@@ -325,6 +366,7 @@ export class ThemeGenerationService {
     return {
       primary,
       secondary,
+      surface,
       neutral,
       success,
       warning,
@@ -354,15 +396,11 @@ export class ThemeGenerationService {
   }
 
   /**
-   * 타이포그래피 스케일 생성
+   * 타이포그래피 스케일 생성 (Tailwind 표준 고정 값)
    */
   private async generateTypographyScale(
     request: ThemeGenerationRequest
   ): Promise<TypographyScaleResponse> {
-    const baseSize = request.typography?.baseSize || 16;
-    const scaleRatio =
-      TYPE_SCALE_RATIOS[request.typography?.scale || 'minor-third'];
-
     return {
       fontFamily: {
         sans:
@@ -372,15 +410,16 @@ export class ThemeGenerationService {
         mono: 'ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace',
       },
       fontSize: {
-        xs: `${(baseSize / scaleRatio / scaleRatio).toFixed(3)}rem`,
-        sm: `${(baseSize / scaleRatio).toFixed(3)}rem`,
-        base: `${baseSize / 16}rem`,
-        lg: `${((baseSize * scaleRatio) / 16).toFixed(3)}rem`,
-        xl: `${((baseSize * scaleRatio * scaleRatio) / 16).toFixed(3)}rem`,
-        '2xl': `${((baseSize * Math.pow(scaleRatio, 3)) / 16).toFixed(3)}rem`,
-        '3xl': `${((baseSize * Math.pow(scaleRatio, 4)) / 16).toFixed(3)}rem`,
-        '4xl': `${((baseSize * Math.pow(scaleRatio, 5)) / 16).toFixed(3)}rem`,
-        '5xl': `${((baseSize * Math.pow(scaleRatio, 6)) / 16).toFixed(3)}rem`,
+        '2xs': '0.625rem',   // 10px
+        xs: '0.75rem',       // 12px
+        sm: '0.875rem',      // 14px
+        base: '1rem',        // 16px
+        lg: '1.125rem',      // 18px
+        xl: '1.25rem',       // 20px
+        '2xl': '1.5rem',     // 24px
+        '3xl': '1.875rem',   // 30px
+        '4xl': '2.25rem',    // 36px
+        '5xl': '3rem',       // 48px
       },
       fontWeight: {
         thin: 100,
@@ -409,46 +448,80 @@ export class ThemeGenerationService {
   }
 
   /**
-   * 간격 스케일 생성
+   * Font size별 line-height 계산 (Tailwind 표준)
+   */
+  private calculateLineHeightForSize(sizeName: string): string {
+    const lineHeightMap: Record<string, string> = {
+      '2xs': 'calc(1 / 0.625)',
+      xs: 'calc(1 / 0.75)',
+      sm: 'calc(1.25 / 0.875)',
+      base: 'calc(1.5 / 1)',
+      lg: 'calc(1.75 / 1.125)',
+      xl: 'calc(1.75 / 1.25)',
+      '2xl': 'calc(2 / 1.5)',
+      '3xl': 'calc(2.25 / 1.875)',
+      '4xl': 'calc(2.5 / 2.25)',
+      '5xl': 'calc(3 / 3)',
+    };
+    return lineHeightMap[sizeName] || '1.5';
+  }
+
+  /**
+   * 간격 스케일 생성 (Tailwind 표준 고정 값)
    */
   private async generateSpacingScale(
     request: ThemeGenerationRequest
   ): Promise<SpacingScaleResponse> {
-    const baseUnit = request.spacing?.baseUnit || 4;
-    const scale = request.spacing?.scale || 'geometric';
-
-    const spacing: Partial<SpacingScaleResponse> = {
+    return {
       0: '0',
+      '2xs': '0.125rem',   // 2px
+      xs: '0.25rem',       // 4px
+      sm: '0.5rem',        // 8px
+      md: '0.75rem',       // 12px
+      lg: '1rem',          // 16px
+      xl: '1.5rem',        // 24px
+      '2xl': '2rem',       // 32px
+      '3xl': '2.5rem',     // 40px
     };
+  }
 
-    if (scale === 'linear') {
-      // Linear: 4px, 8px, 12px, 16px, ...
-      [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].forEach(
-        (multiplier) => {
-          spacing[multiplier as keyof SpacingScaleResponse] = `${baseUnit * multiplier}px`;
-        }
-      );
-    } else if (scale === 'geometric') {
-      // Geometric: 4px, 8px, 16px, 32px, ...
-      [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].forEach(
-        (key) => {
-          const value =
-            key <= 6 ? baseUnit * key : baseUnit * Math.pow(2, Math.floor(key / 4));
-          spacing[key as keyof SpacingScaleResponse] = `${value}px`;
-        }
-      );
-    } else {
-      // Fibonacci: 4px, 8px, 12px, 20px, 32px, ...
-      const fib = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-      [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].forEach(
-        (key, index) => {
-          const value = fib[index % fib.length] * baseUnit;
-          spacing[key as keyof SpacingScaleResponse] = `${value}px`;
-        }
-      );
-    }
+  /**
+   * Border radius 스케일 생성
+   */
+  private async generateRadiusScale(
+    request: ThemeGenerationRequest
+  ): Promise<RadiusScaleResponse> {
+    return {
+      xs: '0.125rem',   // 2px
+      sm: '0.25rem',    // 4px
+      md: '0.375rem',   // 6px
+      lg: '0.5rem',     // 8px
+      xl: '0.75rem',    // 12px
+      '2xl': '1rem',    // 16px
+      '3xl': '1.5rem',  // 24px
+      '4xl': '2rem',    // 32px
+    };
+  }
 
-    return spacing as SpacingScaleResponse;
+  /**
+   * Shadow 스케일 생성 (최소 5개만)
+   */
+  private async generateShadowScale(
+    request: ThemeGenerationRequest
+  ): Promise<ShadowScaleResponse> {
+    return {
+      boxShadow: {
+        sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      },
+      insetShadow: {
+        sm: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+      },
+      dropShadow: {
+        sm: '0 1px 1px rgb(0 0 0 / 0.05)',
+        md: '0 4px 3px rgb(0 0 0 / 0.07), 0 2px 2px rgb(0 0 0 / 0.06)',
+      },
+    };
   }
 
   /**
@@ -459,7 +532,9 @@ export class ThemeGenerationService {
     themeId: string,
     colorPalette: ColorPaletteResponse,
     typography: TypographyScaleResponse,
-    spacing: SpacingScaleResponse
+    spacing: SpacingScaleResponse,
+    radius: RadiusScaleResponse,
+    shadows: ShadowScaleResponse
   ): Partial<DesignToken>[] {
     const tokens: Partial<DesignToken>[] = [];
 
@@ -491,8 +566,9 @@ export class ThemeGenerationService {
       });
     });
 
-    // Typography - Font Size
+    // Typography - Font Size + Paired Line Height
     Object.entries(typography.fontSize).forEach(([name, value]) => {
+      // Font size token
       tokens.push({
         project_id: projectId,
         theme_id: themeId,
@@ -501,6 +577,18 @@ export class ThemeGenerationService {
         value,
         scope: 'raw',
         css_variable: `--text-${name}`,
+      });
+
+      // Paired line-height token
+      const lineHeightValue = this.calculateLineHeightForSize(name);
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `typography.lineHeight.${name}`,
+        type: 'typography',
+        value: lineHeightValue,
+        scope: 'raw',
+        css_variable: `--text-${name}--line-height`,
       });
     });
 
@@ -517,8 +605,34 @@ export class ThemeGenerationService {
       });
     });
 
-    // Spacing
+    // Typography - Letter Spacing
+    Object.entries(typography.letterSpacing).forEach(([name, value]) => {
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `typography.letterSpacing.${name}`,
+        type: 'typography',
+        value,
+        scope: 'raw',
+        css_variable: `--letter-spacing-${name}`,
+      });
+    });
+
+    // Spacing - Base variable
+    tokens.push({
+      project_id: projectId,
+      theme_id: themeId,
+      name: 'spacing.base',
+      type: 'spacing',
+      value: spacing.xs, // xs를 base로 사용
+      scope: 'raw',
+      css_variable: '--spacing',
+    });
+
+    // Spacing - Scale variables
     Object.entries(spacing).forEach(([name, value]) => {
+      if (name === 'xs') return; // xs는 이미 base로 추가됨
+
       tokens.push({
         project_id: projectId,
         theme_id: themeId,
@@ -526,7 +640,59 @@ export class ThemeGenerationService {
         type: 'spacing',
         value,
         scope: 'raw',
-        css_variable: `--spacing-${name}`,
+        css_variable: name === '0' ? '--spacing-0' : `--spacing-${name}`,
+      });
+    });
+
+    // Border Radius
+    Object.entries(radius).forEach(([name, value]) => {
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `radius.${name}`,
+        type: 'other',
+        value,
+        scope: 'raw',
+        css_variable: `--radius-${name}`,
+      });
+    });
+
+    // Shadows - Box Shadow
+    Object.entries(shadows.boxShadow).forEach(([name, value]) => {
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `shadow.box.${name}`,
+        type: 'other',
+        value,
+        scope: 'raw',
+        css_variable: `--shadow-${name}`,
+      });
+    });
+
+    // Shadows - Inset Shadow
+    Object.entries(shadows.insetShadow).forEach(([name, value]) => {
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `shadow.inset.${name}`,
+        type: 'other',
+        value,
+        scope: 'raw',
+        css_variable: `--inset-shadow-${name}`,
+      });
+    });
+
+    // Shadows - Drop Shadow
+    Object.entries(shadows.dropShadow).forEach(([name, value]) => {
+      tokens.push({
+        project_id: projectId,
+        theme_id: themeId,
+        name: `shadow.drop.${name}`,
+        type: 'other',
+        value,
+        scope: 'raw',
+        css_variable: `--drop-shadow-${name}`,
       });
     });
 
@@ -688,11 +854,11 @@ export class ThemeGenerationService {
       {
         project_id: projectId,
         theme_id: themeId,
-        name: 'color.text.tertiary',
+        name: 'color.text.muted',
         type: 'color',
         value: colorPalette.neutral[400],
         scope: 'semantic',
-        css_variable: '--text-tertiary',
+        css_variable: '--text-muted',
       },
       {
         project_id: projectId,
@@ -728,11 +894,11 @@ export class ThemeGenerationService {
       {
         project_id: projectId,
         theme_id: themeId,
-        name: 'color.bg.tertiary',
+        name: 'color.bg.muted',
         type: 'color',
         value: colorPalette.neutral[100],
         scope: 'semantic',
-        css_variable: '--bg-tertiary',
+        css_variable: '--bg-muted',
       }
     );
 
