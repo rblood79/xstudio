@@ -1,3 +1,6 @@
+/* Import Design Token System theme */
+@import './theme.css';
+
 /* Theme Studio CSS imports */
 @import '../theme/styles/ThemeStudio.css';
 @import '../theme/styles/TokenEditor.css';
