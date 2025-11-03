@@ -32,14 +32,14 @@
     }
 
     &.primary {
-      background: var(--color-primary-500);
-      color: var(--color-white);
+      background: var(--button-primary-bg);
+      color: var(--button-primary-text);
       border-color: var(--color-primary-600);
     }
 
     &.secondary {
-      background: var(--color-secondary-500);
-      color: var(--color-white);
+      background: var(--button-secondary-bg);
+      color: var(--button-secondary-text);
       border-color: var(--color-secondary-600);
     }
 
