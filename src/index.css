@@ -1,6 +1,7 @@
 @import '../node_modules/pretendard/dist/web/static/pretendard.css');
-
 @import "tailwindcss";
+@import './builder/components/index.css';
+
 @plugin "tailwindcss-react-aria-components";
 
 /* @import "tailwindcss/theme.css";
