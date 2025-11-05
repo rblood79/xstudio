@@ -31,13 +31,11 @@ export function EventList({ element, onSelectEvent }: EventListProps) {
   return (
     <div className="event-list">
       <div className="event-list-header">
-        <h5 className="section-subtitle">Registered Events</h5>
+        <h5 className="section-title">Registered Events</h5>
       </div>
 
       {registeredEvents.length === 0 ? (
-        <div className="empty-state">
-          <p className="empty-message">이벤트가 등록되지 않았습니다.</p>
-        </div>
+        <p className="empty-message">이벤트가 등록되지 않았습니다.</p>
       ) : (
         <div className="registered-events">
           {registeredEvents.map((event) => (

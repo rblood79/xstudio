@@ -1,11 +1,7 @@
 /* ===== EventSection Styles ===== */
 
-.event-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-}
+/* NOTE: .event-section layout is now handled by shared styles in inspector/index.css
+ * using standard .section-header and .section-content classes */
 
 /* Event List */
 .event-list {
@@ -20,26 +16,9 @@
   justify-content: space-between;
 }
 
-.section-subtitle {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0;
-}
+/* NOTE: .section-subtitle removed - now using standard .section-title from inspector/index.css */
 
-.empty-state {
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-secondary);
-}
-
-.empty-message {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-}
+/* NOTE: .empty-state removed - now using standard .empty-message from inspector/index.css */
 
 .registered-events {
   display: flex;

@@ -72,9 +72,7 @@ export function EventEditor({ event, onBack }: EventEditorProps) {
 
       <div className="actions-list">
         {event.actions.length === 0 ? (
-          <div className="empty-state">
-            <p className="empty-message">액션이 등록되지 않았습니다.</p>
-          </div>
+          <p className="empty-message">액션이 등록되지 않았습니다.</p>
         ) : (
           event.actions.map((action, index) => (
             <div key={index} className="action-wrapper">

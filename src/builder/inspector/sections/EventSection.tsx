@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "react-aria-components";
+import { Plus, X } from "lucide-react";
 import type { SelectedElement } from "../types";
 import type { EventHandler, EventType, ActionType } from "../events/types";
 import { useInspectorState } from "../hooks/useInspectorState";
@@ -7,6 +8,11 @@ import { EventHandlerManager } from "../events/components/EventHandlerManager";
 import { EventPalette } from "../events/components/listMode/EventPalette";
 import { ActionPalette } from "../events/components/listMode/ActionPalette";
 import { createDefaultActionConfig, generateActionId } from "../events/utils/actionHelpers";
+
+const iconProps = {
+  strokeWidth: 1.5,
+  size: 16,
+};
 
 export interface EventSectionProps {
   element: SelectedElement;
@@ -98,35 +104,37 @@ export function EventSection({ element }: EventSectionProps) {
 
   return (
     <div className="event-section">
-      <div className="event-section-header">
-        <h5 className="section-subtitle">Event Handlers</h5>
-        <Button
-          className="react-aria-Button add-event-button-header"
-          onPress={() => setShowAddEvent(!showAddEvent)}
-        >
-          {showAddEvent ? "✕ Cancel" : "+ Add Event"}
-        </Button>
+      <div className="section-header">
+        <div className="section-title">Events</div>
+        <div className="header-actions">
+          <button
+            className="iconButton"
+            aria-label={showAddEvent ? "Cancel" : "Add Event"}
+            onClick={() => setShowAddEvent(!showAddEvent)}
+          >
+            {showAddEvent ? <X {...iconProps} /> : <Plus {...iconProps} />}
+          </button>
+        </div>
       </div>
 
-      {/* Add Event Palette */}
-      {showAddEvent && (
-        <div className="add-event-container">
-          <EventPalette
-            componentType={element.type}
-            registeredEvents={registeredEventTypes}
-            onAddEvent={handleAddEvent}
-          />
-        </div>
-      )}
+      <div className="section-content">
+        {/* Add Event Palette */}
+        {showAddEvent && (
+          <div className="add-event-container">
+            <EventPalette
+              componentType={element.type}
+              registeredEvents={registeredEventTypes}
+              onAddEvent={handleAddEvent}
+            />
+          </div>
+        )}
 
-      {/* Registered Event Handlers */}
-      {eventHandlers.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">⚡</span>
-          <p className="empty-message">No event handlers registered</p>
-          <p className="empty-hint">Click "+ Add Event" to get started</p>
-        </div>
-      ) : (
+        {/* Registered Event Handlers */}
+        {eventHandlers.length === 0 ? (
+          <p className="empty-message">
+            No event handlers registered. Click the + icon to add one.
+          </p>
+        ) : (
         <div className="event-handlers-list">
           {selectedHandler ? (
             // Show EventHandlerManager for selected handler
@@ -191,7 +199,8 @@ export function EventSection({ element }: EventSectionProps) {
             </div>
           )}
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
