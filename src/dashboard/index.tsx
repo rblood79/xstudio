@@ -59,7 +59,8 @@ function Dashboard() {
       const homePage = await pagesApi.createPage({
         project_id: newProject.id,
         title: "Home",
-        slug: "home"
+        slug: "/",
+        order_num: 0
       });
 
       // 기본 body 요소 생성
