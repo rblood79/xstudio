@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import { TokenList } from './components/TokenList';
 import { TokenForm } from './components/TokenForm';
 import { ThemeHeader } from './components/ThemeHeader';
 import { ThemePreview } from './components/ThemePreview';
-//import './styles/components.css';
+import { Palette, Eye, AlertCircle } from 'lucide-react';
+import './styles/ThemeEditor.css';
 
 interface Props {
     projectId: string;
@@ -31,10 +31,14 @@ export default function ThemeEditor({ projectId }: Props) {
         clearError
     } = useTheme();
 
-    if (loading) return <div className="p-3 text-xs">Loading theme...</div>;
+    if (loading) return (
+        <div className="theme-loading">
+            <span>Loading theme...</span>
+        </div>
+    );
 
     return (
-        <div className="flex flex-col gap-4 p-3">
+        <div className="theme-editor-container">
             <ThemeHeader
                 theme={activeTheme}
                 dirty={dirty}
@@ -42,98 +46,116 @@ export default function ThemeEditor({ projectId }: Props) {
             />
 
             {lastError && (
-                <div className="text-[11px] text-red-600 flex items-center justify-between">
-                    <span>{lastError}</span>
-                    <button onClick={clearError} className="text-red-400 hover:text-red-600">×</button>
+                <div className="theme-error-banner">
+                    <div className="error-content">
+                        <AlertCircle size={14} />
+                        <span>{lastError}</span>
+                    </div>
+                    <button onClick={clearError} className="error-close">×</button>
                 </div>
             )}
 
-            {/* 디버깅용 수동 저장 버튼 */}
-            <div className="flex items-center gap-2 text-[11px]">
-                <span>Status: {dirty ? 'Dirty' : 'Clean'}</span>
+            {/* Debug Controls */}
+            <div className="theme-debug-controls">
+                <span className="debug-status">Status: {dirty ? 'Dirty' : 'Clean'}</span>
                 <button
                     onClick={() => {
                         console.log('[theme] Manual save triggered');
                         saveAll();
                     }}
-                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="debug-save-button"
                 >
                     Manual Save
                 </button>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex border-b border-gray-200">
+            <div className="theme-tab-navigation">
                 <button
                     onClick={() => setActiveTab('tokens')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tokens'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
+                    className={activeTab === 'tokens' ? 'theme-tab active' : 'theme-tab'}
                 >
-                    🎨 Tokens
+                    <Palette size={14} />
+                    <span>Tokens</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('preview')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'preview'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
+                    className={activeTab === 'preview' ? 'theme-tab active' : 'theme-tab'}
                 >
-                    👁️ Preview
+                    <Eye size={14} />
+                    <span>Preview</span>
                 </button>
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 overflow-auto">
+            <div className="theme-tab-content">
                 {activeTab === 'tokens' && (
-                    <div className="flex flex-col gap-6">
-                        {/* Raw Tokens */}
-                        <section className="flex flex-col gap-2">
-                            <h4 className="text-xs font-semibold text-neutral-600">
-                                Raw Tokens ({rawTokens.length})
-                            </h4>
-                            <TokenList
-                                tokens={rawTokens}
-                                scope="raw"
-                                onUpdate={updateToken}
-                                onDelete={deleteToken}
-                            />
-                        </section>
+                    <div className="theme-tokens-view">
+                        {/* Raw Tokens Section */}
+                        <div className="theme-section">
+                            <div className="section-header">
+                                <div className="section-title">
+                                    Raw Tokens ({rawTokens.length})
+                                </div>
+                            </div>
+                            <div className="section-content">
+                                <TokenList
+                                    tokens={rawTokens}
+                                    scope="raw"
+                                    onUpdate={updateToken}
+                                    onDelete={deleteToken}
+                                />
+                            </div>
+                        </div>
 
-                        {/* Semantic Tokens */}
-                        <section className="flex flex-col gap-2">
-                            <h4 className="text-xs font-semibold text-neutral-600">
-                                Semantic Tokens ({semanticTokens.length})
-                            </h4>
-                            <TokenList
-                                tokens={semanticTokens}
-                                scope="semantic"
-                                onUpdate={updateToken}
-                                onDelete={deleteToken}
-                            />
-                        </section>
+                        {/* Semantic Tokens Section */}
+                        <div className="theme-section">
+                            <div className="section-header">
+                                <div className="section-title">
+                                    Semantic Tokens ({semanticTokens.length})
+                                </div>
+                            </div>
+                            <div className="section-content">
+                                <TokenList
+                                    tokens={semanticTokens}
+                                    scope="semantic"
+                                    onUpdate={updateToken}
+                                    onDelete={deleteToken}
+                                />
+                            </div>
+                        </div>
 
-                        {/* Add Token Form */}
-                        <TokenForm rawTokens={rawTokens} onAdd={addToken} />
+                        {/* Add Token Form Section */}
+                        <div className="theme-section">
+                            <div className="section-header">
+                                <div className="section-title">Add New Token</div>
+                            </div>
+                            <div className="section-content">
+                                <TokenForm rawTokens={rawTokens} onAdd={addToken} />
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {activeTab === 'preview' && (
-                    <div className="flex flex-col gap-2">
-                        <h4 className="text-xs font-semibold text-neutral-600">
-                            Theme Preview
-                        </h4>
-                        <ThemePreview />
+                    <div className="theme-preview-view">
+                        <div className="theme-section">
+                            <div className="section-header">
+                                <div className="section-title">Theme Preview</div>
+                            </div>
+                            <div className="section-content">
+                                <ThemePreview />
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
 
-            <footer className="pt-2 border-t">
-                <p className="text-[10px] text-neutral-500">
+            <div className="theme-footer">
+                <span className="footer-info">
                     Project: {projectId} | Version: v{activeTheme?.version}
-                </p>
-            </footer>
+                </span>
+            </div>
         </div>
     );
 }

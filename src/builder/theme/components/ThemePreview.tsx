@@ -1,4 +1,5 @@
 import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar, DatePicker, DateRangePicker } from '../../components/list';
+import './ThemePreview.css';
 
 interface Option {
     id: string;
@@ -13,14 +14,14 @@ const selectOptions: Option[] = [
 
 export function ThemePreview() {
     return (
-        <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="theme-preview-container">
             {/* Buttons */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Buttons</h5>
-                <div className="flex gap-2 flex-wrap">
+            <div className="preview-category">
+                <h5 className="preview-category-title">Buttons</h5>
+                <div className="preview-category-content">
                     <Button>Primary Button</Button>
                     <Button>
-                        <span style={{ color: 'var(--color-primary, #3B82F6)' }}>
+                        <span className="styled-button-text">
                             Styled Button
                         </span>
                     </Button>
@@ -29,9 +30,9 @@ export function ThemePreview() {
             </div>
 
             {/* Form Elements */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Form Elements</h5>
-                <div className="flex flex-col gap-3">
+            <div className="preview-category">
+                <h5 className="preview-category-title">Form Elements</h5>
+                <div className="preview-category-form">
                     <TextField
                         label="Text Input"
                         description="Helper text for input field"
@@ -57,9 +58,9 @@ export function ThemePreview() {
             </div>
 
             {/* Checkboxes */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Checkboxes</h5>
-                <div className="flex flex-col gap-2">
+            <div className="preview-category">
+                <h5 className="preview-category-title">Checkboxes</h5>
+                <div className="preview-category-form">
                     <Checkbox defaultSelected>Checked Option</Checkbox>
                     <Checkbox>Unchecked Option</Checkbox>
                     <Checkbox isIndeterminate>Indeterminate Option</Checkbox>
@@ -68,8 +69,8 @@ export function ThemePreview() {
             </div>
 
             {/* Radio Groups */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Radio Groups</h5>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Radio Groups</h5>
                 <RadioGroup
                     label="Choose Option"
                     defaultValue="option1"
@@ -82,8 +83,8 @@ export function ThemePreview() {
             </div>
 
             {/* Tabs */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Tabs</h5>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Tabs</h5>
                 <Tabs defaultSelectedKey="tab1">
                     <TabList>
                         <Tab id="tab1">First Tab</Tab>
@@ -91,17 +92,17 @@ export function ThemePreview() {
                         <Tab id="tab3">Third Tab</Tab>
                     </TabList>
                     <TabPanel id="tab1">
-                        <div className="p-3 text-sm">
+                        <div className="preview-tab-content">
                             Content for the first tab goes here.
                         </div>
                     </TabPanel>
                     <TabPanel id="tab2">
-                        <div className="p-3 text-sm">
+                        <div className="preview-tab-content">
                             Content for the second tab goes here.
                         </div>
                     </TabPanel>
                     <TabPanel id="tab3">
-                        <div className="p-3 text-sm">
+                        <div className="preview-tab-content">
                             Content for the third tab goes here.
                         </div>
                     </TabPanel>
@@ -109,43 +110,21 @@ export function ThemePreview() {
             </div>
 
             {/* Typography Examples */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Typography</h5>
-                <div className="flex flex-col gap-1">
-                    <h1
-                        className="text-2xl font-bold"
-                        style={{
-                            color: 'var(--color-text-heading, #111827)',
-                            fontFamily: 'var(--font-heading, inherit)'
-                        }}
-                    >
+            <div className="preview-category">
+                <h5 className="preview-category-title">Typography</h5>
+                <div className="preview-typography">
+                    <h1 className="preview-heading-1">
                         Heading 1
                     </h1>
-                    <h2
-                        className="text-xl font-semibold"
-                        style={{
-                            color: 'var(--color-text-heading, #111827)',
-                            fontFamily: 'var(--font-heading, inherit)'
-                        }}
-                    >
+                    <h2 className="preview-heading-2">
                         Heading 2
                     </h2>
-                    <p
-                        className="text-sm"
-                        style={{
-                            color: 'var(--color-text-body, #374151)',
-                            fontFamily: 'var(--font-body, inherit)'
-                        }}
-                    >
+                    <p className="preview-body-text">
                         Body text example with normal font weight and readable color.
                     </p>
                     <a
                         href="#"
-                        className="text-sm underline"
-                        style={{
-                            color: 'var(--color-link, #3B82F6)',
-                            fontFamily: 'var(--font-body, inherit)'
-                        }}
+                        className="preview-link"
                         onClick={(e) => e.preventDefault()}
                     >
                         Link example
@@ -154,84 +133,41 @@ export function ThemePreview() {
             </div>
 
             {/* Status Indicators */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Status & Badges</h5>
-                <div className="flex gap-1 flex-wrap">
-                    <span
-                        className="px-2 py-0.5 text-xs rounded-full"
-                        style={{
-                            backgroundColor: 'var(--color-primary, #3B82F6)',
-                            color: 'white'
-                        }}
-                    >
+            <div className="preview-category">
+                <h5 className="preview-category-title">Status & Badges</h5>
+                <div className="preview-category-content">
+                    <span className="preview-badge preview-badge-primary">
                         Primary
                     </span>
-                    <span
-                        className="px-2 py-0.5 text-xs rounded-full"
-                        style={{
-                            backgroundColor: 'var(--color-success, #10B981)',
-                            color: 'white'
-                        }}
-                    >
+                    <span className="preview-badge preview-badge-success">
                         Success
                     </span>
-                    <span
-                        className="px-2 py-0.5 text-xs rounded-full"
-                        style={{
-                            backgroundColor: 'var(--color-warning, #F59E0B)',
-                            color: 'white'
-                        }}
-                    >
+                    <span className="preview-badge preview-badge-warning">
                         Warning
                     </span>
-                    <span
-                        className="px-2 py-0.5 text-xs rounded-full"
-                        style={{
-                            backgroundColor: 'var(--color-danger, #EF4444)',
-                            color: 'white'
-                        }}
-                    >
+                    <span className="preview-badge preview-badge-danger">
                         Danger
                     </span>
                 </div>
             </div>
 
             {/* Cards & Surfaces */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Cards & Surfaces</h5>
-                <div className="grid grid-cols-2 gap-2">
-                    <div
-                        className="p-3 rounded-lg border"
-                        style={{
-                            backgroundColor: 'var(--color-surface, white)',
-                            borderColor: 'var(--color-border, #E5E7EB)',
-                            borderRadius: 'var(--radius-card, 0.5rem)'
-                        }}
-                    >
-                        <h6
-                            className="font-medium text-sm mb-1"
-                            style={{ color: 'var(--color-text-heading, #111827)' }}
-                        >
+            <div className="preview-category">
+                <h5 className="preview-category-title">Cards & Surfaces</h5>
+                <div className="preview-cards-grid">
+                    <div className="preview-card">
+                        <h6 className="preview-card-title">
                             Card Title
                         </h6>
-                        <p
-                            className="text-xs"
-                            style={{ color: 'var(--color-text-body, #374151)' }}
-                        >
+                        <p className="preview-card-body">
                             Card content here.
                         </p>
                     </div>
-                    <div
-                        className="p-3 rounded-lg"
-                        style={{
-                            backgroundColor: 'var(--color-primary, #3B82F6)',
-                            borderRadius: 'var(--radius-card, 0.5rem)'
-                        }}
-                    >
-                        <h6 className="font-medium text-sm mb-1 text-white">
+                    <div className="preview-card preview-card-featured">
+                        <h6 className="preview-card-title">
                             Featured Card
                         </h6>
-                        <p className="text-xs text-white/80">
+                        <p className="preview-card-body">
                             Primary colored card.
                         </p>
                     </div>
@@ -239,23 +175,17 @@ export function ThemePreview() {
             </div>
 
             {/* Progress & Loading */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Progress</h5>
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-1">
-                        <span className="text-xs" style={{ color: 'var(--color-text-muted, #6B7280)' }}>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Progress</h5>
+                <div className="preview-progress-section">
+                    <div className="preview-progress-wrapper">
+                        <span className="preview-progress-label">
                             Progress: 65%
                         </span>
-                        <div
-                            className="w-full rounded-full h-2"
-                            style={{ backgroundColor: 'var(--color-neutral-200, #E5E7EB)' }}
-                        >
+                        <div className="preview-progress-track">
                             <div
-                                className="h-2 rounded-full transition-all duration-300"
-                                style={{
-                                    backgroundColor: 'var(--color-primary, #3B82F6)',
-                                    width: '65%'
-                                }}
+                                className="preview-progress-bar"
+                                style={{ width: '65%' }}
                             />
                         </div>
                     </div>
@@ -263,41 +193,27 @@ export function ThemePreview() {
             </div>
 
             {/* Spacing Visualization */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Spacing</h5>
-                <div className="flex items-center gap-1">
-                    <div
-                        className="bg-blue-200 rounded"
-                        style={{
-                            width: 'var(--spacing-sm, 0.5rem)',
-                            height: 'var(--spacing-sm, 0.5rem)'
-                        }}
-                    ></div>
-                    <span className="text-xs text-gray-500">Small</span>
-
-                    <div
-                        className="bg-blue-300 rounded ml-2"
-                        style={{
-                            width: 'var(--spacing-md, 1rem)',
-                            height: 'var(--spacing-md, 1rem)'
-                        }}
-                    ></div>
-                    <span className="text-xs text-gray-500">Medium</span>
-
-                    <div
-                        className="bg-blue-400 rounded ml-2"
-                        style={{
-                            width: 'var(--spacing-lg, 1.5rem)',
-                            height: 'var(--spacing-lg, 1.5rem)'
-                        }}
-                    ></div>
-                    <span className="text-xs text-gray-500">Large</span>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Spacing</h5>
+                <div className="preview-spacing-grid">
+                    <div className="preview-spacing-item">
+                        <div className="preview-spacing-box preview-spacing-sm"></div>
+                        <span className="preview-spacing-label">Small</span>
+                    </div>
+                    <div className="preview-spacing-item">
+                        <div className="preview-spacing-box preview-spacing-md"></div>
+                        <span className="preview-spacing-label">Medium</span>
+                    </div>
+                    <div className="preview-spacing-item">
+                        <div className="preview-spacing-box preview-spacing-lg"></div>
+                        <span className="preview-spacing-label">Large</span>
+                    </div>
                 </div>
             </div>
 
             {/* DatePicker */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Date Picker</h5>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Date Picker</h5>
                 <DatePicker
                     label="Select Date"
                     description="Choose a date from the picker"
@@ -308,8 +224,8 @@ export function ThemePreview() {
             </div>
 
             {/* DateRangePicker */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Date Range Picker</h5>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Date Range Picker</h5>
                 <DateRangePicker
                     label="Select Date Range"
                     description="Choose start and end dates"
@@ -320,8 +236,8 @@ export function ThemePreview() {
             </div>
 
             {/* Calendar */}
-            <div className="flex flex-col gap-2">
-                <h5 className="text-xs font-medium text-gray-600">Calendar</h5>
+            <div className="preview-category">
+                <h5 className="preview-category-title">Calendar</h5>
                 <Calendar
                     aria-label="Date Selection"
                     visibleDuration={{ months: 1 }}

@@ -20,37 +20,24 @@ export default function Theme() {
     return (
         <div className="sidebar-content">
             {!projectId ? (
-                <p className="text-red-500">Project ID is required</p>
+                <div className="error-state">
+                    <p className="error-message">Project ID is required</p>
+                </div>
             ) : (
                 <>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 'var(--spacing-md)',
-                        paddingBottom: 'var(--spacing-sm)',
-                        borderBottom: '1px solid var(--border-color)'
-                    }}>
-                        <h3 style={{
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: 600,
-                            margin: 0
-                        }}>
-                            Quick Theme Editor
-                        </h3>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={handleOpenThemeStudio}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--spacing-xs)'
-                            }}
-                        >
-                            <Palette size={14} />
-                            Open Theme Studio
-                        </Button>
+                    <div className="panel-header">
+                        <h3 className="panel-title">Quick Theme Editor</h3>
+                        <div className="header-actions">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={handleOpenThemeStudio}
+                                className="theme-studio-button"
+                            >
+                                <Palette size={14} />
+                                Open Theme Studio
+                            </Button>
+                        </div>
                     </div>
 
                     <ThemeInitializer projectId={projectId} />
