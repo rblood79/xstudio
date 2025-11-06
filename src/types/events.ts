@@ -29,8 +29,8 @@ export type ActionType =
 
 // 액션별 특화된 값 타입들
 export interface NavigateActionValue {
-    url: string;
-    newTab?: boolean;
+    path: string;
+    openInNewTab?: boolean;
     replace?: boolean;
 }
 

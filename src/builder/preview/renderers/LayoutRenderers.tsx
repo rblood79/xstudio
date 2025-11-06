@@ -208,6 +208,9 @@ export const renderButton = (
 
   const eventHandlers = createEventHandlerMap(element, eventEngine, projectId);
 
+  // React Aria Button은 onPress를 사용하므로 onClick과 onPress 모두 확인
+  const handlePress = eventHandlers.onPress || eventHandlers.onClick;
+
   return (
     <Button
       key={element.id}
@@ -226,7 +229,7 @@ export const renderButton = (
       isDisabled={Boolean(element.props.isDisabled as boolean)}
       style={element.props.style}
       className={element.props.className}
-      onPress={eventHandlers.onClick as unknown as () => void}
+      onPress={handlePress as unknown as () => void}
       onHoverStart={
         eventHandlers.onMouseEnter as unknown as (e: unknown) => void
       }

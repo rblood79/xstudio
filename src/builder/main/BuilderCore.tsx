@@ -220,6 +220,36 @@ export const BuilderCore: React.FC = () => {
     }
   }, [elements, validateOrderNumbers]);
 
+  // NAVIGATE_TO_PAGE 메시지 수신 (Preview iframe에서)
+  useEffect(() => {
+    const handleNavigateMessage = async (event: MessageEvent) => {
+      // 메시지 출처 검증 (보안)
+      if (event.data?.type !== "NAVIGATE_TO_PAGE") return;
+
+      const { path } = event.data.payload as { path: string; replace?: boolean };
+      console.log("[BuilderCore] Received NAVIGATE_TO_PAGE:", path);
+
+      // pages 배열에서 slug 기반으로 pageId 조회
+      const targetPage = pages.find((p) => p.slug === path);
+
+      if (targetPage) {
+        console.log("[BuilderCore] Navigating to page:", targetPage.title, targetPage.id);
+        // 페이지 elements 로드
+        await fetchElements(targetPage.id);
+      } else {
+        console.warn(`[BuilderCore] Page not found for path: ${path}`);
+        // 페이지를 찾지 못한 경우 사용자에게 알림
+        handleError(new Error(`페이지를 찾을 수 없습니다: ${path}`), "페이지 이동");
+      }
+    };
+
+    window.addEventListener("message", handleNavigateMessage);
+
+    return () => {
+      window.removeEventListener("message", handleNavigateMessage);
+    };
+  }, [pages, fetchElements, handleError]);
+
   // 페이지 추가 핸들러
   const handleAddPage = useCallback(async () => {
     if (!projectId) return;

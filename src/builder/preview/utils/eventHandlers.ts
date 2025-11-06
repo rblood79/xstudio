@@ -17,10 +17,16 @@ export const createEventHandler = (
 ) => {
   return async (event: Event) => {
     // 요소의 이벤트 찾기
-    const elementEvents = (element.props.events as ElementEvent[]) || [];
-    const matchingEvents = elementEvents.filter(
-      (e) => e.event_type === eventType && e.enabled !== false
-    );
+    const elementEvents = (element.props.events as any[]) || [];
+
+    // 두 가지 타입 시스템 지원:
+    // 1. 기존: { event_type: "onClick", actions: [...] }
+    // 2. 새로운: { event: "onClick", actions: [...] }
+    const matchingEvents = elementEvents.filter((e) => {
+      const type = e.event_type || e.event; // 하위 호환성
+      const enabled = e.enabled !== false;
+      return type === eventType && enabled;
+    });
 
     if (matchingEvents.length === 0) {
       return;
@@ -58,19 +64,32 @@ export const createEventHandlerMap = (
   const eventHandlers: EventHandlerMap = {};
 
   if (element.props.events && Array.isArray(element.props.events)) {
-    const events = element.props.events as ElementEvent[];
+    const events = element.props.events as any[];
+
+    // 두 가지 타입 시스템 지원:
+    // 1. 기존: { event_type: "onClick", ... }
+    // 2. 새로운: { event: "onClick", ... }
     const enabledEventTypes = events
       .filter((event) => event.enabled !== false)
-      .map((event) => event.event_type);
+      .map((event) => event.event_type || event.event); // 하위 호환성
 
     // 중복 제거 후 각 이벤트 타입별 핸들러 생성
     [...new Set(enabledEventTypes)].forEach((eventType) => {
-      eventHandlers[eventType] = createEventHandler(
+      if (!eventType) return; // undefined 제외
+
+      const handler = createEventHandler(
         element,
         eventType,
         eventEngine,
         projectId
       );
+
+      eventHandlers[eventType] = handler;
+
+      // React Aria 호환: onClick → onPress 자동 매핑
+      if (eventType === 'onClick') {
+        eventHandlers['onPress'] = handler;
+      }
     });
   }
 

@@ -100,6 +100,14 @@ export interface AddColumnElementsMessage extends PreviewMessage {
   };
 }
 
+export interface NavigateToPageMessage extends PreviewMessage {
+  type: "NAVIGATE_TO_PAGE";
+  payload: {
+    path: string;
+    replace?: boolean;
+  };
+}
+
 export type MessageType =
   | UpdateElementsMessage
   | UpdateElementPropsMessage
@@ -107,4 +115,5 @@ export type MessageType =
   | DeleteElementMessage
   | ThemeVarsMessage
   | UpdateThemeTokensMessage
-  | AddColumnElementsMessage;
+  | AddColumnElementsMessage
+  | NavigateToPageMessage;

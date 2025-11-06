@@ -44,12 +44,12 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
       return (
         <div className="action-value-editor">
           <TextField
-            label="URL"
-            value={String(value.url || "")}
-            onChange={(newUrl) => {
+            label="Path / URL"
+            value={String(value.path || "")}
+            onChange={(newPath) => {
               updateValue({
                 ...(value as Record<string, unknown>),
-                url: newUrl,
+                path: newPath,
               });
             }}
           />
@@ -57,10 +57,10 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
             <label>
               <input
                 type="checkbox"
-                checked={Boolean(value.newTab)}
+                checked={Boolean(value.openInNewTab)}
                 onChange={(e) => {
-                  const updatedValue = { ...value, newTab: e.target.checked };
-                  updateValue({ ...updatedValue, url: value.url || "" });
+                  const updatedValue = { ...value, openInNewTab: e.target.checked };
+                  updateValue({ ...updatedValue, path: value.path || "" });
                 }}
               />
               새 탭에서 열기

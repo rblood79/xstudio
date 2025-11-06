@@ -173,6 +173,21 @@ export const handleSetDarkMode = (data: MessageType) => {
 };
 
 /**
+ * NAVIGATE_TO_PAGE 메시지 처리 (Preview → Parent)
+ * 이 핸들러는 실제로 Preview에서는 사용되지 않고,
+ * Parent (BuilderCore)에서 사용됩니다.
+ */
+export const handleNavigateToPage = (
+  data: MessageType,
+  onNavigate?: (path: string) => void
+) => {
+  if (data.type === "NAVIGATE_TO_PAGE" && onNavigate) {
+    const { path } = data.payload as { path: string };
+    onNavigate(path);
+  }
+};
+
+/**
  * 모든 메시지 타입 처리
  */
 export const handleMessage = (

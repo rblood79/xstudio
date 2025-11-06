@@ -92,7 +92,10 @@ export class EventEngine {
         }>
     ): Promise<void> {
         for (const action of event.actions) {
-            if (!action.enabled) continue;
+            // enabled가 명시적으로 false인 경우만 스킵 (undefined는 true로 간주)
+            if (action.enabled === false) {
+                continue;
+            }
 
             try {
                 const result = await this.executeActionWithTimeout(action, context);
@@ -108,7 +111,7 @@ export class EventEngine {
                     success: false,
                     error: err.message
                 });
-                console.error(`Action execution failed:`, err);
+                console.error(`[EventEngine] Action execution failed:`, err);
             }
         }
     }
@@ -228,16 +231,78 @@ export class EventEngine {
     }
 
     private async executeNavigateAction(action: EventAction): Promise<void> {
-        const { url } = action.value as { url: string };
-        if (url && typeof url === 'string') {
-            // URL 검증
+        // 두 가지 타입 시스템 지원:
+        // 1. 기존: action.value
+        // 2. 새로운: action.config
+        const actionData = action as any;
+        const value = (actionData.config || actionData.value || {}) as {
+            path?: string;
+            url?: string; // 하위 호환성
+            openInNewTab?: boolean;
+            newTab?: boolean; // 하위 호환성
+            replace?: boolean;
+        };
+
+        // path 또는 url (하위 호환)
+        const path = value.path || value.url;
+        // openInNewTab 또는 newTab (하위 호환)
+        const openInNewTab = value.openInNewTab || value.newTab;
+        const replace = value.replace;
+
+        if (!path || typeof path !== 'string') {
+            throw new Error('Invalid path');
+        }
+
+        // 새 탭에서 열기
+        if (openInNewTab) {
+            window.open(path, '_blank');
+            return;
+        }
+
+        // 내부 페이지인지 외부 URL인지 구분
+        const isInternalPage = this.isInternalPath(path);
+
+        if (isInternalPage) {
+            // 빌더 모드 (iframe 안)에서 실행 중인지 확인
+            if (this.isBuilderMode()) {
+                // postMessage로 부모에게 페이지 전환 요청
+                window.parent.postMessage({
+                    type: 'NAVIGATE_TO_PAGE',
+                    payload: { path, replace }
+                }, '*');
+            } else {
+                // 퍼블리시 모드에서는 React Router 사용 (향후 구현)
+                console.warn('[EventEngine] Navigate in published mode not yet implemented');
+                // TODO: 향후 퍼블리시 모드에서 React Router navigate() 호출
+            }
+        } else {
+            // 외부 URL - 기존 방식
             try {
-                new URL(url);
-                window.location.href = url;
+                new URL(path);
+                window.location.href = path;
             } catch {
                 throw new Error('Invalid URL');
             }
         }
+    }
+
+    /**
+     * 빌더 모드(iframe 안)에서 실행 중인지 확인
+     */
+    private isBuilderMode(): boolean {
+        return window.self !== window.top && window.parent !== window.self;
+    }
+
+    /**
+     * 내부 페이지 경로인지 확인 (slug 기반)
+     * 예: "/", "/dashboard", "/about" 등
+     */
+    private isInternalPath(path: string): boolean {
+        // 외부 URL 패턴 (http://, https://, //, mailto:, tel: 등)
+        const externalUrlPattern = /^(https?:\/\/|\/\/|mailto:|tel:)/i;
+
+        // 외부 URL이 아니고 슬래시로 시작하면 내부 페이지
+        return !externalUrlPattern.test(path) && path.startsWith('/');
     }
 
     // 누락된 메서드들 추가
