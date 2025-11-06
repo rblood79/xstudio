@@ -156,6 +156,8 @@
 
   /* Submenu Popover 위치 조정 */
   .react-aria-Popover[data-trigger=SubmenuTrigger] {
+    contain: layout style paint;
+
     &[data-placement="right"] {
       margin-left: -5px;
     }
@@ -167,11 +169,32 @@
     /* Submenu 내부 Menu 스타일 */
     .react-aria-Menu {
       min-width: 150px;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+
+      .react-aria-MenuItem {
+        transform: translate3d(0, 0, 0);
+      }
     }
 
     /* Submenu 내 SearchField */
     .react-aria-SearchField {
       margin: 4px 8px;
+    }
+  }
+
+  /* Main Menu Popover 최적화 */
+  .react-aria-Popover[data-trigger=MenuTrigger] {
+    contain: layout style paint;
+
+    .react-aria-Menu {
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      min-height: 40px;
+
+      .react-aria-MenuItem {
+        transform: translate3d(0, 0, 0);
+      }
     }
   }
 }

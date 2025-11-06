@@ -55,6 +55,17 @@
 
   .react-aria-Popover[data-trigger="ComboBox"] {
     width: var(--trigger-width);
+    contain: layout style paint;
+
+    .react-aria-ListBox {
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      min-height: 40px;
+
+      .react-aria-ListBoxItem {
+        transform: translate3d(0, 0, 0);
+      }
+    }
   }
 
   .react-aria-ListBoxItem[href] {
