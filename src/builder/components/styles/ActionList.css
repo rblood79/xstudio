@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   /* Action List Container */
   .action-list {

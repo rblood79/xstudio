@@ -1,4 +1,4 @@
-@import "./collections.css";
+@import './collections.css';
 
 @layer components {
   .react-aria-ListBox {

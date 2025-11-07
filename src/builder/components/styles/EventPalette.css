@@ -2,8 +2,6 @@
  * EventPalette Component Styles
  */
 
-@import "../theme.css";
-
 @layer components {
   /* ===== EventPalette ===== */
   .event-palette {

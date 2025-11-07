@@ -2,8 +2,6 @@
  * Switch Component Styles
  */
 
-@import "../theme.css";
-
 @layer components {
   .react-aria-Switch {
     display: flex;

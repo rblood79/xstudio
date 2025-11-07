@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   /* Simple Flow View Container */
   .simple-flow-view {

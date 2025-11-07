@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   /* Calendar-specific styles (공통 스타일은 CalendarCommon.css) */
   .react-aria-Calendar {

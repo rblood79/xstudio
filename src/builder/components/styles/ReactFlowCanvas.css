@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   /* ReactFlow Canvas Container */
   .reactflow-canvas {

@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   .react-aria-TextField {
     display: flex;

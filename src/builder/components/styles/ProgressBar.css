@@ -2,8 +2,6 @@
  * ProgressBar Component Styles
  */
 
-@import "../theme.css";
-
 @layer components {
 
   .react-aria-ProgressBar {

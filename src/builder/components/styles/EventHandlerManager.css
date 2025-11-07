@@ -1,5 +1,3 @@
-@import "../theme.css";
-
 @layer components {
   /* Event Handler Manager */
   .event-handler-manager {
