@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -166,6 +166,31 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     isSelected={Boolean(currentProps.allowsCustomValue)}
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                     icon={PenOff}
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.VARIANT}
+                    value={String(currentProps.variant || 'default')}
+                    onChange={(value) => updateProp('variant', value)}
+                    options={[
+                        { value: 'default', label: PROPERTY_LABELS.TAG_VARIANT_DEFAULT },
+                        { value: 'primary', label: PROPERTY_LABELS.TAG_VARIANT_PRIMARY },
+                        { value: 'secondary', label: PROPERTY_LABELS.TAG_VARIANT_SECONDARY },
+                        { value: 'surface', label: PROPERTY_LABELS.TAG_VARIANT_SURFACE }
+                    ]}
+                    icon={Layout}
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.SIZE}
+                    value={String(currentProps.size || 'md')}
+                    onChange={(value) => updateProp('size', value)}
+                    options={[
+                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                    ]}
+                    icon={PencilRuler}
                 />
             </fieldset>
 

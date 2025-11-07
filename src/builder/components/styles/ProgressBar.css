@@ -1,35 +1,42 @@
+/**
+ * ProgressBar Component Styles
+ */
+
 @import "../theme.css";
 
 @layer components {
-  
+
   .react-aria-ProgressBar {
     display: grid;
     grid-template-areas: "label value"
                          "bar bar";
     grid-template-columns: 1fr auto;
-    gap: 4px;
+    gap: var(--spacing-xs);
     width: 250px;
     color: var(--text-color);
-  
+
     .value {
       grid-area: value;
+      font-size: var(--text-sm);
     }
-  
+
     .bar {
       grid-area: bar;
-      box-shadow: inset 0px 0px 0px 1px var(--border-color);
+      box-shadow: var(--inset-shadow-xs);
       forced-color-adjust: none;
       height: 10px;
-      border-radius: 5px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
+      background: var(--color-gray-100);
     }
-  
+
     .fill {
       background: var(--highlight-background);
       height: 100%;
+      transition: width 200ms ease-out;
     }
-  
+
     &:not([aria-valuenow]) {
       .fill {
         width: 120px;
@@ -39,12 +46,69 @@
       }
     }
   }
-  
+
+  /* Primary variant */
+  .react-aria-ProgressBar.primary .fill {
+    background: var(--action-primary-bg);
+  }
+
+  /* Secondary variant */
+  .react-aria-ProgressBar.secondary .fill {
+    background: var(--action-secondary-bg);
+  }
+
+  /* Surface variant */
+  .react-aria-ProgressBar.surface .fill {
+    background: var(--action-surface-bg);
+  }
+
+  /* Small size */
+  .react-aria-ProgressBar.sm {
+    width: 200px;
+
+    .bar {
+      height: 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .value {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* Medium size (default) */
+  .react-aria-ProgressBar.md {
+    width: 250px;
+
+    .bar {
+      height: 10px;
+      border-radius: var(--radius-md);
+    }
+
+    .value {
+      font-size: var(--text-base);
+    }
+  }
+
+  /* Large size */
+  .react-aria-ProgressBar.lg {
+    width: 300px;
+
+    .bar {
+      height: 14px;
+      border-radius: var(--radius-lg);
+    }
+
+    .value {
+      font-size: var(--text-lg);
+    }
+  }
+
   @keyframes indeterminate {
     from {
       transform: translateX(-100%);
     }
-  
+
     to {
       transform: translateX(250px);
     }

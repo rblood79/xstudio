@@ -110,6 +110,66 @@ export type PanelVariant = "default" | "tab" | "sidebar" | "card" | "modal";
 export type SeparatorVariant = "default" | "dashed" | "dotted";
 
 // ============================================================================
+// Tag Variants
+// ============================================================================
+
+/**
+ * Tag visual variants
+ * Used by: Tag component (within TagGroup)
+ *
+ * - default: Standard tag style
+ * - primary: Primary action tag (uses --action-primary-* tokens)
+ * - secondary: Secondary action tag (uses --action-secondary-* tokens)
+ * - surface: Surface action tag (uses --action-surface-* tokens)
+ */
+export type TagVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// ProgressBar Variants
+// ============================================================================
+
+/**
+ * ProgressBar visual variants
+ * Used by: ProgressBar component
+ *
+ * - default: Standard progress bar style
+ * - primary: Primary progress (uses --action-primary-bg token)
+ * - secondary: Secondary progress (uses --action-secondary-bg token)
+ * - surface: Surface progress (uses --action-surface-bg token)
+ */
+export type ProgressBarVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// Meter Variants
+// ============================================================================
+
+/**
+ * Meter visual variants
+ * Used by: Meter component
+ *
+ * - default: Standard meter style
+ * - primary: Primary meter (uses --action-primary-bg token)
+ * - secondary: Secondary meter (uses --action-secondary-bg token)
+ * - surface: Surface meter (uses --action-surface-bg token)
+ */
+export type MeterVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// Switch Variants
+// ============================================================================
+
+/**
+ * Switch visual variants
+ * Used by: Switch component
+ *
+ * - default: Standard switch style
+ * - primary: Primary switch (uses --action-primary-bg token when selected)
+ * - secondary: Secondary switch (uses --action-secondary-bg token when selected)
+ * - surface: Surface switch (uses --action-surface-bg token when selected)
+ */
+export type SwitchVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
 // Table Column Variants
 // ============================================================================
 

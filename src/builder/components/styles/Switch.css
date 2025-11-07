@@ -1,3 +1,7 @@
+/**
+ * Switch Component Styles
+ */
+
 @import "../theme.css";
 
 @layer components {
@@ -10,7 +14,7 @@
     font-size: var(--text-sm);
     color: var(--text-color);
     forced-color-adjust: none;
-    padding: var(--spacing);
+    padding: var(--spacing) 0;
 
     .indicator {
       width: var(--text-4xl);
@@ -23,7 +27,6 @@
       &:before {
         content: "";
         display: block;
-        margin: 0;
         width: var(--text-base);
         height: var(--text-base);
         background: var(--highlight-background);
@@ -73,6 +76,120 @@
         &:before {
           background: var(--border-color-disabled);
         }
+      }
+    }
+  }
+
+  /* Primary variant */
+  .react-aria-Switch.primary {
+    &[data-selected] {
+      .indicator {
+        border-color: var(--action-primary-bg);
+        background: var(--action-primary-bg);
+
+        &:before {
+          background: var(--field-background);
+        }
+      }
+
+      &[data-pressed] .indicator {
+        border-color: var(--action-primary-bg-pressed);
+        background: var(--action-primary-bg-pressed);
+      }
+    }
+  }
+
+  /* Secondary variant */
+  .react-aria-Switch.secondary {
+    &[data-selected] {
+      .indicator {
+        border-color: var(--action-secondary-bg);
+        background: var(--action-secondary-bg);
+
+        &:before {
+          background: var(--field-background);
+        }
+      }
+
+      &[data-pressed] .indicator {
+        border-color: var(--action-secondary-bg-pressed);
+        background: var(--action-secondary-bg-pressed);
+      }
+    }
+  }
+
+  /* Surface variant */
+  .react-aria-Switch.surface {
+    &[data-selected] {
+      .indicator {
+        border-color: var(--action-surface-bg);
+        background: var(--action-surface-bg);
+
+        &:before {
+          background: var(--field-background);
+        }
+      }
+
+      &[data-pressed] .indicator {
+        border-color: var(--action-surface-bg-pressed);
+        background: var(--action-surface-bg-pressed);
+      }
+    }
+  }
+
+  /* Small size */
+  .react-aria-Switch.sm {
+    font-size: var(--text-sm);
+    padding: var(--spacing-sm) 0;
+
+    .indicator {
+      width: 32px;
+      height: 18px;
+      border-radius: 18px;
+
+      &:before {
+        width: 14px;
+        height: 14px;
+        border-radius: 14px;
+        margin: 0px;
+      }
+    }
+  }
+
+  /* Medium size (default) */
+  .react-aria-Switch.md {
+    font-size: var(--text-base);
+    padding: var(--spacing-md) 0;
+
+    .indicator {
+      width: var(--text-4xl);
+      height: var(--text-xl);
+      border-radius: var(--text-xl);
+
+      &:before {
+        width: var(--text-base);
+        height: var(--text-base);
+        border-radius: var(--text-base);
+        margin: 0px;
+      }
+    }
+  }
+
+  /* Large size */
+  .react-aria-Switch.lg {
+    font-size: var(--text-lg);
+    padding: var(--spacing-lg) 0;
+
+    .indicator {
+      width: 52px;
+      height: 28px;
+      border-radius: 28px;
+
+      &:before {
+        width: 24px;
+        height: 24px;
+        border-radius: 24px;
+        margin: 0px;
       }
     }
   }

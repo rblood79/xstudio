@@ -19,55 +19,131 @@
   
   .react-aria-Tag {
     color: var(--text-color);
+    background: var(--color-white);
     border: 1px solid var(--border-color);
     forced-color-adjust: none;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.929rem;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    font-size: var(--text-sm);
     outline: none;
     cursor: default;
     display: flex;
     align-items: center;
-    transition: border-color 200ms;
-  
+    transition: all 200ms;
+
     &[data-hovered] {
       border-color: var(--border-color-hover);
     }
-  
+
     &[data-focus-visible] {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: 2px;
     }
-  
+
     &[data-selected] {
       border-color: var(--highlight-background);
       background: var(--highlight-background);
       color: var(--highlight-foreground);
     }
-  
+  }
+
+  /* Primary variant - controlled by TagGroup */
+  .react-aria-TagGroup[data-tag-variant="primary"] .react-aria-Tag {
+    background: var(--action-primary-bg);
+    color: var(--action-primary-text);
+    border-color: var(--action-primary-border);
+
+    &[data-hovered] {
+      background: var(--action-primary-bg-hover);
+      border-color: var(--action-primary-border-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--action-primary-bg-pressed);
+      border-color: var(--action-primary-border-pressed);
+    }
+  }
+
+  /* Secondary variant - controlled by TagGroup */
+  .react-aria-TagGroup[data-tag-variant="secondary"] .react-aria-Tag {
+    background: var(--action-secondary-bg);
+    color: var(--action-secondary-text);
+    border-color: var(--action-secondary-border);
+
+    &[data-hovered] {
+      background: var(--action-secondary-bg-hover);
+      border-color: var(--action-secondary-border-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--action-secondary-bg-pressed);
+      border-color: var(--action-secondary-border-pressed);
+    }
+  }
+
+  /* Surface variant - controlled by TagGroup */
+  .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
+    background: var(--action-surface-bg);
+    color: var(--action-surface-text);
+    border-color: var(--action-surface-border);
+
+    &[data-hovered] {
+      background: var(--action-surface-bg-hover);
+      border-color: var(--action-surface-border-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--action-surface-bg-pressed);
+      border-color: var(--action-surface-border-pressed);
+    }
+  }
+
+  /* Small size - controlled by TagGroup */
+  .react-aria-TagGroup[data-tag-size="sm"] .react-aria-Tag {
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Medium size - controlled by TagGroup (default) */
+  .react-aria-TagGroup[data-tag-size="md"] .react-aria-Tag {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--text-base);
+    border-radius: var(--radius-md);
+  }
+
+  /* Large size - controlled by TagGroup */
+  .react-aria-TagGroup[data-tag-size="lg"] .react-aria-Tag {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--text-lg);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Remove button styling */
+  .react-aria-Tag {
     [slot=remove] {
       background: none;
       border: none;
       padding: 0;
-      margin-left: 2px;
+      margin-left: var(--spacing-2xs);
       color: var(--text-color-base);
       transition: color 200ms;
       outline: none;
-      font-size: 0.95em;
+      font-size: var(--text-sm);
       border-radius: 100%;
       aspect-ratio: 1/1;
       height: 100%;
-  
+
       &[data-hovered] {
         color: var(--text-color-hover);
       }
-  
+
       &[data-focus-visible] {
         outline: 2px solid var(--focus-ring-color);
         outline-offset: -1px;
       }
     }
-  
+
     &[data-selected] {
       [slot=remove] {
         color: inherit;
@@ -91,11 +167,11 @@
   
   .react-aria-TagGroup {
     [slot=description] {
-      font-size: 12px;
+      font-size: var(--text-sm);
     }
   
     [slot=errorMessage] {
-      font-size: 12px;
+      font-size: var(--text-sm);
       color: var(--invalid-color);
     }
   }

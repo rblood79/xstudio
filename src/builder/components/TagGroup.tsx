@@ -41,6 +41,9 @@ export interface TagGroupProps<T>
   columnMapping?: ColumnMapping;
   // 제거된 항목 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   removedItemIds?: string[];
+  // Tag 스타일 제어
+  variant?: 'default' | 'primary' | 'secondary' | 'surface';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export function TagGroup<T extends object>(
@@ -62,9 +65,14 @@ export function TagGroup<T extends object>(
     dataBinding,
     columnMapping,
     removedItemIds = [],
+    variant = 'default',
+    size = 'md',
     ...props
   }: TagGroupProps<T>
 ): JSX.Element {
+  // Build className with variant and size (재사용을 위해 최상위에 선언)
+  const tagGroupClassName = 'react-aria-TagGroup';
+
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,
@@ -98,7 +106,9 @@ export function TagGroup<T extends object>(
         <AriaTagGroup
           {...props}
           selectionMode="none"
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList className='react-aria-TagList'>
@@ -115,7 +125,9 @@ export function TagGroup<T extends object>(
         <AriaTagGroup
           {...props}
           selectionMode="none"
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList className='react-aria-TagList'>
@@ -168,7 +180,9 @@ export function TagGroup<T extends object>(
           onSelectionChange={onSelectionChange}
           disallowEmptySelection={disallowEmptySelection}
           onRemove={allowsRemoving ? onRemove : undefined}
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList
@@ -195,7 +209,9 @@ export function TagGroup<T extends object>(
         onSelectionChange={onSelectionChange}
         disallowEmptySelection={disallowEmptySelection}
         onRemove={allowsRemoving ? onRemove : undefined}
-        className='react-aria-TagGroup'
+        className={tagGroupClassName}
+        data-tag-variant={variant}
+        data-tag-size={size}
       >
         {label && <Label>{label}</Label>}
         <TagList
@@ -219,7 +235,9 @@ export function TagGroup<T extends object>(
         <AriaTagGroup
           {...props}
           selectionMode="none"
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList className='react-aria-TagList'>
@@ -236,7 +254,9 @@ export function TagGroup<T extends object>(
         <AriaTagGroup
           {...props}
           selectionMode="none"
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList className='react-aria-TagList'>
@@ -269,7 +289,9 @@ export function TagGroup<T extends object>(
           onSelectionChange={onSelectionChange}
           disallowEmptySelection={disallowEmptySelection}
           onRemove={allowsRemoving ? onRemove : undefined}
-          className='react-aria-TagGroup'
+          className={tagGroupClassName}
+          data-tag-variant={variant}
+          data-tag-size={size}
         >
           {label && <Label>{label}</Label>}
           <TagList
@@ -311,7 +333,9 @@ export function TagGroup<T extends object>(
       onSelectionChange={onSelectionChange}
       disallowEmptySelection={disallowEmptySelection}
       onRemove={allowsRemoving ? onRemove : undefined}
-      className='react-aria-TagGroup'
+      className={tagGroupClassName}
+      data-tag-variant={variant}
+      data-tag-size={size}
     >
 
       {label && <Label>{label}</Label>}

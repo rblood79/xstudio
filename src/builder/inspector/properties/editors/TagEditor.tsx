@@ -48,6 +48,10 @@ export function TagEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
             />
+
+            <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
+                💡 Variant and size are controlled by the parent TagGroup
+            </p>
         </div>
     );
 }

@@ -333,6 +333,12 @@ export const renderProgressBar = (
           : 100
       }
       isIndeterminate={Boolean(element.props.isIndeterminate || false)}
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
     />
   );
 };
@@ -362,6 +368,12 @@ export const renderMeter = (
         element.props.maxValue !== undefined
           ? Number(element.props.maxValue)
           : 100
+      }
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
       }
     />
   );

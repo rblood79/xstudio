@@ -835,6 +835,21 @@ Copilot learns from code patterns. Tips:
 - Phase 4.2: Button.css - Applied hover/pressed states to all variants using `[data-hovered]` and `[data-pressed]`
 - Phase 4.3: Card.css - Applied hover/pressed states to primary/secondary/surface variants
 
+**Phase 5: Separator Component Complete Migration** ✅
+- Phase 5.1: Separator.tsx - Refactored to tv() pattern with composeRenderProps
+- Phase 5.2: Separator.css - Updated from data-* attributes to semantic class names (.dashed, .dotted, .sm, .md, .lg)
+- Phase 5.3: SeparatorEditor.tsx - Created Property Editor with variant/size/orientation controls
+- Phase 5.4: Separator.stories.tsx - Created comprehensive Storybook stories with all variants
+- Phase 5.5: labels.ts - Added SEPARATOR_VARIANT_* labels (Solid, Dashed, Dotted)
+
+**Phase 6: Tag Component Action Token Migration** ✅
+- Phase 6.1: TagGroup.tsx - Added variant and size props to Tag component (primary/secondary/surface, sm/md/lg)
+- Phase 6.2: TagGroup.css - Applied Action tokens with hover/pressed states to all variants
+- Phase 6.3: TagEditor.tsx - Added variant and size controls to Property Editor
+- Phase 6.4: componentVariants.ts - Added TagVariant type with Action variants
+- Phase 6.5: TagGroup.stories.tsx - Added variant and size showcase stories
+- Phase 6.6: labels.ts - Added TAG_VARIANT_* labels
+
 ### 📋 Component Refactoring Checklist (Button Pattern)
 
 When refactoring components, follow the **Button.tsx** pattern:

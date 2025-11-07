@@ -143,6 +143,35 @@ export const PROPERTY_LABELS = {
     CARD_VARIANT_ELEVATED: 'Elevated',
     CARD_VARIANT_OUTLINED: 'Outlined',
 
+    // Separator variants
+    SEPARATOR_VARIANT_DEFAULT: 'Solid',
+    SEPARATOR_VARIANT_DASHED: 'Dashed',
+    SEPARATOR_VARIANT_DOTTED: 'Dotted',
+
+    // Tag variants
+    TAG_VARIANT_DEFAULT: 'Default',
+    TAG_VARIANT_PRIMARY: 'Primary',
+    TAG_VARIANT_SECONDARY: 'Secondary',
+    TAG_VARIANT_SURFACE: 'Surface',
+
+    // ProgressBar variants
+    PROGRESSBAR_VARIANT_DEFAULT: 'Default',
+    PROGRESSBAR_VARIANT_PRIMARY: 'Primary',
+    PROGRESSBAR_VARIANT_SECONDARY: 'Secondary',
+    PROGRESSBAR_VARIANT_SURFACE: 'Surface',
+
+    // Meter variants
+    METER_VARIANT_DEFAULT: 'Default',
+    METER_VARIANT_PRIMARY: 'Primary',
+    METER_VARIANT_SECONDARY: 'Secondary',
+    METER_VARIANT_SURFACE: 'Surface',
+
+    // Switch variants
+    SWITCH_VARIANT_DEFAULT: 'Default',
+    SWITCH_VARIANT_PRIMARY: 'Primary',
+    SWITCH_VARIANT_SECONDARY: 'Secondary',
+    SWITCH_VARIANT_SURFACE: 'Surface',
+
     // Card sizes
     CARD_SIZE_SMALL: 'Small',
     CARD_SIZE_MEDIUM: 'Medium',

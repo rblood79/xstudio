@@ -111,3 +111,107 @@ export const SelectableTagGroup: Story = {
     selectionMode: 'multiple',
   },
 };
+
+export const PrimaryVariant: Story = {
+  render: (args) => (
+    <TagGroup {...args} variant="primary">
+      <Tag>React</Tag>
+      <Tag>TypeScript</Tag>
+      <Tag>Tailwind</Tag>
+      <Tag>Zustand</Tag>
+    </TagGroup>
+  ),
+  args: {
+    label: 'Primary 태그',
+    variant: 'primary',
+  },
+};
+
+export const SecondaryVariant: Story = {
+  render: (args) => (
+    <TagGroup {...args} variant="secondary">
+      <Tag>Frontend</Tag>
+      <Tag>Backend</Tag>
+      <Tag>DevOps</Tag>
+      <Tag>Design</Tag>
+    </TagGroup>
+  ),
+  args: {
+    label: 'Secondary 태그',
+    variant: 'secondary',
+  },
+};
+
+export const SurfaceVariant: Story = {
+  render: (args) => (
+    <TagGroup {...args} variant="surface">
+      <Tag>HTML</Tag>
+      <Tag>CSS</Tag>
+      <Tag>JavaScript</Tag>
+      <Tag>Node.js</Tag>
+    </TagGroup>
+  ),
+  args: {
+    label: 'Surface 태그',
+    variant: 'surface',
+  },
+};
+
+export const SmallSize: Story = {
+  render: (args) => (
+    <TagGroup {...args} variant="primary" size="sm">
+      <Tag>Small</Tag>
+      <Tag>Tags</Tag>
+      <Tag>Here</Tag>
+    </TagGroup>
+  ),
+  args: {
+    label: 'Small 크기',
+    variant: 'primary',
+    size: 'sm',
+  },
+};
+
+export const LargeSize: Story = {
+  render: (args) => (
+    <TagGroup {...args} variant="primary" size="lg">
+      <Tag>Large</Tag>
+      <Tag>Tags</Tag>
+      <Tag>Here</Tag>
+    </TagGroup>
+  ),
+  args: {
+    label: 'Large 크기',
+    variant: 'primary',
+    size: 'lg',
+  },
+};
+
+export const AllVariants: Story = {
+  decorators: [
+    () => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '500px' }}>
+        <TagGroup label="Default Variant">
+          <Tag>React</Tag>
+          <Tag>TypeScript</Tag>
+          <Tag>Tailwind</Tag>
+        </TagGroup>
+        <TagGroup label="Primary Variant" variant="primary">
+          <Tag>React</Tag>
+          <Tag>TypeScript</Tag>
+          <Tag>Tailwind</Tag>
+        </TagGroup>
+        <TagGroup label="Secondary Variant" variant="secondary">
+          <Tag>React</Tag>
+          <Tag>TypeScript</Tag>
+          <Tag>Tailwind</Tag>
+        </TagGroup>
+        <TagGroup label="Surface Variant" variant="surface">
+          <Tag>React</Tag>
+          <Tag>TypeScript</Tag>
+          <Tag>Tailwind</Tag>
+        </TagGroup>
+      </div>
+    ),
+  ],
+};

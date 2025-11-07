@@ -5,7 +5,9 @@
  * Based on React Aria Components Separator
  */
 
-import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps } from 'react-aria-components';
+import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps, composeRenderProps } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+import type { SeparatorVariant, ComponentSizeSubset } from '../../types/componentVariants';
 import './styles/Separator.css';
 
 export interface SeparatorProps extends AriaSeparatorProps {
@@ -19,34 +21,58 @@ export interface SeparatorProps extends AriaSeparatorProps {
    * Visual variant
    * @default 'default'
    */
-  variant?: 'default' | 'dashed' | 'dotted';
+  variant?: SeparatorVariant;
 
   /**
    * Size/thickness of the separator
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg';
-
-  /**
-   * Additional CSS class name
-   */
-  className?: string;
+  size?: ComponentSizeSubset;
 }
 
-export function Separator({
-  orientation = 'horizontal',
-  variant = 'default',
-  size = 'md',
-  className = '',
-  ...props
-}: SeparatorProps) {
+const separator = tv({
+  base: 'react-aria-Separator',
+  variants: {
+    variant: {
+      default: '',
+      dashed: 'dashed',
+      dotted: 'dotted',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+    orientation: {
+      horizontal: 'horizontal',
+      vertical: 'vertical',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'md',
+    orientation: 'horizontal',
+  },
+});
+
+export function Separator(props: SeparatorProps) {
+  const { orientation = 'horizontal', variant = 'default', size = 'md' } = props;
+
   return (
     <AriaSeparator
-      orientation={orientation}
-      className={`react-aria-Separator ${className}`}
-      data-variant={variant}
-      data-size={size}
       {...props}
+      orientation={orientation}
+      className={composeRenderProps(
+        props.className,
+        (className) => {
+          return separator({
+            variant,
+            size,
+            orientation,
+            className,
+          });
+        }
+      )}
     />
   );
 }

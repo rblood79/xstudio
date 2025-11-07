@@ -292,6 +292,12 @@ export const renderTagGroup = (
       }
       isDisabled={Boolean(element.props.isDisabled)}
       disallowEmptySelection={Boolean(element.props.disallowEmptySelection)}
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
       dataBinding={element.dataBinding}
       columnMapping={columnMapping}
       removedItemIds={removedItemIds}

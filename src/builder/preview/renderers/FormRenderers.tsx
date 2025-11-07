@@ -536,6 +536,12 @@ export const renderSwitch = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
       onChange={(isSelected) => {
         const updatedProps = {
           ...element.props,
