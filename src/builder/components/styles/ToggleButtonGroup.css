@@ -23,6 +23,8 @@
       padding: 0px;
       border-radius: var(--border-radius);
       box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
       --indicator-left: 0px;
       --indicator-width: 0px;
       --indicator-height: 0px;
