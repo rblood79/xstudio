@@ -45,7 +45,8 @@
   }
 
   /* Primary variant - controlled by ToggleButtonGroup */
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"]
+    .react-aria-ToggleButton {
     &[data-selected] {
       background: var(--action-primary-bg);
       border-color: var(--action-primary-bg);
@@ -59,7 +60,8 @@
   }
 
   /* Secondary variant - controlled by ToggleButtonGroup */
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"]
+    .react-aria-ToggleButton {
     &[data-selected] {
       background: var(--action-secondary-bg);
       border-color: var(--action-secondary-bg);
@@ -73,7 +75,8 @@
   }
 
   /* Surface variant - controlled by ToggleButtonGroup */
-  .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"]
+    .react-aria-ToggleButton {
     &[data-selected] {
       background: var(--action-surface-bg);
       border-color: var(--action-surface-bg);
@@ -87,21 +90,24 @@
   }
 
   /* Small size - controlled by ToggleButtonGroup */
-  .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
+    .react-aria-ToggleButton {
     font-size: var(--text-sm);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    padding: var(--spacing) var(--spacing-md);
   }
 
   /* Medium size - controlled by ToggleButtonGroup (default) */
-  .react-aria-ToggleButtonGroup[data-togglebutton-size="md"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
+    .react-aria-ToggleButton {
     font-size: var(--text-base);
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-xl);
   }
 
   /* Large size - controlled by ToggleButtonGroup */
-  .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"] .react-aria-ToggleButton {
+  .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
+    .react-aria-ToggleButton {
     font-size: var(--text-lg);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-2xl);
   }
 
   /* Standalone ToggleButton variants (not in a group) */
@@ -147,16 +153,16 @@
   /* Standalone ToggleButton sizes (not in a group) */
   .react-aria-ToggleButton.sm {
     font-size: var(--text-sm);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    padding: var(--spacing) var(--spacing-md);
   }
 
   .react-aria-ToggleButton.md {
     font-size: var(--text-base);
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-xl);
   }
 
   .react-aria-ToggleButton.lg {
     font-size: var(--text-lg);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-2xl);
   }
 }

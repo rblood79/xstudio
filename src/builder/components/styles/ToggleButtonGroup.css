@@ -51,21 +51,37 @@
         transition: none;
       }
     }
+
+    /* Primary variant indicator */
+    &[data-togglebutton-variant="primary"]::before {
+      background: var(--action-primary-bg);
+    }
+
+    /* Secondary variant indicator */
+    &[data-togglebutton-variant="secondary"]::before {
+      background: var(--action-secondary-bg);
+    }
+
+    /* Surface variant indicator */
+    &[data-togglebutton-variant="surface"]::before {
+      background: var(--action-surface-bg);
+    }
+
     .react-aria-ToggleButton {
       background-color: transparent;
       border-color: transparent;
-  
+
       &[data-pressed] {
         background: transparent;
         border-color: transparent;
         color: var(--color-gray-800);
       }
-  
+
       &[data-selected] {
         background: transparent;
         border-color: transparent;
         color: var(--color-white);
-  
+
         &[data-pressed] {
           background: transparent;
           border-color: transparent;
