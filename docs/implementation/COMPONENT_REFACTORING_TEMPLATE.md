@@ -1,10 +1,18 @@
 # Component Refactoring Template (Gold Standard)
 
-**기준 컴포넌트**: Button
+**기준 컴포넌트**: Button (빌더), Inspector Property Components
 **작성일**: 2025-11-06
-**참조**: [Button.tsx](../../src/builder/components/Button.tsx), [Button.css](../../src/builder/components/styles/Button.css)
+**최종 업데이트**: 2025-11-07
+**참조**:
+- [Button.tsx](../../src/builder/components/Button.tsx), [Button.css](../../src/builder/components/styles/Button.css)
+- [Inspector Property Components](../../src/builder/inspector/components/)
 
 이 문서는 컴포넌트 리팩토링 시 따라야 할 Gold Standard 패턴을 정의합니다.
+
+**주요 업데이트 (2025-11-07)**:
+- ✅ Inspector Property Component Pattern 섹션 추가
+- ✅ 9개 Property 컴포넌트 사용법 가이드
+- ✅ Before/After 안티패턴 예시
 
 ---
 
@@ -656,6 +664,198 @@ export function TextField({
 
 ---
 
+## 🧩 Inspector Property Component Pattern (2025-11-07 추가)
+
+**상태**: ✅ 완료됨 (commit 2114448)
+
+Inspector UI는 별도의 패턴을 사용합니다. 빌더 컴포넌트(Button, TextField 등)와는 독립적입니다.
+
+### Inspector 컴포넌트 패턴
+
+#### ❌ 안티패턴 (Before)
+
+```typescript
+// ❌ WRONG - Inline components, custom inputs
+import { TextField, Select, SelectItem } from "../../components/list";
+
+function EventEditor() {
+  return (
+    <>
+      <TextField label="Path" value={path} onChange={setPath} />
+
+      <select value={type} onChange={(e) => setType(e.target.value)}>
+        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+
+      <label>
+        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        Enabled
+      </label>
+    </>
+  );
+}
+```
+
+#### ✅ 올바른 패턴 (After)
+
+```typescript
+// ✅ CORRECT - Use Property components from inspector/components
+import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
+
+function EventEditor() {
+  return (
+    <>
+      <PropertyInput
+        label="Path / URL"
+        value={path}
+        onChange={setPath}
+      />
+
+      <PropertySelect
+        label="Action Type"
+        value={type}
+        onChange={setType}
+        options={[
+          { value: "navigate", label: "Navigate" },
+          { value: "update_state", label: "Update State" },
+        ]}
+      />
+
+      <PropertyCheckbox
+        label="Enabled"
+        isSelected={enabled}
+        onChange={setEnabled}
+      />
+    </>
+  );
+}
+```
+
+### Inspector 컴포넌트 라이브러리 (9개)
+
+#### 1. PropertyInput
+```typescript
+<PropertyInput
+  label="대상 요소 ID"
+  value={target}
+  onChange={setTarget}
+  type="text"        // or "number", "color"
+  multiline={false}  // true for textarea
+  disabled={false}
+  min={0}           // for number type
+  max={100}
+/>
+```
+
+#### 2. PropertySelect
+```typescript
+<PropertySelect
+  label="액션 타입"
+  value={selectedType}
+  onChange={setSelectedType}
+  options={[
+    { value: "navigate", label: "Navigate" },
+    { value: "show_modal", label: "Show Modal" },
+  ]}
+  icon={Settings}    // optional
+/>
+```
+
+#### 3. PropertyCheckbox
+```typescript
+<PropertyCheckbox
+  label="활성화"
+  isSelected={enabled}      // Note: isSelected, not checked
+  onChange={setEnabled}     // Note: receives boolean directly
+  icon={CheckCircle}        // optional
+/>
+```
+
+#### 4. PropertySwitch
+```typescript
+<PropertySwitch
+  label="Dark Mode"
+  isSelected={darkMode}
+  onChange={setDarkMode}
+/>
+```
+
+#### 5. PropertySlider
+```typescript
+<PropertySlider
+  label="Opacity"
+  value={opacity}
+  onChange={setOpacity}
+  min={0}
+  max={100}
+  step={1}
+/>
+```
+
+#### 6. PropertyUnitInput
+```typescript
+<PropertyUnitInput
+  label="Width"
+  value={width}
+  onChange={setWidth}
+  units={["px", "%", "rem", "em"]}  // available units
+/>
+```
+
+#### 7. PropertyColor
+```typescript
+<PropertyColor
+  label="Background Color"
+  value={bgColor}
+  onChange={setBgColor}
+/>
+```
+
+#### 8. PropertyCustomId
+```typescript
+<PropertyCustomId
+  label="Element ID"
+  value={customId}
+  onChange={setCustomId}
+/>
+```
+
+#### 9. PropertyFieldset (Layout Wrapper)
+```typescript
+<PropertyFieldset legend="Advanced Options" icon={Settings}>
+  <PropertyInput label="Custom CSS" value={css} onChange={setCss} multiline />
+  <PropertyCheckbox label="Important" isSelected={important} onChange={setImportant} />
+</PropertyFieldset>
+```
+
+### Key Differences: Inspector vs Builder Components
+
+| Aspect | Inspector Components | Builder Components (Button, TextField) |
+|--------|---------------------|----------------------------------------|
+| **Purpose** | Property editor UI | User-facing UI components |
+| **Pattern** | Simple props (label, value, onChange) | tv() variants, composeRenderProps |
+| **Styling** | Consistent Inspector theme | Semantic tokens, variant/size |
+| **Location** | `src/builder/inspector/components/` | `src/builder/components/` |
+| **Import** | `from "../components"` | `from "react-aria-components"` |
+| **Debouncing** | Built-in (blur/enter to save) | Manual control |
+
+### Inspector 리팩토링 체크리스트
+
+- [ ] `TextField` → `PropertyInput`
+- [ ] Inline `<select>` → `PropertySelect`
+- [ ] Inline `<input type="checkbox">` → `PropertyCheckbox`
+- [ ] React import 추가 (`import React from "react"`)
+- [ ] `onChange` 핸들러 타입 확인 (PropertyCheckbox는 boolean 직접 전달)
+- [ ] PropertySelect의 `options` 배열 형식 확인 (`{ value, label }[]`)
+- [ ] TypeScript 에러 없음
+- [ ] 저장 동작 확인 (blur/enter시 저장)
+
+### 참고 예시
+
+**완성된 리팩토링 예시**: [src/builder/inspector/events/index.tsx](../../src/builder/inspector/events/index.tsx)
+
+---
+
 ## 🚀 Quick Start Guide
 
 **새 컴포넌트 또는 기존 컴포넌트 리팩토링**:
@@ -666,6 +866,13 @@ export function TextField({
 4. **CSS 작성 (시멘틱 토큰만)**
 5. **Editor 업데이트**
 6. **검증 (type-check + 시각 테스트)**
+
+**Inspector 컴포넌트 사용 시**:
+1. **Property 컴포넌트 import**: `from "../components"`
+2. **TextField → PropertyInput** 전환
+3. **Inline select/checkbox → Property 컴포넌트** 전환
+4. **React import 추가**
+5. **검증 (TypeScript 에러 + 저장 동작)**
 
 ---
 
@@ -678,5 +885,5 @@ export function TextField({
 
 ---
 
-**마지막 업데이트**: 2025-11-06
-**상태**: ✅ 검증 완료
+**마지막 업데이트**: 2025-11-07
+**상태**: ✅ 검증 완료, Inspector Pattern 추가

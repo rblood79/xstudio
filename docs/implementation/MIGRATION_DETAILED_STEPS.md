@@ -1,9 +1,13 @@
 # XStudio 컴포넌트 마이그레이션 세부 실행 단계
 
 **작성일**: 2025-11-06
+**최종 업데이트**: 2025-11-07
 **참조**: [COMPONENT_MIGRATION_PLAN.md](./COMPONENT_MIGRATION_PLAN.md)
 
 이 문서는 각 Phase의 Step-by-Step 실행 가이드입니다.
+
+**주요 업데이트 (2025-11-07)**:
+- ✅ Phase 0.4: Inspector Property Component Pattern 상세 가이드 추가 (완료됨)
 
 ---
 
@@ -492,6 +496,118 @@ ls -la src/types/componentVariants.ts  # 파일 존재
 - [ ] Button 패턴 완전히 이해
 - [ ] CLAUDE.md 임시 노트 추가
 - [ ] Phase 0 완료 체크리스트 작성
+
+---
+
+## Phase 0.4: Inspector Property Component Pattern ✅ (완료됨)
+
+**상태**: 2025-11-07 완료 (commit 2114448)
+
+### 📝 작업 내용
+Inspector UI의 일관된 Property 컴포넌트 패턴 구축
+
+### 🎯 목표
+모든 Inspector 탭에서 재사용 가능한 Property 컴포넌트 사용
+
+### ✅ 완료된 작업
+
+#### Step 1: Property 컴포넌트 라이브러리 구축 (완료)
+
+**생성된 컴포넌트** (9개):
+1. **PropertyFieldset** - Layout wrapper for consistent structure
+   - 파일: `src/builder/inspector/components/PropertyFieldset.tsx`
+   - 기능: legend, icon, children을 포함한 통일된 레이아웃
+
+2. **PropertyInput** - Text/number input with debouncing
+   - 파일: `src/builder/inspector/components/PropertyInput.tsx`
+   - 기능: multiline, min/max, disabled, focus-to-select
+
+3. **PropertyCheckbox** - React Aria checkbox component
+   - 파일: `src/builder/inspector/components/PropertyCheckbox.tsx`
+   - 기능: isSelected prop (React Aria standard)
+
+4. **PropertySelect** - React Aria select dropdown
+   - 파일: `src/builder/inspector/components/PropertySelect.tsx`
+   - 기능: options array, "auto" value handling
+
+5. **PropertySwitch** - Toggle switch component
+6. **PropertySlider** - Range slider component
+7. **PropertyUnitInput** - Unit-aware input (px, %, rem, etc.)
+8. **PropertyColor** - Color picker component
+9. **PropertyCustomId** - Custom ID input with validation
+
+**Export**: `src/builder/inspector/components/index.ts`
+
+#### Step 2: Events Tab 리팩토링 (완료)
+
+**파일**: `src/builder/inspector/events/index.tsx` (676 lines)
+
+**주요 변경사항**:
+```typescript
+// BEFORE
+import { TextField, Select, SelectItem } from "../../components/list";
+<TextField label="Path" value={value} onChange={onChange} />
+<select>{options.map(...)}</select>
+<input type="checkbox" />
+
+// AFTER
+import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
+<PropertyInput label="Path" value={value} onChange={onChange} />
+<PropertySelect label="Action" value={value} onChange={onChange} options={[...]} />
+<PropertyCheckbox label="Enabled" isSelected={value} onChange={onChange} />
+```
+
+**패턴 적용 예시**:
+1. **TextField → PropertyInput**
+   - 단일 행 입력: `<PropertyInput label="대상 요소 ID" value={target} onChange={...} />`
+   - 멀티라인: `<PropertyInput label="JavaScript 코드" value={code} onChange={...} multiline />`
+
+2. **Inline `<select>` → PropertySelect**
+   ```typescript
+   <PropertySelect
+     label="액션 타입"
+     value={action.type}
+     onChange={(selectedType) => onUpdate({ type: selectedType })}
+     options={Object.entries(ACTION_TYPE_LABELS).map(([type, label]) => ({
+       value: type,
+       label: label
+     }))}
+   />
+   ```
+
+3. **Inline `<input type="checkbox">` → PropertyCheckbox**
+   ```typescript
+   <PropertyCheckbox
+     label="활성화"
+     isSelected={action.enabled !== false}
+     onChange={(isSelected) => onUpdate({ enabled: isSelected })}
+   />
+   ```
+
+#### Step 3: React Import 추가 (완료)
+
+**이유**: UMD global compatibility
+```typescript
+import React, { useState, useEffect } from "react";
+```
+
+### ✅ 완료 조건
+- [x] 9개 Property 컴포넌트 생성
+- [x] `components/index.ts`에 export 추가
+- [x] Events Tab 리팩토링 (676 lines)
+- [x] TextField → PropertyInput 전환
+- [x] Inline select → PropertySelect 전환
+- [x] Inline checkbox → PropertyCheckbox 전환
+- [x] React import 추가
+- [x] TypeScript 에러 없음
+- [x] Commit: 2114448
+
+### 📚 참고 자료
+- **PropertyInput**: `src/builder/inspector/components/PropertyInput.tsx:1-107`
+- **PropertySelect**: `src/builder/inspector/components/PropertySelect.tsx:1-87`
+- **PropertyCheckbox**: `src/builder/inspector/components/PropertyCheckbox.tsx:1-36`
+- **PropertyFieldset**: `src/builder/inspector/components/PropertyFieldset.tsx:1-30`
+- **Events Tab (사용 예시)**: `src/builder/inspector/events/index.tsx`
 
 ---
 

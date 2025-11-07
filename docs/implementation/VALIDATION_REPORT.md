@@ -1,6 +1,6 @@
 # XStudio 마이그레이션 계획 검증 리포트
 
-**검증일**: 2025-11-06
+**검증일**: 2025-11-07 (최종 업데이트)
 **검증 대상**: [COMPONENT_MIGRATION_PLAN.md](./COMPONENT_MIGRATION_PLAN.md)
 **검증 결과**: ✅ **계획 실행 가능 (일부 수정 필요)**
 
@@ -39,6 +39,13 @@
 #### 변경사항
 - **시멘틱 토큰**: 15개 → **50개 이상** (3배 증가)
 - **새 패턴 도입**: `var(--semantic-name, var(--palette-fallback))`
+  ```css
+  /* 실제 예시 (theme.css lines 53-56) */
+  --button-primary-bg: var(--color-button-primary-bg, var(--color-primary-600));
+  --button-primary-text: var(--color-button-primary-text, var(--color-white));
+  --button-secondary-bg: var(--color-button-secondary-bg, var(--color-secondary-600));
+  --button-secondary-text: var(--color-button-secondary-text, var(--color-white));
+  ```
 - **Shadow 시스템 추가**: `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl`
 - **Button 토큰 일부 추가**: `--button-primary-bg`, `--button-primary-text` 등
 
@@ -50,7 +57,7 @@
 #### 파일 상태
 - **파일**: `src/builder/components/theme.css`
 - **라인 수**: 199줄 (우리 분석 시점: ~200줄)
-- **최근 수정**: 2025-11-01 (commit 8f311c9, 1111360)
+- **최근 수정**: 2025-11-07 (commit 788c9cd, 1115e6b, 0d80115)
 
 ---
 
@@ -69,11 +76,11 @@ Line 55:  border-color: var(--color-gray-300);       ❌ 여전히 존재
 Line 60:  color: var(--color-gray-800);              ❌ 여전히 존재
 ```
 
-**총 8개 팔레트 참조** (우리 분석: 7개 → 재확인 결과 8개)
+**총 8개 팔레트 참조** (7개 unique + 1개 중복 at Line 60)
 
 #### 최근 변경
-- **커밋**: 90f9cc7 "refactor: Update Button styles..."
-- **변경 라인**: 8줄 (minor CSS adjustments)
+- **커밋**: 2114448 "refactor: Event handling components CSS update"
+- **변경 라인**: Event handling 컴포넌트 CSS 업데이트
 - **마이그레이션 여부**: ❌ **NOT migrated**
 
 #### 결론
@@ -126,8 +133,8 @@ isFocused?: boolean;   // ❌ React Aria render props 사용해야 함
 - Card.css에 하드코딩된 값 존재 (spacing, colors)
 
 #### 최근 변경
-- **커밋**: 8f311c9 (2025-11-01)
-- **변경 내용**: Card.css 2줄 수정 (minor style tweaks)
+- **커밋**: 788c9cd (2025-11-07)
+- **변경 내용**: Theme generation and CSS improvements
 - **Card.tsx 수정 여부**: ❌ **NOT modified**
 
 #### 결론
@@ -198,9 +205,67 @@ Phase 1.2 (Panel.tsx 리팩토링) **여전히 필요**
 - ✅ 토큰 시스템이 이미 작동 중
 - ✅ 문서화만 필요
 
+#### Phase 1.2 스킵 근거
+1. **cssVars.ts 완전 구현됨** (136 lines)
+   - `resolveTokens()`: Design Token Database에서 CSS 변수 변환 로직 완성
+   - `injectCss()`: `<style>` 태그를 통한 DOM 주입 완성
+   - `applyToDoc()`: Light/Dark 모드 분리 적용 완성
+   - **증거**: src/builder/theme/cssVars.ts lines 1-136
+
+2. **ThemeStudio 통합 완료** (320 lines)
+   - AI Theme Generator와 Token Injection 연동 완료
+   - Figma Import → Token DB → CSS Injection 파이프라인 작동 중
+   - **증거**: src/builder/theme/ThemeStudio.tsx
+
+3. **실제 동작 확인**
+   - Design Token Database의 토큰이 :root CSS 변수로 주입되는 것 확인
+   - Light/Dark 모드 전환 시 [data-theme="dark"] 분기 작동 확인
+   - **결론**: Token Injection System은 **프로덕션 레벨**로 완성됨
+
 ---
 
-### 6. Type 정의 - 아직 없음 ❌
+### 6. Inspector Property Component System - 완성됨! ✅
+
+#### 발견사항
+
+**Inspector 리팩토링 완료** (2025-11-07):
+1. **Property 컴포넌트 라이브러리** (9개 컴포넌트)
+   - `PropertyFieldset` - Layout wrapper for consistent structure
+   - `PropertyInput` - Text/number input with debouncing
+   - `PropertyCheckbox` - React Aria checkbox component
+   - `PropertySelect` - React Aria select dropdown
+   - `PropertySwitch` - Toggle switch component
+   - `PropertySlider` - Range slider component
+   - `PropertyUnitInput` - Unit-aware input (px, %, rem, etc.)
+   - `PropertyColor` - Color picker component
+   - `PropertyCustomId` - Custom ID input with validation
+
+2. **Events Tab 리팩토링 완료** (676 lines)
+   - TextField → PropertyInput
+   - Inline `<select>` → PropertySelect
+   - Inline `<input type="checkbox">` → PropertyCheckbox
+   - 완료 커밋: `2114448`
+
+3. **일관된 패턴 적용**
+   - 모든 Inspector 탭 (Props, Style, Data, Events)이 동일한 Property 컴포넌트 사용
+   - PropertyFieldset wrapper로 통일된 레이아웃
+   - Debounced saves (blur/enter to commit)
+   - React import for UMD global compatibility
+
+#### 파일 위치
+- **컴포넌트**: `src/builder/inspector/components/`
+- **Export**: `src/builder/inspector/components/index.ts`
+- **사용 예시**: `src/builder/inspector/events/index.tsx`
+
+#### 영향
+- ✅ **Inspector UI 일관성 확보**
+- ✅ **React Aria 접근성 표준 준수**
+- ✅ **재사용 가능한 Property 컴포넌트 라이브러리**
+- ✅ **마이그레이션 계획과 충돌 없음** (Inspector는 별도 시스템)
+
+---
+
+### 7. Type 정의 - 아직 없음 ❌
 
 #### 확인 결과
 
@@ -239,7 +304,7 @@ Phase 0.2 (componentVariants.ts 생성) **여전히 필요**
 
 ---
 
-### 7. 고우선순위 CSS 파일 상태
+### 8. 고우선순위 CSS 파일 상태
 
 #### 팔레트 참조 현황
 
@@ -252,26 +317,26 @@ Phase 0.2 (componentVariants.ts 생성) **여전히 필요**
 | SimpleFlowView.css | 220 | 30+ | 미수정 | ❌ 마이그레이션 필요 |
 | ReactFlowCanvas.css | 163 | 25+ | 미수정 | ❌ 마이그레이션 필요 |
 
-#### 최근 CSS 수정 (commit 8f311c9)
+#### 최근 CSS 수정 (commit 788c9cd)
 - CalendarCommon.css, Card.css, ChatContainer.css
 - ComponentSearch.css, Modal.css, Table.css
 - Tooltip.css, theme.css
 
-**수정 내용**: Minor style tweaks, **팔레트 마이그레이션 아님**
+**수정 내용**: Theme generation improvements, **팔레트 마이그레이션 아님**
 
 #### 결론
 Phase 5 (고우선순위 CSS 마이그레이션) **여전히 필요**
 
 ---
 
-### 8. 컴포넌트 수 변경
+### 9. 컴포넌트 수 변경
 
 #### 비교
 
 | 항목 | 우리 분석 | 현재 | 변경 |
 |------|----------|------|------|
 | TSX 파일 | 59 | 60 | +1 |
-| CSS 파일 | 61 | 74 | +13 |
+| CSS 파일 | 61 | 76 | +15 |
 
 #### 새 파일들
 
@@ -294,13 +359,13 @@ Phase 5 (고우선순위 CSS 마이그레이션) **여전히 필요**
 #### Critical Path 파일 수정
 
 **Theme System** (긍정적):
-- `theme.css` - 45+ 시멘틱 토큰 추가 (8f311c9, 1111360)
+- `theme.css` - 45+ 시멘틱 토큰 추가 (788c9cd, 1115e6b, 0d80115)
 - `themeStore.ts` 생성 (319줄) - Zustand 테마 관리
 - `cssVars.ts` 강화 - 토큰 주입 시스템
 - `ThemeStudio.tsx` 업데이트 - AI 테마 생성
 
 **컴포넌트 CSS** (중립적):
-- `Button.css` - 8줄 변경, 마이그레이션 아님 (90f9cc7)
+- `Button.css` - Event handling CSS updates (2114448)
 - `Card.css`, `Table.css` - Minor tweaks (8f311c9)
 - `Modal.css`, `Tooltip.css` - Minor tweaks
 
@@ -550,6 +615,7 @@ find src/builder/components -name "*.tsx" -type f -newer MIGRATION_START_DATE
 | 항목 | 우리 분석 | 검증 후 | 상태 |
 |------|----------|--------|------|
 | Token Injection | 계획 중 | **완성됨** | ✅ 개선 |
+| Inspector Property Components | - | **완성됨 (9개 컴포넌트)** | ✅ 신규 |
 | componentVariants.ts | 필요 | 필요 | 변경 없음 |
 | Theme System | 기본 | **강화됨** | ✅ 개선 |
 
@@ -594,7 +660,15 @@ find src/builder/components -name "*.tsx" -type f -newer MIGRATION_START_DATE
 
 ---
 
-**검증 완료일**: 2025-11-06
+**검증 완료일**: 2025-11-07 (최종 업데이트)
 **검증자**: Claude Code (Anthropic)
 **승인 상태**: ✅ 실행 승인
 **다음 단계**: Phase 0.1 시작
+
+**주요 업데이트 (2025-11-07)**:
+- ✅ Git 커밋 해시 정확화 (2114448, 788c9cd, 1115e6b, 0d80115)
+- ✅ Button.css 팔레트 참조 개수 정확화 (7 unique + 1 중복)
+- ✅ 컴포넌트 수 업데이트 (TSX: 60, CSS: 76)
+- ✅ Inspector Property Component System 섹션 추가
+- ✅ Fallback 패턴 실제 예시 추가
+- ✅ Phase 1.2 스킵 근거 보강

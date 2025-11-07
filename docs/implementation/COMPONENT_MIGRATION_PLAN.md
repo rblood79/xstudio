@@ -1,7 +1,8 @@
 # XStudio 컴포넌트 라이브러리 통합 개선 계획
 
 **작성일**: 2025-11-06
-**상태**: 검증 완료 (Validation Report 참조)
+**최종 업데이트**: 2025-11-07
+**상태**: 검증 완료 (Validation Report 참조), Phase 0.4 완료
 **예상 소요 시간**: 39-52시간 (약 6-8주)
 
 ---
@@ -38,17 +39,21 @@ XStudio 컴포넌트 라이브러리의 3가지 핵심 문제를 해결하기 �
 
 ## 🗺️ Phase 개요
 
-| Phase | 작업 내용 | 예상 시간 | 우선순위 |
-|-------|----------|-----------|----------|
-| **Phase 0** | 기반 인프라 구축 | 3-4시간 | Critical |
-| **Phase 1** | 안티패턴 제거 (Card, Panel) | 3-4시간 | Critical |
-| **Phase 2** | Button.css 시멘틱 토큰 전환 | 1-1.5시간 | High |
-| **Phase 3** | Tier 1 Form 컴포넌트 (6개) | 10-14시간 | High |
-| **Phase 4** | Tier 2 Navigation (4개) | 6-8시간 | Medium |
-| **Phase 5** | 고우선순위 CSS 마이그레이션 | 6-8시간 | High |
-| **Phase 6** | Tier 3 & 나머지 컴포넌트 | 8-10시간 | Medium |
-| **Phase 7** | 검증, 테스트, 문서화 | 3-4시간 | Critical |
-| **합계** | | **39-52시간** | |
+| Phase | 작업 내용 | 예상 시간 | 우선순위 | 상태 |
+|-------|----------|-----------|----------|------|
+| **Phase 0** | 기반 인프라 구축 + Inspector ✅ | 3-4시간 | Critical | 부분 완료 |
+| **Phase 1** | 안티패턴 제거 (Card, Panel) | 3-4시간 | Critical | 대기 중 |
+| **Phase 2** | Button.css 시멘틱 토큰 전환 | 1-1.5시간 | High | 대기 중 |
+| **Phase 3** | Tier 1 Form 컴포넌트 (6개) | 10-14시간 | High | 대기 중 |
+| **Phase 4** | Tier 2 Navigation (4개) | 6-8시간 | Medium | 대기 중 |
+| **Phase 5** | 고우선순위 CSS 마이그레이션 | 6-8시간 | High | 대기 중 |
+| **Phase 6** | Tier 3 & 나머지 컴포넌트 | 8-10시간 | Medium | 대기 중 |
+| **Phase 7** | 검증, 테스트, 문서화 | 3-4시간 | Critical | 대기 중 |
+| **합계** | | **39-52시간** | | |
+
+**주요 업데이트 (2025-11-07)**:
+- ✅ Phase 0.4: Inspector Property Component System 완료 (9개 컴포넌트)
+- ✅ 시멘틱 토큰 50+ 개 이미 존재 (Phase 0.1 부분 완료)
 
 ---
 
@@ -84,10 +89,30 @@ XStudio 컴포넌트 라이브러리의 3가지 핵심 문제를 해결하기 �
 - 리팩토링 템플릿 작성
 - CLAUDE.md 임시 노트 추가
 
+#### 0.4 Inspector Property Component Pattern ✅ (완료됨)
+**상태**: 2025-11-07 완료 (commit 2114448)
+
+**완료된 작업**:
+- ✅ Property 컴포넌트 라이브러리 구축 (9개)
+  - PropertyFieldset, PropertyInput, PropertyCheckbox
+  - PropertySelect, PropertySwitch, PropertySlider
+  - PropertyUnitInput, PropertyColor, PropertyCustomId
+- ✅ Events Tab 리팩토링 (676 lines)
+  - TextField → PropertyInput
+  - Inline `<select>` → PropertySelect
+  - Inline `<input type="checkbox">` → PropertyCheckbox
+- ✅ 일관된 패턴 적용
+  - 모든 Inspector 탭에서 동일 컴포넌트 사용
+  - PropertyFieldset wrapper로 통일된 레이아웃
+  - Debounced saves (blur/enter to commit)
+
+**참고**: Inspector는 빌더 UI의 별도 시스템으로, 컴포넌트 라이브러리 마이그레이션과는 독립적입니다.
+
 **✅ 완료 조건**:
-- [ ] 25개 시멘틱 토큰 추가 (라이트 + 다크)
+- [x] 25개 시멘틱 토큰 추가 (라이트 + 다크) - 50+ 토큰 이미 존재
 - [ ] componentVariants.ts 생성
 - [ ] 템플릿 문서 작성
+- [x] Inspector Property 컴포넌트 패턴 구축 (완료됨)
 
 ---
 
