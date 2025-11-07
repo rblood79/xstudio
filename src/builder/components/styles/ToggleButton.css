@@ -50,7 +50,7 @@
     &[data-selected] {
       background: var(--action-primary-bg);
       border-color: var(--action-primary-bg);
-      color: white;
+      color: var(--action-primary-text);
 
       &[data-pressed] {
         background: var(--action-primary-bg-pressed);
@@ -65,7 +65,7 @@
     &[data-selected] {
       background: var(--action-secondary-bg);
       border-color: var(--action-secondary-bg);
-      color: white;
+      color: var(--action-secondary-text);
 
       &[data-pressed] {
         background: var(--action-secondary-bg-pressed);
@@ -80,7 +80,7 @@
     &[data-selected] {
       background: var(--action-surface-bg);
       border-color: var(--action-surface-bg);
-      color: white;
+      color: var(--action-surface-text);
 
       &[data-pressed] {
         background: var(--action-surface-bg-pressed);
@@ -115,7 +115,7 @@
     &[data-selected] {
       background: var(--action-primary-bg);
       border-color: var(--action-primary-bg);
-      color: white;
+      color: var(--action-primary-text);
 
       &[data-pressed] {
         background: var(--action-primary-bg-pressed);
@@ -128,7 +128,7 @@
     &[data-selected] {
       background: var(--action-secondary-bg);
       border-color: var(--action-secondary-bg);
-      color: white;
+      color: var(--action-secondary-text);
 
       &[data-pressed] {
         background: var(--action-secondary-bg-pressed);
@@ -141,7 +141,7 @@
     &[data-selected] {
       background: var(--action-surface-bg);
       border-color: var(--action-surface-bg);
-      color: white;
+      color: var(--action-surface-text);
 
       &[data-pressed] {
         background: var(--action-surface-bg-pressed);
