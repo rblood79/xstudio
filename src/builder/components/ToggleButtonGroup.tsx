@@ -1,10 +1,18 @@
-import { useEffect, useRef, useMemo } from 'react';
-import { ToggleButton as RACToggleButton, ToggleButtonGroup as RACToggleButtonGroup, ToggleButtonGroupProps, composeRenderProps } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import type { DataBinding, ColumnMapping } from '../../types/unified';
-import type { ComponentSizeSubset, ToggleButtonVariant } from '../../types/componentVariants';
-import { useCollectionData } from '../hooks/useCollectionData';
-import './styles/ToggleButtonGroup.css';
+import { useEffect, useRef, useMemo } from "react";
+import {
+  ToggleButton as RACToggleButton,
+  ToggleButtonGroup as RACToggleButtonGroup,
+  ToggleButtonGroupProps,
+  composeRenderProps,
+} from "react-aria-components";
+import { tv } from "tailwind-variants";
+import type { DataBinding, ColumnMapping } from "../../types/unified";
+import type {
+  ComponentSizeSubset,
+  ToggleButtonVariant,
+} from "../../types/componentVariants";
+import { useCollectionData } from "../hooks/useCollectionData";
+import "./styles/ToggleButtonGroup.css";
 
 export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   indicator?: boolean;
@@ -15,7 +23,7 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   variant?: ToggleButtonVariant;
   /**
    * Size for child ToggleButton buttons
-   * @default 'md'
+   * @default 'sm'
    */
   size?: ComponentSizeSubset;
   // 데이터 바인딩
@@ -24,27 +32,35 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
 }
 
 const toggleButtonGroupStyles = tv({
-  base: 'react-aria-ToggleButtonGroup',
+  base: "react-aria-ToggleButtonGroup",
   variants: {
     variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
+      default: "",
+      primary: "primary",
+      secondary: "secondary",
+      surface: "surface",
     },
     size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
+      sm: "sm",
+      md: "md",
+      lg: "lg",
     },
   },
   defaultVariants: {
-    variant: 'default',
-    size: 'md',
+    variant: "default",
+    size: "sm",
   },
 });
 
-export function ToggleButtonGroup({ indicator = false, variant = 'default', size = 'md', dataBinding, columnMapping, children, ...props }: ToggleButtonGroupExtendedProps) {
+export function ToggleButtonGroup({
+  indicator = false,
+  variant = "default",
+  size = "sm",
+  dataBinding,
+  columnMapping,
+  children,
+  ...props
+}: ToggleButtonGroupExtendedProps) {
   const groupRef = useRef<HTMLDivElement>(null);
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -54,10 +70,10 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
     error,
   } = useCollectionData({
     dataBinding,
-    componentName: 'ToggleButtonGroup',
+    componentName: "ToggleButtonGroup",
     fallbackData: [
-      { id: 1, name: 'Button 1', value: 'button-1' },
-      { id: 2, name: 'Button 2', value: 'button-2' },
+      { id: 1, name: "Button 1", value: "button-1" },
+      { id: 2, name: "Button 2", value: "button-2" },
     ],
   });
 
@@ -73,7 +89,9 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
     if (!group) return;
 
     const updateIndicator = () => {
-      const selectedButton = group.querySelector('[data-selected]') as HTMLElement;
+      const selectedButton = group.querySelector(
+        "[data-selected]"
+      ) as HTMLElement;
       if (selectedButton) {
         const groupRect = group.getBoundingClientRect();
         const buttonRect = selectedButton.getBoundingClientRect();
@@ -83,14 +101,14 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         const width = buttonRect.width;
         const height = buttonRect.height;
 
-        group.style.setProperty('--indicator-left', `${left}px`);
-        group.style.setProperty('--indicator-top', `${top}px`);
-        group.style.setProperty('--indicator-width', `${width}px`);
-        group.style.setProperty('--indicator-height', `${height}px`);
-        group.style.setProperty('--indicator-opacity', '1');
+        group.style.setProperty("--indicator-left", `${left}px`);
+        group.style.setProperty("--indicator-top", `${top}px`);
+        group.style.setProperty("--indicator-width", `${width}px`);
+        group.style.setProperty("--indicator-height", `${height}px`);
+        group.style.setProperty("--indicator-opacity", "1");
       } else {
         // Hide indicator when no button is selected
-        group.style.setProperty('--indicator-opacity', '0');
+        group.style.setProperty("--indicator-opacity", "0");
       }
     };
 
@@ -102,14 +120,14 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
     observer.observe(group, {
       attributes: true,
       subtree: true,
-      attributeFilter: ['data-selected']
+      attributeFilter: ["data-selected"],
     });
 
     return () => observer.disconnect();
   }, [memoizedIndicator, props.selectedKeys, props.defaultSelectedKeys]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 ToggleButton 생성
-  const hasDataBinding = dataBinding?.type === 'collection';
+  const hasDataBinding = dataBinding?.type === "collection";
 
   const toggleButtonGroupClassName = composeRenderProps(
     props.className,
@@ -119,11 +137,14 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
   // ColumnMapping이 있으면 각 데이터 항목마다 ToggleButton 렌더링
   // ListBox와 동일한 패턴
   if (hasDataBinding && columnMapping) {
-    console.log('🎯 ToggleButtonGroup: columnMapping 감지 - 데이터로 ToggleButton 렌더링', {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: boundData.length,
-    });
+    console.log(
+      "🎯 ToggleButtonGroup: columnMapping 감지 - 데이터로 ToggleButton 렌더링",
+      {
+        columnMapping,
+        hasChildren: !!children,
+        dataCount: boundData.length,
+      }
+    );
 
     // Loading 상태
     if (loading) {
@@ -131,13 +152,13 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <RACToggleButton className='react-aria-ToggleButton'>
+          <RACToggleButton className="react-aria-ToggleButton">
             ⏳ 로딩 중...
           </RACToggleButton>
         </RACToggleButtonGroup>
@@ -150,13 +171,13 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <RACToggleButton className='react-aria-ToggleButton'>
+          <RACToggleButton className="react-aria-ToggleButton">
             ❌ 오류
           </RACToggleButton>
         </RACToggleButtonGroup>
@@ -165,13 +186,15 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
 
     // 데이터가 있을 때: children 템플릿 사용
     if (boundData.length > 0) {
-      console.log('✅ ToggleButtonGroup with columnMapping - using children template');
+      console.log(
+        "✅ ToggleButtonGroup with columnMapping - using children template"
+      );
 
       return (
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
@@ -186,7 +209,7 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
       <RACToggleButtonGroup
         {...props}
         ref={groupRef}
-        data-indicator={memoizedIndicator ? 'true' : 'false'}
+        data-indicator={memoizedIndicator ? "true" : "false"}
         data-togglebutton-variant={variant}
         data-togglebutton-size={size}
         className={toggleButtonGroupClassName}
@@ -204,13 +227,13 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <RACToggleButton className='react-aria-ToggleButton'>
+          <RACToggleButton className="react-aria-ToggleButton">
             ⏳ 로딩 중...
           </RACToggleButton>
         </RACToggleButtonGroup>
@@ -223,13 +246,13 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
           isDisabled
         >
-          <RACToggleButton className='react-aria-ToggleButton'>
+          <RACToggleButton className="react-aria-ToggleButton">
             ❌ 오류
           </RACToggleButton>
         </RACToggleButtonGroup>
@@ -246,13 +269,16 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
         isDisabled: Boolean(item.isDisabled),
       }));
 
-      console.log('✅ ToggleButtonGroup Dynamic Collection - items:', buttonItems);
+      console.log(
+        "✅ ToggleButtonGroup Dynamic Collection - items:",
+        buttonItems
+      );
 
       return (
         <RACToggleButtonGroup
           {...props}
           ref={groupRef}
-          data-indicator={memoizedIndicator ? 'true' : 'false'}
+          data-indicator={memoizedIndicator ? "true" : "false"}
           data-togglebutton-variant={variant}
           data-togglebutton-size={size}
           className={toggleButtonGroupClassName}
@@ -262,7 +288,7 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
               key={item.id}
               id={item.id}
               isDisabled={item.isDisabled}
-              className='react-aria-ToggleButton'
+              className="react-aria-ToggleButton"
             >
               {item.label}
             </RACToggleButton>
@@ -277,7 +303,7 @@ export function ToggleButtonGroup({ indicator = false, variant = 'default', size
     <RACToggleButtonGroup
       {...props}
       ref={groupRef}
-      data-indicator={memoizedIndicator ? 'true' : 'false'}
+      data-indicator={memoizedIndicator ? "true" : "false"}
       data-togglebutton-variant={variant}
       data-togglebutton-size={size}
       className={toggleButtonGroupClassName}

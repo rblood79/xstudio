@@ -3,7 +3,6 @@
  */
 
 @layer components {
-
   .react-aria-Checkbox {
     --selected-color: var(--highlight-background);
     --selected-color-pressed: var(--highlight-background-pressed);
@@ -127,13 +126,13 @@
     font-size: var(--text-sm);
 
     .checkbox {
-      width: 14px;
-      height: 14px;
+      width: var(--text-lg);
+      height: var(--text-lg);
     }
 
     svg {
-      width: 14px;
-      height: 14px;
+      width: var(--text-lg);
+      height: var(--text-lg);
     }
   }
 
@@ -142,13 +141,13 @@
     font-size: var(--text-base);
 
     .checkbox {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-xl);
+      height: var(--text-xl);
     }
 
     svg {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-xl);
+      height: var(--text-xl);
     }
   }
 
@@ -157,32 +156,35 @@
     font-size: var(--text-lg);
 
     .checkbox {
-      width: 22px;
-      height: 22px;
+      width: var(--text-2xl);
+      height: var(--text-2xl);
     }
 
     svg {
-      width: 22px;
-      height: 22px;
+      width: var(--text-2xl);
+      height: var(--text-2xl);
     }
   }
 
   /* Parent CheckboxGroup controls child Checkbox variant */
 
   /* Primary variant - controlled by CheckboxGroup */
-  .react-aria-CheckboxGroup[data-checkbox-variant="primary"] .react-aria-Checkbox {
+  .react-aria-CheckboxGroup[data-checkbox-variant="primary"]
+    .react-aria-Checkbox {
     --selected-color: var(--action-primary-bg);
     --selected-color-pressed: var(--action-primary-bg-pressed);
   }
 
   /* Secondary variant - controlled by CheckboxGroup */
-  .react-aria-CheckboxGroup[data-checkbox-variant="secondary"] .react-aria-Checkbox {
+  .react-aria-CheckboxGroup[data-checkbox-variant="secondary"]
+    .react-aria-Checkbox {
     --selected-color: var(--action-secondary-bg);
     --selected-color-pressed: var(--action-secondary-bg-pressed);
   }
 
   /* Surface variant - controlled by CheckboxGroup */
-  .react-aria-CheckboxGroup[data-checkbox-variant="surface"] .react-aria-Checkbox {
+  .react-aria-CheckboxGroup[data-checkbox-variant="surface"]
+    .react-aria-Checkbox {
     --selected-color: var(--action-surface-bg);
     --selected-color-pressed: var(--action-surface-bg-pressed);
   }
@@ -192,13 +194,13 @@
     font-size: var(--text-sm);
 
     .checkbox {
-      width: 14px;
-      height: 14px;
+      width: var(--text-lg);
+      height: var(--text-lg);
     }
 
     svg {
-      width: 14px;
-      height: 14px;
+      width: var(--text-lg);
+      height: var(--text-lg);
     }
   }
 
@@ -207,13 +209,13 @@
     font-size: var(--text-base);
 
     .checkbox {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-xl);
+      height: var(--text-xl);
     }
 
     svg {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-xl);
+      height: var(--text-xl);
     }
   }
 
@@ -222,13 +224,13 @@
     font-size: var(--text-lg);
 
     .checkbox {
-      width: 22px;
-      height: 22px;
+      width: var(--text-2xl);
+      height: var(--text-2xl);
     }
 
     svg {
-      width: 22px;
-      height: 22px;
+      width: var(--text-2xl);
+      height: var(--text-2xl);
     }
   }
 }

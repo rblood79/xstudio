@@ -104,9 +104,12 @@ export const useElementCreator = (): UseElementCreatorReturn => {
     }, []); // 빈 의존성 배열로 한 번만 실행
 
     const getDefaultProps = useCallback((tag: string): ComponentElementProps => {
+        console.log('🎯 getDefaultProps called for tag:', tag);
         switch (tag) {
             case 'Button':
-                return createDefaultButtonProps();
+                const buttonProps = createDefaultButtonProps();
+                console.log('✅ Button props created:', buttonProps);
+                return buttonProps;
             case 'TextField':
                 return createDefaultTextFieldProps();
             case 'Checkbox':

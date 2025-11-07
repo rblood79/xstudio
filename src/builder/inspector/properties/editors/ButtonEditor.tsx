@@ -55,9 +55,10 @@ export function ButtonEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
             <PropertySelect
                 label={PROPERTY_LABELS.VARIANT}
-                value={String(currentProps.variant || 'primary')}
+                value={String(currentProps.variant || 'default')}
                 onChange={(value) => updateProp('variant', value)}
                 options={[
+                    { value: 'default', label: PROPERTY_LABELS.VARIANT_DEFAULT },
                     { value: 'primary', label: PROPERTY_LABELS.VARIANT_PRIMARY },
                     { value: 'secondary', label: PROPERTY_LABELS.VARIANT_SECONDARY },
                     { value: 'surface', label: PROPERTY_LABELS.VARIANT_SURFACE },

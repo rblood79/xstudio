@@ -34,11 +34,11 @@ export type FieldType =
   | "email";
 
 export interface FieldDefinition {
-  key: string;           // 데이터 키 (예: "name")
-  label?: string;        // 표시 레이블 (예: "Full Name")
-  type?: FieldType;      // 데이터 타입
-  visible?: boolean;     // 선택 여부 (기본 true)
-  order?: number;        // 표시 순서
+  key: string; // 데이터 키 (예: "name")
+  label?: string; // 표시 레이블 (예: "Full Name")
+  type?: FieldType; // 데이터 타입
+  visible?: boolean; // 선택 여부 (기본 true)
+  order?: number; // 표시 순서
 }
 
 export interface ColumnMapping {
@@ -75,8 +75,8 @@ export interface Page {
 // === 컴포넌트별 Props 타입 ===
 export interface ButtonElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "primary" | "secondary" | "surface";
-  size?: "sm" | "md" | "lg";
+  variant?: "default" | "primary" | "secondary" | "surface";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isDisabled?: boolean;
   onPress?: () => void;
 }
@@ -114,6 +114,8 @@ export interface RadioElementProps extends BaseElementProps {
 
 export interface ToggleButtonElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  variant?: "default" | "primary" | "secondary" | "surface";
+  size?: "sm" | "md" | "lg";
   isSelected?: boolean;
   defaultSelected?: boolean;
   isDisabled?: boolean;
@@ -122,6 +124,8 @@ export interface ToggleButtonElementProps extends BaseElementProps {
 
 export interface ToggleButtonGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
+  variant?: "default" | "primary" | "secondary" | "surface";
+  size?: "sm" | "md" | "lg";
   value?: string[];
   defaultValue?: string[];
   onChange?: (value: string[]) => void;
@@ -389,8 +393,8 @@ export interface ListBoxElementProps extends BaseElementProps {
   onSelectionChange?: (keys: string[]) => void;
   isDisabled?: boolean;
   selectionMode?: "single" | "multiple";
-  columnMapping?: ColumnMapping;  // 컬럼 매핑 정보 (자동 감지된 컬럼)
-  autoDetectColumns?: boolean;    // 자동 컬럼 감지 활성화
+  columnMapping?: ColumnMapping; // 컬럼 매핑 정보 (자동 감지된 컬럼)
+  autoDetectColumns?: boolean; // 자동 컬럼 감지 활성화
 }
 
 export interface ListBoxItemElementProps extends BaseElementProps {
@@ -400,10 +404,10 @@ export interface ListBoxItemElementProps extends BaseElementProps {
 }
 
 export interface FieldElementProps extends BaseElementProps {
-  key?: string;          // 데이터 키 (예: "name", "email")
-  label?: string;        // 표시 레이블
-  type?: FieldType;      // 데이터 타입
-  value?: unknown;       // 데이터 값 (런타임에서 바인딩)
+  key?: string; // 데이터 키 (예: "name", "email")
+  label?: string; // 표시 레이블
+  type?: FieldType; // 데이터 타입
+  value?: unknown; // 데이터 값 (런타임에서 바인딩)
 }
 
 export interface GridListElementProps extends BaseElementProps {
@@ -562,7 +566,7 @@ export interface Store extends ElementsState, ThemeState, SelectionState {
 export function createDefaultButtonProps(): ButtonElementProps {
   return {
     children: "Button",
-    variant: "primary",
+    variant: "default",
     size: "sm",
     isDisabled: false,
   };
@@ -595,6 +599,8 @@ export function createDefaultRadioProps(): RadioElementProps {
 export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
   return {
     children: "Toggle Button",
+    variant: "default",
+    size: "sm",
     isSelected: false,
     isDisabled: false,
   };
@@ -602,6 +608,8 @@ export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
 
 export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementProps {
   return {
+    variant: "default",
+    size: "sm",
     value: [],
     isDisabled: false,
     selectionMode: "single",
@@ -718,7 +726,7 @@ export function createDefaultTableProps(): TableElementProps {
     selectionMode: "none",
     selectedKeys: [],
     variant: "default", // 기본값 추가
-    size: "md", // 기본값 추가
+    size: "sm", // 기본값 추가
     headerVariant: "default", // 기본값 추가
     cellVariant: "default", // 기본값 추가
     // 페이지네이션 모드 기본값

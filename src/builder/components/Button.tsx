@@ -4,7 +4,10 @@ import {
   ButtonProps as RACButtonProps,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import type { ButtonVariant, ComponentSize } from "../../types/componentVariants";
+import type {
+  ButtonVariant,
+  ComponentSize,
+} from "../../types/componentVariants";
 import "./styles/Button.css";
 
 export interface ButtonProps extends RACButtonProps {
@@ -17,6 +20,7 @@ const button = tv({
   base: "react-aria-Button",
   variants: {
     variant: {
+      default: "",
       primary: "primary",
       secondary: "secondary",
       surface: "surface",
@@ -32,7 +36,7 @@ const button = tv({
     },
   },
   defaultVariants: {
-    //variant: "primary",
+    variant: "default",
     size: "sm",
   },
 });

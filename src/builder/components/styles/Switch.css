@@ -15,20 +15,21 @@
     padding: var(--spacing) 0;
 
     .indicator {
-      width: var(--text-4xl);
-      height: var(--text-xl);
+      width: calc(var(--text-4xl) + 4px);
+      height: calc(var(--text-xl) + 2px);
+      border-radius: var(--text-xl);
       border: 2px solid var(--border-color);
       background: var(--background-color);
-      border-radius: var(--text-xl);
       transition: all 200ms;
 
       &:before {
         content: "";
         display: block;
-        width: var(--text-base);
-        height: var(--text-base);
+        width: var(--text-lg);
+        height: var(--text-lg);
+        border-radius: var(--text-lg);
+        margin: 0px;
         background: var(--highlight-background);
-        border-radius: var(--text-base);
         transition: all 200ms;
       }
     }
@@ -80,6 +81,12 @@
 
   /* Primary variant */
   .react-aria-Switch.primary {
+    .indicator {
+      &:before {
+        background-color: var(--action-primary-bg);
+      }
+    }
+
     &[data-selected] {
       .indicator {
         border-color: var(--action-primary-bg);
@@ -99,6 +106,11 @@
 
   /* Secondary variant */
   .react-aria-Switch.secondary {
+    .indicator {
+      &:before {
+        background-color: var(--action-secondary-bg);
+      }
+    }
     &[data-selected] {
       .indicator {
         border-color: var(--action-secondary-bg);
@@ -118,6 +130,11 @@
 
   /* Surface variant */
   .react-aria-Switch.surface {
+    .indicator {
+      &:before {
+        background-color: var(--action-surface-bg);
+      }
+    }
     &[data-selected] {
       .indicator {
         border-color: var(--action-surface-bg);
@@ -140,14 +157,14 @@
     font-size: var(--text-sm);
 
     .indicator {
-      width: 32px;
-      height: 18px;
-      border-radius: 18px;
+      width: calc(var(--text-4xl) + 4px);
+      height: calc(var(--text-xl) + 2px);
+      border-radius: var(--text-xl);
 
       &:before {
-        width: 14px;
-        height: 14px;
-        border-radius: 14px;
+        width: var(--text-lg);
+        height: var(--text-lg);
+        border-radius: var(--text-lg);
         margin: 0px;
       }
     }
@@ -158,14 +175,14 @@
     font-size: var(--text-base);
 
     .indicator {
-      width: var(--text-4xl);
-      height: var(--text-xl);
+      width: calc(var(--text-4xl) + 8px);
+      height: calc(var(--text-xl) + 4px);
       border-radius: var(--text-xl);
 
       &:before {
-        width: var(--text-base);
-        height: var(--text-base);
-        border-radius: var(--text-base);
+        width: var(--text-xl);
+        height: var(--text-xl);
+        border-radius: var(--text-xl);
         margin: 0px;
       }
     }

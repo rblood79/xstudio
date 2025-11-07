@@ -237,6 +237,7 @@ export const PROPERTY_LABELS = {
     IMAGE: 'Image',
 
     // Button variants
+    VARIANT_DEFAULT: 'Default',
     VARIANT_PRIMARY: 'Primary',
     VARIANT_SECONDARY: 'Secondary',
     VARIANT_SURFACE: 'Surface',

@@ -18,6 +18,8 @@ export function createToggleButtonGroupDefinition(
       tag: "ToggleButtonGroup",
       props: {
         tag: "ToggleButtonGroup",
+        variant: "default",
+        size: "sm",
         orientation: "horizontal",
         selectionMode: "single",
         value: [],
@@ -31,6 +33,8 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 1",
+          variant: "default",
+          size: "sm",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
@@ -41,6 +45,8 @@ export function createToggleButtonGroupDefinition(
         tag: "ToggleButton",
         props: {
           children: "Toggle 2",
+          variant: "default",
+          size: "sm",
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,

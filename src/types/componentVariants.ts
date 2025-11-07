@@ -44,13 +44,20 @@ export type LegacySize = "small" | "medium" | "large";
  * Button visual variants
  * Used by: Button component
  *
+ * - default: Default style (base button styles)
  * - primary: Main call-to-action (uses --button-primary-* tokens)
  * - secondary: Secondary actions (uses --button-secondary-* tokens)
  * - surface: Surface-level actions (uses --button-surface-* tokens)
  * - outline: Outlined style (uses --button-outline-* tokens)
  * - ghost: Minimal style (uses --button-ghost-* tokens)
  */
-export type ButtonVariant = "primary" | "secondary" | "surface" | "outline" | "ghost";
+export type ButtonVariant =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "surface"
+  | "outline"
+  | "ghost";
 
 // ============================================================================
 // Field/Input Variants
@@ -81,7 +88,13 @@ export type FieldVariant = "default" | "filled" | "outlined";
  * - elevated: Card with shadow elevation
  * - outlined: Card with border outline
  */
-export type CardVariant = "default" | "primary" | "secondary" | "surface" | "elevated" | "outlined";
+export type CardVariant =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "surface"
+  | "elevated"
+  | "outlined";
 
 /**
  * Panel visual variants
@@ -137,7 +150,11 @@ export type TagVariant = "default" | "primary" | "secondary" | "surface";
  * - secondary: Secondary progress (uses --action-secondary-bg token)
  * - surface: Surface progress (uses --action-surface-bg token)
  */
-export type ProgressBarVariant = "default" | "primary" | "secondary" | "surface";
+export type ProgressBarVariant =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "surface";
 
 // ============================================================================
 // Meter Variants
@@ -227,7 +244,11 @@ export type SliderVariant = "default" | "primary" | "secondary" | "surface";
  * - secondary: Secondary toggle button (uses --action-secondary-bg token when selected)
  * - surface: Surface toggle button (uses --action-surface-bg token when selected)
  */
-export type ToggleButtonVariant = "default" | "primary" | "secondary" | "surface";
+export type ToggleButtonVariant =
+  | "default"
+  | "primary"
+  | "secondary"
+  | "surface";
 
 // ============================================================================
 // Table Column Variants
@@ -251,11 +272,13 @@ export type TableColumnVariant = "default" | "primary" | "secondary";
  * Convert legacy size to standard size
  * Helper type for migration
  */
-export type ConvertLegacySize<T extends LegacySize> =
-  T extends "small" ? "sm" :
-  T extends "medium" ? "md" :
-  T extends "large" ? "lg" :
-  never;
+export type ConvertLegacySize<T extends LegacySize> = T extends "small"
+  ? "sm"
+  : T extends "medium"
+  ? "md"
+  : T extends "large"
+  ? "lg"
+  : never;
 
 /**
  * Props interface for components with variant and size
@@ -270,7 +293,7 @@ export interface VariantSizeProps<V = string, S = ComponentSize> {
 
   /**
    * Size of the component
-   * @default "md"
+   * @default "sm"
    */
   size?: S;
 }
@@ -283,14 +306,18 @@ export interface VariantSizeProps<V = string, S = ComponentSize> {
  * Type guard to check if a size is a valid ComponentSize
  */
 export function isComponentSize(value: unknown): value is ComponentSize {
-  return typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value);
+  return (
+    typeof value === "string" && ["xs", "sm", "md", "lg", "xl"].includes(value)
+  );
 }
 
 /**
  * Type guard to check if a size is a legacy size
  */
 export function isLegacySize(value: unknown): value is LegacySize {
-  return typeof value === "string" && ["small", "medium", "large"].includes(value);
+  return (
+    typeof value === "string" && ["small", "medium", "large"].includes(value)
+  );
 }
 
 /**

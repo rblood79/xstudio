@@ -130,8 +130,8 @@
     }
 
     .react-aria-SliderThumb {
-      width: 14px;
-      height: 14px;
+      width: var(--text-xl);
+      height: var(--text-xl);
     }
   }
 
@@ -158,8 +158,8 @@
     }
 
     .react-aria-SliderThumb {
-      width: var(--text-lg);
-      height: var(--text-lg);
+      width: var(--text-2xl);
+      height: var(--text-2xl);
     }
   }
 
@@ -186,8 +186,8 @@
     }
 
     .react-aria-SliderThumb {
-      width: 22px;
-      height: 22px;
+      width: var(--text-3xl);
+      height: var(--text-3xl);
     }
   }
 
