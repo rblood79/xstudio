@@ -1,9 +1,4 @@
-@import "./Checkbox.css";
-@import "./ListBox.css";
-@import "./Popover.css";
-@import "./Form.css";
-@import "./Button.css";
-@import "../theme.css";
+/* Component imports removed - managed by index.css */
 
 @layer components {
   .react-aria-ComboBox {

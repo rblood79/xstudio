@@ -1,5 +1,4 @@
 @import "./collections.css";
-@import "./Checkbox.css";
 
 @layer components {
   .react-aria-ListBox {

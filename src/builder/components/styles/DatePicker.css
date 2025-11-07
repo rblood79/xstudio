@@ -1,11 +1,4 @@
-@import "./Button.css";
-@import "./Popover.css";
-@import "./Dialog.css";
-@import "./DateField.css";
-@import "./Calendar.css";
-@import "./Form.css";
-@import "./DatePickerCommon.css";
-@import "../theme.css";
+/* Component imports removed - managed by index.css */
 
 @layer components {
   .react-aria-DatePicker {

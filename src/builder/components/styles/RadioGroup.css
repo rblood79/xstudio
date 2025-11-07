@@ -1,5 +1,4 @@
-@import './Radio.css';
-@import './Form.css';
+/* Component imports removed - managed by index.css */
 
 @layer components {
   .react-aria-RadioGroup {
