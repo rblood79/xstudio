@@ -819,6 +819,22 @@ Copilot learns from code patterns. Tips:
   - Action tokens used by: Button, Tag, Badge, MenuItem, Table ColumnGroup
   - Legacy `--button-*` aliases maintained (deprecated, v2.0 removal)
 
+**Phase 3: Card Component Complete Migration** ✅
+- Phase 3.1: CardEditor.tsx - Added Action variants (primary/secondary/surface), standardized sizes (sm/md/lg)
+- Phase 3.2: Card.css - Added Action variant styles, fixed text color inheritance with `color: inherit`
+- Phase 3.3: Card.stories.tsx - Updated variants and added Primary/Secondary/Surface stories
+- Phase 3.4: componentVariants.ts - Updated CardVariant type with Action variants
+
+**Phase 4: Action Token Hover/Pressed States** ✅
+- Phase 4.1: Added 58 hover/pressed state tokens to theme.css (29 Light + 29 Dark)
+  - Primary: `--action-primary-bg-hover`, `--action-primary-bg-pressed`, `--action-primary-border-hover`, `--action-primary-border-pressed`
+  - Secondary: Same pattern with `--action-secondary-*`
+  - Surface: Same pattern with `--action-surface-*`
+  - Outline: Includes `bg-hover`, `bg-pressed`, `text-hover`, `border-hover`, `border-pressed`
+  - Ghost: Includes `bg-hover`, `bg-pressed`, `text-hover`
+- Phase 4.2: Button.css - Applied hover/pressed states to all variants using `[data-hovered]` and `[data-pressed]`
+- Phase 4.3: Card.css - Applied hover/pressed states to primary/secondary/surface variants
+
 ### 📋 Component Refactoring Checklist (Button Pattern)
 
 When refactoring components, follow the **Button.tsx** pattern:
