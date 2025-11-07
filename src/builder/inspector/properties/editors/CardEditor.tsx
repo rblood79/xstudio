@@ -1,4 +1,4 @@
-import { Type, FileText, Layout, Eye, EyeOff, PointerOff, Focus, PencilRuler } from 'lucide-react';
+import { Type, FileText, Layout, EyeOff, PointerOff, PencilRuler } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -55,6 +55,9 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 onChange={(value) => updateProp('variant', value)}
                 options={[
                     { value: 'default', label: PROPERTY_LABELS.CARD_VARIANT_DEFAULT },
+                    { value: 'primary', label: PROPERTY_LABELS.CARD_VARIANT_PRIMARY },
+                    { value: 'secondary', label: PROPERTY_LABELS.CARD_VARIANT_SECONDARY },
+                    { value: 'surface', label: PROPERTY_LABELS.CARD_VARIANT_SURFACE },
                     { value: 'elevated', label: PROPERTY_LABELS.CARD_VARIANT_ELEVATED },
                     { value: 'outlined', label: PROPERTY_LABELS.CARD_VARIANT_OUTLINED }
                 ]}
@@ -63,12 +66,12 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
             <PropertySelect
                 label={PROPERTY_LABELS.SIZE}
-                value={String(currentProps.size || 'medium')}
+                value={String(currentProps.size || 'md')}
                 onChange={(value) => updateProp('size', value)}
                 options={[
-                    { value: 'small', label: PROPERTY_LABELS.CARD_SIZE_SMALL },
-                    { value: 'medium', label: PROPERTY_LABELS.CARD_SIZE_MEDIUM },
-                    { value: 'large', label: PROPERTY_LABELS.CARD_SIZE_LARGE }
+                    { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                    { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                    { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
                 ]}
                 icon={PencilRuler}
             />
@@ -81,24 +84,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
             />
 
             <PropertySwitch
-                label={PROPERTY_LABELS.SELECTED}
-                isSelected={Boolean(currentProps.isSelected)}
-                onChange={(checked) => updateProp('isSelected', checked)}
-                icon={Eye}
-            />
-
-            <PropertySwitch
                 label={PROPERTY_LABELS.DISABLED}
                 isSelected={Boolean(currentProps.isDisabled)}
                 onChange={(checked) => updateProp('isDisabled', checked)}
                 icon={PointerOff}
-            />
-
-            <PropertySwitch
-                label={PROPERTY_LABELS.IS_FOCUSED}
-                isSelected={Boolean(currentProps.isFocused)}
-                onChange={(checked) => updateProp('isFocused', checked)}
-                icon={Focus}
             />
         </div>
     );

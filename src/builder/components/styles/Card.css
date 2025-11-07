@@ -42,6 +42,24 @@
       }
     }
 
+    &.primary {
+      background: var(--action-primary-bg);
+      color: var(--action-primary-text);
+      border-color: var(--action-primary-border);
+    }
+
+    &.secondary {
+      background: var(--action-secondary-bg);
+      color: var(--action-secondary-text);
+      border-color: var(--action-secondary-border);
+    }
+
+    &.surface {
+      background: var(--action-surface-bg);
+      color: var(--action-surface-text);
+      border-color: var(--action-surface-border);
+    }
+
     /* Size variants */
     &.sm {
       padding: var(--spacing-md);
@@ -89,16 +107,16 @@
   .card-title {
     font-size: var(--text-lg);
     font-weight: 600;
-    color: var(--text-color);
+    color: inherit;
   }
 
   .card-content {
-    color: var(--text-color-base);
+    color: inherit;
   }
 
   .card-description {
     font-size: var(--text-sm);
     margin-bottom: var(--spacing-xs);
-    color: var(--text-color-base);
+    color: inherit;
   }
 }

@@ -1,4 +1,6 @@
 import React from "react";
+import { tv } from "tailwind-variants";
+import type { CardVariant, ComponentSizeSubset } from "../../types/componentVariants";
 import './styles/Card.css';
 
 export interface CardProps {
@@ -6,75 +8,72 @@ export interface CardProps {
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  variant?: "default" | "elevated" | "outlined";
-  size?: "small" | "medium" | "large";
+  variant?: CardVariant;
+  size?: ComponentSizeSubset;
   isQuiet?: boolean;
-  isSelected?: boolean;
   isDisabled?: boolean;
-  isFocused?: boolean;
   onClick?: () => void;
   title?: string;
   description?: string;
 }
+
+const card = tv({
+  base: "react-aria-Card",
+  variants: {
+    variant: {
+      default: "",
+      primary: "primary",
+      secondary: "secondary",
+      surface: "surface",
+      elevated: "elevated",
+      outlined: "outlined",
+    },
+    size: {
+      sm: "sm",
+      md: "md",
+      lg: "lg",
+    },
+    isQuiet: {
+      true: "quiet",
+    },
+    isDisabled: {
+      true: "disabled",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "md",
+  },
+});
 
 export function Card({
   id,
   children,
   title = "Title",
   description = "This is a card description. You can edit this content.",
-  className = "",
+  className,
   style,
   variant = "default",
-  size = "medium",
+  size = "md",
   isQuiet = false,
-  isSelected = false,
   isDisabled = false,
-  isFocused = false,
   onClick,
   ...props
 }: CardProps) {
-  const baseClasses = "react-aria-Card";
-
-  const variantClasses = {
-    default: "",
-    elevated: "elevated",
-    outlined: "outlined",
-  };
-
-  const sizeClasses = {
-    small: "sm",
-    medium: "md",
-    large: "lg",
-  };
-
-  const stateClasses = [
-    isQuiet ? "quiet" : "",
-    isSelected ? "selected" : "",
-    isDisabled ? "disabled" : "",
-    isFocused ? "focused" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const finalClassName = [
-    baseClasses,
-    variantClasses[variant],
-    sizeClasses[size],
-    stateClasses,
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
     <div
       id={id}
-      className={finalClassName}
+      className={card({
+        variant,
+        size,
+        isQuiet,
+        isDisabled,
+        className,
+      })}
       style={style}
       onClick={onClick}
       role="button"
       tabIndex={isDisabled ? -1 : 0}
-      aria-selected={isSelected}
       aria-disabled={isDisabled}
       {...props}
     >

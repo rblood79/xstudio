@@ -137,6 +137,9 @@ export const PROPERTY_LABELS = {
     // Card specific
     SIZE: 'Size',
     CARD_VARIANT_DEFAULT: 'Default',
+    CARD_VARIANT_PRIMARY: 'Primary',
+    CARD_VARIANT_SECONDARY: 'Secondary',
+    CARD_VARIANT_SURFACE: 'Surface',
     CARD_VARIANT_ELEVATED: 'Elevated',
     CARD_VARIANT_OUTLINED: 'Outlined',
 

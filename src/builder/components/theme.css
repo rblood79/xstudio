@@ -49,11 +49,64 @@
   --invalid-color: var(--color-invalid, var(--color-error-400));
   --invalid-color-pressed: var(--color-invalid-pressed, var(--color-error-500));
 
-  /* Button semantic colors - Token integrated */
-  --button-primary-bg: var(--color-button-primary-bg, var(--color-primary-600));
-  --button-primary-text: var(--color-button-primary-text, var(--color-white));
-  --button-secondary-bg: var(--color-button-secondary-bg, var(--color-secondary-600));
-  --button-secondary-text: var(--color-button-secondary-text, var(--color-white));
+  /* Action semantic colors - Used by Button, Tag, Badge, MenuItem, Table ColumnGroup
+   * Token integrated with AI Theme System via --color-action-* overrides */
+
+  /* Primary action tokens */
+  --action-primary-bg: var(--color-action-primary-bg, var(--color-primary-600));
+  --action-primary-bg-hover: var(--color-action-primary-bg-hover, var(--color-primary-700));
+  --action-primary-bg-pressed: var(--color-action-primary-bg-pressed, var(--color-primary-800));
+  --action-primary-text: var(--color-action-primary-text, var(--color-white));
+  --action-primary-border: var(--color-action-primary-border, var(--color-primary-600));
+  --action-primary-border-hover: var(--color-action-primary-border-hover, var(--color-primary-700));
+  --action-primary-border-pressed: var(--color-action-primary-border-pressed, var(--color-primary-800));
+
+  /* Secondary action tokens */
+  --action-secondary-bg: var(--color-action-secondary-bg, var(--color-secondary-600));
+  --action-secondary-bg-hover: var(--color-action-secondary-bg-hover, var(--color-secondary-700));
+  --action-secondary-bg-pressed: var(--color-action-secondary-bg-pressed, var(--color-secondary-800));
+  --action-secondary-text: var(--color-action-secondary-text, var(--color-white));
+  --action-secondary-border: var(--color-action-secondary-border, var(--color-secondary-600));
+  --action-secondary-border-hover: var(--color-action-secondary-border-hover, var(--color-secondary-700));
+  --action-secondary-border-pressed: var(--color-action-secondary-border-pressed, var(--color-secondary-800));
+
+  /* Surface action tokens */
+  --action-surface-bg: var(--color-action-surface-bg, var(--color-surface-500));
+  --action-surface-bg-hover: var(--color-action-surface-bg-hover, var(--color-surface-600));
+  --action-surface-bg-pressed: var(--color-action-surface-bg-pressed, var(--color-surface-700));
+  --action-surface-text: var(--color-action-surface-text, var(--color-white));
+  --action-surface-border: var(--color-action-surface-border, var(--color-surface-600));
+  --action-surface-border-hover: var(--color-action-surface-border-hover, var(--color-surface-700));
+  --action-surface-border-pressed: var(--color-action-surface-border-pressed, var(--color-surface-800));
+
+  /* Outline action tokens */
+  --action-outline-text: var(--color-action-outline-text, var(--color-gray-800));
+  --action-outline-text-hover: var(--color-action-outline-text-hover, var(--color-gray-900));
+  --action-outline-border: var(--color-action-outline-border, var(--color-gray-300));
+  --action-outline-border-hover: var(--color-action-outline-border-hover, var(--color-gray-400));
+  --action-outline-border-pressed: var(--color-action-outline-border-pressed, var(--color-gray-500));
+  --action-outline-bg-hover: var(--color-action-outline-bg-hover, var(--color-gray-50));
+  --action-outline-bg-pressed: var(--color-action-outline-bg-pressed, var(--color-gray-100));
+
+  /* Ghost action tokens */
+  --action-ghost-text: var(--color-action-ghost-text, var(--color-gray-800));
+  --action-ghost-text-hover: var(--color-action-ghost-text-hover, var(--color-gray-900));
+  --action-ghost-bg-hover: var(--color-action-ghost-bg-hover, var(--color-gray-50));
+  --action-ghost-bg-pressed: var(--color-action-ghost-bg-pressed, var(--color-gray-100));
+
+  /* Legacy button token aliases (deprecated, will be removed in v2.0) */
+  --button-primary-bg: var(--action-primary-bg);
+  --button-primary-text: var(--action-primary-text);
+  --button-primary-border: var(--action-primary-border);
+  --button-secondary-bg: var(--action-secondary-bg);
+  --button-secondary-text: var(--action-secondary-text);
+  --button-secondary-border: var(--action-secondary-border);
+  --button-surface-bg: var(--action-surface-bg);
+  --button-surface-text: var(--action-surface-text);
+  --button-surface-border: var(--action-surface-border);
+  --button-outline-text: var(--action-outline-text);
+  --button-outline-border: var(--action-outline-border);
+  --button-ghost-text: var(--action-ghost-text);
 
   /* Shadow System - AI Theme Integration Ready */
   --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
@@ -246,11 +299,63 @@
   --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-neutral-800));
   --highlight-overlay: var(--color-highlight-overlay, rgba(56, 189, 248, 0.15));
 
-  /* Button semantic colors - Dark mode */
-  --button-primary-bg: var(--color-button-primary-bg, var(--color-primary-500));
-  --button-primary-text: var(--color-button-primary-text, var(--color-neutral-900));
-  --button-secondary-bg: var(--color-button-secondary-bg, var(--color-secondary-500));
-  --button-secondary-text: var(--color-button-secondary-text, var(--color-neutral-900));
+  /* Action semantic colors - Dark mode */
+
+  /* Primary action tokens */
+  --action-primary-bg: var(--color-action-primary-bg, var(--color-primary-500));
+  --action-primary-bg-hover: var(--color-action-primary-bg-hover, var(--color-primary-400));
+  --action-primary-bg-pressed: var(--color-action-primary-bg-pressed, var(--color-primary-300));
+  --action-primary-text: var(--color-action-primary-text, var(--color-neutral-900));
+  --action-primary-border: var(--color-action-primary-border, var(--color-primary-500));
+  --action-primary-border-hover: var(--color-action-primary-border-hover, var(--color-primary-400));
+  --action-primary-border-pressed: var(--color-action-primary-border-pressed, var(--color-primary-300));
+
+  /* Secondary action tokens */
+  --action-secondary-bg: var(--color-action-secondary-bg, var(--color-secondary-500));
+  --action-secondary-bg-hover: var(--color-action-secondary-bg-hover, var(--color-secondary-400));
+  --action-secondary-bg-pressed: var(--color-action-secondary-bg-pressed, var(--color-secondary-300));
+  --action-secondary-text: var(--color-action-secondary-text, var(--color-neutral-900));
+  --action-secondary-border: var(--color-action-secondary-border, var(--color-secondary-500));
+  --action-secondary-border-hover: var(--color-action-secondary-border-hover, var(--color-secondary-400));
+  --action-secondary-border-pressed: var(--color-action-secondary-border-pressed, var(--color-secondary-300));
+
+  /* Surface action tokens */
+  --action-surface-bg: var(--color-action-surface-bg, var(--color-surface-400));
+  --action-surface-bg-hover: var(--color-action-surface-bg-hover, var(--color-surface-300));
+  --action-surface-bg-pressed: var(--color-action-surface-bg-pressed, var(--color-surface-200));
+  --action-surface-text: var(--color-action-surface-text, var(--color-neutral-900));
+  --action-surface-border: var(--color-action-surface-border, var(--color-surface-500));
+  --action-surface-border-hover: var(--color-action-surface-border-hover, var(--color-surface-400));
+  --action-surface-border-pressed: var(--color-action-surface-border-pressed, var(--color-surface-300));
+
+  /* Outline action tokens */
+  --action-outline-text: var(--color-action-outline-text, var(--color-neutral-200));
+  --action-outline-text-hover: var(--color-action-outline-text-hover, var(--color-neutral-100));
+  --action-outline-border: var(--color-action-outline-border, var(--color-neutral-600));
+  --action-outline-border-hover: var(--color-action-outline-border-hover, var(--color-neutral-500));
+  --action-outline-border-pressed: var(--color-action-outline-border-pressed, var(--color-neutral-400));
+  --action-outline-bg-hover: var(--color-action-outline-bg-hover, var(--color-neutral-800));
+  --action-outline-bg-pressed: var(--color-action-outline-bg-pressed, var(--color-neutral-700));
+
+  /* Ghost action tokens */
+  --action-ghost-text: var(--color-action-ghost-text, var(--color-neutral-200));
+  --action-ghost-text-hover: var(--color-action-ghost-text-hover, var(--color-neutral-100));
+  --action-ghost-bg-hover: var(--color-action-ghost-bg-hover, var(--color-neutral-800));
+  --action-ghost-bg-pressed: var(--color-action-ghost-bg-pressed, var(--color-neutral-700));
+
+  /* Legacy button token aliases (deprecated) */
+  --button-primary-bg: var(--action-primary-bg);
+  --button-primary-text: var(--action-primary-text);
+  --button-primary-border: var(--action-primary-border);
+  --button-secondary-bg: var(--action-secondary-bg);
+  --button-secondary-text: var(--action-secondary-text);
+  --button-secondary-border: var(--action-secondary-border);
+  --button-surface-bg: var(--action-surface-bg);
+  --button-surface-text: var(--action-surface-text);
+  --button-surface-border: var(--action-surface-border);
+  --button-outline-text: var(--action-outline-text);
+  --button-outline-border: var(--action-outline-border);
+  --button-ghost-text: var(--action-ghost-text);
 
   /* Shadow System - Dark mode (increased opacity for visibility) */
   --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.2));

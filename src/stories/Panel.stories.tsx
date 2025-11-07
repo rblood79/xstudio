@@ -24,20 +24,14 @@ const meta: Meta<typeof Panel> = {
     },
     variant: {
       control: 'radio',
-      options: ['default', 'sidebar', 'modal'],
-      description: '패널의 시각적 변형 (기본, 사이드바, 모달 스타일)',
+      options: ['default', 'tab', 'sidebar', 'card', 'modal'],
+      description: '패널의 시각적 변형',
     },
-    isOpen: {
-      control: 'boolean',
-      description: '패널이 열려있는지 여부 (모달/사이드바 변형에 유용)',
-    },
-    onClose: { action: 'onClose', description: '패널이 닫힐 때 호출되는 콜백' },
   },
   args: {
     title: '패널 제목',
     children: '이것은 패널 내용입니다.',
     variant: 'default',
-    isOpen: true, // 스토리에서는 항상 열려있도록 설정
   }
 };
 
@@ -66,6 +60,32 @@ export const SidebarPanel: Story = {
         <li className="text-gray-700">프로젝트</li>
         <li className="text-gray-700">설정</li>
       </ul>
+    ),
+  }
+};
+
+export const TabPanel: Story = {
+  args: {
+    variant: 'tab',
+    title: '탭 패널',
+    children: (
+      <div className="p-4 text-sm">
+        <p className="text-gray-800">탭 내용 영역입니다.</p>
+        <p className="text-gray-600 text-xs mt-2">Tab 컴포넌트와 함께 사용됩니다.</p>
+      </div>
+    ),
+  }
+};
+
+export const CardStylePanel: Story = {
+  args: {
+    variant: 'card',
+    title: '카드 스타일 패널',
+    children: (
+      <div className="p-4 space-y-2">
+        <p className="text-gray-800">카드처럼 보이는 패널입니다.</p>
+        <span className="text-xs text-gray-500">간단한 정보 카드로 사용할 수 있습니다.</span>
+      </div>
     ),
   }
 };

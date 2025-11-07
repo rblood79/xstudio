@@ -1,4 +1,6 @@
 import React from 'react';
+import { tv } from 'tailwind-variants';
+import type { PanelVariant } from '../../types/componentVariants';
 import './styles/Panel.css';
 
 export interface PanelProps {
@@ -6,32 +8,37 @@ export interface PanelProps {
     className?: string;
     style?: React.CSSProperties;
     title?: string;
-    variant?: 'default' | 'tab' | 'sidebar' | 'card' | 'modal';
+    variant?: PanelVariant;
     'data-element-id'?: string;
     [key: string]: unknown;
 }
 
+const panel = tv({
+    base: 'react-aria-Panel',
+    variants: {
+        variant: {
+            default: 'panel-default',
+            tab: 'panel-tab',
+            sidebar: 'panel-sidebar',
+            card: 'panel-card',
+            modal: 'panel-modal',
+        },
+    },
+    defaultVariants: {
+        variant: 'default',
+    },
+});
+
 export function Panel({
     children,
-    className = '',
+    className,
     style,
     title,
     variant = 'default',
     ...props
 }: PanelProps) {
-    const baseClasses = 'react-aria-Panel';
-    const variantClasses = {
-        default: 'panel-default',
-        tab: 'panel-tab',
-        sidebar: 'panel-sidebar',
-        card: 'panel-card',
-        modal: 'panel-modal'
-    };
-
-    const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
-
     return (
-        <div {...props} className={combinedClasses} style={style}>
+        <div {...props} className={panel({ variant, className })} style={style}>
             {title && <div className="panel-title">{title}</div>}
             <div className="panel-content">
                 {children}

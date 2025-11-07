@@ -788,4 +788,163 @@ Copilot learns from code patterns. Tips:
 
 ---
 
+## 🚧 Component Migration Status (Phase 0 - In Progress)
+
+### ✅ Completed (2025-11-07)
+
+**Phase 0.1: Semantic Tokens** ✅
+- 50+ semantic tokens already exist in `src/builder/components/theme.css`
+- Fallback pattern: `var(--semantic-name, var(--palette-fallback))`
+- Example: `--button-primary-bg: var(--color-button-primary-bg, var(--color-primary-600))`
+
+**Phase 0.2: Component Variant Types** ✅
+- Created: `src/types/componentVariants.ts` (197 lines)
+- Button.tsx updated to use `ButtonVariant` and `ComponentSize`
+- Type guards and conversion utilities included
+
+**Phase 0.4: Inspector Property Components** ✅
+- 9 Property components created in `src/builder/inspector/components/`
+- Events Tab refactored (commit 2114448)
+- Pattern: PropertyInput, PropertySelect, PropertyCheckbox
+
+**Phase 1: Component TSX Refactoring** ✅
+- Phase 1.1: Card.tsx - tv() pattern, shared types, removed anti-patterns
+- Phase 1.2: Panel.tsx - tv() pattern, PanelVariant type
+- Both use `tv()` + `composeRenderProps`, removed manual className concatenation
+
+**Phase 2: Button.css Semantic Token Migration** ✅
+- Phase 2.1: Added 14 Action tokens to theme.css (Light + Dark modes)
+- Phase 2.2: Replaced 8 palette references in Button.css with semantic tokens
+- Phase 2.3: Renamed `--button-*` → `--action-*` for reusability
+  - Action tokens used by: Button, Tag, Badge, MenuItem, Table ColumnGroup
+  - Legacy `--button-*` aliases maintained (deprecated, v2.0 removal)
+
+### 📋 Component Refactoring Checklist (Button Pattern)
+
+When refactoring components, follow the **Button.tsx** pattern:
+
+**1. Imports**
+```typescript
+import { tv } from "tailwind-variants";
+import { composeRenderProps } from "react-aria-components";
+import type { ButtonVariant, ComponentSize } from "../../types/componentVariants";
+```
+
+**2. Props Interface**
+```typescript
+export interface ComponentProps extends AriaComponentProps {
+  variant?: ButtonVariant;  // Use shared types
+  size?: ComponentSize;
+}
+```
+
+**3. tv() Configuration**
+```typescript
+const component = tv({
+  base: "react-aria-ComponentName",
+  variants: {
+    variant: {
+      primary: "primary",    // Maps to CSS class
+      secondary: "secondary",
+    },
+    size: {
+      sm: "sm",
+      md: "md",
+      lg: "lg",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});
+```
+
+**4. Component Implementation**
+```typescript
+export function Component(props: ComponentProps) {
+  return (
+    <AriaComponent
+      {...props}
+      className={composeRenderProps(
+        props.className,
+        (className, renderProps) => {
+          return component({
+            ...renderProps,
+            variant: props.variant,
+            size: props.size,
+            className,
+          });
+        }
+      )}
+    >
+      {props.children}
+    </AriaComponent>
+  );
+}
+```
+
+**5. CSS (styles/ComponentName.css)**
+```css
+@layer components {
+  .react-aria-ComponentName {
+    /* Base styles with semantic tokens */
+    background: var(--button-background);
+    color: var(--text-color);
+  }
+
+  .react-aria-ComponentName.primary {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+  }
+
+  .react-aria-ComponentName.sm {
+    padding: var(--spacing) var(--spacing-md);
+    font-size: var(--text-sm);
+  }
+}
+```
+
+### ❌ Anti-Patterns to Avoid
+
+**DON'T:**
+```typescript
+// ❌ Manual className concatenation
+const variantClasses = { primary: "btn-primary" };
+const className = `${baseClasses} ${variantClasses[variant]}`;
+
+// ❌ Inline Tailwind classes
+<button className="px-4 py-2 bg-blue-500">
+
+// ❌ Palette variables in CSS
+.button { background: var(--color-primary-600); }
+
+// ❌ Non-standard size values
+size?: "small" | "medium" | "large"  // Use ComponentSize instead
+```
+
+**DO:**
+```typescript
+// ✅ Use tv() from tailwind-variants
+const button = tv({ variants: { ... } });
+
+// ✅ Use semantic CSS classes
+<button className={button({ variant: "primary" })}>
+
+// ✅ Use semantic tokens in CSS
+.button { background: var(--button-primary-bg); }
+
+// ✅ Use shared types
+size?: ComponentSize  // "xs" | "sm" | "md" | "lg" | "xl"
+```
+
+### 🔗 Reference Files
+
+- **Gold Standard**: `src/builder/components/Button.tsx` (tv() pattern)
+- **Type Definitions**: `src/types/componentVariants.ts`
+- **Migration Plan**: `docs/implementation/COMPONENT_MIGRATION_PLAN.md`
+- **Detailed Steps**: `docs/implementation/MIGRATION_DETAILED_STEPS.md`
+- **Refactoring Template**: `docs/implementation/COMPONENT_REFACTORING_TEMPLATE.md`
+
+---
+
 **Remember:** This project prioritizes accessibility (React Aria), maintainability (CSS variables, semantic classes), and type safety (strict TypeScript). AI suggestions should align with these values.
