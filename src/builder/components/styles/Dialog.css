@@ -1,7 +1,4 @@
 @import "../theme.css";
-@import './Button.css';
-@import './TextField.css';
-@import './Modal.css';
 
 @layer components {
   

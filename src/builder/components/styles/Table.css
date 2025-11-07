@@ -1,10 +1,4 @@
-@import './Button.css';
-@import './ToggleButton.css';
-@import './CheckboxGroup.css';
-@import './Checkbox.css';
-@import './Popover.css';
-@import './Menu.css';
-@import "../theme.css";
+/* Component imports removed - managed by index.css */
 
 @layer components {
 
