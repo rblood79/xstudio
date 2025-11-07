@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff } from 'lucide-react';
+import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -228,7 +228,38 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     ]}
                     icon={Ratio}
                 />
+            </fieldset>
 
+            <fieldset className="properties-design">
+                {/* Variant 설정 */}
+                <PropertySelect
+                    label={PROPERTY_LABELS.VARIANT}
+                    value={String(currentProps.variant || 'default')}
+                    onChange={(value) => updateProp('variant', value)}
+                    options={[
+                        { value: 'default', label: PROPERTY_LABELS.CHECKBOX_VARIANT_DEFAULT },
+                        { value: 'primary', label: PROPERTY_LABELS.CHECKBOX_VARIANT_PRIMARY },
+                        { value: 'secondary', label: PROPERTY_LABELS.CHECKBOX_VARIANT_SECONDARY },
+                        { value: 'surface', label: PROPERTY_LABELS.CHECKBOX_VARIANT_SURFACE }
+                    ]}
+                    icon={Layout}
+                />
+
+                {/* Size 설정 */}
+                <PropertySelect
+                    label={PROPERTY_LABELS.SIZE}
+                    value={String(currentProps.size || 'md')}
+                    onChange={(value) => updateProp('size', value)}
+                    options={[
+                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                    ]}
+                    icon={Ruler}
+                />
+            </fieldset>
+
+            <fieldset className="properties-aria">
                 {/* 비활성화 설정 */}
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}

@@ -170,6 +170,66 @@ export type MeterVariant = "default" | "primary" | "secondary" | "surface";
 export type SwitchVariant = "default" | "primary" | "secondary" | "surface";
 
 // ============================================================================
+// Checkbox Variants
+// ============================================================================
+
+/**
+ * Checkbox visual variants
+ * Used by: Checkbox component
+ *
+ * - default: Standard checkbox style
+ * - primary: Primary checkbox (uses --action-primary-bg token when selected)
+ * - secondary: Secondary checkbox (uses --action-secondary-bg token when selected)
+ * - surface: Surface checkbox (uses --action-surface-bg token when selected)
+ */
+export type CheckboxVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// Radio Variants
+// ============================================================================
+
+/**
+ * Radio visual variants
+ * Used by: RadioGroup component (controls child Radio buttons)
+ *
+ * - default: Standard radio style
+ * - primary: Primary radio (uses --action-primary-bg token when selected)
+ * - secondary: Secondary radio (uses --action-secondary-bg token when selected)
+ * - surface: Surface radio (uses --action-surface-bg token when selected)
+ */
+export type RadioVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// Slider Variants
+// ============================================================================
+
+/**
+ * Slider visual variants
+ * Used by: Slider component
+ *
+ * - default: Standard slider style
+ * - primary: Primary slider (uses --action-primary-bg token for thumb)
+ * - secondary: Secondary slider (uses --action-secondary-bg token for thumb)
+ * - surface: Surface slider (uses --action-surface-bg token for thumb)
+ */
+export type SliderVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
+// ToggleButton Variants
+// ============================================================================
+
+/**
+ * ToggleButton visual variants
+ * Used by: ToggleButtonGroup component (controls child ToggleButton styling)
+ *
+ * - default: Standard toggle button style
+ * - primary: Primary toggle button (uses --action-primary-bg token when selected)
+ * - secondary: Secondary toggle button (uses --action-secondary-bg token when selected)
+ * - surface: Surface toggle button (uses --action-surface-bg token when selected)
+ */
+export type ToggleButtonVariant = "default" | "primary" | "secondary" | "surface";
+
+// ============================================================================
 // Table Column Variants
 // ============================================================================
 

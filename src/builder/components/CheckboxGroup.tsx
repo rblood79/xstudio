@@ -5,10 +5,13 @@ import {
   FieldError,
   Label,
   Text,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
+import { tv } from 'tailwind-variants';
 import type { DataBinding, ColumnMapping } from '../../types/unified';
+import type { ComponentSizeSubset, CheckboxVariant } from '../../types/componentVariants';
 import { useCollectionData } from '../hooks/useCollectionData';
 
 import './styles/CheckboxGroup.css';
@@ -23,7 +26,38 @@ export interface CheckboxGroupProps
   // 데이터 바인딩
   dataBinding?: DataBinding;
   columnMapping?: ColumnMapping;
+  /**
+   * Visual variant for child Checkbox buttons
+   * @default 'default'
+   */
+  variant?: CheckboxVariant;
+  /**
+   * Size for child Checkbox buttons
+   * @default 'md'
+   */
+  size?: ComponentSizeSubset;
 }
+
+const checkboxGroupStyles = tv({
+  base: 'react-aria-CheckboxGroup',
+  variants: {
+    variant: {
+      default: '',
+      primary: 'primary',
+      secondary: 'secondary',
+      surface: 'surface',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'md',
+  },
+});
 
 export function CheckboxGroup(
   {
@@ -34,6 +68,8 @@ export function CheckboxGroup(
     orientation = 'vertical',
     dataBinding,
     columnMapping,
+    variant = 'default',
+    size = 'md',
     ...props
   }: CheckboxGroupProps
 ) {
@@ -54,6 +90,11 @@ export function CheckboxGroup(
   // DataBinding이 있고 데이터가 로드되었을 때 동적 Checkbox 생성
   const hasDataBinding = dataBinding?.type === 'collection';
 
+  const checkboxGroupClassName = composeRenderProps(
+    props.className,
+    (className) => checkboxGroupStyles({ variant, size, className })
+  );
+
   // ColumnMapping이 있으면 각 데이터 항목마다 Checkbox 렌더링
   // ListBox와 동일한 패턴
   if (hasDataBinding && columnMapping) {
@@ -68,8 +109,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
           isDisabled
         >
           {label && <Label>{label}</Label>}
@@ -84,8 +127,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
           isDisabled
         >
           {label && <Label>{label}</Label>}
@@ -103,8 +148,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
         >
           {label && <Label>{label}</Label>}
           {children}
@@ -118,8 +165,10 @@ export function CheckboxGroup(
     return (
       <AriaCheckboxGroup
         {...props}
-        className='react-aria-CheckboxGroup'
+        className={checkboxGroupClassName}
         data-orientation={orientation}
+        data-checkbox-variant={variant}
+        data-checkbox-size={size}
       >
         {label && <Label>{label}</Label>}
         {children}
@@ -136,8 +185,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
           isDisabled
         >
           {label && <Label>{label}</Label>}
@@ -152,8 +203,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
           isDisabled
         >
           {label && <Label>{label}</Label>}
@@ -179,8 +232,10 @@ export function CheckboxGroup(
       return (
         <AriaCheckboxGroup
           {...props}
-          className='react-aria-CheckboxGroup'
+          className={checkboxGroupClassName}
           data-orientation={orientation}
+          data-checkbox-variant={variant}
+          data-checkbox-size={size}
         >
           {label && <Label>{label}</Label>}
           {checkboxItems.map((item) => (
@@ -211,8 +266,10 @@ export function CheckboxGroup(
   return (
     <AriaCheckboxGroup
       {...props}
-      className='react-aria-CheckboxGroup'
+      className={checkboxGroupClassName}
       data-orientation={orientation}
+      data-checkbox-variant={variant}
+      data-checkbox-size={size}
     >
       {label && <Label>{label}</Label>}
       {children}

@@ -402,6 +402,176 @@ When adding a new component:
 3. Create Storybook story in `src/stories/`
 4. Write tests (Vitest for unit, Playwright for E2E)
 
+#### Action Token System and Component Variants
+
+**Overview**
+
+All interactive components use the Action Token System for consistent theming across variants. This system uses semantic CSS variables and the `tv()` (tailwind-variants) API for type-safe variant composition.
+
+**Action Token CSS Variables:**
+
+```css
+/* Primary Action Colors */
+--action-primary-bg: var(--color-primary-600);
+--action-primary-bg-pressed: var(--color-primary-700);
+
+/* Secondary Action Colors */
+--action-secondary-bg: var(--color-secondary-600);
+--action-secondary-bg-pressed: var(--color-secondary-700);
+
+/* Surface Action Colors */
+--action-surface-bg: var(--color-surface-600);
+--action-surface-bg-pressed: var(--color-surface-700);
+```
+
+**Component Styling Patterns**
+
+Components follow three distinct patterns based on their usage context:
+
+1. **Standalone Components** - Always used independently
+   - Examples: Button, Slider, Card, Separator, ProgressBar, Meter
+   - Have their own variant and size props
+   - Use `tv()` for className composition: `.react-aria-Component.variant`
+
+2. **Parent-Controlled Components** - Child styling controlled by parent
+   - Examples: Radio/RadioGroup, TagGroup/Tag
+   - Radio never used standalone (always in RadioGroup)
+   - Parent sets CSS data attributes: `data-radio-variant`, `data-radio-size`
+   - CSS targets: `.react-aria-RadioGroup[data-radio-variant="primary"] .react-aria-Radio`
+
+3. **Dual-Mode Components** - Support both standalone and parent-controlled
+   - Examples: Checkbox/CheckboxGroup, ToggleButton/ToggleButtonGroup
+   - Work standalone OR in parent group
+   - CSS includes BOTH patterns:
+     - Standalone: `.react-aria-ToggleButton.primary`
+     - Group-controlled: `.react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"] .react-aria-ToggleButton`
+   - Property editor conditionally shows variant/size (hidden when child of group)
+
+**Migrated Components (tv() + Action Tokens):**
+
+| Component | Pattern | Variants | Sizes | File Location |
+|-----------|---------|----------|-------|---------------|
+| Button | Standalone | default, primary, secondary, surface | sm, md, lg | `components/Button.tsx` |
+| Card | Standalone | default, outlined, elevated | N/A | `components/Card.tsx` |
+| Separator | Standalone | default, primary, secondary, surface | N/A | `components/Separator.tsx` |
+| TagGroup | Parent-controlled | default, primary, secondary, surface | sm, md, lg | `components/TagGroup.tsx` |
+| Tag | Parent-controlled | (inherited from TagGroup) | (inherited) | `components/Tag.tsx` |
+| ProgressBar | Standalone | default, primary, secondary, surface | sm, md, lg | `components/ProgressBar.tsx` |
+| Meter | Standalone | default, primary, secondary, surface | sm, md, lg | `components/Meter.tsx` |
+| CheckboxGroup | Parent-controlled | default, primary, secondary, surface | sm, md, lg | `components/CheckboxGroup.tsx` |
+| Checkbox | Dual-mode | default, primary, secondary, surface | sm, md, lg | `components/Checkbox.tsx` |
+| RadioGroup | Parent-controlled | default, primary, secondary, surface | sm, md, lg | `components/RadioGroup.tsx` |
+| Radio | Parent-controlled | (inherited from RadioGroup) | (inherited) | `components/Radio.tsx` |
+| Slider | Standalone | default, primary, secondary, surface | sm, md, lg | `components/Slider.tsx` |
+| ToggleButtonGroup | Parent-controlled | default, primary, secondary, surface | sm, md, lg | `components/ToggleButtonGroup.tsx` |
+| ToggleButton | Dual-mode | default, primary, secondary, surface | sm, md, lg | `components/ToggleButton.tsx` |
+
+**Migration Pattern Example (Dual-Mode):**
+
+```tsx
+// 1. Component with tv() - src/builder/components/ToggleButton.tsx
+import { tv } from 'tailwind-variants';
+
+const toggleButtonStyles = tv({
+  base: 'react-aria-ToggleButton',
+  variants: {
+    variant: {
+      default: '',
+      primary: 'primary',
+      secondary: 'secondary',
+      surface: 'surface',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'md',
+  },
+});
+
+export function ToggleButton({ variant = 'default', size = 'md', ...props }: ToggleButtonExtendedProps) {
+  const toggleButtonClassName = composeRenderProps(
+    props.className,
+    (className) => toggleButtonStyles({ variant, size, className })
+  );
+
+  return <RACToggleButton {...props} className={toggleButtonClassName} />;
+}
+```
+
+```css
+/* 2. Dual-mode CSS - src/builder/components/styles/ToggleButton.css */
+@layer components {
+  /* Base styles */
+  .react-aria-ToggleButton {
+    color: var(--text-color);
+    background: var(--button-background);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Parent-controlled variant (when in ToggleButtonGroup) */
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"] .react-aria-ToggleButton {
+    &[data-selected] {
+      background: var(--action-primary-bg);
+      border-color: var(--action-primary-bg);
+      color: white;
+      &[data-pressed] {
+        background: var(--action-primary-bg-pressed);
+      }
+    }
+  }
+
+  /* Standalone variant (NOT in group) */
+  .react-aria-ToggleButton.primary {
+    &[data-selected] {
+      background: var(--action-primary-bg);
+      border-color: var(--action-primary-bg);
+      color: white;
+      &[data-pressed] {
+        background: var(--action-primary-bg-pressed);
+      }
+    }
+  }
+}
+```
+
+```tsx
+// 3. Conditional Property Editor - src/builder/inspector/properties/editors/ToggleButtonEditor.tsx
+const parentElement = useStore((state) =>
+    state.elements.find((el) => el.id === element?.parent_id)
+);
+const isChildOfToggleButtonGroup = parentElement?.tag === 'ToggleButtonGroup';
+
+// Only show variant/size controls if NOT a child of ToggleButtonGroup
+{!isChildOfToggleButtonGroup && (
+    <fieldset className="properties-design">
+        <PropertySelect
+            label={PROPERTY_LABELS.VARIANT}
+            value={String(currentProps.variant || 'default')}
+            onChange={(value) => updateProp('variant', value)}
+            options={[
+                { value: 'default', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_DEFAULT },
+                { value: 'primary', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_PRIMARY },
+                { value: 'secondary', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_SECONDARY },
+                { value: 'surface', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_SURFACE }
+            ]}
+            icon={Layout}
+        />
+    </fieldset>
+)}
+```
+
+**Key Rules:**
+- All variants use Action Token System CSS variables
+- Use `tv()` from `tailwind-variants` for className composition
+- Always use `composeRenderProps()` to preserve user-provided className
+- Dual-mode components require CSS for BOTH standalone and parent-controlled patterns
+- Property editors should conditionally hide variant/size when child of parent group
+
 #### Key Component Patterns
 
 **ToggleButtonGroup with Indicator**

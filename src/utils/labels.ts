@@ -172,6 +172,30 @@ export const PROPERTY_LABELS = {
     SWITCH_VARIANT_SECONDARY: 'Secondary',
     SWITCH_VARIANT_SURFACE: 'Surface',
 
+    // Checkbox variants
+    CHECKBOX_VARIANT_DEFAULT: 'Default',
+    CHECKBOX_VARIANT_PRIMARY: 'Primary',
+    CHECKBOX_VARIANT_SECONDARY: 'Secondary',
+    CHECKBOX_VARIANT_SURFACE: 'Surface',
+
+    // Radio variants
+    RADIO_VARIANT_DEFAULT: 'Default',
+    RADIO_VARIANT_PRIMARY: 'Primary',
+    RADIO_VARIANT_SECONDARY: 'Secondary',
+    RADIO_VARIANT_SURFACE: 'Surface',
+
+    // Slider variants
+    SLIDER_VARIANT_DEFAULT: 'Default',
+    SLIDER_VARIANT_PRIMARY: 'Primary',
+    SLIDER_VARIANT_SECONDARY: 'Secondary',
+    SLIDER_VARIANT_SURFACE: 'Surface',
+
+    // ToggleButton variants
+    TOGGLEBUTTON_VARIANT_DEFAULT: 'Default',
+    TOGGLEBUTTON_VARIANT_PRIMARY: 'Primary',
+    TOGGLEBUTTON_VARIANT_SECONDARY: 'Secondary',
+    TOGGLEBUTTON_VARIANT_SURFACE: 'Surface',
+
     // Card sizes
     CARD_SIZE_SMALL: 'Small',
     CARD_SIZE_MEDIUM: 'Medium',

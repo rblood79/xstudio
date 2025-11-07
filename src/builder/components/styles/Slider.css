@@ -109,4 +109,121 @@
       }
     }
   }
+
+  /* Small size */
+  .react-aria-Slider.sm {
+    &[data-orientation="horizontal"] {
+      .react-aria-SliderTrack {
+        height: 24px;
+
+        &:before {
+          height: 1px;
+        }
+      }
+    }
+
+    &[data-orientation="vertical"] {
+      .react-aria-SliderTrack {
+        width: 24px;
+
+        &:before {
+          width: 1px;
+        }
+      }
+    }
+
+    .react-aria-SliderThumb {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  /* Medium size (default) */
+  .react-aria-Slider.md {
+    &[data-orientation="horizontal"] {
+      .react-aria-SliderTrack {
+        height: 30px;
+
+        &:before {
+          height: 2px;
+        }
+      }
+    }
+
+    &[data-orientation="vertical"] {
+      .react-aria-SliderTrack {
+        width: 30px;
+
+        &:before {
+          width: 2px;
+        }
+      }
+    }
+
+    .react-aria-SliderThumb {
+      width: var(--text-lg);
+      height: var(--text-lg);
+    }
+  }
+
+  /* Large size */
+  .react-aria-Slider.lg {
+    &[data-orientation="horizontal"] {
+      .react-aria-SliderTrack {
+        height: 36px;
+
+        &:before {
+          height: 3px;
+        }
+      }
+    }
+
+    &[data-orientation="vertical"] {
+      .react-aria-SliderTrack {
+        width: 36px;
+
+        &:before {
+          width: 3px;
+        }
+      }
+    }
+
+    .react-aria-SliderThumb {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  /* Primary variant */
+  .react-aria-Slider.primary {
+    .react-aria-SliderThumb {
+      background: var(--action-primary-bg);
+
+      &[data-dragging] {
+        background: var(--action-primary-bg-pressed);
+      }
+    }
+  }
+
+  /* Secondary variant */
+  .react-aria-Slider.secondary {
+    .react-aria-SliderThumb {
+      background: var(--action-secondary-bg);
+
+      &[data-dragging] {
+        background: var(--action-secondary-bg-pressed);
+      }
+    }
+  }
+
+  /* Surface variant */
+  .react-aria-Slider.surface {
+    .react-aria-SliderThumb {
+      background: var(--action-surface-bg);
+
+      &[data-dragging] {
+        background: var(--action-surface-bg-pressed);
+      }
+    }
+  }
 }

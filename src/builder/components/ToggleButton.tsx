@@ -1,6 +1,47 @@
-import { ToggleButton as RACToggleButton, ToggleButtonProps } from 'react-aria-components';
+import { ToggleButton as RACToggleButton, ToggleButtonProps, composeRenderProps } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+import type { ComponentSizeSubset, ToggleButtonVariant } from '../../types/componentVariants';
 import './styles/ToggleButton.css';
 
-export function ToggleButton(props: ToggleButtonProps) {
-  return <RACToggleButton {...props} className='react-aria-ToggleButton' />;
+export interface ToggleButtonExtendedProps extends ToggleButtonProps {
+  /**
+   * Visual variant of the toggle button
+   * @default 'default'
+   */
+  variant?: ToggleButtonVariant;
+  /**
+   * Size of the toggle button
+   * @default 'md'
+   */
+  size?: ComponentSizeSubset;
+}
+
+const toggleButtonStyles = tv({
+  base: 'react-aria-ToggleButton',
+  variants: {
+    variant: {
+      default: '',
+      primary: 'primary',
+      secondary: 'secondary',
+      surface: 'surface',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'md',
+  },
+});
+
+export function ToggleButton({ variant = 'default', size = 'md', ...props }: ToggleButtonExtendedProps) {
+  const toggleButtonClassName = composeRenderProps(
+    props.className,
+    (className) => toggleButtonStyles({ variant, size, className })
+  );
+
+  return <RACToggleButton {...props} className={toggleButtonClassName} />;
 }

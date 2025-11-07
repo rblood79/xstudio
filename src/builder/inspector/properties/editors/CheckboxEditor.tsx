@@ -1,5 +1,5 @@
-import { Tag, CheckSquare, PointerOff, PenOff, Minus } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
+import { Tag, CheckSquare, PointerOff, PenOff, Minus, Layout, PencilRuler } from 'lucide-react';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
@@ -8,6 +8,12 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     // Get customId from element in store
     const element = useStore((state) => state.elements.find((el) => el.id === elementId));
     const customId = element?.customId || '';
+
+    // Check if this Checkbox is a child of CheckboxGroup
+    const parentElement = useStore((state) =>
+        state.elements.find((el) => el.id === element?.parent_id)
+    );
+    const isChildOfCheckboxGroup = parentElement?.tag === 'CheckboxGroup';
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -69,6 +75,36 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={(checked) => updateProp('isIndeterminate', checked)}
                 icon={Minus}
             />
+
+            {/* Only show variant/size controls if NOT a child of CheckboxGroup */}
+            {!isChildOfCheckboxGroup && (
+                <fieldset className="properties-design">
+                    <PropertySelect
+                        label={PROPERTY_LABELS.VARIANT}
+                        value={String(currentProps.variant || 'default')}
+                        onChange={(value) => updateProp('variant', value)}
+                        options={[
+                            { value: 'default', label: PROPERTY_LABELS.CHECKBOX_VARIANT_DEFAULT },
+                            { value: 'primary', label: PROPERTY_LABELS.CHECKBOX_VARIANT_PRIMARY },
+                            { value: 'secondary', label: PROPERTY_LABELS.CHECKBOX_VARIANT_SECONDARY },
+                            { value: 'surface', label: PROPERTY_LABELS.CHECKBOX_VARIANT_SURFACE }
+                        ]}
+                        icon={Layout}
+                    />
+
+                    <PropertySelect
+                        label={PROPERTY_LABELS.SIZE}
+                        value={String(currentProps.size || 'md')}
+                        onChange={(value) => updateProp('size', value)}
+                        options={[
+                            { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                            { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                            { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                        ]}
+                        icon={PencilRuler}
+                    />
+                </fieldset>
+            )}
         </div>
     );
 }

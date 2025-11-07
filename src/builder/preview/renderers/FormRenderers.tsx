@@ -302,6 +302,12 @@ export const renderCheckbox = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
       onChange={async (isSelected) => {
         const updatedProps = {
           ...element.props,
@@ -361,6 +367,12 @@ export const renderCheckboxGroup = (
       value={selectedValues}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
+      }
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
       }
       onChange={async (newSelectedValues) => {
         // CheckboxGroup의 onChange: 전체 value 배열 업데이트
@@ -493,6 +505,12 @@ export const renderRadioGroup = (
       defaultValue={String(element.props.value || "")}
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "vertical"
+      }
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
       }
       onChange={(selectedValue) => {
         const updatedProps = {

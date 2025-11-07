@@ -1,12 +1,16 @@
+/**
+ * Checkbox Component Styles
+ */
+
 @import "../theme.css";
 
 @layer components {
-  
+
   .react-aria-Checkbox {
     --selected-color: var(--highlight-background);
     --selected-color-pressed: var(--highlight-background-pressed);
     --checkmark-color: var(--highlight-foreground);
-  
+
     display: flex;
     /* This is needed so the HiddenInput is positioned correctly */
     position: relative;
@@ -15,8 +19,8 @@
     font-size: var(--text-sm);
     color: var(--text-color);
     forced-color-adjust: none;
-    padding: var(--spacing);
-  
+    padding: var(--spacing) 0;
+
     .checkbox {
       width: var(--text-lg);
       height: var(--text-lg);
@@ -28,77 +32,205 @@
       justify-content: center;
       flex-shrink: 0;
     }
-  
+
     svg {
       width: var(--text-lg);
       height: var(--text-lg);
       fill: none;
       stroke: var(--checkmark-color);
-      
+
       transition: all 0.2s ease;
     }
-  
+
     &[data-pressed] .checkbox {
       border-color: var(--border-color-pressed);
     }
-  
+
     &[data-focus-visible] .checkbox {
       outline: 2px solid var(--focus-ring-color);
       outline-offset: 2px;
     }
-  
+
     &[data-selected],
     &[data-indeterminate] {
       .checkbox {
         border-color: var(--selected-color);
         background: var(--selected-color);
       }
-  
+
       &[data-pressed] .checkbox {
         border-color: var(--selected-color-pressed);
         background: var(--selected-color-pressed);
       }
-  
+
       svg {
         stroke-dashoffset: 44;
       }
     }
-  
+
     &[data-indeterminate] {
       & svg {
         stroke: none;
         fill: var(--checkmark-color);
       }
     }
-  
+
     &[data-invalid] {
       .checkbox {
         --checkmark-color: var(--gray-50);
         border-color: var(--invalid-color);
       }
-  
+
       &[data-pressed] .checkbox {
         border-color: var(--invalid-color-pressed);
       }
-  
+
       &[data-selected],
       &[data-indeterminate] {
         .checkbox {
           background: var(--invalid-color);
         }
-  
+
         &[data-pressed] .checkbox {
           background: var(--invalid-color-pressed);
         }
       }
     }
-  
+
     &[data-disabled] {
       color: var(--text-color-disabled);
-  
+
       .checkbox {
         border-color: var(--border-color-disabled);
       }
+    }
+  }
+
+  /* Primary variant */
+  .react-aria-Checkbox.primary {
+    --selected-color: var(--action-primary-bg);
+    --selected-color-pressed: var(--action-primary-bg-pressed);
+  }
+
+  /* Secondary variant */
+  .react-aria-Checkbox.secondary {
+    --selected-color: var(--action-secondary-bg);
+    --selected-color-pressed: var(--action-secondary-bg-pressed);
+  }
+
+  /* Surface variant */
+  .react-aria-Checkbox.surface {
+    --selected-color: var(--action-surface-bg);
+    --selected-color-pressed: var(--action-surface-bg-pressed);
+  }
+
+  /* Small size */
+  .react-aria-Checkbox.sm {
+    font-size: var(--text-sm);
+
+    .checkbox {
+      width: 14px;
+      height: 14px;
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  /* Medium size (default) */
+  .react-aria-Checkbox.md {
+    font-size: var(--text-base);
+
+    .checkbox {
+      width: var(--text-lg);
+      height: var(--text-lg);
+    }
+
+    svg {
+      width: var(--text-lg);
+      height: var(--text-lg);
+    }
+  }
+
+  /* Large size */
+  .react-aria-Checkbox.lg {
+    font-size: var(--text-lg);
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+    }
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  /* Parent CheckboxGroup controls child Checkbox variant */
+
+  /* Primary variant - controlled by CheckboxGroup */
+  .react-aria-CheckboxGroup[data-checkbox-variant="primary"] .react-aria-Checkbox {
+    --selected-color: var(--action-primary-bg);
+    --selected-color-pressed: var(--action-primary-bg-pressed);
+  }
+
+  /* Secondary variant - controlled by CheckboxGroup */
+  .react-aria-CheckboxGroup[data-checkbox-variant="secondary"] .react-aria-Checkbox {
+    --selected-color: var(--action-secondary-bg);
+    --selected-color-pressed: var(--action-secondary-bg-pressed);
+  }
+
+  /* Surface variant - controlled by CheckboxGroup */
+  .react-aria-CheckboxGroup[data-checkbox-variant="surface"] .react-aria-Checkbox {
+    --selected-color: var(--action-surface-bg);
+    --selected-color-pressed: var(--action-surface-bg-pressed);
+  }
+
+  /* Small size - controlled by CheckboxGroup */
+  .react-aria-CheckboxGroup[data-checkbox-size="sm"] .react-aria-Checkbox {
+    font-size: var(--text-sm);
+
+    .checkbox {
+      width: 14px;
+      height: 14px;
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  /* Medium size - controlled by CheckboxGroup (default) */
+  .react-aria-CheckboxGroup[data-checkbox-size="md"] .react-aria-Checkbox {
+    font-size: var(--text-base);
+
+    .checkbox {
+      width: var(--text-lg);
+      height: var(--text-lg);
+    }
+
+    svg {
+      width: var(--text-lg);
+      height: var(--text-lg);
+    }
+  }
+
+  /* Large size - controlled by CheckboxGroup */
+  .react-aria-CheckboxGroup[data-checkbox-size="lg"] .react-aria-Checkbox {
+    font-size: var(--text-lg);
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+    }
+
+    svg {
+      width: 22px;
+      height: 22px;
     }
   }
 }

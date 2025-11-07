@@ -945,6 +945,12 @@ export const renderSlider = (
       orientation={
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
       onChange={(value) => {
         const updatedProps = {
           ...element.props,

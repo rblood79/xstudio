@@ -19,5 +19,10 @@
     [slot=description] {
       font-size: var(--text-xs);
     }
+    
+    &[data-orientation=horizontal] {
+      flex-direction: row;
+      align-items: center;
+    }
   }
 }

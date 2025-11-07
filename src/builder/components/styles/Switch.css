@@ -140,7 +140,6 @@
   /* Small size */
   .react-aria-Switch.sm {
     font-size: var(--text-sm);
-    padding: var(--spacing-sm) 0;
 
     .indicator {
       width: 32px;
@@ -159,7 +158,6 @@
   /* Medium size (default) */
   .react-aria-Switch.md {
     font-size: var(--text-base);
-    padding: var(--spacing-md) 0;
 
     .indicator {
       width: var(--text-4xl);
@@ -178,7 +176,6 @@
   /* Large size */
   .react-aria-Switch.lg {
     font-size: var(--text-lg);
-    padding: var(--spacing-lg) 0;
 
     .indicator {
       width: 52px;

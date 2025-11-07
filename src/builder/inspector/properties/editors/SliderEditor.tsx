@@ -1,4 +1,4 @@
-import { Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs } from 'lucide-react';
+import { Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs, Ruler, Ratio } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -81,6 +81,31 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
             />
 
             <PropertySelect
+                label={PROPERTY_LABELS.VARIANT}
+                value={String(currentProps.variant || 'default')}
+                onChange={(value) => updateProp('variant', value)}
+                options={[
+                    { value: 'default', label: PROPERTY_LABELS.SLIDER_VARIANT_DEFAULT },
+                    { value: 'primary', label: PROPERTY_LABELS.SLIDER_VARIANT_PRIMARY },
+                    { value: 'secondary', label: PROPERTY_LABELS.SLIDER_VARIANT_SECONDARY },
+                    { value: 'surface', label: PROPERTY_LABELS.SLIDER_VARIANT_SURFACE }
+                ]}
+                icon={Layout}
+            />
+
+            <PropertySelect
+                label={PROPERTY_LABELS.SIZE}
+                value={String(currentProps.size || 'md')}
+                onChange={(value) => updateProp('size', value)}
+                options={[
+                    { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                    { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                    { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                ]}
+                icon={Ruler}
+            />
+
+            <PropertySelect
                 label={PROPERTY_LABELS.ORIENTATION}
                 value={String(currentProps.orientation || 'horizontal')}
                 onChange={(value) => updateProp('orientation', value)}
@@ -88,7 +113,7 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                     { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
                 ]}
-                icon={Layout}
+                icon={Ratio}
             />
 
             <PropertySwitch

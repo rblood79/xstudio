@@ -1,3 +1,10 @@
+/**
+ * RadioGroup Component
+ *
+ * A group of radio buttons for single selection
+ * Based on React Aria Components RadioGroup
+ */
+
 import {
   FieldError,
   Label,
@@ -5,9 +12,12 @@ import {
   RadioGroup as AriaRadioGroup,
   RadioGroupProps as AriaRadioGroupProps,
   Text,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
 import type { DataBinding, ColumnMapping } from '../../types/unified';
+import type { ComponentSizeSubset, RadioVariant } from '../../types/componentVariants';
 import { useCollectionData } from '../hooks/useCollectionData';
 
 import './styles/RadioGroup.css';
@@ -20,7 +30,38 @@ export interface RadioGroupProps extends Omit<AriaRadioGroupProps, 'children'> {
   // 데이터 바인딩
   dataBinding?: DataBinding;
   columnMapping?: ColumnMapping;
+  /**
+   * Visual variant for child Radio buttons
+   * @default 'default'
+   */
+  variant?: RadioVariant;
+  /**
+   * Size for child Radio buttons
+   * @default 'md'
+   */
+  size?: ComponentSizeSubset;
 }
+
+const radioGroupStyles = tv({
+  base: 'react-aria-RadioGroup',
+  variants: {
+    variant: {
+      default: '',
+      primary: 'primary',
+      secondary: 'secondary',
+      surface: 'surface',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'md',
+  },
+});
 
 export function RadioGroup(
   {
@@ -30,6 +71,8 @@ export function RadioGroup(
     children,
     dataBinding,
     columnMapping,
+    variant = 'default',
+    size = 'md',
     ...props
   }: RadioGroupProps
 ) {
@@ -50,6 +93,11 @@ export function RadioGroup(
   // DataBinding이 있고 데이터가 로드되었을 때 동적 Radio 생성
   const hasDataBinding = dataBinding?.type === 'collection';
 
+  const radioGroupClassName = composeRenderProps(
+    props.className,
+    (className) => radioGroupStyles({ variant, size, className })
+  );
+
   // ColumnMapping이 있으면 각 데이터 항목마다 Radio 렌더링
   // ListBox와 동일한 패턴
   if (hasDataBinding && columnMapping) {
@@ -62,7 +110,13 @@ export function RadioGroup(
     // Loading 상태
     if (loading) {
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup' isDisabled>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          isDisabled
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
@@ -73,7 +127,13 @@ export function RadioGroup(
     // Error 상태
     if (error) {
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup' isDisabled>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          isDisabled
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
@@ -87,7 +147,12 @@ export function RadioGroup(
 
       // children은 Radio 템플릿 (Field 자식 포함 가능)
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           {children}
           {description && <Text slot="description">{description}</Text>}
@@ -98,7 +163,12 @@ export function RadioGroup(
 
     // 데이터 없음
     return (
-      <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
+      <AriaRadioGroup
+        {...props}
+        className={radioGroupClassName}
+        data-radio-variant={variant}
+        data-radio-size={size}
+      >
         {label && <Label>{label}</Label>}
         {children}
         {description && <Text slot="description">{description}</Text>}
@@ -112,7 +182,13 @@ export function RadioGroup(
     // Loading 상태
     if (loading) {
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup' isDisabled>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          isDisabled
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           <Text>⏳ 데이터 로딩 중...</Text>
           {description && <Text slot="description">{description}</Text>}
@@ -123,7 +199,13 @@ export function RadioGroup(
     // Error 상태
     if (error) {
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup' isDisabled>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          isDisabled
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           <Text>❌ 오류: {error}</Text>
           {description && <Text slot="description">{description}</Text>}
@@ -145,7 +227,12 @@ export function RadioGroup(
       console.log('✅ RadioGroup Dynamic Collection - items:', radioItems);
 
       return (
-        <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
+        <AriaRadioGroup
+          {...props}
+          className={radioGroupClassName}
+          data-radio-variant={variant}
+          data-radio-size={size}
+        >
           {label && <Label>{label}</Label>}
           {radioItems.map((item) => (
             <AriaRadio
@@ -166,7 +253,12 @@ export function RadioGroup(
 
   // Static Children (기존 방식)
   return (
-    <AriaRadioGroup {...props} className='react-aria-RadioGroup'>
+    <AriaRadioGroup
+      {...props}
+      className={radioGroupClassName}
+      data-radio-variant={variant}
+      data-radio-size={size}
+    >
       {label && <Label>{label}</Label>}
       {children}
       {description && <Text slot="description">{description}</Text>}

@@ -495,6 +495,12 @@ export const renderToggleButtonGroup = (
       orientation={orientation}
       selectionMode={element.props.selectionMode as "single" | "multiple"}
       indicator={indicator}
+      variant={
+        (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+      }
+      size={
+        (element.props.size as "sm" | "md" | "lg") || "md"
+      }
       defaultSelectedKeys={
         Array.isArray(element.props.value) ? element.props.value : []
       }
@@ -548,6 +554,16 @@ export const renderToggleButton = (
       }
       defaultSelected={element.props.defaultSelected}
       isDisabled={Boolean(element.props.isDisabled)}
+      variant={
+        !isInGroup
+          ? (element.props.variant as "default" | "primary" | "secondary" | "surface") || "default"
+          : undefined
+      }
+      size={
+        !isInGroup
+          ? (element.props.size as "sm" | "md" | "lg") || "md"
+          : undefined
+      }
       style={element.props.style}
       className={element.props.className}
       onPress={() => {

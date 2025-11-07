@@ -1,3 +1,7 @@
+/**
+ * Radio Component Styles
+ */
+
 @import './base.css';
 
 @layer components {
@@ -10,7 +14,7 @@
     line-height: var(--text-sm--line-height);
     color: var(--text-color);
     forced-color-adjust: none;
-    padding: var(--spacing);
+    padding: var(--spacing) 0;
     width: fit-content;
 
     &:before {
@@ -61,6 +65,86 @@
       &:before {
         border-color: var(--border-color-disabled);
       }
+    }
+  }
+
+  /* Parent RadioGroup controls child Radio variant */
+
+  /* Primary variant - controlled by RadioGroup */
+  .react-aria-RadioGroup[data-radio-variant="primary"] .react-aria-Radio {
+    &[data-selected]:before {
+      border-color: var(--action-primary-bg);
+    }
+
+    &[data-selected][data-pressed]:before {
+      border-color: var(--action-primary-bg-pressed);
+    }
+  }
+
+  /* Secondary variant - controlled by RadioGroup */
+  .react-aria-RadioGroup[data-radio-variant="secondary"] .react-aria-Radio {
+    &[data-selected]:before {
+      border-color: var(--action-secondary-bg);
+    }
+
+    &[data-selected][data-pressed]:before {
+      border-color: var(--action-secondary-bg-pressed);
+    }
+  }
+
+  /* Surface variant - controlled by RadioGroup */
+  .react-aria-RadioGroup[data-radio-variant="surface"] .react-aria-Radio {
+    &[data-selected]:before {
+      border-color: var(--action-surface-bg);
+    }
+
+    &[data-selected][data-pressed]:before {
+      border-color: var(--action-surface-bg-pressed);
+    }
+  }
+
+  /* Small size - controlled by RadioGroup */
+  .react-aria-RadioGroup[data-radio-size="sm"] .react-aria-Radio {
+    font-size: var(--text-sm);
+
+    &:before {
+      width: 14px;
+      height: 14px;
+      border-radius: 14px;
+    }
+
+    &[data-selected]:before {
+      border-width: 4px;
+    }
+  }
+
+  /* Medium size - controlled by RadioGroup (default) */
+  .react-aria-RadioGroup[data-radio-size="md"] .react-aria-Radio {
+    font-size: var(--text-base);
+
+    &:before {
+      width: var(--text-lg);
+      height: var(--text-lg);
+      border-radius: var(--text-lg);
+    }
+
+    &[data-selected]:before {
+      border-width: calc(var(--spacing) * 1.25);
+    }
+  }
+
+  /* Large size - controlled by RadioGroup */
+  .react-aria-RadioGroup[data-radio-size="lg"] .react-aria-Radio {
+    font-size: var(--text-lg);
+
+    &:before {
+      width: 22px;
+      height: 22px;
+      border-radius: 22px;
+    }
+
+    &[data-selected]:before {
+      border-width: 6px;
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target, Layout, Ruler } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -211,6 +211,35 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         updateProp('indicator', checked);
                     }}
                     icon={Target}
+                />
+            </fieldset>
+
+            <fieldset className="properties-design">
+                {/* Variant 설정 */}
+                <PropertySelect
+                    label={PROPERTY_LABELS.VARIANT}
+                    value={String(currentProps.variant || 'default')}
+                    onChange={(value) => updateProp('variant', value)}
+                    options={[
+                        { value: 'default', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_DEFAULT },
+                        { value: 'primary', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_PRIMARY },
+                        { value: 'secondary', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_SECONDARY },
+                        { value: 'surface', label: PROPERTY_LABELS.TOGGLEBUTTON_VARIANT_SURFACE }
+                    ]}
+                    icon={Layout}
+                />
+
+                {/* Size 설정 */}
+                <PropertySelect
+                    label={PROPERTY_LABELS.SIZE}
+                    value={String(currentProps.size || 'md')}
+                    onChange={(value) => updateProp('size', value)}
+                    options={[
+                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                    ]}
+                    icon={Ruler}
                 />
             </fieldset>
 
