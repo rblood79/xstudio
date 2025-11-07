@@ -26,25 +26,49 @@
   --text-color-base: var(--color-text-base, var(--color-neutral-900));
   --text-color-hover: var(--color-text-hover, var(--color-neutral-950));
   --text-color-disabled: var(--color-text-disabled, var(--color-neutral-500));
-  --text-color-placeholder: var(--color-text-placeholder, var(--color-neutral-700));
+  --text-color-placeholder: var(
+    --color-text-placeholder,
+    var(--color-neutral-700)
+  );
   --link-color: var(--color-link, var(--color-primary-500));
   --link-color-secondary: var(--color-link-secondary, var(--color-neutral-900));
   --link-color-pressed: var(--color-link-pressed, var(--color-primary-600));
   --border-color: var(--color-border-base, var(--color-neutral-300));
   --border-color-hover: var(--color-border-hover, var(--color-neutral-400));
   --border-color-pressed: var(--color-border-pressed, var(--color-neutral-500));
-  --border-color-disabled: var(--color-border-disabled, var(--color-neutral-100));
+  --border-color-disabled: var(
+    --color-border-disabled,
+    var(--color-neutral-100)
+  );
   --button-background: var(--color-button-background, var(--color-neutral-50));
-  --button-background-pressed: var(--color-button-background-pressed, var(--color-neutral-100));
+  --button-background-pressed: var(
+    --color-button-background-pressed,
+    var(--color-neutral-100)
+  );
   --field-background: var(--color-field-background, var(--color-neutral-50));
   --field-text-color: var(--color-field-text, var(--color-neutral-900));
-  --overlay-background: var(--color-overlay-background, var(--color-neutral-50));
+  --overlay-background: var(
+    --color-overlay-background,
+    var(--color-neutral-50)
+  );
   /* Highlight colors - Token integrated, based on theme primary colors */
-  --highlight-background: var(--color-highlight-background, var(--color-primary-600));
-  --highlight-background-pressed: var(--color-highlight-background-pressed, var(--color-primary-700));
-  --highlight-background-invalid: var(--color-highlight-background-invalid, var(--color-error-600));
+  --highlight-background: var(
+    --color-highlight-background,
+    var(--color-primary-600)
+  );
+  --highlight-background-pressed: var(
+    --color-highlight-background-pressed,
+    var(--color-primary-700)
+  );
+  --highlight-background-invalid: var(
+    --color-highlight-background-invalid,
+    var(--color-error-600)
+  );
   --highlight-foreground: var(--color-highlight-foreground, var(--color-white));
-  --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-neutral-100));
+  --highlight-foreground-pressed: var(
+    --color-highlight-foreground-pressed,
+    var(--color-neutral-100)
+  );
   --highlight-overlay: var(--color-highlight-overlay, rgba(14, 165, 233, 0.15));
   --invalid-color: var(--color-invalid, var(--color-error-400));
   --invalid-color-pressed: var(--color-invalid-pressed, var(--color-error-500));
@@ -54,45 +78,126 @@
 
   /* Primary action tokens */
   --action-primary-bg: var(--color-action-primary-bg, var(--color-primary-600));
-  --action-primary-bg-hover: var(--color-action-primary-bg-hover, var(--color-primary-700));
-  --action-primary-bg-pressed: var(--color-action-primary-bg-pressed, var(--color-primary-800));
+  --action-primary-bg-hover: var(
+    --color-action-primary-bg-hover,
+    var(--color-primary-700)
+  );
+  --action-primary-bg-pressed: var(
+    --color-action-primary-bg-pressed,
+    var(--color-primary-800)
+  );
   --action-primary-text: var(--color-action-primary-text, var(--color-white));
-  --action-primary-border: var(--color-action-primary-border, var(--color-primary-600));
-  --action-primary-border-hover: var(--color-action-primary-border-hover, var(--color-primary-700));
-  --action-primary-border-pressed: var(--color-action-primary-border-pressed, var(--color-primary-800));
+  --action-primary-border: var(
+    --color-action-primary-border,
+    var(--color-primary-600)
+  );
+  --action-primary-border-hover: var(
+    --color-action-primary-border-hover,
+    var(--color-primary-700)
+  );
+  --action-primary-border-pressed: var(
+    --color-action-primary-border-pressed,
+    var(--color-primary-800)
+  );
 
   /* Secondary action tokens */
-  --action-secondary-bg: var(--color-action-secondary-bg, var(--color-secondary-600));
-  --action-secondary-bg-hover: var(--color-action-secondary-bg-hover, var(--color-secondary-700));
-  --action-secondary-bg-pressed: var(--color-action-secondary-bg-pressed, var(--color-secondary-800));
-  --action-secondary-text: var(--color-action-secondary-text, var(--color-white));
-  --action-secondary-border: var(--color-action-secondary-border, var(--color-secondary-600));
-  --action-secondary-border-hover: var(--color-action-secondary-border-hover, var(--color-secondary-700));
-  --action-secondary-border-pressed: var(--color-action-secondary-border-pressed, var(--color-secondary-800));
+  --action-secondary-bg: var(
+    --color-action-secondary-bg,
+    var(--color-secondary-600)
+  );
+  --action-secondary-bg-hover: var(
+    --color-action-secondary-bg-hover,
+    var(--color-secondary-700)
+  );
+  --action-secondary-bg-pressed: var(
+    --color-action-secondary-bg-pressed,
+    var(--color-secondary-800)
+  );
+  --action-secondary-text: var(
+    --color-action-secondary-text,
+    var(--color-white)
+  );
+  --action-secondary-border: var(
+    --color-action-secondary-border,
+    var(--color-secondary-600)
+  );
+  --action-secondary-border-hover: var(
+    --color-action-secondary-border-hover,
+    var(--color-secondary-700)
+  );
+  --action-secondary-border-pressed: var(
+    --color-action-secondary-border-pressed,
+    var(--color-secondary-800)
+  );
 
   /* Surface action tokens */
   --action-surface-bg: var(--color-action-surface-bg, var(--color-surface-500));
-  --action-surface-bg-hover: var(--color-action-surface-bg-hover, var(--color-surface-600));
-  --action-surface-bg-pressed: var(--color-action-surface-bg-pressed, var(--color-surface-700));
+  --action-surface-bg-hover: var(
+    --color-action-surface-bg-hover,
+    var(--color-surface-600)
+  );
+  --action-surface-bg-pressed: var(
+    --color-action-surface-bg-pressed,
+    var(--color-surface-700)
+  );
   --action-surface-text: var(--color-action-surface-text, var(--color-white));
-  --action-surface-border: var(--color-action-surface-border, var(--color-surface-600));
-  --action-surface-border-hover: var(--color-action-surface-border-hover, var(--color-surface-700));
-  --action-surface-border-pressed: var(--color-action-surface-border-pressed, var(--color-surface-800));
+  --action-surface-border: var(
+    --color-action-surface-border,
+    var(--color-surface-600)
+  );
+  --action-surface-border-hover: var(
+    --color-action-surface-border-hover,
+    var(--color-surface-700)
+  );
+  --action-surface-border-pressed: var(
+    --color-action-surface-border-pressed,
+    var(--color-surface-800)
+  );
 
   /* Outline action tokens */
-  --action-outline-text: var(--color-action-outline-text, var(--color-gray-800));
-  --action-outline-text-hover: var(--color-action-outline-text-hover, var(--color-gray-900));
-  --action-outline-border: var(--color-action-outline-border, var(--color-gray-300));
-  --action-outline-border-hover: var(--color-action-outline-border-hover, var(--color-gray-400));
-  --action-outline-border-pressed: var(--color-action-outline-border-pressed, var(--color-gray-500));
-  --action-outline-bg-hover: var(--color-action-outline-bg-hover, var(--color-gray-50));
-  --action-outline-bg-pressed: var(--color-action-outline-bg-pressed, var(--color-gray-100));
+  --action-outline-text: var(
+    --color-action-outline-text,
+    var(--color-gray-800)
+  );
+  --action-outline-text-hover: var(
+    --color-action-outline-text-hover,
+    var(--color-gray-900)
+  );
+  --action-outline-border: var(
+    --color-action-outline-border,
+    var(--color-gray-300)
+  );
+  --action-outline-border-hover: var(
+    --color-action-outline-border-hover,
+    var(--color-gray-400)
+  );
+  --action-outline-border-pressed: var(
+    --color-action-outline-border-pressed,
+    var(--color-gray-500)
+  );
+  --action-outline-bg-hover: var(
+    --color-action-outline-bg-hover,
+    var(--color-gray-50)
+  );
+  --action-outline-bg-pressed: var(
+    --color-action-outline-bg-pressed,
+    var(--color-gray-100)
+  );
 
   /* Ghost action tokens */
   --action-ghost-text: var(--color-action-ghost-text, var(--color-gray-800));
-  --action-ghost-text-hover: var(--color-action-ghost-text-hover, var(--color-gray-900));
-  --action-ghost-bg-hover: var(--color-action-ghost-bg-hover, var(--color-gray-50));
-  --action-ghost-bg-pressed: var(--color-action-ghost-bg-pressed, var(--color-gray-100));
+  --action-ghost-text-hover: var(
+    --color-action-ghost-text-hover,
+    var(--color-gray-900)
+  );
+  --action-ghost-bg-hover: var(
+    --color-action-ghost-bg-hover,
+    var(--color-gray-50)
+  );
+  --action-ghost-bg-pressed: var(
+    --color-action-ghost-bg-pressed,
+    var(--color-gray-100)
+  );
 
   /* Legacy button token aliases (deprecated, will be removed in v2.0) */
   --button-primary-bg: var(--action-primary-bg);
@@ -110,17 +215,42 @@
 
   /* Shadow System - AI Theme Integration Ready */
   --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
-  --shadow-md: var(--box-shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1));
-  --shadow-lg: var(--box-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1));
-  --shadow-xl: var(--box-shadow-xl, 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1));
+  --shadow-md: var(
+    --box-shadow-md,
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1)
+  );
+  --shadow-lg: var(
+    --box-shadow-lg,
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1)
+  );
+  --shadow-xl: var(
+    --box-shadow-xl,
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1)
+  );
 
   /* Drop shadows (for filter property) */
-  --drop-shadow-sm: var(--filter-drop-shadow-sm, drop-shadow(0 1px 1px rgb(0 0 0 / 0.05)));
-  --drop-shadow-md: var(--filter-drop-shadow-md, drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06)));
+  --drop-shadow-sm: var(
+    --filter-drop-shadow-sm,
+    drop-shadow(0 1px 1px rgb(0 0 0 / 0.05))
+  );
+  --drop-shadow-md: var(
+    --filter-drop-shadow-md,
+    drop-shadow(0 4px 3px rgb(0 0 0 / 0.07))
+      drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))
+  );
 
   /* Inset shadows */
-  --inset-shadow-xs: var(--inset-box-shadow-xs, inset 0 1px 1px 0 rgb(0 0 0 / 0.05));
-  --inset-shadow-sm: var(--inset-box-shadow-sm, inset 0 2px 4px 0 rgb(0 0 0 / 0.05));
+  --inset-shadow-xs: var(
+    --inset-box-shadow-xs,
+    inset 0 1px 1px 0 rgb(0 0 0 / 0.05)
+  );
+  --inset-shadow-sm: var(
+    --inset-box-shadow-sm,
+    inset 0 2px 4px 0 rgb(0 0 0 / 0.05)
+  );
 
   /* Overlay backgrounds */
   --overlay-backdrop: rgba(0 0 0 / 0.5);
@@ -133,16 +263,16 @@
 
   /* Typography Scale - Tailwind v4 표준 (고정값, AI 생성 불필요) */
   /* Font Sizes */
-  --text-2xs: 0.625rem;   /* 10px */
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
-  --text-xl: 1.25rem;     /* 20px */
-  --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
-  --text-4xl: 2.25rem;    /* 36px */
-  --text-5xl: 3rem;       /* 48px */
+  --text-2xs: 0.625rem; /* 10px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+  --text-5xl: 3rem; /* 48px */
 
   /* Line Heights (페어링) */
   --text-2xs--line-height: calc(1 / 0.625);
@@ -175,28 +305,29 @@
   /* Font Families (기본값, AI로 fontFamily만 커스터마이징 가능) */
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+    monospace;
 
   /* Spacing Scale - Tailwind v4 표준 (고정값, AI 생성 불필요) */
   --spacing-0: 0;
-  --spacing-2xs: 0.125rem;   /* 2px */
-  --spacing-xs: 0.25rem;     /* 4px */
-  --spacing-sm: 0.5rem;      /* 8px */
-  --spacing-md: 0.75rem;     /* 12px */
-  --spacing-lg: 1rem;        /* 16px */
-  --spacing-xl: 1.5rem;      /* 24px */
-  --spacing-2xl: 2rem;       /* 32px */
-  --spacing-3xl: 2.5rem;     /* 40px */
+  --spacing-2xs: 0.125rem; /* 2px */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 0.75rem; /* 12px */
+  --spacing-lg: 1rem; /* 16px */
+  --spacing-xl: 1.5rem; /* 24px */
+  --spacing-2xl: 2rem; /* 32px */
+  --spacing-3xl: 2.5rem; /* 40px */
 
   /* Border Radius - Tailwind v4 표준 (고정값, AI 생성 불필요) */
-  --radius-xs: 0.125rem;   /* 2px */
-  --radius-sm: 0.25rem;    /* 4px */
-  --radius-md: 0.375rem;   /* 6px */
-  --radius-lg: 0.5rem;     /* 8px */
-  --radius-xl: 0.75rem;    /* 12px */
-  --radius-2xl: 1rem;      /* 16px */
-  --radius-3xl: 1.5rem;    /* 24px */
-  --radius-4xl: 2rem;      /* 32px */
+  --radius-xs: 0.125rem; /* 2px */
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-md: 0.375rem; /* 6px */
+  --radius-lg: 0.5rem; /* 8px */
+  --radius-xl: 0.75rem; /* 12px */
+  --radius-2xl: 1rem; /* 16px */
+  --radius-3xl: 1.5rem; /* 24px */
+  --radius-4xl: 2rem; /* 32px */
 
   /* Neutral Colors - 고정값 (AI 생성 불필요, 표준 Gray scale) */
   --color-neutral-50: hsl(0, 0%, 98%);
@@ -278,70 +409,184 @@
   --text-color-base: var(--color-text-base, var(--color-neutral-100));
   --text-color-hover: var(--color-text-hover, var(--color-neutral-50));
   --text-color-disabled: var(--color-text-disabled, var(--color-neutral-500));
-  --text-color-placeholder: var(--color-text-placeholder, var(--color-neutral-400));
+  --text-color-placeholder: var(
+    --color-text-placeholder,
+    var(--color-neutral-400)
+  );
   --link-color: var(--color-link, var(--color-primary-400));
   --link-color-secondary: var(--color-link-secondary, var(--color-neutral-100));
   --link-color-pressed: var(--color-link-pressed, var(--color-primary-300));
   --border-color: var(--color-border-base, var(--color-neutral-700));
   --border-color-hover: var(--color-border-hover, var(--color-neutral-600));
   --border-color-pressed: var(--color-border-pressed, var(--color-neutral-500));
-  --border-color-disabled: var(--color-border-disabled, var(--color-neutral-800));
+  --border-color-disabled: var(
+    --color-border-disabled,
+    var(--color-neutral-800)
+  );
   --button-background: var(--color-button-background, var(--color-neutral-800));
-  --button-background-pressed: var(--color-button-background-pressed, var(--color-neutral-700));
+  --button-background-pressed: var(
+    --color-button-background-pressed,
+    var(--color-neutral-700)
+  );
   --field-background: var(--color-field-background, var(--color-neutral-800));
   --field-text-color: var(--color-field-text, var(--color-neutral-100));
-  --overlay-background: var(--color-overlay-background, var(--color-neutral-800));
+  --overlay-background: var(
+    --color-overlay-background,
+    var(--color-neutral-800)
+  );
   /* Highlight colors for dark mode - Based on lighter primary shades */
-  --highlight-background: var(--color-highlight-background, var(--color-primary-500));
-  --highlight-background-pressed: var(--color-highlight-background-pressed, var(--color-primary-400));
-  --highlight-background-invalid: var(--color-highlight-background-invalid, var(--color-error-500));
-  --highlight-foreground: var(--color-highlight-foreground, var(--color-neutral-900));
-  --highlight-foreground-pressed: var(--color-highlight-foreground-pressed, var(--color-neutral-800));
+  --highlight-background: var(
+    --color-highlight-background,
+    var(--color-primary-500)
+  );
+  --highlight-background-pressed: var(
+    --color-highlight-background-pressed,
+    var(--color-primary-400)
+  );
+  --highlight-background-invalid: var(
+    --color-highlight-background-invalid,
+    var(--color-error-500)
+  );
+  --highlight-foreground: var(
+    --color-highlight-foreground,
+    var(--color-neutral-900)
+  );
+  --highlight-foreground-pressed: var(
+    --color-highlight-foreground-pressed,
+    var(--color-neutral-800)
+  );
   --highlight-overlay: var(--color-highlight-overlay, rgba(56, 189, 248, 0.15));
 
   /* Action semantic colors - Dark mode */
 
   /* Primary action tokens */
   --action-primary-bg: var(--color-action-primary-bg, var(--color-primary-500));
-  --action-primary-bg-hover: var(--color-action-primary-bg-hover, var(--color-primary-400));
-  --action-primary-bg-pressed: var(--color-action-primary-bg-pressed, var(--color-primary-300));
-  --action-primary-text: var(--color-action-primary-text, var(--color-neutral-900));
-  --action-primary-border: var(--color-action-primary-border, var(--color-primary-500));
-  --action-primary-border-hover: var(--color-action-primary-border-hover, var(--color-primary-400));
-  --action-primary-border-pressed: var(--color-action-primary-border-pressed, var(--color-primary-300));
+  --action-primary-bg-hover: var(
+    --color-action-primary-bg-hover,
+    var(--color-primary-400)
+  );
+  --action-primary-bg-pressed: var(
+    --color-action-primary-bg-pressed,
+    var(--color-primary-300)
+  );
+  --action-primary-text: var(
+    --color-action-primary-text,
+    var(--color-neutral-900)
+  );
+  --action-primary-border: var(
+    --color-action-primary-border,
+    var(--color-primary-500)
+  );
+  --action-primary-border-hover: var(
+    --color-action-primary-border-hover,
+    var(--color-primary-400)
+  );
+  --action-primary-border-pressed: var(
+    --color-action-primary-border-pressed,
+    var(--color-primary-300)
+  );
 
   /* Secondary action tokens */
-  --action-secondary-bg: var(--color-action-secondary-bg, var(--color-secondary-500));
-  --action-secondary-bg-hover: var(--color-action-secondary-bg-hover, var(--color-secondary-400));
-  --action-secondary-bg-pressed: var(--color-action-secondary-bg-pressed, var(--color-secondary-300));
-  --action-secondary-text: var(--color-action-secondary-text, var(--color-neutral-900));
-  --action-secondary-border: var(--color-action-secondary-border, var(--color-secondary-500));
-  --action-secondary-border-hover: var(--color-action-secondary-border-hover, var(--color-secondary-400));
-  --action-secondary-border-pressed: var(--color-action-secondary-border-pressed, var(--color-secondary-300));
+  --action-secondary-bg: var(
+    --color-action-secondary-bg,
+    var(--color-secondary-500)
+  );
+  --action-secondary-bg-hover: var(
+    --color-action-secondary-bg-hover,
+    var(--color-secondary-400)
+  );
+  --action-secondary-bg-pressed: var(
+    --color-action-secondary-bg-pressed,
+    var(--color-secondary-300)
+  );
+  --action-secondary-text: var(
+    --color-action-secondary-text,
+    var(--color-neutral-900)
+  );
+  --action-secondary-border: var(
+    --color-action-secondary-border,
+    var(--color-secondary-500)
+  );
+  --action-secondary-border-hover: var(
+    --color-action-secondary-border-hover,
+    var(--color-secondary-400)
+  );
+  --action-secondary-border-pressed: var(
+    --color-action-secondary-border-pressed,
+    var(--color-secondary-300)
+  );
 
   /* Surface action tokens */
   --action-surface-bg: var(--color-action-surface-bg, var(--color-surface-400));
-  --action-surface-bg-hover: var(--color-action-surface-bg-hover, var(--color-surface-300));
-  --action-surface-bg-pressed: var(--color-action-surface-bg-pressed, var(--color-surface-200));
-  --action-surface-text: var(--color-action-surface-text, var(--color-neutral-900));
-  --action-surface-border: var(--color-action-surface-border, var(--color-surface-500));
-  --action-surface-border-hover: var(--color-action-surface-border-hover, var(--color-surface-400));
-  --action-surface-border-pressed: var(--color-action-surface-border-pressed, var(--color-surface-300));
+  --action-surface-bg-hover: var(
+    --color-action-surface-bg-hover,
+    var(--color-surface-300)
+  );
+  --action-surface-bg-pressed: var(
+    --color-action-surface-bg-pressed,
+    var(--color-surface-200)
+  );
+  --action-surface-text: var(
+    --color-action-surface-text,
+    var(--color-neutral-900)
+  );
+  --action-surface-border: var(
+    --color-action-surface-border,
+    var(--color-surface-500)
+  );
+  --action-surface-border-hover: var(
+    --color-action-surface-border-hover,
+    var(--color-surface-400)
+  );
+  --action-surface-border-pressed: var(
+    --color-action-surface-border-pressed,
+    var(--color-surface-300)
+  );
 
   /* Outline action tokens */
-  --action-outline-text: var(--color-action-outline-text, var(--color-neutral-200));
-  --action-outline-text-hover: var(--color-action-outline-text-hover, var(--color-neutral-100));
-  --action-outline-border: var(--color-action-outline-border, var(--color-neutral-600));
-  --action-outline-border-hover: var(--color-action-outline-border-hover, var(--color-neutral-500));
-  --action-outline-border-pressed: var(--color-action-outline-border-pressed, var(--color-neutral-400));
-  --action-outline-bg-hover: var(--color-action-outline-bg-hover, var(--color-neutral-800));
-  --action-outline-bg-pressed: var(--color-action-outline-bg-pressed, var(--color-neutral-700));
+  --action-outline-text: var(
+    --color-action-outline-text,
+    var(--color-neutral-200)
+  );
+  --action-outline-text-hover: var(
+    --color-action-outline-text-hover,
+    var(--color-neutral-100)
+  );
+  --action-outline-border: var(
+    --color-action-outline-border,
+    var(--color-neutral-600)
+  );
+  --action-outline-border-hover: var(
+    --color-action-outline-border-hover,
+    var(--color-neutral-500)
+  );
+  --action-outline-border-pressed: var(
+    --color-action-outline-border-pressed,
+    var(--color-neutral-400)
+  );
+  --action-outline-bg-hover: var(
+    --color-action-outline-bg-hover,
+    var(--color-neutral-800)
+  );
+  --action-outline-bg-pressed: var(
+    --color-action-outline-bg-pressed,
+    var(--color-neutral-700)
+  );
 
   /* Ghost action tokens */
   --action-ghost-text: var(--color-action-ghost-text, var(--color-neutral-200));
-  --action-ghost-text-hover: var(--color-action-ghost-text-hover, var(--color-neutral-100));
-  --action-ghost-bg-hover: var(--color-action-ghost-bg-hover, var(--color-neutral-800));
-  --action-ghost-bg-pressed: var(--color-action-ghost-bg-pressed, var(--color-neutral-700));
+  --action-ghost-text-hover: var(
+    --color-action-ghost-text-hover,
+    var(--color-neutral-100)
+  );
+  --action-ghost-bg-hover: var(
+    --color-action-ghost-bg-hover,
+    var(--color-neutral-800)
+  );
+  --action-ghost-bg-pressed: var(
+    --color-action-ghost-bg-pressed,
+    var(--color-neutral-700)
+  );
 
   /* Legacy button token aliases (deprecated) */
   --button-primary-bg: var(--action-primary-bg);
@@ -359,9 +604,21 @@
 
   /* Shadow System - Dark mode (increased opacity for visibility) */
   --shadow-sm: var(--box-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.2));
-  --shadow-md: var(--box-shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2));
-  --shadow-lg: var(--box-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3));
-  --shadow-xl: var(--box-shadow-xl, 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4));
+  --shadow-md: var(
+    --box-shadow-md,
+    0 4px 6px -1px rgb(0 0 0 / 0.3),
+    0 2px 4px -2px rgb(0 0 0 / 0.2)
+  );
+  --shadow-lg: var(
+    --box-shadow-lg,
+    0 10px 15px -3px rgb(0 0 0 / 0.4),
+    0 4px 6px -4px rgb(0 0 0 / 0.3)
+  );
+  --shadow-xl: var(
+    --box-shadow-xl,
+    0 20px 25px -5px rgb(0 0 0 / 0.5),
+    0 8px 10px -6px rgb(0 0 0 / 0.4)
+  );
 
   /* Overlay backgrounds - Dark mode */
   --highlight-hover-overlay: rgba(0 0 0 / 0.1);

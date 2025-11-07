@@ -22,6 +22,7 @@
       width: fit-content;
       padding: 0px;
       border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
       --indicator-left: 0px;
       --indicator-width: 0px;
       --indicator-height: 0px;
@@ -34,8 +35,8 @@
         top: 0px;
         left: 0px;
         z-index: 0;
-        width: var(--indicator-width);
-        height: var(--indicator-height);
+        width: calc(var(--indicator-width) - 2px);
+        height: calc(var(--indicator-height) - 2px);
         transform: translateX(var(--indicator-left))
           translateY(var(--indicator-top));
         border-radius: var(--border-radius);
