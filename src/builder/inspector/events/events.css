@@ -466,7 +466,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md);
+  padding: var(--spacing);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -848,7 +848,7 @@
   color: var(--color-text-primary);
 }
 
-.view-mode-button.selected {
+.view-mode-button[data-selected] {
   background: var(--color-primary-bg);
   color: var(--color-primary);
   border-color: var(--color-primary);

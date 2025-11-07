@@ -93,7 +93,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-3);
+    padding: var(--spacing);
     background: var(--color-white);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -103,8 +103,7 @@
 
   .handler-item:hover {
     border-color: var(--color-primary-300);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    transform: translateX(4px);
+    transform: translateX(0px);
   }
 
   .handler-info {
@@ -114,7 +113,6 @@
   }
 
   .handler-type {
-    font-size: var(--text-base);
     font-weight: 600;
     color: var(--color-gray-900);
   }
@@ -171,7 +169,6 @@
 
   .selected-handler-type {
     flex: 1;
-    font-size: var(--text-base);
     font-weight: 600;
     color: var(--color-gray-900);
   }

@@ -141,17 +141,17 @@ export function EventSection({ element }: EventSectionProps) {
             <div className="selected-handler-container">
               <div className="selected-handler-header">
                 <Button
-                  className="react-aria-Button back-button"
+                  className="react-aria-Button"
                   onPress={() => setSelectedHandlerId(null)}
                 >
-                  ← Back to List
+                  ← Back
                 </Button>
                 <span className="selected-handler-type">{selectedHandler.event}</span>
                 <Button
-                  className="react-aria-Button remove-handler-button"
+                  className="react-aria-Button"
                   onPress={() => handleRemoveHandler(selectedHandler.id)}
                 >
-                  🗑️ Remove
+                  🗑️ 
                 </Button>
               </div>
               {/* ActionPalette for selecting action type */}

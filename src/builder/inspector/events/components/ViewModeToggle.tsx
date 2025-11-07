@@ -1,4 +1,4 @@
-import { Button } from "react-aria-components";
+import { ToggleButtonGroup, ToggleButton, Key } from "../../../components/list";
 
 export type ViewMode = "list" | "simple" | "reactflow";
 
@@ -13,34 +13,31 @@ export interface ViewModeToggleProps {
 export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
   console.log("🎚️ ViewModeToggle rendered with value:", value);
 
-  const handleButtonClick = (mode: ViewMode) => {
-    console.log("🎚️ Button clicked:", mode);
-    onChange(mode);
+  const handleSelectionChange = (keys: Set<Key>) => {
+    const selectedKey = Array.from(keys)[0];
+    if (selectedKey && typeof selectedKey === "string") {
+      const selectedMode = selectedKey as ViewMode;
+      console.log("🎚️ Selection changed:", selectedMode);
+      onChange(selectedMode);
+    }
   };
 
   return (
-    <div className="view-mode-toggle">
-      <Button
-        className={`react-aria-Button view-mode-button ${value === "list" ? "selected" : ""}`}
-        onPress={() => handleButtonClick("list")}
-      >
-        <span className="mode-icon">📋</span>
+    <ToggleButtonGroup
+      className="view-mode-toggle"
+      selectedKeys={new Set([value])}
+      onSelectionChange={handleSelectionChange}
+      selectionMode="single"
+    >
+      <ToggleButton id="list" className="view-mode-button">
         <span className="mode-label">List</span>
-      </Button>
-      <Button
-        className={`react-aria-Button view-mode-button ${value === "simple" ? "selected" : ""}`}
-        onPress={() => handleButtonClick("simple")}
-      >
-        <span className="mode-icon">🔀</span>
+      </ToggleButton>
+      <ToggleButton id="simple" className="view-mode-button">
         <span className="mode-label">Simple</span>
-      </Button>
-      <Button
-        className={`react-aria-Button view-mode-button ${value === "reactflow" ? "selected" : ""}`}
-        onPress={() => handleButtonClick("reactflow")}
-      >
-        <span className="mode-icon">🎯</span>
-        <span className="mode-label">ReactFlow</span>
-      </Button>
-    </div>
+      </ToggleButton>
+      <ToggleButton id="reactflow" className="view-mode-button">
+         <span className="mode-label">ReactFlow</span>
+      </ToggleButton>
+    </ToggleButtonGroup>
   );
 }

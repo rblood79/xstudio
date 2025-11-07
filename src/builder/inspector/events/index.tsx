@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -7,7 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { Button, Select, SelectItem, TextField } from "../../components/list";
+import { Button } from "../../components/list";
+import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
 import { useStore } from "../../stores";
 import {
   EventType,
@@ -20,7 +21,6 @@ import {
   DEFAULT_THROTTLE_TIME,
 } from "../../../types/events";
 import { saveService } from "../../../services/save";
-//import { iconProps } from '../../../utils/uiConstants';
 
 import "./index.css";
 
@@ -43,7 +43,7 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
     case "navigate":
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="Path / URL"
             value={String(value.path || "")}
             onChange={(newPath) => {
@@ -53,40 +53,36 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
               });
             }}
           />
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={Boolean(value.openInNewTab)}
-                onChange={(e) => {
-                  const updatedValue = { ...value, openInNewTab: e.target.checked };
-                  updateValue({ ...updatedValue, path: value.path || "" });
-                }}
-              />
-              새 탭에서 열기
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="새 탭에서 열기"
+            isSelected={Boolean(value.openInNewTab)}
+            onChange={(isSelected) => {
+              const updatedValue = { ...value, openInNewTab: isSelected };
+              updateValue({ ...updatedValue, path: value.path || "" });
+            }}
+          />
         </div>
       );
 
     case "toggle_visibility":
       return (
         <div className="action-value-editor">
-          <Select
+          <PropertySelect
             label="동작"
-            selectedKey={
+            value={
               value.show === undefined ? "toggle" : value.show ? "show" : "hide"
             }
-            onSelectionChange={(key) => {
+            onChange={(key) => {
               const show = key === "toggle" ? undefined : key === "show";
               updateValue({ ...value, show });
             }}
-          >
-            <SelectItem key="toggle">토글</SelectItem>
-            <SelectItem key="show">표시</SelectItem>
-            <SelectItem key="hide">숨김</SelectItem>
-          </Select>
-          <TextField
+            options={[
+              { value: "toggle", label: "토글" },
+              { value: "show", label: "표시" },
+              { value: "hide", label: "숨김" }
+            ]}
+          />
+          <PropertyInput
             label="애니메이션 지속시간 (ms)"
             type="number"
             value={String(value.duration || "")}
@@ -103,69 +99,59 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
     case "update_state":
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="상태 키"
             value={String(value.key || "")}
             onChange={(newKey) => {
               updateValue({ ...value, key: newKey, value: value.value || "" });
             }}
           />
-          <TextField
+          <PropertyInput
             label="상태 값"
             value={String(value.value || "")}
             onChange={(newValue) => {
               updateValue({ ...value, value: newValue });
             }}
           />
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={Boolean(value.merge)}
-                onChange={(e) => {
-                  updateValue({
-                    ...value,
-                    merge: e.target.checked,
-                    key: value.key || "",
-                    value: value.value || "",
-                  });
-                }}
-              />
-              객체 병합
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="객체 병합"
+            isSelected={Boolean(value.merge)}
+            onChange={(isSelected) => {
+              updateValue({
+                ...value,
+                merge: isSelected,
+                key: value.key || "",
+                value: value.value || "",
+              });
+            }}
+          />
         </div>
       );
 
     case "show_modal":
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="모달 ID"
             value={String(value.modalId || "")}
             onChange={(newValue) =>
               updateValue({ ...value, modalId: newValue })
             }
           />
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={Boolean(value.backdrop !== false)}
-                onChange={(e) =>
-                  updateValue({ ...value, backdrop: e.target.checked })
-                }
-              />
-              배경 클릭으로 닫기
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="배경 클릭으로 닫기"
+            isSelected={Boolean(value.backdrop !== false)}
+            onChange={(isSelected) =>
+              updateValue({ ...value, backdrop: isSelected })
+            }
+          />
         </div>
       );
 
     case "custom_function":
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="JavaScript 코드"
             value={String(value.code || "")}
             onChange={(newCode) => {
@@ -175,30 +161,26 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 async: Boolean(value.async),
               });
             }}
+            multiline
           />
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={Boolean(value.async)}
-                onChange={(e) => {
-                  updateValue({
-                    ...value,
-                    async: e.target.checked,
-                    code: value.code || "",
-                  });
-                }}
-              />
-              비동기 실행
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="비동기 실행"
+            isSelected={Boolean(value.async)}
+            onChange={(isSelected) => {
+              updateValue({
+                ...value,
+                async: isSelected,
+                code: value.code || "",
+              });
+            }}
+          />
         </div>
       );
 
     case "update_props":
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="Props (JSON)"
             value={JSON.stringify(value.props || {}, null, 2)}
             onChange={(newProps) => {
@@ -218,30 +200,26 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 console.error("JSON 파싱 오류");
               }
             }}
+            multiline
           />
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={Boolean(value.merge)}
-                onChange={(e) => {
-                  updateValue({
-                    ...value,
-                    merge: e.target.checked,
-                    props: value.props || {},
-                  });
-                }}
-              />
-              기존 속성과 병합
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="기존 속성과 병합"
+            isSelected={Boolean(value.merge)}
+            onChange={(isSelected) => {
+              updateValue({
+                ...value,
+                merge: isSelected,
+                props: value.props || {},
+              });
+            }}
+          />
         </div>
       );
 
     default:
       return (
         <div className="action-value-editor">
-          <TextField
+          <PropertyInput
             label="Props (JSON)"
             value={JSON.stringify(value, null, 2)}
             onChange={(jsonValue) => {
@@ -252,6 +230,7 @@ function ActionValueEditor({ action, onUpdate }: ActionValueEditorProps) {
                 // JSON 파싱 실패 시 무시
               }
             }}
+            multiline
           />
         </div>
       );
@@ -292,57 +271,52 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
 
       {isExpanded && (
         <div className="action-content">
-          <div className="select-wrapper">
-            <label>액션 타입</label>
-            <select
-              value={action.type}
-              onChange={(e) => {
-                const selectedType = e.target.value as ActionType;
-                console.log("액션 타입 변경:", selectedType);
+          <PropertySelect
+            label="액션 타입"
+            value={action.type}
+            onChange={(selectedType) => {
+              const actionType = selectedType as ActionType;
+              console.log("액션 타입 변경:", actionType);
 
-                // 액션 타입에 따른 기본값 설정
-                let defaultValue = {};
+              // 액션 타입에 따른 기본값 설정
+              let defaultValue = {};
 
-                if (selectedType === "custom_function") {
-                  defaultValue = {
-                    code: 'console.log("이벤트 발생:", event);',
-                  };
-                } else if (selectedType === "navigate") {
-                  defaultValue = { url: "" };
-                } else if (selectedType === "update_state") {
-                  defaultValue = { key: "", value: "" };
-                } else if (selectedType === "toggle_visibility") {
-                  defaultValue = { show: undefined };
-                } else if (selectedType === "show_modal") {
-                  defaultValue = { modalId: "", backdrop: true };
-                }
-
-                const updatedAction = {
-                  ...action,
-                  type: selectedType,
-                  value: defaultValue,
+              if (actionType === "custom_function") {
+                defaultValue = {
+                  code: 'console.log("이벤트 발생:", event);',
                 };
+              } else if (actionType === "navigate") {
+                defaultValue = { url: "" };
+              } else if (actionType === "update_state") {
+                defaultValue = { key: "", value: "" };
+              } else if (actionType === "toggle_visibility") {
+                defaultValue = { show: undefined };
+              } else if (actionType === "show_modal") {
+                defaultValue = { modalId: "", backdrop: true };
+              }
 
-                console.log("업데이트된 액션:", updatedAction);
-                onUpdate(updatedAction);
-              }}
-              className="action-type-select"
-            >
-              {Object.entries(ACTION_TYPE_LABELS).map(([actionType, label]) => (
-                <option key={actionType} value={actionType}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+              const updatedAction = {
+                ...action,
+                type: actionType,
+                value: defaultValue,
+              };
 
-          <TextField
+              console.log("업데이트된 액션:", updatedAction);
+              onUpdate(updatedAction);
+            }}
+            options={Object.entries(ACTION_TYPE_LABELS).map(([actionType, label]) => ({
+              value: actionType,
+              label: label
+            }))}
+          />
+
+          <PropertyInput
             label="대상 요소 ID"
             value={action.target || ""}
             onChange={(value) => onUpdate({ ...action, target: value })}
           />
 
-          <TextField
+          <PropertyInput
             label="지연 시간 (ms)"
             type="number"
             value={String(action.delay || 0)}
@@ -351,27 +325,21 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
             }
           />
 
-          <TextField
+          <PropertyInput
             label="실행 조건"
             value={action.condition || ""}
             onChange={(value) => onUpdate({ ...action, condition: value })}
-            description="JavaScript 표현식 (예: state.isLoggedIn)"
           />
 
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={action.enabled !== false}
-                onChange={(e) =>
-                  onUpdate({ ...action, enabled: e.target.checked })
-                }
-              />
-              활성화
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="활성화"
+            isSelected={action.enabled !== false}
+            onChange={(isSelected) =>
+              onUpdate({ ...action, enabled: isSelected })
+            }
+          />
 
-          <TextField
+          <PropertyInput
             label="설명"
             value={action.description || ""}
             onChange={(value) => onUpdate({ ...action, description: value })}
@@ -455,88 +423,66 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
 
       {isExpanded && (
         <div className="event-content">
-          <div className="select-wrapper">
-            <label>이벤트 타입</label>
-            <select
-              value={event.event_type}
-              onChange={(e) => {
-                const selectedType = e.target.value as EventType;
-                console.log("이벤트 타입 변경:", selectedType);
-                onUpdate({ ...event, event_type: selectedType });
-              }}
-              className="event-type-select"
-            >
-              {Object.entries(EVENT_TYPE_LABELS).map(([type, label]) => (
-                <option key={type} value={type}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <PropertySelect
+            label="이벤트 타입"
+            value={event.event_type}
+            onChange={(selectedType) => {
+              const eventType = selectedType as EventType;
+              console.log("이벤트 타입 변경:", eventType);
+              onUpdate({ ...event, event_type: eventType });
+            }}
+            options={Object.entries(EVENT_TYPE_LABELS).map(([type, label]) => ({
+              value: type,
+              label: label
+            }))}
+          />
 
-          <TextField
+          <PropertyInput
             label="설명"
             value={event.description || ""}
             onChange={(value) => onUpdate({ ...event, description: value })}
           />
 
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={event.enabled !== false}
-                onChange={(e) =>
-                  onUpdate({ ...event, enabled: e.target.checked })
-                }
-              />
-              활성화
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="활성화"
+            isSelected={event.enabled !== false}
+            onChange={(isSelected) =>
+              onUpdate({ ...event, enabled: isSelected })
+            }
+          />
 
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={event.preventDefault || false}
-                onChange={(e) =>
-                  onUpdate({ ...event, preventDefault: e.target.checked })
-                }
-              />
-              기본 동작 방지
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="기본 동작 방지"
+            isSelected={event.preventDefault || false}
+            onChange={(isSelected) =>
+              onUpdate({ ...event, preventDefault: isSelected })
+            }
+          />
 
-          <div className="checkbox-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={event.stopPropagation || false}
-                onChange={(e) =>
-                  onUpdate({ ...event, stopPropagation: e.target.checked })
-                }
-              />
-              이벤트 전파 중단
-            </label>
-          </div>
+          <PropertyCheckbox
+            label="이벤트 전파 중단"
+            isSelected={event.stopPropagation || false}
+            onChange={(isSelected) =>
+              onUpdate({ ...event, stopPropagation: isSelected })
+            }
+          />
 
-          <TextField
-            label="디바운스 시간 (ms)"
+          <PropertyInput
+            label={`디바운스 시간 (ms) - 기본값: ${DEFAULT_DEBOUNCE_TIME}ms`}
             type="number"
             value={String(event.debounce || "")}
             onChange={(value) =>
               onUpdate({ ...event, debounce: parseInt(value) || undefined })
             }
-            description={`기본값: ${DEFAULT_DEBOUNCE_TIME}ms`}
           />
 
-          <TextField
-            label="스로틀 시간 (ms)"
+          <PropertyInput
+            label={`스로틀 시간 (ms) - 기본값: ${DEFAULT_THROTTLE_TIME}ms`}
             type="number"
             value={String(event.throttle || "")}
             onChange={(value) =>
               onUpdate({ ...event, throttle: parseInt(value) || undefined })
             }
-            description={`기본값: ${DEFAULT_THROTTLE_TIME}ms`}
           />
 
           <div className="actions-section">
