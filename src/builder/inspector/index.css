@@ -706,7 +706,6 @@
     .react-aria-Button {
       color: var(--builder-inspector-text-primary);
       background: var(--builder-inspector-control-bg);
-      border: 1px solid var(--builder-inspector-border);
 
       &[data-pressed] {
         background: var(--builder-inspector-hover-bg);

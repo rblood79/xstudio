@@ -10,13 +10,13 @@
   .ai-generator-container h2 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin-bottom: var(--spacing-2);
   }
 
   .ai-generator-container .subtitle {
     font-size: var(--text-base);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     margin-bottom: var(--spacing-6);
   }
 
@@ -36,11 +36,11 @@
   .form-group label {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-700);
+    color: var(--text-color);
   }
 
   .form-group .required {
-    color: var(--color-error-600);
+    color: var(--status-error);
   }
 
   .form-group input[type="text"],
@@ -48,18 +48,18 @@
   .form-group select {
     padding: var(--spacing-3);
     font-size: var(--text-base);
-    border: 1px solid var(--color-gray-300);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--color-white);
-    color: var(--color-gray-900);
+    background: var(--surface-primary);
+    color: var(--text-color);
   }
 
   .form-group input:focus,
   .form-group textarea:focus,
   .form-group select:focus {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--action-primary-bg);
     outline-offset: 0;
-    border-color: var(--color-primary-500);
+    border-color: var(--action-primary-bg);
   }
 
   .form-group textarea {
@@ -68,7 +68,7 @@
 
   .field-hint {
     font-size: var(--text-sm);
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
     margin: 0;
   }
 
@@ -82,7 +82,7 @@
     width: 60px;
     height: 44px;
     padding: var(--spacing-1);
-    border: 1px solid var(--color-gray-300);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
     cursor: pointer;
   }
@@ -96,8 +96,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-white);
-    background: var(--color-primary-600);
+    color: var(--surface-primary);
+    background: var(--action-primary-bg-pressed);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -105,7 +105,7 @@
   }
 
   .generate-btn:hover {
-    background: var(--color-primary-700);
+    background: var(--action-primary-bg-pressed);
   }
 
   .generate-btn:active {
@@ -115,7 +115,7 @@
   /* Progress */
   .progress-container {
     padding: var(--spacing-6);
-    background: var(--color-gray-50);
+    background: var(--surface-tertiary);
     border-radius: var(--radius-lg);
   }
 
@@ -129,19 +129,19 @@
   .progress-header h3 {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin: 0;
   }
 
   .progress-percentage {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-primary-600);
+    color: var(--action-primary-bg-pressed);
   }
 
   .progress-bar {
     height: 12px;
-    background: var(--color-gray-200);
+    background: var(--border-color);
     border-radius: var(--radius-full);
     overflow: hidden;
     margin-bottom: var(--spacing-3);
@@ -149,13 +149,13 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-600));
+    background: linear-gradient(90deg, var(--action-primary-bg), var(--action-primary-bg-pressed));
     transition: width 300ms ease-out;
   }
 
   .progress-message {
     font-size: var(--text-sm);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     margin-bottom: var(--spacing-6);
   }
 
@@ -185,25 +185,25 @@
   .stage-icon {
     width: 32px;
     height: 32px;
-    border: 2px solid var(--color-gray-300);
+    border: 2px solid var(--border-color-hover);
     border-radius: 50%;
-    background: var(--color-white);
+    background: var(--surface-primary);
   }
 
   .stage-indicator.active .stage-icon {
-    border-color: var(--color-primary-500);
-    background: var(--color-primary-50);
+    border-color: var(--action-primary-bg);
+    background: var(--action-primary-bg-hover);
     animation: pulse 2s infinite;
   }
 
   .stage-indicator.completed .stage-icon {
-    border-color: var(--color-success-500);
-    background: var(--color-success-500);
+    border-color: var(--status-success);
+    background: var(--status-success);
   }
 
   .stage-label {
     font-size: var(--text-xs);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     text-align: center;
   }
 
@@ -219,8 +219,8 @@
   /* Results */
   .generation-results {
     padding: var(--spacing-6);
-    background: var(--color-success-50);
-    border: 1px solid var(--color-success-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--status-success);
     border-radius: var(--radius-lg);
   }
 
@@ -234,7 +234,7 @@
   .result-header h3 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-success-700);
+    color: var(--status-success);
     margin: 0;
   }
 
@@ -242,17 +242,17 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-primary-600);
-    background: var(--color-white);
-    border: 1px solid var(--color-primary-300);
+    color: var(--action-primary-bg-pressed);
+    background: var(--surface-primary);
+    border: 1px solid var(--action-primary-bg);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .new-theme-btn:hover {
-    background: var(--color-primary-50);
-    border-color: var(--color-primary-400);
+    background: var(--action-primary-bg-hover);
+    border-color: var(--action-primary-bg);
   }
 
   /* Result Stats */
@@ -268,33 +268,33 @@
     flex-direction: column;
     gap: var(--spacing-1);
     padding: var(--spacing-4);
-    background: var(--color-white);
+    background: var(--surface-primary);
     border-radius: var(--radius-md);
   }
 
   .stat-label {
     font-size: var(--text-xs);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     text-transform: uppercase;
   }
 
   .stat-value {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
   }
 
   /* Palette Preview */
   .palette-preview {
     padding: var(--spacing-4);
-    background: var(--color-white);
+    background: var(--surface-primary);
     border-radius: var(--radius-md);
   }
 
   .palette-preview h4 {
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin-bottom: var(--spacing-3);
   }
 
@@ -314,7 +314,7 @@
     width: 80px;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-700);
+    color: var(--text-color);
     text-transform: capitalize;
   }
 
@@ -339,21 +339,21 @@
   /* Error */
   .error-message {
     padding: var(--spacing-6);
-    background: var(--color-error-50);
-    border: 1px solid var(--color-error-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
 
   .error-message h3 {
     font-size: var(--text-xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-error-700);
+    color: var(--status-error);
     margin-bottom: var(--spacing-2);
   }
 
   .error-message p {
     font-size: var(--text-base);
-    color: var(--color-error-600);
+    color: var(--status-error);
     margin-bottom: var(--spacing-4);
   }
 
@@ -361,14 +361,14 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-white);
-    background: var(--color-error-600);
+    color: var(--surface-primary);
+    background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
   }
 
   .error-message button:hover {
-    background: var(--color-error-700);
+    background: var(--status-error);
   }
 }

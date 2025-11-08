@@ -1,9 +1,9 @@
 @layer utilities {
     :root {
-        --color-border: var(--color-gray-300);
-        --color-background: var(--color-white);
-        --highlight-background: var(--color-primary-500);
-        --highlight-foreground: var(--color-primary-50);
-        --overlay-background: var(--color-gray-50);
+        --color-border: var(--border-color);
+        --color-background: var(--background);
+        --highlight-background: var(--action-primary-bg);
+        --highlight-foreground: var(--action-primary-text);
+        --overlay-background: var(--surface-tertiary);
     }
 }

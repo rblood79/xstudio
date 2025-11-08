@@ -2,7 +2,7 @@
   /* Theme Container */
   .theme {
     width: 720px;
-    background: var(--color-white);
+    background: var(--surface-primary);
     height: 100%;
     overflow: auto;
   }
@@ -17,7 +17,7 @@
 
   .error-message {
     font-size: var(--text-sm);
-    color: var(--color-red-500);
+    color: var(--status-error);
     margin: 0;
   }
 
@@ -30,10 +30,10 @@
 
   /* Preview Components */
   .preview-container {
-    background-color: var(--color-gray-50);
+    background-color: var(--surface-tertiary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-gray-200);
+    border: 1px solid var(--border-color);
   }
 
   .preview-title {
@@ -49,10 +49,10 @@
   }
 
   .category-container {
-    background-color: var(--color-white);
+    background-color: var(--surface-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-gray-200);
+    border: 1px solid var(--border-color);
   }
 
   .category-title {

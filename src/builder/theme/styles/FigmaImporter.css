@@ -10,13 +10,13 @@
   .figma-importer-container h2 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin-bottom: var(--spacing-2);
   }
 
   .figma-importer-container .subtitle {
     font-size: var(--text-base);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     margin-bottom: var(--spacing-6);
   }
 
@@ -36,11 +36,11 @@
   .figma-import-form label {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-700);
+    color: var(--text-color);
   }
 
   .figma-import-form .required {
-    color: var(--color-error-600);
+    color: var(--status-error);
   }
 
   .figma-import-form input[type="text"],
@@ -48,27 +48,27 @@
   .figma-import-form select {
     padding: var(--spacing-3);
     font-size: var(--text-base);
-    border: 1px solid var(--color-gray-300);
+    border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--color-white);
-    color: var(--color-gray-900);
+    background: var(--surface-primary);
+    color: var(--text-color);
   }
 
   .figma-import-form input:focus,
   .figma-import-form select:focus {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--action-primary-bg);
     outline-offset: 0;
-    border-color: var(--color-primary-500);
+    border-color: var(--action-primary-bg);
   }
 
   .figma-import-form .field-hint {
     font-size: var(--text-sm);
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
     margin: 0;
   }
 
   .figma-import-form .field-hint strong {
-    color: var(--color-gray-700);
+    color: var(--text-color);
     font-weight: var(--font-weight-semibold);
   }
 
@@ -84,7 +84,7 @@
     align-items: center;
     gap: var(--spacing-2);
     font-size: var(--text-base);
-    color: var(--color-gray-700);
+    color: var(--text-color);
     cursor: pointer;
   }
 
@@ -99,8 +99,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-white);
-    background: var(--color-primary-600);
+    color: var(--surface-primary);
+    background: var(--action-primary-bg-pressed);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -108,7 +108,7 @@
   }
 
   .import-btn:hover:not(:disabled) {
-    background: var(--color-primary-700);
+    background: var(--action-primary-bg-pressed);
   }
 
   .import-btn:disabled {
@@ -129,15 +129,15 @@
   .importing-state .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid var(--color-gray-200);
-    border-top-color: var(--color-primary-500);
+    border: 3px solid var(--border-color);
+    border-top-color: var(--action-primary-bg);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
 
   .importing-state p {
     font-size: var(--text-base);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
   }
 
   @keyframes spin {
@@ -149,8 +149,8 @@
   /* Results */
   .import-results {
     padding: var(--spacing-6);
-    background: var(--color-primary-50);
-    border: 1px solid var(--color-primary-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--action-primary-bg-hover);
     border-radius: var(--radius-lg);
   }
 
@@ -164,7 +164,7 @@
   .result-header h3 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-primary-700);
+    color: var(--action-primary-bg-pressed);
     margin: 0;
   }
 
@@ -172,17 +172,17 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-primary-600);
-    background: var(--color-white);
-    border: 1px solid var(--color-primary-300);
+    color: var(--action-primary-bg-pressed);
+    background: var(--surface-primary);
+    border: 1px solid var(--action-primary-bg);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .reset-btn:hover {
-    background: var(--color-primary-50);
-    border-color: var(--color-primary-400);
+    background: var(--action-primary-bg-hover);
+    border-color: var(--action-primary-bg);
   }
 
   /* Import Stats */
@@ -199,53 +199,53 @@
     align-items: center;
     gap: var(--spacing-1);
     padding: var(--spacing-4);
-    background: var(--color-white);
+    background: var(--surface-primary);
     border-radius: var(--radius-md);
   }
 
   .stat-card.total {
-    background: var(--color-primary-600);
+    background: var(--action-primary-bg-pressed);
   }
 
   .stat-number {
     font-size: var(--text-3xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
   }
 
   .stat-card.total .stat-number {
-    color: var(--color-white);
+    color: var(--surface-primary);
   }
 
   .stat-label {
     font-size: var(--text-xs);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     text-transform: uppercase;
   }
 
   .stat-card.total .stat-label {
-    color: var(--color-white);
+    color: var(--surface-primary);
   }
 
   /* Skipped Notice */
   .skipped-notice {
     padding: var(--spacing-3) var(--spacing-4);
-    background: var(--color-warning-50);
-    border: 1px solid var(--color-warning-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--status-warning);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-4);
   }
 
   .skipped-notice span {
     font-size: var(--text-sm);
-    color: var(--color-warning-700);
+    color: var(--status-warning);
   }
 
   /* Error List */
   .error-list {
     padding: var(--spacing-4);
-    background: var(--color-error-50);
-    border: 1px solid var(--color-error-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--status-error);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-4);
   }
@@ -253,7 +253,7 @@
   .error-list h4 {
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-error-700);
+    color: var(--status-error);
     margin-bottom: var(--spacing-2);
   }
 
@@ -265,9 +265,9 @@
 
   .error-list li {
     font-size: var(--text-sm);
-    color: var(--color-error-600);
+    color: var(--status-error);
     padding: var(--spacing-2) 0;
-    border-bottom: 1px solid var(--color-error-100);
+    border-bottom: 1px solid var(--action-primary-bg-hover);
   }
 
   .error-list li:last-child {
@@ -276,20 +276,20 @@
 
   .error-list li strong {
     font-weight: var(--font-weight-semibold);
-    color: var(--color-error-700);
+    color: var(--status-error);
   }
 
   /* Token List Preview */
   .token-list-preview {
     padding: var(--spacing-4);
-    background: var(--color-white);
+    background: var(--surface-primary);
     border-radius: var(--radius-md);
   }
 
   .token-list-preview h4 {
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin-bottom: var(--spacing-3);
   }
 
@@ -304,7 +304,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-2);
-    border-bottom: 1px solid var(--color-gray-100);
+    border-bottom: 1px solid var(--surface-secondary);
   }
 
   .token-list-preview li:last-child {
@@ -313,22 +313,22 @@
 
   .token-list-preview li.more {
     justify-content: center;
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
     font-size: var(--text-sm);
   }
 
   .token-name {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-900);
+    color: var(--text-color);
     font-family: var(--font-mono);
   }
 
   .token-type {
     font-size: var(--text-xs);
     padding: var(--spacing-1) var(--spacing-2);
-    background: var(--color-gray-100);
-    color: var(--color-gray-600);
+    background: var(--surface-secondary);
+    color: var(--text-color-secondary);
     border-radius: var(--radius-sm);
     text-transform: uppercase;
   }
@@ -336,21 +336,21 @@
   /* Error Message */
   .figma-importer-container .error-message {
     padding: var(--spacing-6);
-    background: var(--color-error-50);
-    border: 1px solid var(--color-error-200);
+    background: var(--action-primary-bg-hover);
+    border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
 
   .figma-importer-container .error-message h3 {
     font-size: var(--text-xl);
     font-weight: var(--font-weight-bold);
-    color: var(--color-error-700);
+    color: var(--status-error);
     margin-bottom: var(--spacing-2);
   }
 
   .figma-importer-container .error-message p {
     font-size: var(--text-base);
-    color: var(--color-error-600);
+    color: var(--status-error);
     margin-bottom: var(--spacing-4);
   }
 
@@ -358,14 +358,14 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-white);
-    background: var(--color-error-600);
+    color: var(--surface-primary);
+    background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
   }
 
   .figma-importer-container .error-message button:hover {
-    background: var(--color-error-700);
+    background: var(--status-error);
   }
 }
