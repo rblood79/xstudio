@@ -17,12 +17,10 @@ import {
   Radio,
   Key,
   Label,
-  Switch,
-  Button,
 } from "react-aria-components";
+import { Select, SelectItem } from "../components/Select";
 import { iconProps } from "../../utils/uiConstants";
 import { useStore } from "../stores";
-import { saveService } from "../../services/save";
 import { useThemes } from "../../hooks/theme/useThemes";
 import { ThemeService } from "../../services/theme";
 
@@ -70,12 +68,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPlay,
   onPublish,
 }) => {
-  // SaveMode 상태와 액션을 별도 selector로 가져오기 (최신 상태 보장)
-  const isRealtimeMode = useStore((state) => state.isRealtimeMode);
-  const pendingChanges = useStore((state) => state.pendingChanges);
-  const setRealtimeMode = useStore((state) => state.setRealtimeMode);
-  const pendingCount = pendingChanges.size;
-
   // Theme 관련 상태
   const activeTheme = useStore((state) => state.activeTheme);
   const loadTheme = useStore((state) => state.loadTheme);
@@ -84,13 +76,14 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     enableRealtime: false,
   });
 
-  const [isSaving, setIsSaving] = React.useState(false);
   const [isDarkMode, setIsDarkMode] = React.useState(false);
 
   // 다크모드 초기화 (로컬 스토리지에서 복원)
   React.useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
     const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark);
 
     if (shouldBeDark) {
@@ -98,30 +91,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
       setIsDarkMode(true);
     }
   }, []);
-
-  const handleSave = (): void => {
-    setIsSaving(true);
-    saveService
-      .saveAllPendingChanges()
-      .then(() => {
-        console.log("✅ 저장 완료");
-      })
-      .catch((error) => {
-        console.error("❌ 저장 실패:", error);
-      })
-      .finally(() => {
-        setIsSaving(false);
-      });
-  };
-
-  const handleRealtimeModeChange = (enabled: boolean): void => {
-    setRealtimeMode(enabled);
-
-    if (enabled && pendingChanges.size > 0) {
-      // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
-      handleSave();
-    }
-  };
 
   const handleThemeChange = async (themeId: string): Promise<void> => {
     if (!projectId) return;
@@ -149,7 +118,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     }
 
     // Preview iframe에도 다크모드 메시지 전송
-    const previewIframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+    const previewIframe = document.querySelector(
+      'iframe[title="preview"]'
+    ) as HTMLIFrameElement;
     if (previewIframe?.contentWindow) {
       previewIframe.contentWindow.postMessage(
         {
@@ -160,7 +131,10 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
       );
     }
 
-    console.log("[BuilderHeader] Dark mode:", newDarkMode ? "enabled" : "disabled");
+    console.log(
+      "[BuilderHeader] Dark mode:",
+      newDarkMode ? "enabled" : "disabled"
+    );
   };
 
   return (
@@ -178,50 +152,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           {/*projectId && <code className="project-id">ID: {projectId}</code>*/}
           {!projectId && !projectName && "No project loaded"}
         </div>
-        {projectId && themes.length > 0 && (
-          <div className="theme-selector">
-            <label htmlFor="theme-select">Theme:</label>
-            <select
-              id="theme-select"
-              value={activeTheme?.id || ""}
-              onChange={(e) => handleThemeChange(e.target.value)}
-              disabled={themesLoading}
-            >
-              {themes.map((theme) => (
-                <option key={theme.id} value={theme.id}>
-                  {theme.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <button
-          aria-label="Toggle dark mode"
-          onClick={handleDarkModeToggle}
-          className="dark-mode-toggle"
-          disabled={!(activeTheme?.supports_dark_mode ?? true)}
-          title={
-            !(activeTheme?.supports_dark_mode ?? true)
-              ? "현재 테마는 다크모드를 지원하지 않습니다"
-              : isDarkMode
-              ? "라이트 모드로 전환"
-              : "다크 모드로 전환"
-          }
-        >
-          {isDarkMode ? (
-            <Sun
-              color={iconProps.color}
-              strokeWidth={iconProps.stroke}
-              size={iconProps.size}
-            />
-          ) : (
-            <Moon
-              color={iconProps.color}
-              strokeWidth={iconProps.stroke}
-              size={iconProps.size}
-            />
-          )}
-        </button>
       </div>
 
       <div className="header_contents screen">
@@ -276,23 +206,51 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             </Radio>
           ))}
         </RadioGroup>
-        <Switch
-          id="realtime-mode"
-          isSelected={isRealtimeMode}
-          onChange={handleRealtimeModeChange}
+        {projectId && themes.length > 0 && (
+          <div className="theme-selector">
+            <Select
+              label=""
+              selectedKey={activeTheme?.id || ""}
+              onSelectionChange={(key) => handleThemeChange(String(key))}
+              isDisabled={themesLoading}
+              placeholder="Select a theme"
+              aria-label="Select theme"
+            >
+              {themes.map((theme) => (
+                <SelectItem key={theme.id} id={theme.id} textValue={theme.name}>
+                  {theme.name}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+        )}
+        <button
+          aria-label="Toggle dark mode"
+          onClick={handleDarkModeToggle}
+          className="dark-mode-toggle"
+          disabled={!(activeTheme?.supports_dark_mode ?? true)}
+          title={
+            !(activeTheme?.supports_dark_mode ?? true)
+              ? "현재 테마는 다크모드를 지원하지 않습니다"
+              : isDarkMode
+              ? "라이트 모드로 전환"
+              : "다크 모드로 전환"
+          }
         >
-          <div className="indicator" />
-          {isRealtimeMode ? "Auto" : "Manual"}
-        </Switch>
-        <Button
-          id="save-button"
-          onPress={handleSave}
-          isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
-        >
-          {isSaving
-            ? "Saving..."
-            : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-        </Button>
+          {isDarkMode ? (
+            <Sun
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          ) : (
+            <Moon
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          )}
+        </button>
       </div>
 
       <div className="header_contents header_right">

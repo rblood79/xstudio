@@ -115,47 +115,106 @@
                 opacity: 0.8;
               }
             }
+          }
 
+          &.screen {
+            gap: var(--spacing-sm);
+
+            /* Theme selector 스타일 */
             .theme-selector {
               display: flex;
               align-items: center;
               gap: var(--spacing-sm);
-              margin-left: var(--spacing-md);
 
-              label {
-                font-size: var(--text-sm);
-                font-weight: 500;
-                color: var(--builder-header-text);
-              }
+              .react-aria-Select {
+                display: flex;
+                align-items: center;
+                gap: var(--spacing-sm);
 
-              select {
-                padding: var(--spacing-sm) var(--spacing);
-                font-size: var(--text-sm);
-                border: 1px solid var(--builder-header-input-border);
-                border-radius: var(--radius-md);
-                background: var(--builder-header-input-bg);
-                color: var(--builder-header-text);
-                cursor: pointer;
-                transition: all 0.2s;
-
-                &:hover {
-                  border-color: var(--builder-header-input-focus-border);
-                  background: var(--builder-header-input-border);
+                .react-aria-Label {
+                  font-size: var(--text-sm);
+                  font-weight: 500;
+                  color: var(--builder-header-text);
+                  white-space: nowrap;
                 }
 
-                &:focus {
-                  outline: 2px solid var(--builder-header-input-focus-border);
-                  outline-offset: 2px;
-                  border-color: var(--builder-header-input-focus-border);
+                .react-aria-Button {
+                  padding: var(--spacing-xs) var(--spacing);
+                  font-size: var(--text-sm);
+                  border: 1px solid var(--builder-header-input-border);
+                  border-radius: var(--radius-md);
+                  background: var(--builder-header-input-bg);
+                  color: var(--builder-header-text);
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  display: flex;
+                  align-items: center;
+                  gap: var(--spacing-sm);
+                  min-width: 120px;
+
+                  &[data-hovered] {
+                    border-color: var(--builder-header-input-focus-border);
+                    background: var(--builder-header-input-border);
+                  }
+
+                  &[data-focus-visible] {
+                    outline: 2px solid var(--builder-header-input-focus-border);
+                    outline-offset: 2px;
+                    border-color: var(--builder-header-input-focus-border);
+                  }
+
+                  &[data-disabled] {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                  }
+
+                  .select-chevron {
+                    display: flex;
+                    align-items: center;
+                    margin-left: auto;
+                  }
                 }
 
-                &:disabled {
-                  opacity: 0.5;
-                  cursor: not-allowed;
+                .react-aria-Popover {
+                  background: var(--builder-header-input-bg);
+                  border: 1px solid var(--builder-header-input-border);
+                  border-radius: var(--radius-md);
+                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                  margin-top: var(--spacing-sm);
+
+                  .react-aria-ListBox {
+                    padding: var(--spacing-sm);
+                    outline: none;
+
+                    .react-aria-ListBoxItem {
+                      padding: var(--spacing-sm) var(--spacing);
+                      font-size: var(--text-sm);
+                      color: var(--builder-header-text);
+                      border-radius: var(--radius-sm);
+                      cursor: pointer;
+                      transition: background-color 0.2s;
+
+                      &[data-hovered] {
+                        background: var(--builder-header-input-border);
+                      }
+
+                      &[data-selected] {
+                        background: var(--builder-header-input-focus-border);
+                        color: var(--builder-indicator-text);
+                        font-weight: 500;
+                      }
+
+                      &[data-focused] {
+                        outline: 2px solid var(--builder-header-input-focus-border);
+                        outline-offset: -2px;
+                      }
+                    }
+                  }
                 }
               }
             }
 
+            /* Dark mode toggle 스타일 */
             .dark-mode-toggle {
               display: flex;
               align-items: center;
@@ -178,76 +237,6 @@
               &:disabled {
                 opacity: 0.4;
                 cursor: not-allowed;
-              }
-            }
-          }
-
-          &.screen {
-            gap: var(--spacing-sm);
-
-            /* Switch 스타일 */
-            #realtime-mode {
-              display: flex;
-              align-items: center;
-              gap: var(--spacing);
-              font-size: var(--text-sm);
-              color: var(--builder-header-text);
-              cursor: pointer;
-              padding: var(--spacing) var(--spacing-sm);
-              border-radius: var(--radius-md);
-              background-color: transparent;
-              transition: background-color 0.2s;
-
-              &:hover {
-                background-color: var(--builder-header-button-hover);
-              }
-
-              .indicator {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: var(--builder-header-badge-bg);
-                transition: background-color 0.2s;
-              }
-
-              &[data-selected="true"] .indicator {
-                background: var(--builder-status-success);
-              }
-            }
-
-            /* Save 버튼 스타일 */
-            #save-button {
-              font-size: var(--text-sm);
-              padding: var(--spacing) var(--spacing-lg);
-              border-radius: var(--radius-md);
-              background-color: var(--builder-status-info-hover);
-              color: var(--builder-indicator-text);
-              border: none;
-              cursor: pointer;
-              transition: all 0.2s;
-
-              &:hover:not(:disabled) {
-                background-color: var(--builder-status-info-pressed);
-              }
-
-              &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-              }
-
-              &[data-pending="true"]:not(:disabled) {
-                background: var(--builder-status-warning);
-                animation: pulse 2s infinite;
-              }
-            }
-
-            @keyframes pulse {
-              0%,
-              100% {
-                opacity: 1;
-              }
-              50% {
-                opacity: 0.7;
               }
             }
           }

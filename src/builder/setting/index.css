@@ -78,7 +78,8 @@
 }
 
 .settings-section .react-aria-Group {
-  background-color: var(--surface-secondary);
+  background-color: var(--builder-inspector-control-bg);
+  border: 1px solid var(--builder-inspector-border);
   border-radius: var(--radius-md);
   width: 100%;
   min-width: 0;
@@ -207,4 +208,40 @@
   color: var(--text-color);
   min-width: 40px;
   text-align: right;
+}
+
+/* Save Button */
+.settings-section .save-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing) var(--spacing-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color-inverse);
+  background-color: var(--action-primary-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-section .save-button:hover:not(:disabled) {
+  background-color: var(--action-primary-bg-hover);
+}
+
+.settings-section .save-button:active:not(:disabled) {
+  background-color: var(--action-primary-bg-pressed);
+}
+
+.settings-section .save-button[data-focused] {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.settings-section .save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

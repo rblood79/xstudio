@@ -1,6 +1,9 @@
 import './index.css';
-import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn } from 'lucide-react';
+import React from 'react';
+import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save } from 'lucide-react';
+import { Button } from 'react-aria-components';
 import { useStore } from '../stores';
+import { saveService } from '../../services/save';
 import { PropertySwitch, PropertySelect, PropertySlider } from '../inspector/components';
 
 function Setting() {
@@ -30,6 +33,14 @@ function Setting() {
 
     const uiScale = useStore((state) => state.uiScale);
     const setUiScale = useStore((state) => state.setUiScale);
+
+    // SaveMode 상태
+    const isRealtimeMode = useStore((state) => state.isRealtimeMode);
+    const pendingChanges = useStore((state) => state.pendingChanges);
+    const setRealtimeMode = useStore((state) => state.setRealtimeMode);
+    const pendingCount = pendingChanges.size;
+
+    const [isSaving, setIsSaving] = React.useState(false);
 
     const themeModeOptions = [
         { value: 'light', label: 'Light' },
@@ -64,9 +75,61 @@ function Setting() {
         setUiScale(scale);
     };
 
+    const handleSave = (): void => {
+        setIsSaving(true);
+        saveService
+            .saveAllPendingChanges()
+            .then(() => {
+                console.log("✅ 저장 완료");
+            })
+            .catch((error) => {
+                console.error("❌ 저장 실패:", error);
+            })
+            .finally(() => {
+                setIsSaving(false);
+            });
+    };
+
+    const handleRealtimeModeChange = (enabled: boolean): void => {
+        setRealtimeMode(enabled);
+
+        if (enabled && pendingChanges.size > 0) {
+            // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
+            handleSave();
+        }
+    };
+
     return (
         <div className="sidebar-content">
             <div className="settings-container">
+                {/* Save Mode Section */}
+                <div className="settings-section">
+                    <div className="section-header">
+                        <div className="section-title">Save Mode</div>
+                    </div>
+                    <div className="section-content">
+                        <div className="component-props">
+                            <PropertySwitch
+                                label="Auto Save"
+                                isSelected={isRealtimeMode}
+                                onChange={handleRealtimeModeChange}
+                                icon={Save}
+                            />
+
+                            <Button
+                                onPress={handleSave}
+                                isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
+                                className="save-button"
+                            >
+                                <Save size={16} strokeWidth={1.5} />
+                                {isSaving
+                                    ? "Saving..."
+                                    : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Preview & Overlay Section */}
                 <div className="settings-section">
                     <div className="section-header">
