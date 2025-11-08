@@ -131,9 +131,9 @@
 }
 
 .back-button {
-  color: var(--text-color-secondary);
+  color: var(--builder-inspector-text-secondary);
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--builder-inspector-border);
 }
 
 .back-button:hover {
@@ -221,14 +221,14 @@
 }
 
 .add-action-button {
-  color: var(--highlight-foreground);
-  background: var(--highlight-background);
+  color: var(--builder-inspector-tab-active);
+  background: var(--builder-inspector-focus-ring);
   border: none;
   transition: all 0.2s ease;
 }
 
 .add-action-button:hover {
-  background: var(--highlight-background-pressed);
+  background: var(--builder-inspector-button-primary-hover);
 }
 
 /* Action Editor */

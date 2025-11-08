@@ -1,7 +1,6 @@
 @layer builder-system {
   .app {
-    font-size: var(--text-sm);
-
+    /* font-size는 BuilderCore.tsx의 uiScale useEffect에서 동적으로 설정됨 */
     display: contents;
 
     .contents {

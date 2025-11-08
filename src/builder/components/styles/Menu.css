@@ -1,5 +1,4 @@
 @layer components {
-  
   .react-aria-Menu {
     max-height: inherit;
     overflow: auto;
@@ -7,7 +6,7 @@
     min-width: 150px;
     outline: none;
   }
-  
+
   .react-aria-MenuItem {
     margin: var(--spacing);
     padding: var(--spacing) var(--spacing-md);
@@ -18,75 +17,76 @@
     font-size: var(--text-sm);
     position: relative;
     display: grid;
-    grid-template-areas: "label kbd"
-                        "desc  kbd";
+    grid-template-areas:
+      "label kbd"
+      "desc  kbd";
     align-items: center;
     column-gap: var(--gap);
     forced-color-adjust: none;
-  
+
     &[data-focused] {
       background: var(--highlight-background);
       color: var(--highlight-foreground);
     }
   }
-  
+
   .react-aria-MenuItem {
     &[data-selection-mode] {
       padding-left: var(--spacing-xl);
-  
+
       &::before {
         position: absolute;
         left: var(--spacing);
         font-weight: 600;
       }
-  
-      &[data-selection-mode=multiple][data-selected]::before {
-        content: '✓';
-        content: '✓' / '';
-        alt: ' ';
+
+      &[data-selection-mode="multiple"][data-selected]::before {
+        content: "✓";
+        content: "✓" / "";
+        alt: " ";
         position: absolute;
         left: var(--spacing);
         font-weight: 600;
       }
-  
-      &[data-selection-mode=single][data-selected]::before {
-        content: '●';
-        content: '●' / '';
-        transform: scale(0.7)
+
+      &[data-selection-mode="single"][data-selected]::before {
+        content: "●";
+        content: "●" / "";
+        transform: scale(0.7);
       }
     }
   }
-  
+
   .react-aria-MenuItem[href] {
     text-decoration: none;
     cursor: pointer;
   }
-  
+
   .react-aria-Menu {
     .react-aria-MenuSection:not(:first-child) {
       margin-top: 12px;
     }
-  
+
     .react-aria-Header {
       font-size: var(--text-sm);
       font-weight: bold;
       padding: 0 var(--spacing-sm);
     }
-  
+
     .react-aria-Separator {
       height: 1px;
       background: var(--border-color);
       margin: var(--spacing) var(--spacing-sm);
     }
   }
-  
+
   .react-aria-MenuItem {
-    [slot=label] {
+    [slot="label"] {
       font-weight: bold;
       grid-area: label;
     }
 
-    [slot=description] {
+    [slot="description"] {
       font-size: small;
       grid-area: desc;
     }
@@ -150,7 +150,7 @@
   }
 
   /* Submenu Popover 위치 조정 */
-  .react-aria-Popover[data-trigger=SubmenuTrigger] {
+  .react-aria-Popover[data-trigger="SubmenuTrigger"] {
     contain: layout style paint;
 
     &[data-placement="right"] {
@@ -179,13 +179,13 @@
   }
 
   /* Main Menu Popover 최적화 */
-  .react-aria-Popover[data-trigger=MenuTrigger] {
+  .react-aria-Popover[data-trigger="MenuTrigger"] {
     contain: layout style paint;
 
     .react-aria-Menu {
       transform: translate3d(0, 0, 0);
       backface-visibility: hidden;
-      min-height: 40px;
+      min-height: 24px;
 
       .react-aria-MenuItem {
         transform: translate3d(0, 0, 0);

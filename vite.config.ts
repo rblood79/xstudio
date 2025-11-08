@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import postcssImport from "postcss-import";
+import postcssNested from "postcss-nested";
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -23,6 +25,12 @@ export default defineConfig(({ command }) => {
       },
     },
     css: {
+      postcss: {
+        plugins: [
+          postcssImport(),
+          postcssNested(),
+        ],
+      },
       modules: {
         // CSS Modules 설정
         localsConvention: "camelCaseOnly", // 클래스 이름을 camelCase로 변환

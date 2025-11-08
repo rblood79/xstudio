@@ -1,0 +1,64 @@
+/* XStudio Builder CSS - ITCSS Architecture
+ *
+ * This is the master entry point for all Builder CSS.
+ * Files are imported in order of specificity (Inverted Triangle CSS):
+ *
+ * 1. Theme Layer (Settings)
+ *    - CSS variables and design tokens
+ *    - Builder system tokens (header, sidebar, inspector)
+ *    - Preview system tokens (user-customizable)
+ *    - Shared tokens (typography, spacing, colors)
+ *
+ * 2. Base Layer
+ *    - CSS reset and normalization
+ *    - Base element styles
+ *    - Animations
+ *
+ * 3. Utilities Layer
+ *    - Layout helpers (flexbox, grid patterns)
+ *    - Spacing utilities
+ *    - Common patterns
+ *
+ * 4. Layout Layer
+ *    - Major layout structures
+ *    - Grid systems
+ *    - Header, panels, workspace
+ *
+ * 5. Modules Layer
+ *    - Feature-specific modules
+ *    - Main, Sidebar, Inspector, ThemeStudio
+ *
+ * Note: Component styles (React Aria) are imported separately
+ * via src/builder/components/index.css
+ */
+
+/* ==================== 1. Theme Layer ==================== */
+/* Already imported via components/theme.css */
+/* - builder-system.css */
+/* - preview-system.css */
+/* - shared-tokens.css */
+
+/* ==================== 2. Base Layer ==================== */
+/* @import './2-base/reset.css'; */
+/* @import './2-base/animations.css'; */
+
+/* ==================== 3. Utilities Layer ==================== */
+/* @import './3-utilities/layout.css'; */
+/* @import './3-utilities/spacing.css'; */
+
+/* ==================== 4. Layout Layer ==================== */
+/* @import './4-layout/grid.css'; */
+/* @import './4-layout/header.css'; */
+/* @import './4-layout/panels.css'; */
+
+/* ==================== 5. Modules Layer ==================== */
+/* @import './5-modules/main.css'; */
+/* @import './5-modules/sidebar.css'; */
+/* @import './5-modules/inspector.css'; */
+/* @import './5-modules/theme-studio.css'; */
+
+/* Temporary: Legacy imports (will be migrated) */
+@import '../main/index.css';
+@import '../sidebar/index.css';
+@import '../inspector/index.css';
+@import '../theme/index.css';

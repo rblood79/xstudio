@@ -8,7 +8,6 @@
       padding: var(--spacing);
       display: flex;
       align-items: center;
-      max-width: 250px;
 
       &[data-focus-visible],
       &[data-pressed] {
@@ -47,7 +46,7 @@
     .react-aria-ListBox {
       transform: translate3d(0, 0, 0);
       backface-visibility: hidden;
-      min-height: 40px;
+      min-height: 24px;
 
       .react-aria-ListBoxItem {
         transform: translate3d(0, 0, 0);

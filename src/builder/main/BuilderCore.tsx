@@ -78,10 +78,28 @@ export const BuilderCore: React.FC = () => {
     }
   }, [themeMode]);
 
-  // UI Scale 적용 (전역)
+  // UI Scale 적용 (Builder UI만, Preview iframe 제외)
   useEffect(() => {
-    const root = document.documentElement;
-    root.style.fontSize = `${uiScale}%`;
+    // .app은 display: contents이므로 .contents에 직접 적용
+    const builderContents = document.querySelector('.app .contents') as HTMLElement;
+    if (builderContents) {
+      builderContents.style.fontSize = `${uiScale}%`;
+      console.log('[BuilderCore] uiScale applied to .contents:', {
+        uiScale: `${uiScale}%`,
+        computedFontSize: window.getComputedStyle(builderContents).fontSize
+      });
+    }
+
+    // Preview iframe의 font-size 확인 (디버깅용)
+    const previewIframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+    if (previewIframe && previewIframe.contentDocument) {
+      const previewHtml = previewIframe.contentDocument.documentElement;
+      console.log('[BuilderCore] Preview iframe font-size:', {
+        htmlFontSize: window.getComputedStyle(previewHtml).fontSize,
+        bodyFontSize: previewIframe.contentDocument.body ?
+          window.getComputedStyle(previewIframe.contentDocument.body).fontSize : 'N/A'
+      });
+    }
   }, [uiScale]);
 
   // Undo/Redo 조건
