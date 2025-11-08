@@ -1,7 +1,7 @@
 @layer components {
   .react-aria-ToggleButton {
     color: var(--text-color);
-    background: var(--button-background);
+    background: var(--control-bg);
     border: 1px solid var(--border-color);
     forced-color-adjust: none;
     border-radius: var(--border-radius);
@@ -37,7 +37,7 @@
 
     &[data-disabled] {
       border-color: var(--border-color-disabled);
-      background: var(--button-background);
+      background: var(--control-bg);
       color: var(--text-color-disabled);
     }
   }

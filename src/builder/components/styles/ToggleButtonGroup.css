@@ -18,7 +18,7 @@
 
     &[data-indicator="true"] {
       position: relative;
-      background: var(--button-background);
+      background: var(--control-bg);
       width: fit-content;
       padding: 0px;
       border-radius: var(--border-radius);

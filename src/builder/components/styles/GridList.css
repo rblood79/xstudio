@@ -46,11 +46,11 @@
         transition: background 200ms;
   
         &[data-hovered] {
-          background: var(--highlight-hover);
+          background: var(--highlight-hover-overlay);
         }
   
         &[data-pressed] {
-          background: var(--highlight-pressed);
+          background: var(--highlight-pressed-overlay);
           box-shadow: none;
         }
       }
