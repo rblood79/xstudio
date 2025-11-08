@@ -1,0 +1,161 @@
+/* Builder System Tokens - XStudio Builder UI Only
+ * These tokens are ONLY for Builder system UI (header, sidebar, inspector)
+ * NOT affected by user theme changes in Preview
+ * Independent dark mode support via [data-builder-theme="dark"]
+ */
+
+@layer builder-system {
+  :root {
+    /* ==================== Builder-Specific Sizes ==================== */
+    --sizes-inspectorWidth: 320px;
+    --sidebar-width: 240px;
+    --sidebar-nav-width: 48px;
+
+    /* Inspector control sizes */
+    --inspector-control-size: 27px;
+    --inspector-label-width: 27px;
+
+    /* ==================== Builder Header ==================== */
+    --builder-header-bg: var(--color-gray-950);
+    --builder-header-text: var(--color-neutral-100);
+    --builder-header-border: var(--color-gray-800);
+    --builder-header-button-bg: transparent;
+    --builder-header-button-hover: rgba(255, 255, 255, 0.1);
+    --builder-header-button-pressed: rgba(255, 255, 255, 0.15);
+
+    /* ==================== Builder Sidebar ==================== */
+    --builder-sidebar-bg: #fff;
+    --builder-sidebar-border: var(--color-gray-300);
+    --builder-sidebar-hover-bg: #f5f5f5;
+    --builder-sidebar-active-bg: var(--color-gray-950);
+    --builder-sidebar-active-text: var(--color-gray-200);
+    --builder-sidebar-nav-bg: #fff;
+
+    /* ==================== Builder Inspector ==================== */
+    --builder-inspector-bg: var(--color-white);
+    --builder-inspector-border: var(--color-gray-300);
+    --builder-inspector-header-bg: var(--color-gray-50);
+    --builder-inspector-control-bg: var(--color-gray-100);
+    --builder-inspector-control-border: transparent;
+
+    /* ==================== Builder Canvas/Workspace ==================== */
+    --builder-canvas-bg: #ffffff;
+    --builder-canvas-border: var(--color-gray-200);
+    --builder-workspace-bg: var(--color-neutral-100);
+    --builder-indicator-bg: var(--color-sky-500);
+    --builder-indicator-text: var(--color-white);
+
+    /* ==================== Builder Error States ==================== */
+    --builder-error-bg: #fee2e2;
+    --builder-error-border: #fecaca;
+    --builder-error-text: #dc2626;
+    --builder-error-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+    /* ==================== Builder Overlay/Modal ==================== */
+    --builder-overlay-bg: rgba(0, 0, 0, 0.5);
+    --builder-modal-bg: white;
+    --builder-modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+
+    /* ==================== Builder Loading Spinner ==================== */
+    --builder-spinner-track: #f3f3f3;
+    --builder-spinner-fill: #3498db;
+
+    /* ==================== Builder Button/Controls ==================== */
+    --builder-button-bg: var(--color-gray-100);
+    --builder-button-text: var(--color-gray-900);
+    --builder-button-border: var(--color-gray-300);
+    --builder-button-hover-bg: var(--color-gray-200);
+    --builder-button-pressed-bg: var(--color-gray-300);
+
+    /* Builder Primary Action */
+    --builder-button-primary-bg: var(--color-blue-600);
+    --builder-button-primary-text: var(--color-white);
+    --builder-button-primary-hover: var(--color-blue-700);
+    --builder-button-primary-disabled: var(--color-blue-300);
+
+    /* Builder Save Button */
+    --builder-save-pending-bg: var(--color-orange-500);
+    --builder-save-pending-pulse: pulse 2s infinite;
+
+    /* ==================== Builder Focus/Selection ==================== */
+    --builder-focus-ring: var(--color-primary-500);
+    --builder-selection-bg: var(--color-primary-100);
+    --builder-selection-border: var(--color-primary-500);
+
+    /* ==================== Builder Tree/Layer View ==================== */
+    --builder-tree-item-hover: var(--builder-sidebar-hover-bg);
+    --builder-tree-item-selected: var(--color-primary-100);
+    --builder-tree-indent: var(--spacing-lg);
+  }
+
+  /* ==================== Builder Dark Mode ==================== */
+  /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] */
+  [data-builder-theme="dark"] {
+    /* Header */
+    --builder-header-bg: var(--color-gray-900);
+    --builder-header-text: var(--color-neutral-50);
+    --builder-header-border: var(--color-gray-700);
+
+    /* Sidebar */
+    --builder-sidebar-bg: var(--color-gray-900);
+    --builder-sidebar-border: var(--color-gray-700);
+    --builder-sidebar-hover-bg: var(--color-gray-800);
+    --builder-sidebar-active-bg: var(--color-gray-700);
+    --builder-sidebar-active-text: var(--color-neutral-100);
+    --builder-sidebar-nav-bg: var(--color-gray-900);
+
+    /* Inspector */
+    --builder-inspector-bg: var(--color-gray-900);
+    --builder-inspector-border: var(--color-gray-700);
+    --builder-inspector-header-bg: var(--color-gray-800);
+    --builder-inspector-control-bg: var(--color-gray-800);
+
+    /* Canvas */
+    --builder-canvas-bg: var(--color-gray-800);
+    --builder-canvas-border: var(--color-gray-700);
+    --builder-workspace-bg: var(--color-gray-950);
+
+    /* Error States (maintain visibility in dark mode) */
+    --builder-error-bg: rgba(254, 226, 226, 0.1);
+    --builder-error-border: rgba(254, 202, 202, 0.3);
+    --builder-error-text: #fca5a5;
+
+    /* Modal */
+    --builder-modal-bg: var(--color-gray-800);
+    --builder-modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+
+    /* Buttons */
+    --builder-button-bg: var(--color-gray-700);
+    --builder-button-text: var(--color-neutral-100);
+    --builder-button-border: var(--color-gray-600);
+    --builder-button-hover-bg: var(--color-gray-600);
+    --builder-button-pressed-bg: var(--color-gray-500);
+
+    /* Focus/Selection */
+    --builder-focus-ring: var(--color-primary-400);
+    --builder-selection-bg: rgba(59, 130, 246, 0.2);
+    --builder-selection-border: var(--color-primary-400);
+
+    /* Tree View */
+    --builder-tree-item-hover: var(--color-gray-800);
+    --builder-tree-item-selected: rgba(59, 130, 246, 0.2);
+  }
+
+  /* ==================== Accessibility: High Contrast Mode ==================== */
+  @media (forced-colors: active) {
+    :root {
+      --builder-header-bg: Canvas;
+      --builder-header-text: CanvasText;
+      --builder-sidebar-bg: Canvas;
+      --builder-inspector-bg: Canvas;
+      --builder-canvas-bg: Canvas;
+      --builder-border: CanvasText;
+      --builder-error-bg: Mark;
+      --builder-error-text: MarkText;
+      --builder-button-bg: ButtonFace;
+      --builder-button-text: ButtonText;
+      --builder-button-border: ButtonBorder;
+      --builder-focus-ring: Highlight;
+    }
+  }
+}
