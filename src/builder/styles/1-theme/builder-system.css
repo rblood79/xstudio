@@ -37,6 +37,18 @@
     --builder-inspector-header-bg: var(--color-gray-50);
     --builder-inspector-control-bg: var(--color-gray-100);
     --builder-inspector-control-border: transparent;
+    --builder-inspector-surface: var(--color-white);
+    --builder-inspector-text-primary: var(--color-gray-900);
+    --builder-inspector-text-secondary: var(--color-gray-600);
+    --builder-inspector-hover-bg: var(--color-gray-100);
+    --builder-inspector-focus-ring: var(--color-primary-500);
+    --builder-inspector-tab-active: var(--color-primary-600);
+    --builder-inspector-divider: var(--color-gray-200);
+
+    /* Inspector Warning States */
+    --builder-inspector-warning-bg: var(--color-warning-background, #fef3c7);
+    --builder-inspector-warning-border: var(--color-warning-border, #fcd34d);
+    --builder-inspector-warning-text: var(--color-warning-foreground, #92400e);
 
     /* ==================== Builder Canvas/Workspace ==================== */
     --builder-canvas-bg: #ffffff;
@@ -109,6 +121,16 @@
     --builder-inspector-border: var(--color-gray-700);
     --builder-inspector-header-bg: var(--color-gray-800);
     --builder-inspector-control-bg: var(--color-gray-800);
+    --builder-inspector-surface: var(--color-gray-900);
+    --builder-inspector-text-primary: var(--color-neutral-100);
+    --builder-inspector-text-secondary: var(--color-gray-400);
+    --builder-inspector-hover-bg: var(--color-gray-800);
+    --builder-inspector-focus-ring: var(--color-primary-400);
+    --builder-inspector-tab-active: var(--color-primary-400);
+    --builder-inspector-divider: var(--color-gray-700);
+    --builder-inspector-warning-bg: rgba(254, 243, 199, 0.1);
+    --builder-inspector-warning-border: rgba(252, 211, 77, 0.3);
+    --builder-inspector-warning-text: #fde68a;
 
     /* Canvas */
     --builder-canvas-bg: var(--color-gray-800);

@@ -1,14 +1,14 @@
-# CSS Refactoring Summary - Phase 0-4 Complete
+# CSS Refactoring Summary - Phase 0-4.5 Complete
 
 **Date:** 2025-11-08
 **Duration:** 1 day
-**Status:** ✅ **Successfully Completed & Validated**
+**Status:** ✅ **Successfully Completed & Theme Isolation Achieved**
 
 ---
 
 ## 🎯 Executive Summary
 
-XStudio CSS 리팩토링 Phase 0-4 완료 및 검증. Builder UI와 Preview 컴포넌트 스타일을 완전히 분리하고, ITCSS 아키텍처 기반으로 재구성. 모든 하드코딩 색상 제거, 다크모드 준비 완료. @layer 충돌 0건, CSS 구문 오류 0건 검증 완료.
+XStudio CSS 리팩토링 Phase 0-4.5 완료. Builder UI와 Preview 컴포넌트 스타일 **완전 분리** 달성. ITCSS 아키텍처 기반 재구성, 모든 하드코딩 색상 제거, Builder 다크모드 독립 완료. @layer 충돌 0건, CSS 구문 오류 0건 검증. **Inspector 독립화로 Phase 1 핵심 목표 100% 달성**.
 
 ---
 
@@ -257,6 +257,69 @@ src/builder/styles/
 
 ---
 
+### **Phase 4.5: Inspector 색상 독립화**
+
+**Duration:** 45 minutes
+**Status:** ✅ Complete
+
+**Problem:**
+- Inspector가 `--color-*` 팔레트 변수를 직접 사용
+- Preview 테마 변경 시 Inspector UI도 함께 변경됨
+- **Phase 1의 핵심 목표인 "Builder/Preview 독립" 미완성** ⚠️
+
+**Deliverables:**
+
+1. ✅ **Palette Variable Identification**
+   - Inspector에서 19개 `--color-*` 변수 사용 발견:
+     - `--color-border`, `--color-surface`, `--color-background`
+     - `--color-text-primary`, `--color-text-secondary`
+     - `--color-white`, `--color-black`, `--color-gray-*`
+     - `--color-primary`, `--color-hover`, `--color-focus-ring`
+     - `--color-warning-*` (3개)
+
+2. ✅ **Inspector Token Creation**
+   - `builder-system.css`에 11개 Inspector 전용 토큰 추가:
+     ```css
+     --builder-inspector-surface
+     --builder-inspector-text-primary
+     --builder-inspector-text-secondary
+     --builder-inspector-hover-bg
+     --builder-inspector-focus-ring
+     --builder-inspector-tab-active
+     --builder-inspector-divider
+     --builder-inspector-warning-bg
+     --builder-inspector-warning-border
+     --builder-inspector-warning-text
+     ```
+
+3. ✅ **Dark Mode Support**
+   - Dark mode에 11개 Inspector 토큰 추가
+   - Builder 다크모드 독립적으로 동작
+
+4. ✅ **Palette Variable Replacement**
+   - `inspector/index.css`에서 19개 팔레트 변수 → Builder 토큰 교체
+   - **남은 팔레트 변수: 0개** ✅
+
+**Phase 4.5 Changes:**
+
+| File | Changes | Lines |
+|------|---------|-------|
+| [builder-system.css](../src/builder/styles/1-theme/builder-system.css) | Added 11 Inspector tokens (Light + Dark) | +22 |
+| [inspector/index.css](../src/builder/inspector/index.css) | Replaced 19 palette variables with Builder tokens | ~30 |
+
+**Impact:**
+- ✅ **Inspector 완전 독립화** - Preview 테마 변경 시 Inspector 영향 받지 않음
+- ✅ **Phase 1 목표 완료** - Builder UI (Header + Sidebar + Inspector) 모두 독립
+- ✅ **다크모드 독립** - Builder 다크모드 `[data-builder-theme="dark"]` 완전 지원
+
+**Verification:**
+```bash
+grep -c "var(--color-" src/builder/inspector/index.css
+# Output: 0 (모든 팔레트 변수 제거 완료)
+```
+
+---
+
 ## 📈 Achievements
 
 ### **1. Theme Isolation** ✅
@@ -397,6 +460,7 @@ shared-tokens.css  (151 lines) - Common
 2. ⚠️ **@layer ordering** - Required careful planning
 3. ⚠️ **Gradient colors** - Publish button gradient needed special handling
 4. ⚠️ **Hidden hardcoded colors** - Phase 2에서 놓친 rgba() 값 4개 Phase 4에서 발견 및 수정
+5. ⚠️ **Inspector palette variables** - Phase 1에서 놓친 19개 팔레트 변수 Phase 4.5에서 수정
 
 ### **Improvements**
 1. 💡 Use `@layer` from day 1 in new projects
@@ -448,6 +512,10 @@ shared-tokens.css  (151 lines) - Common
 
 ---
 
-**Phase 0-4 Complete!** ✨
+**Phase 0-4.5 Complete!** ✨
 
-All core refactoring and validation tasks completed successfully. Ready for Phase 5 (Visual Testing) and future optimization phases.
+All core refactoring, validation, and **theme isolation** tasks completed successfully.
+
+**🎯 Key Achievement:** Builder UI (Header + Sidebar + Inspector) 완전 독립 - Preview 테마 변경 시 Builder UI 영향 받지 않음
+
+Ready for Phase 5 (Visual Testing) and future optimization phases.

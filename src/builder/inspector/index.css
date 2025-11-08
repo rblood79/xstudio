@@ -2,24 +2,22 @@
 @import "./data/data.css";
 @import "./events/events.css";
 
-@layer theme {
+@layer builder-system {
   :root {
     /* Inspector 전용 크기 토큰 */
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
   }
-}
 
-@layer utilities {
   .inspector {
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid var(--builder-inspector-border);
 
     .inspector-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       height: 100%;
-      background: var(--color-surface);
+      background: var(--builder-inspector-surface);
 
       &.empty {
         align-items: center;
@@ -44,7 +42,7 @@
     }
 
     .empty-message {
-      color: var(--color-text-secondary);
+      color: var(--builder-inspector-text-secondary);
       font-size: var(--font-size-sm);
     }
 
@@ -53,20 +51,20 @@
       align-items: center;
       justify-content: flex-start;
       padding: var(--spacing-4);
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-background);
+      border-bottom: 1px solid var(--builder-inspector-divider);
+      background: var(--builder-inspector-header-bg);
     }
 
     .inspector-title {
       font-size: var(--font-size-lg);
       font-weight: var(--font-weight-semibold);
-      color: var(--color-text-primary);
+      color: var(--builder-inspector-text-primary);
       margin: 0;
     }
 
     .inspector-id {
       font-size: var(--font-size-sm);
-      color: var(--color-text-secondary);
+      color: var(--builder-inspector-text-secondary);
       font-family: var(--font-mono);
       white-space: nowrap;
       overflow: hidden;
@@ -83,8 +81,8 @@
 
     .inspector-tab-list {
       display: flex;
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-background);
+      border-bottom: 1px solid var(--builder-inspector-divider);
+      background: var(--builder-inspector-header-bg);
     }
 
     .inspector-tab {
@@ -93,24 +91,24 @@
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
-      color: var(--color-text-secondary);
+      color: var(--builder-inspector-text-secondary);
       font-size: var(--font-size-sm);
       cursor: pointer;
       transition: all 0.2s;
 
       &:hover {
-        color: var(--color-text-primary);
-        background: var(--color-hover);
+        color: var(--builder-inspector-text-primary);
+        background: var(--builder-inspector-hover-bg);
       }
 
       &[data-selected] {
-        border-bottom-color: var(--color-primary);
-        color: var(--color-primary);
+        border-bottom-color: var(--builder-inspector-tab-active);
+        color: var(--builder-inspector-tab-active);
         font-weight: var(--font-weight-medium);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--color-focus-ring);
+        outline: 2px solid var(--builder-inspector-focus-ring);
         outline-offset: -2px;
       }
     }
@@ -122,7 +120,7 @@
       outline: none;
 
       &[data-focus-visible] {
-        outline: 2px solid var(--color-focus-ring);
+        outline: 2px solid var(--builder-inspector-focus-ring);
         outline-offset: -2px;
       }
     }
@@ -152,7 +150,7 @@
           width: calc(var(--indicator-width) - var(--spacing));
           height: calc(var(--indicator-height) - var(--spacing));
           border-radius: var(--radius-sm);
-          background: var(--color-white);
+          background: var(--builder-inspector-bg);
         }
 
         .react-aria-ToggleButton {
@@ -162,18 +160,18 @@
           &[data-pressed] {
             background: transparent;
             border-color: transparent;
-            color: var(--color-gray-800);
+            color: var(--builder-inspector-text-primary);
           }
 
           &[data-selected] {
             background: transparent;
             border-color: transparent;
-            color: var(--color-white);
+            color: var(--builder-inspector-bg);
 
             &[data-pressed] {
               background: transparent;
               border-color: transparent;
-              color: var(--color-white);
+              color: var(--builder-inspector-bg);
             }
           }
         }
@@ -182,8 +180,8 @@
       .section-header {
         font-size: var(--text-xs);
         font-weight: var(--font-weight-bold);
-        background-color: var(--color-gray-50);
-        border-bottom: 1px solid var(--color-gray-100);
+        background-color: var(--builder-inspector-header-bg);
+        border-bottom: 1px solid var(--builder-inspector-control-bg);
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -403,7 +401,7 @@
         .fieldset-legend {
           grid-area: label;
           font-size: var(--text-2xs);
-          color: var(--color-gray-400);
+          color: var(--builder-inspector-text-secondary);
         }
 
         .fieldset-actions {
@@ -411,7 +409,7 @@
           display: flex;
 
           .react-aria-Button {
-            background-color: var(--color-gray-100);
+            background-color: var(--builder-inspector-control-bg);
             border-color: transparent;
             padding: var(--spacing);
             height: var(--inspector-control-size);
@@ -452,7 +450,7 @@
                 .alignment-dot {
                   width: var(--spacing);
                   height: var(--spacing);
-                  background-color: var(--color-gray-300);
+                  background-color: var(--builder-inspector-divider);
                 }
               }
             }
@@ -471,7 +469,7 @@
       }
 
       .react-aria-Group {
-        background-color: var(--color-gray-100);
+        background-color: var(--builder-inspector-control-bg);
         border-radius: var(--radius-md);
         width: 100%;
         min-width: 0;
@@ -541,7 +539,7 @@
 
           .react-aria-SelectValue {
             font-size: var(--text-xs);
-            color: var(--color-black);
+            color: var(--builder-inspector-text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -586,7 +584,7 @@
         border-right-width: 0;
         border-radius: var(--radius-md) 0 0 var(--radius-md);
         font-size: var(--text-xs);
-        color: var(--color-gray-700);
+        color: var(--builder-inspector-text-secondary);
       }
 
       input.control-input {
@@ -611,9 +609,10 @@
 
       .react-aria-ToggleButtonGroup {
         width: 100%;
-        background-color: var(--color-gray-100);
+        background-color: var(--builder-inspector-control-bg);
         border-radius: var(--radius-md);
         box-shadow: var(--inset-shadow-sm);
+        outline: none;
 
         .react-aria-ToggleButton {
           padding: var(--spacing);
@@ -625,16 +624,16 @@
           border-color: transparent;
 
           &[data-selected] {
-            background: var(--color-white);
+            background: var(--builder-inspector-bg);
             border-radius: var(--radius-md);
-            border-color: var(--color-gray-300);
+            border-color: var(--builder-inspector-divider);
             border-width: 1px;
           }
         }
       }
 
       .react-aria-CheckboxGroup {
-        background-color: var(--color-gray-100);
+        background-color: var(--builder-inspector-control-bg);
         border-radius: var(--radius-md);
         gap: 0;
 
@@ -650,37 +649,37 @@
 
       .loading-message,
       .empty-message {
-        color: var(--color-text-secondary);
+        color: var(--builder-inspector-text-secondary);
         font-size: var(--font-size-sm);
       }
 
       .section-placeholder {
         padding: var(--spacing-4);
-        background: var(--color-warning-background);
-        border: 1px solid var(--color-warning-border);
+        background: var(--builder-inspector-warning-bg);
+        border: 1px solid var(--builder-inspector-warning-border);
         border-radius: var(--radius-md);
-        color: var(--color-warning-foreground);
+        color: var(--builder-inspector-warning-text);
         font-size: var(--font-size-sm);
         margin-bottom: var(--spacing-4);
       }
 
       .section-info {
         padding: var(--spacing-4);
-        background: var(--color-background);
-        border: 1px solid var(--color-border);
+        background: var(--builder-inspector-surface);
+        border: 1px solid var(--builder-inspector-divider);
         border-radius: var(--radius-md);
 
         h4 {
           margin: 0 0 var(--spacing-2) 0;
           font-size: var(--font-size-sm);
           font-weight: var(--font-weight-semibold);
-          color: var(--color-text-primary);
+          color: var(--builder-inspector-text-primary);
         }
 
         pre {
           margin: 0;
           padding: var(--spacing-2);
-          background: var(--color-surface);
+          background: var(--builder-inspector-control-bg);
           border-radius: var(--radius-sm);
           font-size: var(--font-size-xs);
           font-family: var(--font-mono);
@@ -691,7 +690,7 @@
           margin: 0;
           padding-left: var(--spacing-4);
           font-size: var(--font-size-sm);
-          color: var(--color-text-secondary);
+          color: var(--builder-inspector-text-secondary);
         }
       }
     }
