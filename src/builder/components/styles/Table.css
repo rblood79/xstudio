@@ -4,9 +4,9 @@
 
   .react-aria-Table {
     padding: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--border-color);
     border-radius: var(--spacing-sm);
-    background: var(--color-background);
+    background: var(--background);
     outline: none;
     border-spacing: 0;
     min-height: var(--spacing-xl);
@@ -41,8 +41,8 @@
 
     .react-aria-TableHeader {
       font-size: var(--text-sm);
-      color: var(--color-primary-600);
-      background: var(--color-gray-200);
+      color: var(--action-primary-bg-pressed);
+      background: var(--border-color);
 
       /*  &:after {
             content: '';
@@ -51,12 +51,12 @@
         }*/
 
       & tr:last-child .react-aria-Column {
-        border-bottom: 1px solid var(--color-gray-300);
+        border-bottom: 1px solid var(--border-color-hover);
         cursor: default;
       }
 
       .react-aria-Column {
-        border-right: 1px solid var(--color-gray-300);
+        border-right: 1px solid var(--border-color-hover);
 
         &:last-child {
           border-right: none;
@@ -83,7 +83,7 @@
         top: 10%;
         bottom: 10%;
         width: var(--spacing-2xs);
-        background-color: var(--color-sky-500);
+        background-color: var(--status-info);
         height: 80%;
         flex: 0 0 auto;
         touch-action: none;
@@ -126,7 +126,7 @@
       }
 
       &[data-pressed] {
-        background: var(--color-gray-100);
+        background: var(--surface-secondary);
       }
 
       &[data-selected] {
@@ -295,8 +295,8 @@
   .react-aria-Card {
     display: block;
     border-radius: var(--radius-2xl);
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
     padding: var(--spacing-md);
     cursor: pointer;
     position: relative;
@@ -317,12 +317,12 @@
 
     .card-description {
       font-size: var(--text-sm);
-      color: var(--color-gray-600);
+      color: var(--text-color-secondary);
     }
 
     .card-content {
       font-size: var(--text-sm);
-      color: var(--color-gray-600);
+      color: var(--text-color-secondary);
     }
   }
 
@@ -341,7 +341,7 @@
   }
 
   .react-aria-PageSizeLabel {
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     white-space: nowrap;
   }
 
@@ -354,7 +354,7 @@
   }
 
   .react-aria-PageSizeText {
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     white-space: nowrap;
   }
 
@@ -383,7 +383,7 @@
   }
 
   .react-aria-PageButton:hover:not(:disabled) {
-    background-color: var(--color-primary-500);
+    background-color: var(--action-primary-bg);
   }
 
   .react-aria-PageButton:disabled {
@@ -392,12 +392,12 @@
   }
 
   .react-aria-PageButton.active {
-    background-color: var(--color-primary-900);
-    color: var(--color-white);
+    background-color: var(--action-primary-bg-pressed);
+    color: var(--surface-primary);
   }
 
   .react-aria-PageButton.active:hover {
-    background-color: var(--color-primary-950);
+    background-color: var(--action-primary-bg-pressed);
   }
 
   .react-aria-GoToPage {
@@ -417,12 +417,12 @@
 
   .react-aria-GoToPageInput:focus {
     outline: none;
-    border-color: var(--color-primary-700);
+    border-color: var(--action-primary-bg-pressed);
     box-shadow: var(--drop-shadow-md);
   }
 
   .react-aria-GoToPageButton:hover:not(:disabled) {
-    background-color: var(--color-primary-900);
+    background-color: var(--action-primary-bg-pressed);
   }
 
   .react-aria-GoToPageButton:disabled {
@@ -431,14 +431,14 @@
   }
 
   .react-aria-PageInfo {
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     white-space: nowrap;
     font-size: var(--text-xs);
   }
 
   .react-aria-LoadingText {
     font-size: var(--text-sm);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     font-style: italic;
   }
 }

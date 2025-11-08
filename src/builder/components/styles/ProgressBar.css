@@ -26,7 +26,7 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
       will-change: transform;
-      background: var(--color-gray-100);
+      background: var(--control-track-bg);
     }
 
     .fill {

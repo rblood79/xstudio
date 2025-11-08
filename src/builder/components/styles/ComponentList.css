@@ -7,15 +7,15 @@
   }
 
   .category-icon-small {
-    color: var(--color-primary-600);
+    color: var(--action-primary-bg-pressed);
     flex-shrink: 0;
   }
 
   .category-count {
     font-size: var(--text-xs);
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
     padding: var(--spacing-2xs) var(--spacing-sm);
-    background: var(--color-gray-200);
+    background: var(--border-color);
     border-radius: var(--radius-sm);
     box-shadow: var(--inset-shadow-sm);
   }
@@ -80,12 +80,12 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--color-gray-700);
+    color: var(--text-color);
   }
 
   .no-results-hint {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
   }
 }

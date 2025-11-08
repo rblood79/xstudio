@@ -126,15 +126,15 @@
     font-size: var(--text-xs);
     padding: 2px 6px;
     border-radius: var(--radius-sm);
-    background: var(--color-gray-100);
-    color: var(--color-gray-700);
+    background: var(--control-track-bg);
+    color: var(--text-color-secondary);
     margin-left: auto;
   }
 
   .menu-item-description {
     grid-area: desc;
     font-size: var(--text-xs);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
   }
 
   /* Submenu chevron 스타일 개선 */

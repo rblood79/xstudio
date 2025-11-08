@@ -17,27 +17,27 @@
 
   .pagination-info {
     font-size: var(--text-sm);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     text-align: center;
   }
 
   .pagination-ellipsis {
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
   }
 
   /* Page button states */
   .react-aria-Pagination .react-aria-Button[data-current="true"] {
-    background-color: var(--color-primary-500);
-    color: var(--color-white);
+    background-color: var(--action-primary-bg);
+    color: var(--surface-primary);
   }
 
   .react-aria-Pagination .react-aria-Button:not([data-current="true"]) {
-    background-color: var(--color-gray-200);
-    color: var(--color-gray-700);
+    background-color: var(--border-color);
+    color: var(--text-color);
   }
 
   .react-aria-Pagination .react-aria-Button:not([data-current="true"]):hover:not(:disabled) {
-    background-color: var(--color-gray-300);
+    background-color: var(--border-color-hover);
   }
 
   .react-aria-Pagination .react-aria-Button:disabled {

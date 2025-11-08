@@ -5,7 +5,7 @@
     /* Base styles */
     display: block;
     box-sizing: border-box;
-    background: var(--color-white);
+    background: var(--surface-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -38,7 +38,7 @@
 
       &[data-hovered] {
         box-shadow: none;
-        border-color: var(--color-primary-400);
+        border-color: var(--action-primary-bg);
       }
     }
 
@@ -108,8 +108,8 @@
 
     /* State variants */
     &.selected {
-      border-color: var(--color-primary-500);
-      background: var(--color-primary-50);
+      border-color: var(--action-primary-bg);
+      background: var(--action-primary-bg-hover);
     }
 
     &.quiet {
@@ -118,7 +118,7 @@
 
       &[data-hovered] {
         box-shadow: none;
-        background: var(--color-gray-50);
+        background: var(--surface-secondary);
       }
     }
 

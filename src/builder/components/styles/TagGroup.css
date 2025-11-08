@@ -16,7 +16,7 @@
   
   .react-aria-Tag {
     color: var(--text-color);
-    background: var(--color-white);
+    background: var(--surface-primary);
     border: 1px solid var(--border-color);
     forced-color-adjust: none;
     border-radius: var(--radius-sm);

@@ -4,7 +4,7 @@
     display: flex;
     flex-direction: column;
     padding: var(--spacing-4);
-    background: var(--color-gray-50);
+    background: var(--surface-tertiary);
     border-radius: var(--radius-md);
     overflow-x: auto;
   }
@@ -30,50 +30,50 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    background: var(--color-white);
-    border: 2px solid var(--color-border);
+    background: var(--surface-primary);
+    border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .flow-node:hover {
-    border-color: var(--color-primary-300);
+    border-color: var(--action-primary-bg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
   }
 
   .flow-node.selected {
-    border-color: var(--color-primary-500);
-    box-shadow: 0 0 0 3px var(--color-primary-100);
+    border-color: var(--action-primary-bg);
+    box-shadow: 0 0 0 3px var(--action-primary-bg-hover);
   }
 
   /* Trigger Node */
   .flow-trigger-node {
-    border-color: var(--color-blue-400);
+    border-color: var(--status-info);
   }
 
   .flow-trigger-node:hover {
-    border-color: var(--color-blue-500);
+    border-color: var(--status-info);
   }
 
   .flow-trigger-node.selected {
-    border-color: var(--color-blue-600);
-    box-shadow: 0 0 0 3px var(--color-blue-100);
+    border-color: var(--status-info);
+    box-shadow: 0 0 0 3px var(--action-primary-bg-hover);
   }
 
   /* Action Node */
   .flow-action-node {
-    border-color: var(--color-purple-400);
+    border-color: var(--action-secondary-bg);
   }
 
   .flow-action-node:hover {
-    border-color: var(--color-purple-500);
+    border-color: var(--action-secondary-bg);
   }
 
   .flow-action-node.selected {
-    border-color: var(--color-purple-600);
-    box-shadow: 0 0 0 3px var(--color-purple-100);
+    border-color: var(--action-secondary-bg-pressed);
+    box-shadow: 0 0 0 3px var(--action-secondary-bg-hover);
   }
 
   /* Node Header */
@@ -82,15 +82,15 @@
     align-items: center;
     gap: var(--spacing-2);
     padding: var(--spacing-3);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .trigger-header {
-    background: var(--color-blue-50);
+    background: var(--action-primary-bg-hover);
   }
 
   .action-header {
-    background: var(--color-purple-50);
+    background: var(--action-secondary-bg-hover);
   }
 
   .flow-node-icon {
@@ -102,12 +102,12 @@
     flex: 1;
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--color-gray-900);
+    color: var(--text-color);
   }
 
   .flow-node-index {
     font-size: var(--text-xs);
-    color: var(--color-gray-500);
+    color: var(--control-secondary-bg);
     font-weight: 500;
   }
 
@@ -119,21 +119,21 @@
   .trigger-event-type {
     font-size: var(--text-base);
     font-weight: 600;
-    color: var(--color-gray-900);
+    color: var(--text-color);
     margin-bottom: var(--spacing-1);
   }
 
   .trigger-description {
     font-size: var(--text-xs);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     line-height: 1.4;
   }
 
   .action-config-summary {
     font-size: var(--text-sm);
-    color: var(--color-gray-700);
+    color: var(--text-color);
     font-family: monospace;
-    background: var(--color-gray-100);
+    background: var(--surface-secondary);
     padding: var(--spacing-2);
     border-radius: var(--radius-sm);
     overflow-wrap: break-word;
@@ -150,32 +150,32 @@
   .connector-line {
     width: 2px;
     height: 24px;
-    background: var(--color-gray-400);
+    background: var(--text-color-placeholder);
   }
 
   .connector-arrow {
     font-size: var(--text-sm);
-    color: var(--color-gray-400);
+    color: var(--text-color-placeholder);
     line-height: 1;
     margin-top: -4px;
   }
 
   .flow-connector-conditional .connector-line {
-    background: var(--color-orange-400);
-    border-left: 2px dashed var(--color-orange-400);
+    background: var(--status-warning);
+    border-left: 2px dashed var(--status-warning);
     background: transparent;
   }
 
   .flow-connector-conditional .connector-arrow {
-    color: var(--color-orange-400);
+    color: var(--status-warning);
   }
 
   .flow-connector-error .connector-line {
-    background: var(--color-red-400);
+    background: var(--status-error);
   }
 
   .flow-connector-error .connector-arrow {
-    color: var(--color-red-400);
+    color: var(--status-error);
   }
 
   /* Empty State */
@@ -187,8 +187,8 @@
     gap: var(--spacing-2);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--color-white);
-    border: 2px dashed var(--color-border);
+    background: var(--surface-primary);
+    border: 2px dashed var(--border-color);
     border-radius: var(--radius-md);
     width: 100%;
     max-width: 400px;
@@ -201,7 +201,7 @@
 
   .flow-empty-state .empty-message {
     font-size: var(--text-sm);
-    color: var(--color-gray-600);
+    color: var(--text-color-secondary);
     margin: 0;
   }
 

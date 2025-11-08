@@ -48,13 +48,13 @@
       line-height: var(--text-xs--line-height);
       vertical-align: middle;
       text-align: center;
-      background: var(--color-gray-500);
-      color: var(--color-gray-50);
+      background: var(--control-secondary-bg);
+      color: var(--control-secondary-text);
       border: none;
       padding: 0;
-  
+
       &[data-pressed] {
-        background: var(--color-gray-600);
+        background: var(--control-secondary-bg-hover);
       }
     }
   
