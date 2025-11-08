@@ -3,7 +3,8 @@
   position: absolute;
   pointer-events: none;
   z-index: 1;
-  border: 1px solid var(--builder-indicator-bg);
+  outline: 1px solid var(--builder-indicator-bg);
+  outline-offset: 0;
 }
 
 .overlay-info {

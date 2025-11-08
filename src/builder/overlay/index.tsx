@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useStore } from "../stores";
 import { ChevronUp } from 'lucide-react';
-import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
+import { MessageService } from '../../utils/messaging';
 
 import "./index.css";
+
 interface Rect {
     top: number;
     left: number;
@@ -13,94 +14,77 @@ interface Rect {
 
 export default function SelectionOverlay() {
     const selectedElementId = useStore((state) => state.selectedElementId);
-    // elements 배열을 stores에서 가져옵니다
     const elements = useStore((state) => state.elements);
     const overlayOpacity = useStore((state) => state.overlayOpacity);
     const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>("");
-    const [dbTag, setDbTag] = useState<string>("");  // 데이터베이스의 tag를 저장할 상태
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
+    const rafIdRef = useRef<number | null>(null);
 
-    // selectedElementId가 변경될 때마다 데이터베이스에서 tag 값을 가져옵니다
-    useEffect(() => {
-        if (selectedElementId && elements && elements.length > 0) {
-            const selectedElement = elements.find(el => el.id === selectedElementId);
-            if (selectedElement && selectedElement.tag) {
-                setDbTag(selectedElement.tag);
-            } else {
-                setDbTag("");
-            }
-        } else {
-            setDbTag("");
-        }
-    }, [selectedElementId, elements]);
+    // Tag 표시 로직 (useMemo로 최적화)
+    const displayTag = useMemo(() => {
+        const element = elements.find(el => el.id === selectedElementId);
+        return element?.tag || selectedTag || "";
+    }, [elements, selectedElementId, selectedTag]);
 
     const updatePosition = useCallback(() => {
-        const iframe = iframeRef.current;
-        if (!iframe || !iframe.contentWindow || !selectedElementId) return;
+        // 이미 대기 중인 업데이트가 있으면 취소
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+        }
 
-        const element = iframe.contentDocument?.querySelector(
-            `[data-element-id="${selectedElementId}"]`
-        ) as HTMLElement;
+        rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
 
-        if (element) {
-            //console.log(selectedTag, '//', selectedElementId)
-            //const iframeRect = iframe.getBoundingClientRect();
+            const iframe = iframeRef.current;
+            if (!iframe?.contentDocument || !selectedElementId) {
+                setOverlayRect(null);
+                return;
+            }
+
+            const element = iframe.contentDocument.querySelector(
+                `[data-element-id="${selectedElementId}"]`
+            ) as HTMLElement;
+
+            if (!element) {
+                setOverlayRect(null);
+                setSelectedTag("");
+                return;
+            }
+
+            // iframe의 위치 (부모 문서 기준)
+            const iframeRect = iframe.getBoundingClientRect();
+            // 요소의 위치 (iframe 내부 기준)
             const elementRect = element.getBoundingClientRect();
 
+            // 정확한 위치 계산: iframe offset + element position
+            // 소수점 유지 (subpixel rendering 지원)
             const newRect = {
-                top: Math.floor(elementRect.top), // iframe 뷰포트 기준을 부모 문서 기준으로 변환
-                left: Math.floor(elementRect.left),
-                width: Math.floor(elementRect.width),
-                height: Math.floor(elementRect.height),
+                top: iframeRect.top + elementRect.top,
+                left: iframeRect.left + elementRect.left,
+                width: elementRect.width,
+                height: elementRect.height,
             };
 
-            /*console.log("iframeRect:", iframeRect);
-            console.log("elementRect:", elementRect);
-            console.log("scrollY:", iframe.contentWindow.scrollY, "scrollX:", iframe.contentWindow.scrollX);
-            console.log("newRect calculated:", newRect);*/
-
-            setOverlayRect({ ...newRect });
+            setOverlayRect(newRect);
             setSelectedTag(element.tagName.toLowerCase());
-        } else {
-            setOverlayRect(null);
-            setSelectedTag("");
-        }
+        });
     }, [selectedElementId]);
 
-    // elements가 변경될 때도 overlay 업데이트
+    // 선택된 요소의 크기 변경 감지 (ResizeObserver만 사용)
     useEffect(() => {
         if (!selectedElementId || !iframeRef.current?.contentDocument) return;
 
-        const mutationObserver = new MutationObserver(() => {
-            if (selectedElementId) {
-                updatePosition();
-            }
-        });
-
-        const resizeObserver = new ResizeObserver(() => {
-            if (selectedElementId) {
-                updatePosition();
-            }
-        });
-
-        mutationObserver.observe(iframeRef.current.contentDocument.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['data-element-id', 'style', 'class']
-        });
-
-        // 선택된 요소의 크기 변경 감지
         const selectedElement = iframeRef.current.contentDocument.querySelector(
             `[data-element-id="${selectedElementId}"]`
         );
-        if (selectedElement) {
-            resizeObserver.observe(selectedElement);
-        }
+
+        if (!selectedElement) return;
+
+        const resizeObserver = new ResizeObserver(updatePosition);
+        resizeObserver.observe(selectedElement);
 
         return () => {
-            mutationObserver.disconnect();
             resizeObserver.disconnect();
         };
     }, [selectedElementId, updatePosition]);
@@ -117,14 +101,39 @@ export default function SelectionOverlay() {
 
         const handleMessage = (event: MessageEvent) => {
             if (event.origin !== window.location.origin) return;
+
             if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
+                // Preview의 좌표를 신뢰 (재계산 불필요)
                 const { top, left, width, height } = event.data.payload.rect;
-                setOverlayRect({ top, left, width, height });
-                setSelectedTag(event.data.payload.tag || "Unknown");
-                //console.log("Initial rect from postMessage:", { top, left, width, height });
-                setTimeout(updatePosition, 0); // 초기화 후 즉시 DOM 계산
+
+                // iframe offset 정확히 반영
+                const iframeRect = iframe?.getBoundingClientRect();
+                if (iframeRect) {
+                    setOverlayRect({
+                        top: iframeRect.top + top,
+                        left: iframeRect.left + left,
+                        width,
+                        height,
+                    });
+                } else {
+                    setOverlayRect({ top, left, width, height });
+                }
+
+                setSelectedTag(event.data.payload.tag || "");
             } else if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.payload?.rect) {
-                setOverlayRect({ ...event.data.payload.rect });
+                // Props 업데이트 시에도 iframe offset 반영
+                const { top, left, width, height } = event.data.payload.rect;
+                const iframeRect = iframe?.getBoundingClientRect();
+                if (iframeRect) {
+                    setOverlayRect({
+                        top: iframeRect.top + top,
+                        left: iframeRect.left + left,
+                        width,
+                        height,
+                    });
+                } else {
+                    setOverlayRect({ top, left, width, height });
+                }
             } else if (event.data.type === "CLEAR_OVERLAY") {
                 setOverlayRect(null);
                 setSelectedTag("");
@@ -149,12 +158,14 @@ export default function SelectionOverlay() {
             }
             window.removeEventListener("resize", handleScrollResize);
             window.removeEventListener("scroll", handleScrollResize);
-        };
-    }, [selectedElementId, updatePosition]); // iframe 의존성 제거
 
-    /*useEffect(() => {
-        console.log("overlayRect updated:", overlayRect);
-    }, [overlayRect]);*/
+            // requestAnimationFrame cleanup
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+        };
+    }, [selectedElementId, updatePosition]);
 
     if (!overlayRect) return null;
 
@@ -170,7 +181,7 @@ export default function SelectionOverlay() {
                 }}>
                 <div className="overlay-info">
                     <div className="overlay-tag-parent"><ChevronUp size={16} /></div>
-                    <div className="overlay-tag">{dbTag || selectedTag}</div>
+                    <div className="overlay-tag">{displayTag}</div>
                 </div>
                 <div title="Drag to resize" className="resize-handle" />
 
