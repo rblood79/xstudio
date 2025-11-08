@@ -22,6 +22,11 @@
     --builder-header-button-bg: transparent;
     --builder-header-button-hover: rgba(255, 255, 255, 0.1);
     --builder-header-button-pressed: rgba(255, 255, 255, 0.15);
+    --builder-header-text-secondary: var(--color-neutral-400);
+    --builder-header-input-bg: var(--color-gray-800);
+    --builder-header-input-border: var(--color-gray-700);
+    --builder-header-input-focus-border: var(--color-primary-500);
+    --builder-header-badge-bg: var(--color-gray-500);
 
     /* ==================== Builder Sidebar ==================== */
     --builder-sidebar-bg: #fff;
@@ -30,6 +35,7 @@
     --builder-sidebar-active-bg: var(--color-gray-950);
     --builder-sidebar-active-text: var(--color-gray-200);
     --builder-sidebar-nav-bg: #fff;
+    --builder-sidebar-icon: var(--color-gray-500);
 
     /* ==================== Builder Inspector ==================== */
     --builder-inspector-bg: var(--color-white);
@@ -50,12 +56,53 @@
     --builder-inspector-warning-border: var(--color-warning-border, #fcd34d);
     --builder-inspector-warning-text: var(--color-warning-foreground, #92400e);
 
+    /* Inspector Success States */
+    --builder-inspector-success-bg: var(--color-success-50);
+    --builder-inspector-success-border: var(--color-success-200);
+    --builder-inspector-success-text: var(--color-success-700);
+
+    /* Inspector Error States */
+    --builder-inspector-error-bg: var(--color-error-50);
+    --builder-inspector-error-text: var(--color-error-700);
+
+    /* Inspector Danger States */
+    --builder-inspector-danger-bg: var(--color-error-600);
+    --builder-inspector-danger-text: var(--color-white);
+    --builder-inspector-danger-hover: var(--color-error-700);
+
+    /* Inspector Info/Pending States (for data editors) */
+    --builder-inspector-info-bg: var(--color-blue-50);
+    --builder-inspector-info-border: var(--color-blue-200);
+    --builder-inspector-info-text: var(--color-blue-700);
+
+    /* Inspector Button States */
+    --builder-inspector-button-secondary-bg: var(--color-gray-100);
+    --builder-inspector-button-secondary-text: var(--color-gray-600);
+    --builder-inspector-button-secondary-hover-bg: var(--color-gray-200);
+    --builder-inspector-button-secondary-hover-border: var(--color-gray-400);
+    --builder-inspector-button-disabled-bg: var(--color-gray-300);
+    --builder-inspector-button-disabled-text: var(--color-gray-500);
+
+    /* Inspector Primary Button Variants (darker tones) */
+    --builder-inspector-button-primary-bg: var(--color-primary-700);
+    --builder-inspector-button-primary-hover: var(--color-primary-900);
+
     /* ==================== Builder Canvas/Workspace ==================== */
     --builder-canvas-bg: #ffffff;
     --builder-canvas-border: var(--color-gray-200);
     --builder-workspace-bg: var(--color-neutral-100);
     --builder-indicator-bg: var(--color-sky-500);
     --builder-indicator-text: var(--color-white);
+    --builder-indicator-hover-bg: var(--color-sky-200);
+
+    /* Builder Status Indicators (for main header status badges) */
+    --builder-status-info: var(--color-blue-500);
+    --builder-status-info-hover: var(--color-blue-600);
+    --builder-status-info-pressed: var(--color-blue-700);
+    --builder-status-success: var(--color-green-500);
+    --builder-status-warning: var(--color-orange-500);
+    --builder-status-error: var(--color-red-500);
+    --builder-status-pending: var(--color-purple-500);
 
     /* ==================== Builder Error States ==================== */
     --builder-error-bg: #fee2e2;
@@ -107,6 +154,11 @@
     --builder-header-bg: var(--color-gray-900);
     --builder-header-text: var(--color-neutral-50);
     --builder-header-border: var(--color-gray-700);
+    --builder-header-text-secondary: var(--color-neutral-300);
+    --builder-header-input-bg: var(--color-gray-800);
+    --builder-header-input-border: var(--color-gray-600);
+    --builder-header-input-focus-border: var(--color-primary-400);
+    --builder-header-badge-bg: var(--color-gray-600);
 
     /* Sidebar */
     --builder-sidebar-bg: var(--color-gray-900);
@@ -115,6 +167,7 @@
     --builder-sidebar-active-bg: var(--color-gray-700);
     --builder-sidebar-active-text: var(--color-neutral-100);
     --builder-sidebar-nav-bg: var(--color-gray-900);
+    --builder-sidebar-icon: var(--color-gray-400);
 
     /* Inspector */
     --builder-inspector-bg: var(--color-gray-900);
@@ -131,6 +184,37 @@
     --builder-inspector-warning-bg: rgba(254, 243, 199, 0.1);
     --builder-inspector-warning-border: rgba(252, 211, 77, 0.3);
     --builder-inspector-warning-text: #fde68a;
+
+    /* Success States */
+    --builder-inspector-success-bg: rgba(16, 185, 129, 0.1);
+    --builder-inspector-success-border: rgba(16, 185, 129, 0.3);
+    --builder-inspector-success-text: var(--color-success-300);
+
+    /* Error States */
+    --builder-inspector-error-bg: rgba(239, 68, 68, 0.1);
+    --builder-inspector-error-text: var(--color-error-300);
+
+    /* Danger States */
+    --builder-inspector-danger-bg: var(--color-error-700);
+    --builder-inspector-danger-text: var(--color-white);
+    --builder-inspector-danger-hover: var(--color-error-800);
+
+    /* Info/Pending States */
+    --builder-inspector-info-bg: rgba(59, 130, 246, 0.1);
+    --builder-inspector-info-border: rgba(59, 130, 246, 0.3);
+    --builder-inspector-info-text: var(--color-blue-300);
+
+    /* Button States */
+    --builder-inspector-button-secondary-bg: var(--color-gray-700);
+    --builder-inspector-button-secondary-text: var(--color-gray-300);
+    --builder-inspector-button-secondary-hover-bg: var(--color-gray-600);
+    --builder-inspector-button-secondary-hover-border: var(--color-gray-500);
+    --builder-inspector-button-disabled-bg: var(--color-gray-800);
+    --builder-inspector-button-disabled-text: var(--color-gray-600);
+
+    /* Primary Button Variants */
+    --builder-inspector-button-primary-bg: var(--color-primary-600);
+    --builder-inspector-button-primary-hover: var(--color-primary-700);
 
     /* Canvas */
     --builder-canvas-bg: var(--color-gray-800);

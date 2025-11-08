@@ -18,8 +18,8 @@
 
       nav.header {
         grid-area: header;
-        background-color: var(--color-gray-950);
-        color: var(--color-neutral-100);
+        background-color: var(--builder-header-bg);
+        color: var(--builder-header-text);
         display: flex;
         flex-direction: row;
         justify-content: space-between;
@@ -31,7 +31,7 @@
         .header_contents {
           /*button {
                     font-size: var(--text-sm);
-                    @apply bg-[var(--color-gray-500)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
+                    @apply bg-[var(--builder-header-badge-bg)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
 
                 }*/
           .aria-ToggleButton {
@@ -57,7 +57,7 @@
 
             .aria-Radio {
               padding: var(--spacing-sm);
-              background-color: var(--color-white);
+              background-color: var(--builder-indicator-text);
 
               .react-aria-Label {
                 position: absolute;
@@ -67,11 +67,11 @@
               }
 
               &[data-selected] {
-                background-color: var(--color-gray-700);
-                color: var(--color-white);
+                background-color: var(--builder-header-input-border);
+                color: var(--builder-indicator-text);
 
                 svg {
-                  stroke: var(--color-white);
+                  stroke: var(--builder-indicator-text);
                   stroke-width: 2;
                 }
               }
@@ -86,7 +86,7 @@
             }
 
             /*font-size: var(--text-sm);
-                    @apply flex rounded-[var(--radius-md)] bg-[var(--color-gray-500)] gap-[var(--spacing)];*/
+                    @apply flex rounded-[var(--radius-md)] bg-[var(--builder-header-badge-bg)] gap-[var(--spacing)];*/
           }
 
           flex: 0;
@@ -107,12 +107,12 @@
 
               .project-name {
                 font-weight: 600;
-                color: var(--color-neutral-100);
+                color: var(--builder-header-text);
               }
 
               .project-id {
                 font-size: var(--text-xs);
-                color: var(--color-neutral-400);
+                color: var(--builder-header-text-secondary);
                 opacity: 0.8;
               }
             }
@@ -126,28 +126,28 @@
               label {
                 font-size: var(--text-sm);
                 font-weight: 500;
-                color: var(--color-neutral-100);
+                color: var(--builder-header-text);
               }
 
               select {
                 padding: var(--spacing-sm) var(--spacing);
                 font-size: var(--text-sm);
-                border: 1px solid var(--color-gray-700);
+                border: 1px solid var(--builder-header-input-border);
                 border-radius: var(--radius-md);
-                background: var(--color-gray-800);
-                color: var(--color-neutral-100);
+                background: var(--builder-header-input-bg);
+                color: var(--builder-header-text);
                 cursor: pointer;
                 transition: all 0.2s;
 
                 &:hover {
-                  border-color: var(--color-gray-600);
-                  background: var(--color-gray-700);
+                  border-color: var(--builder-header-input-focus-border);
+                  background: var(--builder-header-input-border);
                 }
 
                 &:focus {
-                  outline: 2px solid var(--color-primary-500);
+                  outline: 2px solid var(--builder-header-input-focus-border);
                   outline-offset: 2px;
-                  border-color: var(--color-primary-500);
+                  border-color: var(--builder-header-input-focus-border);
                 }
 
                 &:disabled {
@@ -192,7 +192,7 @@
               align-items: center;
               gap: var(--spacing);
               font-size: var(--text-sm);
-              color: var(--color-neutral-100);
+              color: var(--builder-header-text);
               cursor: pointer;
               padding: var(--spacing) var(--spacing-sm);
               border-radius: var(--radius-md);
@@ -207,12 +207,12 @@
                 width: 8px;
                 height: 8px;
                 border-radius: 50%;
-                background: var(--color-gray-500);
+                background: var(--builder-header-badge-bg);
                 transition: background-color 0.2s;
               }
 
               &[data-selected="true"] .indicator {
-                background: var(--color-green-500);
+                background: var(--builder-status-success);
               }
             }
 
@@ -221,14 +221,14 @@
               font-size: var(--text-sm);
               padding: var(--spacing) var(--spacing-lg);
               border-radius: var(--radius-md);
-              background-color: var(--color-blue-600);
-              color: var(--color-white);
+              background-color: var(--builder-status-info-hover);
+              color: var(--builder-indicator-text);
               border: none;
               cursor: pointer;
               transition: all 0.2s;
 
               &:hover:not(:disabled) {
-                background-color: var(--color-blue-700);
+                background-color: var(--builder-status-info-pressed);
               }
 
               &:disabled {
@@ -237,7 +237,7 @@
               }
 
               &[data-pending="true"]:not(:disabled) {
-                background: var(--color-orange-500);
+                background: var(--builder-status-warning);
                 animation: pulse 2s infinite;
               }
             }
@@ -259,7 +259,7 @@
 
             button {
               border-radius: var(--radius-md);
-              background-color: var(--color-white);
+              background-color: var(--builder-indicator-text);
               padding: var(--spacing-sm);
 
               &:disabled {
@@ -270,20 +270,20 @@
 
             .publish {
               background: linear-gradient(
-                    var(--color-white),
-                    var(--color-neutral-100)
+                    var(--builder-indicator-text),
+                    var(--builder-header-text)
                   )
                   padding-box,
                 linear-gradient(
                     82.77deg,
-                    var(--color-blue-600) 11.87%,
-                    var(--color-blue-500) 38.42%,
-                    var(--color-purple-500) 64.19%,
-                    var(--color-red-500) 89.96%
+                    var(--builder-status-info-hover) 11.87%,
+                    var(--builder-status-info) 38.42%,
+                    var(--builder-status-pending) 64.19%,
+                    var(--builder-status-error) 89.96%
                   )
                   border-box;
               border: 2px solid transparent;
-              color: var(--color-gray-900);
+              color: var(--builder-header-bg);
               line-height: var(--text-lg--line-height);
               font-size: 12px;
               padding: calc(var(--spacing) * 1.17) var(--spacing-lg);
@@ -306,7 +306,7 @@
           align-items: center;
           flex-grow: 1;
           position: relative;
-          background-color: var(--color-neutral-100);
+          background-color: var(--builder-header-text);
 
           .workspace {
             padding: 0;
@@ -357,7 +357,7 @@
 
               font-size: var(--text-xs);
               font-weight: var(--font-weight-light);
-              color: var(--color-gray-900);
+              color: var(--builder-header-bg);
               padding: 0 var(--spacing);
 
               overflow: hidden;
@@ -370,7 +370,7 @@
 
       aside {
         z-index: 2;
-        background-color: var(--color-white);
+        background-color: var(--builder-indicator-text);
 
         &.sidebar {
           grid-area: sidebar;
@@ -392,9 +392,9 @@
           font-size: var(--text-xs);
           font-weight: var(--font-weight-bold);
           /*padding-left: calc(var(--spacing-lg));*/
-          background-color: var(--color-gray-50);
-          /*border-top: 1px solid var(--color-gray-200);*/
-          border-bottom: 1px solid var(--color-gray-100);
+          background-color: var(--builder-inspector-header-bg);
+          /*border-top: 1px solid var(--builder-inspector-divider);*/
+          border-bottom: 1px solid var(--builder-inspector-control-bg);
           display: flex;
           flex-direction: row;
           align-items: center;
@@ -422,7 +422,7 @@
       footer {
         isolation: isolate;
         grid-area: footer;
-        background: var(--color-primary-900);
+        background: var(--builder-inspector-button-primary-hover);
 
         .contents {
           height: fit-content;

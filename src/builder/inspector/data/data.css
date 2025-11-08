@@ -15,7 +15,7 @@
         }
 
         .empty-message {
-          color: var(--color-text-secondary);
+          color: var(--builder-inspector-text-secondary);
           font-size: var(--font-size-sm);
         }
       }
@@ -28,8 +28,8 @@
       .data-editor-container {
         margin-top: var(--spacing-4);
         padding: var(--spacing-4);
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
+        background: var(--builder-inspector-surface);
+        border: 1px solid var(--builder-inspector-border);
         border-radius: var(--radius-md);
       }
     }
@@ -51,8 +51,8 @@
 
       .confirm-button {
         padding: var(--spacing-1) var(--spacing-3);
-        background: var(--color-primary);
-        color: var(--color-primary-foreground);
+        background: var(--builder-inspector-focus-ring);
+        color: var(--builder-inspector-tab-active);
         border: none;
         border-radius: var(--radius-sm);
         font-size: var(--font-size-sm);
@@ -60,7 +60,7 @@
         transition: background 0.2s;
 
         &:hover {
-          background: var(--color-primary-hover);
+          background: var(--builder-inspector-button-primary-hover);
         }
       }
     }
@@ -75,10 +75,10 @@
           margin-top: var(--spacing-2);
 
           &.field-modified {
-            border: 2px solid var(--color-primary);
+            border: 2px solid var(--builder-inspector-focus-ring);
             border-radius: var(--radius-sm);
             padding: var(--spacing-2);
-            box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+            box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
           }
         }
 
@@ -87,21 +87,21 @@
           align-items: center;
           gap: var(--spacing-2);
           padding: var(--spacing-2);
-          background: var(--color-background);
-          border: 1px solid var(--color-border);
+          background: var(--builder-inspector-bg);
+          border: 1px solid var(--builder-inspector-border);
           border-radius: var(--radius-sm);
           cursor: pointer;
           transition: all 0.2s;
 
           &:hover {
-            background: var(--color-hover);
-            border-color: var(--color-primary);
+            background: var(--builder-inspector-hover-bg);
+            border-color: var(--builder-inspector-focus-ring);
           }
 
           &.selected {
-            background: var(--color-primary);
-            color: var(--color-primary-foreground);
-            border-color: var(--color-primary);
+            background: var(--builder-inspector-focus-ring);
+            color: var(--builder-inspector-tab-active);
+            border-color: var(--builder-inspector-focus-ring);
           }
         }
       }
@@ -112,16 +112,16 @@
         flex: 1;
 
         &.field-modified {
-          border: 2px solid var(--color-primary);
+          border: 2px solid var(--builder-inspector-focus-ring);
           border-radius: var(--radius-sm);
           padding: var(--spacing-2);
-          box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+          box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
         }
 
         .order-direction {
           padding: var(--spacing-2) var(--spacing-4);
-          background: var(--color-primary);
-          color: var(--color-primary-foreground);
+          background: var(--builder-inspector-focus-ring);
+          color: var(--builder-inspector-tab-active);
           border: none;
           border-radius: var(--radius-sm);
           cursor: pointer;
@@ -146,18 +146,18 @@
       .helper-text {
         margin-top: var(--spacing-4);
         padding: var(--spacing-3);
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
+        background: var(--builder-inspector-surface);
+        border: 1px solid var(--builder-inspector-border);
         border-radius: var(--radius-sm);
 
         .helper-code {
           display: block;
           padding: var(--spacing-2);
-          background: var(--color-background);
+          background: var(--builder-inspector-bg);
           border-radius: var(--radius-sm);
           font-family: var(--font-mono);
           font-size: var(--font-size-xs);
-          color: var(--color-primary);
+          color: var(--builder-inspector-focus-ring);
         }
       }
     }
@@ -166,8 +166,8 @@
     .static-data-editor {
       .example-button {
         padding: var(--spacing-1) var(--spacing-3);
-        background: var(--color-secondary);
-        color: var(--color-secondary-foreground);
+        background: var(--builder-inspector-tab-active);
+        color: var(--builder-inspector-surface);
         border: none;
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
@@ -185,9 +185,9 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--color-danger-background);
-      color: var(--color-danger-foreground);
-      border: 1px solid var(--color-danger-border);
+      background: var(--builder-inspector-error-bg);
+      color: var(--builder-inspector-danger-text);
+      border: 1px solid var(--builder-inspector-success-border);
     }
 
     .success-message {
@@ -195,9 +195,9 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--color-success-background);
-      color: var(--color-success-foreground);
-      border: 1px solid var(--color-success-border);
+      background: var(--builder-inspector-success-bg);
+      color: var(--builder-inspector-success-text);
+      border: 1px solid var(--builder-inspector-success-border);
     }
 
     .pending-message {
@@ -205,16 +205,16 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--color-warning-background);
-      color: var(--color-warning-foreground);
-      border: 1px solid var(--color-warning-border);
+      background: var(--builder-inspector-warning-bg);
+      color: var(--builder-inspector-warning-text);
+      border: 1px solid var(--builder-inspector-warning-border);
     }
 
     /* Helper text */
     .helper-text {
       padding: var(--spacing-3);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
+      background: var(--builder-inspector-surface);
+      border: 1px solid var(--builder-inspector-border);
       border-radius: var(--radius-sm);
 
       .helper-title {
@@ -226,7 +226,7 @@
       .helper-content {
         margin: 0;
         font-size: var(--font-size-xs);
-        color: var(--color-text-secondary);
+        color: var(--builder-inspector-text-secondary);
         line-height: 1.4;
       }
     }
@@ -247,9 +247,9 @@
     .api-collection-editor {
       /* 변경된 필드 하이라이트 */
       .control-input.field-modified {
-        border-color: var(--color-primary);
+        border-color: var(--builder-inspector-focus-ring);
         border-width: 2px;
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
         transition: all 0.2s ease-in-out;
       }
 
@@ -263,24 +263,24 @@
       /* Discard Changes 버튼 */
       .discard-button {
         padding: var(--spacing-2) var(--spacing-4);
-        background: var(--color-gray-100);
-        color: var(--color-gray-600);
-        border: 1px solid var(--color-border);
+        background: var(--builder-inspector-button-secondary-bg);
+        color: var(--builder-inspector-button-secondary-text);
+        border: 1px solid var(--builder-inspector-border);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-sm);
         cursor: pointer;
         transition: all 0.2s;
 
         &:hover {
-          background: var(--color-gray-200);
-          border-color: var(--color-gray-400);
+          background: var(--builder-inspector-button-secondary-hover-bg);
+          border-color: var(--builder-inspector-button-secondary-hover-border);
         }
       }
 
       /* Apply Changes 버튼 */
       .apply-button {
         padding: var(--spacing) var(--spacing-md);
-        background: var(--color-primary-700);
+        background: var(--builder-inspector-button-primary-bg);
         color: white;
         border: none;
         border-radius: var(--radius-sm);
@@ -290,13 +290,13 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-          background: var(--color-primary-900);
-          box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.3);
+          background: var(--builder-inspector-button-primary-hover);
+          box-shadow: 0 2px 8px rgba(var(--builder-inspector-focus-ring), 0.3);
         }
 
         &:disabled {
-          background: var(--color-gray-300);
-          color: var(--color-gray-500);
+          background: var(--builder-inspector-button-disabled-bg);
+          color: var(--builder-inspector-button-disabled-text);
           cursor: not-allowed;
           opacity: 0.6;
         }
@@ -304,16 +304,16 @@
         /* 변경사항 있음 표시 */
         &.has-changes::after {
           content: " ●";
-          color: var(--color-success);
+          color: var(--builder-inspector-success-text);
         }
       }
 
       /* Discard 버튼 */
       .discard-button {
         padding: var(--spacing) var(--spacing-md);
-        background: var(--color-gray-200);
-        color: var(--color-gray-700);
-        border: 1px solid var(--color-gray-300);
+        background: var(--builder-inspector-button-secondary-hover-bg);
+        color: var(--builder-inspector-text-primary);
+        border: 1px solid var(--builder-inspector-button-disabled-bg);
         border-radius: var(--radius-sm);
         font-size: var(--text-sm);
         font-weight: var(--font-weight-medium);
@@ -321,14 +321,14 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-          background: var(--color-gray-300);
-          border-color: var(--color-gray-400);
+          background: var(--builder-inspector-button-disabled-bg);
+          border-color: var(--builder-inspector-button-secondary-hover-border);
         }
 
         &:disabled {
-          background: var(--color-gray-100);
-          color: var(--color-gray-400);
-          border-color: var(--color-gray-200);
+          background: var(--builder-inspector-button-secondary-bg);
+          color: var(--builder-inspector-button-secondary-hover-border);
+          border-color: var(--builder-inspector-button-secondary-hover-bg);
           cursor: not-allowed;
           opacity: 0.6;
         }
@@ -360,25 +360,25 @@
         flex-direction: column;
         gap: var(--spacing);
         padding: var(--spacing-md);
-        background: var(--color-gray-50);
+        background: var(--builder-inspector-header-bg);
         border-radius: var(--radius);
-        border: 1px solid var(--color-gray-200);
+        border: 1px solid var(--builder-inspector-button-secondary-hover-bg);
 
         .info-text {
           font-size: 14px;
-          color: var(--color-gray-600);
+          color: var(--builder-inspector-button-secondary-text);
           line-height: 1.5;
           margin: 0;
         }
 
         .warning-text {
           font-size: 13px;
-          color: var(--color-yellow-700);
+          color: var(--builder-inspector-warning-text);
           line-height: 1.5;
           margin: 0;
           padding: var(--spacing);
-          background: var(--color-yellow-50);
-          border: 1px solid var(--color-yellow-200);
+          background: var(--builder-inspector-warning-bg);
+          border: 1px solid var(--builder-inspector-warning-border);
           border-radius: var(--radius-sm);
         }
       }
@@ -386,12 +386,12 @@
       /* Pending 변경 알림 */
       .pending-change-notice {
         font-size: 13px;
-        color: var(--color-blue-700);
+        color: var(--builder-inspector-info-text);
         line-height: 1.5;
         margin: 0;
         padding: var(--spacing-md);
-        background: var(--color-blue-50);
-        border: 1px solid var(--color-blue-200);
+        background: var(--builder-inspector-info-bg);
+        border: 1px solid var(--builder-inspector-info-border);
         border-radius: var(--radius);
       }
     }

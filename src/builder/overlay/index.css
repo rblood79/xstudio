@@ -3,7 +3,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 1;
-  border: 1px solid var(--color-sky-500);
+  border: 1px solid var(--builder-indicator-bg);
 }
 
 .overlay-info {
@@ -18,8 +18,8 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
   padding: var(--spacing) var(--spacing-sm);
-  background-color: var(--color-sky-500);
-  color: var(--color-neutral-100);
+  background-color: var(--builder-indicator-bg);
+  color: var(--builder-indicator-text);
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
@@ -28,7 +28,7 @@
 
 .overlay-tag-parent {
   padding: var(--spacing);
-  background: var(--color-sky-200);
+  background: var(--builder-indicator-hover-bg);
   margin-left: -25px;
 }
 
@@ -37,7 +37,7 @@
   z-index: 1;
   height: 100%;
   width: 100%;
-  background-color: var(--color-sky-500);
+  background-color: var(--builder-indicator-bg);
   opacity: 0.05;
   box-shadow: var(--inset-shadow-sm);
 }
@@ -68,7 +68,7 @@
     right: 0;
     width: 6px;
     height: 48px;
-    background: var(--color-gray-50);
+    background: var(--builder-inspector-header-bg);
     top: 50%;
     transform: translateY(-50%);
     left: calc(100% + 8px);
