@@ -233,7 +233,7 @@ export const renderDataField = (
       const parentValue = parent.props.value as Record<string, unknown> | undefined;
 
       if (parentValue && typeof parentValue === "object") {
-        value = parentValue[path] as any;
+        value = parentValue[path] as string | number | boolean | null | undefined;
         console.log("🔍 DataField 데이터 바인딩:", {
           fieldId: element.id,
           fieldKey: element.props.key,

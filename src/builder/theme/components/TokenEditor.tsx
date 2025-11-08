@@ -195,7 +195,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
             <label>Scope</label>
             <select
               value={scopeFilter}
-              onChange={(e) => setScopeFilter(e.target.value as any)}
+              onChange={(e) => setScopeFilter(e.target.value as 'all' | 'raw' | 'semantic')}
             >
               <option value="all">전체</option>
               <option value="raw">Raw</option>
@@ -312,7 +312,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                 <label>Scope</label>
                 <select
                   value={selectedToken.scope}
-                  onChange={(e) => handleUpdateToken({ scope: e.target.value as any })}
+                  onChange={(e) => handleUpdateToken({ scope: e.target.value as 'raw' | 'semantic' })}
                 >
                   <option value="raw">Raw</option>
                   <option value="semantic">Semantic</option>

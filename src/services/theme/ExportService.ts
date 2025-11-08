@@ -110,7 +110,7 @@ export class ExportService {
     tokens: DesignToken[],
     options: ExportOptions
   ): ExportResult {
-    const config: any = {
+    const config: Record<string, unknown> = {
       theme: {
         extend: {},
       },

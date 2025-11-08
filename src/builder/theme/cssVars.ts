@@ -1,5 +1,5 @@
 
-import type { DesignToken, TokenValue } from '../../types/theme';
+import type { DesignToken } from '../../types/theme';
 import type { TokenType } from '../../types/theme';
 import { MessageService } from '../../utils/messaging';
 import { tokenToCSS } from '../../utils/theme/tokenToCss';

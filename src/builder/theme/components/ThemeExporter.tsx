@@ -27,7 +27,7 @@ interface ThemeExporterProps {
   projectId: string;
 }
 
-export function ThemeExporter({ themeId, projectId: _projectId }: ThemeExporterProps) {
+export function ThemeExporter({ themeId }: ThemeExporterProps) {
   const styles = exporterStyles();
 
   const { tokens, loading } = useTokens({

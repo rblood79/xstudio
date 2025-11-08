@@ -232,7 +232,7 @@ export function useSyncWithBuilder(): void {
 
         // customId가 존재할 때 custom_id(snake_case)로 변환하여 전송
         if (Object.prototype.hasOwnProperty.call(elementUpdate, "customId")) {
-          payload.custom_id = (elementUpdate as any).customId;
+          payload.custom_id = (elementUpdate as { customId?: string }).customId;
         }
 
         // dataBinding이 실제로 존재하고 null이 아닐 때만 data_binding(snake_case)으로 전송

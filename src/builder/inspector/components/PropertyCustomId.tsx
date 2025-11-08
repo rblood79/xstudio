@@ -9,7 +9,6 @@ interface PropertyCustomIdProps {
   label?: string;
   value: string;
   elementId: string; // Current element ID (to exclude from uniqueness check)
-  onChange?: (value: string) => void; // @deprecated - No longer used, kept for backward compatibility
   placeholder?: string;
   className?: string;
 }
@@ -18,7 +17,6 @@ export function PropertyCustomId({
   label = "ID",
   value,
   elementId,
-  onChange: _onChange, // Renamed to indicate it's unused
   placeholder = "button_1",
   className,
 }: PropertyCustomIdProps) {

@@ -21,7 +21,6 @@ export function EventHandlerManager({
   onAddAction
 }: EventHandlerManagerProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [selectedActionId, setSelectedActionId] = useState<string | null>(null);
 
   const handleViewModeChange = (mode: ViewMode) => {
     console.log("🔄 ViewMode changed:", mode);

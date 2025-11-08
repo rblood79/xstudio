@@ -1,5 +1,5 @@
 import { EventEngine } from "../../../utils/eventEngine";
-import { ElementEvent, EventContext } from "../../../types/events";
+import { EventContext } from "../../../types/events";
 import { PreviewElement, EventHandlerMap } from "../types";
 
 /**
@@ -17,7 +17,7 @@ export const createEventHandler = (
 ) => {
   return async (event: Event) => {
     // 요소의 이벤트 찾기
-    const elementEvents = (element.props.events as any[]) || [];
+    const elementEvents = (element.props.events as Array<Record<string, unknown>>) || [];
 
     // 두 가지 타입 시스템 지원:
     // 1. 기존: { event_type: "onClick", actions: [...] }
@@ -64,7 +64,7 @@ export const createEventHandlerMap = (
   const eventHandlers: EventHandlerMap = {};
 
   if (element.props.events && Array.isArray(element.props.events)) {
-    const events = element.props.events as any[];
+    const events = element.props.events as Array<Record<string, unknown>>;
 
     // 두 가지 타입 시스템 지원:
     // 1. 기존: { event_type: "onClick", ... }

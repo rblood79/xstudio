@@ -3,9 +3,7 @@ import ReactFlow, {
   Background,
   Controls,
   MiniMap,
-  type NodeTypes,
-  type OnNodesChange,
-  applyNodeChanges
+  type NodeTypes
 } from "reactflow";
 import "reactflow/dist/style.css";
 import type { EventHandler } from "../../types";
@@ -33,7 +31,7 @@ export function ReactFlowCanvas({
   const { nodes: initialNodes, edges } = useEventFlow(eventHandler);
 
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: any) => {
+    (_event: React.MouseEvent, node: { id: string }) => {
       if (node.id.startsWith("action-")) {
         const actionId = node.id.replace("action-", "");
         onSelectAction?.(actionId);

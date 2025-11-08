@@ -106,10 +106,11 @@ export const useElementCreator = (): UseElementCreatorReturn => {
     const getDefaultProps = useCallback((tag: string): ComponentElementProps => {
         console.log('🎯 getDefaultProps called for tag:', tag);
         switch (tag) {
-            case 'Button':
+            case 'Button': {
                 const buttonProps = createDefaultButtonProps();
                 console.log('✅ Button props created:', buttonProps);
                 return buttonProps;
+            }
             case 'TextField':
                 return createDefaultTextFieldProps();
             case 'Checkbox':

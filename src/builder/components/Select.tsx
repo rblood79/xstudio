@@ -134,7 +134,7 @@ export function Select<T extends object>({
 
     // Dynamic collection without columnMapping
     if (hasDataBinding && !columnMapping && boundData.length > 0) {
-      return (item: any) => (
+      return (item: Record<string, unknown>) => (
         <ListBoxItem
           key={item.id}
           id={item.id}

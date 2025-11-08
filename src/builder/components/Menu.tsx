@@ -203,8 +203,7 @@ export function MenuButton<T extends object>({
           <Button>{label}</Button>
           <Popover>
             <Menu items={menuItems as Iterable<T>}>
-              {/* children은 MenuItem 템플릿으로 사용 */}
-              {children}
+              {(item) => renderMenuItem(item)}
             </Menu>
           </Popover>
         </MenuTrigger>

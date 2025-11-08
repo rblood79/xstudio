@@ -187,7 +187,7 @@ export function FigmaImporter({
             <select
               id="conflict-resolution"
               value={conflictResolution}
-              onChange={(e) => setConflictResolution(e.target.value as any)}
+              onChange={(e) => setConflictResolution(e.target.value as 'skip' | 'overwrite' | 'rename')}
             >
               <option value="skip">Skip - 기존 토큰 유지</option>
               <option value="overwrite">Overwrite - 기존 토큰 덮어쓰기</option>

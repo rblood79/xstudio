@@ -48,7 +48,7 @@ export function AIThemeGenerator({
 
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<ThemeGenerationProgress | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ThemeGenerationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Form state
@@ -161,7 +161,7 @@ export function AIThemeGenerator({
             <select
               id="theme-style"
               value={style}
-              onChange={(e) => setStyle(e.target.value as any)}
+              onChange={(e) => setStyle(e.target.value as 'modern' | 'classic' | 'playful' | 'professional' | 'minimal')}
             >
               <option value="modern">Modern - 현대적이고 깔끔한</option>
               <option value="classic">Classic - 클래식하고 전통적인</option>
@@ -260,11 +260,11 @@ export function AIThemeGenerator({
           <div className="palette-preview">
             <h4>색상 팔레트</h4>
             <div className="color-grid">
-              {Object.entries(result.colorPalette).map(([name, shades]: [string, any]) => (
+              {Object.entries(result.colorPalette).map(([name, shades]: [string, Record<string, { h: number; s: number; l: number }>]) => (
                 <div key={name} className="color-palette-item">
                   <span className="palette-name">{name}</span>
                   <div className="shade-grid">
-                    {Object.entries(shades).map(([shade, color]: [string, any]) => (
+                    {Object.entries(shades).map(([shade, color]: [string, { h: number; s: number; l: number }]) => (
                       <div
                         key={shade}
                         className="shade-box"

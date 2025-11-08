@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Button } from "react-aria-components";
 import { ACTION_METADATA, ACTION_CATEGORIES, getRecommendedActions } from "../../data/actionMetadata";
-import type { ActionType, EventAction } from "../../types";
+import type { ActionType } from "../../types";
 
 export interface ActionPaletteProps {
   eventType?: string;

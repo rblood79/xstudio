@@ -12,15 +12,11 @@ import type {
   FigmaTextStyle,
   FigmaEffectStyle,
   FigmaVariable,
-  FigmaFileResponse,
-  FigmaImportError,
-  FigmaExportError,
-  ImportConflict,
-  ConflictResolution,
+  FigmaFileResponse
 } from '../../types/theme/figma.types';
-import type { DesignToken, ColorValueHSL, ColorValueRGB } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueRGB } from '../../types/theme/token.types';
 import { TokenService } from './TokenService';
-import { rgbToHsl, hslToString } from '../../utils/theme/colorUtils';
+import { rgbToHsl } from '../../utils/theme/colorUtils';
 
 const FIGMA_API_BASE = 'https://api.figma.com/v1';
 
@@ -66,7 +62,7 @@ export class FigmaService {
     // 실제 API 응답에서 스타일 파싱
     // (Figma API 응답 구조에 따라 조정 필요)
     if (file.styles) {
-      Object.values(file.styles).forEach((style: any) => {
+      Object.values(file.styles).forEach((style: { styleType: string }) => {
         if (style.styleType === 'FILL') {
           colors.push(style as FigmaColorStyle);
         } else if (style.styleType === 'TEXT') {

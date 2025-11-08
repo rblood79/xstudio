@@ -14,9 +14,7 @@ import type {
 import {
   parseTokens,
   filterTokensByCategory,
-  filterTokensByGroup,
-  sortTokens,
-  separateTokensByScope,
+  filterTokensByGroup
 } from '../../utils/theme/tokenParser';
 
 export interface UseTokensOptions {

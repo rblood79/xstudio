@@ -131,7 +131,7 @@ export function APICollectionEditor({
 
       // resultPath로 데이터 추출
       const resultPath = parsedDataMapping.resultPath || "";
-      let items: any = data;
+      let items: unknown = data;
 
       if (resultPath) {
         const paths = resultPath.split(".");

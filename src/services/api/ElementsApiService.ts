@@ -19,7 +19,7 @@ export class ElementsApiService extends BaseApiService {
 
     // Supabase snake_case를 camelCase로 변환
     return elements.map(
-      (el: any) => ({
+      (el: Record<string, unknown>) => ({
         ...el,
         customId: el.custom_id, // snake_case → camelCase
         dataBinding: el.data_binding, // snake_case → camelCase
@@ -35,10 +35,10 @@ export class ElementsApiService extends BaseApiService {
     );
 
     // camelCase → snake_case 변환
-    const elementToSave: any = {
+    const elementToSave: Record<string, unknown> = {
       ...element,
-      custom_id: (element as any).customId,
-      data_binding: (element as any).dataBinding,
+      custom_id: (element as { customId?: string }).customId,
+      data_binding: (element as { dataBinding?: unknown }).dataBinding,
     };
 
     // camelCase 필드 제거 (snake_case로 변환되었으므로)
@@ -70,10 +70,10 @@ export class ElementsApiService extends BaseApiService {
 
     // 각 element에 대해 camelCase → snake_case 변환
     const elementsToSave = elements.map((element) => {
-      const converted: any = {
+      const converted: Record<string, unknown> = {
         ...element,
-        custom_id: (element as any).customId,
-        data_binding: (element as any).dataBinding,
+        custom_id: (element as { customId?: string }).customId,
+        data_binding: (element as { dataBinding?: unknown }).dataBinding,
       };
       delete converted.customId;
       delete converted.dataBinding;
@@ -89,7 +89,7 @@ export class ElementsApiService extends BaseApiService {
 
     // 응답을 camelCase로 변환
     if (Array.isArray(result)) {
-      return result.map((el: any) => ({
+      return result.map((el: Record<string, unknown>) => ({
         ...el,
         customId: el.custom_id,
         dataBinding: el.data_binding,
@@ -114,13 +114,13 @@ export class ElementsApiService extends BaseApiService {
     );
 
     // camelCase → snake_case 변환
-    const updatesToSave: any = { ...updates };
-    if ((updates as any).customId !== undefined) {
-      updatesToSave.custom_id = (updates as any).customId;
+    const updatesToSave: Record<string, unknown> = { ...updates };
+    if ((updates as { customId?: string }).customId !== undefined) {
+      updatesToSave.custom_id = (updates as { customId?: string }).customId;
       delete updatesToSave.customId;
     }
-    if ((updates as any).dataBinding !== undefined) {
-      updatesToSave.data_binding = (updates as any).dataBinding;
+    if ((updates as { dataBinding?: unknown }).dataBinding !== undefined) {
+      updatesToSave.data_binding = (updates as { dataBinding?: unknown }).dataBinding;
       delete updatesToSave.dataBinding;
     }
 

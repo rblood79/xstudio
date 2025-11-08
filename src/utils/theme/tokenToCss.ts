@@ -40,7 +40,7 @@ export function tokenToCSS(token: DesignToken): Record<string, string> {
       // typography.heading.h1 { fontFamily, fontSize, fontWeight, lineHeight }
       // → --typography-heading-h1-font-family: "Inter"
       // → --typography-heading-h1-font-size: "2rem"
-      const value = token.value as any;
+      const value = token.value as Record<string, unknown>;
 
       if (typeof value === 'object' && value !== null) {
         if (value.fontFamily) vars[`${cssVar}-font-family`] = value.fontFamily;
@@ -59,7 +59,7 @@ export function tokenToCSS(token: DesignToken): Record<string, string> {
       // 객체 → CSS box-shadow 문자열
       // { offsetX: 0, offsetY: 4, blur: 8, spread: 0, color: {...} }
       // → "0px 4px 8px 0px rgba(0,0,0,0.1)"
-      const value = token.value as any;
+      const value = token.value as Record<string, unknown>;
 
       if (typeof value === 'object' && value !== null) {
         const offsetX = value.offsetX || 0;
@@ -92,7 +92,7 @@ export function tokenToCSS(token: DesignToken): Record<string, string> {
     case 'border': {
       // { width: "1px", style: "solid", color: {...} }
       // → "1px solid #e5e7eb"
-      const value = token.value as any;
+      const value = token.value as Record<string, unknown>;
 
       if (typeof value === 'object' && value !== null) {
         const width = value.width || '1px';

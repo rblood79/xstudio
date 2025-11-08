@@ -26,8 +26,8 @@ export interface ComponentIntent {
   action: IntentAction;
   componentType?: string;
   targetElementId?: string;
-  props?: Record<string, any>;
-  styles?: Record<string, any>;
+  props?: Record<string, unknown>;
+  styles?: Record<string, unknown>;
   dataBinding?: {
     baseUrl: string;
     endpoint: string;
@@ -42,7 +42,7 @@ export interface BuilderContext {
   elements: Array<{
     id: string;
     tag: string;
-    props: Record<string, any>;
+    props: Record<string, unknown>;
     parent_id: string | null;
   }>;
   recentChanges: string[];

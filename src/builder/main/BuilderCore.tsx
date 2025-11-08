@@ -96,7 +96,7 @@ export const BuilderCore: React.FC = () => {
     // 히스토리 정보 업데이트
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
-  }, []);
+  }, [setHistoryInfo]);
 
   const handleRedo = useCallback(() => {
     const { redo } = useStore.getState();
@@ -105,7 +105,7 @@ export const BuilderCore: React.FC = () => {
     // 히스토리 정보 업데이트
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
-  }, []);
+  }, [setHistoryInfo]);
 
   // 훅 사용
   const { error, isLoading, setError, setIsLoading, handleError, clearError } =

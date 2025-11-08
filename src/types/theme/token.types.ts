@@ -12,7 +12,7 @@ export interface DesignToken {
   theme_id: string;
   name: string;  // "color.brand.primary" (점으로 구분된 계층 구조)
   type: string;  // "color", "typography", "spacing", "shadow", "border", "radius", "motion"
-  value: any;    // JSONB (유연한 타입)
+  value: unknown;    // JSONB (유연한 타입)
   scope: 'raw' | 'semantic';
   alias_of?: string | null;
   css_variable?: string;
@@ -85,13 +85,13 @@ export interface TokenPreset {
   id: string;
   name: string;
   description?: string;
-  values: Record<string, any>;  // token_id → value
+  values: Record<string, unknown>;  // token_id → value
 }
 
 // ===== Figma 호환 타입 =====
 export interface FigmaToken {
   $type: string;
-  $value: any;
+  $value: unknown;
   $description?: string;
   $extensions?: {
     'com.figma'?: {
@@ -109,7 +109,7 @@ export interface FigmaTokenCollection {
 // ===== W3C Design Token 형식 =====
 export interface W3CToken {
   $type: string;
-  $value: any;
+  $value: unknown;
   $description?: string;
 }
 
@@ -200,16 +200,16 @@ export const TokenFilterSchema = z.object({
 });
 
 // ===== 타입 가드 =====
-export function isColorValueHSL(value: any): value is ColorValueHSL {
-  return value && typeof value === 'object' && 'h' in value && 's' in value && 'l' in value;
+export function isColorValueHSL(value: unknown): value is ColorValueHSL {
+  return value !== null && value !== undefined && typeof value === 'object' && 'h' in value && 's' in value && 'l' in value;
 }
 
-export function isColorValueRGB(value: any): value is ColorValueRGB {
-  return value && typeof value === 'object' && 'r' in value && 'g' in value && 'b' in value;
+export function isColorValueRGB(value: unknown): value is ColorValueRGB {
+  return value !== null && value !== undefined && typeof value === 'object' && 'r' in value && 'g' in value && 'b' in value;
 }
 
-export function isTypographyValue(value: any): value is TypographyValue {
-  return value && typeof value === 'object' && 'fontFamily' in value && 'fontSize' in value;
+export function isTypographyValue(value: unknown): value is TypographyValue {
+  return value !== null && value !== undefined && typeof value === 'object' && 'fontFamily' in value && 'fontSize' in value;
 }
 
 export function isResolvedToken(token: DesignToken | ResolvedToken): token is ResolvedToken {

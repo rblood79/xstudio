@@ -26,7 +26,7 @@ interface FigmaPluginExporterProps {
   projectId: string;
 }
 
-export function FigmaPluginExporter({ themeId, projectId: _projectId }: FigmaPluginExporterProps) {
+export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
   const styles = figmaPluginStyles();
 
   const { tokens, loading } = useTokens({

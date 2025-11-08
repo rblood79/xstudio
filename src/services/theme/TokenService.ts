@@ -286,7 +286,7 @@ export class TokenService {
    */
   static subscribeToTokenChanges(
     themeId: string,
-    callback: (payload: any) => void
+    callback: (payload: Record<string, unknown>) => void
   ): () => void {
     const channel = supabase
       .channel(`tokens:theme:${themeId}`)
@@ -312,7 +312,7 @@ export class TokenService {
    */
   static subscribeToProjectTokens(
     projectId: string,
-    callback: (payload: any) => void
+    callback: (payload: Record<string, unknown>) => void
   ): () => void {
     const channel = supabase
       .channel(`tokens:project:${projectId}`)
@@ -366,9 +366,9 @@ export class TokenService {
    */
   static async exportTokensW3C(
     themeId: string
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     const tokens = await this.getResolvedTokens(themeId);
-    const exported: Record<string, any> = {};
+    const exported: Record<string, Record<string, unknown>> = {};
 
     for (const token of tokens) {
       // "color.brand.primary" → { color: { brand: { primary: { $type, $value } } } }
@@ -402,11 +402,11 @@ export class TokenService {
   static async importTokensW3C(
     projectId: string,
     themeId: string,
-    w3cTokens: Record<string, any>
+    w3cTokens: Record<string, unknown>
   ): Promise<number> {
     const tokens: Partial<DesignToken>[] = [];
 
-    const traverse = (obj: any, path: string[] = []) => {
+    const traverse = (obj: Record<string, unknown>, path: string[] = []) => {
       for (const [key, value] of Object.entries(obj)) {
         if (value && typeof value === 'object') {
           if ('$type' in value && '$value' in value) {

@@ -11,7 +11,7 @@ import { Element } from "../../../types/store";
  * @param element - 직렬화할 Element 객체
  * @returns 직렬화된 Element 객체
  */
-export const sanitizeElement = (element: Element): any => {
+export const sanitizeElement = (element: Element): Record<string, unknown> => {
   try {
     // structuredClone 우선 사용 (최신 브라우저)
     if (typeof structuredClone !== "undefined") {

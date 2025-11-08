@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TextField, Button, Checkbox } from "react-aria-components";
-import type { EventAction, ActionType } from "../../types";
+import type { EventAction } from "../../types";
 import { ACTION_METADATA } from "../../data/actionMetadata";
 
 export interface InlineActionEditorProps {
@@ -31,7 +31,7 @@ export function InlineActionEditor({
     });
   };
 
-  const handleFieldChange = (fieldName: string, value: any) => {
+  const handleFieldChange = (fieldName: string, value: string | number | boolean) => {
     setConfig((prev) => ({
       ...prev,
       [fieldName]: value

@@ -234,7 +234,7 @@ export class EventEngine {
         // 두 가지 타입 시스템 지원:
         // 1. 기존: action.value
         // 2. 새로운: action.config
-        const actionData = action as any;
+        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
         const value = (actionData.config || actionData.value || {}) as {
             path?: string;
             url?: string; // 하위 호환성

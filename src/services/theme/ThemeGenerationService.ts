@@ -11,91 +11,17 @@ import type {
   ThemeGenerationStage,
   ColorPaletteResponse,
   ColorShades,
-  TypographyScaleResponse,
-  SpacingScaleResponse,
-  RadiusScaleResponse,
-  ShadowScaleResponse,
   ThemeGenerationError,
 } from '../../types/theme/generation.types';
 import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
 import {
   parseColorString,
-  generateColorScale,
-  getAnalogousColors,
   getSplitComplementaryColors,
   adjustLightness,
   adjustSaturation,
 } from '../../utils/theme/colorUtils';
 import { ThemeService } from './ThemeService';
 import { TokenService } from './TokenService';
-import { TYPE_SCALE_RATIOS } from '../../types/theme/generation.types';
-
-const THEME_GENERATION_SYSTEM_PROMPT = `당신은 웹 디자인 시스템 전문가입니다. 사용자의 요청을 바탕으로 완전한 디자인 테마를 생성합니다.
-
-**생성 가능한 요소:**
-- 색상 팔레트 (Primary, Secondary, Neutral, Semantic colors)
-- 타이포그래피 스케일 (Font family, sizes, weights, line heights)
-- 간격 시스템 (Spacing scale)
-- Border radius, Shadow, Motion 토큰
-- Semantic 토큰 (버튼, 입력, 카드 등의 컴포넌트 토큰)
-
-**색상 생성 규칙:**
-- Primary: 브랜드 메인 컬러 (50-900 shade)
-- Secondary: Primary의 보색 또는 유사색
-- Neutral: Gray scale (50-900)
-- Success: 녹색 계열 (#10b981 기준)
-- Warning: 주황색 계열 (#f59e0b 기준)
-- Error: 빨강색 계열 (#ef4444 기준)
-- Info: 파랑색 계열 (#3b82f6 기준)
-
-**접근성 준수:**
-- WCAG AA 기준 명암비 준수
-- 텍스트 색상은 배경과 4.5:1 이상
-- 대형 텍스트는 3:1 이상
-
-**토큰 네이밍 규칙:**
-- Raw 토큰: "color.{palette}.{shade}", "typography.size.{name}"
-- Semantic 토큰: "color.button.primary.bg", "color.input.border"
-
-**응답 형식 (JSON):**
-{
-  "colors": {
-    "primary": { "500": { "h": 210, "s": 100, "l": 50, "a": 1 }, ... },
-    "secondary": { ... },
-    "neutral": { ... },
-    "success": { ... },
-    "warning": { ... },
-    "error": { ... },
-    "info": { ... }
-  },
-  "typography": {
-    "fontFamily": {
-      "sans": "Inter, system-ui, sans-serif",
-      "serif": "Georgia, serif",
-      "mono": "Fira Code, monospace"
-    },
-    "fontSize": {
-      "xs": "0.75rem",
-      "sm": "0.875rem",
-      "base": "1rem",
-      ...
-    },
-    "fontWeight": {
-      "normal": 400,
-      "medium": 500,
-      "semibold": 600,
-      "bold": 700
-    }
-  },
-  "spacing": {
-    "0": "0",
-    "1": "0.25rem",
-    "2": "0.5rem",
-    ...
-  }
-}
-
-**중요:** 반드시 유효한 JSON만 응답하세요.`;
 
 export class ThemeGenerationService {
   private client: Groq;

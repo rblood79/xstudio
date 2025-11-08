@@ -63,7 +63,7 @@ function createTemplate(
   description: string,
   category: TemplateCategory,
   icon: string,
-  events: Array<{ type: EventType; actions: Array<{ type: ActionType; config: any }> }>,
+  events: Array<{ type: EventType; actions: Array<{ type: ActionType; config: Record<string, unknown> }> }>,
   tags: string[],
   componentTypes?: string[],
   usageCount?: number

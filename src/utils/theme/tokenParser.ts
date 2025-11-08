@@ -69,7 +69,6 @@ export function groupTokensByCategory(tokens: DesignToken[]): Record<string, Rec
  * 토큰을 TokenGroup 형식으로 변환
  */
 export function createTokenGroups(tokens: DesignToken[]): TokenGroup[] {
-  const parsedTokens = parseTokens(tokens);
   const grouped = groupTokensByCategory(tokens);
 
   return Object.entries(grouped).map(([category, groups]) => ({
@@ -197,14 +196,14 @@ export function separateTokensByScope(tokens: DesignToken[]): {
 /**
  * 상속된 토큰만 필터링
  */
-export function filterInheritedTokens(tokens: any[]): any[] {
+export function filterInheritedTokens(tokens: Array<{ is_inherited?: boolean }>): Array<{ is_inherited?: boolean }> {
   return tokens.filter((token) => token.is_inherited === true);
 }
 
 /**
  * 현재 테마의 토큰만 필터링
  */
-export function filterCurrentThemeTokens(tokens: any[]): any[] {
+export function filterCurrentThemeTokens(tokens: Array<{ is_inherited?: boolean }>): Array<{ is_inherited?: boolean }> {
   return tokens.filter((token) => token.is_inherited === false);
 }
 

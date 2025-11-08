@@ -249,7 +249,7 @@ export class ThemeService {
    */
   static subscribeToTheme(
     themeId: string,
-    callback: (payload: any) => void
+    callback: (payload: Record<string, unknown>) => void
   ): () => void {
     const channel = supabase
       .channel(`theme:${themeId}`)
@@ -276,7 +276,7 @@ export class ThemeService {
    */
   static subscribeToProjectThemes(
     projectId: string,
-    callback: (payload: any) => void
+    callback: (payload: Record<string, unknown>) => void
   ): () => void {
     const channel = supabase
       .channel(`themes:project:${projectId}`)

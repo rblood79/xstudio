@@ -58,7 +58,7 @@ export function DarkModeGenerator({
     setCustomOptions(DarkModeService.PRESETS[newPreset]);
   };
 
-  const handleOptionChange = (key: keyof DarkModeOptions, value: any) => {
+  const handleOptionChange = (key: keyof DarkModeOptions, value: number | boolean | string) => {
     setCustomOptions((prev) => ({
       ...prev,
       [key]: value,
