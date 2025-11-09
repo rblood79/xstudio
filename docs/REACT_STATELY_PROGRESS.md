@@ -153,6 +153,18 @@
    - **기술 세부사항**: useListData.update()는 `T` 와 `(old: T) => T` 모두 허용하지만, arrow function은 postMessage로 직렬화 불가
    - **커밋**: `23b4caf` fix: Prevent DataCloneError in EventSection postMessage
 
+6. **TriggerNode.tsx undefined metadata.label** (2025-11-09)
+   - **에러**: `Cannot read properties of undefined (reading 'label')` at TriggerNode.tsx:23
+   - **원인**: Phase 1 리팩토링에서 EventHandler 타입이 ElementEvent로 변경되었으나 (event → event_type), useEventFlow와 ReactFlowCanvas는 구 타입 사용
+   - **수정**:
+     - useEventFlow.ts: `EventHandler` → `ElementEvent`, `eventHandler.event` → `eventHandler.event_type`
+     - ReactFlowCanvas.tsx: Props interface에서 `EventHandler` → `ElementEvent`
+     - 두 파일 모두 `@/types/events`에서 import
+   - **타입 정렬**:
+     - 구 타입: `EventHandler { event: EventType }` (src/builder/inspector/events/types)
+     - 신 타입: `ElementEvent { event_type: EventType }` (src/types/events.ts)
+   - **커밋**: `49f5bfc` fix: Update ReactFlow types from EventHandler to ElementEvent
+
 ### 기술적 개선
 
 ✅ **자동 불변성 관리** - useListData가 안전한 상태 업데이트 처리
