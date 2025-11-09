@@ -343,6 +343,19 @@ export const PROPERTY_LABELS = {
     SPELL_CHECK: 'Spell Check',
     AUTO_CORRECT: 'Auto Correct',
 
+    // Number formatting properties
+    NUMBER_FORMAT_STYLE: 'Format Style',
+    NUMBER_STYLE_DECIMAL: 'Decimal',
+    NUMBER_STYLE_CURRENCY: 'Currency',
+    NUMBER_STYLE_PERCENT: 'Percent',
+    NUMBER_STYLE_UNIT: 'Unit',
+    CURRENCY: 'Currency',
+    MIN_FRACTION_DIGITS: 'Min Decimal Places',
+    MAX_FRACTION_DIGITS: 'Max Decimal Places',
+    WHEEL_DISABLED: 'Disable Mouse Wheel',
+    INCREMENT_ARIA_LABEL: 'Increment Button Label',
+    DECREMENT_ARIA_LABEL: 'Decrement Button Label',
+
     // Fieldset legends - General
     CONTENT: 'Content',
     STYLING: 'Styling',
