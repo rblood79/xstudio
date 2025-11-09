@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FolderTree, Workflow, Plus } from 'lucide-react';
+import { FolderTree, Workflow, Plus, Tag, Binary, PointerOff, FileText, Link2, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -84,36 +84,90 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    onChange={updateCustomId}
-                    placeholder="treeitem_1"
-                />
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="treeitem_1"
+            />
+
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
+                    label={PROPERTY_LABELS.TITLE}
                     value={String(currentProps.title || '')}
-                    onChange={(value) => updateProp('title', value)}
-                    icon={FolderTree}
+                    onChange={(value) => updateProp('title', value || undefined)}
+                    icon={Tag}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
-                    onChange={(value) => updateProp('value', value)}
-                    icon={Workflow}
+                    onChange={(value) => updateProp('value', value || undefined)}
+                    icon={Binary}
                 />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.TEXT_VALUE}
+                    value={String(currentProps.textValue || '')}
+                    onChange={(value) => updateProp('textValue', value || undefined)}
+                    icon={FileText}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.HREF}
+                    value={String(currentProps.href || '')}
+                    onChange={(value) => updateProp('href', value || undefined)}
+                    icon={Link2}
+                    placeholder="https://example.com"
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
                     isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
                 />
             </fieldset>
 
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tree item label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
+
+            {/* Child TreeItems Section */}
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>Child TreeItems</legend>
 
