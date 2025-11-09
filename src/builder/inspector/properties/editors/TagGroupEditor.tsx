@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler } from 'lucide-react';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -124,14 +124,17 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    onChange={updateCustomId}
-                    placeholder="taggroup_1"
-                />
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="taggroup_1"
+            />
+
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -153,20 +156,11 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
+            </fieldset>
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.ALLOWS_REMOVING}
-                    isSelected={Boolean(currentProps.allowsRemoving)}
-                    onChange={(checked) => updateProp('allowsRemoving', checked)}
-                    icon={Trash}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
-                    isSelected={Boolean(currentProps.allowsCustomValue)}
-                    onChange={(checked) => updateProp('allowsCustomValue', checked)}
-                    icon={PenOff}
-                />
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -194,8 +188,9 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.SELECTION_SETTINGS}</legend>
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -225,6 +220,95 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
                     icon={ToggleRight}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.REQUIRED}
+                    isSelected={Boolean(currentProps.isRequired)}
+                    onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.READONLY}
+                    isSelected={Boolean(currentProps.isReadOnly)}
+                    onChange={(checked) => updateProp('isReadOnly', checked)}
+                    icon={PenOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.ALLOWS_REMOVING}
+                    isSelected={Boolean(currentProps.allowsRemoving)}
+                    onChange={(checked) => updateProp('allowsRemoving', checked)}
+                    icon={Trash}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.ALLOWS_CUSTOM_VALUE}
+                    isSelected={Boolean(currentProps.allowsCustomValue)}
+                    onChange={(checked) => updateProp('allowsCustomValue', checked)}
+                    icon={PenOff}
+                />
+            </fieldset>
+
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="tag-group-name"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tag group label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
