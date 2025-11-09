@@ -97,6 +97,16 @@ export const PROPERTY_LABELS = {
     ORIENTATION_HORIZONTAL: 'Horizontal',
     ORIENTATION_VERTICAL: 'Vertical',
 
+    // Placement options (for Tooltip, Popover, etc.)
+    PLACEMENT: 'Placement',
+    PLACEMENT_TOP: 'Top',
+    PLACEMENT_BOTTOM: 'Bottom',
+    PLACEMENT_LEFT: 'Left',
+    PLACEMENT_RIGHT: 'Right',
+    PLACEMENT_START: 'Start',
+    PLACEMENT_END: 'End',
+    OFFSET: 'Offset (px)',
+
     // Default tab
     DEFAULT_TAB: 'Default Tab',
 
