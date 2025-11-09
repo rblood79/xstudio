@@ -1,26 +1,26 @@
 import { useState } from "react";
-import type { EventHandler } from "../types";
+import type { ElementEvent } from "@/types/events";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
-import { ActionList } from "./listMode/ActionList";
 import { SimpleFlowView } from "./visualMode/SimpleFlowView";
 import { ReactFlowCanvas } from "./visualMode/ReactFlowCanvas";
 
 export interface EventHandlerManagerProps {
-  eventHandler: EventHandler;
-  onUpdateHandler: (handler: EventHandler) => void;
+  eventHandler: ElementEvent;
+  onUpdateHandler: (handler: ElementEvent) => void;
   onAddAction?: () => void;
 }
 
 /**
- * EventHandlerManager - Unified component for managing event handlers
- * Supports List, Simple Flow, and ReactFlow modes
+ * EventHandlerManager - ReactFlow 중심 이벤트 핸들러 관리
+ * Phase 1: listMode 제거, visualMode만 지원
  */
 export function EventHandlerManager({
   eventHandler,
   onUpdateHandler,
   onAddAction
 }: EventHandlerManagerProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  // listMode 제거, ReactFlow 기본값으로 변경
+  const [viewMode, setViewMode] = useState<ViewMode>("reactflow");
 
   const handleViewModeChange = (mode: ViewMode) => {
     console.log("🔄 ViewMode changed:", mode);
@@ -83,24 +83,13 @@ export function EventHandlerManager({
 
   return (
     <div className="event-handler-manager">
-      {/* View Mode Toggle */}
+      {/* View Mode Toggle - listMode 제거 */}
       <div className="manager-header">
         <ViewModeToggle value={viewMode} onChange={handleViewModeChange} />
       </div>
 
-      {/* Content based on view mode */}
+      {/* Content based on view mode - listMode 제거됨 */}
       <div className="manager-content">
-        {viewMode === "list" && (
-          <ActionList
-            actions={eventHandler.actions}
-            onReorder={handleReorder}
-            onUpdateAction={handleUpdateAction}
-            onDeleteAction={handleDeleteAction}
-            onDuplicateAction={handleDuplicateAction}
-            onAddAction={onAddAction}
-          />
-        )}
-
         {viewMode === "simple" && (
           <SimpleFlowView
             eventHandler={eventHandler}

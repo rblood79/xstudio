@@ -1,204 +1,185 @@
-import { useState } from "react";
+/**
+ * EventSection - React Stately 기반 이벤트 관리
+ *
+ * Phase 1: Inspector Events React Stately 전환
+ * - useEventHandlers (useListData 기반)
+ * - useActions (useListData 기반)
+ * - useEventSelection (useState 기반)
+ * - EventTypePicker (간단한 Select)
+ * - ActionTypePicker (간단한 Select)
+ */
+
+import { useState, useEffect } from "react";
 import { Button } from "react-aria-components";
-import { Plus, X } from "lucide-react";
 import type { SelectedElement } from "../types";
-import type { EventHandler, EventType, ActionType } from "../events/types";
+import type { ElementEvent, EventType, ActionType } from "@/types/events";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { EventHandlerManager } from "../events/components/EventHandlerManager";
-import { EventPalette } from "../events/components/listMode/EventPalette";
-import { ActionPalette } from "../events/components/listMode/ActionPalette";
-import { createDefaultActionConfig, generateActionId } from "../events/utils/actionHelpers";
-
-const iconProps = {
-  strokeWidth: 1.5,
-  size: 16,
-};
+import { EventTypePicker } from "../events/pickers/EventTypePicker";
+import { ActionTypePicker } from "../events/pickers/ActionTypePicker";
+import { useEventHandlers } from "../events/state/useEventHandlers";
+import { useActions } from "../events/state/useActions";
+import { useEventSelection } from "../events/state/useEventSelection";
 
 export interface EventSectionProps {
   element: SelectedElement;
 }
 
-/**
- * EventSection - Integrated with new EventHandlerManager
- */
 export function EventSection({ element }: EventSectionProps) {
-  const [showAddEvent, setShowAddEvent] = useState(false);
-  const [selectedHandlerId, setSelectedHandlerId] = useState<string | null>(null);
   const [showAddAction, setShowAddAction] = useState(false);
 
-  // Use Inspector state methods for event management
-  const addEventToInspector = useInspectorState((state) => state.addEvent);
-  const updateEventInInspector = useInspectorState((state) => state.updateEvent);
-  const removeEventFromInspector = useInspectorState((state) => state.removeEvent);
-
-  // IMPORTANT: Get events from Inspector state, not from element prop
-  // Inspector state is the source of truth for real-time updates
+  // Inspector 상태에서 이벤트 가져오기
   const selectedElement = useInspectorState((state) => state.selectedElement);
-  const eventHandlers: EventHandler[] = selectedElement?.events || [];
-  const registeredEventTypes: EventType[] = eventHandlers.map((h) => h.event);
+  const updateEvents = useInspectorState((state) => state.updateEvents);
 
-  // Get selected handler
-  const selectedHandler = selectedHandlerId
-    ? eventHandlers.find((h) => h.id === selectedHandlerId)
-    : null;
+  // React Stately로 이벤트 핸들러 관리
+  const {
+    handlers,
+    addHandler,
+    updateHandler,
+    removeHandler,
+  } = useEventHandlers(selectedElement?.events || []);
 
-  // Handle adding new event
+  // 이벤트 선택 관리
+  const {
+    selectedHandlerId,
+    selectedHandler,
+    selectHandler,
+    selectAfterDelete,
+  } = useEventSelection(handlers);
+
+  // Actions 관리 (선택된 핸들러의 액션만)
+  const {
+    actions,
+    addAction,
+    updateAction,
+    removeAction,
+    moveAction,
+  } = useActions(selectedHandler?.actions || []);
+
+  // 등록된 이벤트 타입 목록 (중복 방지용)
+  const registeredEventTypes: EventType[] = handlers.map((h) => h.event_type);
+
+  // Actions 변경 시 Handler 업데이트
+  useEffect(() => {
+    if (selectedHandler) {
+      updateHandler(selectedHandler.id, { actions });
+    }
+  }, [actions, selectedHandler?.id]);
+
+  // Handlers 변경 시 Inspector 동기화
+  useEffect(() => {
+    updateEvents(handlers);
+  }, [handlers]);
+
+  // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
-    const newHandler: EventHandler = {
-      id: `event-${eventType}-${Date.now()}`,
-      event: eventType,
-      actions: []
-    };
-
-    // Update Inspector state - useSyncWithBuilder will sync to Builder store
-    addEventToInspector(newHandler);
-
-    // Automatically select the new handler
-    setSelectedHandlerId(newHandler.id);
-    setShowAddEvent(false);
+    const newHandler = addHandler(eventType);
+    // 자동으로 새 핸들러 선택
+    selectHandler(newHandler.id);
   };
 
-  // Handle updating event handler
-  const handleUpdateHandler = (handlerId: string, updated: EventHandler) => {
-    // Update Inspector state - useSyncWithBuilder will sync to Builder store
-    updateEventInInspector(handlerId, updated);
-  };
-
-  // Handle removing event handler
+  // 이벤트 핸들러 삭제
   const handleRemoveHandler = (handlerId: string) => {
-    // Update Inspector state - useSyncWithBuilder will sync to Builder store
-    removeEventFromInspector(handlerId);
-
-    // Clear selection if removed handler was selected
-    if (selectedHandlerId === handlerId) {
-      setSelectedHandlerId(null);
-    }
+    removeHandler(handlerId);
+    // 다음 핸들러 자동 선택
+    selectAfterDelete(handlerId);
   };
 
-  // Handle adding action to selected handler
-  const handleAddActionType = (actionType: ActionType) => {
-    if (!selectedHandler) {
-      return;
-    }
-
-    // Create action with default config for the selected type
-    const newAction = {
-      id: generateActionId(actionType),
-      type: actionType,
-      config: createDefaultActionConfig(actionType)
-    };
-
-    const updatedHandler: EventHandler = {
-      ...selectedHandler,
-      actions: [...selectedHandler.actions, newAction]
-    };
-
-    handleUpdateHandler(selectedHandler.id, updatedHandler);
-    setShowAddAction(false); // Hide ActionPalette after adding
-  };
-
-  // Show ActionPalette
-  const handleShowAddAction = () => {
-    setShowAddAction(true);
+  // 액션 추가
+  const handleAddAction = (actionType: ActionType) => {
+    addAction(actionType, {});
+    setShowAddAction(false);
   };
 
   return (
     <div className="event-section">
       <div className="section-header">
         <div className="section-title">Events</div>
-        <div className="header-actions">
-          <button
-            className="iconButton"
-            aria-label={showAddEvent ? "Cancel" : "Add Event"}
-            onClick={() => setShowAddEvent(!showAddEvent)}
-          >
-            {showAddEvent ? <X {...iconProps} /> : <Plus {...iconProps} />}
-          </button>
-        </div>
       </div>
 
       <div className="section-content">
-        {/* Add Event Palette */}
-        {showAddEvent && (
-          <div className="add-event-container">
-            <EventPalette
-              componentType={element.type}
-              registeredEvents={registeredEventTypes}
-              onAddEvent={handleAddEvent}
-            />
-          </div>
-        )}
+        {/* EventTypePicker - 간단한 Select로 대체 */}
+        <div className="add-event-container">
+          <EventTypePicker
+            onSelect={handleAddEvent}
+            registeredTypes={registeredEventTypes}
+          />
+        </div>
 
-        {/* Registered Event Handlers */}
-        {eventHandlers.length === 0 ? (
+        {/* 등록된 이벤트 핸들러 목록 */}
+        {handlers.length === 0 ? (
           <p className="empty-message">
-            No event handlers registered. Click the + icon to add one.
+            No event handlers registered. Use the selector above to add one.
           </p>
         ) : (
-        <div className="event-handlers-list">
-          {selectedHandler ? (
-            // Show EventHandlerManager for selected handler
-            <div className="selected-handler-container">
-              <div className="selected-handler-header">
-                <Button
-                  className="react-aria-Button"
-                  onPress={() => setSelectedHandlerId(null)}
-                >
-                  ← Back
-                </Button>
-                <span className="selected-handler-type">{selectedHandler.event}</span>
-                <Button
-                  className="react-aria-Button"
-                  onPress={() => handleRemoveHandler(selectedHandler.id)}
-                >
-                  🗑️ 
-                </Button>
-              </div>
-              {/* ActionPalette for selecting action type */}
-              {showAddAction ? (
-                <ActionPalette
-                  eventType={selectedHandler.event}
-                  componentType={element.type}
-                  previousAction={
-                    selectedHandler.actions.length > 0
-                      ? selectedHandler.actions[selectedHandler.actions.length - 1].type
-                      : undefined
-                  }
-                  onAddAction={handleAddActionType}
-                  onCancel={() => setShowAddAction(false)}
-                />
-              ) : (
-                <EventHandlerManager
-                  eventHandler={selectedHandler}
-                  onUpdateHandler={(updated) =>
-                    handleUpdateHandler(selectedHandler.id, updated)
-                  }
-                  onAddAction={handleShowAddAction}
-                />
-              )}
-            </div>
-          ) : (
-            // Show list of handlers
-            <div className="handlers-list">
-              {eventHandlers.map((handler) => (
-                <div
-                  key={handler.id}
-                  className="handler-item"
-                  onClick={() => setSelectedHandlerId(handler.id)}
-                >
-                  <div className="handler-info">
-                    <span className="handler-type">{handler.event}</span>
-                    <span className="handler-action-count">
-                      {handler.actions.length} action
-                      {handler.actions.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <span className="handler-arrow">→</span>
+          <div className="event-handlers-list">
+            {selectedHandler ? (
+              // 선택된 핸들러의 상세 화면
+              <div className="selected-handler-container">
+                <div className="selected-handler-header">
+                  <Button
+                    className="react-aria-Button"
+                    onPress={() => selectHandler(null)}
+                  >
+                    ← Back
+                  </Button>
+                  <span className="selected-handler-type">
+                    {selectedHandler.event_type}
+                  </span>
+                  <Button
+                    className="react-aria-Button"
+                    onPress={() => handleRemoveHandler(selectedHandler.id)}
+                  >
+                    🗑️
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+
+                {/* ActionTypePicker - 간단한 Select로 대체 */}
+                {showAddAction ? (
+                  <div className="add-action-container">
+                    <ActionTypePicker
+                      onSelect={handleAddAction}
+                      showCategories={true}
+                    />
+                    <Button
+                      onPress={() => setShowAddAction(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <EventHandlerManager
+                    eventHandler={selectedHandler}
+                    onUpdateHandler={(updated) =>
+                      updateHandler(selectedHandler.id, updated)
+                    }
+                    onAddAction={() => setShowAddAction(true)}
+                  />
+                )}
+              </div>
+            ) : (
+              // 핸들러 목록 화면
+              <div className="handlers-list">
+                {handlers.map((handler) => (
+                  <div
+                    key={handler.id}
+                    className="handler-item"
+                    onClick={() => selectHandler(handler.id)}
+                  >
+                    <div className="handler-info">
+                      <span className="handler-type">{handler.event_type}</span>
+                      <span className="handler-action-count">
+                        {handler.actions.length} action
+                        {handler.actions.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <span className="handler-arrow">→</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

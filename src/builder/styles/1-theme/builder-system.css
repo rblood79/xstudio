@@ -124,6 +124,7 @@
     --builder-button-text: var(--color-gray-900);
     --builder-button-border: var(--color-gray-300);
     --builder-button-hover-bg: var(--color-gray-200);
+    --builder-button-active-bg: var(--color-gray-100);
     --builder-button-pressed-bg: var(--color-gray-300);
 
     /* Builder Primary Action */
@@ -235,6 +236,7 @@
     --builder-button-text: var(--color-neutral-100);
     --builder-button-border: var(--color-gray-600);
     --builder-button-hover-bg: var(--color-gray-600);
+    --builder-button-active-bg: var(--color-gray-400);
     --builder-button-pressed-bg: var(--color-gray-500);
 
     /* Focus/Selection */
