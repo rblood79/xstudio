@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { ListTree, FolderTree, Workflow, Plus } from 'lucide-react';
+import { ListTree, FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -100,21 +100,36 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    onChange={updateCustomId}
-                    placeholder="tree_1"
-                />
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="tree_1"
+            />
+
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value)}
-                    icon={ListTree}
+                    value={String(currentProps.label || '')}
+                    onChange={(value) => updateProp('label', value || undefined)}
+                    icon={Tag}
                 />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DESCRIPTION}
+                    value={String(currentProps.description || '')}
+                    onChange={(value) => updateProp('description', value || undefined)}
+                    icon={FileText}
+                />
+            </fieldset>
+
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -136,10 +151,11 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
                     isSelected={Boolean(currentProps.disallowEmptySelection)}
                     onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.SELECTED_KEY}
+                    label={PROPERTY_LABELS.EXPANDED_KEYS}
                     value={Array.isArray(currentProps.expandedKeys) ? currentProps.expandedKeys.join(', ') : ''}
                     onChange={(value) => {
                         const keys = value ? value.split(',').map(k => k.trim()).filter(Boolean) : [];
@@ -149,7 +165,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.SELECTED_KEY}
+                    label={PROPERTY_LABELS.SELECTED_KEYS}
                     value={Array.isArray(currentProps.selectedKeys) ? currentProps.selectedKeys.join(', ') : ''}
                     onChange={(value) => {
                         const keys = value ? value.split(',').map(k => k.trim()).filter(Boolean) : [];
@@ -159,7 +175,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
+                    label={PROPERTY_LABELS.DEFAULT_EXPANDED_KEYS}
                     value={Array.isArray(currentProps.defaultExpandedKeys) ? currentProps.defaultExpandedKeys.join(', ') : ''}
                     onChange={(value) => {
                         const keys = value ? value.split(',').map(k => k.trim()).filter(Boolean) : [];
@@ -169,7 +185,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
+                    label={PROPERTY_LABELS.DEFAULT_SELECTED_KEYS}
                     value={Array.isArray(currentProps.defaultSelectedKeys) ? currentProps.defaultSelectedKeys.join(', ') : ''}
                     onChange={(value) => {
                         const keys = value ? value.split(',').map(k => k.trim()).filter(Boolean) : [];
@@ -179,6 +195,55 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 />
             </fieldset>
 
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
+                    isSelected={Boolean(currentProps.autoFocus)}
+                    onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tree label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
+
+            {/* Tree Items Section */}
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.TREE_ITEMS}</legend>
 
