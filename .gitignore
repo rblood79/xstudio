@@ -39,6 +39,12 @@ node_modules/
 *.sw?
 # OS specific
 .DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.swp
+*~
+
 # Task files
 tasks.json
 tasks/ 
