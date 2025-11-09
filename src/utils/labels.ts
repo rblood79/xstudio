@@ -278,6 +278,29 @@ export const PROPERTY_LABELS = {
 
     // ARIA
     ARIA_LABEL: 'Aria Label',
+    ARIA_LABELLEDBY: 'Aria Labelled By',
+    ARIA_DESCRIBEDBY: 'Aria Described By',
+
+    // Link properties
+    HREF: 'Link URL',
+    TARGET: 'Link Target',
+    TARGET_SELF: 'Same Window',
+    TARGET_BLANK: 'New Window',
+    TARGET_PARENT: 'Parent Frame',
+    TARGET_TOP: 'Top Frame',
+    REL: 'Link Relationship',
+
+    // Form properties
+    FORM_ACTION: 'Form Action URL',
+    FORM_METHOD: 'Form Method',
+    FORM_METHOD_GET: 'GET',
+    FORM_METHOD_POST: 'POST',
+    FORM_METHOD_DIALOG: 'Dialog',
+    FORM_NO_VALIDATE: 'Skip Validation',
+    FORM_TARGET: 'Form Target',
+
+    // State properties
+    IS_PENDING: 'Pending State',
 
     // Fieldset legends - General
     CONTENT: 'Content',
