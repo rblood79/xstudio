@@ -170,8 +170,8 @@ export function EventSection({ element }: EventSectionProps) {
                     <div className="handler-info">
                       <span className="handler-type">{handler.event_type}</span>
                       <span className="handler-action-count">
-                        {handler.actions.length} action
-                        {handler.actions.length !== 1 ? "s" : ""}
+                        {handler.actions?.length || 0} action
+                        {(handler.actions?.length || 0) !== 1 ? "s" : ""}
                       </span>
                     </div>
                     <span className="handler-arrow">→</span>

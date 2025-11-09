@@ -29,8 +29,14 @@ import type { ElementEvent, EventType } from '@/types/events';
  * removeHandler(handlerId);
  */
 export function useEventHandlers(initialEvents: ElementEvent[]) {
+  // Ensure all events have actions array initialized
+  const sanitizedEvents = initialEvents.map(event => ({
+    ...event,
+    actions: event.actions || [],
+  }));
+
   const list = useListData({
-    initialItems: initialEvents,
+    initialItems: sanitizedEvents,
     getKey: (item) => item.id,
   });
 
@@ -75,7 +81,7 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
     const duplicate: ElementEvent = {
       ...original,
       id: `${id}-copy-${Date.now()}`,
-      actions: original.actions.map((action) => ({
+      actions: (original.actions || []).map((action) => ({
         ...action,
         id: `${action.id}-copy-${Date.now()}`,
       })),
