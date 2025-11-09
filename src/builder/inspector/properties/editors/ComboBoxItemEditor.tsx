@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Tag, Binary, FileText, PointerOff } from 'lucide-react';
+import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput } from '../../components/PropertyInput';
 import { PropertySwitch } from '../../components/PropertySwitch';
 import { PropertyCustomId } from '../../components';
@@ -63,7 +63,7 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
     };
 
     return (
-        <div className="space-y-4">
+        <div className="component-props">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -72,33 +72,79 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                 placeholder="comboboxitem_1"
             />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.LABEL}
-                value={String(localProps.label || '')}
-                onChange={(value) => handlePropertyChange('label', value)}
-                icon={Tag}
-            />
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-            <PropertyInput
-                label={PROPERTY_LABELS.VALUE}
-                value={String(localProps.value || '')}
-                onChange={(value) => handlePropertyChange('value', value)}
-                icon={Binary}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.LABEL}
+                    value={String(localProps.label || '')}
+                    onChange={(value) => handlePropertyChange('label', value || undefined)}
+                    icon={Tag}
+                />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.DESCRIPTION}
-                value={String(localProps.description || '')}
-                onChange={(value) => handlePropertyChange('description', value)}
-                icon={FileText}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.VALUE}
+                    value={String(localProps.value || '')}
+                    onChange={(value) => handlePropertyChange('value', value || undefined)}
+                    icon={Binary}
+                />
 
-            <PropertySwitch
-                label={PROPERTY_LABELS.DISABLED}
-                isSelected={Boolean(localProps.isDisabled)}
-                onChange={(checked) => handlePropertyChange('isDisabled', checked)}
-                icon={PointerOff}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.DESCRIPTION}
+                    value={String(localProps.description || '')}
+                    onChange={(value) => handlePropertyChange('description', value || undefined)}
+                    icon={FileText}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.TEXT_VALUE}
+                    value={String(localProps.textValue || '')}
+                    onChange={(value) => handlePropertyChange('textValue', value || undefined)}
+                    icon={Binary}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(localProps.isDisabled)}
+                    onChange={(checked) => handlePropertyChange('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(localProps['aria-label'] || '')}
+                    onChange={(value) => handlePropertyChange('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="ComboBox item label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(localProps['aria-labelledby'] || '')}
+                    onChange={(value) => handlePropertyChange('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(localProps['aria-describedby'] || '')}
+                    onChange={(value) => handlePropertyChange('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
         </div>
     );
 }
