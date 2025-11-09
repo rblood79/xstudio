@@ -1,24 +1,24 @@
 import { useMemo } from "react";
 import type { Node, Edge } from "reactflow";
-import type { EventHandler } from "../types";
+import type { ElementEvent } from "@/types/events";
 import type { TriggerNodeData } from "../components/visualMode/TriggerNode";
 import type { ActionNodeData } from "../components/visualMode/ActionNode";
 
 /**
- * Convert EventHandler to ReactFlow nodes and edges
+ * Convert ElementEvent to ReactFlow nodes and edges
  */
-export function useEventFlow(eventHandler: EventHandler) {
+export function useEventFlow(eventHandler: ElementEvent) {
   const { nodes, edges } = useMemo(() => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
     // Create trigger node
     const triggerNode: Node<TriggerNodeData> = {
-      id: `trigger-${eventHandler.event}`,
+      id: `trigger-${eventHandler.event_type}`,
       type: "trigger",
       position: { x: 250, y: 50 },
       data: {
-        eventType: eventHandler.event
+        eventType: eventHandler.event_type
       }
     };
     nodes.push(triggerNode);
