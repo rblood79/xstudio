@@ -10,6 +10,10 @@ import {
   Focus,
   Binary,
   FileText,
+  Type,
+  Hash,
+  FormInput,
+  CheckSquare,
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -185,41 +189,44 @@ export function ListBoxEditor({
   // ListBox 컴포넌트 전체 설정 UI
   return (
     <div className="component-props">
-      <fieldset className="properties-aria">
-        {/* Custom ID */}
-        <PropertyCustomId
-          label="ID"
-          value={customId}
-          elementId={elementId}
-          onChange={updateCustomId}
-          placeholder="listbox_1"
-        />
+      <PropertyCustomId
+        label="ID"
+        value={customId}
+        elementId={elementId}
+        onChange={updateCustomId}
+        placeholder="listbox_1"
+      />
 
-        {/* 라벨 설정 */}
+      {/* Content Section */}
+      <fieldset className="properties-group">
+        <legend>Content</legend>
+
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
-          onChange={(value) => updateProp("label", value)}
+          onChange={(value) => updateProp("label", value || undefined)}
           icon={Tag}
         />
 
-        {/* 설명 설정 */}
         <PropertyInput
           label={PROPERTY_LABELS.DESCRIPTION}
           value={String(currentProps.description || "")}
-          onChange={(value) => updateProp("description", value)}
+          onChange={(value) => updateProp("description", value || undefined)}
           icon={FileText}
         />
 
-        {/* 오류 메시지 설정 */}
         <PropertyInput
           label={PROPERTY_LABELS.ERROR_MESSAGE}
           value={String(currentProps.errorMessage || "")}
-          onChange={(value) => updateProp("errorMessage", value)}
+          onChange={(value) => updateProp("errorMessage", value || undefined)}
           icon={AlertTriangle}
         />
+      </fieldset>
 
-        {/* 선택 모드 설정 */}
+      {/* State Section */}
+      <fieldset className="properties-group">
+        <legend>State</legend>
+
         <PropertySelect
           label={PROPERTY_LABELS.SELECTION_MODE}
           value={String(currentProps.selectionMode || "single")}
@@ -234,7 +241,6 @@ export function ListBoxEditor({
           icon={List}
         />
 
-        {/* 빈 선택 허용 안함 설정 */}
         <PropertySwitch
           label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
           isSelected={Boolean(currentProps.disallowEmptySelection)}
@@ -242,7 +248,18 @@ export function ListBoxEditor({
           icon={SquareX}
         />
 
-        {/* 비활성화 설정 */}
+        <PropertySwitch
+          label={PROPERTY_LABELS.REQUIRED}
+          isSelected={Boolean(currentProps.isRequired)}
+          onChange={(checked) => updateProp("isRequired", checked)}
+          icon={CheckSquare}
+        />
+      </fieldset>
+
+      {/* Behavior Section */}
+      <fieldset className="properties-group">
+        <legend>Behavior</legend>
+
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
@@ -250,7 +267,6 @@ export function ListBoxEditor({
           icon={PointerOff}
         />
 
-        {/* 자동 포커스 설정 */}
         <PropertySwitch
           label={PROPERTY_LABELS.AUTO_FOCUS}
           isSelected={Boolean(currentProps.autoFocus)}
@@ -259,10 +275,62 @@ export function ListBoxEditor({
         />
       </fieldset>
 
+      {/* Form Integration Section */}
+      <fieldset className="properties-group">
+        <legend>Form Integration</legend>
+
+        <PropertyInput
+          label={PROPERTY_LABELS.NAME}
+          value={String(currentProps.name || "")}
+          onChange={(value) => updateProp("name", value || undefined)}
+          icon={FormInput}
+          placeholder="listbox-name"
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+          value={String(currentProps.validationBehavior || "native")}
+          onChange={(value) => updateProp("validationBehavior", value)}
+          options={[
+            { value: "native", label: "Native" },
+            { value: "aria", label: "ARIA" },
+          ]}
+        />
+      </fieldset>
+
+      {/* Accessibility Section */}
+      <fieldset className="properties-group">
+        <legend>Accessibility</legend>
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps["aria-label"] || "")}
+          onChange={(value) => updateProp("aria-label", value || undefined)}
+          icon={Type}
+          placeholder="ListBox label for screen readers"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps["aria-labelledby"] || "")}
+          onChange={(value) => updateProp("aria-labelledby", value || undefined)}
+          icon={Hash}
+          placeholder="label-element-id"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+          value={String(currentProps["aria-describedby"] || "")}
+          onChange={(value) => updateProp("aria-describedby", value || undefined)}
+          icon={Hash}
+          placeholder="description-element-id"
+        />
+      </fieldset>
+
+      {/* Item Management Section */}
       <fieldset className="properties-aria">
         <legend className="fieldset-legend">{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
 
-        {/* 아이템 개수 표시 */}
         <div className="tab-overview">
           <p className="tab-overview-text">
             Total items: {listBoxChildren.length || 0}
@@ -272,7 +340,6 @@ export function ListBoxEditor({
           </p>
         </div>
 
-        {/* 아이템 목록 */}
         {listBoxChildren.length > 0 && (
           <div className="react-aria-ListBox">
             {listBoxChildren.map((item, index) => (
@@ -296,7 +363,6 @@ export function ListBoxEditor({
           </div>
         )}
 
-        {/* 새 아이템 추가 */}
         <div className="tab-actions">
           <button
             className="control-button add"
@@ -308,7 +374,6 @@ export function ListBoxEditor({
                   storeElements.map((el) => ({ id: el.id, tag: el.tag }))
                 );
 
-                // 새로운 ListBoxItem 요소를 Supabase에 직접 삽입
                 const newItem = {
                   id: ElementUtils.generateId(),
                   page_id: currentPageId || "1",
@@ -331,7 +396,6 @@ export function ListBoxEditor({
                     elementId
                   );
 
-                // 스토어에 새 요소 추가
                 addElement(data);
                 console.log("새 ListBoxItem 추가됨:", data);
               } catch (error) {
