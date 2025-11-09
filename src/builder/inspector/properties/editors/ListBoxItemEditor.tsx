@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Tag, Binary, PointerOff, PenOff, SquarePlus, Database } from 'lucide-react';
+import { Tag, Binary, PointerOff, SquarePlus, Database, FileText, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -134,30 +134,57 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
     // Field 자식이 없으면 기존 정적 아이템 편집 UI
     return (
         <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="listboxitem_1"
+            />
+
             <fieldset className="properties-aria">
                 <legend className="fieldset-legend">Static Item Properties</legend>
+                <p className="tab-overview-help">
+                    💡 This is a static ListBoxItem. Add Field elements to enable dynamic data rendering.
+                </p>
+            </fieldset>
 
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    onChange={updateCustomId}
-                    placeholder="listboxitem_1"
-                />
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
-                    onChange={(value) => updateProp('value', value)}
+                    onChange={(value) => updateProp('value', value || undefined)}
                     icon={Binary}
                 />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DESCRIPTION}
+                    value={String(currentProps.description || '')}
+                    onChange={(value) => updateProp('description', value || undefined)}
+                    icon={FileText}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.TEXT_VALUE}
+                    value={String(currentProps.textValue || '')}
+                    onChange={(value) => updateProp('textValue', value || undefined)}
+                    icon={Binary}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -165,12 +192,34 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
+            </fieldset>
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="List box item label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
