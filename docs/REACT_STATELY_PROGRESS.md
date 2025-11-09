@@ -142,6 +142,17 @@
      - useEventHandlers.ts: duplicateHandler에 null check `(original.actions || [])`
    - **커밋**: `b80d969` fix: Add null safety checks for handler.actions
 
+5. **EventSection.tsx DataCloneError** (2025-11-09)
+   - **에러**: `Failed to execute 'postMessage': (old)=>({...old, ...updates}) could not be cloned`
+   - **원인**: useEventHandlers.updateHandler가 arrow function을 list.update()에 전달, 이것이 handlers 배열에 포함되어 postMessage 직렬화 실패
+   - **수정**:
+     - EventSection.tsx: 완전한 handler 객체 전달 (`{ ...selectedHandler, actions }`)
+     - useEventHandlers.ts: updateHandler가 완전한 객체와 Partial 모두 지원
+       - 완전한 ElementEvent (id + event_type 존재): 직접 사용
+       - Partial<ElementEvent>: 기존 방식대로 arrow function으로 병합
+   - **기술 세부사항**: useListData.update()는 `T` 와 `(old: T) => T` 모두 허용하지만, arrow function은 postMessage로 직렬화 불가
+   - **커밋**: `23b4caf` fix: Prevent DataCloneError in EventSection postMessage
+
 ### 기술적 개선
 
 ✅ **자동 불변성 관리** - useListData가 안전한 상태 업데이트 처리
