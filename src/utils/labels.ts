@@ -302,6 +302,47 @@ export const PROPERTY_LABELS = {
     // State properties
     IS_PENDING: 'Pending State',
 
+    // Input type properties
+    INPUT_TYPE: 'Input Type',
+    INPUT_TYPE_TEXT: 'Text',
+    INPUT_TYPE_EMAIL: 'Email',
+    INPUT_TYPE_PASSWORD: 'Password',
+    INPUT_TYPE_SEARCH: 'Search',
+    INPUT_TYPE_TEL: 'Telephone',
+    INPUT_TYPE_URL: 'URL',
+    INPUT_TYPE_NUMBER: 'Number',
+
+    // Input mode properties
+    INPUT_MODE: 'Input Mode',
+    INPUT_MODE_NONE: 'None',
+    INPUT_MODE_TEXT: 'Text',
+    INPUT_MODE_NUMERIC: 'Numeric',
+    INPUT_MODE_DECIMAL: 'Decimal',
+    INPUT_MODE_TEL: 'Telephone',
+    INPUT_MODE_EMAIL: 'Email',
+    INPUT_MODE_URL: 'URL',
+    INPUT_MODE_SEARCH: 'Search',
+
+    // AutoComplete properties
+    AUTO_COMPLETE_OFF: 'Off',
+    AUTO_COMPLETE_ON: 'On',
+    AUTO_COMPLETE_NAME: 'Name',
+    AUTO_COMPLETE_EMAIL: 'Email',
+    AUTO_COMPLETE_USERNAME: 'Username',
+    AUTO_COMPLETE_NEW_PASSWORD: 'New Password',
+    AUTO_COMPLETE_CURRENT_PASSWORD: 'Current Password',
+    AUTO_COMPLETE_TEL: 'Telephone',
+    AUTO_COMPLETE_URL: 'URL',
+
+    // Validation properties
+    PATTERN: 'Pattern (Regex)',
+    MIN_LENGTH: 'Min Length',
+    MAX_LENGTH: 'Max Length',
+
+    // Text editing properties
+    SPELL_CHECK: 'Spell Check',
+    AUTO_CORRECT: 'Auto Correct',
+
     // Fieldset legends - General
     CONTENT: 'Content',
     STYLING: 'Styling',
