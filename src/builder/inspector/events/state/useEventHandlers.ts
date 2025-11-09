@@ -62,10 +62,17 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
    * 이벤트 핸들러 업데이트
    *
    * @param id - 이벤트 핸들러 ID
-   * @param updates - 업데이트할 속성
+   * @param updates - 업데이트할 속성 또는 완전한 핸들러 객체
    */
-  const updateHandler = (id: Key, updates: Partial<ElementEvent>) => {
-    list.update(id, (old) => ({ ...old, ...updates }));
+  const updateHandler = (id: Key, updates: Partial<ElementEvent> | ElementEvent) => {
+    // updates가 완전한 ElementEvent인지 확인 (id와 event_type 존재)
+    if ('id' in updates && 'event_type' in updates) {
+      // 완전한 객체를 전달받은 경우 그대로 사용
+      list.update(id, updates as ElementEvent);
+    } else {
+      // Partial인 경우 병합
+      list.update(id, (old) => ({ ...old, ...updates }));
+    }
   };
 
   /**

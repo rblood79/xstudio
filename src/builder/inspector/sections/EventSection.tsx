@@ -63,7 +63,10 @@ export function EventSection({ element }: EventSectionProps) {
   // Actions 변경 시 Handler 업데이트
   useEffect(() => {
     if (selectedHandler) {
-      updateHandler(selectedHandler.id, { actions });
+      // useListData의 update는 함수를 받지만, 우리는 직접 객체를 전달
+      // 함수를 전달하면 postMessage로 직렬화할 수 없어 에러 발생
+      const updatedHandler = { ...selectedHandler, actions };
+      updateHandler(selectedHandler.id, updatedHandler);
     }
   }, [actions, selectedHandler?.id]);
 
