@@ -1,4 +1,4 @@
-import { Clock, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe } from 'lucide-react';
+import { Clock, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -35,20 +35,82 @@ export function TimeFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                 placeholder="timefield_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value)}
+                    value={String(currentProps.label || '')}
+                    onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DESCRIPTION}
+                    value={String(currentProps.description || '')}
+                    onChange={(value) => updateProp('description', value || undefined)}
+                    icon={FileText}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ERROR_MESSAGE}
+                    value={String(currentProps.errorMessage || '')}
+                    onChange={(value) => updateProp('errorMessage', value || undefined)}
+                    icon={AlertTriangle}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholderValue || '')}
-                    onChange={(value) => updateProp('placeholderValue', value)}
+                    onChange={(value) => updateProp('placeholderValue', value || undefined)}
                     placeholder="00:00"
                 />
+            </fieldset>
+
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.MIN_VALUE}
+                    value={String(currentProps.minValue || '')}
+                    onChange={(value) => updateProp('minValue', value || undefined)}
+                    placeholder="00:00"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.MAX_VALUE}
+                    value={String(currentProps.maxValue || '')}
+                    onChange={(value) => updateProp('maxValue', value || undefined)}
+                    placeholder="23:59"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DEFAULT_VALUE}
+                    value={String(currentProps.defaultValue || '')}
+                    onChange={(value) => updateProp('defaultValue', value || undefined)}
+                    placeholder="12:00"
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.REQUIRED}
+                    isSelected={Boolean(currentProps.isRequired)}
+                    onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -65,28 +127,16 @@ export function TimeFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                 />
 
                 <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INVALID}
-                    isSelected={Boolean(currentProps.isInvalid)}
-                    onChange={(checked) => updateProp('isInvalid', checked)}
-                    icon={AlertTriangle}
-                />
-
-                <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
                 />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TIME_SETTINGS}</legend>
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.HOUR_CYCLE}
@@ -123,49 +173,28 @@ export function TimeFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     label={PROPERTY_LABELS.FORCE_LEADING_ZEROS}
                     isSelected={Boolean(currentProps.shouldForceLeadingZeros)}
                     onChange={(checked) => updateProp('shouldForceLeadingZeros', checked)}
+                    icon={Clock}
                 />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TIME_RANGE}</legend>
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MIN_VALUE}
-                    value={String(currentProps.minValue || '')}
-                    onChange={(value) => updateProp('minValue', value)}
-                    placeholder="00:00"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MAX_VALUE}
-                    value={String(currentProps.maxValue || '')}
-                    onChange={(value) => updateProp('maxValue', value)}
-                    placeholder="23:59"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_VALUE}
-                    value={String(currentProps.defaultValue || '')}
-                    onChange={(value) => updateProp('defaultValue', value)}
-                    placeholder="12:00"
-                />
-            </fieldset>
-
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.FORM_INTEGRATION}</legend>
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
                     value={String(currentProps.name || '')}
-                    onChange={(value) => updateProp('name', value)}
-                    icon={Tag}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="time-field-name"
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.FORM}
                     value={String(currentProps.form || '')}
-                    onChange={(value) => updateProp('form', value)}
-                    placeholder="Form ID"
+                    onChange={(value) => updateProp('form', value || undefined)}
+                    icon={FormInput}
+                    placeholder="form-id"
                 />
 
                 <PropertySelect
@@ -176,6 +205,35 @@ export function TimeFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                         { value: 'native', label: 'Native' },
                         { value: 'aria', label: 'ARIA' }
                     ]}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Time field label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
         </div>
