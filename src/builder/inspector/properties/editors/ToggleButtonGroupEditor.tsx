@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target, Layout, Ruler } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target, Layout, Ruler, Type, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -138,8 +138,10 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                 placeholder="togglebuttongroup_1"
             />
 
-            <fieldset className="properties-aria">
-                {/* 라벨 설정 */}
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
@@ -147,7 +149,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     icon={Tag}
                 />
 
-                {/* 설명 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
@@ -155,67 +156,18 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     icon={FileText}
                 />
 
-                {/* 오류 메시지 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
-
-                {/* 방향 설정 */}
-                <PropertySelect
-                    label={PROPERTY_LABELS.ORIENTATION}
-                    value={String(currentProps.orientation || 'horizontal')}
-                    onChange={(value) => updateProp('orientation', value)}
-                    options={[
-                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
-                    ]}
-                    icon={ToggleLeft}
-                />
-
-                {/* 선택 모드 설정 */}
-                <PropertySelect
-                    label={PROPERTY_LABELS.SELECTION_MODE}
-                    value={String(currentProps.selectionMode || 'single')}
-                    onChange={(value) => updateProp('selectionMode', value)}
-                    options={[
-                        { value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
-                        { value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
-                    ]}
-                    icon={Binary}
-                />
-
-                {/* 비활성화 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                {/* 자동 포커스 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
-                />
-
-                {/* Indicator 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INDICATOR}
-                    isSelected={currentProps.indicator === true}
-                    onChange={(checked) => {
-                        updateProp('indicator', checked);
-                    }}
-                    icon={Target}
-                />
             </fieldset>
 
+            {/* Design Section */}
             <fieldset className="properties-design">
-                {/* Variant 설정 */}
+                <legend>Design</legend>
+
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
                     value={String(currentProps.variant || 'default')}
@@ -229,7 +181,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                     icon={Layout}
                 />
 
-                {/* Size 설정 */}
                 <PropertySelect
                     label={PROPERTY_LABELS.SIZE}
                     value={String(currentProps.size || 'md')}
@@ -240,6 +191,117 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
                     ]}
                     icon={Ruler}
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.ORIENTATION}
+                    value={String(currentProps.orientation || 'horizontal')}
+                    onChange={(value) => updateProp('orientation', value)}
+                    options={[
+                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+                    ]}
+                    icon={ToggleLeft}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INDICATOR}
+                    isSelected={currentProps.indicator === true}
+                    onChange={(checked) => {
+                        updateProp('indicator', checked);
+                    }}
+                    icon={Target}
+                />
+            </fieldset>
+
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.SELECTION_MODE}
+                    value={String(currentProps.selectionMode || 'single')}
+                    onChange={(value) => updateProp('selectionMode', value)}
+                    options={[
+                        { value: 'single', label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
+                        { value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
+                    ]}
+                    icon={Binary}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.REQUIRED}
+                    isSelected={Boolean(currentProps.isRequired)}
+                    onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
+                    isSelected={Boolean(currentProps.autoFocus)}
+                    onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
+                />
+            </fieldset>
+
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="togglebutton-group-name"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Toggle button group label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
