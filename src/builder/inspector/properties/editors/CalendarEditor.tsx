@@ -1,4 +1,4 @@
-import { Calendar, Tag, PointerOff, PenOff, AlertTriangle } from 'lucide-react';
+import { Calendar, Tag, PointerOff, PenOff, AlertTriangle, Focus, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -35,13 +35,49 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 placeholder="calendar_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
                 <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value)}
-                    icon={Tag}
+                    label={PROPERTY_LABELS.MIN_VALUE}
+                    value={String(currentProps.minValue || '')}
+                    onChange={(value) => updateProp('minValue', value || undefined)}
+                    placeholder="YYYY-MM-DD"
                 />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.MAX_VALUE}
+                    value={String(currentProps.maxValue || '')}
+                    onChange={(value) => updateProp('maxValue', value || undefined)}
+                    placeholder="YYYY-MM-DD"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DEFAULT_VALUE}
+                    value={String(currentProps.defaultValue || '')}
+                    onChange={(value) => updateProp('defaultValue', value || undefined)}
+                    placeholder="YYYY-MM-DD"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.DEFAULT_FOCUSED_VALUE}
+                    value={String(currentProps.defaultFocusedValue || '')}
+                    onChange={(value) => updateProp('defaultFocusedValue', value || undefined)}
+                    placeholder="YYYY-MM-DD"
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -61,50 +97,13 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     label={PROPERTY_LABELS.AUTO_FOCUS}
                     isSelected={Boolean(currentProps.autoFocus)}
                     onChange={(checked) => updateProp('autoFocus', checked)}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INVALID}
-                    isSelected={Boolean(currentProps.isInvalid)}
-                    onChange={(checked) => updateProp('isInvalid', checked)}
-                    icon={AlertTriangle}
+                    icon={Focus}
                 />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.DATE_RANGE}</legend>
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MIN_VALUE}
-                    value={String(currentProps.minValue || '')}
-                    onChange={(value) => updateProp('minValue', value)}
-                    placeholder="YYYY-MM-DD"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MAX_VALUE}
-                    value={String(currentProps.maxValue || '')}
-                    onChange={(value) => updateProp('maxValue', value)}
-                    placeholder="YYYY-MM-DD"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_VALUE}
-                    value={String(currentProps.defaultValue || '')}
-                    onChange={(value) => updateProp('defaultValue', value)}
-                    placeholder="YYYY-MM-DD"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_FOCUSED_VALUE}
-                    value={String(currentProps.defaultFocusedValue || '')}
-                    onChange={(value) => updateProp('defaultFocusedValue', value)}
-                    placeholder="YYYY-MM-DD"
-                />
-            </fieldset>
-
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.DISPLAY_SETTINGS}</legend>
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.PAGE_BEHAVIOR}
@@ -120,7 +119,7 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <PropertySelect
                     label={PROPERTY_LABELS.FIRST_DAY_OF_WEEK}
                     value={String(currentProps.firstDayOfWeek || '')}
-                    onChange={(value) => updateProp('firstDayOfWeek', value)}
+                    onChange={(value) => updateProp('firstDayOfWeek', value || undefined)}
                     options={[
                         { value: '', label: 'Default (Locale)' },
                         { value: 'sun', label: 'Sunday' },
@@ -149,8 +148,37 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <PropertyInput
                     label={PROPERTY_LABELS.VISIBLE_DURATION}
                     value={String(currentProps.visibleDuration || '')}
-                    onChange={(value) => updateProp('visibleDuration', value)}
+                    onChange={(value) => updateProp('visibleDuration', value || undefined)}
                     placeholder="e.g., {months: 1}"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Calendar label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
         </div>
