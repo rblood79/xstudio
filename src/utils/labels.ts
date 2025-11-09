@@ -284,11 +284,23 @@ export const PROPERTY_LABELS = {
     // Link properties
     HREF: 'Link URL',
     TARGET: 'Link Target',
+    TARGET_NONE: 'Default',
     TARGET_SELF: 'Same Window',
     TARGET_BLANK: 'New Window',
     TARGET_PARENT: 'Parent Frame',
     TARGET_TOP: 'Top Frame',
     REL: 'Link Relationship',
+
+    // Breadcrumb properties
+    CURRENT: 'Current Page',
+    ARIA_CURRENT: 'Aria Current',
+    ARIA_CURRENT_NONE: 'None',
+    ARIA_CURRENT_PAGE: 'Page',
+    ARIA_CURRENT_STEP: 'Step',
+    ARIA_CURRENT_LOCATION: 'Location',
+    ARIA_CURRENT_DATE: 'Date',
+    ARIA_CURRENT_TIME: 'Time',
+    ARIA_CURRENT_TRUE: 'True',
 
     // Form properties
     FORM_ACTION: 'Form Action URL',
