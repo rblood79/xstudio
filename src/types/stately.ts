@@ -6,6 +6,7 @@
  */
 
 import type { Key, Selection } from 'react-stately';
+import type { FieldDefinition, FieldType } from './unified';
 
 /**
  * 리스트 데이터 아이템 기본 인터페이스
@@ -16,6 +17,23 @@ export interface ListDataItem {
   id: string;
   /** 추가 속성 */
   [key: string]: unknown;
+}
+
+/**
+ * 컬럼 리스트 아이템 (Phase 2: Data Section)
+ * APICollectionEditor, SupabaseCollectionEditor에서 사용
+ */
+export interface ColumnListItem extends ListDataItem {
+  /** 컬럼 키 (데이터 필드명) */
+  key: string;
+  /** 표시 레이블 */
+  label: string;
+  /** 데이터 타입 */
+  type: FieldType;
+  /** 선택 여부 */
+  selected?: boolean;
+  /** 표시 순서 */
+  order?: number;
 }
 
 /**
