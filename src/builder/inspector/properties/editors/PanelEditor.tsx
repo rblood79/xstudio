@@ -1,4 +1,4 @@
-import { Type, Layout, ToggleLeft, X } from 'lucide-react';
+import { Type, Layout, ToggleLeft, X, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -38,47 +38,85 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 placeholder="panel_1"
             />
 
-            {/* 제목 설정 */}
-            <PropertyInput
-                label={PROPERTY_LABELS.TITLE}
-                value={String(currentProps.title || '')}
-                onChange={(value) => updateProp('title', value)}
-                icon={Type}
-            />
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-            {/* 스타일 설정 */}
-            <PropertySelect
-                label={PROPERTY_LABELS.STYLE}
-                value={String(currentProps.variant || 'card')}
-                onChange={(value) => updateProp('variant', value as 'tab' | 'card' | 'bordered' | 'shadow')}
-                options={[
-                    { value: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
-                    { value: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
-                    { value: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
-                    { value: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
-                ]}
-                icon={Layout}
-            />
-
-            {/* 열림 상태 설정 (Tab 패널이 아닌 경우에만) */}
-            {!isTabPanel && (
-                <PropertySwitch
-                    label={PROPERTY_LABELS.IS_OPEN}
-                    isSelected={Boolean(currentProps.isOpen)}
-                    onChange={(checked) => updateProp('isOpen', checked)}
-                    icon={ToggleLeft}
+                <PropertyInput
+                    label={PROPERTY_LABELS.TITLE}
+                    value={String(currentProps.title || '')}
+                    onChange={(value) => updateProp('title', value)}
+                    icon={Type}
                 />
+            </fieldset>
+
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.STYLE}
+                    value={String(currentProps.variant || 'card')}
+                    onChange={(value) => updateProp('variant', value as 'tab' | 'card' | 'bordered' | 'shadow')}
+                    options={[
+                        { value: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
+                        { value: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
+                        { value: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
+                        { value: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
+                    ]}
+                    icon={Layout}
+                />
+            </fieldset>
+
+            {/* State Section (Tab Panel이 아닌 경우만) */}
+            {!isTabPanel && (
+                <fieldset className="properties-group">
+                    <legend>State</legend>
+
+                    <PropertySwitch
+                        label={PROPERTY_LABELS.IS_OPEN}
+                        isSelected={Boolean(currentProps.isOpen)}
+                        onChange={(checked) => updateProp('isOpen', checked)}
+                        icon={ToggleLeft}
+                    />
+
+                    <PropertySwitch
+                        label={PROPERTY_LABELS.IS_DISMISSABLE}
+                        isSelected={Boolean(currentProps.isDismissable)}
+                        onChange={(checked) => updateProp('isDismissable', checked)}
+                        icon={X}
+                    />
+                </fieldset>
             )}
 
-            {/* 닫기 가능 설정 (Tab 패널이 아닌 경우에만) */}
-            {!isTabPanel && (
-                <PropertySwitch
-                    label={PROPERTY_LABELS.IS_DISMISSABLE}
-                    isSelected={Boolean(currentProps.isDismissable)}
-                    onChange={(checked) => updateProp('isDismissable', checked)}
-                    icon={X}
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Panel label for screen readers"
                 />
-            )}
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
 
             {/* Tab 패널인 경우 tabIndex 정보 표시 */}
             {isTabPanel && (

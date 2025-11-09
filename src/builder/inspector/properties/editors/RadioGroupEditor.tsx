@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio, Layout, Ruler } from 'lucide-react';
+import { Tag, SquarePlus, Trash, FileText, PointerOff, AlertTriangle, CheckSquare, PenOff, CheckCheck, Binary, Ratio, Layout, Ruler, Type, Hash, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -160,10 +160,10 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                 placeholder="radiogroup_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-
-                {/* 라벨 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
@@ -171,7 +171,6 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Tag}
                 />
 
-                {/* 설명 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
@@ -179,29 +178,18 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={FileText}
                 />
 
-                {/* 오류 메시지 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
-
-                {/* 방향 설정 */}
-                <PropertySelect
-                    label={PROPERTY_LABELS.ORIENTATION}
-                    value={String(currentProps.orientation || 'vertical')}
-                    options={[
-                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
-                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                    ]}
-                    onChange={(value) => updateProp('orientation', value)}
-                    icon={Ratio}
-                />
             </fieldset>
 
+            {/* Design Section */}
             <fieldset className="properties-design">
-                {/* Variant 설정 */}
+                <legend>Design</legend>
+
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
                     value={String(currentProps.variant || 'default')}
@@ -215,7 +203,6 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Layout}
                 />
 
-                {/* Size 설정 */}
                 <PropertySelect
                     label={PROPERTY_LABELS.SIZE}
                     value={String(currentProps.size || 'md')}
@@ -227,10 +214,23 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     ]}
                     icon={Ruler}
                 />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.ORIENTATION}
+                    value={String(currentProps.orientation || 'vertical')}
+                    options={[
+                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL },
+                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                    ]}
+                    onChange={(value) => updateProp('orientation', value)}
+                    icon={Ratio}
+                />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                {/* 선택 값 설정 */}
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value || '')}
@@ -238,7 +238,6 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Binary}
                 />
 
-                {/* 기본 선택 값 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DEFAULT_VALUE}
                     value={String(currentProps.defaultValue || '')}
@@ -246,15 +245,6 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={CheckCheck}
                 />
 
-                {/* 비활성화 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                {/* 필수 설정 */}
                 <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
                     isSelected={Boolean(currentProps.isRequired)}
@@ -262,12 +252,72 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                     icon={CheckSquare}
                 />
 
-                {/* 읽기 전용 설정 */}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
                 <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
                     isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
+                />
+            </fieldset>
+
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="radio-group-name"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Radio group label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 

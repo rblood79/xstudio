@@ -1,4 +1,4 @@
-import { Tag, Binary, Gauge, Layout, PencilRuler } from 'lucide-react';
+import { Tag, Binary, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -26,8 +26,8 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     };
 
     // 숫자 프로퍼티 업데이트 함수
-    const updateNumberProp = (key: string, value: string, defaultValue: number = 0) => {
-        const numericValue = value === '' ? undefined : Number(value) || defaultValue;
+    const updateNumberProp = (key: string, value: string, defaultValue?: number) => {
+        const numericValue = value === '' ? undefined : (Number(value) || defaultValue);
         updateProp(key, numericValue);
     };
 
@@ -41,7 +41,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 placeholder="meter_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
@@ -52,29 +55,16 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.value ?? '')}
-                    onChange={(value) => updateNumberProp('value', value, 0)}
-                    type="number"
+                    onChange={(value) => updateNumberProp('value', value)}
                     icon={Gauge}
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MIN_VALUE}
-                    value={String(currentProps.minValue ?? '0')}
-                    onChange={(value) => updateNumberProp('minValue', value, 0)}
-                    type="number"
-                    icon={Binary}
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.MAX_VALUE}
-                    value={String(currentProps.maxValue ?? '100')}
-                    onChange={(value) => updateNumberProp('maxValue', value, 100)}
-                    type="number"
-                    icon={Binary}
+                    placeholder="50"
                 />
             </fieldset>
 
+            {/* Design Section */}
             <fieldset className="properties-design">
+                <legend>Design</legend>
+
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
                     value={String(currentProps.variant || 'default')}
@@ -98,6 +88,56 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
                     ]}
                     icon={PencilRuler}
+                />
+            </fieldset>
+
+            {/* Range Section */}
+            <fieldset className="properties-group">
+                <legend>Range</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.MIN_VALUE}
+                    value={String(currentProps.minValue ?? '')}
+                    onChange={(value) => updateNumberProp('minValue', value, 0)}
+                    icon={ArrowDown}
+                    placeholder="0"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.MAX_VALUE}
+                    value={String(currentProps.maxValue ?? '')}
+                    onChange={(value) => updateNumberProp('maxValue', value, 100)}
+                    icon={ArrowUp}
+                    placeholder="100"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Meter indicator for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
         </div>

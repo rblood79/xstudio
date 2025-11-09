@@ -1,5 +1,5 @@
-import { AppWindow, Type, Menu } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCustomId } from '../../components';
+import { AppWindow, Type, Menu, PointerOff, Hash } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
@@ -50,13 +50,33 @@ export function TabEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                 placeholder="tab_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.TAB_TITLE}
                     value={String(currentProps.title || '')}
-                    onChange={(value) => updateProp('title', value)}
+                    onChange={(value) => updateProp('title', value || undefined)}
                     icon={Type}
                 />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -73,12 +93,34 @@ export function TabEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                     options={TAB_APPEARANCES}
                     icon={AppWindow}
                 />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.DISABLED}
-                    value={String(currentProps.isDisabled || false)}
-                    onChange={(value) => updateProp('isDisabled', value === 'true')}
-                    icon={AppWindow}
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tab label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
         </div>

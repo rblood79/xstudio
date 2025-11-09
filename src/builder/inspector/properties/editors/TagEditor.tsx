@@ -1,4 +1,4 @@
-import { Type, PointerOff } from 'lucide-react';
+import { Type, PointerOff, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -35,19 +35,66 @@ export function TagEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                 placeholder="tag_1"
             />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.TEXT}
-                value={String(currentProps.children || '')}
-                onChange={(value) => updateProp('children', value)}
-                icon={Type}
-            />
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-            <PropertySwitch
-                label={PROPERTY_LABELS.DISABLED}
-                isSelected={Boolean(currentProps.isDisabled)}
-                onChange={(checked) => updateProp('isDisabled', checked)}
-                icon={PointerOff}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.TEXT}
+                    value={String(currentProps.children || '')}
+                    onChange={(value) => updateProp('children', value)}
+                    icon={Type}
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.TEXT_VALUE}
+                    value={String(currentProps.textValue || '')}
+                    onChange={(value) => updateProp('textValue', value || undefined)}
+                    icon={Type}
+                    placeholder="Text for accessibility and filtering"
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tag label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
 
             <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
                 💡 Variant and size are controlled by the parent TagGroup

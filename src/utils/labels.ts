@@ -97,6 +97,16 @@ export const PROPERTY_LABELS = {
     ORIENTATION_HORIZONTAL: 'Horizontal',
     ORIENTATION_VERTICAL: 'Vertical',
 
+    // Placement options (for Tooltip, Popover, etc.)
+    PLACEMENT: 'Placement',
+    PLACEMENT_TOP: 'Top',
+    PLACEMENT_BOTTOM: 'Bottom',
+    PLACEMENT_LEFT: 'Left',
+    PLACEMENT_RIGHT: 'Right',
+    PLACEMENT_START: 'Start',
+    PLACEMENT_END: 'End',
+    OFFSET: 'Offset (px)',
+
     // Default tab
     DEFAULT_TAB: 'Default Tab',
 
@@ -278,6 +288,95 @@ export const PROPERTY_LABELS = {
 
     // ARIA
     ARIA_LABEL: 'Aria Label',
+    ARIA_LABELLEDBY: 'Aria Labelled By',
+    ARIA_DESCRIBEDBY: 'Aria Described By',
+
+    // Link properties
+    HREF: 'Link URL',
+    TARGET: 'Link Target',
+    TARGET_NONE: 'Default',
+    TARGET_SELF: 'Same Window',
+    TARGET_BLANK: 'New Window',
+    TARGET_PARENT: 'Parent Frame',
+    TARGET_TOP: 'Top Frame',
+    REL: 'Link Relationship',
+
+    // Breadcrumb properties
+    CURRENT: 'Current Page',
+    ARIA_CURRENT: 'Aria Current',
+    ARIA_CURRENT_NONE: 'None',
+    ARIA_CURRENT_PAGE: 'Page',
+    ARIA_CURRENT_STEP: 'Step',
+    ARIA_CURRENT_LOCATION: 'Location',
+    ARIA_CURRENT_DATE: 'Date',
+    ARIA_CURRENT_TIME: 'Time',
+    ARIA_CURRENT_TRUE: 'True',
+
+    // Form properties
+    FORM_ACTION: 'Form Action URL',
+    FORM_METHOD: 'Form Method',
+    FORM_METHOD_GET: 'GET',
+    FORM_METHOD_POST: 'POST',
+    FORM_METHOD_DIALOG: 'Dialog',
+    FORM_NO_VALIDATE: 'Skip Validation',
+    FORM_TARGET: 'Form Target',
+
+    // State properties
+    IS_PENDING: 'Pending State',
+
+    // Input type properties
+    INPUT_TYPE: 'Input Type',
+    INPUT_TYPE_TEXT: 'Text',
+    INPUT_TYPE_EMAIL: 'Email',
+    INPUT_TYPE_PASSWORD: 'Password',
+    INPUT_TYPE_SEARCH: 'Search',
+    INPUT_TYPE_TEL: 'Telephone',
+    INPUT_TYPE_URL: 'URL',
+    INPUT_TYPE_NUMBER: 'Number',
+
+    // Input mode properties
+    INPUT_MODE: 'Input Mode',
+    INPUT_MODE_NONE: 'None',
+    INPUT_MODE_TEXT: 'Text',
+    INPUT_MODE_NUMERIC: 'Numeric',
+    INPUT_MODE_DECIMAL: 'Decimal',
+    INPUT_MODE_TEL: 'Telephone',
+    INPUT_MODE_EMAIL: 'Email',
+    INPUT_MODE_URL: 'URL',
+    INPUT_MODE_SEARCH: 'Search',
+
+    // AutoComplete properties
+    AUTO_COMPLETE_OFF: 'Off',
+    AUTO_COMPLETE_ON: 'On',
+    AUTO_COMPLETE_NAME: 'Name',
+    AUTO_COMPLETE_EMAIL: 'Email',
+    AUTO_COMPLETE_USERNAME: 'Username',
+    AUTO_COMPLETE_NEW_PASSWORD: 'New Password',
+    AUTO_COMPLETE_CURRENT_PASSWORD: 'Current Password',
+    AUTO_COMPLETE_TEL: 'Telephone',
+    AUTO_COMPLETE_URL: 'URL',
+
+    // Validation properties
+    PATTERN: 'Pattern (Regex)',
+    MIN_LENGTH: 'Min Length',
+    MAX_LENGTH: 'Max Length',
+
+    // Text editing properties
+    SPELL_CHECK: 'Spell Check',
+    AUTO_CORRECT: 'Auto Correct',
+
+    // Number formatting properties
+    NUMBER_FORMAT_STYLE: 'Format Style',
+    NUMBER_STYLE_DECIMAL: 'Decimal',
+    NUMBER_STYLE_CURRENCY: 'Currency',
+    NUMBER_STYLE_PERCENT: 'Percent',
+    NUMBER_STYLE_UNIT: 'Unit',
+    CURRENCY: 'Currency',
+    MIN_FRACTION_DIGITS: 'Min Decimal Places',
+    MAX_FRACTION_DIGITS: 'Max Decimal Places',
+    WHEEL_DISABLED: 'Disable Mouse Wheel',
+    INCREMENT_ARIA_LABEL: 'Increment Button Label',
+    DECREMENT_ARIA_LABEL: 'Decrement Button Label',
 
     // Fieldset legends - General
     CONTENT: 'Content',

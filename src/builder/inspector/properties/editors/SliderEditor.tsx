@@ -1,4 +1,7 @@
-import { Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs, Ruler, Ratio } from 'lucide-react';
+import {
+    Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs, Ruler, Ratio,
+    ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff
+} from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -26,8 +29,8 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     };
 
     // 숫자 프로퍼티 업데이트 함수
-    const updateNumberProp = (key: string, value: string, defaultValue: number = 0) => {
-        const numericValue = value === '' ? undefined : Number(value) || defaultValue;
+    const updateNumberProp = (key: string, value: string, defaultValue?: number) => {
+        const numericValue = value === '' ? undefined : (Number(value) || defaultValue);
         updateProp(key, numericValue);
     };
 
@@ -41,87 +44,157 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 placeholder="slider_1"
             />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.LABEL}
-                value={String(currentProps.label || '')}
-                onChange={(value) => updateProp('label', value)}
-                icon={Type}
-            />
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-            <PropertyInput
-                label={PROPERTY_LABELS.DEFAULT_VALUE}
-                value={String(currentProps.value || '')}
-                onChange={(value) => updateNumberProp('value', value)}
-                type="number"
-                icon={NotebookTabs}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.LABEL}
+                    value={String(currentProps.label || '')}
+                    onChange={(value) => updateProp('label', value)}
+                    icon={Type}
+                />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.MIN_VALUE}
-                value={String(currentProps.minValue || '0')}
-                onChange={(value) => updateNumberProp('minValue', value, 0)}
-                type="number"
+                <PropertyInput
+                    label={PROPERTY_LABELS.DEFAULT_VALUE}
+                    value={String(currentProps.value ?? '')}
+                    onChange={(value) => updateNumberProp('value', value)}
+                    icon={NotebookTabs}
+                    placeholder="0"
+                />
+            </fieldset>
 
-            />
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
-            <PropertyInput
-                label={PROPERTY_LABELS.MAX_VALUE}
-                value={String(currentProps.maxValue || '100')}
-                onChange={(value) => updateNumberProp('maxValue', value, 100)}
-                type="number"
-                icon={Binary}
-            />
+                <PropertySelect
+                    label={PROPERTY_LABELS.VARIANT}
+                    value={String(currentProps.variant || 'default')}
+                    onChange={(value) => updateProp('variant', value)}
+                    options={[
+                        { value: 'default', label: PROPERTY_LABELS.SLIDER_VARIANT_DEFAULT },
+                        { value: 'primary', label: PROPERTY_LABELS.SLIDER_VARIANT_PRIMARY },
+                        { value: 'secondary', label: PROPERTY_LABELS.SLIDER_VARIANT_SECONDARY },
+                        { value: 'surface', label: PROPERTY_LABELS.SLIDER_VARIANT_SURFACE }
+                    ]}
+                    icon={Layout}
+                />
 
-            <PropertyInput
-                label={PROPERTY_LABELS.STEP}
-                value={String(currentProps.step || '1')}
-                onChange={(value) => updateNumberProp('step', value, 1)}
-                type="number"
-                icon={TriangleRight}
-            />
+                <PropertySelect
+                    label={PROPERTY_LABELS.SIZE}
+                    value={String(currentProps.size || 'md')}
+                    onChange={(value) => updateProp('size', value)}
+                    options={[
+                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+                    ]}
+                    icon={Ruler}
+                />
 
-            <PropertySelect
-                label={PROPERTY_LABELS.VARIANT}
-                value={String(currentProps.variant || 'default')}
-                onChange={(value) => updateProp('variant', value)}
-                options={[
-                    { value: 'default', label: PROPERTY_LABELS.SLIDER_VARIANT_DEFAULT },
-                    { value: 'primary', label: PROPERTY_LABELS.SLIDER_VARIANT_PRIMARY },
-                    { value: 'secondary', label: PROPERTY_LABELS.SLIDER_VARIANT_SECONDARY },
-                    { value: 'surface', label: PROPERTY_LABELS.SLIDER_VARIANT_SURFACE }
-                ]}
-                icon={Layout}
-            />
+                <PropertySelect
+                    label={PROPERTY_LABELS.ORIENTATION}
+                    value={String(currentProps.orientation || 'horizontal')}
+                    onChange={(value) => updateProp('orientation', value)}
+                    options={[
+                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+                    ]}
+                    icon={Ratio}
+                />
+            </fieldset>
 
-            <PropertySelect
-                label={PROPERTY_LABELS.SIZE}
-                value={String(currentProps.size || 'md')}
-                onChange={(value) => updateProp('size', value)}
-                options={[
-                    { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
-                    { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
-                    { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
-                ]}
-                icon={Ruler}
-            />
+            {/* Range Section */}
+            <fieldset className="properties-group">
+                <legend>Range</legend>
 
-            <PropertySelect
-                label={PROPERTY_LABELS.ORIENTATION}
-                value={String(currentProps.orientation || 'horizontal')}
-                onChange={(value) => updateProp('orientation', value)}
-                options={[
-                    { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                    { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
-                ]}
-                icon={Ratio}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.MIN_VALUE}
+                    value={String(currentProps.minValue ?? '')}
+                    onChange={(value) => updateNumberProp('minValue', value, 0)}
+                    icon={ArrowDown}
+                    placeholder="0"
+                />
 
-            <PropertySwitch
-                label={PROPERTY_LABELS.DISABLED}
-                isSelected={Boolean(currentProps.isDisabled)}
-                onChange={(checked) => updateProp('isDisabled', checked)}
-                icon={ToggleLeft}
-            />
+                <PropertyInput
+                    label={PROPERTY_LABELS.MAX_VALUE}
+                    value={String(currentProps.maxValue ?? '')}
+                    onChange={(value) => updateNumberProp('maxValue', value, 100)}
+                    icon={ArrowUp}
+                    placeholder="100"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.STEP}
+                    value={String(currentProps.step ?? '')}
+                    onChange={(value) => updateNumberProp('step', value, 1)}
+                    icon={Move}
+                    placeholder="1"
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={Tag}
+                    placeholder="slider-name"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.FORM}
+                    value={String(currentProps.form || '')}
+                    onChange={(value) => updateProp('form', value || undefined)}
+                    icon={FileText}
+                    placeholder="form-id"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Slider label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
         </div>
     );
 }

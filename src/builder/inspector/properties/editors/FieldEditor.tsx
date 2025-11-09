@@ -6,7 +6,7 @@ import {
 } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
-import { Tag, Type, Eye, EyeOff } from "lucide-react";
+import { Tag, Type, Eye, EyeOff, Hash } from "lucide-react";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
 
 interface FieldElementProps {
@@ -55,17 +55,18 @@ export function FieldEditor({
 
   return (
     <div className="component-props">
-      <fieldset className="properties-aria">
-        {/* Custom ID */}
-        <PropertyCustomId
-          label="ID"
-          value={customId}
-          elementId={elementId}
-          onChange={updateCustomId}
-          placeholder="field_1"
-        />
+      <PropertyCustomId
+        label="ID"
+        value={customId}
+        elementId={elementId}
+        onChange={updateCustomId}
+        placeholder="field_1"
+      />
 
-        {/* Data Key (읽기 전용) */}
+      {/* Content Section */}
+      <fieldset className="properties-group">
+        <legend>Content</legend>
+
         <PropertyInput
           label={PROPERTY_LABELS.DATA_KEY}
           value={fieldProps?.key || ""}
@@ -75,16 +76,31 @@ export function FieldEditor({
           disabled
         />
 
-        {/* Label */}
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={fieldProps?.label || ""}
-          onChange={(value) => updateProps({ label: value })}
+          onChange={(value) => updateProps({ label: value || undefined })}
           placeholder={PROPERTY_LABELS.FIELD_LABEL_PLACEHOLDER}
           icon={Type}
         />
+      </fieldset>
 
-        {/* Field Type */}
+      {/* Behavior Section */}
+      <fieldset className="properties-group">
+        <legend>Behavior</legend>
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.VISIBLE}
+          isSelected={fieldProps?.visible !== false}
+          onChange={(isSelected) => updateProps({ visible: isSelected })}
+          icon={fieldProps?.visible !== false ? Eye : EyeOff}
+        />
+      </fieldset>
+
+      {/* Design Section */}
+      <fieldset className="properties-design">
+        <legend>Design</legend>
+
         <PropertySelect
           label={PROPERTY_LABELS.TYPE}
           value={fieldProps?.type || "string"}
@@ -104,13 +120,32 @@ export function FieldEditor({
         />
       </fieldset>
 
-      <fieldset className="properties-aria">
-        {/* Visible Toggle */}
-        <PropertySwitch
-          label={PROPERTY_LABELS.VISIBLE}
-          isSelected={fieldProps?.visible !== false}
-          onChange={(isSelected) => updateProps({ visible: isSelected })}
-          icon={fieldProps?.visible !== false ? Eye : EyeOff}
+      {/* Accessibility Section */}
+      <fieldset className="properties-group">
+        <legend>Accessibility</legend>
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps['aria-label'] || '')}
+          onChange={(value) => updateProps({ 'aria-label': value || undefined })}
+          icon={Type}
+          placeholder="Field label for screen readers"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps['aria-labelledby'] || '')}
+          onChange={(value) => updateProps({ 'aria-labelledby': value || undefined })}
+          icon={Hash}
+          placeholder="label-element-id"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+          value={String(currentProps['aria-describedby'] || '')}
+          onChange={(value) => updateProps({ 'aria-describedby': value || undefined })}
+          icon={Hash}
+          placeholder="description-element-id"
         />
       </fieldset>
     </div>

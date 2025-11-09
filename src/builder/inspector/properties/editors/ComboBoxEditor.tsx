@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
+import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus, Type, Hash, FormInput, Menu } from 'lucide-react';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -190,40 +190,47 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 placeholder="combobox_1"
             />
 
-            <fieldset className="properties-aria">
-                {/* 기본 속성들 */}
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value)}
+                    onChange={(value) => updateProp('description', value || undefined)}
                     icon={FileText}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
-                    onChange={(value) => updateProp('errorMessage', value)}
+                    onChange={(value) => updateProp('errorMessage', value || undefined)}
                     icon={AlertTriangle}
                 />
 
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
-                    onChange={(value) => updateProp('placeholder', value)}
+                    onChange={(value) => updateProp('placeholder', value || undefined)}
                     icon={FileText}
                 />
+            </fieldset>
+
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
                     value={String(currentProps.selectedValue || '')}
-                    onChange={(value) => updateProp('selectedValue', value)}
+                    onChange={(value) => updateProp('selectedValue', value || undefined)}
                     icon={Tag}
                     placeholder="선택된 값이 여기에 표시됩니다"
                 />
@@ -236,17 +243,22 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 />
 
                 <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
                     isSelected={Boolean(currentProps.isRequired)}
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
                 />
 
                 <PropertySwitch
@@ -262,13 +274,76 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.MENU_TRIGGER}
+                    value={String(currentProps.menuTrigger || 'focus')}
+                    onChange={(value) => updateProp('menuTrigger', value)}
+                    options={[
+                        { value: 'focus', label: 'Focus' },
+                        { value: 'input', label: 'Input' },
+                        { value: 'manual', label: 'Manual' }
+                    ]}
+                    icon={Menu}
+                />
             </fieldset>
 
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="combobox-name"
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+                    value={String(currentProps.validationBehavior || 'native')}
+                    onChange={(value) => updateProp('validationBehavior', value)}
+                    options={[
+                        { value: 'native', label: 'Native' },
+                        { value: 'aria', label: 'ARIA' }
+                    ]}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="ComboBox label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
+
+            {/* Item Management Section */}
             <fieldset className="properties-aria">
                 <legend>{PROPERTY_LABELS.ADD_OPTION}</legend>
 
-
-                {/* 옵션 목록 표시 */}
                 {comboBoxItemChildren.length > 0 ? (
                     <div className="tabs-list">
                         {comboBoxItemChildren.map((item, index) => (
@@ -290,7 +365,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     <p className="no-options">{PROPERTY_LABELS.NO_OPTIONS}</p>
                 )}
 
-                {/* 새 아이템 추가 */}
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
@@ -311,7 +385,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     order_num: (comboBoxItemChildren.length || 0) + 1,
                                 };
 
-                                // Supabase에 upsert (중복 방지)
                                 const { data, error } = await supabase
                                     .from("elements")
                                     .upsert(newItem, {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler } from 'lucide-react';
+import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, Hash, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -190,10 +190,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                 placeholder="checkboxgroup_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-
-                {/* 라벨 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
@@ -201,7 +201,6 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={Tag}
                 />
 
-                {/* 설명 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
@@ -209,29 +208,18 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={FileText}
                 />
 
-                {/* 오류 메시지 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
-
-                {/* 방향 설정 */}
-                <PropertySelect
-                    label={PROPERTY_LABELS.ORIENTATION}
-                    value={String(currentProps.orientation || 'vertical')}
-                    onChange={(value) => updateProp('orientation', value)}
-                    options={[
-                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
-                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
-                    ]}
-                    icon={Ratio}
-                />
             </fieldset>
 
+            {/* Design Section */}
             <fieldset className="properties-design">
-                {/* Variant 설정 */}
+                <legend>Design</legend>
+
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
                     value={String(currentProps.variant || 'default')}
@@ -245,7 +233,6 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={Layout}
                 />
 
-                {/* Size 설정 */}
                 <PropertySelect
                     label={PROPERTY_LABELS.SIZE}
                     value={String(currentProps.size || 'md')}
@@ -257,18 +244,23 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     ]}
                     icon={Ruler}
                 />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.ORIENTATION}
+                    value={String(currentProps.orientation || 'vertical')}
+                    onChange={(value) => updateProp('orientation', value)}
+                    options={[
+                        { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
+                        { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }
+                    ]}
+                    icon={Ratio}
+                />
             </fieldset>
 
-            <fieldset className="properties-aria">
-                {/* 비활성화 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
 
-                {/* 필수 설정 */}
                 <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
                     isSelected={Boolean(currentProps.isRequired)}
@@ -276,12 +268,72 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={CheckSquare}
                 />
 
-                {/* 읽기 전용 설정 */}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.INVALID}
+                    isSelected={Boolean(currentProps.isInvalid)}
+                    onChange={(checked) => updateProp('isInvalid', checked)}
+                    icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
                 <PropertySwitch
                     label={PROPERTY_LABELS.READONLY}
                     isSelected={Boolean(currentProps.isReadOnly)}
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
+                />
+            </fieldset>
+
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="checkbox-group-name"
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Checkbox group label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
