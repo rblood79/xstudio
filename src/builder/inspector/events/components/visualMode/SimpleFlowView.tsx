@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { EventHandler } from "../../types";
+import type { ElementEvent } from "@/types/events";
 import { FlowNode, type FlowNodeData } from "./FlowNode";
 import { FlowConnector } from "./FlowConnector";
 
 export interface SimpleFlowViewProps {
-  eventHandler: EventHandler;
+  eventHandler: ElementEvent;
   onSelectAction?: (actionId: string) => void;
 }
 
@@ -32,10 +32,10 @@ export function SimpleFlowView({
 
   // Add trigger node
   nodes.push({
-    id: `trigger-${eventHandler.event}`,
+    id: `trigger-${eventHandler.event_type}`,
     data: {
       type: "trigger",
-      eventType: eventHandler.event
+      eventType: eventHandler.event_type
     }
   });
 
