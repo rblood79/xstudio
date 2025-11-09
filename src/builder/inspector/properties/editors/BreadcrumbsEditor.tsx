@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { SquarePlus, PointerOff, Tag } from 'lucide-react';
+import { SquarePlus, PointerOff, Tag, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -95,27 +95,52 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
     // Breadcrumbs 전체 설정 모드
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    onChange={updateCustomId}
-                    placeholder="breadcrumbs_1"
-                />
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="breadcrumbs_1"
+            />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value)}
-                    icon={Tag}
-                />
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
                     isSelected={Boolean(currentProps.isDisabled)}
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Breadcrumb navigation for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
