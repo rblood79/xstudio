@@ -2,12 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import postcssImport from "postcss-import";
 import postcssNested from "postcss-nested";
+import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
   return {
     plugins: [react()],
     base: command === "build" ? "/xstudio/" : "/",
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
     server: {
       // Note: Supabase client connects directly using VITE_SUPABASE_URL
       // No proxy needed for development environment
