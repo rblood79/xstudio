@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { AppWindow, Plus, Ratio, PointerOff } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCustomId } from '../../components';
+import { AppWindow, Plus, Ratio, PointerOff, Type, Hash } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -143,18 +143,38 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 placeholder="tabs_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
                 <PropertySelect
                     label={PROPERTY_LABELS.DEFAULT_TAB}
                     value={String(currentProps.defaultSelectedKey || '')}
-                    onChange={(value) => updateProp('defaultSelectedKey', value)}
+                    onChange={(value) => updateProp('defaultSelectedKey', value || undefined)}
                     options={tabChildren.map(tab => ({
                         id: tab.id,
-                        value: tab.id, // value 속성 추가
+                        value: tab.id,
                         label: ('title' in tab.props ? tab.props.title : 'Untitled Tab') as string
                     }))}
                     icon={AppWindow}
                 />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
 
                 <PropertySelect
                     label={PROPERTY_LABELS.ORIENTATION}
@@ -163,15 +183,38 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     options={ORIENTATIONS}
                     icon={Ratio}
                 />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.DISABLED}
-                    value={String(currentProps.isDisabled || false)}
-                    onChange={(value) => updateProp('isDisabled', value === 'true')}
-                    icon={PointerOff}
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tabs label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
                 />
             </fieldset>
 
+            {/* Tab Management Section */}
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.TAB_MANAGEMENT}</legend>
 
