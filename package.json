@@ -16,7 +16,12 @@
     "playwright:install": "npx playwright install"
   },
   "dependencies": {
+    "@internationalized/date": "^3.10.0",
+    "@internationalized/number": "^3.6.5",
     "@lucide/lab": "^0.1.2",
+    "@react-aria/focus": "^3.21.2",
+    "@react-aria/i18n": "^3.12.13",
+    "@react-aria/utils": "^3.31.0",
     "@supabase/supabase-js": "^2.49.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.3",

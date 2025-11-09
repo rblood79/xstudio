@@ -64,16 +64,16 @@
 }
 
 .resize-handle {
-  /*position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 6px;
-    height: 48px;
-    background: var(--builder-inspector-header-bg);
-    top: 50%;
-    transform: translateY(-50%);
-    left: calc(100% + 8px);
-    border-radius: 48px;
-    cursor: ew-resize;
-    pointer-events: auto;*/
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 6px;
+  height: 48px;
+  background: var(--builder-inspector-header-bg);
+  top: 50%;
+  transform: translateY(-50%);
+  left: calc(100% + 8px);
+  border-radius: 48px;
+  cursor: ew-resize;
+  pointer-events: auto;
 }

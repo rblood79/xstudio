@@ -932,7 +932,7 @@
       &[data-focused],
       &[data-pressed] {
         outline: 2px solid var(--builder-inspector-focus-ring);
-        outline-offset: 2px;
+        /*outline-offset: 2px;*/
       }
 
       .react-aria-switch-indicator {
