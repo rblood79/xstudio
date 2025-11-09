@@ -133,6 +133,15 @@
    - `@/` → `./src` 매핑
    - import 에러 해결
 
+4. **EventSection.tsx runtime error** (2025-11-09)
+   - **에러**: `Cannot read properties of undefined (reading 'length')` at line 173
+   - **원인**: DB에서 로드된 이벤트 핸들러에 actions 배열이 초기화되지 않음
+   - **수정**:
+     - EventSection.tsx: Optional chaining `handler.actions?.length || 0`
+     - useEventHandlers.ts: 초기 이벤트 sanitize `actions: event.actions || []`
+     - useEventHandlers.ts: duplicateHandler에 null check `(original.actions || [])`
+   - **커밋**: `b80d969` fix: Add null safety checks for handler.actions
+
 ### 기술적 개선
 
 ✅ **자동 불변성 관리** - useListData가 안전한 상태 업데이트 처리
