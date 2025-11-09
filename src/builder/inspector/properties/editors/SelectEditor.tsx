@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
@@ -154,58 +154,97 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 placeholder="select_1"
             />
 
-            <fieldset className="properties-aria">
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
 
-
-                {/* 라벨 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
                 />
 
-                {/* 설명 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DESCRIPTION}
                     value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value)}
+                    onChange={(value) => updateProp('description', value || undefined)}
                     icon={FileText}
                 />
 
-                {/* 오류 메시지 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
                     value={String(currentProps.errorMessage || '')}
-                    onChange={(value) => updateProp('errorMessage', value)}
+                    onChange={(value) => updateProp('errorMessage', value || undefined)}
                     icon={AlertTriangle}
                 />
 
-                {/* 플레이스홀더 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
                     value={String(currentProps.placeholder || '')}
-                    onChange={(value) => updateProp('placeholder', value)}
+                    onChange={(value) => updateProp('placeholder', value || undefined)}
                     icon={SpellCheck2}
                 />
+            </fieldset>
 
-                {/* 선택된 키 설정 */}
+            {/* State Section */}
+            <fieldset className="properties-group">
+                <legend>State</legend>
+
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
-                    value={String(currentProps.selectedValue || '')} // selectedValue 사용
-                    onChange={(value) => updateProp('selectedValue', value)}
+                    value={String(currentProps.selectedValue || '')}
+                    onChange={(value) => updateProp('selectedValue', value || undefined)}
                     icon={Hash}
                 />
 
-                {/* 기본 선택 키 설정 */}
                 <PropertyInput
                     label={PROPERTY_LABELS.DEFAULT_SELECTED_KEY}
                     value={String(currentProps.defaultSelectedKey || '')}
-                    onChange={(value) => updateProp('defaultSelectedKey', value)}
+                    onChange={(value) => updateProp('defaultSelectedKey', value || undefined)}
                     icon={Hash}
                 />
 
-                {/* 메뉴 트리거 설정 */}
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
+                    isSelected={Boolean(currentProps.disallowEmptySelection)}
+                    onChange={(checked) => updateProp('disallowEmptySelection', checked)}
+                    icon={SquareX}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.REQUIRED}
+                    isSelected={Boolean(currentProps.isRequired)}
+                    onChange={(checked) => updateProp('isRequired', checked)}
+                    icon={CheckSquare}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.READONLY}
+                    isSelected={Boolean(currentProps.isReadOnly)}
+                    onChange={(checked) => updateProp('isReadOnly', checked)}
+                    icon={PenOff}
+                />
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.AUTO_FOCUS}
+                    isSelected={Boolean(currentProps.autoFocus)}
+                    onChange={(checked) => updateProp('autoFocus', checked)}
+                    icon={Focus}
+                />
+
                 <PropertySelect
                     label={PROPERTY_LABELS.MENU_TRIGGER}
                     value={String(currentProps.menuTrigger || 'click')}
@@ -216,52 +255,64 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     ]}
                     icon={Menu}
                 />
+            </fieldset>
 
-                {/* 빈 선택 허용 안함 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
-                    isSelected={Boolean(currentProps.disallowEmptySelection)}
-                    onChange={(checked) => updateProp('disallowEmptySelection', checked)}
-                    icon={SquareX}
+            {/* Form Integration Section */}
+            <fieldset className="properties-group">
+                <legend>Form Integration</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.NAME}
+                    value={String(currentProps.name || '')}
+                    onChange={(value) => updateProp('name', value || undefined)}
+                    icon={FormInput}
+                    placeholder="select-name"
                 />
 
-                {/* 비활성화 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-
-                {/* 필수 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
-
-                {/* 읽기 전용 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
-                />
-
-                {/* 자동 포커스 설정 */}
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
+                <PropertySelect
+                    label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
+                    value={String(currentProps.validationBehavior || 'native')}
+                    onChange={(value) => updateProp('validationBehavior', value)}
+                    options={[
+                        { value: 'native', label: 'Native' },
+                        { value: 'aria', label: 'ARIA' }
+                    ]}
                 />
             </fieldset>
 
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Select label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
+
+            {/* Item Management Section */}
             <fieldset className="properties-aria">
                 <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
 
-                {/* 아이템 개수 표시 */}
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
                         Total items: {selectItemChildren.length || 0}
@@ -271,7 +322,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     </p>
                 </div>
 
-                {/* 아이템 목록 */}
                 {selectItemChildren.length > 0 && (
                     <div className='tabs-list'>
                         {selectItemChildren.map((item, index) => (
@@ -291,7 +341,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     </div>
                 )}
 
-                {/* 새 아이템 추가 */}
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
@@ -315,7 +364,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                     order_num: (selectItemChildren.length || 0) + 1,
                                 };
 
-                                // Supabase에 upsert (중복 방지)
                                 const { data, error } = await supabase
                                     .from("elements")
                                     .upsert(newItem, {
@@ -329,7 +377,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                 }
 
                                 if (data && data[0]) {
-                                    // 로컬 상태에 추가
                                     addElement(data[0]);
                                 }
                             } catch (error) {
