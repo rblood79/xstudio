@@ -1,61 +1,97 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useListData } from 'react-stately';
+import { useEffect } from 'react';
 
 const FAVORITE_COMPONENTS_KEY = 'xstudio_favorite_components';
 
-export function useFavoriteComponents() {
-    const [favoriteTags, setFavoriteTags] = useState<string[]>([]);
-
-    // localStorage에서 즐겨찾기 로드
-    useEffect(() => {
-        try {
-            const stored = localStorage.getItem(FAVORITE_COMPONENTS_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) {
-                    setFavoriteTags(parsed);
-                }
+/**
+ * localStorage에서 즐겨찾기 로드
+ */
+function loadFavoritesFromStorage(): { id: string; tag: string }[] {
+    try {
+        const stored = localStorage.getItem(FAVORITE_COMPONENTS_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+                // string[] → { id, tag }[] 변환
+                return parsed.map((tag) => ({ id: tag, tag }));
             }
-        } catch (error) {
-            console.error('Failed to load favorite components:', error);
         }
-    }, []);
+    } catch (error) {
+        console.error('Failed to load favorite components:', error);
+    }
+    return [];
+}
 
-    // localStorage에 저장
-    const saveToStorage = useCallback((tags: string[]) => {
-        try {
-            localStorage.setItem(FAVORITE_COMPONENTS_KEY, JSON.stringify(tags));
-        } catch (error) {
-            console.error('Failed to save favorite components:', error);
-        }
-    }, []);
+/**
+ * localStorage에 즐겨찾기 저장
+ */
+function saveFavoritesToStorage(items: { id: string; tag: string }[]) {
+    try {
+        // { id, tag }[] → string[] 변환
+        const tags = items.map((item) => item.tag);
+        localStorage.setItem(FAVORITE_COMPONENTS_KEY, JSON.stringify(tags));
+    } catch (error) {
+        console.error('Failed to save favorite components:', error);
+    }
+}
+
+/**
+ * useFavoriteComponents - React Stately useListData 기반 즐겨찾기 관리
+ *
+ * @example
+ * ```tsx
+ * const { favoriteTags, toggleFavorite, isFavorite, clearFavorites } = useFavoriteComponents();
+ *
+ * // 즐겨찾기 토글
+ * toggleFavorite('Button');
+ *
+ * // 즐겨찾기 여부 확인
+ * if (isFavorite('Button')) { ... }
+ * ```
+ */
+export function useFavoriteComponents() {
+    const list = useListData<{ id: string; tag: string }>({
+        initialItems: loadFavoritesFromStorage(),
+        getKey: (item) => item.id,
+    });
+
+    // localStorage 동기화: items가 변경될 때마다 저장
+    useEffect(() => {
+        saveFavoritesToStorage(list.items);
+    }, [list.items]);
 
     // 즐겨찾기 토글
-    const toggleFavorite = useCallback((tag: string) => {
-        setFavoriteTags(prevTags => {
-            const exists = prevTags.includes(tag);
-            const updated = exists
-                ? prevTags.filter(t => t !== tag)
-                : [...prevTags, tag];
-            saveToStorage(updated);
-            return updated;
-        });
-    }, [saveToStorage]);
+    const toggleFavorite = (tag: string) => {
+        const exists = list.items.some((item) => item.tag === tag);
+        if (exists) {
+            // 제거
+            list.remove(tag);
+        } else {
+            // 추가
+            list.append({ id: tag, tag });
+        }
+    };
 
     // 즐겨찾기 여부 확인
-    const isFavorite = useCallback((tag: string) => {
-        return favoriteTags.includes(tag);
-    }, [favoriteTags]);
+    const isFavorite = (tag: string) => {
+        return list.items.some((item) => item.tag === tag);
+    };
 
     // 즐겨찾기 초기화
-    const clearFavorites = useCallback(() => {
-        setFavoriteTags([]);
+    const clearFavorites = () => {
+        // 모든 아이템 제거
+        const allKeys = list.items.map((item) => item.id);
+        list.remove(...allKeys);
         localStorage.removeItem(FAVORITE_COMPONENTS_KEY);
-    }, []);
+    };
+
+    // 하위 호환성을 위해 favoriteTags 배열 제공
+    const favoriteTags = list.items.map((item) => item.tag);
 
     return {
         favoriteTags,
         toggleFavorite,
         isFavorite,
-        clearFavorites
+        clearFavorites,
     };
 }
