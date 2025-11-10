@@ -7,6 +7,7 @@ import { useErrorHandler, type ErrorInfo } from './useErrorHandler';
 import { generateCustomId } from '../utils/idGeneration';
 import {
     createDefaultButtonProps,
+    createDefaultLinkProps,
     createDefaultTextFieldProps,
     createDefaultCheckboxProps,
     createDefaultRadioProps,
@@ -111,6 +112,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 console.log('✅ Button props created:', buttonProps);
                 return buttonProps;
             }
+            case 'Link':
+                return createDefaultLinkProps();
             case 'TextField':
                 return createDefaultTextFieldProps();
             case 'Checkbox':

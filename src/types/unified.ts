@@ -81,6 +81,18 @@ export interface ButtonElementProps extends BaseElementProps {
   onPress?: () => void;
 }
 
+export interface LinkElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  href?: string;
+  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isDisabled?: boolean;
+  isExternal?: boolean;
+  showExternalIcon?: boolean;
+  target?: string;
+  rel?: string;
+}
+
 export interface TextFieldElementProps extends BaseElementProps {
   label?: string;
   description?: string;
@@ -450,6 +462,7 @@ export interface NavElementProps extends BaseElementProps {
 // === 통합된 ComponentElementProps ===
 export type ComponentElementProps =
   | ButtonElementProps
+  | LinkElementProps
   | TextFieldElementProps
   | CheckboxElementProps
   | RadioElementProps
@@ -569,6 +582,18 @@ export function createDefaultButtonProps(): ButtonElementProps {
     variant: "default",
     size: "sm",
     isDisabled: false,
+  };
+}
+
+export function createDefaultLinkProps(): LinkElementProps {
+  return {
+    children: "Link",
+    href: "#",
+    variant: "default",
+    size: "md",
+    isDisabled: false,
+    isExternal: false,
+    showExternalIcon: true,
   };
 }
 

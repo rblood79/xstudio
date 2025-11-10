@@ -20,6 +20,20 @@ export interface ButtonElementProps extends BaseElementProps {
   onPress?: () => void;
 }
 
+// Link 컴포넌트 타입
+export interface LinkElementProps extends BaseElementProps {
+  //tag: 'Link';
+  children?: React.ReactNode;
+  href?: string;
+  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isDisabled?: boolean;
+  isExternal?: boolean;
+  showExternalIcon?: boolean;
+  target?: string;
+  rel?: string;
+}
+
 // TextField 컴포넌트 타입
 export interface TextFieldElementProps extends BaseElementProps {
   //tag: 'TextField';
@@ -416,6 +430,7 @@ export interface NavElementProps extends BaseElementProps {
 // 유니온 타입으로 모든 컴포넌트 props 정의
 export type ComponentElementProps =
   | ButtonElementProps
+  | LinkElementProps
   | TextFieldElementProps
   | CheckboxElementProps
   | RadioElementProps
@@ -461,6 +476,18 @@ export function createDefaultButtonProps(): ButtonElementProps {
   };
   console.log('🔍 createDefaultButtonProps called:', props);
   return props;
+}
+
+export function createDefaultLinkProps(): LinkElementProps {
+  return {
+    children: "Link",
+    href: "#",
+    variant: "default",
+    size: "md",
+    isDisabled: false,
+    isExternal: false,
+    showExternalIcon: true,
+  };
 }
 
 export function createDefaultTextFieldProps(): TextFieldElementProps {
