@@ -7,7 +7,7 @@
  * Phase 1: Inspector Events React Stately 전환
  */
 
-import { Select, Label, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
+import { Select, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
 import { Plus } from 'lucide-react';
 import type { EventType } from '@/types/events';
 import { EVENT_TYPE_LABELS } from '@/types/events';
@@ -51,9 +51,9 @@ export function EventTypePicker({
       isDisabled={isDisabled || availableEventTypes.length === 0}
       className="event-type-picker"
     >
-      <Label>이벤트 추가</Label>
+      
       <Button>
-        <Plus size={16} strokeWidth={1.5} />
+        <Plus size={16}/>
         <span>이벤트 추가</span>
       </Button>
       <Popover>

@@ -67,13 +67,13 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 6px;
-  height: 48px;
-  background: var(--builder-inspector-header-bg);
+  width: 2px;
+  height: 100%;
+  background: var(--builder-indicator-bg);
   top: 50%;
   transform: translateY(-50%);
-  left: calc(100% + 8px);
-  border-radius: 48px;
+  left: 100%;
+  border-radius: 0px;
   cursor: ew-resize;
   pointer-events: auto;
 }
