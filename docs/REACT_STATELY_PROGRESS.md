@@ -9,8 +9,8 @@
 
 ## 📊 전체 진행률
 
-**완료**: Phase 0-9 ✅ (모든 계획 단계 + 추가 최적화 완료)
-**진행 상황**: 24개 커밋, 6개 문서, TypeScript 컴파일 ✅
+**완료**: Phase 0-10 ✅ (모든 계획 단계 + 추가 최적화 완료)
+**진행 상황**: 25개 커밋, 6개 문서, TypeScript 컴파일 ✅
 
 | Phase | 상태 | 진행률 | 설명 |
 |-------|------|--------|------|
@@ -24,6 +24,7 @@
 | **Phase 7** | ✅ 완료 | 100% | Data Fetching - useAsyncQuery 범용 훅 생성 |
 | **Phase 8** | ✅ 완료 | 100% | Final Optimization & Documentation |
 | **Phase 9** | ✅ 완료 | 100% | localStorage 리스트 관리 최적화 (Quick Wins) |
+| **Phase 10** | ✅ 완료 | 100% | usePageManager ApiResult 패턴 및 wrapper 함수 제거 |
 
 ---
 
@@ -766,6 +767,175 @@ const { recentTags, addRecentComponent, clearRecentComponents } = useRecentCompo
 
 ---
 
+## ✅ Phase 10: usePageManager ApiResult 패턴 및 wrapper 함수 제거 (완료)
+
+**기간**: 1일
+**커밋**: `cb0c72d` refactor: Phase 10 - usePageManager ApiResult 패턴 적용 및 wrapper 함수 제거
+**상태**: ✅ 완료 (2025-11-10)
+
+### 목표
+
+wrapper 함수를 최대한 줄이고 복잡도를 낮추기 위해 ApiResult 패턴 도입 및 React Stately 패턴 일관성 향상
+
+### Phase 10.1: usePageManager 리팩토링
+
+**변경 사항** (`src/builder/hooks/usePageManager.ts`):
+
+1. **ApiResult<T> 인터페이스 도입**
+   ```typescript
+   export interface ApiResult<T> {
+     success: boolean;
+     data?: T;
+     error?: Error;
+   }
+   ```
+   - 에러를 throw하는 대신 ApiResult 반환
+   - 호출자가 명시적으로 에러 처리
+
+2. **useListData로 pages 관리**
+   ```typescript
+   const pageList = useListData<Page>({
+     initialItems: [],
+     getKey: (page) => page.id,
+   });
+   ```
+   - useState(pages) → useListData(pages)
+   - `pageList.append()`, `pageList.remove()` 사용
+
+3. **useCallback 완전 제거** (3 → 0)
+   - `fetchElements`: 일반 함수로 변경, ApiResult 반환
+   - `addPage`: `handleAddPage: createPage` → `addPage` 직접 사용
+   - `initializeProject`: setIsLoading/setError 파라미터 제거
+
+**코드 변화**:
+```typescript
+// ❌ Before: 에러 throw + useCallback
+const fetchElements = useCallback(async (pageId: string) => {
+  const elementsData = await ElementUtils.getElementsByPageId(pageId);
+  setElements(elementsData, { skipHistory: true });
+  // throws on error
+}, []);
+
+// ✅ After: ApiResult 반환 + 일반 함수
+const fetchElements = async (pageId: string): Promise<ApiResult<Element[]>> => {
+  try {
+    const elementsData = await ElementUtils.getElementsByPageId(pageId);
+    setElements(elementsData, { skipHistory: true });
+    return { success: true, data: elementsData };
+  } catch (error) {
+    return { success: false, error: error as Error };
+  }
+};
+```
+
+**통계**:
+- 코드: 130 → 188 lines (+58 lines, JSDoc + ApiResult 처리 포함)
+- useState: 2 → 1 (pages 제거, selectedPageId 유지)
+- useCallback: 3 → 0 (모두 제거)
+
+### Phase 10.2: BuilderCore wrapper 함수 제거
+
+**변경 사항** (`src/builder/main/BuilderCore.tsx`):
+
+1. **initializeProject wrapper 제거**
+   ```typescript
+   // ❌ Before: wrapper 함수에서 setIsLoading/setError 전달
+   initializeProject(projectId, setIsLoading, setError);
+
+   // ✅ After: ApiResult 직접 처리
+   const initialize = async () => {
+     setIsLoading(true);
+     const result = await initializeProject(projectId);
+     if (!result.success) {
+       setError(result.error?.message || "프로젝트 초기화 실패");
+     }
+     setIsLoading(false);
+   };
+   initialize();
+   ```
+
+2. **fetchElementsWrapper 단순화**
+   ```typescript
+   // ❌ Before: try-catch wrapper
+   const fetchElementsWrapper = async (pageId: string) => {
+     try {
+       await fetchElements(pageId);
+     } catch (error) {
+       handleError(error, "요소 로드");
+     }
+   };
+
+   // ✅ After: ApiResult 직접 처리
+   const fetchElementsWrapper = async (pageId: string) => {
+     const result = await fetchElements(pageId);
+     if (!result.success) {
+       handleError(result.error || new Error("요소 로드 실패"), "요소 로드");
+     }
+   };
+   ```
+
+3. **handleAddPage wrapper 단순화**
+   ```typescript
+   // ❌ Before: try-catch wrapper
+   try {
+     await createPage(projectId, addElement);
+   } catch (error) {
+     handleError(error, "페이지 생성");
+   }
+
+   // ✅ After: ApiResult 직접 처리
+   const result = await addPage(projectId, addElement);
+   if (!result.success) {
+     handleError(result.error || new Error("페이지 생성 실패"), "페이지 생성");
+   }
+   ```
+
+**통계**:
+- try-catch 블록 제거: 3개
+- wrapper 레이어 복잡도 감소
+
+### Phase 10.3: React Stately 패턴 일관성 향상
+
+**setPages → pageList.remove() 리팩토링**:
+
+**변경된 파일 (4개)**:
+1. **BuilderCore.tsx**: `setPages` prop 제거 → `pageList` prop 전달
+2. **Sidebar/index.tsx**: `setPages` → `pageList` 인터페이스 변경
+3. **Nodes/index.tsx**: `setPages` → `pageList` prop 전달
+4. **Nodes/Pages.tsx**: `setPages()` → `pageList.remove()` 직접 사용
+
+**코드 변화**:
+```typescript
+// ❌ Before: setPages useState 사용
+setPages((prev) => prev.filter((p) => p.id !== page.id));
+
+// ✅ After: React Stately useListData 사용
+pageList.remove(page.id);
+```
+
+### 최종 성과
+
+**코드 품질**:
+- useCallback 제거: -3개 (모든 wrapper 함수 제거)
+- try-catch 블록 제거: -3개
+- 명시적 에러 처리: ApiResult 패턴으로 가독성 향상
+- React Stately 패턴 일관성: `setPages()` → `pageList.remove()`
+
+**개선 효과**:
+1. **복잡도 감소**: wrapper 레이어 제거로 호출 스택 단순화
+2. **에러 처리 명시화**: `if (!result.success)` 패턴으로 에러 처리 가시성 향상
+3. **React Stately 일관성**: useListData 메서드 직접 사용으로 패턴 통일
+4. **유지보수성**: 에러 처리 로직이 호출 시점에 명확히 표현됨
+
+**영향받은 파일 (5개)**:
+- `src/builder/hooks/usePageManager.ts`
+- `src/builder/main/BuilderCore.tsx`
+- `src/builder/sidebar/index.tsx`
+- `src/builder/nodes/index.tsx`
+- `src/builder/nodes/Pages.tsx`
+
+---
+
 ## 📝 문서
 
 1. **`docs/REACT_STATELY_REFACTORING_PLAN.md`** (1,400+ 줄)
@@ -792,7 +962,7 @@ const { recentTags, addRecentComponent, clearRecentComponents } = useRecentCompo
 
 ## 🚀 다음 단계
 
-### ✅ Phase 0-9 모두 완료! (2025-11-10)
+### ✅ Phase 0-10 모두 완료! (2025-11-10)
 
 **완료된 Phase:**
 - Phase 0: 환경 설정 ✅
@@ -805,11 +975,12 @@ const { recentTags, addRecentComponent, clearRecentComponents } = useRecentCompo
 - Phase 7: Data Fetching Services (useAsyncQuery) ✅
 - Phase 8: Final Optimization & Documentation ✅
 - Phase 9: localStorage 리스트 관리 최적화 (Quick Wins) ✅
+- Phase 10: usePageManager ApiResult 패턴 및 wrapper 함수 제거 ✅
 
 **최종 성과:**
-- 총 24개 커밋 (Phase 0-9)
-- useState 감소: -19개 (net)
-- useCallback 감소: -7개
+- 총 25개 커밋 (Phase 0-10)
+- useState 감소: -20개 (net, pages 포함)
+- useCallback 감소: -10개 (wrapper 함수 포함)
 - useEffect 감소: -2개
 - 새 훅 생성: 16개
 - 문서: 6개
@@ -832,13 +1003,7 @@ const { recentTags, addRecentComponent, clearRecentComponents } = useRecentCompo
 
 ### 다음 권장 작업
 
-**Phase 9 완료 후 추가 선택사항:**
-
-**Option B (선택)**: usePageManager 리팩토링
-- useState -2개 (pages, selectedPageId)
-- useCallback -3개
-- useAsyncQuery로 비동기 처리 개선
-- 예상 시간: 1-2시간
+**Phase 10 완료 후 추가 선택사항:**
 
 **Option C (선택)**: Theme 컴포넌트 5개 최적화
 - useState -5+개
@@ -890,4 +1055,4 @@ const { recentTags, addRecentComponent, clearRecentComponents } = useRecentCompo
 ---
 
 **작성**: Claude Code
-**마지막 업데이트**: 2025-11-10 (Phase 0-9 모두 완료 🎉🎊)
+**마지막 업데이트**: 2025-11-10 (Phase 0-10 모두 완료 🎉🎊)
