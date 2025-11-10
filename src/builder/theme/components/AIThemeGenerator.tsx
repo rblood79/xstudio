@@ -5,11 +5,13 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
+import { useAsyncMutation } from '../../hooks/useAsyncMutation';
 import { createThemeGenerationService } from '../../../services/theme';
 import type {
   ThemeGenerationRequest,
   ThemeGenerationProgress,
   ThemeGenerationStage,
+  ThemeGenerationResponse,
 } from '../../../types/theme/generation.types';
 import '../styles/AIThemeGenerator.css';
 
@@ -46,10 +48,8 @@ export function AIThemeGenerator({
 }: AIThemeGeneratorProps) {
   const styles = aiGeneratorStyles();
 
-  const [generating, setGenerating] = useState(false);
+  // Streaming progress state (별도 관리 필요)
   const [progress, setProgress] = useState<ThemeGenerationProgress | null>(null);
-  const [result, setResult] = useState<ThemeGenerationResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Form state
   const [themeName, setThemeName] = useState('');
@@ -57,52 +57,60 @@ export function AIThemeGenerator({
   const [style, setStyle] = useState<'modern' | 'classic' | 'playful' | 'professional' | 'minimal'>('modern');
   const [description, setDescription] = useState('');
 
-  const handleGenerate = async () => {
-    if (!themeName.trim()) {
-      alert('테마 이름을 입력하세요');
-      return;
-    }
-
-    setGenerating(true);
-    setProgress(null);
-    setResult(null);
-    setError(null);
-
-    try {
+  // Generate mutation (스트리밍 진행 상태 포함)
+  const generateMutation = useAsyncMutation<ThemeGenerationResponse, ThemeGenerationRequest>(
+    async (request) => {
       const service = createThemeGenerationService();
-
-      const request: ThemeGenerationRequest = {
-        projectId,
-        themeName,
-        brandColor,
-        style,
-        description: description || undefined,
-        includeSemanticTokens: true,
-      };
+      let finalResult: ThemeGenerationResponse | null = null;
 
       // 스트리밍으로 진행 상태 받기
       for await (const progressData of service.generateTheme(request)) {
         setProgress(progressData);
 
         if (progressData.stage === 'complete' && progressData.data) {
-          setResult(progressData.data);
-          if (onThemeGenerated && progressData.data.themeId) {
-            onThemeGenerated(progressData.data.themeId);
-          }
+          finalResult = progressData.data;
         }
       }
+
+      return finalResult!;
+    },
+    {
+      onSuccess: (result) => {
+        if (onThemeGenerated && result.themeId) {
+          onThemeGenerated(result.themeId);
+        }
+      },
+    }
+  );
+
+  const handleGenerate = async () => {
+    if (!themeName.trim()) {
+      alert('테마 이름을 입력하세요');
+      return;
+    }
+
+    setProgress(null);
+
+    const request: ThemeGenerationRequest = {
+      projectId,
+      themeName,
+      brandColor,
+      style,
+      description: description || undefined,
+      includeSemanticTokens: true,
+    };
+
+    try {
+      await generateMutation.execute(request);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '테마 생성 실패');
+      // 에러는 generateMutation.error에 자동 저장됨
       console.error('[AIThemeGenerator] Generation failed:', err);
-    } finally {
-      setGenerating(false);
     }
   };
 
   const handleReset = () => {
     setProgress(null);
-    setResult(null);
-    setError(null);
+    generateMutation.reset();
     setThemeName('');
     setBrandColor('#3b82f6');
     setStyle('modern');
@@ -116,7 +124,7 @@ export function AIThemeGenerator({
         브랜드 색상과 스타일을 입력하면 완전한 디자인 테마를 자동 생성합니다
       </p>
 
-      {!generating && !result && (
+      {!generateMutation.isLoading && !generateMutation.data && (
         <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
           {/* Theme Name */}
           <div className={styles.formGroup()}>
@@ -191,7 +199,7 @@ export function AIThemeGenerator({
       )}
 
       {/* Progress */}
-      {generating && progress && (
+      {generateMutation.isLoading && progress && (
         <div className="progress-container">
           <div className="progress-header">
             <h3>{stageLabels[progress.stage]}</h3>
@@ -230,7 +238,7 @@ export function AIThemeGenerator({
       )}
 
       {/* Results */}
-      {result && (
+      {generateMutation.data && (
         <div className={styles.results()}>
           <div className="result-header">
             <h3>✅ 테마 생성 완료!</h3>
@@ -242,16 +250,16 @@ export function AIThemeGenerator({
           <div className="result-stats">
             <div className="stat-item">
               <span className="stat-label">테마 이름</span>
-              <span className="stat-value">{result.themeName}</span>
+              <span className="stat-value">{generateMutation.data.themeName}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">생성된 토큰</span>
-              <span className="stat-value">{result.metadata.tokenCount}개</span>
+              <span className="stat-value">{generateMutation.data.metadata.tokenCount}개</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">생성 시간</span>
               <span className="stat-value">
-                {new Date(result.metadata.generatedAt).toLocaleString('ko-KR')}
+                {new Date(generateMutation.data.metadata.generatedAt).toLocaleString('ko-KR')}
               </span>
             </div>
           </div>
@@ -260,7 +268,7 @@ export function AIThemeGenerator({
           <div className="palette-preview">
             <h4>색상 팔레트</h4>
             <div className="color-grid">
-              {Object.entries(result.colorPalette).map(([name, shades]: [string, Record<string, { h: number; s: number; l: number }>]) => (
+              {Object.entries(generateMutation.data.colorPalette).map(([name, shades]: [string, Record<string, { h: number; s: number; l: number }>]) => (
                 <div key={name} className="color-palette-item">
                   <span className="palette-name">{name}</span>
                   <div className="shade-grid">
@@ -283,10 +291,10 @@ export function AIThemeGenerator({
       )}
 
       {/* Error */}
-      {error && (
+      {generateMutation.error && (
         <div className="error-message">
           <h3>⚠️ 오류 발생</h3>
-          <p>{error}</p>
+          <p>{generateMutation.error.message}</p>
           <button onClick={handleReset}>다시 시도</button>
         </div>
       )}

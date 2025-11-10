@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
+import { useAsyncMutation } from '../../hooks/useAsyncMutation';
 import { createFigmaService } from '../../../services/theme';
 import type {
   FigmaImportRequest,
@@ -33,10 +34,6 @@ export function FigmaImporter({
 }: FigmaImporterProps) {
   const styles = figmaImporterStyles();
 
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<FigmaImportResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   // Form state
   const [fileKey, setFileKey] = useState('');
   const [accessToken, setAccessToken] = useState('');
@@ -45,6 +42,21 @@ export function FigmaImporter({
   const [importEffects, setImportEffects] = useState(true);
   const [importVariables, setImportVariables] = useState(true);
   const [conflictResolution, setConflictResolution] = useState<'skip' | 'overwrite' | 'rename'>('rename');
+
+  // Import mutation
+  const importMutation = useAsyncMutation<FigmaImportResult, FigmaImportRequest>(
+    async (request) => {
+      const service = createFigmaService(request.accessToken);
+      return await service.importStyles(request);
+    },
+    {
+      onSuccess: (result) => {
+        if (onImportComplete) {
+          onImportComplete(result);
+        }
+      },
+    }
+  );
 
   const handleImport = async () => {
     if (!fileKey.trim()) {
@@ -57,42 +69,28 @@ export function FigmaImporter({
       return;
     }
 
-    setImporting(true);
-    setResult(null);
-    setError(null);
+    const request: FigmaImportRequest = {
+      projectId,
+      themeId,
+      fileKey,
+      accessToken,
+      importColors,
+      importTextStyles,
+      importEffects,
+      importVariables,
+      conflictResolution,
+    };
 
     try {
-      const service = createFigmaService(accessToken);
-
-      const request: FigmaImportRequest = {
-        projectId,
-        themeId,
-        fileKey,
-        accessToken,
-        importColors,
-        importTextStyles,
-        importEffects,
-        importVariables,
-        conflictResolution,
-      };
-
-      const importResult = await service.importStyles(request);
-      setResult(importResult);
-
-      if (onImportComplete) {
-        onImportComplete(importResult);
-      }
+      await importMutation.execute(request);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import 실패');
+      // 에러는 importMutation.error에 자동 저장됨
       console.error('[FigmaImporter] Import failed:', err);
-    } finally {
-      setImporting(false);
     }
   };
 
   const handleReset = () => {
-    setResult(null);
-    setError(null);
+    importMutation.reset();
     setFileKey('');
     setAccessToken('');
   };
@@ -104,7 +102,7 @@ export function FigmaImporter({
         Figma 파일에서 색상, 텍스트, 효과 스타일을 가져옵니다
       </p>
 
-      {!importing && !result && (
+      {!importMutation.isLoading && !importMutation.data && (
         <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleImport(); }}>
           {/* File Key */}
           <div className="form-group">
@@ -199,14 +197,14 @@ export function FigmaImporter({
           </div>
 
           {/* Submit Button */}
-          <button type="submit" className="import-btn" disabled={importing}>
-            {importing ? '⏳ Import 중...' : '📥 Figma에서 가져오기'}
+          <button type="submit" className="import-btn" disabled={importMutation.isLoading}>
+            {importMutation.isLoading ? '⏳ Import 중...' : '📥 Figma에서 가져오기'}
           </button>
         </form>
       )}
 
       {/* Importing */}
-      {importing && (
+      {importMutation.isLoading && (
         <div className="importing-state">
           <div className="spinner" />
           <p>Figma 스타일을 가져오는 중...</p>
@@ -214,11 +212,11 @@ export function FigmaImporter({
       )}
 
       {/* Results */}
-      {result && (
+      {importMutation.data && (
         <div className={styles.results()}>
           <div className="result-header">
             <h3>
-              {result.success ? '✅ Import 완료!' : '⚠️ Import 완료 (일부 오류)'}
+              {importMutation.data.success ? '✅ Import 완료!' : '⚠️ Import 완료 (일부 오류)'}
             </h3>
             <button onClick={handleReset} className="reset-btn">
               다시 Import
@@ -228,64 +226,64 @@ export function FigmaImporter({
           {/* Stats */}
           <div className="import-stats">
             <div className="stat-card">
-              <span className="stat-number">{result.imported.colors}</span>
+              <span className="stat-number">{importMutation.data.imported.colors}</span>
               <span className="stat-label">색상</span>
             </div>
             <div className="stat-card">
-              <span className="stat-number">{result.imported.textStyles}</span>
+              <span className="stat-number">{importMutation.data.imported.textStyles}</span>
               <span className="stat-label">텍스트</span>
             </div>
             <div className="stat-card">
-              <span className="stat-number">{result.imported.effects}</span>
+              <span className="stat-number">{importMutation.data.imported.effects}</span>
               <span className="stat-label">효과</span>
             </div>
             <div className="stat-card">
-              <span className="stat-number">{result.imported.variables}</span>
+              <span className="stat-number">{importMutation.data.imported.variables}</span>
               <span className="stat-label">변수</span>
             </div>
             <div className="stat-card total">
-              <span className="stat-number">{result.imported.total}</span>
+              <span className="stat-number">{importMutation.data.imported.total}</span>
               <span className="stat-label">총 토큰</span>
             </div>
           </div>
 
           {/* Skipped */}
-          {result.skipped > 0 && (
+          {importMutation.data.skipped > 0 && (
             <div className="skipped-notice">
-              <span>⏭️ {result.skipped}개 토큰 건너뜀 (충돌)</span>
+              <span>⏭️ {importMutation.data.skipped}개 토큰 건너뜀 (충돌)</span>
             </div>
           )}
 
           {/* Errors */}
-          {result.errors.length > 0 && (
+          {importMutation.data.errors.length > 0 && (
             <div className="error-list">
-              <h4>오류 목록 ({result.errors.length}개)</h4>
+              <h4>오류 목록 ({importMutation.data.errors.length}개)</h4>
               <ul>
-                {result.errors.slice(0, 10).map((err, index) => (
+                {importMutation.data.errors.slice(0, 10).map((err, index) => (
                   <li key={index}>
                     <strong>{err.styleName}</strong> ({err.styleType}): {err.reason}
                   </li>
                 ))}
-                {result.errors.length > 10 && (
-                  <li>...외 {result.errors.length - 10}개</li>
+                {importMutation.data.errors.length > 10 && (
+                  <li>...외 {importMutation.data.errors.length - 10}개</li>
                 )}
               </ul>
             </div>
           )}
 
           {/* Token List Preview */}
-          {result.tokens.length > 0 && (
+          {importMutation.data.tokens.length > 0 && (
             <div className="token-list-preview">
               <h4>생성된 토큰 미리보기 (최근 10개)</h4>
               <ul>
-                {result.tokens.slice(0, 10).map((token, index) => (
+                {importMutation.data.tokens.slice(0, 10).map((token, index) => (
                   <li key={index}>
                     <span className="token-name">{token.name}</span>
                     <span className="token-type">{token.type}</span>
                   </li>
                 ))}
-                {result.tokens.length > 10 && (
-                  <li className="more">...외 {result.tokens.length - 10}개</li>
+                {importMutation.data.tokens.length > 10 && (
+                  <li className="more">...외 {importMutation.data.tokens.length - 10}개</li>
                 )}
               </ul>
             </div>
@@ -294,10 +292,10 @@ export function FigmaImporter({
       )}
 
       {/* Error */}
-      {error && (
+      {importMutation.error && (
         <div className="error-message">
           <h3>⚠️ 오류 발생</h3>
-          <p>{error}</p>
+          <p>{importMutation.error.message}</p>
           <button onClick={handleReset}>다시 시도</button>
         </div>
       )}

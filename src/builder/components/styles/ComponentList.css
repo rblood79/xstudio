@@ -14,10 +14,14 @@
   .category-count {
     font-size: var(--text-xs);
     color: var(--control-secondary-bg);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    padding: var(--spacing-2xs);
     background: var(--border-color);
     border-radius: var(--radius-sm);
     box-shadow: var(--inset-shadow-sm);
+    min-width: var(--text-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .component-list {

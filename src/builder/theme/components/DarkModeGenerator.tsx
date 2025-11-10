@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
+import { useAsyncMutation } from '../../hooks/useAsyncMutation';
 import { DarkModeService } from '../../../services/theme/DarkModeService';
 import type { DarkModeOptions } from '../../../services/theme/DarkModeService';
 import { useTokens } from '../../../hooks/theme/useTokens';
@@ -42,16 +43,45 @@ export function DarkModeGenerator({
 
   const { createTheme } = useThemes({ projectId, enableRealtime: false });
 
+  // Form state
   const [preset, setPreset] = useState<PresetName>('default');
   const [customOptions, setCustomOptions] = useState<DarkModeOptions>(
     DarkModeService.PRESETS.default
   );
   const [darkThemeName, setDarkThemeName] = useState('');
 
+  // Preview state
   const [previewTokens, setPreviewTokens] = useState<DesignToken[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+
+  // Generate mutation
+  interface GenerateRequest {
+    themeName: string;
+    options: DarkModeOptions;
+  }
+
+  const generateMutation = useAsyncMutation<{ themeId: string }, GenerateRequest>(
+    async ({ themeName, options }) => {
+      // 1. 다크 모드 토큰 생성
+      await DarkModeService.generateDarkTheme(
+        themeId,
+        lightTokens,
+        themeName,
+        options
+      );
+
+      // 2. 새 다크 테마 생성
+      const newTheme = await createTheme(themeName);
+
+      return { themeId: newTheme!.id };
+    },
+    {
+      onSuccess: (result) => {
+        if (onDarkThemeCreated) {
+          onDarkThemeCreated(result.themeId);
+        }
+      },
+    }
+  );
 
   const handlePresetChange = (newPreset: PresetName) => {
     setPreset(newPreset);
@@ -86,44 +116,20 @@ export function DarkModeGenerator({
       return;
     }
 
-    setGenerating(true);
-    setError(null);
-    setSuccess(false);
-
     try {
-      // 1. 다크 모드 토큰 생성
-      await DarkModeService.generateDarkTheme(
-        themeId,
-        lightTokens,
-        darkThemeName,
-        customOptions
-      );
-      // TODO: TokenService를 사용하여 토큰 일괄 저장
-      // const result = await DarkModeService.generateDarkTheme(...);
-      // await TokenService.bulkCreate(newTheme.id, result.darkTokens);
-
-      // 2. 새 다크 테마 생성
-      const newTheme = await createTheme(darkThemeName);
-
-      // 3. 다크 토큰 저장은 추후 구현
-
-      setSuccess(true);
-
-      if (onDarkThemeCreated && newTheme) {
-        onDarkThemeCreated(newTheme.id);
-      }
+      await generateMutation.execute({
+        themeName: darkThemeName,
+        options: customOptions,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '다크 테마 생성 실패');
+      // 에러는 generateMutation.error에 자동 저장됨
       console.error('[DarkModeGenerator] Generation failed:', err);
-    } finally {
-      setGenerating(false);
     }
   };
 
   const handleReset = () => {
     setPreviewTokens([]);
-    setSuccess(false);
-    setError(null);
+    generateMutation.reset();
     setDarkThemeName('');
   };
 
@@ -145,7 +151,7 @@ export function DarkModeGenerator({
         </div>
       )}
 
-      {!loading && !success && (
+      {!loading && !generateMutation.isSuccess && (
         <>
           <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
             {/* Dark Theme Name */}
@@ -272,8 +278,8 @@ export function DarkModeGenerator({
               <button type="button" onClick={handlePreview} className="preview-btn">
                 👁️ 미리보기
               </button>
-              <button type="submit" className="generate-btn" disabled={generating}>
-                {generating ? '⏳ 생성 중...' : '🌙 다크 테마 생성'}
+              <button type="submit" className="generate-btn" disabled={generateMutation.isLoading}>
+                {generateMutation.isLoading ? '⏳ 생성 중...' : '🌙 다크 테마 생성'}
               </button>
             </div>
           </form>
@@ -339,7 +345,7 @@ export function DarkModeGenerator({
       )}
 
       {/* Success */}
-      {success && (
+      {generateMutation.isSuccess && (
         <div className="success-message">
           <h3>✅ 다크 테마 생성 완료!</h3>
           <p>"{darkThemeName}" 테마가 성공적으로 생성되었습니다.</p>
@@ -350,10 +356,10 @@ export function DarkModeGenerator({
       )}
 
       {/* Error */}
-      {error && (
+      {generateMutation.error && (
         <div className="error-message">
           <h3>⚠️ 오류 발생</h3>
-          <p>{error}</p>
+          <p>{generateMutation.error.message}</p>
           <button onClick={handleReset}>다시 시도</button>
         </div>
       )}
