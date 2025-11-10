@@ -9,6 +9,12 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [react()],
     base: command === "build" ? "/xstudio/" : "/",
+    build: {
+      // 브라우저 호환성 명시 (필요시)
+      // 'baseline-widely-available'은 Vite 7의 기본값
+      // 더 넓은 호환성이 필요하면 'modules' 사용
+      target: "baseline-widely-available", // 또는 'modules'
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
@@ -32,10 +38,7 @@ export default defineConfig(({ command }) => {
     },
     css: {
       postcss: {
-        plugins: [
-          postcssImport(),
-          postcssNested(),
-        ],
+        plugins: [postcssImport(), postcssNested()],
       },
       modules: {
         // CSS Modules 설정
