@@ -90,3 +90,5 @@ export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyE
         </div>
     );
 }
+
+export default SeparatorEditor;

@@ -198,3 +198,5 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
         </div>
     );
 }
+
+export default DateRangePickerEditor;

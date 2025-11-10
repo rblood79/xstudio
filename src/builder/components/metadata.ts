@@ -395,6 +395,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onAction"],
     },
   },
+  {
+    type: "Separator",
+    label: "Separator",
+    category: "Layout",
+    icon: "➖",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SeparatorEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Overlays
   {
@@ -465,7 +477,8 @@ export const componentMetadata: ComponentMeta[] = [
     category: "Date & Time",
     icon: "📅",
     inspector: {
-      hasCustomEditor: false,
+      hasCustomEditor: true,
+      editorName: "DateRangePickerEditor",
       dataBindingType: "value",
       supportedEvents: ["onChange", "onOpenChange"],
     },
