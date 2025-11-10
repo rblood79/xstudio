@@ -21,6 +21,7 @@ import {
   DEFAULT_THROTTLE_TIME,
 } from "../../../types/events";
 import { saveService } from "../../../services/save";
+import { useActions } from "./state/useActions";
 
 import "./index.css";
 
@@ -365,32 +366,29 @@ interface EventEditorProps {
 function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const addAction = () => {
-    const newAction: EventAction = {
-      id: `action_${Date.now()}`,
-      type: "update_state",
-      enabled: true,
-    };
-    onUpdate({
-      ...event,
-      actions: [...event.actions, newAction],
-    });
+  // ✅ useActions 훅 사용 - 기존 수동 배열 조작 로직 제거
+  const {
+    actions,
+    addAction: addActionToList,
+    updateAction: updateActionInList,
+    removeAction: removeActionFromList,
+  } = useActions(event.actions);
+
+  // actions 변경 시 event 업데이트
+  useEffect(() => {
+    onUpdate({ ...event, actions });
+  }, [actions, event, onUpdate]);
+
+  const handleAddAction = () => {
+    addActionToList("update_state", {});
   };
 
-  const updateAction = (actionId: string, updatedAction: EventAction) => {
-    onUpdate({
-      ...event,
-      actions: event.actions.map((action) =>
-        action.id === actionId ? updatedAction : action
-      ),
-    });
+  const handleUpdateAction = (actionId: string, updatedAction: EventAction) => {
+    updateActionInList(actionId, updatedAction);
   };
 
-  const deleteAction = (actionId: string) => {
-    onUpdate({
-      ...event,
-      actions: event.actions.filter((action) => action.id !== actionId),
-    });
+  const handleDeleteAction = (actionId: string) => {
+    removeActionFromList(actionId);
   };
 
   return (
@@ -401,7 +399,7 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
             {EVENT_TYPE_LABELS[event.event_type]}
           </span>
           <span className="event-actions-count">
-            ({event.actions.length}개 액션)
+            ({actions.length}개 액션)
           </span>
           {event.description && (
             <span className="event-description">{event.description}</span>
@@ -488,20 +486,20 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
           <div className="actions-section">
             <div className="actions-header">
               <h4>액션</h4>
-              <Button onPress={addAction}>
+              <Button onPress={handleAddAction}>
                 <Plus size={16} />
               </Button>
             </div>
 
             <div className="actions-list">
-              {event.actions.map((action) => (
+              {actions.map((action) => (
                 <ActionEditor
                   key={action.id}
                   action={action}
                   onUpdate={(updatedAction) =>
-                    updateAction(action.id, updatedAction)
+                    handleUpdateAction(action.id, updatedAction)
                   }
-                  onDelete={() => deleteAction(action.id)}
+                  onDelete={() => handleDeleteAction(action.id)}
                 />
               ))}
             </div>
