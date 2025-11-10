@@ -1,0 +1,146 @@
+@import './base.css';
+
+@layer components {
+  /* Base Badge Styles */
+  .react-aria-Badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    border-radius: var(--radius-full);
+    transition: all 200ms;
+    background: var(--color-gray-200);
+    color: var(--color-gray-700);
+    border: 1px solid transparent;
+  }
+
+  /* Variant: Primary */
+  .react-aria-Badge.primary {
+    background: var(--action-primary-bg);
+    color: white;
+  }
+
+  /* Variant: Secondary */
+  .react-aria-Badge.secondary {
+    background: var(--action-secondary-bg);
+    color: white;
+  }
+
+  /* Variant: Surface */
+  .react-aria-Badge.surface {
+    background: var(--action-surface-bg);
+    color: white;
+  }
+
+  /* Variant: Outline */
+  .react-aria-Badge.outline {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
+  }
+
+  /* Variant: Ghost */
+  .react-aria-Badge.ghost {
+    background: var(--color-gray-100);
+    color: var(--text-color);
+  }
+
+  /* Size: XS */
+  .react-aria-Badge.xs {
+    font-size: var(--text-xs);
+    padding: 2px var(--spacing-sm);
+    min-width: 16px;
+    height: 16px;
+  }
+
+  /* Size: SM (default) */
+  .react-aria-Badge.sm {
+    font-size: var(--text-sm);
+    padding: 2px var(--spacing-md);
+    min-width: 20px;
+    height: 20px;
+  }
+
+  /* Size: MD */
+  .react-aria-Badge.md {
+    font-size: var(--text-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-width: 24px;
+    height: 24px;
+  }
+
+  /* Size: LG */
+  .react-aria-Badge.lg {
+    font-size: var(--text-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    min-width: 28px;
+    height: 28px;
+  }
+
+  /* Size: XL */
+  .react-aria-Badge.xl {
+    font-size: var(--text-xl);
+    padding: var(--spacing) var(--spacing-lg);
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /* Dot Badge (indicator only, no text) */
+  .react-aria-Badge.dot {
+    padding: 0;
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+
+    &.sm {
+      width: 10px;
+      height: 10px;
+      min-width: 10px;
+    }
+
+    &.md {
+      width: 12px;
+      height: 12px;
+      min-width: 12px;
+    }
+
+    &.lg {
+      width: 14px;
+      height: 14px;
+      min-width: 14px;
+    }
+
+    &.xl {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+    }
+  }
+
+  /* Pulsing animation */
+  .react-aria-Badge.pulsing {
+    animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes badge-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (forced-colors: active) {
+    .react-aria-Badge {
+      border: 1px solid CanvasText;
+    }
+
+    .react-aria-Badge.outline {
+      border: 2px solid CanvasText;
+    }
+  }
+}

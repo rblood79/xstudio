@@ -11,6 +11,8 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
+import { useFocusRing } from '@react-aria/focus';
+import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, SwitchVariant } from '../../types/componentVariants';
 
 import './styles/Switch.css';
@@ -43,6 +45,10 @@ const switchStyles = tv({
       md: 'md',
       lg: 'lg',
     },
+    isFocusVisible: {
+      true: 'focus-visible',
+      false: '',
+    },
   },
   defaultVariants: {
     variant: 'default',
@@ -51,12 +57,21 @@ const switchStyles = tv({
 });
 
 export function Switch({ children, variant = 'default', size = 'md', ...props }: SwitchProps) {
+  const { focusProps, isFocusVisible } = useFocusRing();
+
   return (
     <AriaSwitch
-      {...props}
+      {...mergeProps(props, focusProps)}
+      data-focus-visible={isFocusVisible}
       className={composeRenderProps(
         props.className,
-        (className) => switchStyles({ variant, size, className })
+        (className, renderProps) => switchStyles({
+          ...renderProps,
+          variant,
+          size,
+          isFocusVisible,
+          className
+        })
       )}
     >
       <div className="indicator" />

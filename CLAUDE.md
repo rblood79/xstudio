@@ -402,6 +402,254 @@ When adding a new component:
 3. Create Storybook story in `src/stories/`
 4. Write tests (Vitest for unit, Playwright for E2E)
 
+#### Component Editor Development
+
+**Creating Inspector Property Editors for React Aria Components**
+
+When creating property editors for components that use React Aria features (internationalization, date/time handling, number formatting), follow these patterns to expose all features in the builder UI.
+
+**Core Principles:**
+- All React Aria props should be configurable via Inspector UI
+- Use consistent Property components (PropertyInput, PropertySelect, PropertySwitch)
+- Group related properties into logical fieldsets
+- Add visual icons from lucide-react for clarity
+
+**Standard Editor Structure:**
+
+```typescript
+import { /* icons */ Globe, DollarSign, CalendarDays } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
+import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { useStore } from '../../../stores';
+
+export function ComponentEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
+    // Update prop helper
+    const updateProp = (key: string, value: unknown) => {
+        const updatedProps = { ...currentProps, [key]: value };
+        onUpdate(updatedProps);
+    };
+
+    // Update customId helper
+    const updateCustomId = (newCustomId: string) => {
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
+    // Number prop helper (for numeric inputs)
+    const updateNumberProp = (key: string, value: string, defaultValue?: number) => {
+        const numericValue = value === '' ? undefined : (Number(value) || defaultValue);
+        updateProp(key, numericValue);
+    };
+
+    return (
+        <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="component_1"
+            />
+
+            {/* Add property fieldsets here */}
+        </div>
+    );
+}
+```
+
+**Property Component Patterns:**
+
+| Feature Type | Component | Pattern | Example |
+|--------------|-----------|---------|---------|
+| **Text Input** | PropertyInput | Simple text/string values | Timezone, locale, date strings |
+| **Dropdown** | PropertySelect | Enum/choice values | Value format, hour cycle, variants |
+| **Toggle** | PropertySwitch | Boolean values | Show value, default to today, disabled |
+| **Number Input** | PropertyInput | Numeric values (use updateNumberProp) | Min/max values, step |
+
+**Common Property Sections:**
+
+```typescript
+// 1. Internationalization Section (Date/Time Components)
+<fieldset className="properties-group">
+  <legend>Internationalization</legend>
+
+  <PropertyInput
+    label="Timezone"
+    value={String(currentProps.timezone || '')}
+    onChange={(value) => updateProp('timezone', value || undefined)}
+    placeholder="Asia/Seoul, America/New_York"
+    icon={Globe}
+  />
+
+  <PropertySwitch
+    label="Default to Today"
+    isSelected={Boolean(currentProps.defaultToday)}
+    onChange={(checked) => updateProp('defaultToday', checked)}
+    icon={CalendarDays}
+  />
+
+  <PropertyInput
+    label="Min Date"
+    value={String(currentProps.minDate || '')}
+    onChange={(value) => updateProp('minDate', value || undefined)}
+    placeholder="2024-01-01"
+  />
+
+  <PropertyInput
+    label="Max Date"
+    value={String(currentProps.maxDate || '')}
+    onChange={(value) => updateProp('maxDate', value || undefined)}
+    placeholder="2024-12-31"
+  />
+</fieldset>
+
+// 2. Number Formatting Section (Number Display Components)
+<fieldset className="properties-group">
+  <legend>Number Formatting</legend>
+
+  <PropertyInput
+    label="Locale"
+    value={String(currentProps.locale || '')}
+    onChange={(value) => updateProp('locale', value || undefined)}
+    placeholder="ko-KR, en-US, ja-JP"
+    icon={Globe}
+  />
+
+  <PropertySelect
+    label="Value Format"
+    value={String(currentProps.valueFormat || 'number')}
+    onChange={(value) => updateProp('valueFormat', value)}
+    options={[
+      { value: 'number', label: 'Number' },
+      { value: 'percent', label: 'Percent' },
+      { value: 'unit', label: 'Unit' },
+      { value: 'custom', label: 'Custom' }
+    ]}
+    icon={DollarSign}
+  />
+
+  {/* Conditional props based on valueFormat */}
+  {currentProps.valueFormat === 'unit' && (
+    <PropertyInput
+      label="Unit"
+      value={String(currentProps.unit || '')}
+      onChange={(value) => updateProp('unit', value || undefined)}
+      placeholder="kilometer, celsius, meter"
+      icon={Type}
+    />
+  )}
+
+  <PropertySwitch
+    label="Show Value"
+    isSelected={currentProps.showValue !== false}
+    onChange={(checked) => updateProp('showValue', checked)}
+    icon={NotebookTabs}
+  />
+</fieldset>
+```
+
+**Icon Usage Guidelines:**
+
+| Property Type | Icon | Import |
+|---------------|------|--------|
+| Locale/Timezone | Globe | `lucide-react` |
+| Value Format | DollarSign | `lucide-react` |
+| Date Controls | CalendarDays | `lucide-react` |
+| Time Controls | Clock | `lucide-react` |
+| Min/Max Values | ArrowDown/ArrowUp | `lucide-react` |
+| Generic Input | Type | `lucide-react` |
+| Toggle/Boolean | Check, ToggleLeft | `lucide-react` |
+| Number Display | NotebookTabs, BarChart3, Gauge | `lucide-react` |
+
+**Conditional Property Rendering:**
+
+Some properties depend on other values. Use conditional rendering:
+
+```typescript
+{/* Only show unit input when valueFormat is 'unit' */}
+{currentProps.valueFormat === 'unit' && (
+  <PropertyInput
+    label="Unit"
+    value={String(currentProps.unit || '')}
+    onChange={(value) => updateProp('unit', value || undefined)}
+    placeholder="kilometer, celsius, meter"
+  />
+)}
+
+{/* Only show variant/size when NOT a child of parent group */}
+{!isChildOfGroup && (
+  <fieldset className="properties-design">
+    <PropertySelect
+      label={PROPERTY_LABELS.VARIANT}
+      value={String(currentProps.variant || 'default')}
+      onChange={(value) => updateProp('variant', value)}
+      options={[...]}
+    />
+  </fieldset>
+)}
+```
+
+**Value Handling:**
+
+```typescript
+// String props
+onChange={(value) => updateProp('timezone', value || undefined)}
+
+// Number props
+onChange={(value) => updateNumberProp('minValue', value, 0)}
+
+// Boolean props
+onChange={(checked) => updateProp('isDisabled', checked)}
+
+// Enum props
+onChange={(value) => updateProp('valueFormat', value)}
+```
+
+**Placeholder Best Practices:**
+
+- **Dates**: Use ISO format (YYYY-MM-DD)
+- **Locales**: Show examples (ko-KR, en-US, ja-JP)
+- **Timezones**: Show common examples (Asia/Seoul, America/New_York)
+- **Units**: Show common units (kilometer, celsius, meter)
+- **Numbers**: Show typical values (0, 100, 50)
+
+**Example Editors:**
+
+Reference implementations in `src/builder/inspector/properties/editors/`:
+- **CalendarEditor.tsx** - Timezone, defaultToday, minDate, maxDate
+- **SliderEditor.tsx** - Locale, valueFormat, unit, showValue (with conditional unit input)
+- **MeterEditor.tsx** - Locale, valueFormat, showValue
+- **ProgressBarEditor.tsx** - Locale, valueFormat, showValue
+- **TimeFieldEditor.tsx** - hourCycle control
+- **DatePickerEditor.tsx** - Timezone, date range constraints
+- **NumberFieldEditor.tsx** - Locale, formatStyle, currency, unit, notation
+
+**Testing Editor Changes:**
+
+After creating/updating an editor:
+1. **Visual Test**: Add component in builder, verify all controls appear
+2. **Functional Test**: Change each property, verify Preview updates
+3. **Type Safety**: Ensure TypeScript has no errors
+4. **Persistence Test**: Save/reload, verify properties persist
+
+**Future Enhancements:**
+
+When React Aria adds new features, follow this checklist:
+- [ ] Identify which components support the new feature
+- [ ] Add property controls to relevant editors
+- [ ] Choose appropriate Property component (Input/Select/Switch)
+- [ ] Add icon for visual clarity
+- [ ] Test in Builder Preview
+- [ ] Update `REACT_ARIA_INTEGRATION.md` documentation
+- [ ] Add to component Storybook stories
+
 #### Action Token System and Component Variants
 
 **Overview**

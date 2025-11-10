@@ -20,6 +20,13 @@ import {
 } from "react-aria-components";
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  getLocalTimeZone,
+  parseDate,
+  today,
+  type CalendarDate
+} from '@internationalized/date';
+import { safeParseDateString, isValidDateString } from '../../utils/dateUtils';
 
 import "./styles/DatePicker.css";
 
@@ -40,6 +47,27 @@ export interface DatePickerProps<T extends DateValue>
   includeTime?: boolean;
   timeFormat?: "12h" | "24h";
   timeLabel?: string;
+  // React Aria 라이브러리 활용 추가 옵션
+  /**
+   * 타임존 (기본값: 로컬 타임존)
+   * @default getLocalTimeZone()
+   */
+  timezone?: string;
+  /**
+   * 기본값을 오늘로 설정
+   * @default false
+   */
+  defaultToday?: boolean;
+  /**
+   * 최소 날짜 (문자열 또는 DateValue)
+   * @example "2024-01-01" or parseDate("2024-01-01")
+   */
+  minDate?: string | DateValue;
+  /**
+   * 최대 날짜 (문자열 또는 DateValue)
+   * @example "2024-12-31" or parseDate("2024-12-31")
+   */
+  maxDate?: string | DateValue;
 }
 
 export function DatePicker<T extends DateValue>({
@@ -57,18 +85,42 @@ export function DatePicker<T extends DateValue>({
   timeFormat = "24h",
   timeLabel = "시간",
   granularity,
+  timezone,
+  defaultToday = false,
+  minDate,
+  maxDate,
   ...props
 }: DatePickerProps<T>) {
+  // 타임존 설정 (명시하지 않으면 로컬 타임존 사용)
+  const effectiveTimezone = timezone || getLocalTimeZone();
+
   // includeTime이 true일 때 granularity를 자동으로 설정
   const effectiveGranularity = includeTime
     ? granularity || "minute"
     : granularity || "day";
+
+  // minDate/maxDate 자동 파싱 (문자열인 경우)
+  const minValue = typeof minDate === 'string'
+    ? safeParseDateString(minDate)
+    : minDate;
+
+  const maxValue = typeof maxDate === 'string'
+    ? safeParseDateString(maxDate)
+    : maxDate;
+
+  // defaultToday가 true이고 value가 없으면 오늘 날짜 설정
+  const defaultValue = defaultToday && !props.value && !props.defaultValue
+    ? (today(effectiveTimezone) as T)
+    : props.defaultValue;
 
   return (
     <AriaDatePicker
       {...props}
       className="react-aria-DatePicker"
       granularity={effectiveGranularity}
+      defaultValue={defaultValue}
+      minValue={minValue as T | undefined}
+      maxValue={maxValue as T | undefined}
     >
       {label && <Label>{label}</Label>}
       <Group>

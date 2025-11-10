@@ -20,6 +20,8 @@ import {
 } from "react-aria-components";
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { getLocalTimeZone, today } from '@internationalized/date';
+import { safeParseDateString } from '../../utils/dateUtils';
 
 import "./styles/DateRangePicker.css";
 
@@ -40,6 +42,26 @@ export interface DateRangePickerProps<T extends DateValue>
   timeFormat?: "12h" | "24h";
   startTimeLabel?: string;
   endTimeLabel?: string;
+  /**
+   * 타임존 (기본값: 로컬 타임존)
+   * @default getLocalTimeZone()
+   */
+  timezone?: string;
+  /**
+   * 기본값을 오늘로 설정 (시작일과 종료일 모두 오늘)
+   * @default false
+   */
+  defaultToday?: boolean;
+  /**
+   * 최소 날짜 (문자열 또는 DateValue)
+   * @example "2024-01-01"
+   */
+  minDate?: string | DateValue;
+  /**
+   * 최대 날짜 (문자열 또는 DateValue)
+   * @example "2024-12-31"
+   */
+  maxDate?: string | DateValue;
 }
 
 export function DateRangePicker<T extends DateValue>({
@@ -58,18 +80,42 @@ export function DateRangePicker<T extends DateValue>({
   startTimeLabel = "시작 시간",
   endTimeLabel = "종료 시간",
   granularity,
+  timezone,
+  defaultToday = false,
+  minDate,
+  maxDate,
   ...props
 }: DateRangePickerProps<T>) {
+  // 타임존 설정
+  const effectiveTimezone = timezone || getLocalTimeZone();
+
   // includeTime이 true일 때 granularity를 자동으로 설정
   const effectiveGranularity = includeTime
     ? granularity || "minute"
     : granularity || "day";
+
+  // minDate/maxDate 자동 파싱
+  const minValue = typeof minDate === 'string'
+    ? safeParseDateString(minDate)
+    : minDate;
+
+  const maxValue = typeof maxDate === 'string'
+    ? safeParseDateString(maxDate)
+    : maxDate;
+
+  // defaultToday가 true이고 value가 없으면 오늘 날짜로 시작일과 종료일 설정
+  const defaultValue = defaultToday && !props.value && !props.defaultValue
+    ? { start: today(effectiveTimezone) as T, end: today(effectiveTimezone) as T }
+    : props.defaultValue;
 
   return (
     <AriaDateRangePicker
       {...props}
       className="react-aria-DateRangePicker"
       granularity={effectiveGranularity}
+      defaultValue={defaultValue}
+      minValue={minValue as T | undefined}
+      maxValue={maxValue as T | undefined}
     >
       {label && <Label>{label}</Label>}
       <Group>

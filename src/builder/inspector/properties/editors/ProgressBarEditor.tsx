@@ -1,4 +1,4 @@
-import { Tag, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp } from 'lucide-react';
+import { Tag, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp, Globe, DollarSign } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -58,6 +58,38 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(value) => updateNumberProp('value', value)}
                     icon={BarChart3}
                     placeholder="50"
+                />
+            </fieldset>
+
+            {/* Number Formatting Section */}
+            <fieldset className="properties-group">
+                <legend>Number Formatting</legend>
+
+                <PropertyInput
+                    label="Locale"
+                    value={String(currentProps.locale || '')}
+                    onChange={(value) => updateProp('locale', value || undefined)}
+                    placeholder="ko-KR, en-US, etc."
+                    icon={Globe}
+                />
+
+                <PropertySelect
+                    label="Value Format"
+                    value={String(currentProps.valueFormat || 'number')}
+                    onChange={(value) => updateProp('valueFormat', value)}
+                    options={[
+                        { value: 'number', label: 'Number' },
+                        { value: 'percent', label: 'Percent' },
+                        { value: 'custom', label: 'Custom' }
+                    ]}
+                    icon={DollarSign}
+                />
+
+                <PropertySwitch
+                    label="Show Value"
+                    isSelected={currentProps.showValue !== false}
+                    onChange={(checked) => updateProp('showValue', checked)}
+                    icon={BarChart3}
                 />
             </fieldset>
 

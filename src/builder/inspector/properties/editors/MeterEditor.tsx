@@ -1,4 +1,5 @@
-import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash } from 'lucide-react';
+import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe, DollarSign } from 'lucide-react';
+import { PropertySwitch } from '../../components';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
@@ -58,6 +59,38 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(value) => updateNumberProp('value', value)}
                     icon={Gauge}
                     placeholder="50"
+                />
+            </fieldset>
+
+            {/* Number Formatting Section */}
+            <fieldset className="properties-group">
+                <legend>Number Formatting</legend>
+
+                <PropertyInput
+                    label="Locale"
+                    value={String(currentProps.locale || '')}
+                    onChange={(value) => updateProp('locale', value || undefined)}
+                    placeholder="ko-KR, en-US, etc."
+                    icon={Globe}
+                />
+
+                <PropertySelect
+                    label="Value Format"
+                    value={String(currentProps.valueFormat || 'number')}
+                    onChange={(value) => updateProp('valueFormat', value)}
+                    options={[
+                        { value: 'number', label: 'Number' },
+                        { value: 'percent', label: 'Percent' },
+                        { value: 'custom', label: 'Custom' }
+                    ]}
+                    icon={DollarSign}
+                />
+
+                <PropertySwitch
+                    label="Show Value"
+                    isSelected={currentProps.showValue !== false}
+                    onChange={(checked) => updateProp('showValue', checked)}
+                    icon={Gauge}
                 />
             </fieldset>
 

@@ -12,6 +12,8 @@ import {
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
 import { tv } from 'tailwind-variants';
+import { useFocusRing } from '@react-aria/focus';
+import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, CheckboxVariant } from '../../types/componentVariants';
 
 import './styles/Checkbox.css';
@@ -45,6 +47,10 @@ const checkboxStyles = tv({
       md: 'md',
       lg: 'lg',
     },
+    isFocusVisible: {
+      true: 'focus-visible',
+      false: '',
+    },
   },
   defaultVariants: {
     variant: 'default',
@@ -54,18 +60,26 @@ const checkboxStyles = tv({
 
 export function MyCheckbox(props: CheckboxProps) {
   const { children, isTreeItemChild = false, variant = 'default', size = 'md', ...restProps } = props;
+  const { focusProps, isFocusVisible } = useFocusRing();
 
   // TreeItem 내부에서 사용될 때는 slot을 설정하지 않음
   const checkboxProps = isTreeItemChild
-    ? restProps
-    : { slot: "selection", ...restProps };
+    ? mergeProps(restProps, focusProps)
+    : mergeProps({ slot: "selection", ...restProps }, focusProps);
 
   return (
     <AriaCheckbox
       {...checkboxProps}
+      data-focus-visible={isFocusVisible}
       className={composeRenderProps(
         checkboxProps.className,
-        (className) => checkboxStyles({ variant, size, className })
+        (className, renderProps) => checkboxStyles({
+          ...renderProps,
+          variant,
+          size,
+          isFocusVisible,
+          className
+        })
       )}
     >
       {({ isSelected, isIndeterminate }) => (

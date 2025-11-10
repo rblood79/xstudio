@@ -1,10 +1,10 @@
-import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Clock, Globe, Focus, FileText, Type, Hash, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
+import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash } from 'lucide-react';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
 
-export function DatePickerEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
     const element = useStore((state) => state.elements.find((el) => el.id === elementId));
     const customId = element?.customId || '';
@@ -18,7 +18,6 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
     };
 
     const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
         const updateElement = useStore.getState().updateElement;
         if (updateElement && elementId) {
             updateElement(elementId, { customId: newCustomId });
@@ -32,7 +31,7 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                 value={customId}
                 elementId={elementId}
                 onChange={updateCustomId}
-                placeholder="datepicker_1"
+                placeholder="daterangepicker_1"
             />
 
             {/* Content Section */}
@@ -62,9 +61,9 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
 
                 <PropertyInput
                     label={PROPERTY_LABELS.PLACEHOLDER}
-                    value={String(currentProps.placeholderValue || '')}
-                    onChange={(value) => updateProp('placeholderValue', value || undefined)}
-                    placeholder="YYYY-MM-DD"
+                    value={String(currentProps.placeholder || '')}
+                    onChange={(value) => updateProp('placeholder', value || undefined)}
+                    placeholder="Select date range"
                 />
             </fieldset>
 
@@ -76,7 +75,7 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     label="Timezone"
                     value={String(currentProps.timezone || '')}
                     onChange={(value) => updateProp('timezone', value || undefined)}
-                    placeholder="Asia/Seoul"
+                    placeholder="Asia/Seoul, America/New_York"
                     icon={Globe}
                 />
 
@@ -101,13 +100,6 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     placeholder="2024-12-31"
                 />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DEFAULT_VALUE}
-                    value={String(currentProps.defaultValue || '')}
-                    onChange={(value) => updateProp('defaultValue', value || undefined)}
-                    placeholder="YYYY-MM-DD"
-                />
-
                 <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
                     isSelected={Boolean(currentProps.isRequired)}
@@ -120,6 +112,32 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     isSelected={Boolean(currentProps.isInvalid)}
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
+                />
+            </fieldset>
+
+            {/* Options Section */}
+            <fieldset className="properties-group">
+                <legend>Options</legend>
+
+                <PropertySwitch
+                    label="Show Week Numbers"
+                    isSelected={Boolean(currentProps.showWeekNumbers)}
+                    onChange={(checked) => updateProp('showWeekNumbers', checked)}
+                    icon={CalendarDays}
+                />
+
+                <PropertySwitch
+                    label="Highlight Today"
+                    isSelected={currentProps.highlightToday !== false}
+                    onChange={(checked) => updateProp('highlightToday', checked)}
+                    icon={CalendarDays}
+                />
+
+                <PropertySwitch
+                    label="Allow Clear"
+                    isSelected={currentProps.allowClear !== false}
+                    onChange={(checked) => updateProp('allowClear', checked)}
+                    icon={Type}
                 />
             </fieldset>
 
@@ -147,123 +165,6 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.SHOULD_CLOSE_ON_SELECT}
-                    isSelected={currentProps.shouldCloseOnSelect !== false}
-                    onChange={(checked) => updateProp('shouldCloseOnSelect', checked)}
-                />
-            </fieldset>
-
-            {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.GRANULARITY}
-                    value={String(currentProps.granularity || '')}
-                    onChange={(value) => updateProp('granularity', value || undefined)}
-                    options={[
-                        { value: '', label: 'Date Only' },
-                        { value: 'hour', label: 'Hour' },
-                        { value: 'minute', label: 'Minute' },
-                        { value: 'second', label: 'Second' }
-                    ]}
-                    icon={Clock}
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.HOUR_CYCLE}
-                    value={String(currentProps.hourCycle || '')}
-                    onChange={(value) => updateProp('hourCycle', value ? Number(value) : undefined)}
-                    options={[
-                        { value: '', label: 'Default (Locale)' },
-                        { value: '12', label: '12 Hour' },
-                        { value: '24', label: '24 Hour' }
-                    ]}
-                    icon={Clock}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.HIDE_TIMEZONE}
-                    isSelected={Boolean(currentProps.hideTimeZone)}
-                    onChange={(checked) => updateProp('hideTimeZone', checked)}
-                    icon={Globe}
-                />
-
-                <PropertySwitch
-                    label={PROPERTY_LABELS.FORCE_LEADING_ZEROS}
-                    isSelected={Boolean(currentProps.shouldForceLeadingZeros)}
-                    onChange={(checked) => updateProp('shouldForceLeadingZeros', checked)}
-                    icon={Clock}
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.PAGE_BEHAVIOR}
-                    value={String(currentProps.pageBehavior || 'visible')}
-                    onChange={(value) => updateProp('pageBehavior', value)}
-                    options={[
-                        { value: 'visible', label: 'Visible' },
-                        { value: 'single', label: 'Single' }
-                    ]}
-                    icon={CalendarDays}
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.FIRST_DAY_OF_WEEK}
-                    value={String(currentProps.firstDayOfWeek || '')}
-                    onChange={(value) => updateProp('firstDayOfWeek', value || undefined)}
-                    options={[
-                        { value: '', label: 'Default (Locale)' },
-                        { value: 'sun', label: 'Sunday' },
-                        { value: 'mon', label: 'Monday' },
-                        { value: 'tue', label: 'Tuesday' },
-                        { value: 'wed', label: 'Wednesday' },
-                        { value: 'thu', label: 'Thursday' },
-                        { value: 'fri', label: 'Friday' },
-                        { value: 'sat', label: 'Saturday' }
-                    ]}
-                    icon={CalendarDays}
-                />
-            </fieldset>
-
-            {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.NAME}
-                    value={String(currentProps.name || '')}
-                    onChange={(value) => updateProp('name', value || undefined)}
-                    icon={FormInput}
-                    placeholder="date-picker-name"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.FORM}
-                    value={String(currentProps.form || '')}
-                    onChange={(value) => updateProp('form', value || undefined)}
-                    icon={FormInput}
-                    placeholder="form-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.AUTOCOMPLETE}
-                    value={String(currentProps.autoComplete || '')}
-                    onChange={(value) => updateProp('autoComplete', value || undefined)}
-                    icon={FormInput}
-                    placeholder="bday"
-                />
-
-                <PropertySelect
-                    label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
-                    value={String(currentProps.validationBehavior || 'native')}
-                    onChange={(value) => updateProp('validationBehavior', value)}
-                    options={[
-                        { value: 'native', label: 'Native' },
-                        { value: 'aria', label: 'ARIA' }
-                    ]}
-                />
             </fieldset>
 
             {/* Accessibility Section */}
@@ -275,7 +176,7 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     value={String(currentProps['aria-label'] || '')}
                     onChange={(value) => updateProp('aria-label', value || undefined)}
                     icon={Type}
-                    placeholder="Date picker label for screen readers"
+                    placeholder="Date range picker"
                 />
 
                 <PropertyInput

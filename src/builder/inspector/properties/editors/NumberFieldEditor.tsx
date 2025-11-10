@@ -1,6 +1,6 @@
 import {
     Tag, Hash, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
-    SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick
+    SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick, Globe, Hash as HashIcon
 } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -84,49 +84,92 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                 />
             </fieldset>
 
-            {/* Number Format Section */}
+            {/* Internationalization Section */}
             <fieldset className="properties-group">
-                <legend>Number Format</legend>
+                <legend>Internationalization</legend>
+
+                <PropertyInput
+                    label="Locale"
+                    value={String(currentProps.locale || '')}
+                    onChange={(value) => updateProp('locale', value || undefined)}
+                    placeholder="ko-KR, en-US, etc."
+                    icon={Globe}
+                />
 
                 <PropertySelect
-                    label={PROPERTY_LABELS.NUMBER_FORMAT_STYLE}
-                    value={String(formatOptions.style || 'decimal')}
-                    onChange={(value) => updateFormatOption('style', value)}
+                    label="Format Style"
+                    value={String(currentProps.formatStyle || 'decimal')}
+                    onChange={(value) => updateProp('formatStyle', value)}
                     options={[
-                        { value: 'decimal', label: PROPERTY_LABELS.NUMBER_STYLE_DECIMAL },
-                        { value: 'currency', label: PROPERTY_LABELS.NUMBER_STYLE_CURRENCY },
-                        { value: 'percent', label: PROPERTY_LABELS.NUMBER_STYLE_PERCENT },
-                        { value: 'unit', label: PROPERTY_LABELS.NUMBER_STYLE_UNIT }
+                        { value: 'decimal', label: 'Decimal' },
+                        { value: 'currency', label: 'Currency' },
+                        { value: 'percent', label: 'Percent' },
+                        { value: 'unit', label: 'Unit' }
                     ]}
                     icon={DollarSign}
                 />
 
-                {formatOptions.style === 'currency' && (
+                {currentProps.formatStyle === 'currency' && (
                     <PropertySelect
-                        label={PROPERTY_LABELS.CURRENCY}
-                        value={String(formatOptions.currency || 'USD')}
-                        onChange={(value) => updateFormatOption('currency', value)}
+                        label="Currency"
+                        value={String(currentProps.currency || 'KRW')}
+                        onChange={(value) => updateProp('currency', value)}
                         options={[
+                            { value: 'KRW', label: 'KRW (₩)' },
                             { value: 'USD', label: 'USD ($)' },
                             { value: 'EUR', label: 'EUR (€)' },
                             { value: 'GBP', label: 'GBP (£)' },
                             { value: 'JPY', label: 'JPY (¥)' },
-                            { value: 'KRW', label: 'KRW (₩)' },
-                            { value: 'CNY', label: 'CNY (¥)' }
+                            { value: 'CNY', label: 'CNY (¥)' },
+                            { value: 'AUD', label: 'AUD ($)' },
+                            { value: 'CAD', label: 'CAD ($)' }
                         ]}
                         icon={DollarSign}
                     />
                 )}
 
-                {formatOptions.style === 'unit' && (
+                {currentProps.formatStyle === 'unit' && (
                     <PropertyInput
-                        label={PROPERTY_LABELS.UNIT}
-                        value={String(formatOptions.unit || '')}
-                        onChange={(value) => updateFormatOption('unit', value || undefined)}
+                        label="Unit"
+                        value={String(currentProps.unit || '')}
+                        onChange={(value) => updateProp('unit', value || undefined)}
                         icon={Type}
-                        placeholder="meter, kilogram, etc."
+                        placeholder="kilometer, celsius, megabyte, etc."
                     />
                 )}
+
+                <PropertySelect
+                    label="Notation"
+                    value={String(currentProps.notation || 'standard')}
+                    onChange={(value) => updateProp('notation', value)}
+                    options={[
+                        { value: 'standard', label: 'Standard' },
+                        { value: 'compact', label: 'Compact (1.2K, 1.5M)' },
+                        { value: 'scientific', label: 'Scientific' },
+                        { value: 'engineering', label: 'Engineering' }
+                    ]}
+                    icon={HashIcon}
+                />
+
+                <PropertyInput
+                    label="Decimals"
+                    value={String(currentProps.decimals ?? '')}
+                    onChange={(value) => updateProp('decimals', value ? Number(value) : undefined)}
+                    icon={Hash}
+                    placeholder="2"
+                />
+
+                <PropertySwitch
+                    label="Show Group Separator"
+                    isSelected={currentProps.showGroupSeparator !== false}
+                    onChange={(checked) => updateProp('showGroupSeparator', checked)}
+                    icon={Hash}
+                />
+            </fieldset>
+
+            {/* Number Format Section (Legacy formatOptions) */}
+            <fieldset className="properties-group">
+                <legend>Advanced Format Options</legend>
 
                 <PropertyInput
                     label={PROPERTY_LABELS.MIN_FRACTION_DIGITS}

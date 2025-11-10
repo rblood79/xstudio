@@ -4,6 +4,8 @@ import {
   ButtonProps as RACButtonProps,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
+import { useFocusRing } from "@react-aria/focus";
+import { mergeProps } from "@react-aria/utils";
 import type {
   ButtonVariant,
   ComponentSize,
@@ -16,7 +18,6 @@ export interface ButtonProps extends RACButtonProps {
 }
 
 const button = tv({
-  //extend: focusRing,
   base: "react-aria-Button",
   variants: {
     variant: {
@@ -34,6 +35,11 @@ const button = tv({
       lg: "lg",
       xl: "xl",
     },
+    // 포커스 가시성 variant 추가
+    isFocusVisible: {
+      true: "focus-visible",
+      false: "",
+    },
   },
   defaultVariants: {
     variant: "default",
@@ -42,10 +48,13 @@ const button = tv({
 });
 
 export function Button(props: ButtonProps) {
+  const { focusProps, isFocusVisible } = useFocusRing();
+
   return (
     <RACButton
-      {...props}
-      type={props.type} // Add this line to pass the type prop
+      {...mergeProps(props, focusProps)}
+      type={props.type}
+      data-focus-visible={isFocusVisible}
       className={composeRenderProps(
         props.className,
         (className, renderProps) => {
@@ -53,6 +62,7 @@ export function Button(props: ButtonProps) {
             ...renderProps,
             variant: props.variant,
             size: props.size,
+            isFocusVisible, // 포커스 상태 추가
             className,
           });
           return generatedClass;
