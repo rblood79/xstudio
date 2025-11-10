@@ -9,15 +9,16 @@
 
 ## 📊 전체 진행률
 
-**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅
-**진행 상황**: 14개 커밋, 5개 문서, TypeScript 컴파일 ✅
+**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅
+**진행 상황**: 16개 커밋, 5개 문서, TypeScript 컴파일 ✅
 
 | Phase | 상태 | 진행률 | 설명 |
 |-------|------|--------|------|
 | **Phase 0** | ✅ 완료 | 100% | 패키지 설치, 타입 정의, Git 설정 |
 | **Phase 1** | ✅ 완료 | 100% | Inspector Events React Stately 전환 |
 | **Phase 2** | ✅ 완료 | 100% | Inspector Data 섹션 useColumnLoader 적용 |
-| **Phase 3-8** | ⏸️ 대기 | 0% | 계획 수립 완료, 실행 대기 |
+| **Phase 3** | ✅ 완료 | 100% | Sidebar Tree 트리 상태 관리 및 hierarchical 렌더링 |
+| **Phase 4-8** | ⏸️ 대기 | 0% | 계획 수립 완료, 실행 대기 |
 
 ---
 
@@ -230,11 +231,113 @@
 
 ---
 
+## ✅ Phase 3: Sidebar Tree (완료)
+
+**기간**: 1일 (2025-11-10)
+**커밋**: 2개 (ce00aa9, 03d9246)
+**상태**: ✅ 완료 및 안정화
+
+### 주요 성과
+
+**코드 개선**:
+- 상태 관리 로직 제거: -23줄 (expandedItems, updateExpandedItems)
+- 신규 훅/유틸 추가: +829줄 (useTreeExpandState: 140줄, treeUtils: 220줄, renderElementTree: 469줄)
+- 아키텍처 개선: flat → hierarchical 구조 변환 분리
+
+**Phase 3.1: 트리 상태 관리 마이그레이션**
+
+**생성된 파일** (3개, 378줄):
+- `src/builder/hooks/useTreeExpandState.ts` (140줄)
+  - expandedKeys, toggleKey, expandKey, collapseKey, collapseAll
+  - 자동 부모 펼치기 (expandParents)
+  - selectedElementId 변경 시 자동 부모 펼치기
+
+- `src/builder/utils/treeUtils.ts` (220줄)
+  - buildTreeFromElements: flat → hierarchical 변환
+  - flattenTreeToElements: hierarchical → flat 역변환
+  - sortTabsChildren: Tab/Panel 쌍 정렬
+  - findTreeItemById, getAllTreeItemIds
+
+- `src/types/stately.ts` (+18줄)
+  - ElementTreeItem 타입 추가
+  - TreeDataItem 확장
+
+**수정된 파일** (1개):
+- `src/builder/sidebar/index.tsx` (-23줄)
+  - expandedItems useState 제거
+  - updateExpandedItems useCallback 제거
+  - useTreeExpandState 적용
+  - collapseAllTreeItems → collapseAll
+
+**Phase 3.2: Hierarchical 렌더링 마이그레이션**
+
+**생성된 함수**:
+- `renderElementTree` (469줄, Sidebar/index.tsx)
+  - ElementTreeItem[] 기반 hierarchical 렌더링
+  - Collection 컴포넌트 8종 지원 (ToggleButtonGroup, CheckboxGroup, RadioGroup, ListBox, GridList, Select, ComboBox, Tree)
+  - Table은 기존 renderTableStructure 재사용
+  - 순수 재귀 렌더링 (정렬 로직 분리됨)
+
+**수정된 파일** (3개):
+- `src/builder/sidebar/index.tsx` (+469줄)
+  - renderElementTree 함수 추가
+  - Nodes에 renderElementTree prop 전달
+
+- `src/builder/nodes/index.tsx` (+7줄)
+  - renderElementTree prop 추가 및 Layers 전달
+
+- `src/builder/nodes/Layers.tsx` (+15줄)
+  - buildTreeFromElements import
+  - elementTree useMemo로 변환 캐싱
+  - renderElementTree 사용
+
+### 아키텍처 개선
+
+**Before**:
+```
+flat Element[] → renderTree (재귀 + 정렬 로직)
+```
+
+**After**:
+```
+flat Element[] → buildTreeFromElements → ElementTreeItem[]
+                                       ↓
+                               renderElementTree (순수 재귀)
+```
+
+**주요 이점**:
+- **관심사 분리**: 데이터 변환 (buildTreeFromElements) vs 렌더링 (renderElementTree)
+- **정렬 로직 분리**: Tabs, Collection, Table 특수 정렬이 buildTreeFromElements에 캡슐화
+- **성능 향상**: useMemo로 트리 변환 캐싱
+- **유지보수성**: 단순화된 렌더링 로직
+- **확장성**: 새 컴포넌트 타입 추가가 용이
+
+### 기술적 개선
+
+✅ **자동 상태 관리** - useTreeExpandState가 펼치기/접기 자동 처리
+✅ **자동 부모 펼치기** - 요소 선택 시 부모 체인 자동 펼침
+✅ **정렬 로직 캡슐화** - Tab/Panel 쌍 매칭이 treeUtils에 분리
+✅ **타입 안전성** - ElementTreeItem 타입으로 계층 구조 표현
+✅ **성능 최적화** - useMemo로 트리 변환 캐싱
+
+### 테스트 결과
+
+✅ **기본 트리 렌더링**: 모든 요소 정상 표시, 펼치기/접기 작동
+✅ **Tabs 컴포넌트**: Tab/Panel 쌍 정렬 정상, tabId 매칭 작동
+✅ **Collection 컴포넌트**: ListBox, GridList, Select 등 가상 자식 표시
+✅ **Table 컴포넌트**: thead, tbody, Column 구조 정상 표시
+
+---
+
 ## 📈 전체 통계
 
 ### 커밋 내역
 
 ```
+Phase 3 (2개):
+* 03d9246 refactor(phase-3.2): Migrate Sidebar tree to hierarchical rendering
+* ce00aa9 refactor(phase-3.1): Migrate Sidebar tree to React Stately expand state
+
 Phase 2 (2개):
 * 1f019df refactor(phase-2.3): Migrate SupabaseCollectionEditor to React Stately hooks
 * 4fa2fe1 refactor(phase-2.2): Migrate APICollectionEditor to React Stately hooks
@@ -253,17 +356,17 @@ Phase 0 (2개):
 * 340f004 docs: Add Inspector architecture analysis
 * 4e70ad2 chore(phase-0): Setup React Stately integration
 
-총 커밋: 12개
+총 커밋: 14개
 ```
 
 ### 파일 변경 통계
 
-| 상태 | Phase 0 | Phase 1 | Phase 2 | 합계 |
-|------|---------|---------|---------|------|
-| **생성** | 2 타입 파일 | 5개 hooks/pickers | 3개 hooks | **10개** |
-| **수정** | - | 3개 컴포넌트 | 2개 에디터 | **5개** |
-| **삭제** | - | 9개 listMode | - | **9개** |
-| **문서** | 2개 | 1개 분석 | 0개 | **3개** |
+| 상태 | Phase 0 | Phase 1 | Phase 2 | Phase 3 | 합계 |
+|------|---------|---------|---------|---------|------|
+| **생성** | 2 타입 파일 | 5개 hooks/pickers | 3개 hooks | 2개 hooks/utils | **12개** |
+| **수정** | - | 3개 컴포넌트 | 2개 에디터 | 4개 컴포넌트 | **9개** |
+| **삭제** | - | 9개 listMode | - | - | **9개** |
+| **문서** | 2개 | 1개 분석 | 0개 | 0개 | **3개** |
 
 ### useState 감소량
 
@@ -272,7 +375,8 @@ Phase 0 (2개):
 | **APICollectionEditor** | 10개 | 7개 | **-3개** |
 | **SupabaseCollectionEditor** | 8개 | 6개 | **-2개** |
 | **EventSection** | ~12개 | ~6개 (추정) | **-6개** |
-| **총 감소** | ~30개 | ~19개 | **-11개 (-37%)** |
+| **Sidebar** | 1개 (expandedItems) | 0개 | **-1개** |
+| **총 감소** | ~31개 | ~19개 | **-12개 (-39%)** |
 
 ---
 
@@ -340,24 +444,23 @@ Phase 0 (2개):
 
 ## 🚀 다음 단계
 
-### 우선순위 1: Phase 3 준비 및 실행
+### 우선순위 1: Phase 4 준비 및 실행
 
-**Phase 3: Sidebar Tree (useTreeData)**
-- 대상 파일: `src/builder/sidebar/Tree.tsx` (예상)
-- 목표: 계층형 요소 트리를 useTreeData로 관리
-- 예상 작업 시간: 4-6시간
-- 예상 효과: 트리 상태 관리 자동화, 드래그앤드롭 개선
+**Phase 4: Components Palette (useListState)**
+- 대상 파일: `src/builder/components/` (예상)
+- 목표: 컴포넌트 팔레트 상태 관리를 useListState로 자동화
+- 예상 작업 시간: 3-5시간
+- 예상 효과: 컴포넌트 검색/필터링 개선, 상태 관리 단순화
 
 **실행 계획**:
-1. Sidebar Tree 컴포넌트 구조 분석
-2. 현재 트리 상태 관리 방식 파악
-3. useTreeData 적용 전략 수립
+1. Components Palette 구조 분석
+2. 현재 상태 관리 방식 파악
+3. useListState 적용 전략 수립
 4. 단계별 리팩토링 실행
 
 ### 우선순위 2: 이후 Phase 검토
 
 전체 계획서(`docs/PHASE_2_TO_8_EXECUTION_GUIDE.md`) 참조:
-- Phase 4: Components Palette (useListState)
 - Phase 5: Properties Section (useListData)
 - Phase 6: Custom Hooks (useAsyncList)
 - Phase 7: Data Fetching Services (useAsyncList)
@@ -402,4 +505,4 @@ Phase 0 (2개):
 ---
 
 **작성**: Claude Code
-**마지막 업데이트**: 2025-11-09
+**마지막 업데이트**: 2025-11-10 (Phase 3 완료)
