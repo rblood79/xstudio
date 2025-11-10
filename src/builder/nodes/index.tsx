@@ -3,6 +3,7 @@ import { Pages } from './Pages';
 import { Layers } from './Layers';
 import { ElementProps } from '../../types/supabase';
 import { Page, Element } from '../../types/store'; // 통합된 타입 사용
+import type { ElementTreeItem } from '../../types/stately';
 import './index.css';
 
 interface NodesProps {
@@ -15,6 +16,12 @@ interface NodesProps {
         onClick: (item: T) => void,
         onDelete: (item: T) => Promise<void>,
         parentId?: string | null,
+        depth?: number
+    ) => React.ReactNode;
+    renderElementTree: (
+        tree: ElementTreeItem[],
+        onClick: (item: Element) => void,
+        onDelete: (item: Element) => Promise<void>,
         depth?: number
     ) => React.ReactNode;
     fetchElements: (pageId: string) => Promise<void>;
@@ -31,6 +38,7 @@ export function Nodes({
     setPages,
     handleAddPage,
     renderTree,
+    renderElementTree,
     fetchElements,
     elements,
     setElements,
@@ -54,6 +62,7 @@ export function Nodes({
                 selectedElementId={selectedElementId}
                 setSelectedElement={setSelectedElement}
                 renderTree={renderTree}
+                renderElementTree={renderElementTree}
                 sendElementSelectedMessage={sendElementSelectedMessage}
                 collapseAllTreeItems={collapseAllTreeItems} // Layers 컴포넌트로 prop 전달
             />

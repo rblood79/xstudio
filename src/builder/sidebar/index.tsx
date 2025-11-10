@@ -16,6 +16,7 @@ import { SidebarNav, Tab } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useTreeExpandState } from '../hooks/useTreeExpandState';
+import type { ElementTreeItem } from '../../types/stately';
 
 interface SidebarProps {
     pages: Page[];
@@ -939,6 +940,474 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         );
     };
 
+    /**
+     * renderElementTree - Hierarchical ElementTreeItem 구조 렌더링
+     *
+     * Phase 3.2: buildTreeFromElements로 생성된 hierarchical 구조를 렌더링
+     * Table 컴포넌트는 기존 renderTableStructure 로직 재사용
+     */
+    const renderElementTree = (
+        tree: ElementTreeItem[],
+        onClick: (item: Element) => void,
+        onDelete: (item: Element) => Promise<void>,
+        depth: number = 0
+    ): React.ReactNode => {
+        if (tree.length === 0) return null;
+
+        return (
+            <>
+                {tree.map((item) => {
+                    const hasChildNodes = item.children && item.children.length > 0;
+                    const isExpanded = expandedKeys.has(item.id);
+
+                    // Collection 컴포넌트들의 가상 자식 노드들
+                    const hasToggleChildren = item.tag === 'ToggleButtonGroup' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasCheckboxChildren = item.tag === 'CheckboxGroup' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasRadioChildren = item.tag === 'RadioGroup' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasListBoxChildren = item.tag === 'ListBox' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasGridListChildren = item.tag === 'GridList' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasSelectChildren = item.tag === 'Select' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasComboBoxChildren = item.tag === 'ComboBox' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+                    const hasTreeChildren = item.tag === 'Tree' && item.props?.children && Array.isArray(item.props.children) && item.props.children.length > 0;
+
+                    // Table 컴포넌트 확인
+                    const hasTableChildren = item.tag === 'Table' && hasChildNodes;
+
+                    const hasAnyChildren = hasChildNodes || hasToggleChildren || hasCheckboxChildren || hasRadioChildren || hasListBoxChildren || hasGridListChildren || hasSelectChildren || hasComboBoxChildren || hasTreeChildren || hasTableChildren;
+
+                    // Element로 변환 (onClick, onDelete용)
+                    const element: Element = {
+                        id: item.id,
+                        tag: item.tag,
+                        parent_id: item.parent_id || null,
+                        order_num: item.order_num,
+                        props: item.props as ElementProps,
+                        deleted: item.deleted,
+                        dataBinding: item.dataBinding,
+                        page_id: '',
+                        created_at: '',
+                        updated_at: '',
+                    };
+
+                    return (
+                        <div
+                            key={item.id}
+                            data-depth={depth}
+                            data-has-children={hasAnyChildren}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClick(element);
+                            }}
+                            className="element"
+                        >
+                            <div className={`elementItem ${selectedElementId === item.id ? 'active' : ''}`}>
+                                <div className="elementItemIndent" style={{ width: depth > 0 ? `${(depth * 8) + 0}px` : '0px' }}>
+                                </div>
+                                <div
+                                    className="elementItemIcon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (hasAnyChildren) {
+                                            toggleExpand(item.id);
+                                        }
+                                    }}
+                                >
+                                    {hasAnyChildren ? (
+                                        <ChevronRight
+                                            color={iconEditProps.color}
+                                            strokeWidth={iconEditProps.stroke}
+                                            size={iconEditProps.size}
+                                            style={{
+                                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            color={iconEditProps.color}
+                                            strokeWidth={iconEditProps.stroke}
+                                            size={iconEditProps.size}
+                                            style={{ padding: '2px' }}
+                                        />
+                                    )}
+                                </div>
+                                <div className="elementItemLabel">
+                                    {/* Tab과 Panel, Table 관련 컴포넌트들의 경우 더 명확한 라벨 표시 */}
+                                    {item.tag === 'Tab' && item.props ?
+                                        `Tab: ${(item.props as ElementProps).title || 'Untitled'}` :
+                                        item.tag === 'Panel' && item.props ?
+                                            `Panel: ${(item.props as ElementProps).title || 'Untitled'}` :
+                                            item.tag === 'TableHeader' ?
+                                                'thead' :
+                                                item.tag === 'TableBody' ?
+                                                    'tbody' :
+                                                    item.tag === 'Column' && item.props ?
+                                                        `th: ${(item.props as ElementProps).children || 'Column'}` :
+                                                        item.tag === 'Row' ?
+                                                            'tr' :
+                                                            item.tag === 'Cell' && item.props ?
+                                                                `td: ${(item.props as ElementProps).children || 'Cell'}` :
+                                                                item.tag
+                                    }
+                                </div>
+                                <div className="elementItemActions">
+                                    <button className="iconButton" aria-label="Settings">
+                                        <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                    </button>
+                                    {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
+                                    {item.tag !== 'body' && (
+                                        <button
+                                            className="iconButton"
+                                            aria-label={`Delete ${item.tag}`}
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await onDelete(element);
+                                            }}
+                                        >
+                                            <Trash color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {isExpanded && (
+                                <>
+                                    {/* Table 컴포넌트의 경우 기존 renderTableStructure 사용 */}
+                                    {hasTableChildren ? (
+                                        renderTableStructure(
+                                            // flat elements 필요 (renderTableStructure가 flat 기반)
+                                            elements,
+                                            (el) => el.tag,
+                                            onClick,
+                                            onDelete,
+                                            item.id,
+                                            depth,
+                                            isExpanded,
+                                            toggleExpand,
+                                            expandedKeys
+                                        )
+                                    ) : (
+                                        /* 일반 hierarchical 자식 노드들 재귀 렌더링 */
+                                        hasChildNodes && item.children && renderElementTree(item.children, onClick, onDelete, depth + 1)
+                                    )}
+
+                                    {/* Collection 컴포넌트들의 가상 자식 노드들 (기존 로직 유지) */}
+                                    {hasToggleChildren && (
+                                        <>
+                                            {childrenAs<ButtonItem>(item.props.children).map((button, index) => (
+                                                <div
+                                                    key={`${item.id}-toggle-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{button.title || `Button ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* CheckboxGroup 가상 자식 노드들 */}
+                                    {hasCheckboxChildren && (
+                                        <>
+                                            {childrenAs<CheckboxItem>(item.props.children).map((checkbox, index) => (
+                                                <div
+                                                    key={`${item.id}-checkbox-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{checkbox.label || `Checkbox ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* RadioGroup 가상 자식 노드들 */}
+                                    {hasRadioChildren && (
+                                        <>
+                                            {childrenAs<RadioItem>(item.props.children).map((radio, index) => (
+                                                <div
+                                                    key={`${item.id}-radio-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{radio.label || `Radio ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* ListBox 가상 자식 노드들 */}
+                                    {hasListBoxChildren && (
+                                        <>
+                                            {childrenAs<ListItem>(item.props.children).map((listItem, index) => (
+                                                <div
+                                                    key={`${item.id}-listitem-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{listItem.label || `Item ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* GridList 가상 자식 노드들 */}
+                                    {hasGridListChildren && (
+                                        <>
+                                            {childrenAs<ListItem>(item.props.children).map((gridItem, index) => (
+                                                <div
+                                                    key={`${item.id}-griditem-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{gridItem.label || `Item ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* Select 가상 자식 노드들 */}
+                                    {hasSelectChildren && (
+                                        <>
+                                            {childrenAs<ListItem>(item.props.children).map((selectItem, index) => (
+                                                <div
+                                                    key={`${item.id}-selectitem-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{selectItem.label || `Option ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* ComboBox 가상 자식 노드들 */}
+                                    {hasComboBoxChildren && (
+                                        <>
+                                            {childrenAs<ListItem>(item.props.children).map((comboItem, index) => (
+                                                <div
+                                                    key={`${item.id}-comboitem-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            <Box
+                                                                color={iconEditProps.color}
+                                                                strokeWidth={iconEditProps.stroke}
+                                                                size={iconEditProps.size}
+                                                                style={{ padding: '2px' }}
+                                                            />
+                                                        </div>
+                                                        <div className="elementItemLabel">{comboItem.label || `Option ${index + 1}`}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* Tree 가상 자식 노드들 */}
+                                    {hasTreeChildren && (
+                                        <>
+                                            {childrenAs<TreeItem>(item.props.children).map((treeItem, index) => (
+                                                <div
+                                                    key={`${item.id}-treeitem-${index}`}
+                                                    data-depth={depth + 1}
+                                                    data-has-children={treeItem.children && treeItem.children.length > 0}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                    }}
+                                                    className="element"
+                                                >
+                                                    <div className={`elementItem ${selectedTab?.parentId === item.id && selectedTab?.tabIndex === index ? 'active' : ''}`}>
+                                                        <div className="elementItemIndent" style={{ width: `${((depth + 1) * 8) + 0}px` }}>
+                                                        </div>
+                                                        <div className="elementItemIcon">
+                                                            {treeItem.children && treeItem.children.length > 0 ? (
+                                                                <Folder
+                                                                    color={iconEditProps.color}
+                                                                    strokeWidth={iconEditProps.stroke}
+                                                                    size={iconEditProps.size}
+                                                                />
+                                                            ) : (
+                                                                <File
+                                                                    color={iconEditProps.color}
+                                                                    strokeWidth={iconEditProps.stroke}
+                                                                    size={iconEditProps.size}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <div className="elementItemLabel">{treeItem.title}</div>
+                                                        <div className="elementItemActions">
+                                                        </div>
+                                                    </div>
+                                                    {/* Tree 아이템의 하위 자식들 재귀적으로 렌더링 */}
+                                                    {treeItem.children && treeItem.children.length > 0 && (
+                                                        <>
+                                                            {treeItem.children.map((child, childIndex) => (
+                                                                <div
+                                                                    key={`${item.id}-treeitem-${index}-child-${childIndex}`}
+                                                                    data-depth={depth + 2}
+                                                                    data-has-children={false}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        selectTabElement(item.id as string, item.props as ElementProps, index);
+                                                                    }}
+                                                                    className="element"
+                                                                >
+                                                                    <div className="elementItem">
+                                                                        <div className="elementItemIndent" style={{ width: `${((depth + 2) * 8) + 0}px` }}>
+                                                                        </div>
+                                                                        <div className="elementItemIcon">
+                                                                            <File
+                                                                                color={iconEditProps.color}
+                                                                                strokeWidth={iconEditProps.stroke}
+                                                                                size={iconEditProps.size}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="elementItemLabel">{child.title}</div>
+                                                                        <div className="elementItemActions">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    );
+                })}
+            </>
+        );
+    };
+
     // sendElementSelectedMessage 함수를 useIframeMessenger에서 가져와서 사용
     const { sendElementSelectedMessage } = useIframeMessenger();
 
@@ -958,6 +1427,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                         setPages={setPages}
                         handleAddPage={handleAddPage}
                         renderTree={renderTree}
+                        renderElementTree={renderElementTree}
                         fetchElements={fetchElements}
                         elements={elements}
                         setElements={setElements}

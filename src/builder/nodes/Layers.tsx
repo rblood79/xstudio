@@ -4,6 +4,8 @@ import { ElementProps } from '../../types/supabase';
 import { Element } from '../../types/store'; // 통합된 타입 사용
 import { useStore } from '../stores'; // useStore import 추가
 import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
+import type { ElementTreeItem } from '../../types/stately';
+import { buildTreeFromElements } from '../utils/treeUtils';
 import './index.css';
 
 interface LayersProps {
@@ -17,6 +19,12 @@ interface LayersProps {
         onSelect: (item: Element) => void,
         onDelete: (item: Element) => Promise<void>
     ) => React.ReactNode;
+    renderElementTree: (
+        tree: ElementTreeItem[],
+        onClick: (item: Element) => void,
+        onDelete: (item: Element) => Promise<void>,
+        depth?: number
+    ) => React.ReactNode;
     sendElementSelectedMessage: (id: string, props: ElementProps) => void;
     collapseAllTreeItems?: () => void; // 새로운 props 추가
 }
@@ -26,10 +34,16 @@ export function Layers({
     selectedElementId,
     setSelectedElement,
     renderTree,
+    renderElementTree,
     sendElementSelectedMessage,
     collapseAllTreeItems
 }: LayersProps) {
     const { removeElement } = useStore(); // removeElement 함수 가져오기
+
+    // Phase 3.2: flat Element[] → hierarchical ElementTreeItem[] 변환
+    const elementTree = React.useMemo(() => {
+        return buildTreeFromElements(elements);
+    }, [elements]);
 
     return (
         <div className="sidebar_elements">
@@ -54,9 +68,9 @@ export function Layers({
                 {elements.length === 0 ? (
                     <p className="no_element">No element available</p>
                 ) : (
-                    renderTree(
-                        elements,
-                        (el) => el.tag,
+                    // Phase 3.2: hierarchical renderElementTree 사용
+                    renderElementTree(
+                        elementTree,
                         (el) => {
                             setSelectedElement(el.id, el.props as ElementProps);
                             requestAnimationFrame(() => sendElementSelectedMessage(el.id, el.props as ElementProps));
