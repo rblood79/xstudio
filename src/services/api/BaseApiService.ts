@@ -6,7 +6,8 @@ import { classifyError, logError, ApiError, ApiErrorType } from './ErrorHandler'
 export abstract class BaseApiService {
     protected readonly supabase: SupabaseClient;
     private readonly rateLimiter = new Map<string, number>();
-    private readonly maxRequestsPerMinute = 60;
+    // 개발 환경에서는 rate limit 완화 (1000 req/min), 프로덕션에서는 60 req/min
+    private readonly maxRequestsPerMinute = import.meta.env.DEV ? 1000 : 60;
 
     constructor() {
         // 전역 싱글톤 인스턴스 사용
@@ -30,6 +31,12 @@ export abstract class BaseApiService {
         }
 
         this.rateLimiter.set(key, count + 1);
+
+        // 개발 환경에서만 디버그 로그
+        if (import.meta.env.DEV && count > 10) {
+            console.warn(`[Rate Limit] ${operation}: ${count + 1}/${this.maxRequestsPerMinute} requests in this minute`);
+        }
+
         return true;
     }
 

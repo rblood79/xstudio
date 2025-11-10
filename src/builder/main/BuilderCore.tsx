@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
@@ -162,24 +162,39 @@ export const BuilderCore: React.FC = () => {
     fetchProjectInfo();
   }, [projectId]);
 
-  // 프로젝트 초기화
+  // 프로젝트 초기화 (중복 실행 방지)
+  const isInitializing = useRef(false);
+  const initializedProjectId = useRef<string | null>(null);
+
   useEffect(() => {
     const initialize = async () => {
-      if (projectId) {
-        setIsLoading(true);
-        const result = await initializeProject(projectId);
+      // 중복 실행 방지: 이미 초기화 중이거나 같은 프로젝트가 초기화되었으면 스킵
+      if (!projectId || isInitializing.current || initializedProjectId.current === projectId) {
+        return;
+      }
 
-        if (!result.success) {
-          setError(result.error?.message || "프로젝트 초기화 실패");
-        }
+      isInitializing.current = true;
+      console.log('🚀 프로젝트 초기화 시작:', projectId);
 
-        setIsLoading(false);
-        loadProjectTheme(projectId);
+      setIsLoading(true);
+      const result = await initializeProject(projectId);
 
-        // 메모리 모니터링 시작 (개발 모드에서만)
-        if (import.meta.env.DEV) {
-          memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
-        }
+      if (!result.success) {
+        setError(result.error?.message || "프로젝트 초기화 실패");
+        isInitializing.current = false;
+        return;
+      }
+
+      setIsLoading(false);
+      loadProjectTheme(projectId);
+      initializedProjectId.current = projectId;
+      isInitializing.current = false;
+
+      console.log('✅ 프로젝트 초기화 완료:', projectId);
+
+      // 메모리 모니터링 시작 (개발 모드에서만)
+      if (import.meta.env.DEV) {
+        memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
       }
     };
 

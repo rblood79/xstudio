@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useListData } from 'react-stately';
 import { Page, Element } from '../../types/store';
 import { pagesApi } from '../../services/api/PagesApiService';
@@ -52,6 +52,9 @@ export const usePageManager = (): UsePageManagerReturn => {
 
     // 2. selectedPageId: 단순 state
     const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+
+    // 3. 중복 초기화 방지
+    const initializingRef = useRef<string | null>(null);
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
 
@@ -145,7 +148,16 @@ export const usePageManager = (): UsePageManagerReturn => {
      * @returns ApiResult (성공 시 data, 실패 시 error)
      */
     const initializeProject = async (projectId: string): Promise<ApiResult<Page[]>> => {
+        // 중복 호출 방지: 같은 프로젝트가 이미 초기화 중이면 스킵
+        if (initializingRef.current === projectId) {
+            console.warn('⚠️ 프로젝트가 이미 초기화 중입니다:', projectId);
+            return { success: false, error: new Error('프로젝트가 이미 초기화 중입니다') };
+        }
+
         try {
+            initializingRef.current = projectId;
+            console.log('🔄 프로젝트 초기화 시작 (usePageManager):', projectId);
+
             // 1. 프로젝트의 페이지들 로드
             const projectPages = await pagesApi.getPagesByProjectId(projectId);
 
@@ -163,14 +175,17 @@ export const usePageManager = (): UsePageManagerReturn => {
 
                 const result = await fetchElements(firstPage.id);
                 if (!result.success) {
+                    initializingRef.current = null;
                     return { success: false, error: result.error };
                 }
             }
 
-            console.log('✅ 프로젝트 초기화 완료:', projectPages.length, 'pages');
+            console.log('✅ 프로젝트 초기화 완료 (usePageManager):', projectPages.length, 'pages');
+            initializingRef.current = null;
             return { success: true, data: projectPages };
         } catch (error) {
             console.error('프로젝트 초기화 에러:', error);
+            initializingRef.current = null;
             return { success: false, error: error as Error };
         }
     };
