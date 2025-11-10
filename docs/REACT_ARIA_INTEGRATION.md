@@ -1191,6 +1191,226 @@ export function Switch({ children, variant, size, ...props }) {
 - WCAG 2.1 Level AA compliant
 - Consistent with Button, Form, Popover from Phase 3
 
+### Builder UI Integration
+
+**Making React Aria features accessible in the xstudio builder system**
+
+All enhanced components from Phase 1-4 now have Inspector controls for new properties, allowing users to configure React Aria features directly in the builder UI without writing code.
+
+#### Updated Component Editors
+
+**Files Modified:**
+- `src/builder/inspector/properties/editors/CalendarEditor.tsx`
+- `src/builder/inspector/properties/editors/SliderEditor.tsx`
+- `src/builder/inspector/properties/editors/MeterEditor.tsx`
+- `src/builder/inspector/properties/editors/ProgressBarEditor.tsx`
+- `src/builder/inspector/properties/editors/TimeFieldEditor.tsx` (already had hourCycle support)
+
+#### CalendarEditor Enhancements
+
+**New Controls Added:**
+
+```typescript
+{/* State Section */}
+<fieldset className="properties-group">
+  <legend>State</legend>
+
+  {/* Timezone Input */}
+  <PropertyInput
+    label="Timezone"
+    value={String(currentProps.timezone || '')}
+    onChange={(value) => updateProp('timezone', value || undefined)}
+    placeholder="Asia/Seoul"
+    icon={Globe}
+  />
+
+  {/* Default to Today Switch */}
+  <PropertySwitch
+    label="Default to Today"
+    isSelected={Boolean(currentProps.defaultToday)}
+    onChange={(checked) => updateProp('defaultToday', checked)}
+    icon={CalendarDays}
+  />
+
+  {/* Min/Max Date Range */}
+  <PropertyInput
+    label="Min Date"
+    value={String(currentProps.minDate || '')}
+    onChange={(value) => updateProp('minDate', value || undefined)}
+    placeholder="2024-01-01"
+  />
+
+  <PropertyInput
+    label="Max Date"
+    value={String(currentProps.maxDate || '')}
+    onChange={(value) => updateProp('maxDate', value || undefined)}
+    placeholder="2024-12-31"
+  />
+</fieldset>
+```
+
+**Features:**
+- **Timezone Control**: Select timezone for calendar (e.g., Asia/Seoul, America/New_York)
+- **Default to Today**: Automatically set today's date as default
+- **Date Range Constraints**: Min/max date validation
+
+#### SliderEditor Enhancements
+
+**New Controls Added:**
+
+```typescript
+{/* Number Formatting Section */}
+<fieldset className="properties-group">
+  <legend>Number Formatting</legend>
+
+  {/* Locale Input */}
+  <PropertyInput
+    label="Locale"
+    value={String(currentProps.locale || '')}
+    onChange={(value) => updateProp('locale', value || undefined)}
+    placeholder="ko-KR, en-US, etc."
+    icon={Globe}
+  />
+
+  {/* Value Format Select */}
+  <PropertySelect
+    label="Value Format"
+    value={String(currentProps.valueFormat || 'number')}
+    onChange={(value) => updateProp('valueFormat', value)}
+    options={[
+      { value: 'number', label: 'Number' },
+      { value: 'percent', label: 'Percent' },
+      { value: 'unit', label: 'Unit' },
+      { value: 'custom', label: 'Custom' }
+    ]}
+    icon={DollarSign}
+  />
+
+  {/* Conditional Unit Input */}
+  {currentProps.valueFormat === 'unit' && (
+    <PropertyInput
+      label="Unit"
+      value={String(currentProps.unit || '')}
+      onChange={(value) => updateProp('unit', value || undefined)}
+      icon={Type}
+      placeholder="kilometer, celsius, meter, etc."
+    />
+  )}
+
+  {/* Show Value Toggle */}
+  <PropertySwitch
+    label="Show Value"
+    isSelected={currentProps.showValue !== false}
+    onChange={(checked) => updateProp('showValue', checked)}
+    icon={NotebookTabs}
+  />
+</fieldset>
+```
+
+**Features:**
+- **Locale-aware Formatting**: Format numbers according to user's locale
+- **Value Format Types**: Number, Percent, Unit, Custom
+- **Conditional Unit Input**: Shows unit selector when format is 'unit'
+- **Show Value Toggle**: Display formatted value alongside slider
+
+#### MeterEditor & ProgressBarEditor Enhancements
+
+**New Controls Added (identical pattern for both):**
+
+```typescript
+{/* Number Formatting Section */}
+<fieldset className="properties-group">
+  <legend>Number Formatting</legend>
+
+  <PropertyInput
+    label="Locale"
+    value={String(currentProps.locale || '')}
+    onChange={(value) => updateProp('locale', value || undefined)}
+    placeholder="ko-KR, en-US, etc."
+    icon={Globe}
+  />
+
+  <PropertySelect
+    label="Value Format"
+    value={String(currentProps.valueFormat || 'number')}
+    onChange={(value) => updateProp('valueFormat', value)}
+    options={[
+      { value: 'number', label: 'Number' },
+      { value: 'percent', label: 'Percent' },
+      { value: 'custom', label: 'Custom' }
+    ]}
+    icon={DollarSign}
+  />
+
+  <PropertySwitch
+    label="Show Value"
+    isSelected={currentProps.showValue !== false}
+    onChange={(checked) => updateProp('showValue', checked)}
+    icon={BarChart3}  // or Gauge for Meter
+  />
+</fieldset>
+```
+
+**Features:**
+- **Locale-aware Formatting**: Format values according to user's locale
+- **Value Format Types**: Number, Percent, Custom
+- **Show Value Toggle**: Display formatted value
+
+#### TimeFieldEditor
+
+**Already Supported:**
+- **hourCycle Control**: Select 12/24 hour format (lines 142-151)
+
+#### Editor UI Components
+
+All editors use consistent Property components from `src/builder/inspector/components/`:
+
+| Component | Usage | Example |
+|-----------|-------|---------|
+| **PropertyInput** | Text/string input | Timezone, locale, date strings |
+| **PropertySelect** | Dropdown selection | Value format, hour cycle |
+| **PropertySwitch** | Boolean toggle | Default to today, show value |
+
+#### Visual Indicators
+
+All controls use lucide-react icons for visual clarity:
+- **Globe** - Locale and timezone inputs
+- **DollarSign** - Value format selectors
+- **CalendarDays** - Date-related toggles
+- **NotebookTabs/BarChart3/Gauge** - Value display toggles
+
+#### User Workflow
+
+**Example: Configuring a Slider with Korean locale and unit formatting**
+
+1. **Add Slider component** to page in Builder
+2. **Select Slider** in layer tree
+3. **Open Inspector** (Properties panel)
+4. **Navigate to "Number Formatting" section**
+5. **Set Locale** to "ko-KR"
+6. **Set Value Format** to "Unit"
+7. **Set Unit** to "kilometer"
+8. **Enable Show Value** toggle
+9. **Preview** shows: "50km" formatted in Korean style
+
+#### Integration with Phase 1-4 Features
+
+All inspector controls directly map to component props enhanced in earlier phases:
+
+| Phase | Component | Inspector Controls | Component Props |
+|-------|-----------|-------------------|-----------------|
+| **Phase 1** | DatePicker, Calendar | Timezone, Min/Max Date, Default to Today | `timezone`, `minDate`, `maxDate`, `defaultToday` |
+| **Phase 1** | NumberField, Slider, Meter, ProgressBar | Locale, Value Format, Unit, Show Value | `locale`, `valueFormat`, `unit`, `showValue` |
+| **Phase 2** | TimeField | Hour Cycle | `hourCycle` |
+| **Phase 3** | Button, Form, Popover | (Automatic focus management) | N/A (useFocusRing) |
+| **Phase 4** | DatePicker, NumberField | (Advanced formatting) | `formatStyle`, `currency`, `notation` |
+
+**Benefits:**
+- **No Code Required**: Users configure React Aria features via UI
+- **Type Safety**: All prop updates use TypeScript-safe `updateProp()` function
+- **Immediate Feedback**: Changes reflected in Preview iframe instantly
+- **Undo/Redo**: All changes tracked in history system
+
 ---
 
 ## Next Steps
