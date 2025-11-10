@@ -16,6 +16,7 @@ import { SidebarNav, Tab } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useTreeExpandState } from '../hooks/useTreeExpandState';
+import { useSidebarTabs } from '../hooks/useSidebarTabs';
 import type { ElementTreeItem } from '../../types/stately';
 
 interface SidebarProps {
@@ -34,8 +35,8 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
-    // 활성 탭을 단일 값에서 Set으로 변경
-    const [activeTabs, setActiveTabs] = React.useState<Set<Tab>>(new Set(['nodes']));
+    // 활성 탭 상태 관리 (localStorage 연동)
+    const { activeTabs, toggleTab } = useSidebarTabs();
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
 
     // React Stately 기반 트리 펼치기/접기 상태 관리
@@ -52,18 +53,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
         }
     };
 
-    // Set 객체 메모이제이션
-    const toggleTab = useCallback((tab: Tab) => {
-        setActiveTabs(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(tab)) {
-                newSet.delete(tab);
-            } else {
-                newSet.add(tab);
-            }
-            return newSet;
-        });
-    }, []);
+    // toggleTab은 useSidebarTabs에서 제공
 
     const hasChildren = <T extends { id: string; parent_id?: string | null }>(
         items: T[],

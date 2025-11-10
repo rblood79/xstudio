@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { SearchField } from "./SearchField";
+import { useRecentSearches } from "../hooks/useRecentSearches";
 import "./styles/ComponentSearch.css";
 
 interface ComponentSearchProps {
@@ -17,6 +18,7 @@ interface ComponentSearchProps {
 export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { addSearch } = useRecentSearches();
 
   // Detect platform for keyboard shortcut display
   const isMac = useMemo(() => {
@@ -47,6 +49,17 @@ export function ComponentSearch({ onSearchChange }: ComponentSearchProps) {
   useEffect(() => {
     onSearchChange(query);
   }, [query, onSearchChange]);
+
+  // 검색 기록 저장 (debounce: 1초 후 저장)
+  useEffect(() => {
+    if (!query.trim()) return;
+
+    const timeoutId = setTimeout(() => {
+      addSearch(query);
+    }, 1000); // 1초 대기
+
+    return () => clearTimeout(timeoutId);
+  }, [query, addSearch]);
 
   // Store input ref when SearchField mounts
   // const handleRef = (input: HTMLInputElement | null) => {
