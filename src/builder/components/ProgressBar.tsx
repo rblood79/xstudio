@@ -13,6 +13,7 @@ import {
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, ProgressBarVariant } from '../../types/componentVariants';
+import { formatPercent, formatNumber } from '../../utils/numberUtils';
 
 import './styles/ProgressBar.css';
 
@@ -28,6 +29,28 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    * @default 'md'
    */
   size?: ComponentSizeSubset;
+  /**
+   * 로케일
+   * @default 'ko-KR'
+   */
+  locale?: string;
+  /**
+   * 값 표시 형식
+   * - number: 숫자로 표시 (75)
+   * - percent: 퍼센트로 표시 (75%)
+   * - custom: 커스텀 포맷터 사용
+   * @default 'percent'
+   */
+  valueFormat?: 'number' | 'percent' | 'custom';
+  /**
+   * 값 표시 여부
+   * @default true
+   */
+  showValue?: boolean;
+  /**
+   * 커스텀 포맷터 함수
+   */
+  customFormatter?: (value: number) => string;
 }
 
 const progressBar = tv({
@@ -51,7 +74,32 @@ const progressBar = tv({
   },
 });
 
-export function ProgressBar({ label, variant = 'default', size = 'md', ...props }: ProgressBarProps) {
+export function ProgressBar({
+  label,
+  variant = 'default',
+  size = 'md',
+  locale = 'ko-KR',
+  valueFormat = 'percent',
+  showValue = true,
+  customFormatter,
+  ...props
+}: ProgressBarProps) {
+  // 값 포맷팅 함수
+  const formatValue = (value: number): string => {
+    if (customFormatter) {
+      return customFormatter(value);
+    }
+
+    switch (valueFormat) {
+      case 'percent':
+        return formatPercent(value / 100, locale, 0);
+      case 'number':
+        return formatNumber(value, locale);
+      default:
+        return String(value);
+    }
+  };
+
   return (
     <AriaProgressBar
       {...props}
@@ -62,8 +110,14 @@ export function ProgressBar({ label, variant = 'default', size = 'md', ...props 
     >
       {({ percentage, valueText }) => (
         <>
-          <Label>{label}</Label>
-          <span className="value">{valueText}</span>
+          {label && <Label>{label}</Label>}
+          {showValue && (
+            <span className="value">
+              {props.value !== undefined
+                ? formatValue(props.value as number)
+                : valueText}
+            </span>
+          )}
           <div className="bar">
             <div className="fill" style={{ width: percentage + '%' }} />
           </div>
