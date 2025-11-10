@@ -963,15 +963,245 @@ test('Modal focus trap works', async ({ page }) => {
 
 ---
 
+## Phase 5: I18n System and Additional Component Enhancements
+
+### I18n System (Internationalization)
+
+**Complete internationalization system using @react-aria/i18n**
+
+#### Architecture
+
+**Files Created:**
+- `src/i18n/types.ts` - Type definitions for I18n system
+- `src/i18n/translations.ts` - Translation files for all supported locales
+- `src/i18n/locales.ts` - Locale configurations and utilities
+- `src/i18n/I18nProvider.tsx` - I18n Provider component
+- `src/i18n/useI18n.ts` - useI18n custom hook
+- `src/i18n/LanguageSwitcher.tsx` - Language switcher component
+- `src/i18n/index.ts` - Module exports
+
+#### Supported Locales
+
+| Locale | Language | Direction | Currency | Time Format |
+|--------|----------|-----------|----------|-------------|
+| ko-KR | 한국어 (Korean) | LTR | KRW | 24h |
+| en-US | English | LTR | USD | 12h |
+| ja-JP | 日本語 (Japanese) | LTR | JPY | 24h |
+| zh-CN | 简体中文 (Simplified Chinese) | LTR | CNY | 24h |
+
+#### Key Features
+
+**1. I18nProvider Component**
+
+Wraps the application with both React Aria's I18nProvider and custom context:
+
+```typescript
+import { I18nProvider } from './i18n';
+
+function App() {
+  return (
+    <I18nProvider>
+      {/* Your app */}
+    </I18nProvider>
+  );
+}
+```
+
+**2. useI18n Hook**
+
+Access translations and formatting functions:
+
+```typescript
+import { useI18n } from './i18n';
+
+function MyComponent() {
+  const { t, locale, setLocale, formatDate, formatCurrency, formatNumber } = useI18n();
+
+  return (
+    <div>
+      <h1>{t('builder.title')}</h1>
+      <p>{t('common.loading')}</p>
+      <p>{formatCurrency(1000)}</p>
+      <p>{formatDate(new Date())}</p>
+      <button onClick={() => setLocale('en-US')}>
+        Switch to English
+      </button>
+    </div>
+  );
+}
+```
+
+**3. Translation System**
+
+Organized by categories with placeholder support:
+
+```typescript
+// Translation keys structure
+export interface TranslationKeys {
+  common: {
+    save: string;
+    cancel: string;
+    delete: string;
+    // ... 20+ common translations
+  };
+  builder: {
+    title: string;
+    newProject: string;
+    // ... 10+ builder translations
+  };
+  components: {
+    button: string;
+    input: string;
+    // ... 25+ component translations
+  };
+  validation: {
+    required: string;
+    minLength: string; // Supports placeholders: "Must be at least {min} characters"
+    // ... 10+ validation translations
+  };
+  messages: {
+    projectSaved: string;
+    confirmDelete: string;
+    // ... 10+ message translations
+  };
+}
+```
+
+**Usage with placeholders:**
+
+```typescript
+const { t } = useI18n();
+
+// Simple translation
+t('common.save'); // "Save" (en-US) or "저장" (ko-KR)
+
+// With placeholders
+t('validation.minLength', { min: 8 }); // "Must be at least 8 characters"
+t('validation.max', { max: 100 }); // "Maximum value is 100"
+```
+
+**4. LanguageSwitcher Component**
+
+Pre-built component for language selection:
+
+```typescript
+import { LanguageSwitcher } from './i18n/LanguageSwitcher';
+
+function Header() {
+  return (
+    <header>
+      <LanguageSwitcher label="언어" showIcon />
+    </header>
+  );
+}
+```
+
+**5. Automatic Features**
+
+- **Locale Persistence**: Saves selected locale to localStorage
+- **Browser Locale Detection**: Automatically detects user's browser language
+- **Document Attributes**: Updates `lang` and `dir` attributes on `<html>`
+- **React Aria Integration**: Passes locale to all React Aria components
+- **Number/Date Formatting**: Uses locale-specific formatting everywhere
+
+#### Integration with Existing Components
+
+All enhanced components from Phase 1-3 automatically inherit locale:
+
+```typescript
+// DatePicker uses locale for formatting
+<DatePicker
+  label={t('components.datePicker')}
+  timezone="Asia/Seoul"
+/>
+
+// NumberField uses locale for number formatting
+<NumberField
+  label={t('components.input')}
+  formatStyle="currency"
+  // Currency automatically uses locale config (KRW for ko-KR, USD for en-US)
+/>
+```
+
+#### Locale Configuration
+
+Each locale has full configuration:
+
+```typescript
+export interface LocaleConfig {
+  locale: SupportedLocale;      // 'ko-KR', 'en-US', etc.
+  name: string;                  // '한국어', 'English', etc.
+  direction: Direction;          // 'ltr' or 'rtl'
+  dateFormat: string;            // 'YYYY년 MM월 DD일', 'MM/DD/YYYY', etc.
+  timeFormat: 12 | 24;           // 12-hour or 24-hour
+  currency: string;              // 'KRW', 'USD', etc.
+}
+```
+
+#### RTL Support (Ready)
+
+The system is ready for RTL languages:
+
+```typescript
+// Add RTL locale (e.g., Arabic)
+'ar-SA': {
+  locale: 'ar-SA',
+  name: 'العربية',
+  direction: 'rtl',  // Automatic RTL layout
+  dateFormat: 'DD/MM/YYYY',
+  timeFormat: 12,
+  currency: 'SAR',
+}
+```
+
+System automatically updates `document.documentElement.dir = 'rtl'`.
+
+### Additional Component Enhancements
+
+#### Keyboard Focus Management
+
+**Enhanced Components:**
+- **Switch** - useFocusRing for keyboard-only focus visibility
+- **Checkbox** - useFocusRing with TreeItem compatibility
+- **Radio** - useFocusRing with modernized structure
+
+**Pattern Applied:**
+
+```typescript
+import { useFocusRing } from '@react-aria/focus';
+import { mergeProps } from '@react-aria/utils';
+
+export function Switch({ children, variant, size, ...props }) {
+  const { focusProps, isFocusVisible } = useFocusRing();
+
+  return (
+    <AriaSwitch
+      {...mergeProps(props, focusProps)}
+      data-focus-visible={isFocusVisible}
+      className={switchStyles({ variant, size, isFocusVisible })}
+    >
+      {children}
+    </AriaSwitch>
+  );
+}
+```
+
+**Benefits:**
+- Focus ring only on Tab navigation (not mouse clicks)
+- WCAG 2.1 Level AA compliant
+- Consistent with Button, Form, Popover from Phase 3
+
+---
+
 ## Next Steps
 
 ### Planned Enhancements (Future)
 
-1. **DateRangePicker Enhancement**: Apply date utilities to DateRangePicker component
-2. **Inspector Editors**: Update DatePickerEditor and NumberFieldEditor with new prop controls
-3. **I18n System**: Implement global I18nProvider and translation system
-4. **Additional Components**: Apply focus management to remaining interactive components
-5. **RTL Support**: Add right-to-left layout support using @react-aria/i18n
+1. **Testing**: Write comprehensive tests for new features (Vitest unit tests, Playwright E2E)
+2. **Storybook**: Add stories showcasing new props and I18n features
+3. **RTL Language Support**: Add Arabic (ar-SA) or Hebrew (he-IL) translations for RTL testing
+4. **Performance Optimization**: Profile and optimize I18n translation lookups if needed
+5. **Documentation**: Create user-facing guides for using I18n and accessibility features
 
 ### Known Limitations
 
@@ -1029,6 +1259,10 @@ const zonedDate = toZonedDateTime(date, 'Asia/Seoul');
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Last Updated:** 2025-11-10
 **Author:** Claude Code (xstudio integration)
+
+**Changelog:**
+- v2.0 (2025-11-10): Added Phase 5 - I18n System and additional focus management enhancements
+- v1.0 (2025-11-10): Initial documentation for Phases 1-4
