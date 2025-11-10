@@ -28,6 +28,11 @@
         padding: 0 var(--spacing-sm);
 
         .header_contents {
+          .history-info {
+            font-size: var(--text-sm);
+            font-weight: var(--font-weight-bold);
+            color: var(--builder-header-text);
+          }
           /*button {
                     font-size: var(--text-sm);
                     @apply bg-[var(--builder-header-badge-bg)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];

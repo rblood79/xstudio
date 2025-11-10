@@ -254,7 +254,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
       </div>
 
       <div className="header_contents header_right">
-        <span>
+        <span className="history-info">
           {historyInfo ? `${historyInfo.current}/${historyInfo.total}` : "0/0"}
         </span>
         <button
