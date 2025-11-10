@@ -1,25 +1,39 @@
-import { useState, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
-import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
-import { ElementUtils } from '../../../../utils/elementUtils';
-
-interface SelectedOptionState {
-    parentId: string;
-    optionId: string;
-}
+import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
 
 export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement, removeElement, elements: storeElements, currentPageId } = useStore();
+    // Collection Item 관리 훅
+    const {
+        children,
+        selectedItemIndex,
+        selectItem,
+        deselectItem,
+        addItem,
+        deleteItem,
+        updateItem,
+    } = useCollectionItemManager({
+        elementId,
+        childTag: 'SelectItem',
+        defaultItemProps: (index) => ({
+            label: `Option ${index + 1}`,
+            value: `option${index + 1}`,
+        }),
+    });
 
     // Get customId from element in store
     const element = useStore((state) => state.elements.find((el) => el.id === elementId));
     const customId = element?.customId || '';
+
+    useEffect(() => {
+        // 옵션 선택 상태 초기화
+        deselectItem();
+    }, [elementId, deselectItem]);
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
@@ -37,16 +51,9 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         }
     };
 
-    // 실제 SelectItem 자식 요소들을 찾기
-    const selectItemChildren = useMemo(() => {
-        return storeElements
-            .filter((child) => child.parent_id === elementId && child.tag === 'SelectItem')
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    }, [storeElements, elementId]);
-
-    // 선택된 옵션이 있고, 현재 Select 컴포넌트의 옵션인 경우 개별 옵션 편집 UI 표시
-    if (selectedOption && selectedOption.parentId === elementId) {
-        const currentOption = selectItemChildren.find(child => child.id === selectedOption.optionId);
+    // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
+    if (selectedItemIndex !== null) {
+        const currentOption = children[selectedItemIndex];
         if (!currentOption) return null;
 
         return (
@@ -63,8 +70,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                 ...currentOption.props,
                                 label: value
                             };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
                         }}
                         icon={Tag}
                     />
@@ -78,8 +84,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                 ...currentOption.props,
                                 value: value
                             };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
                         }}
                         icon={Binary}
                     />
@@ -93,8 +98,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                 ...currentOption.props,
                                 isDisabled: checked
                             };
-                            const { updateElementProps } = useStore.getState();
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
@@ -117,8 +121,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                     }
 
                                     // 로컬 상태에서 제거
-                                    removeElement(currentOption.id);
-                                    setSelectedOption(null);
+                                    deleteItem(currentOption.id);
                                 } catch (error) {
                                     console.error("SelectItem 삭제 중 오류:", error);
                                 }
@@ -134,7 +137,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 <div className='tab-actions'>
                     <button
                         className='control-button secondary'
-                        onClick={() => setSelectedOption(null)}
+                        onClick={deselectItem}
                     >
                         {PROPERTY_LABELS.CLOSE}
                     </button>
@@ -315,16 +318,16 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
-                        Total items: {selectItemChildren.length || 0}
+                        Total items: {children.length || 0}
                     </p>
                     <p className='tab-overview-help'>
                         💡 Select individual items from list to edit properties
                     </p>
                 </div>
 
-                {selectItemChildren.length > 0 && (
+                {children.length > 0 && (
                     <div className='tabs-list'>
-                        {selectItemChildren.map((item, index) => (
+                        {children.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {String((item.props as Record<string, unknown>).label) || `Item ${index + 1}`}
@@ -332,7 +335,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                                 </span>
                                 <button
                                     className='tab-edit-button'
-                                    onClick={() => setSelectedOption({ parentId: elementId, optionId: item.id })}
+                                    onClick={() => selectItem(index)}
                                 >
                                     Edit
                                 </button>
@@ -344,45 +347,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={async () => {
-                            try {
-                                const newItemId = ElementUtils.generateId();
-                                const newItem = {
-                                    id: newItemId,
-                                    page_id: currentPageId || '1',
-                                    tag: 'SelectItem',
-                                    props: {
-                                        label: `Option ${(selectItemChildren.length || 0) + 1}`,
-                                        value: `option${(selectItemChildren.length || 0) + 1}`,
-                                        description: '',
-                                        isDisabled: false,
-                                        isReadOnly: false,
-                                        style: {},
-                                        className: '',
-                                    },
-                                    parent_id: elementId,
-                                    order_num: (selectItemChildren.length || 0) + 1,
-                                };
-
-                                const { data, error } = await supabase
-                                    .from("elements")
-                                    .upsert(newItem, {
-                                        onConflict: 'id'
-                                    })
-                                    .select();
-
-                                if (error) {
-                                    console.error("SelectItem 추가 에러:", error);
-                                    return;
-                                }
-
-                                if (data && data[0]) {
-                                    addElement(data[0]);
-                                }
-                            } catch (error) {
-                                console.error("SelectItem 추가 중 오류:", error);
-                            }
-                        }}
+                        onClick={addItem}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         Add Item

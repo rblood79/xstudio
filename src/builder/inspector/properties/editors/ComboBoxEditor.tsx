@@ -1,39 +1,40 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Tag, SquarePlus, PointerOff, AlertTriangle, FileText, Trash, Binary, CheckSquare, PenOff, Focus, Type, Hash, FormInput, Menu } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
-import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
-import { ElementUtils } from '../../../../utils/elementUtils';
-
-interface SelectedOptionState {
-    parentId: string;
-    optionId: string;
-}
+import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
 
 export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const [selectedOption, setSelectedOption] = useState<SelectedOptionState | null>(null);
-    const { addElement, removeElement, elements: storeElements, currentPageId, updateElementProps } = useStore();
+    // Collection Item 관리 훅
+    const {
+        children,
+        selectedItemIndex,
+        selectItem,
+        deselectItem,
+        addItem,
+        deleteItem,
+        updateItem,
+    } = useCollectionItemManager({
+        elementId,
+        childTag: 'ComboBoxItem',
+        defaultItemProps: (index) => ({
+            label: `Option ${index + 1}`,
+            value: `option${index + 1}`,
+            textValue: `Option ${index + 1}`,
+        }),
+    });
 
     // Get customId from element in store
     const element = useStore((state) => state.elements.find((el) => el.id === elementId));
     const customId = element?.customId || '';
 
-    // 디버깅을 위한 로그 추가
-    /*useEffect(() => {
-        console.log('ComboBoxEditor currentProps 업데이트:', {
-            elementId,
-            selectedKey: currentProps.selectedKey,
-            currentProps
-        });
-    }, [currentProps, elementId]);*/
-
     useEffect(() => {
         // 옵션 선택 상태 초기화
-        setSelectedOption(null);
-    }, [elementId]);
+        deselectItem();
+    }, [elementId, deselectItem]);
 
     const updateProp = (key: string, value: unknown) => {
         console.log('ComboBoxEditor updateProp 호출:', { key, value });
@@ -52,16 +53,9 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
         }
     };
 
-    // 실제 ComboBoxItem 자식 요소들을 찾기
-    const comboBoxItemChildren = useMemo(() => {
-        return storeElements
-            .filter((child) => child.parent_id === elementId && child.tag === 'ComboBoxItem')
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    }, [storeElements, elementId]);
-
-    // 선택된 옵션이 있고, 현재 ComboBox 컴포넌트의 옵션인 경우 개별 옵션 편집 UI 표시
-    if (selectedOption && selectedOption.parentId === elementId) {
-        const currentOption = comboBoxItemChildren.find(item => item.id === selectedOption.optionId);
+    // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
+    if (selectedItemIndex !== null) {
+        const currentOption = children[selectedItemIndex];
         if (!currentOption) return null;
 
         return (
@@ -76,7 +70,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 ...currentOption.props,
                                 label: value
                             } as typeof currentOption.props & { label: string };
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
 
                             // 부모 ComboBox의 defaultSelectedKey가 현재 옵션의 value와 같다면 업데이트
                             if (currentProps.defaultSelectedKey === (currentOption.props as Record<string, unknown>).value) {
@@ -96,7 +90,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 ...currentOption.props,
                                 value: value
                             };
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
 
                             // 부모 ComboBox의 defaultSelectedKey가 이전 값과 같다면 새 값으로 업데이트
                             if (currentProps.defaultSelectedKey === oldValue) {
@@ -115,7 +109,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 ...currentOption.props,
                                 description: value
                             };
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
                         }}
                         icon={FileText}
                     />
@@ -129,7 +123,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 ...currentOption.props,
                                 isDisabled: checked
                             };
-                            updateElementProps(currentOption.id, updatedProps);
+                            updateItem(currentOption.id, updatedProps);
                         }}
                         icon={PointerOff}
                     />
@@ -152,8 +146,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     }
 
                                     // 로컬 상태에서 제거
-                                    removeElement(currentOption.id);
-                                    setSelectedOption(null);
+                                    deleteItem(currentOption.id);
                                 } catch (error) {
                                     console.error("SelectItem 삭제 중 오류:", error);
                                 }
@@ -168,7 +161,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     <div className='tab-actions'>
                         <button
                             className='control-button secondary'
-                            onClick={() => setSelectedOption(null)}
+                            onClick={deselectItem}
                         >
                             {PROPERTY_LABELS.CLOSE}
                         </button>
@@ -344,9 +337,9 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
             <fieldset className="properties-aria">
                 <legend>{PROPERTY_LABELS.ADD_OPTION}</legend>
 
-                {comboBoxItemChildren.length > 0 ? (
+                {children.length > 0 ? (
                     <div className="tabs-list">
-                        {comboBoxItemChildren.map((item, index) => (
+                        {children.map((item, index) => (
                             <div key={item.id} className='tab-list-item'>
                                 <span className='tab-title'>
                                     {String((item.props as Record<string, unknown>).label) || `Item ${index + 1}`}
@@ -354,7 +347,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                 </span>
                                 <button
                                     className='tab-edit-button'
-                                    onClick={() => setSelectedOption({ parentId: elementId, optionId: item.id })}
+                                    onClick={() => selectItem(index)}
                                 >
                                     Edit
                                 </button>
@@ -368,42 +361,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 <div className='tab-actions'>
                     <button
                         className='control-button add'
-                        onClick={async () => {
-                            try {
-                                const newItemId = ElementUtils.generateId();
-                                const newItem = {
-                                    id: newItemId,
-                                    page_id: currentPageId || '1',
-                                    tag: 'ComboBoxItem',
-                                    props: {
-                                        label: `Option ${(comboBoxItemChildren.length || 0) + 1}`,
-                                        value: `option${(comboBoxItemChildren.length || 0) + 1}`,
-                                        description: '',
-                                        isDisabled: false,
-                                    },
-                                    parent_id: elementId,
-                                    order_num: (comboBoxItemChildren.length || 0) + 1,
-                                };
-
-                                const { data, error } = await supabase
-                                    .from("elements")
-                                    .upsert(newItem, {
-                                        onConflict: 'id'
-                                    })
-                                    .select();
-
-                                if (error) {
-                                    console.error("ComboBoxItem 추가 에러:", error);
-                                    return;
-                                }
-
-                                if (data && data[0]) {
-                                    addElement(data[0]);
-                                }
-                            } catch (err) {
-                                console.error("ComboBoxItem 추가 중 오류:", err);
-                            }
-                        }}
+                        onClick={addItem}
                     >
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         {PROPERTY_LABELS.ADD_OPTION}

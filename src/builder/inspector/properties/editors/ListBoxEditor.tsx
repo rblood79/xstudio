@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import {
   Tag,
   SquarePlus,
@@ -19,37 +19,41 @@ import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from 
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/labels";
-import { supabase } from "../../../../env/supabase.client";
 import { useStore } from "../../../stores";
-import { ElementUtils } from "../../../../utils/elementUtils";
-
-interface SelectedItemState {
-  parentId: string;
-  itemIndex: number;
-}
+import { useCollectionItemManager } from "../../../hooks/useCollectionItemManager";
 
 export function ListBoxEditor({
   elementId,
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(
-    null
-  );
-  const { addElement, currentPageId, updateElementProps, setElements } =
-    useStore();
-
-  // 스토어에서 elements를 직접 구독하여 실시간 업데이트
-  const storeElements = useStore((state) => state.elements);
+  // Collection Item 관리 훅
+  const {
+    children,
+    selectedItemIndex,
+    selectItem,
+    deselectItem,
+    addItem,
+    deleteItem,
+    updateItem,
+  } = useCollectionItemManager({
+    elementId,
+    childTag: 'ListBoxItem',
+    defaultItemProps: (index) => ({
+      label: `Item ${index + 1}`,
+      value: `item${index + 1}`,
+    }),
+  });
 
   // Get customId from element in store
+  const storeElements = useStore((state) => state.elements);
   const element = storeElements.find((el) => el.id === elementId);
   const customId = element?.customId || '';
 
   useEffect(() => {
     // 아이템 선택 상태 초기화
-    setSelectedItem(null);
-  }, [elementId]);
+    deselectItem();
+  }, [elementId, deselectItem]);
 
   const updateProp = (key: string, value: unknown) => {
     const updatedProps = {
@@ -67,18 +71,9 @@ export function ListBoxEditor({
     }
   };
 
-  // 실제 ListBoxItem 자식 요소들을 찾기 (useMemo로 최적화)
-  const listBoxChildren = useMemo(() => {
-    return storeElements
-      .filter(
-        (child) => child.parent_id === elementId && child.tag === "ListBoxItem"
-      )
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, elementId]);
-
-  // 선택된 아이템이 있고, 현재 ListBox 컴포넌트의 아이템인 경우 개별 아이템 편집 UI 표시
-  if (selectedItem && selectedItem.parentId === elementId) {
-    const currentItem = listBoxChildren[selectedItem.itemIndex];
+  // 선택된 아이템이 있는 경우 개별 아이템 편집 UI 표시
+  if (selectedItemIndex !== null) {
+    const currentItem = children[selectedItemIndex];
     if (!currentItem) return null;
 
     return (
@@ -96,7 +91,7 @@ export function ListBoxEditor({
                 ...currentItem.props,
                 label: value,
               };
-              updateElementProps(currentItem.id, updatedProps);
+              updateItem(currentItem.id, updatedProps);
             }}
             icon={Tag}
           />
@@ -113,7 +108,7 @@ export function ListBoxEditor({
                 ...currentItem.props,
                 value: value,
               };
-              updateElementProps(currentItem.id, updatedProps);
+              updateItem(currentItem.id, updatedProps);
             }}
             icon={Binary}
           />
@@ -130,7 +125,7 @@ export function ListBoxEditor({
                 ...currentItem.props,
                 isDisabled: checked,
               };
-              updateElementProps(currentItem.id, updatedProps);
+              updateItem(currentItem.id, updatedProps);
             }}
             icon={PointerOff}
           />
@@ -139,29 +134,7 @@ export function ListBoxEditor({
           <div className="tab-actions">
             <button
               className="control-button delete"
-              onClick={async () => {
-                try {
-                  // 실제 ListBoxItem 컴포넌트를 데이터베이스에서 삭제
-                  const { error } = await supabase
-                    .from("elements")
-                    .delete()
-                    .eq("id", currentItem.id);
-
-                  if (error) {
-                    console.error("ListBoxItem 삭제 에러:", error);
-                    return;
-                  }
-
-                  // 스토어에서도 제거
-                  const updatedElements = storeElements.filter(
-                    (el) => el.id !== currentItem.id
-                  );
-                  setElements(updatedElements);
-                  setSelectedItem(null);
-                } catch (error) {
-                  console.error("ListBoxItem 삭제 중 오류:", error);
-                }
-              }}
+              onClick={() => deleteItem(currentItem.id)}
             >
               <Trash
                 color={iconProps.color}
@@ -177,7 +150,7 @@ export function ListBoxEditor({
         <div className="tab-actions">
           <button
             className="control-button secondary"
-            onClick={() => setSelectedItem(null)}
+            onClick={deselectItem}
           >
             Back to ListBox Settings
           </button>
@@ -333,16 +306,16 @@ export function ListBoxEditor({
 
         <div className="tab-overview">
           <p className="tab-overview-text">
-            Total items: {listBoxChildren.length || 0}
+            Total items: {children.length || 0}
           </p>
           <p className="tab-overview-help">
             💡 Select individual items from list to edit label, value, and state
           </p>
         </div>
 
-        {listBoxChildren.length > 0 && (
+        {children.length > 0 && (
           <div className="react-aria-ListBox">
-            {listBoxChildren.map((item, index) => (
+            {children.map((item, index) => (
               <div key={item.id} className="react-aria-ListBoxItem">
                 <span className="tab-title">
                   {String(
@@ -352,9 +325,7 @@ export function ListBoxEditor({
                 </span>
                 <button
                   className="tab-edit-button"
-                  onClick={() =>
-                    setSelectedItem({ parentId: elementId, itemIndex: index })
-                  }
+                  onClick={() => selectItem(index)}
                 >
                   Edit
                 </button>
@@ -366,42 +337,7 @@ export function ListBoxEditor({
         <div className="tab-actions">
           <button
             className="control-button add"
-            onClick={async () => {
-              try {
-                console.log(" ListBoxEditor - elementId:", elementId);
-                console.log(
-                  "🔍 ListBoxEditor - storeElements:",
-                  storeElements.map((el) => ({ id: el.id, tag: el.tag }))
-                );
-
-                const newItem = {
-                  id: ElementUtils.generateId(),
-                  page_id: currentPageId || "1",
-                  tag: "ListBoxItem",
-                  props: {
-                    label: `Item ${(listBoxChildren.length || 0) + 1}`,
-                    value: `item${(listBoxChildren.length || 0) + 1}`,
-                    isDisabled: false,
-                    style: {},
-                    className: "",
-                  },
-                  parent_id: elementId,
-                  order_num: (listBoxChildren.length || 0) + 1,
-                };
-
-                const data =
-                  await ElementUtils.createChildElementWithParentCheck(
-                    newItem,
-                    currentPageId || "1",
-                    elementId
-                  );
-
-                addElement(data);
-                console.log("새 ListBoxItem 추가됨:", data);
-              } catch (error) {
-                console.error("ListBoxItem 추가 중 오류:", error);
-              }
-            }}
+            onClick={addItem}
           >
             <SquarePlus
               color={iconProps.color}
