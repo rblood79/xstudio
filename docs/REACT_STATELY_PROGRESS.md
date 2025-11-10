@@ -9,8 +9,8 @@
 
 ## 📊 전체 진행률
 
-**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅
-**진행 상황**: 16개 커밋, 5개 문서, TypeScript 컴파일 ✅
+**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅, Phase 3 ✅, Phase 4 ✅
+**진행 상황**: 17개 커밋, 5개 문서, TypeScript 컴파일 ✅
 
 | Phase | 상태 | 진행률 | 설명 |
 |-------|------|--------|------|
@@ -18,7 +18,8 @@
 | **Phase 1** | ✅ 완료 | 100% | Inspector Events React Stately 전환 |
 | **Phase 2** | ✅ 완료 | 100% | Inspector Data 섹션 useColumnLoader 적용 |
 | **Phase 3** | ✅ 완료 | 100% | Sidebar Tree 트리 상태 관리 및 hierarchical 렌더링 |
-| **Phase 4-8** | ⏸️ 대기 | 0% | 계획 수립 완료, 실행 대기 |
+| **Phase 4** | ✅ 완료 | 100% | Components Palette 카테고리 펼치기/접기 및 UX 개선 |
+| **Phase 5-8** | ⏸️ 대기 | 0% | 계획 수립 완료, 실행 대기 |
 
 ---
 
@@ -329,11 +330,77 @@ flat Element[] → buildTreeFromElements → ElementTreeItem[]
 
 ---
 
+## ✅ Phase 4: Components Palette (완료)
+
+**기간**: 1일 (2025-11-10)
+**커밋**: 1개 (0b1fdc6)
+**상태**: ✅ 완료 및 안정화
+
+### 주요 성과
+
+**코드 개선**:
+- 신규 훅 추가: +150줄 (useCategoryExpansion)
+- ComponentList 개선: +14줄 (카테고리 펼치기/접기, Recently Used 삭제)
+- UX 개선: 카테고리 상태 localStorage 지속성, 검색 시 자동 펼치기
+
+**Phase 4.1: useCategoryExpansion Hook 생성**
+
+**생성된 파일** (1개, 150줄):
+- `src/builder/hooks/useCategoryExpansion.ts` (150줄)
+  - expandedCategories Set으로 펼침 상태 관리
+  - toggleCategory, expandCategories, expandAll, collapseAll
+  - localStorage 지속성 (STORAGE_KEY: 'xstudio_category_expansion')
+  - isExpanded 함수로 펼침 여부 확인
+
+**Phase 4.2: ComponentList 카테고리 펼치기/접기 적용**
+
+**수정된 파일** (1개):
+- `src/builder/components/ComponentList.tsx` (+14줄)
+  - useCategoryExpansion hook 적용
+  - ChevronUp/ChevronDown 토글 아이콘 추가
+  - 모든 카테고리 기본 펼침 (initialExpanded: allCategoryKeys)
+  - 검색 모드/일반 모드 모두 지원
+
+**Phase 4.3: 검색 시 자동 펼치기**
+
+**기능 추가**:
+- useEffect로 검색 결과가 있는 카테고리 자동 펼치기
+- expandCategories 함수로 다중 카테고리 펼치기
+- 검색어 제거 시 기존 펼침 상태 유지
+
+**Phase 4.4: Recently Used 삭제 버튼**
+
+**기능 추가**:
+- Trash2 아이콘 버튼 추가 (panel-header > header-actions)
+- clearRecentComponents 함수 연결
+- localStorage 데이터도 함께 제거
+- 버튼 클릭 시 Recently Used 섹션 즉시 숨김
+
+### 기술적 개선
+
+✅ **localStorage 지속성** - 사용자 카테고리 펼침 상태 저장
+✅ **자동 펼치기** - 검색 결과 카테고리 자동 펼침
+✅ **UX 개선** - 토글 아이콘으로 직관적인 펼치기/접기
+✅ **Recently Used 관리** - 한 번의 클릭으로 검색 기록 제거
+✅ **타입 안전성** - UseCategoryExpansionOptions, UseCategoryExpansionResult 인터페이스
+
+### 테스트 결과
+
+✅ **카테고리 펼치기/접기**: ChevronUp/Down 아이콘 토글 정상 작동
+✅ **검색 자동 펼치기**: "button" 검색 시 "Actions" 카테고리 자동 펼침
+✅ **Recently Used 삭제**: Trash2 버튼 클릭 시 기록 즉시 제거
+✅ **localStorage 지속성**: 페이지 새로고침 후에도 펼침 상태 유지
+
+---
+
 ## 📈 전체 통계
 
 ### 커밋 내역
 
 ```
+Phase 4 (1개):
+* 0b1fdc6 feat: Add category expansion and Recently Used clear feature (Phase 4)
+
 Phase 3 (2개):
 * 03d9246 refactor(phase-3.2): Migrate Sidebar tree to hierarchical rendering
 * ce00aa9 refactor(phase-3.1): Migrate Sidebar tree to React Stately expand state
@@ -356,17 +423,17 @@ Phase 0 (2개):
 * 340f004 docs: Add Inspector architecture analysis
 * 4e70ad2 chore(phase-0): Setup React Stately integration
 
-총 커밋: 14개
+총 커밋: 15개
 ```
 
 ### 파일 변경 통계
 
-| 상태 | Phase 0 | Phase 1 | Phase 2 | Phase 3 | 합계 |
-|------|---------|---------|---------|---------|------|
-| **생성** | 2 타입 파일 | 5개 hooks/pickers | 3개 hooks | 2개 hooks/utils | **12개** |
-| **수정** | - | 3개 컴포넌트 | 2개 에디터 | 4개 컴포넌트 | **9개** |
-| **삭제** | - | 9개 listMode | - | - | **9개** |
-| **문서** | 2개 | 1개 분석 | 0개 | 0개 | **3개** |
+| 상태 | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 | 합계 |
+|------|---------|---------|---------|---------|---------|------|
+| **생성** | 2 타입 파일 | 5개 hooks/pickers | 3개 hooks | 2개 hooks/utils | 1개 hook | **13개** |
+| **수정** | - | 3개 컴포넌트 | 2개 에디터 | 4개 컴포넌트 | 1개 컴포넌트 | **10개** |
+| **삭제** | - | 9개 listMode | - | - | - | **9개** |
+| **문서** | 2개 | 1개 분석 | 0개 | 0개 | 0개 | **3개** |
 
 ### useState 감소량
 
@@ -444,24 +511,23 @@ Phase 0 (2개):
 
 ## 🚀 다음 단계
 
-### 우선순위 1: Phase 4 준비 및 실행
+### 우선순위 1: Phase 5 준비 및 실행
 
-**Phase 4: Components Palette (useListState)**
-- 대상 파일: `src/builder/components/` (예상)
-- 목표: 컴포넌트 팔레트 상태 관리를 useListState로 자동화
-- 예상 작업 시간: 3-5시간
-- 예상 효과: 컴포넌트 검색/필터링 개선, 상태 관리 단순화
+**Phase 5: Properties Section (useListData)**
+- 대상 파일: `src/builder/inspector/properties/` (예상)
+- 목표: Property editors 상태 관리를 useListData로 자동화
+- 예상 작업 시간: 5-8시간
+- 예상 효과: Property 관리 단순화, 상태 관리 통일
 
 **실행 계획**:
-1. Components Palette 구조 분석
-2. 현재 상태 관리 방식 파악
-3. useListState 적용 전략 수립
+1. Properties Section 구조 분석
+2. 현재 상태 관리 방식 파악 (51개 파일)
+3. useListData 적용 가능한 패턴 식별
 4. 단계별 리팩토링 실행
 
 ### 우선순위 2: 이후 Phase 검토
 
 전체 계획서(`docs/PHASE_2_TO_8_EXECUTION_GUIDE.md`) 참조:
-- Phase 5: Properties Section (useListData)
 - Phase 6: Custom Hooks (useAsyncList)
 - Phase 7: Data Fetching Services (useAsyncList)
 - Phase 8: Final Optimization & Documentation
@@ -505,4 +571,4 @@ Phase 0 (2개):
 ---
 
 **작성**: Claude Code
-**마지막 업데이트**: 2025-11-10 (Phase 3 완료)
+**마지막 업데이트**: 2025-11-10 (Phase 4 완료)
