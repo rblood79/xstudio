@@ -66,8 +66,14 @@ export function useSidebarTabs() {
         });
     };
 
+    // 전체 닫기
+    const closeAll = () => {
+        setActiveTabs(new Set<Tab>());
+    };
+
     return {
         activeTabs,
         toggleTab,
+        closeAll,
     };
 }

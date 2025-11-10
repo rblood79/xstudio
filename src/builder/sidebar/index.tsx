@@ -36,7 +36,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
     // 활성 탭 상태 관리 (localStorage 연동)
-    const { activeTabs, toggleTab } = useSidebarTabs();
+    const { activeTabs, toggleTab, closeAll } = useSidebarTabs();
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
 
     // React Stately 기반 트리 펼치기/접기 상태 관리
@@ -1517,7 +1517,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
 
     return (
         <aside className="sidebar">
-            <SidebarNav activeTabs={activeTabs} onTabChange={toggleTab} />
+            <SidebarNav activeTabs={activeTabs} onTabChange={toggleTab} onCloseAll={closeAll} />
             <div className="sidebar-container">
                 {renderContent()}
             </div>
