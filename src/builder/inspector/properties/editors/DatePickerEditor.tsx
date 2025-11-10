@@ -73,17 +73,32 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                 <legend>State</legend>
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.MIN_VALUE}
-                    value={String(currentProps.minValue || '')}
-                    onChange={(value) => updateProp('minValue', value || undefined)}
-                    placeholder="YYYY-MM-DD"
+                    label="Timezone"
+                    value={String(currentProps.timezone || '')}
+                    onChange={(value) => updateProp('timezone', value || undefined)}
+                    placeholder="Asia/Seoul"
+                    icon={Globe}
+                />
+
+                <PropertySwitch
+                    label="Default to Today"
+                    isSelected={Boolean(currentProps.defaultToday)}
+                    onChange={(checked) => updateProp('defaultToday', checked)}
+                    icon={CalendarDays}
                 />
 
                 <PropertyInput
-                    label={PROPERTY_LABELS.MAX_VALUE}
-                    value={String(currentProps.maxValue || '')}
-                    onChange={(value) => updateProp('maxValue', value || undefined)}
-                    placeholder="YYYY-MM-DD"
+                    label="Min Date"
+                    value={String(currentProps.minDate || '')}
+                    onChange={(value) => updateProp('minDate', value || undefined)}
+                    placeholder="2024-01-01"
+                />
+
+                <PropertyInput
+                    label="Max Date"
+                    value={String(currentProps.maxDate || '')}
+                    onChange={(value) => updateProp('maxDate', value || undefined)}
+                    placeholder="2024-12-31"
                 />
 
                 <PropertyInput
