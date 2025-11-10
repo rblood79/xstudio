@@ -12,6 +12,8 @@ import { apiConfig } from "../../../services/api";
 import { ElementUtils } from "../../../utils/elementUtils";
 import { Element } from "../../../types/store";
 import { useStore } from "../../stores";
+import { useColumnLoader, useChangeDetection } from "./hooks";
+import type { ColumnListItem } from "@/types/stately";
 import "./data.css";
 
 export interface APICollectionEditorProps {
@@ -43,12 +45,9 @@ export function APICollectionEditor({
     JSON.stringify(config.dataMapping, null, 2)
   );
 
-  // 컬럼 관련 state 추가
-  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  // 컬럼 관련 state
   const [localColumns, setLocalColumns] = useState<string[]>(config.columns || []);
   const [localColumnMapping, setLocalColumnMapping] = useState<ColumnMapping | undefined>(config.columnMapping);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   // config가 변경되면 local state 업데이트 (Supabase와 동일한 패턴)
   useEffect(() => {
@@ -58,10 +57,7 @@ export function APICollectionEditor({
     setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
     setLocalColumns(config.columns || []);
     setLocalColumnMapping(config.columnMapping);
-
-    // availableColumns 복원 (Load로 가져온 전체 컬럼 목록)
-    setAvailableColumns(config.availableColumns || []);
-  }, [config.endpoint, config.params, config.headers, config.dataMapping, config.columns, config.columnMapping, config.availableColumns]);
+  }, [config.endpoint, config.params, config.headers, config.dataMapping, config.columns, config.columnMapping]);
 
   // 변경 감지: 각 필드별로 변경 여부 확인
   const endpointChanged = localEndpoint !== (config.endpoint || "");
@@ -77,92 +73,103 @@ export function APICollectionEditor({
     return endpointChanged || paramsChanged || headersChanged || dataMappingChanged || columnsChanged;
   }, [endpointChanged, paramsChanged, headersChanged, dataMappingChanged, columnsChanged]);
 
-  // Endpoint Path의 Load 버튼으로 데이터 로드 및 컬럼 추출
-  const handleLoadData = async () => {
-    setLoading(true);
-    setLoadError(null);
+  // useColumnLoader 훅으로 컬럼 로딩 자동화
+  const columnLoader = useColumnLoader(async ({ signal }) => {
+    const parsedParams = JSON.parse(localParams);
+    const parsedHeaders = JSON.parse(localHeaders);
+    const parsedDataMapping = JSON.parse(localDataMapping);
 
-    try {
-      const parsedParams = JSON.parse(localParams);
-      const parsedHeaders = JSON.parse(localHeaders);
-      const parsedDataMapping = JSON.parse(localDataMapping);
+    let data: unknown;
 
-      let data: unknown;
+    // MOCK_DATA 특별 처리
+    if (config.baseUrl === "MOCK_DATA") {
+      console.log("🎭 MOCK_DATA 모드 - Mock API 호출:", localEndpoint);
 
-      // MOCK_DATA 특별 처리
-      if (config.baseUrl === "MOCK_DATA") {
-        console.log("🎭 MOCK_DATA 모드 - Mock API 호출:", localEndpoint);
+      const mockFetch = apiConfig.MOCK_DATA;
+      data = await mockFetch(localEndpoint, parsedParams);
 
-        const mockFetch = apiConfig.MOCK_DATA;
-        data = await mockFetch(localEndpoint, parsedParams);
-
-        console.log("📦 Mock API 응답 데이터:", data);
-      } else {
-        // 실제 API 호출
-        let baseUrl = "";
-        switch (config.baseUrl) {
-          case "JSONPLACEHOLDER":
-            baseUrl = "https://jsonplaceholder.typicode.com";
-            break;
-          case "DUMMYJSON":
-            baseUrl = "https://dummyjson.com";
-            break;
-          case "CUSTOM":
-            baseUrl = config.customUrl || "";
-            break;
-        }
-
-        const fullUrl = `${baseUrl}${localEndpoint}`;
-        console.log("🌐 API 호출:", fullUrl);
-
-        const response = await fetch(fullUrl, {
-          method: config.method || "GET",
-          headers: parsedHeaders,
-          ...(config.method === "POST" && { body: JSON.stringify(parsedParams) }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        data = await response.json();
-        console.log("📦 API 응답 데이터:", data);
+      console.log("📦 Mock API 응답 데이터:", data);
+    } else {
+      // 실제 API 호출
+      let baseUrl = "";
+      switch (config.baseUrl) {
+        case "JSONPLACEHOLDER":
+          baseUrl = "https://jsonplaceholder.typicode.com";
+          break;
+        case "DUMMYJSON":
+          baseUrl = "https://dummyjson.com";
+          break;
+        case "CUSTOM":
+          baseUrl = config.customUrl || "";
+          break;
       }
 
-      // resultPath로 데이터 추출
-      const resultPath = parsedDataMapping.resultPath || "";
-      let items: unknown = data;
+      const fullUrl = `${baseUrl}${localEndpoint}`;
+      console.log("🌐 API 호출:", fullUrl);
 
-      if (resultPath) {
-        const paths = resultPath.split(".");
-        for (const path of paths) {
-          items = items?.[path];
-        }
+      const response = await fetch(fullUrl, {
+        method: config.method || "GET",
+        headers: parsedHeaders,
+        signal, // abort signal 전달
+        ...(config.method === "POST" && { body: JSON.stringify(parsedParams) }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      if (!Array.isArray(items) || items.length === 0) {
-        throw new Error("응답 데이터가 배열이 아니거나 비어있습니다.");
+      data = await response.json();
+      console.log("📦 API 응답 데이터:", data);
+    }
+
+    // resultPath로 데이터 추출
+    const resultPath = parsedDataMapping.resultPath || "";
+    let items: unknown = data;
+
+    if (resultPath) {
+      const paths = resultPath.split(".");
+      for (const path of paths) {
+        items = items?.[path];
       }
+    }
 
-      // 컬럼 감지 (타입 자동 인식)
-      const columnMapping = detectColumnsFromData(items);
-      const cols = Object.keys(columnMapping);
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("응답 데이터가 배열이 아니거나 비어있습니다.");
+    }
 
-      console.log("📋 추출된 컬럼 (타입 포함):", columnMapping);
-      console.log("ℹ️ 컬럼이 추출되었습니다. 'Apply Changes' 버튼을 눌러 적용하세요.");
+    // 컬럼 감지 (타입 자동 인식)
+    const columnMapping = detectColumnsFromData(items);
+    const cols = Object.keys(columnMapping);
 
-      // Local state 업데이트
-      setAvailableColumns(cols);
-      setLocalColumnMapping(columnMapping);
+    console.log("📋 추출된 컬럼 (타입 포함):", columnMapping);
+    console.log("ℹ️ 컬럼이 추출되었습니다. 'Apply Changes' 버튼을 눌러 적용하세요.");
 
-      // localColumns는 기존 선택을 유지하되, 새로운 컬럼이 있으면 추가
-      // (첫 호출인 경우에만 모든 컬럼 선택)
+    // ColumnListItem[] 형태로 반환 + columnMapping 저장
+    setLocalColumnMapping(columnMapping);
+
+    return cols.map((key, index) => ({
+      id: key,
+      key,
+      label: columnMapping[key].label || key,
+      type: columnMapping[key].type || 'string',
+      selected: true,
+      order: index,
+    }));
+  });
+
+  // columnLoader.items가 변경되면 localColumns 자동 업데이트
+  useEffect(() => {
+    if (columnLoader.items.length > 0) {
+      const availableColumnKeys = columnLoader.items.map(item => item.key);
+
+      // 첫 호출인 경우 모든 컬럼 선택
       if (localColumns.length === 0) {
         console.log("ℹ️ 첫 호출: 모든 컬럼을 기본 선택합니다.");
-        setLocalColumns(cols);
+        setLocalColumns(availableColumnKeys);
       } else {
         // 기존 선택 유지 + 새로운 컬럼 추가
-        const newColumns = cols.filter(col => !availableColumns.includes(col));
+        const currentAvailable = columnLoader.items.map(item => item.key);
+        const newColumns = currentAvailable.filter(col => !localColumns.includes(col));
         if (newColumns.length > 0) {
           console.log(`ℹ️ ${newColumns.length}개 새로운 컬럼 발견:`, newColumns);
           setLocalColumns([...localColumns, ...newColumns]);
@@ -170,16 +177,8 @@ export function APICollectionEditor({
           console.log("ℹ️ 기존 컬럼 선택을 유지합니다.");
         }
       }
-
-    } catch (error) {
-      console.error("❌ API 호출 오류:", error);
-      setLoadError((error as Error).message);
-      setAvailableColumns([]);
-      setLocalColumns([]);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [columnLoader.items]);
 
   // Field Elements 동기화 함수
   const syncFieldElements = async (selectedColumns: string[]) => {
@@ -314,7 +313,7 @@ export function APICollectionEditor({
         dataMapping: parsedDataMapping,
         columns: localColumns,
         columnMapping: localColumnMapping,
-        availableColumns: availableColumns,
+        availableColumns: columnLoader.items.map(item => item.key),
       });
 
       // 1. Field Elements 먼저 생성 (onChange 전에)
@@ -332,7 +331,7 @@ export function APICollectionEditor({
         dataMapping: parsedDataMapping,
         columns: localColumns,
         columnMapping: localColumnMapping, // columnMapping 포함
-        availableColumns: availableColumns, // 전체 컬럼 목록도 저장
+        availableColumns: columnLoader.items.map(item => item.key), // 전체 컬럼 목록도 저장
       });
 
     } catch (error) {
@@ -348,8 +347,6 @@ export function APICollectionEditor({
     setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
     setLocalColumns(config.columns || []);
     setLocalColumnMapping(config.columnMapping); // columnMapping도 복원
-    setAvailableColumns(config.availableColumns || []); // 전체 컬럼 목록도 복원
-    setLoadError(null);
   };
 
   return (
@@ -391,6 +388,9 @@ export function APICollectionEditor({
               customUrl: key === "CUSTOM" ? config.customUrl : undefined, // CUSTOM이 아니면 customUrl 제거
             });
 
+            // columnLoader 초기화
+            columnLoader.setLoadingState("idle");
+
             // localDataMapping도 업데이트
             setLocalDataMapping(JSON.stringify(defaultDataMapping, null, 2));
 
@@ -411,9 +411,8 @@ export function APICollectionEditor({
             if (value !== config.customUrl) {
               // Custom URL이 변경되면 endpoint와 관련 데이터 초기화
               setLocalEndpoint("");
-              setAvailableColumns([]);
               setLocalColumns([]);
-              setLoadError(null);
+              columnLoader.setLoadingState("idle");
 
               onChange({
                 ...config,
@@ -450,15 +449,15 @@ export function APICollectionEditor({
 
           <Button
             size="xs"
-            onClick={handleLoadData}
-            isDisabled={!localEndpoint || loading}
+            onClick={columnLoader.reload}
+            isDisabled={!localEndpoint || columnLoader.isLoading}
             children={<Download size={iconProps.size} />}
           />
         </TextField>
       </PropertyFieldset>
 
       {/* 로드 에러 표시 */}
-      {loadError && (
+      {columnLoader.error && (
         <div className="error-message" style={{
           color: "var(--color-red-500)",
           padding: "8px",
@@ -467,7 +466,7 @@ export function APICollectionEditor({
           fontSize: "12px",
           marginTop: "8px"
         }}>
-          ⚠️ {loadError}
+          ⚠️ {columnLoader.error.message}
           {(config.baseUrl === "JSONPLACEHOLDER" || config.baseUrl === "MOCK_DATA") && (
             <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.8, lineHeight: "1.4" }}>
               💡 Mock 데이터 사용 가능한 엔드포인트:
@@ -489,10 +488,10 @@ export function APICollectionEditor({
           )}
         </div>
       )}      {/* 컬럼 선택 UI - Load 성공 시에만 표시 */}
-      {availableColumns.length > 0 && (
+      {columnLoader.items.length > 0 && (
         <fieldset className="properties-aria">
           <legend className="fieldset-legend">
-            Columns to Display ({availableColumns.length} detected)
+            Columns to Display ({columnLoader.items.length} detected)
           </legend>
           <div className="react-aria-control react-aria-Group">
             <CheckboxGroup
@@ -502,7 +501,7 @@ export function APICollectionEditor({
                 setLocalColumns(value);
               }}
             >
-              {availableColumns.map((column) => {
+              {columnLoader.items.map((item) => item.key).map((column) => {
                 const columnInfo = (config.columnMapping as ColumnMapping)?.[column];
                 const typeLabel = columnInfo?.type || 'string';
                 const typeEmoji = {
