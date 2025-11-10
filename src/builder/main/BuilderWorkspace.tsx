@@ -99,6 +99,8 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
             >
                 <div
                     className="workspace"
+                    data-max-width={currentBreakpoint?.max_width?.toString() || '100%'}
+                    data-max-height={currentBreakpoint?.max_height?.toString() || '100%'}
                     style={{
                         width: currentBreakpoint?.max_width || '100%',
                         height: currentBreakpoint?.max_height || '100%',
