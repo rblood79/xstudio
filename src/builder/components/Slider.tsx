@@ -9,6 +9,7 @@ import {
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, SliderVariant } from '../../types/componentVariants';
+import { formatNumber, formatPercent, formatUnit } from '../../utils/numberUtils';
 
 import './styles/Slider.css';
 
@@ -25,6 +26,34 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
      * @default 'md'
      */
     size?: ComponentSizeSubset;
+    /**
+     * 로케일
+     * @default 'ko-KR'
+     */
+    locale?: string;
+    /**
+     * 값 표시 형식
+     * - number: 숫자로 표시 (75)
+     * - percent: 퍼센트로 표시 (75%)
+     * - unit: 단위와 함께 표시 (75 km)
+     * - custom: 커스텀 포맷터 사용
+     * @default 'number'
+     */
+    valueFormat?: 'number' | 'percent' | 'unit' | 'custom';
+    /**
+     * 단위 (valueFormat이 'unit'일 때 사용)
+     * @example 'kilometer', 'celsius', 'meter'
+     */
+    unit?: string;
+    /**
+     * 커스텀 포맷터 함수
+     */
+    customFormatter?: (value: number) => string;
+    /**
+     * 값 표시 여부
+     * @default true
+     */
+    showValue?: boolean;
 }
 
 const sliderStyles = tv({
@@ -48,21 +77,49 @@ const sliderStyles = tv({
     },
 });
 
-export function Slider<T extends number | number[]>(
-    { label, thumbLabels, variant = 'default', size = 'md', ...props }: SliderProps<T>
-) {
+export function Slider<T extends number | number[]>({
+    label,
+    thumbLabels,
+    variant = 'default',
+    size = 'md',
+    locale = 'ko-KR',
+    valueFormat = 'number',
+    unit,
+    customFormatter,
+    showValue = true,
+    ...props
+}: SliderProps<T>) {
     const sliderClassName = composeRenderProps(
         props.className,
         (className) => sliderStyles({ variant, size, className })
     );
 
+    // 값 포맷팅 함수
+    const formatValue = (value: number): string => {
+        if (customFormatter) {
+            return customFormatter(value);
+        }
+
+        switch (valueFormat) {
+            case 'percent':
+                return formatPercent(value / 100, locale, 0);
+            case 'unit':
+                return unit ? formatUnit(value, unit, locale) : formatNumber(value, locale);
+            case 'number':
+            default:
+                return formatNumber(value, locale);
+        }
+    };
+
     return (
         <AriaSlider {...props} className={sliderClassName}>
             {label && <Label>{label}</Label>}
-            <SliderOutput>
-                {({ state }) =>
-                    state.values.map((_, i) => state.getThumbValueLabel(i)).join(' – ')}
-            </SliderOutput>
+            {showValue && (
+                <SliderOutput>
+                    {({ state }) =>
+                        state.values.map((value, i) => formatValue(value)).join(' – ')}
+                </SliderOutput>
+            )}
             <SliderTrack>
                 {({ state }) =>
                     state.values.map((_, i) => (
