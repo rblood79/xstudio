@@ -117,10 +117,10 @@ export const BuilderCore: React.FC = () => {
   const {
     pages,
     selectedPageId,
-    setPages,
     fetchElements,
-    handleAddPage: createPage,
+    addPage,
     initializeProject,
+    pageList,
   } = usePageManager();
   const {
     handleIframeLoad,
@@ -164,15 +164,26 @@ export const BuilderCore: React.FC = () => {
 
   // 프로젝트 초기화
   useEffect(() => {
-    if (projectId) {
-      initializeProject(projectId, setIsLoading, setError);
-      loadProjectTheme(projectId);
+    const initialize = async () => {
+      if (projectId) {
+        setIsLoading(true);
+        const result = await initializeProject(projectId);
 
-      // 메모리 모니터링 시작 (개발 모드에서만)
-      if (import.meta.env.DEV) {
-        memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
+        if (!result.success) {
+          setError(result.error?.message || "프로젝트 초기화 실패");
+        }
+
+        setIsLoading(false);
+        loadProjectTheme(projectId);
+
+        // 메모리 모니터링 시작 (개발 모드에서만)
+        if (import.meta.env.DEV) {
+          memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
+        }
       }
-    }
+    };
+
+    initialize();
 
     // 컴포넌트 언마운트 시 메모리 모니터링 중지
     return () => {
@@ -238,7 +249,10 @@ export const BuilderCore: React.FC = () => {
       if (targetPage) {
         console.log("[BuilderCore] Navigating to page:", targetPage.title, targetPage.id);
         // 페이지 elements 로드
-        await fetchElements(targetPage.id);
+        const result = await fetchElements(targetPage.id);
+        if (!result.success) {
+          handleError(result.error || new Error("페이지 로드 실패"), "페이지 이동");
+        }
       } else {
         console.warn(`[BuilderCore] Page not found for path: ${path}`);
         // 페이지를 찾지 못한 경우 사용자에게 알림
@@ -256,16 +270,17 @@ export const BuilderCore: React.FC = () => {
   // 페이지 추가 핸들러
   const handleAddPage = useCallback(async () => {
     if (!projectId) return;
-    try {
-      // 타입 변환을 통해 호환성 확보
-      const addElement = useStore.getState().addElement as (
-        element: Element
-      ) => void;
-      await createPage(projectId, addElement);
-    } catch (error) {
-      handleError(error, "페이지 생성");
+
+    // 타입 변환을 통해 호환성 확보
+    const addElement = useStore.getState().addElement as (
+      element: Element
+    ) => void;
+
+    const result = await addPage(projectId, addElement);
+    if (!result.success) {
+      handleError(result.error || new Error("페이지 생성 실패"), "페이지 생성");
     }
-  }, [projectId, createPage, handleError]);
+  }, [projectId, addPage, handleError]);
 
   // 요소 추가 핸들러
   const handleAddElementWrapper = useCallback(
@@ -301,10 +316,9 @@ export const BuilderCore: React.FC = () => {
   // 요소 로드 핸들러
   const fetchElementsWrapper = useCallback(
     async (pageId: string) => {
-      try {
-        await fetchElements(pageId);
-      } catch (error) {
-        handleError(error, "요소 로드");
+      const result = await fetchElements(pageId);
+      if (!result.success) {
+        handleError(result.error || new Error("요소 로드 실패"), "요소 로드");
       }
     },
     [fetchElements, handleError]
@@ -406,7 +420,7 @@ export const BuilderCore: React.FC = () => {
 
         <Sidebar
           pages={pages}
-          setPages={setPages}
+          pageList={pageList}
           handleAddPage={handleAddPage}
           handleAddElement={handleAddElementWrapper}
           fetchElements={fetchElementsWrapper}

@@ -20,7 +20,7 @@ import type { ElementTreeItem } from '../../types/stately';
 
 interface SidebarProps {
     pages: Page[];
-    setPages: React.Dispatch<React.SetStateAction<Page[]>>;
+    pageList: { remove: (...keys: string[]) => void };
     handleAddPage: () => Promise<void>;
     handleAddElement: (tag: string, parentId?: string, position?: number) => Promise<void>; // 시그니처 수정
     fetchElements: (pageId: string) => Promise<void>;
@@ -28,7 +28,7 @@ interface SidebarProps {
     children?: React.ReactNode;
 }
 
-export default function Sidebar({ pages, setPages, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
+export default function Sidebar({ pages, pageList, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
     // 메모이제이션 추가
     const elements = useStore((state) => state.elements);
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
@@ -1424,7 +1424,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 <div key="nodes" className="sidebar-section nodes">
                     <Nodes
                         pages={pages}
-                        setPages={setPages}
+                        pageList={pageList}
                         handleAddPage={handleAddPage}
                         renderTree={renderTree}
                         renderElementTree={renderElementTree}

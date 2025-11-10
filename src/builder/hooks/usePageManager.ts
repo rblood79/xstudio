@@ -1,29 +1,69 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useListData } from 'react-stately';
 import { Page, Element } from '../../types/store';
 import { pagesApi } from '../../services/api/PagesApiService';
-//import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/supabase';
 import { ElementUtils } from '../../utils/elementUtils';
 
+/**
+ * API 응답 타입 (에러를 throw하지 않고 return)
+ */
+export interface ApiResult<T> {
+    success: boolean;
+    data?: T;
+    error?: Error;
+}
+
 export interface UsePageManagerReturn {
     pages: Page[];
     selectedPageId: string | null;
-    setPages: React.Dispatch<React.SetStateAction<Page[]>>;
-    setSelectedPageId: React.Dispatch<React.SetStateAction<string | null>>;
-    fetchElements: (pageId: string) => Promise<void>;
-    handleAddPage: (projectId: string, addElement: (element: Element) => void) => Promise<void>;
-    initializeProject: (projectId: string, setIsLoading: (loading: boolean) => void, setError: (error: string | null) => void) => Promise<void>;
+    setSelectedPageId: (id: string | null) => void;
+    fetchElements: (pageId: string) => Promise<ApiResult<Element[]>>;
+    addPage: (projectId: string, addElement: (element: Element) => void) => Promise<ApiResult<Page>>;
+    initializeProject: (projectId: string) => Promise<ApiResult<Page[]>>;
+    // 직접 접근 (필요시)
+    pageList: ReturnType<typeof useListData<Page>>;
 }
 
+/**
+ * usePageManager - React Stately useListData 기반 페이지 관리
+ *
+ * wrapper 함수 불필요: 모든 함수가 에러를 return으로 처리
+ * useCallback 0개: 모두 일반 함수로 처리
+ *
+ * @example
+ * ```tsx
+ * const { pages, selectedPageId, fetchElements, addPage, initializeProject } = usePageManager();
+ *
+ * // wrapper 없이 직접 사용
+ * const result = await fetchElements(pageId);
+ * if (!result.success) {
+ *   console.error('에러:', result.error);
+ * }
+ * ```
+ */
 export const usePageManager = (): UsePageManagerReturn => {
-    const [pages, setPages] = useState<Page[]>([]);
+    // 1. pages 관리: useListData (append/remove 자동)
+    const pageList = useListData<Page>({
+        initialItems: [],
+        getKey: (page) => page.id,
+    });
+
+    // 2. selectedPageId: 단순 state
     const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
 
-    const fetchElements = useCallback(async (pageId: string) => {
-        if (!pageId) return;
+    /**
+     * fetchElements - 페이지 요소 로드
+     *
+     * @returns ApiResult (성공 시 data, 실패 시 error)
+     */
+    const fetchElements = async (pageId: string): Promise<ApiResult<Element[]>> => {
+        if (!pageId) {
+            return { success: false, error: new Error('pageId is required') };
+        }
 
         try {
             const elementsData = await ElementUtils.getElementsByPageId(pageId);
@@ -32,12 +72,12 @@ export const usePageManager = (): UsePageManagerReturn => {
                 isTracking: boolean;
             };
 
-            // 히스토리 추적이 일시정지된 경우에도 페이지 로드는 허용 (Undo/Redo 시 페이지 상태 유지)
+            // 히스토리 추적이 일시정지된 경우에도 페이지 로드는 허용
             if (!isTracking) {
                 console.log('⚠️ 히스토리 추적 일시정지됨 - 페이지 요소 로드 계속 진행');
             }
 
-            // 항상 히스토리 기록하지 않음 (페이지 로드는 히스토리에 포함하지 않음)
+            // 항상 히스토리 기록하지 않음
             setElements(elementsData, { skipHistory: true });
 
             // 페이지 변경 시 현재 페이지 ID 업데이트
@@ -47,24 +87,34 @@ export const usePageManager = (): UsePageManagerReturn => {
             console.log('📄 페이지 요소 로드 완료:', {
                 pageId,
                 elementCount: elementsData.length,
-                elementIds: elementsData.map(el => el.id)
             });
+
+            return { success: true, data: elementsData };
         } catch (error) {
             console.error('요소 로드 에러:', error);
-            throw error; // 에러를 상위로 전달
+            return { success: false, error: error as Error };
         }
-    }, [setCurrentPageId]);
+    };
 
-    const handleAddPage = useCallback(async (projectId: string, addElement: (element: Element) => void) => {
+    /**
+     * addPage - 새 페이지 추가
+     *
+     * @returns ApiResult (성공 시 data, 실패 시 error)
+     */
+    const addPage = async (
+        projectId: string,
+        addElement: (element: Element) => void
+    ): Promise<ApiResult<Page>> => {
         try {
             const newPage = await pagesApi.createPage({
                 project_id: projectId,
-                title: `Page ${pages.length + 1}`,
-                slug: `page-${pages.length + 1}`,
-                order_num: pages.length
+                title: `Page ${pageList.items.length + 1}`,
+                slug: `page-${pageList.items.length + 1}`,
+                order_num: pageList.items.length,
             });
 
-            setPages(prev => [...prev, newPage]);
+            // useListData로 자동 추가
+            pageList.append(newPage);
             setSelectedPageId(newPage.id);
             setCurrentPageId(newPage.id);
 
@@ -80,50 +130,58 @@ export const usePageManager = (): UsePageManagerReturn => {
 
             const elementData = await ElementUtils.createElement(bodyElement);
             addElement(elementData);
+
+            console.log('✅ 페이지 추가 완료:', newPage.title);
+            return { success: true, data: newPage };
         } catch (error) {
             console.error('페이지 생성 에러:', error);
-            throw error; // 에러를 상위로 전달
+            return { success: false, error: error as Error };
         }
-    }, [pages.length, setCurrentPageId]);
+    };
 
-    const initializeProject = useCallback(async (
-        projectId: string,
-        setIsLoading: (loading: boolean) => void,
-        setError: (error: string | null) => void
-    ) => {
+    /**
+     * initializeProject - 프로젝트 초기화
+     *
+     * @returns ApiResult (성공 시 data, 실패 시 error)
+     */
+    const initializeProject = async (projectId: string): Promise<ApiResult<Page[]>> => {
         try {
-            setIsLoading(true);
-
             // 1. 프로젝트의 페이지들 로드
             const projectPages = await pagesApi.getPagesByProjectId(projectId);
-            setPages(projectPages);
 
-            // 2. 첫 번째 페이지가 있으면 선택하고 요소들 로드
+            // 2. 기존 페이지 제거 후 새로 추가
+            const existingKeys = pageList.items.map((p) => p.id);
+            if (existingKeys.length > 0) {
+                pageList.remove(...existingKeys);
+            }
+            projectPages.forEach((page) => pageList.append(page));
+
+            // 3. 첫 번째 페이지가 있으면 선택하고 요소들 로드
             if (projectPages.length > 0) {
                 const firstPage = projectPages[0];
-                setSelectedPageId(firstPage.id);
                 setCurrentPageId(firstPage.id);
 
-                // 첫 번째 페이지의 요소들 로드
-                await fetchElements(firstPage.id);
+                const result = await fetchElements(firstPage.id);
+                if (!result.success) {
+                    return { success: false, error: result.error };
+                }
             }
+
+            console.log('✅ 프로젝트 초기화 완료:', projectPages.length, 'pages');
+            return { success: true, data: projectPages };
         } catch (error) {
             console.error('프로젝트 초기화 에러:', error);
-            const errorMessage = `프로젝트 로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
-            setError(errorMessage);
-            throw error;
-        } finally {
-            setIsLoading(false);
+            return { success: false, error: error as Error };
         }
-    }, [setCurrentPageId, fetchElements]);
+    };
 
     return {
-        pages,
+        pages: pageList.items,
         selectedPageId,
-        setPages,
         setSelectedPageId,
         fetchElements,
-        handleAddPage,
-        initializeProject
+        addPage,
+        initializeProject,
+        pageList, // 직접 접근 (필요시)
     };
 };

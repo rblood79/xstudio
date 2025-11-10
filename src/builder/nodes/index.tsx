@@ -8,7 +8,7 @@ import './index.css';
 
 interface NodesProps {
     pages: Page[];
-    setPages: React.Dispatch<React.SetStateAction<Page[]>>;
+    pageList: { remove: (...keys: string[]) => void };
     handleAddPage: () => void;
     renderTree: <T extends { id: string; parent_id?: string | null; order_num?: number; }>(
         items: T[],
@@ -35,7 +35,7 @@ interface NodesProps {
 
 export function Nodes({
     pages,
-    setPages,
+    pageList,
     handleAddPage,
     renderTree,
     renderElementTree,
@@ -51,7 +51,7 @@ export function Nodes({
         <div className="sidebar-content nodes">
             <Pages
                 pages={pages}
-                setPages={setPages}
+                pageList={pageList}
                 handleAddPage={handleAddPage}
                 renderTree={renderTree}
                 fetchElements={fetchElements}

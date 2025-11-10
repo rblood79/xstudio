@@ -7,7 +7,7 @@ type Page = Database['public']['Tables']['pages']['Row'];
 
 interface PagesProps {
     pages: Page[];
-    setPages: React.Dispatch<React.SetStateAction<Page[]>>;
+    pageList: { remove: (...keys: string[]) => void };
     handleAddPage: () => void;
     renderTree: (
         items: Page[],
@@ -18,7 +18,7 @@ interface PagesProps {
     fetchElements: (pageId: string) => Promise<void>;
 }
 
-export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElements }: PagesProps) {
+export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElements }: PagesProps) {
     return (
         <div className="sidebar_pages">
             <div className="panel-header">
@@ -45,7 +45,7 @@ export function Pages({ pages, setPages, handleAddPage, renderTree, fetchElement
                         async (page) => {
                             const { error } = await supabase.from("pages").delete().eq("id", page.id);
                             if (error) console.error("페이지 삭제 에러:", error);
-                            else setPages((prev) => prev.filter((p) => p.id !== page.id));
+                            else pageList.remove(page.id);
                         }
                     )
                 )}
