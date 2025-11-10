@@ -87,6 +87,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Link",
+    label: "Link",
+    category: "Actions",
+    icon: "🔗",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "LinkEditor",
+      dataBindingType: null,
+      supportedEvents: ["onPress", "onClick"],
+    },
+  },
 
   // Inputs
   {

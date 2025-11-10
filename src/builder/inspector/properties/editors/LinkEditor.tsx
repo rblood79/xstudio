@@ -146,3 +146,5 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         </div>
     );
 }
+
+export default LinkEditor;
