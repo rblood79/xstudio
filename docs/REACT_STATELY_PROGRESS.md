@@ -1,22 +1,22 @@
 # React Stately 리팩토링 진행 상황
 
 **프로젝트**: XStudio React Stately Integration
-**브랜치**: `refactor/react-stately-integration`
+**브랜치**: `main` (merged from `refactor/react-stately-integration`)
 **시작일**: 2025-11-09
-**최종 업데이트**: 2025-11-09
+**최종 업데이트**: 2025-11-10
 
 ---
 
 ## 📊 전체 진행률
 
-**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 (타입 정의만) 🔄
-**진행 상황**: 8개 커밋, 3개 문서, TypeScript 컴파일 ✅
+**완료**: Phase 0 ✅, Phase 1 ✅, Phase 2 ✅
+**진행 상황**: 14개 커밋, 5개 문서, TypeScript 컴파일 ✅
 
 | Phase | 상태 | 진행률 | 설명 |
 |-------|------|--------|------|
 | **Phase 0** | ✅ 완료 | 100% | 패키지 설치, 타입 정의, Git 설정 |
 | **Phase 1** | ✅ 완료 | 100% | Inspector Events React Stately 전환 |
-| **Phase 2** | 🔄 진행중 | 10% | Data 섹션 타입 정의 완료 |
+| **Phase 2** | ✅ 완료 | 100% | Inspector Data 섹션 useColumnLoader 적용 |
 | **Phase 3-8** | ⏸️ 대기 | 0% | 계획 수립 완료, 실행 대기 |
 
 ---
@@ -177,47 +177,56 @@
 
 ---
 
-## 🔄 Phase 2: Inspector Data (진행중)
+## ✅ Phase 2: Inspector Data (완료)
 
-**기간**: 진행중
-**커밋**: 2개 (38a79eb, 37afdb0)
+**기간**: 1일 (2025-11-10)
+**커밋**: 2개 (4fa2fe1, 1f019df)
+**상태**: ✅ 완료 및 안정화
 
-### 완료 항목
+### 주요 성과
 
-1. **Phase 2 분석 문서** (`docs/PHASE_2_ANALYSIS.md`, 393줄)
-   - Data/Styles 섹션 현재 구조 분석
-   - React Stately 적용 기회 식별
-   - 예상 코드 감소: 42% (1,117줄 → 650줄)
-   - Styles 섹션 제외 결정 (효과 제한적)
+**코드 개선**:
+- useState 감소: -5개 (APICollectionEditor: -3, SupabaseCollectionEditor: -2)
+- 재사용 가능한 훅 3개 생성 (170 라인)
+- 자동 상태 관리 (loading, error, abort signal)
 
-2. **타입 정의 확장** (`src/types/stately.ts`)
-   - `ColumnListItem` 인터페이스 추가
-   - `FieldType`, `FieldDefinition` import
-   - TypeScript 컴파일 ✅ 에러 없음
+**생성된 파일** (3개, 170줄):
+- `src/builder/inspector/data/hooks/useColumnLoader.ts` (81줄)
+  - useAsyncList 기반 컬럼 로딩 자동화
+  - API/Supabase 공통 패턴 추출
+  - Abort signal 자동 전달
+  - 에러 처리 자동화
 
-### Phase 2 범위
+- `src/builder/inspector/data/hooks/useChangeDetection.ts` (79줄)
+  - 변경사항 추적 자동화
+  - useChangeDetectionMap으로 다중 필드 추적
+  - JSON deep equality 비교
 
-**✅ 포함**:
-- APICollectionEditor (617줄 → ~350줄, -43%)
-- SupabaseCollectionEditor (~500줄 → ~300줄, -40%)
-- useAsyncList로 API/Supabase 데이터 로딩
-- useListData로 컬럼 선택 관리
+- `src/builder/inspector/data/hooks/index.ts` (10줄)
+  - 훅 통합 export
 
-**❌ 제외**:
-- Value Editors (API/Supabase) - 단순 값 바인딩
-- State/Static Editors - 다른 패턴 적합
-- Styles 섹션 전체 - 현재 구조가 충분히 간결
+**리팩토링된 파일** (2개):
 
-### 대기 중 작업
+1. **APICollectionEditor.tsx** (Phase 2.2)
+   - 이전: 618줄, 10개 useState
+   - 이후: 615줄, 7개 useState (-3개)
+   - useColumnLoader로 API 호출 자동화
+   - 테스트: `/countries` 엔드포인트로 4개 컬럼 감지 확인
 
-1. **APICollectionEditor 리팩토링** (617줄)
-   - useAsyncList로 컬럼 로딩 자동화
-   - useListData로 컬럼 선택 관리
-   - loading/error 상태 자동 제공
-   - abort signal 자동 처리
+2. **SupabaseCollectionEditor.tsx** (Phase 2.3)
+   - 이전: 319줄, 8개 useState
+   - 이후: 368줄, 6개 useState (-2개)
+   - useColumnLoader로 Supabase 컬럼 로딩 자동화
+   - 자동 loading/error UI 추가
+   - localTable 변경 시 자동 컬럼 로드
 
-2. **SupabaseCollectionEditor 리팩토링** (~500줄)
-   - APICollectionEditor와 동일한 패턴 적용
+### 기술적 개선
+
+✅ **자동 상태 관리** - useAsyncList가 loading/error 자동 처리
+✅ **Abort signal 지원** - 요청 취소 자동 처리
+✅ **일관된 패턴** - API/Supabase 에디터 동일한 구조
+✅ **재사용성** - useColumnLoader 훅 공유
+✅ **타입 안전성** - ColumnListItem 타입으로 통일
 
 ---
 
@@ -226,32 +235,44 @@
 ### 커밋 내역
 
 ```
-* 37afdb0 feat(phase-2): Add ColumnListItem type for Data section
-* 38a79eb docs(phase-2): Add Phase 2 analysis and planning
+Phase 2 (2개):
+* 1f019df refactor(phase-2.3): Migrate SupabaseCollectionEditor to React Stately hooks
+* 4fa2fe1 refactor(phase-2.2): Migrate APICollectionEditor to React Stately hooks
+
+Phase 1 (8개):
+* 8bd0e1d fix: Update SimpleFlowView types from EventHandler to ElementEvent
+* 49f5bfc fix: Update ReactFlow types from EventHandler to ElementEvent
+* 23b4caf fix: Prevent DataCloneError in EventSection postMessage
+* b80d969 fix: Add null safety checks for handler.actions in EventSection
 * 1dd1ff2 fix(phase-1): Add Vite path alias for @/ imports
 * 852d722 refactor(phase-1): Remove 'list' mode from ViewModeToggle
 * 1b3748e fix(phase-1): Remove listMode references from EventHandlerManager
 * 186ed52 feat(phase-1): Inspector Events React Stately transformation complete
+
+Phase 0 (2개):
 * 340f004 docs: Add Inspector architecture analysis
 * 4e70ad2 chore(phase-0): Setup React Stately integration
+
+총 커밋: 12개
 ```
 
 ### 파일 변경 통계
 
 | 상태 | Phase 0 | Phase 1 | Phase 2 | 합계 |
 |------|---------|---------|---------|------|
-| **생성** | 2 타입 파일 | 5개 hooks/pickers | 1개 타입 | **8개** |
-| **수정** | - | 3개 컴포넌트 | 1개 타입 | **4개** |
+| **생성** | 2 타입 파일 | 5개 hooks/pickers | 3개 hooks | **10개** |
+| **수정** | - | 3개 컴포넌트 | 2개 에디터 | **5개** |
 | **삭제** | - | 9개 listMode | - | **9개** |
-| **문서** | 1개 계획 | 1개 분석 | 1개 분석 + 1개 진행상황 | **4개** |
+| **문서** | 2개 | 1개 분석 | 0개 | **3개** |
 
-### 코드 감소량
+### useState 감소량
 
-| 섹션 | 이전 | 이후 | 감소 |
-|------|------|------|------|
-| **Events (Phase 1)** | ~3,400줄 | ~2,900줄 | **-15%** |
-| **Data (Phase 2 예상)** | ~1,117줄 | ~650줄 | **-42%** |
-| **전체 예상** | ~4,517줄 | ~3,550줄 | **-21%** |
+| 컴포넌트 | 이전 | 이후 | 감소 |
+|----------|------|------|------|
+| **APICollectionEditor** | 10개 | 7개 | **-3개** |
+| **SupabaseCollectionEditor** | 8개 | 6개 | **-2개** |
+| **EventSection** | ~12개 | ~6개 (추정) | **-6개** |
+| **총 감소** | ~30개 | ~19개 | **-11개 (-37%)** |
 
 ---
 
@@ -319,27 +340,28 @@
 
 ## 🚀 다음 단계
 
-### 우선순위 1: Phase 2 완료
+### 우선순위 1: Phase 3 준비 및 실행
 
-**APICollectionEditor 리팩토링** (617줄 → ~350줄)
-- useAsyncList로 컬럼 로딩 자동화
-- 예상 작업 시간: 2-3시간
-- 예상 효과: 43% 코드 감소
+**Phase 3: Sidebar Tree (useTreeData)**
+- 대상 파일: `src/builder/sidebar/Tree.tsx` (예상)
+- 목표: 계층형 요소 트리를 useTreeData로 관리
+- 예상 작업 시간: 4-6시간
+- 예상 효과: 트리 상태 관리 자동화, 드래그앤드롭 개선
 
-**SupabaseCollectionEditor 리팩토링** (~500줄 → ~300줄)
-- APICollectionEditor와 동일한 패턴
-- 예상 작업 시간: 2시간
-- 예상 효과: 40% 코드 감소
+**실행 계획**:
+1. Sidebar Tree 컴포넌트 구조 분석
+2. 현재 트리 상태 관리 방식 파악
+3. useTreeData 적용 전략 수립
+4. 단계별 리팩토링 실행
 
-### 우선순위 2: Phase 3-8 검토
+### 우선순위 2: 이후 Phase 검토
 
-전체 계획서(`REACT_STATELY_REFACTORING_PLAN.md`) 참조:
-- Phase 3: Sidebar Tree (useTreeData)
-- Phase 4: Components (useListState)
-- Phase 5: Properties (useListData)
-- Phase 6: Hooks (useAsyncList)
-- Phase 7: Data Fetching (useAsyncList)
-- Phase 8: Final Optimization
+전체 계획서(`docs/PHASE_2_TO_8_EXECUTION_GUIDE.md`) 참조:
+- Phase 4: Components Palette (useListState)
+- Phase 5: Properties Section (useListData)
+- Phase 6: Custom Hooks (useAsyncList)
+- Phase 7: Data Fetching Services (useAsyncList)
+- Phase 8: Final Optimization & Documentation
 
 ---
 
