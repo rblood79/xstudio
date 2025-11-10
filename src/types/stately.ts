@@ -46,6 +46,27 @@ export interface TreeDataItem extends ListDataItem {
 }
 
 /**
+ * Element 트리 아이템 (Phase 3: Sidebar Tree)
+ * Sidebar의 요소 계층 구조 표현
+ */
+export interface ElementTreeItem extends TreeDataItem {
+  /** React Aria 컴포넌트 태그 */
+  tag: string;
+  /** 부모 요소 ID (flat 구조와의 호환성) */
+  parent_id?: string | null;
+  /** 표시 순서 */
+  order_num?: number;
+  /** 컴포넌트 props */
+  props?: Record<string, unknown>;
+  /** 삭제 여부 */
+  deleted?: boolean;
+  /** 데이터 바인딩 설정 */
+  dataBinding?: Record<string, unknown>;
+  /** 자식 요소들 */
+  children?: ElementTreeItem[];
+}
+
+/**
  * 비동기 리스트 로드 옵션
  * useAsyncList의 load 함수 파라미터
  */

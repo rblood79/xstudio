@@ -15,6 +15,7 @@ import Setting from '../setting';
 import { SidebarNav, Tab } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
+import { useTreeExpandState } from '../hooks/useTreeExpandState';
 
 interface SidebarProps {
     pages: Page[];
@@ -35,31 +36,12 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     // 활성 탭을 단일 값에서 Set으로 변경
     const [activeTabs, setActiveTabs] = React.useState<Set<Tab>>(new Set(['nodes']));
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
-    // 펼쳐진 항목의 ID를 추적하는 상태 추가
-    const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
 
-    // useEffect를 useCallback으로 최적화
-    const updateExpandedItems = useCallback(() => {
-        if (!selectedElementId || elements.length === 0) return;
-
-        const parentIds = new Set<string>();
-        let currentElement = elements.find(el => el.id === selectedElementId);
-
-        while (currentElement?.parent_id) {
-            parentIds.add(currentElement.parent_id);
-            currentElement = elements.find(el => el.id === currentElement?.parent_id);
-        }
-
-        setExpandedItems(prev => {
-            const newSet = new Set(prev);
-            parentIds.forEach(id => newSet.add(id));
-            return newSet;
-        });
-    }, [selectedElementId, elements]);
-
-    useEffect(() => {
-        updateExpandedItems();
-    }, [updateExpandedItems]);
+    // React Stately 기반 트리 펼치기/접기 상태 관리
+    const { expandedKeys, toggleKey, collapseAll } = useTreeExpandState({
+        selectedElementId,
+        elements,
+    });
 
     const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
         if (typeof elementsOrFn === 'function') {
@@ -89,17 +71,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         return items.some((item) => item.parent_id === itemId);
     };
 
-    const toggleExpand = (itemId: string) => {
-        setExpandedItems(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(itemId)) {
-                newSet.delete(itemId);
-            } else {
-                newSet.add(itemId);
-            }
-            return newSet;
-        });
-    };
+    // toggleExpand 함수를 useTreeExpandState의 toggleKey로 교체
+    const toggleExpand = toggleKey;
 
     type ButtonItem = { id: string; title: string; isSelected?: boolean };
     type CheckboxItem = { id: string; label: string; isSelected?: boolean };
@@ -131,7 +104,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
         depth: number,
         _isExpanded: boolean,
         toggleExpand: (id: string) => void,
-        expandedItems: Set<string>
+        expandedKeys: Set<string>
     ): React.ReactNode => {
         const tableHeader = items.find(child =>
             child.parent_id === tableId && child.tag === 'TableHeader'
@@ -176,7 +149,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                     strokeWidth={iconEditProps.stroke}
                                     size={iconEditProps.size}
                                     style={{
-                                        transform: expandedItems.has(tableHeader.id) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                        transform: expandedKeys.has(tableHeader.id) ? 'rotate(90deg)' : 'rotate(0deg)',
                                     }}
                                 />
                             ) : (
@@ -208,7 +181,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 </div>
 
                 {/* Column Groups 행 */}
-                {columnGroups.length > 0 && expandedItems.has(tableHeader.id) && (
+                {columnGroups.length > 0 && expandedKeys.has(tableHeader.id) && (
                     <div
                         data-depth={depth + 2}
                         data-has-children={true}
@@ -233,7 +206,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                         strokeWidth={iconEditProps.stroke}
                                         size={iconEditProps.size}
                                         style={{
-                                            transform: expandedItems.has(`column-groups-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            transform: expandedKeys.has(`column-groups-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
                                         }}
                                     />
                                 ) : (
@@ -251,7 +224,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 )}
 
                 {/* Column Groups */}
-                {expandedItems.has(`column-groups-${tableHeader.id}`) && columnGroups.map((group) => (
+                {expandedKeys.has(`column-groups-${tableHeader.id}`) && columnGroups.map((group) => (
                     <div
                         key={group.id}
                         data-depth={depth + 3}
@@ -295,7 +268,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 ))}
 
                 {/* Individual Columns 행 */}
-                {columns.length > 0 && expandedItems.has(tableHeader.id) && (
+                {columns.length > 0 && expandedKeys.has(tableHeader.id) && (
                     <div
                         data-depth={depth + 2}
                         data-has-children={true}
@@ -320,7 +293,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                         strokeWidth={iconEditProps.stroke}
                                         size={iconEditProps.size}
                                         style={{
-                                            transform: expandedItems.has(`individual-columns-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            transform: expandedKeys.has(`individual-columns-${tableHeader.id}`) ? 'rotate(90deg)' : 'rotate(0deg)',
                                         }}
                                     />
                                 ) : (
@@ -338,7 +311,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                 )}
 
                 {/* Individual Columns */}
-                {expandedItems.has(`individual-columns-${tableHeader.id}`) && columns.map((column) => (
+                {expandedKeys.has(`individual-columns-${tableHeader.id}`) && columns.map((column) => (
                     <div
                         key={column.id}
                         data-depth={depth + 3}
@@ -516,7 +489,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
             <>
                 {filteredItems.map((item) => {
                     const hasChildNodes = hasChildren(items, item.id);
-                    const isExpanded = expandedItems.has(item.id);
+                    const isExpanded = expandedKeys.has(item.id);
 
                     // Tabs 컴포넌트의 경우 실제 Tab과 Panel 자식 노드만 확인 (가상 자식 제거)
                     const hasTabsChildren = hasTag(item) && item.tag === 'Tabs' && hasChildNodes;
@@ -637,7 +610,7 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
                                 <>
                                     {/* Table 컴포넌트의 경우 특별한 구조로 렌더링 */}
                                     {hasTableChildren ? (
-                                        renderTableStructure(items, getLabel, onClick, onDelete, item.id, depth, isExpanded, toggleExpand, expandedItems)
+                                        renderTableStructure(items, getLabel, onClick, onDelete, item.id, depth, isExpanded, toggleExpand, expandedKeys)
                                     ) : (
                                         /* 일반 자식 노드들 렌더링 (Table 제외) */
                                         hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)
@@ -969,10 +942,8 @@ export default function Sidebar({ pages, setPages, handleAddPage, handleAddEleme
     // sendElementSelectedMessage 함수를 useIframeMessenger에서 가져와서 사용
     const { sendElementSelectedMessage } = useIframeMessenger();
 
-    // 모든 트리 아이템 접기 함수 추가
-    const collapseAllTreeItems = () => {
-        setExpandedItems(new Set());
-    };
+    // 모든 트리 아이템 접기 함수 (useTreeExpandState의 collapseAll 사용)
+    const collapseAllTreeItems = collapseAll;
 
     // 변경된 renderContent 함수
     const renderContent = () => {
