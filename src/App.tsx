@@ -6,8 +6,8 @@ function App() {
   const navigate = useNavigate();
 
   return (
-    <main className="grid justify-center items-center h-screen ">
-      <div className="main-container">
+    <main>
+      <div>
         <Button onClick={() => navigate("/signin")} size="sm" children="START" />
       </div>
     </main>

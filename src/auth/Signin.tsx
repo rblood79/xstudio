@@ -1,56 +1,81 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
 import { supabase } from '../env/supabase.client';
 import { TextField, Button } from '../builder/components/list';
 import './index.css';
+
+interface AuthCredentials {
+  email: string;
+  password: string;
+}
 
 const Signin = () => {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setMessage('');
-
-    if (isSignUp) {
-      // 회원가입
-      const { error } = await supabase.auth.signUp({
-        email,
-        password
-      });
+  // Sign Up mutation
+  const signUpMutation = useAsyncMutation<string, AuthCredentials>(
+    async ({ email, password }) => {
+      const { error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
-        setError(error.message);
-      } else {
-        setMessage('회원가입이 완료되었습니다. 이메일을 확인해주세요.');
+        throw error;
+      }
+
+      return '회원가입이 완료되었습니다. 이메일을 확인해주세요.';
+    },
+    {
+      onSuccess: () => {
         setEmail('');
         setPassword('');
-      }
-    } else {
-      // 로그인
+      },
+    }
+  );
+
+  // Sign In mutation
+  const signInMutation = useAsyncMutation<void, AuthCredentials>(
+    async ({ email, password }) => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        setError(error.message);
-      } else {
-        navigate('/dashboard');
+        throw error;
       }
+    },
+    {
+      onSuccess: () => {
+        navigate('/dashboard');
+      },
     }
+  );
 
-    setLoading(false);
+  const loading = signUpMutation.isLoading || signInMutation.isLoading;
+  const error = signUpMutation.error || signInMutation.error;
+  const message = signUpMutation.data;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const credentials = { email, password };
+
+    try {
+      if (isSignUp) {
+        await signUpMutation.execute(credentials);
+      } else {
+        await signInMutation.execute(credentials);
+      }
+    } catch (err) {
+      // 에러는 mutation.error에 자동 저장됨
+      console.error('[Signin] Auth failed:', err);
+    }
   };
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
-    setError('');
-    setMessage('');
+    signUpMutation.reset();
+    signInMutation.reset();
     setEmail('');
     setPassword('');
   };
@@ -76,7 +101,7 @@ const Signin = () => {
             onChange={setEmail}
             isRequired={true}
             //description="로그인에 사용할 이메일 주소입니다."
-            errorMessage={error ? error : undefined}
+            errorMessage={error ? error.message : undefined}
           />
 
           <TextField

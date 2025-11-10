@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
+import { useAsyncMutation } from '../../hooks/useAsyncMutation';
 import { ExportService } from '../../../services/theme';
 import type {
   ExportFormat,
@@ -35,13 +36,18 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
     enableRealtime: false,
   });
 
+  // Form state
   const [format, setFormat] = useState<ExportFormat>('css');
   const [includeComments, setIncludeComments] = useState(true);
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [minify, setMinify] = useState(false);
 
-  const [result, setResult] = useState<ExportResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Export mutation
+  const exportMutation = useAsyncMutation<ExportResult, ExportOptions>(
+    async (options) => {
+      return await ExportService.exportTokens(tokens, options);
+    }
+  );
 
   const handleExport = async () => {
     if (tokens.length === 0) {
@@ -49,32 +55,28 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
       return;
     }
 
-    setError(null);
+    const options: ExportOptions = {
+      format,
+      includeComments,
+      groupByCategory,
+      minify,
+    };
 
     try {
-      const options: ExportOptions = {
-        format,
-        includeComments,
-        groupByCategory,
-        minify,
-      };
-
-      const exportResult = await ExportService.exportTokens(tokens, options);
-      setResult(exportResult);
+      await exportMutation.execute(options);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Export 실패');
+      // 에러는 exportMutation.error에 자동 저장됨
       console.error('[ThemeExporter] Export failed:', err);
     }
   };
 
   const handleDownload = () => {
-    if (!result) return;
-    ExportService.downloadFile(result);
+    if (!exportMutation.data) return;
+    ExportService.downloadFile(exportMutation.data);
   };
 
   const handleReset = () => {
-    setResult(null);
-    setError(null);
+    exportMutation.reset();
   };
 
   return (
@@ -161,12 +163,12 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
           </form>
 
           {/* Preview */}
-          {result && (
+          {exportMutation.data && (
             <div className={styles.preview()}>
               <div className="preview-header">
                 <div className="preview-title">
                   <h3>Export 결과</h3>
-                  <span className="file-name">{result.filename}</span>
+                  <span className="file-name">{exportMutation.data.filename}</span>
                 </div>
                 <div className="preview-actions">
                   <button onClick={handleDownload} className="download-btn">
@@ -181,15 +183,15 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
               <div className="preview-stats">
                 <div className="stat-item">
                   <span className="stat-label">형식</span>
-                  <span className="stat-value">{result.format.toUpperCase()}</span>
+                  <span className="stat-value">{exportMutation.data.format.toUpperCase()}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">파일명</span>
-                  <span className="stat-value">{result.filename}</span>
+                  <span className="stat-value">{exportMutation.data.filename}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">크기</span>
-                  <span className="stat-value">{(result.content.length / 1024).toFixed(2)} KB</span>
+                  <span className="stat-value">{(exportMutation.data.content.length / 1024).toFixed(2)} KB</span>
                 </div>
               </div>
 
@@ -198,7 +200,7 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
                   <span className="code-label">미리보기</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(result.content);
+                      navigator.clipboard.writeText(exportMutation.data!.content);
                       alert('클립보드에 복사되었습니다');
                     }}
                     className="copy-btn"
@@ -207,17 +209,17 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
                   </button>
                 </div>
                 <pre className="code-block">
-                  <code>{result.content}</code>
+                  <code>{exportMutation.data.content}</code>
                 </pre>
               </div>
             </div>
           )}
 
           {/* Error */}
-          {error && (
+          {exportMutation.error && (
             <div className="error-message">
               <h3>⚠️ 오류 발생</h3>
-              <p>{error}</p>
+              <p>{exportMutation.error.message}</p>
               <button onClick={handleReset}>다시 시도</button>
             </div>
           )}

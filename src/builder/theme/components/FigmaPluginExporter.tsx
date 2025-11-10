@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
+import { useAsyncMutation } from '../../hooks/useAsyncMutation';
 import { FigmaPluginService } from '../../../services/theme/FigmaPluginService';
 import type {
   FigmaPluginExportOptions,
@@ -34,6 +35,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
     enableRealtime: false,
   });
 
+  // Form state
   const [pluginName, setPluginName] = useState('XStudio Theme Import');
   const [description, setDescription] = useState('Import design tokens from XStudio');
 
@@ -45,9 +47,24 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
   const [exportTextStyles, setExportTextStyles] = useState(true);
   const [exportEffects, setExportEffects] = useState(true);
 
-  const [result, setResult] = useState<FigmaPluginExportResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // UI state
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  // Export mutation
+  const exportMutation = useAsyncMutation<FigmaPluginExportResult, FigmaPluginExportOptions>(
+    async (options) => {
+      return await FigmaPluginService.exportToFigmaPlugin(tokens, options);
+    },
+    {
+      onSuccess: (result) => {
+        // 첫 번째 파일 자동 선택
+        const firstFile = Object.keys(result.files)[0];
+        if (firstFile) {
+          setSelectedFile(firstFile);
+        }
+      },
+    }
+  );
 
   const handleExport = async () => {
     if (!pluginName.trim()) {
@@ -60,41 +77,32 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
       return;
     }
 
-    setError(null);
+    const options: FigmaPluginExportOptions = {
+      pluginName,
+      description: description || undefined,
+      includeFiles: {
+        manifest: includeManifest,
+        code: includeCode,
+        ui: includeUI,
+      },
+      exportTargets: {
+        colors: exportColors,
+        textStyles: exportTextStyles,
+        effects: exportEffects,
+      },
+    };
 
     try {
-      const options: FigmaPluginExportOptions = {
-        pluginName,
-        description: description || undefined,
-        includeFiles: {
-          manifest: includeManifest,
-          code: includeCode,
-          ui: includeUI,
-        },
-        exportTargets: {
-          colors: exportColors,
-          textStyles: exportTextStyles,
-          effects: exportEffects,
-        },
-      };
-
-      const exportResult = await FigmaPluginService.exportToFigmaPlugin(tokens, options);
-      setResult(exportResult);
-
-      // 첫 번째 파일 자동 선택
-      const firstFile = Object.keys(exportResult.files)[0];
-      if (firstFile) {
-        setSelectedFile(firstFile);
-      }
+      await exportMutation.execute(options);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Export 실패');
+      // 에러는 exportMutation.error에 자동 저장됨
       console.error('[FigmaPluginExporter] Export failed:', err);
     }
   };
 
   const handleDownloadAll = async () => {
-    if (!result) return;
-    await FigmaPluginService.downloadPluginFiles(result);
+    if (!exportMutation.data) return;
+    await FigmaPluginService.downloadPluginFiles(exportMutation.data);
   };
 
   const handleDownloadFile = (filename: string, content: string) => {
@@ -112,8 +120,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
   };
 
   const handleReset = () => {
-    setResult(null);
-    setError(null);
+    exportMutation.reset();
     setSelectedFile(null);
   };
 
@@ -131,7 +138,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
         </div>
       )}
 
-      {!loading && !result && (
+      {!loading && !exportMutation.data && (
         <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleExport(); }}>
           {/* Plugin Name */}
           <div className="form-group">
@@ -236,12 +243,12 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
       )}
 
       {/* Preview */}
-      {result && (
+      {exportMutation.data && (
         <div className={styles.preview()}>
           <div className="preview-header">
             <div className="preview-title">
               <h3>Plugin 파일 생성 완료</h3>
-              <span className="file-count">{Object.keys(result.files).length}개 파일</span>
+              <span className="file-count">{Object.keys(exportMutation.data.files).length}개 파일</span>
             </div>
             <div className="preview-actions">
               <button onClick={handleDownloadAll} className="download-all-btn">
@@ -256,23 +263,23 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
           <div className="preview-stats">
             <div className="stat-item">
               <span className="stat-label">Plugin 이름</span>
-              <span className="stat-value">{result.metadata.pluginName}</span>
+              <span className="stat-value">{exportMutation.data.metadata.pluginName}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">토큰 수</span>
-              <span className="stat-value">{result.metadata.tokenCount}개</span>
+              <span className="stat-value">{exportMutation.data.metadata.tokenCount}개</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">생성 시간</span>
               <span className="stat-value">
-                {new Date(result.metadata.generatedAt).toLocaleString('ko-KR')}
+                {new Date(exportMutation.data.metadata.generatedAt).toLocaleString('ko-KR')}
               </span>
             </div>
           </div>
 
           {/* File Tabs */}
           <div className="file-tabs">
-            {Object.keys(result.files).map((filename) => (
+            {Object.keys(exportMutation.data.files).map((filename) => (
               <button
                 key={filename}
                 className={`file-tab ${selectedFile === filename ? 'active' : ''}`}
@@ -284,14 +291,14 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
           </div>
 
           {/* File Content */}
-          {selectedFile && result.files[selectedFile] && (
+          {selectedFile && exportMutation.data.files[selectedFile] && (
             <div className="file-content">
               <div className="file-header">
                 <span className="file-name">{selectedFile}</span>
                 <div className="file-actions">
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(result.files[selectedFile]!);
+                      navigator.clipboard.writeText(exportMutation.data!.files[selectedFile]!);
                       alert('클립보드에 복사되었습니다');
                     }}
                     className="copy-btn"
@@ -299,7 +306,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
                     📋 복사
                   </button>
                   <button
-                    onClick={() => handleDownloadFile(selectedFile, result.files[selectedFile]!)}
+                    onClick={() => handleDownloadFile(selectedFile, exportMutation.data!.files[selectedFile]!)}
                     className="download-btn"
                   >
                     ⬇️ 다운로드
@@ -307,7 +314,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
                 </div>
               </div>
               <pre className="code-block">
-                <code>{result.files[selectedFile]}</code>
+                <code>{exportMutation.data.files[selectedFile]}</code>
               </pre>
             </div>
           )}
@@ -326,10 +333,10 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
       )}
 
       {/* Error */}
-      {error && (
+      {exportMutation.error && (
         <div className="error-message">
           <h3>⚠️ 오류 발생</h3>
-          <p>{error}</p>
+          <p>{exportMutation.error.message}</p>
           <button onClick={handleReset}>다시 시도</button>
         </div>
       )}

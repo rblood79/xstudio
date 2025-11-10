@@ -1,57 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { projectsApi, pagesApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
 import { ElementUtils } from '../utils/elementUtils';
 import { Button, TextField } from '../builder/components/list';
+import { useAsyncQuery } from '../builder/hooks/useAsyncQuery';
+import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
 import {
   SquarePlus,
 } from "lucide-react";
 import "./index.css";
 
+interface CreateProjectRequest {
+  name: string;
+}
+
 function Dashboard() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
   const [newProjectName, setNewProjectName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const projectsData = await projectsApi.fetchProjects();
-        setProjects(projectsData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '프로젝트를 불러오는데 실패했습니다.');
-        console.error("프로젝트 조회 에러:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch projects with useAsyncQuery
+  const projectsQuery = useAsyncQuery<Project[]>(
+    async () => await projectsApi.fetchProjects()
+  );
 
-    fetchProjects();
-  }, []);
-
-  const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!newProjectName.trim()) {
-      setError("프로젝트 이름을 입력해주세요.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
+  // Create project mutation
+  const createProjectMutation = useAsyncMutation<Project, CreateProjectRequest>(
+    async ({ name }) => {
       // 현재 사용자 정보 가져오기
       const user = await projectsApi.getCurrentUser();
 
       // 프로젝트 생성
       const newProject = await projectsApi.createProject({
-        name: newProjectName.trim(),
+        name: name.trim(),
         created_by: user.id
       });
 
@@ -75,18 +56,42 @@ function Dashboard() {
 
       await ElementUtils.createElement(bodyElement);
 
-      // 프로젝트 목록 업데이트
-      setProjects(prev => [newProject, ...prev]);
-      setNewProjectName("");
+      return newProject;
+    },
+    {
+      onSuccess: (newProject) => {
+        projectsQuery.refetch(); // 목록 갱신
+        setNewProjectName("");
+        navigate(`/builder/${newProject.id}`);
+      },
+    }
+  );
 
-      // 빌더 페이지로 이동
-      navigate(`/builder/${newProject.id}`);
+  // Delete project mutation
+  const deleteProjectMutation = useAsyncMutation<void, string>(
+    async (id) => {
+      await projectsApi.deleteProject(id);
+    },
+    {
+      onSuccess: () => {
+        projectsQuery.refetch(); // 목록 갱신
+      },
+    }
+  );
 
+  const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!newProjectName.trim()) {
+      alert("프로젝트 이름을 입력해주세요.");
+      return;
+    }
+
+    try {
+      await createProjectMutation.execute({ name: newProjectName });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '프로젝트 생성에 실패했습니다.');
+      // 에러는 createProjectMutation.error에 자동 저장됨
       console.error("프로젝트 생성 에러:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -96,21 +101,18 @@ function Dashboard() {
     }
 
     try {
-      setLoading(true);
-      setError(null);
-
-      await projectsApi.deleteProject(id);
-      setProjects(prev => prev.filter(project => project.id !== id));
-
+      await deleteProjectMutation.execute(id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '프로젝트 삭제에 실패했습니다.');
+      // 에러는 deleteProjectMutation.error에 자동 저장됨
       console.error("프로젝트 삭제 에러:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (loading && projects.length === 0) {
+  const projects = projectsQuery.data || [];
+  const loading = projectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading;
+  const error = projectsQuery.error || createProjectMutation.error || deleteProjectMutation.error;
+
+  if (projectsQuery.isLoading && projects.length === 0) {
     return (
       <div className="dashboard">
         <div className="loading">프로젝트를 불러오는 중...</div>
@@ -125,7 +127,7 @@ function Dashboard() {
 
       {error && (
         <div className="error-message">
-          {error}
+          {error.message}
         </div>
       )}
       <main className="main">
@@ -140,7 +142,7 @@ function Dashboard() {
           <Button
             type="submit"
             isDisabled={loading || !newProjectName.trim()}
-            children={loading ? 'Creating...' : 'Add Project'}
+            children={createProjectMutation.isLoading ? 'Creating...' : 'Add Project'}
           />
         </form>
 
