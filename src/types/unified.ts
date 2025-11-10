@@ -380,6 +380,14 @@ export interface CardElementProps extends BaseElementProps {
   isDisabled?: boolean;
 }
 
+export interface BadgeElementProps extends BaseElementProps {
+  children?: React.ReactNode;
+  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  isDot?: boolean;
+  isPulsing?: boolean;
+}
+
 export interface TagGroupElementProps extends BaseElementProps {
   children?: React.ReactNode;
   items?: Array<{
@@ -499,6 +507,7 @@ export type ComponentElementProps =
   | RowElementProps
   | CellElementProps
   | CardElementProps
+  | BadgeElementProps
   | TagGroupElementProps
   | TagElementProps
   | ListBoxElementProps
@@ -839,6 +848,16 @@ export function createDefaultCardProps(): CardElementProps {
     orientation: "vertical",
     title: "Title",
     description: "Description",
+  };
+}
+
+export function createDefaultBadgeProps(): BadgeElementProps {
+  return {
+    children: "Badge",
+    variant: "default",
+    size: "sm",
+    isDot: false,
+    isPulsing: false,
   };
 }
 

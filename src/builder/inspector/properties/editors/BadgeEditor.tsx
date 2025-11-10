@@ -102,3 +102,5 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         </div>
     );
 }
+
+export default BadgeEditor;

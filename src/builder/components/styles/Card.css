@@ -1,14 +1,15 @@
-@import './base.css';
+@import "./base.css";
 
 @layer components {
   .react-aria-Card {
     /* Base styles */
     display: block;
+    width: 100%;
     box-sizing: border-box;
     background: var(--surface-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     box-shadow: var(--shadow-sm);
     transition: all 150ms ease;
 
@@ -92,17 +93,17 @@
 
     /* Size variants */
     &.sm {
-      padding: var(--spacing-md);
+      padding: var(--spacing-sm);
       border-radius: var(--radius-md);
     }
 
     &.md {
-      padding: var(--spacing-lg);
+      padding: var(--spacing-md);
       border-radius: var(--radius-lg);
     }
 
     &.lg {
-      padding: var(--spacing-xl);
+      padding: var(--spacing-lg);
       border-radius: var(--radius-xl);
     }
 

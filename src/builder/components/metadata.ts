@@ -333,6 +333,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Badge",
+    label: "Badge",
+    category: "Feedback",
+    icon: "🏷️",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "BadgeEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Layout
   {

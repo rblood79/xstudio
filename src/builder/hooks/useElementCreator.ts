@@ -29,6 +29,7 @@ import {
     createDefaultDateRangePickerProps,
     createDefaultTableProps,
     createDefaultCardProps,
+    createDefaultBadgeProps,
     createDefaultTagGroupProps,
     createDefaultTagProps,
     createDefaultListBoxProps,
@@ -156,6 +157,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                 return createDefaultTableProps();
             case 'Card':
                 return createDefaultCardProps();
+            case 'Badge':
+                return createDefaultBadgeProps();
             case 'TagGroup':
                 return createDefaultTagGroupProps();
             case 'Tag':
