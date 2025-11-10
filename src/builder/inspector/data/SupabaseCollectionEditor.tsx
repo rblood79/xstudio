@@ -4,6 +4,8 @@ import { PropertySelect, PropertyInput } from "../components";
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
+import { useColumnLoader } from "./hooks";
+import type { ColumnListItem } from "@/types/stately";
 import "./data.css";
 
 export interface SupabaseCollectionEditorProps {
@@ -18,8 +20,6 @@ export function SupabaseCollectionEditor({
   onTablePropsUpdate,
 }: SupabaseCollectionEditorProps) {
   const [tables, setTables] = useState<string[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
 
   // Local state로 관리 (즉각 적용 방지)
   const [localTable, setLocalTable] = useState(config.table || "");
@@ -27,17 +27,68 @@ export function SupabaseCollectionEditor({
   const [localOrderBy, setLocalOrderBy] = useState(config.orderBy);
   const [localLimit, setLocalLimit] = useState(config.limit?.toString() || "");
 
+  // useColumnLoader로 컬럼 로딩 자동화
+  const columnLoader = useColumnLoader(async ({ signal }) => {
+    if (!localTable) {
+      return [];
+    }
+
+    // Supabase에서 샘플 데이터로 컬럼 조회
+    const { data, error } = await supabase
+      .from(localTable)
+      .select("*")
+      .limit(1)
+      .abortSignal(signal);
+
+    if (error) {
+      throw new Error(`Supabase error: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error("No data found in table");
+    }
+
+    // 컬럼 이름을 ColumnListItem[] 형태로 반환
+    const columnKeys = Object.keys(data[0]);
+    return columnKeys.map((key, index) => ({
+      id: key,
+      key,
+      label: key,
+      type: 'string', // Supabase는 타입 추론 없이 모두 string으로
+      selected: true,
+      order: index,
+    }));
+  });
+
   // 테이블 목록 로드
   useEffect(() => {
     loadTables();
   }, []);
 
-  // 선택된 테이블의 컬럼 로드
+  // localTable이 변경되면 컬럼 로드
   useEffect(() => {
     if (localTable) {
-      loadColumns(localTable);
+      columnLoader.reload();
     }
   }, [localTable]);
+
+  // columnLoader.items가 변경되면 localColumns 자동 업데이트
+  useEffect(() => {
+    if (columnLoader.items.length > 0) {
+      const columnKeys = columnLoader.items.map(item => item.key);
+
+      // 첫 호출인 경우 모든 컬럼 선택
+      if (localColumns.length === 0) {
+        setLocalColumns(columnKeys);
+      } else {
+        // 기존 선택 유지 + 새로운 컬럼 추가
+        const newColumns = columnKeys.filter(col => !localColumns.includes(col));
+        if (newColumns.length > 0) {
+          setLocalColumns([...localColumns, ...newColumns]);
+        }
+      }
+    }
+  }, [columnLoader.items]);
 
   // config가 변경되면 local state 업데이트
   useEffect(() => {
@@ -48,7 +99,6 @@ export function SupabaseCollectionEditor({
   }, [config.table, config.columns, config.orderBy, config.limit]);
 
   const loadTables = async () => {
-    setLoading(true);
     try {
       // 프로젝트에서 사용하는 실제 Supabase 테이블 목록
       const projectTables = [
@@ -63,24 +113,6 @@ export function SupabaseCollectionEditor({
     } catch (error) {
       console.error("Error loading tables:", error);
       setTables([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadColumns = async (tableName: string) => {
-    try {
-      // 샘플 데이터로 컬럼 조회
-      const { data, error } = await supabase
-        .from(tableName)
-        .select("*")
-        .limit(1);
-
-      if (!error && data && data[0]) {
-        setColumns(Object.keys(data[0]));
-      }
-    } catch (error) {
-      console.error("Error loading columns:", error);
     }
   };
 
@@ -207,27 +239,44 @@ export function SupabaseCollectionEditor({
         label="Table"
         value={localTable || ""}
         options={
-          loading
-            ? [{ value: "loading", label: "Loading tables..." }]
-            : tables.length === 0
-              ? [{ value: "empty", label: "No tables found" }]
-              : tables.map((table) => ({ value: table, label: table }))
+          tables.length === 0
+            ? [{ value: "empty", label: "No tables found" }]
+            : tables.map((table) => ({ value: table, label: table }))
         }
         onChange={(key: string) => handleTableChange(key)}
       />
 
+      {/* 로딩 상태 표시 */}
+      {columnLoader.isLoading && (
+        <div className="loading-message">Loading columns...</div>
+      )}
+
+      {/* 에러 표시 */}
+      {columnLoader.error && (
+        <div className="error-message" style={{
+          color: "var(--color-red-500)",
+          padding: "8px",
+          backgroundColor: "var(--color-red-50)",
+          borderRadius: "4px",
+          fontSize: "12px",
+          marginTop: "8px"
+        }}>
+          ⚠️ {columnLoader.error.message}
+        </div>
+      )}
+
       {/* 컬럼 선택 */}
-      {localTable && columns.length > 0 && (
+      {localTable && columnLoader.items.length > 0 && (
         <fieldset className="properties-aria">
-          <legend className="fieldset-legend">Columns to Display</legend>
+          <legend className="fieldset-legend">Columns to Display ({columnLoader.items.length} detected)</legend>
           <CheckboxGroup
             value={localColumns}
             onChange={(value) => setLocalColumns(value)}
             className={`column-list ${columnsChanged ? "field-modified" : ""}`}
           >
-            {columns.map((column) => (
-              <Checkbox key={column} value={column}>
-                {column}
+            {columnLoader.items.map((item) => (
+              <Checkbox key={item.key} value={item.key}>
+                {item.label}
               </Checkbox>
             ))}
           </CheckboxGroup>
@@ -235,7 +284,7 @@ export function SupabaseCollectionEditor({
       )}
 
       {/* 정렬 설정 */}
-      {localTable && (
+      {localTable && columnLoader.items.length > 0 && (
         <div className={`order-controls ${orderByChanged ? "field-modified" : ""}`}>
           <PropertySelect
             icon={ArrowUpDown}
@@ -243,7 +292,7 @@ export function SupabaseCollectionEditor({
             value={localOrderBy?.column || ""}
             options={[
               { value: "", label: "No sorting" },
-              ...columns.map((column) => ({ value: column, label: column })),
+              ...columnLoader.items.map((item) => ({ value: item.key, label: item.label })),
             ]}
             onChange={(key: string) => {
               if (key) {
