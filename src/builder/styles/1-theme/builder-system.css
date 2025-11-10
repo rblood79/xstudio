@@ -241,12 +241,12 @@
 
     /* Focus/Selection */
     --builder-focus-ring: var(--color-primary-400);
-    --builder-selection-bg: rgba(59, 130, 246, 0.2);
+    --builder-selection-bg: var(--color-primary-600);
     --builder-selection-border: var(--color-primary-400);
 
     /* Tree View */
     --builder-tree-item-hover: var(--color-gray-800);
-    --builder-tree-item-selected: rgba(59, 130, 246, 0.2);
+    --builder-tree-item-selected: var(--color-primary-600);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */

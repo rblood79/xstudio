@@ -1,4 +1,4 @@
-@import './base.css';
+@import "./base.css";
 
 @layer components {
   .component-search {
@@ -18,7 +18,7 @@
 
   .component-search-field .react-aria-Input {
     box-shadow: var(--inset-shadow-sm);
-    background-color: var(--surface-secondary);
+    background-color: var(--builder-selection-bg--surface-secondary);
     outline: 1px solid var(--border-color);
     border: 0;
     width: 100%;
@@ -27,13 +27,13 @@
     line-height: var(--text-xs--line-height);
     padding: var(--spacing-sm);
     padding-inline-start: var(--spacing-sm);
-    color: var(--text-color);
+    color: var(--highlight-background);
     transition: all 200ms;
   }
 
   .component-search-field .react-aria-Input:focus {
     outline: none;
-    background-color: var(--border-color);
+    background-color: var(--builder-inspector-button-primary-bg);
     box-shadow: var(--inset-shadow-xs);
   }
 
@@ -55,7 +55,7 @@
   }
 
   .component-search-field .react-aria-Button:hover {
-    background: var(--border-color);
+    background: var(--builder-inspector-bg);
     color: var(--text-color);
   }
 }

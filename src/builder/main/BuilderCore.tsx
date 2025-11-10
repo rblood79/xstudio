@@ -134,7 +134,19 @@ export const BuilderCore: React.FC = () => {
   const { validateOrderNumbers } = useValidation();
 
   // Local 상태
-  const [breakpoint, setBreakpoint] = useState(new Set<Key>(["screen"]));
+  const [breakpoint, setBreakpoint] = useState<Set<Key>>(() => {
+    // 로컬 스토리지에서 저장된 breakpoint 복원
+    const savedBreakpoint = localStorage.getItem("builder-breakpoint");
+    if (savedBreakpoint) {
+      try {
+        return new Set<Key>([savedBreakpoint]);
+      } catch (error) {
+        console.warn("Failed to parse saved breakpoint:", error);
+        return new Set<Key>(["screen"]);
+      }
+    }
+    return new Set<Key>(["screen"]);
+  });
 
   const [breakpoints] = useState<Breakpoint[]>([
     { id: "screen", label: "Screen", max_width: "100%", max_height: "100%" },
@@ -142,6 +154,14 @@ export const BuilderCore: React.FC = () => {
     { id: "tablet", label: "Tablet", max_width: 1024, max_height: 800 },
     { id: "mobile", label: "Mobile", max_width: 390, max_height: 844 },
   ]);
+
+  // breakpoint 변경 시 로컬 스토리지에 저장
+  const handleBreakpointChange = useCallback((value: Key) => {
+    const newBreakpoint = new Set<Key>([value]);
+    setBreakpoint(newBreakpoint);
+    localStorage.setItem("builder-breakpoint", String(value));
+    console.log("[BuilderCore] Breakpoint changed:", value);
+  }, []);
 
   // 프로젝트 정보 가져오기
   useEffect(() => {
@@ -408,7 +428,7 @@ export const BuilderCore: React.FC = () => {
           projectName={projectInfo?.name}
           breakpoint={breakpoint}
           breakpoints={breakpoints}
-          onBreakpointChange={(value) => setBreakpoint(new Set<Key>([value]))}
+          onBreakpointChange={handleBreakpointChange}
           historyInfo={{
             current: historyInfo.currentIndex + 1,
             total: historyInfo.totalEntries,
