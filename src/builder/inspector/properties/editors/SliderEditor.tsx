@@ -1,6 +1,6 @@
 import {
     Type, Layout, NotebookTabs, Ruler, Ratio,
-    ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff
+    ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff, Globe, DollarSign
 } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -61,6 +61,49 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(value) => updateNumberProp('value', value)}
                     icon={NotebookTabs}
                     placeholder="0"
+                />
+            </fieldset>
+
+            {/* Number Formatting Section */}
+            <fieldset className="properties-group">
+                <legend>Number Formatting</legend>
+
+                <PropertyInput
+                    label="Locale"
+                    value={String(currentProps.locale || '')}
+                    onChange={(value) => updateProp('locale', value || undefined)}
+                    placeholder="ko-KR, en-US, etc."
+                    icon={Globe}
+                />
+
+                <PropertySelect
+                    label="Value Format"
+                    value={String(currentProps.valueFormat || 'number')}
+                    onChange={(value) => updateProp('valueFormat', value)}
+                    options={[
+                        { value: 'number', label: 'Number' },
+                        { value: 'percent', label: 'Percent' },
+                        { value: 'unit', label: 'Unit' },
+                        { value: 'custom', label: 'Custom' }
+                    ]}
+                    icon={DollarSign}
+                />
+
+                {currentProps.valueFormat === 'unit' && (
+                    <PropertyInput
+                        label="Unit"
+                        value={String(currentProps.unit || '')}
+                        onChange={(value) => updateProp('unit', value || undefined)}
+                        icon={Type}
+                        placeholder="kilometer, celsius, meter, etc."
+                    />
+                )}
+
+                <PropertySwitch
+                    label="Show Value"
+                    isSelected={currentProps.showValue !== false}
+                    onChange={(checked) => updateProp('showValue', checked)}
+                    icon={NotebookTabs}
                 />
             </fieldset>
 
