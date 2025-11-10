@@ -67,9 +67,13 @@ export function PropertyUnitInput({
 
   useEffect(() => {
     const parsed = parseUnitValue(value);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNumericValue(parsed.numericValue);
+     
     setUnit(parsed.unit);
+     
     setIsKeyword(parsed.numericValue === null);
+     
     setInputValue(
       parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
     );

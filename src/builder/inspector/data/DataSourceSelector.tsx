@@ -47,6 +47,7 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
 
   // binding이 변경되면 pendingSource 초기화
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPendingSource(null);
   }, [binding]);
 

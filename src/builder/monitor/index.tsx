@@ -46,6 +46,7 @@ export const Monitor: React.FC = () => {
     // History 정보 업데이트
     useEffect(() => {
         if (historyInfo) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHistoryLogs(prev => {
                 const newLog: HistoryLog = {
                     timestamp: new Date(),

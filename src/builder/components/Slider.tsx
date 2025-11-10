@@ -117,7 +117,7 @@ export function Slider<T extends number | number[]>({
             {showValue && (
                 <SliderOutput>
                     {({ state }) =>
-                        state.values.map((value, i) => formatValue(value)).join(' – ')}
+                        state.values.map((value) => formatValue(value)).join(' – ')}
                 </SliderOutput>
             )}
             <SliderTrack>

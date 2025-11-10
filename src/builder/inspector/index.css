@@ -503,6 +503,14 @@
         align-items: center;
         justify-content: space-between;
 
+        /* Show focus ring on container when Switch is focused */
+        &:has(.react-aria-Switch:focus-visible),
+        &:has(.react-aria-Switch[data-focused]),
+        &:has(.react-aria-Switch[data-focus-visible]) {
+          outline: 2px solid var(--focus-ring-color);
+          outline-offset: -2px;
+        }
+
         .react-aria-Checkbox {
           width: 100%;
           /*justify-content: space-between;
@@ -562,10 +570,21 @@
           padding-inline-start: var(--inspector-label-width);
           flex-direction: row-reverse;
 
+          /* Remove focus ring from Switch itself */
           &[data-focused],
-          &[data-pressed] {
-            outline: 2px solid var(--focus-ring-color);
-            box-shadow: var(--inset-shadow-sm);
+          &[data-pressed],
+          &[data-focus-visible] {
+            outline: none !important;
+            box-shadow: none;
+          }
+
+          /* Remove focus ring from indicator */
+          .indicator {
+            outline: none !important;
+          }
+
+          &[data-focus-visible] .indicator {
+            outline: none !important;
           }
         }
       }

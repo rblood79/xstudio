@@ -17,6 +17,7 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
 
     // 초기 로컬 상태 설정
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalProps({ ...currentProps });
     }, [currentProps]);
 

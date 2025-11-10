@@ -11,7 +11,6 @@ import {
 } from 'react-aria-components';
 
 import { Plus, Minus } from 'lucide-react';
-import type { NumberFormatOptions } from '../../utils/numberUtils';
 
 import './styles/NumberField.css';
 
@@ -66,7 +65,6 @@ export function NumberField({
   label,
   description,
   errorMessage,
-  locale = 'ko-KR',
   formatStyle = 'decimal',
   currency = 'KRW',
   unit,

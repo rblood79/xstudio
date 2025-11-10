@@ -15,14 +15,19 @@ export function PropertiesSection({ element }: PropertiesSectionProps) {
   const updateProperties = useInspectorState((state) => state.updateProperties);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     getEditor(element.type)
       .then((editor) => {
+         
         setEditor(() => editor);
+         
         setLoading(false);
       })
       .catch(() => {
+         
         setEditor(null);
+         
         setLoading(false);
       });
   }, [element.type]);

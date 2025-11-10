@@ -11,7 +11,6 @@ import type { I18nContextValue, SupportedLocale } from './types';
 import { getTranslation, replacePlaceholders } from './translations';
 import { getLocaleConfig, getStoredLocale, setStoredLocale } from './locales';
 import { formatNumber, formatCurrency } from '../utils/numberUtils';
-import { getCurrentDate } from '../utils/dateUtils';
 
 /**
  * I18n Context
@@ -69,7 +68,6 @@ export function I18nProvider({ children, initialLocale }: I18nProviderProps) {
    */
   const formatDate = useCallback(
     (date: Date): string => {
-      const calendarDate = getCurrentDate(config.locale);
       const formatter = new Intl.DateTimeFormat(locale, {
         year: 'numeric',
         month: 'long',

@@ -59,8 +59,27 @@ export function SupabaseCollectionEditor({
     }));
   });
 
+  const loadTables = async () => {
+    try {
+      // 프로젝트에서 사용하는 실제 Supabase 테이블 목록
+      const projectTables = [
+        "projects",
+        "pages",
+        "elements",
+        "design_themes",
+        "design_tokens",
+      ];
+
+      setTables(projectTables);
+    } catch (error) {
+      console.error("Error loading tables:", error);
+      setTables([]);
+    }
+  };
+
   // 테이블 목록 로드
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTables();
   }, []);
 
@@ -76,6 +95,7 @@ export function SupabaseCollectionEditor({
     if (columnLoader.items.length > 0) {
       const columnKeys = columnLoader.items.map(item => item.key);
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalColumns(prevColumns => {
         // 첫 호출인 경우 모든 컬럼 선택
         if (prevColumns.length === 0) {
@@ -95,29 +115,15 @@ export function SupabaseCollectionEditor({
 
   // config가 변경되면 local state 업데이트
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalTable(config.table || "");
+     
     setLocalColumns(config.columns || []);
+     
     setLocalOrderBy(config.orderBy);
+     
     setLocalLimit(config.limit?.toString() || "");
   }, [config.table, config.columns, config.orderBy, config.limit]);
-
-  const loadTables = async () => {
-    try {
-      // 프로젝트에서 사용하는 실제 Supabase 테이블 목록
-      const projectTables = [
-        "projects",
-        "pages",
-        "elements",
-        "design_themes",
-        "design_tokens",
-      ];
-
-      setTables(projectTables);
-    } catch (error) {
-      console.error("Error loading tables:", error);
-      setTables([]);
-    }
-  };
 
   // 변경 감지
   const tableChanged = useMemo(() => localTable !== (config.table || ""), [localTable, config.table]);

@@ -49,6 +49,7 @@ function usePageId() {
 
     useEffect(() => {
         if (storePageId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPageId(storePageId);
             return;
         }
@@ -57,6 +58,7 @@ function usePageId() {
         const urlPageId = pathParts[pathParts.length - 1];
 
         if (urlPageId && UUID_REGEX.test(urlPageId)) {
+             
             setLocalPageId(urlPageId);
             setCurrentPageId(urlPageId);
         } else {

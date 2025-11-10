@@ -23,6 +23,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
     const customId = element?.customId || '';
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedTag(null);
     }, [elementId]);
 

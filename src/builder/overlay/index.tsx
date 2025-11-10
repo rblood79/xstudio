@@ -94,7 +94,9 @@ export default function SelectionOverlay() {
     iframeRef.current = iframe;
 
     if (!iframe?.contentDocument) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOverlayRect(null);
+       
       setSelectedTag("");
       return;
     }

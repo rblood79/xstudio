@@ -22,11 +22,9 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getLocalTimeZone,
-  parseDate,
-  today,
-  type CalendarDate
+  today
 } from '@internationalized/date';
-import { safeParseDateString, isValidDateString } from '../../utils/dateUtils';
+import { safeParseDateString } from '../../utils/dateUtils';
 
 import "./styles/DatePicker.css";
 

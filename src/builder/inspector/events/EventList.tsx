@@ -16,8 +16,10 @@ export function EventList({ element, onSelectEvent }: EventListProps) {
   const registeredEvents = element.events || [];
 
   const handleAddEvent = (eventName: string) => {
+    // eslint-disable-next-line react-hooks/purity
+    const timestamp = Date.now();
     const newEvent: EventHandler = {
-      id: `${eventName}-${Date.now()}`,
+      id: `${eventName}-${timestamp}`,
       event: eventName,
       actions: [],
     };

@@ -50,11 +50,17 @@ export function APICollectionEditor({
 
   // config가 변경되면 local state 업데이트 (Supabase와 동일한 패턴)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalEndpoint(config.endpoint || "");
+     
     setLocalParams(JSON.stringify(config.params || {}, null, 2));
+     
     setLocalHeaders(JSON.stringify(config.headers || {}, null, 2));
+     
     setLocalDataMapping(JSON.stringify(config.dataMapping, null, 2));
+     
     setLocalColumns(config.columns || []);
+     
     setLocalColumnMapping(config.columnMapping);
   }, [config.endpoint, config.params, config.headers, config.dataMapping, config.columns, config.columnMapping]);
 
@@ -161,6 +167,7 @@ export function APICollectionEditor({
     if (columnLoader.items.length > 0) {
       const availableColumnKeys = columnLoader.items.map(item => item.key);
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalColumns(prevColumns => {
         // 첫 호출인 경우 모든 컬럼 선택
         if (prevColumns.length === 0) {

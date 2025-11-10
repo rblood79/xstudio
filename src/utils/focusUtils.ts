@@ -323,7 +323,7 @@ export const debugFocusOrder = (container: HTMLElement = document.body): Array<{
 }> => {
   const focusable = findFocusableElements(container);
 
-  const metadata = focusable.map((el, index) => ({
+  const metadata = focusable.map((el) => ({
     element: el,
     tagName: el.tagName,
     id: el.id || undefined,

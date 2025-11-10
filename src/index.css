@@ -2,7 +2,7 @@
 @import "tailwindcss";
 @import "./builder/components/index.css";
 
-@plugin "tailwindcss-react-aria-components";
+/* @plugin "tailwindcss-react-aria-components"; */
 
 /* @import "tailwindcss/theme.css";
 @import "tailwindcss/preflight.css";

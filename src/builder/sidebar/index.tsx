@@ -12,7 +12,7 @@ import Theme from '../theme';
 import AI from '../ai';
 import User from '../user';
 import Setting from '../setting';
-import { SidebarNav, Tab } from './SidebarNav';
+import { SidebarNav } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useTreeExpandState } from '../hooks/useTreeExpandState';

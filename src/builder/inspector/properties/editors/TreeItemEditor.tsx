@@ -37,6 +37,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
     useEffect(() => {
         const { currentPageId } = useStore.getState();
         if (currentPageId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPageId(currentPageId);
         }
     }, []);

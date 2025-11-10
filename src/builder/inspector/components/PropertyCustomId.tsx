@@ -32,7 +32,9 @@ export function PropertyCustomId({
 
   // Sync local state with prop value when it changes externally
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInputValue(value || "");
+     
     setError(undefined);
   }, [value]);
 

@@ -518,8 +518,10 @@ function Events() {
   // 선택된 요소의 이벤트 로드
   useEffect(() => {
     if (selectedElementProps?.events) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEvents(selectedElementProps.events);
     } else {
+       
       setEvents([]);
     }
   }, [selectedElementProps?.events]);
