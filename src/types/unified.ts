@@ -367,8 +367,17 @@ export interface CellElementProps extends BaseElementProps {
 
 export interface CardElementProps extends BaseElementProps {
   children?: React.ReactNode;
-  variant?: "default" | "outlined" | "elevated";
-  size?: "small" | "medium" | "large";
+  variant?: "default" | "outlined" | "elevated" | "primary" | "secondary" | "surface" | "gallery" | "quiet";
+  size?: "sm" | "md" | "lg";
+  orientation?: "horizontal" | "vertical";
+  title?: string;
+  description?: string;
+  heading?: string;
+  subheading?: string;
+  footer?: string;
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  isDisabled?: boolean;
 }
 
 export interface TagGroupElementProps extends BaseElementProps {
@@ -826,7 +835,10 @@ export function createDefaultCellProps(): CellElementProps {
 export function createDefaultCardProps(): CardElementProps {
   return {
     variant: "default",
-    size: "medium",
+    size: "md",
+    orientation: "vertical",
+    title: "Title",
+    description: "Description",
   };
 }
 

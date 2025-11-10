@@ -326,9 +326,14 @@ export interface CardElementProps extends BaseElementProps {
   //tag: 'Card';
   title?: string;
   description?: string;
-  variant?: "default" | "outlined" | "elevated";
-  size?: "small" | "medium" | "large";
+  variant?: "default" | "outlined" | "elevated" | "primary" | "secondary" | "surface" | "gallery" | "quiet";
+  size?: "sm" | "md" | "lg";
+  orientation?: "horizontal" | "vertical";
+  heading?: string;
+  subheading?: string;
+  footer?: string;
   isQuiet?: boolean;
+  isSelectable?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   isFocused?: boolean;
