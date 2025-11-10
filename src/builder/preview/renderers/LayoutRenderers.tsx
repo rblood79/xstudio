@@ -7,6 +7,7 @@ import {
   Panel,
   Card,
   Button,
+  Link,
   Tooltip,
   ProgressBar,
   Meter,
@@ -450,5 +451,58 @@ export const renderBreadcrumb = (
     >
       {element.props.children}
     </Breadcrumb>
+  );
+};
+
+/**
+ * Link 렌더링
+ */
+export const renderLink = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement, eventEngine, projectId } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const eventHandlers = createEventHandlerMap(element, eventEngine, projectId);
+
+  return (
+    <Link
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      href={String(element.props.href || "")}
+      variant={
+        element.props.variant as
+          | "primary"
+          | "secondary"
+          | "surface"
+          | "outline"
+          | "ghost"
+      }
+      size={element.props.size as "xs" | "sm" | "md" | "lg" | "xl"}
+      isExternal={Boolean(element.props.isExternal)}
+      showExternalIcon={element.props.showExternalIcon !== false}
+      isDisabled={Boolean(element.props.isDisabled)}
+      style={element.props.style}
+      className={element.props.className}
+      onPress={eventHandlers.onPress as unknown as () => void}
+      onHoverStart={
+        eventHandlers.onMouseEnter as unknown as (e: unknown) => void
+      }
+      onHoverEnd={eventHandlers.onMouseLeave as unknown as (e: unknown) => void}
+      onFocus={eventHandlers.onFocus as unknown as (e: unknown) => void}
+      onBlur={eventHandlers.onBlur as unknown as (e: unknown) => void}
+    >
+      {typeof element.props.children === "string"
+        ? element.props.children
+        : children.length === 0
+        ? "Link"
+        : null}
+      {children.map((child) => renderElement(child, child.id))}
+    </Link>
   );
 };

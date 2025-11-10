@@ -19,6 +19,7 @@ const layoutComp = [
     { tag: 'Card', label: 'card', icon: AppWindowMac },
     { tag: 'Tabs', label: 'tabs', icon: AppWindow },
     { tag: 'Breadcrumbs', label: 'breadcrumbs', icon: ChevronRight },
+    { tag: 'Link', label: 'link', icon: Link },
     { tag: 'Separator', label: 'separator', icon: SeparatorHorizontal },
     { tag: 'Nav', label: 'navigation', icon: Menu },
 ] as const;

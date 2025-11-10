@@ -53,6 +53,7 @@ export const rendererMap: Record<
   Separator: LayoutRenderers.renderSeparator,
   Breadcrumbs: LayoutRenderers.renderBreadcrumbs,
   Breadcrumb: LayoutRenderers.renderBreadcrumb,
+  Link: LayoutRenderers.renderLink,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,
