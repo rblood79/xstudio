@@ -1,5 +1,4 @@
 @layer components {
-  
   .my-autocomplete {
     display: flex;
     flex-direction: column;
@@ -11,15 +10,15 @@
     border-radius: 10px;
     background: var(--overlay-background);
   }
-  
+
   .react-aria-SearchField {
     width: 100%;
   }
-  
+
   .react-aria-Label {
-    margin-bottom: .5em;
+    /* margin-bottom: .5em; */
   }
-  
+
   .react-aria-Menu {
     &[data-empty] {
       align-items: center;
@@ -27,7 +26,7 @@
       font-style: italic;
     }
   }
-  
+
   .react-aria-MenuItem[href] {
     text-decoration: none;
     cursor: pointer;
