@@ -38,6 +38,10 @@ export interface UseCollectionDataResult {
   filterText?: string;
   /** 필터 텍스트 설정 */
   setFilterText?: (text: string) => void;
+  /** 더 많은 데이터 로드 (페이지네이션) */
+  loadMore?: () => void;
+  /** 더 로드할 데이터가 있는지 여부 */
+  hasMore?: boolean;
 }
 
 /**
@@ -319,6 +323,11 @@ export function useCollectionData({
     return result;
   }, [list.items, filterText, sortDescriptor]);
 
+  // 페이지네이션 지원 (향후 구현)
+  // 현재는 API가 cursor를 반환하지 않으므로 loadMore는 undefined
+  const loadMore = undefined; // API가 cursor 지원 시 list.loadMore 사용
+  const hasMore = false; // API가 cursor 지원 시 true/false 판단
+
   return {
     data: processedData,
     loading: list.isLoading,
@@ -327,5 +336,7 @@ export function useCollectionData({
     sort,
     filterText,
     setFilterText,
+    loadMore,
+    hasMore,
   };
 }
