@@ -1,6 +1,6 @@
 import React from "react";
 //import "./SidebarNav.css";
-import { File, SquarePlus, DatabaseZap, LibraryBig, Palette, WandSparkles, Users, Settings, X } from 'lucide-react';
+import { File, SquarePlus, DatabaseZap, LibraryBig, Palette, WandSparkles, Users, Settings, PanelLeftClose } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 
 export type Tab = 'nodes' | 'components' | 'library' | 'dataset' | 'theme' | 'ai' | 'user' | 'settings';
@@ -45,7 +45,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTabs, onTabChange,
                     aria-label="Close all tabs"
                     title="전체 닫기"
                 >
-                    <X color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                    <PanelLeftClose color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                 </button>
             )}
         </nav>
