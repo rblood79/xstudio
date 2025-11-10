@@ -1,5 +1,5 @@
 import { useAsyncList } from "react-stately";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { DataBinding } from "../../types/unified";
 import type { AsyncListLoadOptions } from "../../types/stately";
 
@@ -29,6 +29,15 @@ export interface UseCollectionDataResult {
   error: string | null;
   /** 데이터 재로드 */
   reload: () => void;
+  /** 정렬 함수 */
+  sort?: (descriptor: {
+    column: string;
+    direction: "ascending" | "descending";
+  }) => void;
+  /** 필터 텍스트 */
+  filterText?: string;
+  /** 필터 텍스트 설정 */
+  setFilterText?: (text: string) => void;
 }
 
 /**
@@ -202,6 +211,15 @@ export function useCollectionData({
     [dataBinding]
   );
 
+  // 정렬 상태
+  const [sortDescriptor, setSortDescriptor] = useState<{
+    column: string;
+    direction: "ascending" | "descending";
+  } | null>(null);
+
+  // 필터 상태
+  const [filterText, setFilterText] = useState<string>("");
+
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
       // dataBinding이 없으면 빈 배열 반환
@@ -255,10 +273,59 @@ export function useCollectionData({
     getKey: (item) => String(item.id || Math.random()),
   });
 
+  // 정렬 함수
+  const sort = useCallback(
+    (descriptor: { column: string; direction: "ascending" | "descending" }) => {
+      setSortDescriptor(descriptor);
+      console.log(`🔄 ${componentName} 정렬:`, descriptor);
+    },
+    [componentName]
+  );
+
+  // 필터링 및 정렬된 데이터
+  const processedData = useMemo(() => {
+    let result = [...list.items];
+
+    // 필터링 적용
+    if (filterText.trim()) {
+      const lowerFilterText = filterText.toLowerCase();
+      result = result.filter((item) => {
+        // 모든 필드에서 검색
+        return Object.values(item).some((value) =>
+          String(value).toLowerCase().includes(lowerFilterText)
+        );
+      });
+    }
+
+    // 정렬 적용
+    if (sortDescriptor) {
+      result.sort((a, b) => {
+        const aVal = a[sortDescriptor.column];
+        const bVal = b[sortDescriptor.column];
+
+        let comparison = 0;
+        if (aVal < bVal) {
+          comparison = -1;
+        } else if (aVal > bVal) {
+          comparison = 1;
+        }
+
+        return sortDescriptor.direction === "descending"
+          ? -comparison
+          : comparison;
+      });
+    }
+
+    return result;
+  }, [list.items, filterText, sortDescriptor]);
+
   return {
-    data: list.items,
+    data: processedData,
     loading: list.isLoading,
     error: list.error ? list.error.message : null,
     reload: list.reload,
+    sort,
+    filterText,
+    setFilterText,
   };
 }
