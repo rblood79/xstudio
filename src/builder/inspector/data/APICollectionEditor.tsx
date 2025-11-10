@@ -12,8 +12,7 @@ import { apiConfig } from "../../../services/api";
 import { ElementUtils } from "../../../utils/elementUtils";
 import { Element } from "../../../types/store";
 import { useStore } from "../../stores";
-import { useColumnLoader, useChangeDetection } from "./hooks";
-import type { ColumnListItem } from "@/types/stately";
+import { useColumnLoader } from "./hooks";
 import "./data.css";
 
 export interface APICollectionEditorProps {
@@ -162,21 +161,23 @@ export function APICollectionEditor({
     if (columnLoader.items.length > 0) {
       const availableColumnKeys = columnLoader.items.map(item => item.key);
 
-      // 첫 호출인 경우 모든 컬럼 선택
-      if (localColumns.length === 0) {
-        console.log("ℹ️ 첫 호출: 모든 컬럼을 기본 선택합니다.");
-        setLocalColumns(availableColumnKeys);
-      } else {
+      setLocalColumns(prevColumns => {
+        // 첫 호출인 경우 모든 컬럼 선택
+        if (prevColumns.length === 0) {
+          console.log("ℹ️ 첫 호출: 모든 컬럼을 기본 선택합니다.");
+          return availableColumnKeys;
+        }
+
         // 기존 선택 유지 + 새로운 컬럼 추가
-        const currentAvailable = columnLoader.items.map(item => item.key);
-        const newColumns = currentAvailable.filter(col => !localColumns.includes(col));
+        const newColumns = availableColumnKeys.filter(col => !prevColumns.includes(col));
         if (newColumns.length > 0) {
           console.log(`ℹ️ ${newColumns.length}개 새로운 컬럼 발견:`, newColumns);
-          setLocalColumns([...localColumns, ...newColumns]);
-        } else {
-          console.log("ℹ️ 기존 컬럼 선택을 유지합니다.");
+          return [...prevColumns, ...newColumns];
         }
-      }
+
+        console.log("ℹ️ 기존 컬럼 선택을 유지합니다.");
+        return prevColumns;
+      });
     }
   }, [columnLoader.items]);
 

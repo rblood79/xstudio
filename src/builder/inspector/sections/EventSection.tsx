@@ -12,7 +12,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "react-aria-components";
 import type { SelectedElement } from "../types";
-import type { ElementEvent, EventType, ActionType } from "@/types/events";
+import type { EventType, ActionType } from "@/types/events";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { EventHandlerManager } from "../events/components/EventHandlerManager";
 import { EventTypePicker } from "../events/pickers/EventTypePicker";
@@ -25,7 +25,8 @@ export interface EventSectionProps {
   element: SelectedElement;
 }
 
-export function EventSection({ element }: EventSectionProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function EventSection(props: EventSectionProps) {
   const [showAddAction, setShowAddAction] = useState(false);
 
   // Inspector 상태에서 이벤트 가져오기
@@ -42,7 +43,6 @@ export function EventSection({ element }: EventSectionProps) {
 
   // 이벤트 선택 관리
   const {
-    selectedHandlerId,
     selectedHandler,
     selectHandler,
     selectAfterDelete,
@@ -52,9 +52,6 @@ export function EventSection({ element }: EventSectionProps) {
   const {
     actions,
     addAction,
-    updateAction,
-    removeAction,
-    moveAction,
   } = useActions(selectedHandler?.actions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
@@ -68,12 +65,12 @@ export function EventSection({ element }: EventSectionProps) {
       const updatedHandler = { ...selectedHandler, actions };
       updateHandler(selectedHandler.id, updatedHandler);
     }
-  }, [actions, selectedHandler?.id]);
+  }, [actions, selectedHandler, updateHandler]);
 
   // Handlers 변경 시 Inspector 동기화
   useEffect(() => {
     updateEvents(handlers);
-  }, [handlers]);
+  }, [handlers, updateEvents]);
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
@@ -154,10 +151,6 @@ export function EventSection({ element }: EventSectionProps) {
                 ) : (
                   <EventHandlerManager
                     eventHandler={selectedHandler}
-                    onUpdateHandler={(updated) =>
-                      updateHandler(selectedHandler.id, updated)
-                    }
-                    onAddAction={() => setShowAddAction(true)}
                   />
                 )}
               </div>

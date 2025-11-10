@@ -1,5 +1,5 @@
 import {
-    Type, Binary, TriangleRight, Layout, ToggleLeft, NotebookTabs, Ruler, Ratio,
+    Type, Layout, NotebookTabs, Ruler, Ratio,
     ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff
 } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';

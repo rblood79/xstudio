@@ -5,7 +5,6 @@ import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../types";
 import { useColumnLoader } from "./hooks";
-import type { ColumnListItem } from "@/types/stately";
 import "./data.css";
 
 export interface SupabaseCollectionEditorProps {
@@ -70,23 +69,27 @@ export function SupabaseCollectionEditor({
     if (localTable) {
       columnLoader.reload();
     }
-  }, [localTable]);
+  }, [localTable, columnLoader]);
 
   // columnLoader.items가 변경되면 localColumns 자동 업데이트
   useEffect(() => {
     if (columnLoader.items.length > 0) {
       const columnKeys = columnLoader.items.map(item => item.key);
 
-      // 첫 호출인 경우 모든 컬럼 선택
-      if (localColumns.length === 0) {
-        setLocalColumns(columnKeys);
-      } else {
-        // 기존 선택 유지 + 새로운 컬럼 추가
-        const newColumns = columnKeys.filter(col => !localColumns.includes(col));
-        if (newColumns.length > 0) {
-          setLocalColumns([...localColumns, ...newColumns]);
+      setLocalColumns(prevColumns => {
+        // 첫 호출인 경우 모든 컬럼 선택
+        if (prevColumns.length === 0) {
+          return columnKeys;
         }
-      }
+
+        // 기존 선택 유지 + 새로운 컬럼 추가
+        const newColumns = columnKeys.filter(col => !prevColumns.includes(col));
+        if (newColumns.length > 0) {
+          return [...prevColumns, ...newColumns];
+        }
+
+        return prevColumns;
+      });
     }
   }, [columnLoader.items]);
 

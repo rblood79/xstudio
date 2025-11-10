@@ -1,6 +1,5 @@
 import React from "react";
 import { tv } from "tailwind-variants";
-import { composeRenderProps } from "react-aria-components";
 import type { CardVariant, ComponentSizeSubset } from "../../types/componentVariants";
 import './styles/Card.css';
 

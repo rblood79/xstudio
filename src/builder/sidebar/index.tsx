@@ -1,5 +1,5 @@
 import "./index.css";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/supabase';

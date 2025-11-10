@@ -1,4 +1,4 @@
-import { Tag, Binary, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp } from 'lucide-react';
+import { Tag, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';

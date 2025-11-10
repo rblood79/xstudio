@@ -13,12 +13,6 @@ interface LayersProps {
     setElements: React.Dispatch<React.SetStateAction<Element[]>>;
     selectedElementId: string | null;
     setSelectedElement: (id: string | null, props?: ElementProps) => void;
-    renderTree: (
-        items: Element[],
-        getLabel: (item: Element) => string,
-        onSelect: (item: Element) => void,
-        onDelete: (item: Element) => Promise<void>
-    ) => React.ReactNode;
     renderElementTree: (
         tree: ElementTreeItem[],
         onClick: (item: Element) => void,
@@ -33,7 +27,6 @@ export function Layers({
     elements,
     selectedElementId,
     setSelectedElement,
-    renderTree,
     renderElementTree,
     sendElementSelectedMessage,
     collapseAllTreeItems

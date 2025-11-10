@@ -209,12 +209,6 @@ export function useCollectionData({
   componentName,
   fallbackData = [],
 }: UseCollectionDataOptions): UseCollectionDataResult {
-  // dataBinding을 JSON으로 직렬화하여 안정화 (무한 루프 방지)
-  const dataBindingKey = useMemo(
-    () => (dataBinding ? JSON.stringify(dataBinding) : null),
-    [dataBinding]
-  );
-
   // 정렬 상태
   const [sortDescriptor, setSortDescriptor] = useState<{
     column: string;

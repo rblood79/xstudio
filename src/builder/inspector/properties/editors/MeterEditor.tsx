@@ -1,4 +1,4 @@
-import { Tag, Binary, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash } from 'lucide-react';
+import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/labels';

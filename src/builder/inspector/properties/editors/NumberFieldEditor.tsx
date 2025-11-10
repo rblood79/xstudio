@@ -1,6 +1,6 @@
 import {
     Tag, Hash, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
-    SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, Percent, MousePointerClick
+    SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick
 } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
