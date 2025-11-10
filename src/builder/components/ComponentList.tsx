@@ -1,9 +1,10 @@
-import { useMemo, useCallback, memo, useState } from 'react';
-import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Settings2, ChevronRight, Clock, Star } from 'lucide-react';
+import { useMemo, useCallback, memo, useState, useEffect } from 'react';
+import { AppWindowMac, SeparatorHorizontal, ChevronUp, Square, Code, Text, ToggleLeft, AppWindow, InspectionPanel, SlidersHorizontal, MousePointer, Tag, CalendarCheck, CalendarDays, RectangleEllipsis, Calendar, ListTree, Menu, GroupIcon, ListIcon, Grid, TableProperties, SquareCheck, ChevronDown, Search, ToggleRight, Hash, MessageSquare, Settings, Gauge, BarChart3, Settings2, ChevronRight, Clock, Star, Trash2 } from 'lucide-react';
 import { iconProps } from '../../utils/uiConstants';
 import { ComponentSearch } from './ComponentSearch';
 import { useRecentComponents } from '../hooks/useRecentComponents';
 import { useFavoriteComponents } from '../hooks/useFavoriteComponents';
+import { useCategoryExpansion } from '../hooks/useCategoryExpansion';
 import './styles/ComponentList.css';
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
@@ -123,9 +124,16 @@ ComponentItem.displayName = 'ComponentItem';
 
 // 메인 컴포넌트
 const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentListProps) => {
-    const { recentTags, addRecentComponent } = useRecentComponents();
+    const { recentTags, addRecentComponent, clearRecentComponents } = useRecentComponents();
     const { favoriteTags} = useFavoriteComponents();
     const [searchQuery, setSearchQuery] = useState('');
+
+    // 카테고리 펼치기/접기 상태 관리 (모든 카테고리 기본 펼침)
+    const allCategoryKeys = useMemo(() => ['layout', 'inputs', 'actions', 'collections', 'feedback', 'dateTime', 'overlays', 'structure', 'other'], []);
+    const { isExpanded, toggleCategory, expandCategories } = useCategoryExpansion({
+        initialExpanded: allCategoryKeys,
+        persist: true,
+    });
 
     // 이벤트 핸들러를 메모이제이션
     const handleComponentAdd = useCallback((tag: string, parentId?: string) => {
@@ -240,6 +248,14 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
             .filter((comp): comp is typeof allComponents[0] => comp !== undefined);
     }, [favoriteTags, allComponents]);
 
+    // 검색 시 검색 결과가 있는 카테고리 자동 펼치기
+    useEffect(() => {
+        if (searchQuery && filteredGroups) {
+            const categoriesToExpand = Object.keys(filteredGroups);
+            expandCategories(categoriesToExpand);
+        }
+    }, [searchQuery, filteredGroups, expandCategories]);
+
     return (
         <div className="sidebar-content">
             <div className="panel-header">
@@ -268,6 +284,13 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
                             
                         </div>
                         <div className="header-actions">
+                                <button
+                                    className='iconButton'
+                                    aria-label="Clear Recent History"
+                                    onClick={clearRecentComponents}
+                                >
+                                    <Trash2 color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                </button>
                                 <button
                                     className='iconButton'
                                     aria-label="Toggle Recently Used"
@@ -314,10 +337,12 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
 
             {/* 카테고리별 컴포넌트 */}
             {searchQuery && filteredGroups ? (
-                // 검색 모드: 필터링된 카테고리만 표시
+                // 검색 모드: 필터링된 카테고리만 표시 (검색 결과가 있는 카테고리는 자동 펼침)
                 Object.entries(filteredGroups).map(([groupName, components]) => {
                     const categoryKey = groupName as keyof typeof categoryConfig;
                     const config = categoryConfig[categoryKey];
+                    // 검색 모드에서는 항상 펼쳐진 상태로 표시 (사용자가 수동으로 접을 수도 있음)
+                    const expanded = isExpanded(categoryKey);
 
                     if (!components || components.length === 0) return null;
 
@@ -332,21 +357,28 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
                                     <button
                                         className='iconButton'
                                         aria-label={`Toggle ${config.label}`}
+                                        onClick={() => toggleCategory(categoryKey)}
                                     >
-                                        <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        {expanded ? (
+                                            <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        ) : (
+                                            <ChevronDown color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        )}
                                     </button>
                                 </div>
                             </div>
-                            <div className="component-list">
-                                {components.map((component) => (
-                                    <ComponentItem
-                                        key={component.tag}
-                                        component={component}
-                                        onAdd={handleComponentAdd}
-                                        selectedElementId={selectedElementId}
-                                    />
-                                ))}
-                            </div>
+                            {expanded && (
+                                <div className="component-list">
+                                    {components.map((component) => (
+                                        <ComponentItem
+                                            key={component.tag}
+                                            component={component}
+                                            onAdd={handleComponentAdd}
+                                            selectedElementId={selectedElementId}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })
@@ -355,6 +387,7 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
                 Object.entries(componentGroups).map(([groupName, components]) => {
                     const categoryKey = groupName as keyof typeof categoryConfig;
                     const config = categoryConfig[categoryKey];
+                    const expanded = isExpanded(categoryKey);
 
                     return (
                         <div key={groupName} className='component_element'>
@@ -367,21 +400,28 @@ const ComponentList = memo(({ handleAddElement, selectedElementId }: ComponentLi
                                     <button
                                         className='iconButton'
                                         aria-label={`Toggle ${config.label}`}
+                                        onClick={() => toggleCategory(categoryKey)}
                                     >
-                                        <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        {expanded ? (
+                                            <ChevronUp color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        ) : (
+                                            <ChevronDown color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        )}
                                     </button>
                                 </div>
                             </div>
-                            <div className="component-list">
-                                {components.map((component) => (
-                                    <ComponentItem
-                                        key={component.tag}
-                                        component={component}
-                                        onAdd={handleComponentAdd}
-                                        selectedElementId={selectedElementId}
-                                    />
-                                ))}
-                            </div>
+                            {expanded && (
+                                <div className="component-list">
+                                    {components.map((component) => (
+                                        <ComponentItem
+                                            key={component.tag}
+                                            component={component}
+                                            onAdd={handleComponentAdd}
+                                            selectedElementId={selectedElementId}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })
