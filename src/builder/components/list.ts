@@ -37,6 +37,7 @@ export * from "./Separator";
 export * from "./Breadcrumbs";
 export * from "./Breadcrumb";
 export * from "./Link";
+export * from "./Badge";
 export * from "./Dialog";
 export * from "./Modal";
 export * from "./Popover";

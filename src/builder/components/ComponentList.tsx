@@ -58,6 +58,7 @@ const feedbackComp = [
     { tag: 'Tooltip', label: 'tooltip', icon: MessageSquare },
     { tag: 'ProgressBar', label: 'progress bar', icon: BarChart3 },
     { tag: 'Meter', label: 'meter', icon: Gauge },
+    { tag: 'Badge', label: 'badge', icon: Star },
 ] as const;
 
 const dateTimeComp = [
