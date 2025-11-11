@@ -13,6 +13,8 @@ import {
   RadioGroup,
   Switch,
 } from "../../components/list";
+import { MyColorSwatches } from "../../components/TailSwatch";
+import { parseColor } from "react-aria-components";
 import { PreviewElement, RenderContext } from "../types";
 import { saveService } from "../../../services/save";
 
@@ -572,5 +574,64 @@ export const renderSwitch = (
         ? element.props.children
         : null}
     </Switch>
+  );
+};
+
+/**
+ * TailSwatch (Color Picker) 렌더링
+ */
+export const renderTailSwatch = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { updateElementProps } = context;
+
+  // Parse color value or use default
+  const colorValue = element.props.value || "#3b82f6";
+  const color = React.useMemo(() => {
+    try {
+      return parseColor(colorValue as string);
+    } catch {
+      return parseColor("#3b82f6");
+    }
+  }, [colorValue]);
+
+  const handleColorChange = (newColor: any) => {
+    const hexColor = newColor.toString("hex");
+    const updatedProps = {
+      ...element.props,
+      value: hexColor,
+    };
+    updateElementProps(element.id, updatedProps);
+    saveService.scheduleElementSave(element.id);
+  };
+
+  return (
+    <div
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      <MyColorSwatches
+        areaProps={{
+          value: color,
+          onChange: handleColorChange,
+          colorSpace: (element.props.colorSpace as "rgb" | "hsl" | "hsb") || "hsb",
+          isDisabled: Boolean(element.props.isDisabled),
+        }}
+        sliderProps={{
+          value: color,
+          onChange: handleColorChange,
+          isDisabled: Boolean(element.props.isDisabled),
+        }}
+        swatchPickerProps={{
+          value: color,
+          onChange: handleColorChange,
+          isDisabled: Boolean(element.props.isDisabled),
+        }}
+      />
+    </div>
   );
 };

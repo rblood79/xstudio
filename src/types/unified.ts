@@ -200,6 +200,14 @@ export interface SliderElementProps extends BaseElementProps {
   orientation?: "horizontal" | "vertical";
 }
 
+export interface TailSwatchElementProps extends BaseElementProps {
+  value?: string; // Color value (hex, rgb, hsl)
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  colorSpace?: "rgb" | "hsl" | "hsb";
+  isDisabled?: boolean;
+}
+
 export interface TabsElementProps extends BaseElementProps {
   children?: React.ReactNode;
   selectedKey?: string;
@@ -492,6 +500,7 @@ export type ComponentElementProps =
   | SelectElementProps
   | ComboBoxElementProps
   | SliderElementProps
+  | TailSwatchElementProps
   | TabsElementProps
   | TabElementProps
   | PanelElementProps
@@ -685,6 +694,14 @@ export function createDefaultSliderProps(): SliderElementProps {
     step: 1,
     isDisabled: false,
     orientation: "horizontal",
+  };
+}
+
+export function createDefaultTailSwatchProps(): TailSwatchElementProps {
+  return {
+    value: "#3b82f6", // Default blue-500
+    colorSpace: "hsb",
+    isDisabled: false,
   };
 }
 
@@ -933,6 +950,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Select: createDefaultSelectProps,
     ComboBox: createDefaultComboBoxProps,
     Slider: createDefaultSliderProps,
+    TailSwatch: createDefaultTailSwatchProps,
     Tabs: createDefaultTabsProps,
     Tab: createDefaultTabProps,
     Panel: createDefaultPanelProps,

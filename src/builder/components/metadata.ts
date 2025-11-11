@@ -233,6 +233,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onChange", "onChangeEnd"],
     },
   },
+  {
+    type: "TailSwatch",
+    label: "Color Picker",
+    category: "Inputs",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "TailSwatchEditor",
+      dataBindingType: "value",
+      supportedEvents: ["onChange"],
+    },
+  },
 
   // Data Display
   {

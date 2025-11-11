@@ -30,6 +30,7 @@ export const rendererMap: Record<
   Radio: FormRenderers.renderRadio,
   RadioGroup: FormRenderers.renderRadioGroup,
   Switch: FormRenderers.renderSwitch,
+  TailSwatch: FormRenderers.renderTailSwatch,
 
   // Selection 컴포넌트
   ListBox: SelectionRenderers.renderListBox,

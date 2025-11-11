@@ -6,6 +6,7 @@ export { PropertySwitch } from './PropertySwitch';
 export { PropertySlider } from './PropertySlider';
 export { PropertyUnitInput } from './PropertyUnitInput';
 export { PropertyColor } from './PropertyColor';
+export { PropertyColorPicker } from './PropertyColorPicker';
 export { PropertyCustomId } from './PropertyCustomId';
 
 

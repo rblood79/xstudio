@@ -37,6 +37,7 @@ import {
   Star,
   Trash2,
   Link,
+  Paintbrush,
 } from "lucide-react";
 import { iconProps } from "../../utils/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
@@ -74,6 +75,7 @@ const inputsComp = [
   { tag: "ComboBox", label: "combo box", icon: ChevronDown },
   { tag: "Switch", label: "switch", icon: ToggleRight },
   { tag: "Slider", label: "slider", icon: SlidersHorizontal },
+  { tag: "TailSwatch", label: "color picker", icon: Paintbrush },
 ] as const;
 
 const actionsComp = [

@@ -21,6 +21,7 @@ export { TabEditor } from './TabEditor';
 export { PanelEditor } from './PanelEditor';
 export { SliderEditor } from './SliderEditor';
 export { SwitchEditor } from './SwitchEditor';
+export { TailSwatchEditor } from './TailSwatchEditor';
 export { TableEditor } from './TableEditor';
 export { TableHeaderEditor } from './TableHeaderEditor';
 export { TableBodyEditor } from './TableBodyEditor';
