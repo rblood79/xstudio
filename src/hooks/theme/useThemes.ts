@@ -7,7 +7,7 @@
  */
 
 import { useEffect } from 'react';
-import { useUnifiedThemeStore } from '../../builder/stores/themeStore';
+import { useUnifiedThemeStore } from '../../stores/themeStore';
 import type { DesignTheme } from '../../types/theme';
 
 export interface UseThemesOptions {

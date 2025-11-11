@@ -522,21 +522,6 @@ export type ComponentElementProps =
   | SectionElementProps
   | NavElementProps;
 
-// === 테마 관련 타입 ===
-export interface DesignToken {
-  id: string;
-  project_id: string;
-  theme_id: string;
-  name: string;
-  type: "color" | "typography" | "spacing" | "border" | "shadow";
-  value: TokenValue;
-  scope: "raw" | "semantic";
-  alias_of?: string | null;
-  css_variable?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 // === 스토어 상태 타입 ===
 export interface ElementsState {
   elements: Element[];

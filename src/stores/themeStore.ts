@@ -17,16 +17,16 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { ThemeService } from '../../services/theme/ThemeService';
-import { TokenService } from '../../services/theme/TokenService';
-import { tokensToCSS, formatCSSVars } from '../../utils/theme/tokenToCss';
+import { ThemeService } from '../services/theme/ThemeService';
+import { TokenService } from '../services/theme/TokenService';
+import { tokensToCSS, formatCSSVars } from '../utils/theme/tokenToCss';
 import type {
   DesignTheme,
   DesignToken,
   CreateTokenInput,
   UpdateTokenInput,
   TokenValue,
-} from '../../types/theme';
+} from '../types/theme';
 
 interface UnifiedThemeState {
   // ===== Theme State =====

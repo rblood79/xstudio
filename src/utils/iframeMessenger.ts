@@ -1,5 +1,5 @@
 import { Element } from '../types/store';
-import { DesignToken } from '../types/store';
+import type { DesignToken } from '../types/theme';
 import { ElementUtils } from './elementUtils';
 
 // 메시지 데이터 타입 정의

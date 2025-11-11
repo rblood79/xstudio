@@ -322,6 +322,34 @@ npm run type-check
 - ✅ **타입 에러 0개**
 - ✅ **SSoT 달성** (Component Props + Theme Types)
 
+**Phase 0 추가 완료 사항 (2025-11-12 - 불완전 마이그레이션 해결):**
+
+**문제 발견:**
+- ❌ `unified.ts`에 DesignToken 정의가 여전히 남아있음 (lines 526-538)
+- ❌ `types/store.ts`가 unified.ts에서 DesignToken 재수출 → 48개 파일이 구버전 사용
+- ❌ `builder/stores/themeStore.ts` 위치 문제 (전역 hooks가 builder store import)
+
+**해결 작업:**
+1. ✅ unified.ts에서 DesignToken 정의 삭제 (13줄)
+2. ✅ types/store.ts 수정 - theme/index.ts에서 재수출
+3. ✅ iframeMessenger.ts import 경로 수정
+4. ✅ themeStore.ts 파일 이동: `builder/stores/` → `stores/`
+5. ✅ themeStore.ts import 경로 수정 (9개 파일):
+   - hooks/theme/useActiveTheme.ts
+   - hooks/theme/useThemes.ts
+   - hooks/useTheme.ts
+   - builder/theme/ThemeInitializer.tsx
+   - builder/hooks/useThemeManager.ts
+   - builder/setting/index.tsx
+   - stores/themeStore.ts (내부 imports)
+6. ✅ 최종 타입 체크: 0 errors
+
+**최종 결과:**
+- ✅ DesignToken SSoT 완전 달성 (theme/index.ts만 존재)
+- ✅ 전이 종속성 해결 (48개 파일이 올바른 타입 사용)
+- ✅ 도메인 분리 원칙 준수 (전역 store는 전역 위치에)
+- ✅ 아키텍처 일관성 확보 (전역 hooks → 전역 store)
+
 ---
 
 ### 이슈 #3: 이벤트 타입 선언과 런타임 처리 불일치 ✅ **RESOLVED (Previously)**

@@ -4,7 +4,7 @@ import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Sav
 import { Button } from 'react-aria-components';
 import { useParams } from 'react-router-dom';
 import { useStore } from '../stores';
-import { useUnifiedThemeStore } from '../stores/themeStore';
+import { useUnifiedThemeStore } from '../../stores/themeStore';
 import { saveService } from '../../services/save';
 import { PropertySwitch, PropertySelect, PropertySlider } from '../inspector/components';
 import { useThemes } from '../../hooks/theme/useThemes';

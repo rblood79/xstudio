@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useUnifiedThemeStore } from '../builder/stores/themeStore';
+import { useUnifiedThemeStore } from '../stores/themeStore';
 import type { TokenValue, NewTokenInput } from '../types/theme';
 
 export function useTheme() {

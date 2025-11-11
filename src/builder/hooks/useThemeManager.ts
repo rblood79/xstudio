@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useUnifiedThemeStore } from '../stores/themeStore';
+import { useUnifiedThemeStore } from '../../stores/themeStore';
 
 export interface UseThemeManagerReturn {
     applyThemeTokens: () => void;
