@@ -10,7 +10,8 @@
 import { Select, Label, Button, Popover, ListBox, ListBoxItem, Section, Header } from 'react-aria-components';
 import { Plus } from 'lucide-react';
 import type { ActionType } from '@/types/events';
-import { ACTION_TYPE_LABELS, ACTION_CATEGORIES } from '@/types/events';
+import { ACTION_TYPE_LABELS } from '@/types/events';
+import { ACTION_CATEGORIES } from '@/types/events.registry';
 
 interface ActionTypePickerProps {
   /** 액션 선택 시 호출되는 콜백 */
@@ -70,7 +71,7 @@ export function ActionTypePicker({
     );
   }
 
-  // 카테고리별로 그룹핑
+  // 카테고리별로 그룹핑 (Registry 기반)
   return (
     <Select
       placeholder="액션 추가"
@@ -85,50 +86,16 @@ export function ActionTypePicker({
       </Button>
       <Popover>
         <ListBox>
-          <Section key="navigation">
-            <Header>네비게이션</Header>
-            {ACTION_CATEGORIES.navigation.map((actionType) => (
-              <ListBoxItem key={actionType} id={actionType}>
-                {ACTION_TYPE_LABELS[actionType as ActionType]}
-              </ListBoxItem>
-            ))}
-          </Section>
-
-          <Section key="interaction">
-            <Header>인터랙션</Header>
-            {ACTION_CATEGORIES.interaction.map((actionType) => (
-              <ListBoxItem key={actionType} id={actionType}>
-                {ACTION_TYPE_LABELS[actionType as ActionType]}
-              </ListBoxItem>
-            ))}
-          </Section>
-
-          <Section key="data">
-            <Header>데이터</Header>
-            {ACTION_CATEGORIES.data.map((actionType) => (
-              <ListBoxItem key={actionType} id={actionType}>
-                {ACTION_TYPE_LABELS[actionType as ActionType]}
-              </ListBoxItem>
-            ))}
-          </Section>
-
-          <Section key="media">
-            <Header>미디어</Header>
-            {ACTION_CATEGORIES.media.map((actionType) => (
-              <ListBoxItem key={actionType} id={actionType}>
-                {ACTION_TYPE_LABELS[actionType as ActionType]}
-              </ListBoxItem>
-            ))}
-          </Section>
-
-          <Section key="custom">
-            <Header>커스텀</Header>
-            {ACTION_CATEGORIES.custom.map((actionType) => (
-              <ListBoxItem key={actionType} id={actionType}>
-                {ACTION_TYPE_LABELS[actionType as ActionType]}
-              </ListBoxItem>
-            ))}
-          </Section>
+          {Object.entries(ACTION_CATEGORIES).map(([categoryKey, category]) => (
+            <Section key={categoryKey}>
+              <Header>{category.label}</Header>
+              {category.actions.map((actionType) => (
+                <ListBoxItem key={actionType} id={actionType}>
+                  {ACTION_TYPE_LABELS[actionType as ActionType]}
+                </ListBoxItem>
+              ))}
+            </Section>
+          ))}
         </ListBox>
       </Popover>
     </Select>

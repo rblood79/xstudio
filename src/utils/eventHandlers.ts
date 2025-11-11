@@ -1,5 +1,5 @@
 import { Element } from '../types/store';
-import { ElementEvent } from '../types/events';
+import { ElementEvent, IMPLEMENTED_EVENT_TYPES } from '../types/events';
 import { EventEngine } from './eventEngine';
 import { createHash } from 'crypto';
 
@@ -41,11 +41,8 @@ export class EventHandlerFactory {
         if (element.props.events && Array.isArray(element.props.events)) {
             const events = element.props.events as ElementEvent[];
 
-            // 보안 검증: 이벤트 타입 화이트리스트
-            const allowedEventTypes = [
-                'onClick', 'onChange', 'onSubmit', 'onFocus', 'onBlur',
-                'onMouseEnter', 'onMouseLeave', 'onKeyDown', 'onKeyUp'
-            ];
+            // 보안 검증: 이벤트 타입 화이트리스트 (Registry 기반)
+            const allowedEventTypes = [...IMPLEMENTED_EVENT_TYPES];
 
             const activeEventTypes = [...new Set(
                 events
@@ -119,11 +116,8 @@ export class EventHandlerFactory {
     }
 
     private isValidEventType(eventType: string): boolean {
-        const allowedTypes = [
-            'onClick', 'onChange', 'onSubmit', 'onFocus', 'onBlur',
-            'onMouseEnter', 'onMouseLeave', 'onKeyDown', 'onKeyUp'
-        ];
-        return allowedTypes.includes(eventType);
+        // Registry 기반 검증
+        return IMPLEMENTED_EVENT_TYPES.includes(eventType as any);
     }
 
     private registerCleanup(cleanupFn: () => void) {

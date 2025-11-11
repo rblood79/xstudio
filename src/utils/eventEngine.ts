@@ -2,7 +2,8 @@ import {
     EventAction,
     ElementEvent,
     EventContext,
-    EventExecutionResult
+    EventExecutionResult,
+    isImplementedActionType
 } from '../types/events';
 
 export class EventEngine {
@@ -170,6 +171,11 @@ export class EventEngine {
     }
 
     private async executeAction(actionType: string, action: EventAction, context: EventContext): Promise<unknown> {
+        // Registry 기반 타입 검증
+        if (!isImplementedActionType(actionType)) {
+            throw new Error(`Action type not implemented: ${actionType}`);
+        }
+
         const handler = this.actionHandlers[actionType];
         if (!handler) {
             throw new Error(`Unknown action type: ${actionType}`);
