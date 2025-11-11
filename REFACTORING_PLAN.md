@@ -993,16 +993,35 @@ const themes = useThemeStore(state => state.themes);
 
 ---
 
-## 📨 Phase 2: 메시징 레이어 통합 (P1 - High)
+## 📨 Phase 2: 메시징 레이어 통합 (P1 - High) ✅ **COMPLETED**
 
-### 이슈 #8: 세 개의 경쟁하는 메시징 구현
+### 이슈 #8: 세 개의 경쟁하는 메시징 구현 ✅ **RESOLVED**
 
 **문제:**
 - `utils/iframeMessenger.ts` (196줄) - IframeMessenger 클래스 (큐잉, 타임아웃, 보안)
 - `utils/messaging.ts` (93줄) - MessageService 싱글톤 (간단한 래퍼)
 - `builder/preview/utils/messageHandlers.ts` - Preview 전용 핸들러
 
-**해결 방안:**
+**완료 내역 (2025-11-12):**
+- ✅ `services/messaging/MessagingService.ts` 생성 (265줄)
+- ✅ Facade 패턴으로 IframeMessenger 래핑
+- ✅ Type-safe API 제공 (Element, Theme, Navigation, Error operations)
+- ✅ 계층 구조 명확화: Application → MessagingService → IframeMessenger → postMessage
+- ✅ Singleton 인스턴스 및 Convenience functions export
+- ✅ Type check 통과
+
+**실제 구현:**
+```typescript
+// services/messaging/MessagingService.ts
+- Element Operations: updateElements, updateElementProps, addElement, removeElement, selectElement
+- Theme Operations: updateThemeVars, updateThemeTokens, updateThemeFromTokens, setDarkMode
+- Navigation: navigateToPage
+- Error & Loading: sendError, sendLoading
+- Handlers: registerHandler, unregisterHandler
+- Utilities: clearOverlay, destroy
+```
+
+**해결 방안 (계획과 차이):**
 
 #### 계층 정리
 ```
@@ -1152,97 +1171,114 @@ export const {
 } = messagingService;
 ```
 
-**마이그레이션 단계:**
-```bash
-# Step 1: MessagingService 생성
-# services/messaging/MessagingService.ts 생성
+**아키텍처 결정:**
+기존 파일들을 즉시 삭제하지 않고 유지하기로 결정:
 
-# Step 2: MessageService.ts를 deprecated로 표시
-echo "// @deprecated Use services/messaging/MessagingService" | cat - utils/messaging.ts > temp && mv temp utils/messaging.ts
+1. **`utils/iframeMessenger.ts`** - 유지 (Transport Layer)
+   - 큐잉, 타임아웃, origin 검증 등 저수준 기능
+   - MessagingService가 내부적으로 사용
 
-# Step 3: 의존성 마이그레이션
-rg "MessageService" --files-with-matches
-rg "from ['\"].*messaging['\"]" --files-with-matches
+2. **`utils/messaging.ts`** - 유지 (Backward Compatibility)
+   - 기존 코드(BuilderCore, Layers, Overlay 등)에서 광범위하게 사용
+   - 점진적 마이그레이션을 위해 유지
 
-# Step 4: 자동 치환
-find src -name "*.ts" -o -name "*.tsx" | xargs sed -i \
-  "s/import { MessageService }/import { messagingService }/g"
+3. **`builder/preview/utils/messageHandlers.ts`** - 유지 (Preview 전용)
+   - Preview 컴포넌트의 메시지 처리 로직
+   - 독립적인 역할로 유지
 
-# Step 5: MessageService 삭제
-rm utils/messaging.ts
-```
-
-**예상 효과:**
-- ✅ 93줄 삭제 (MessageService)
-- ✅ 메시징 API 단일화
-- ✅ 타입 안정성 향상
+**실제 효과:**
+- ✅ 새로운 코드는 MessagingService 사용 가능
+- ✅ 기존 코드는 안전하게 동작 유지
+- ✅ 타입 안정성 향상 (MessagingService)
+- ✅ 계층 구조 명확화
+- ⏳ 향후 점진적 마이그레이션 가능 (v2.0)
 
 ---
 
-## 🛠️ Phase 3: 유틸리티 통합 (P2 - Medium)
+## 🛠️ Phase 3: 유틸리티 통합 (P2 - Medium) ✅ **COMPLETED**
 
-### 이슈 #9: Element Creation 3중 구현
+### 이슈 #9: Element Creation 3중 구현 ✅ **RESOLVED**
 
 **문제:**
 1. `builder/stores/utils/elementCreation.ts` - Triple-sync (memory → iframe → DB)
 2. `builder/factories/utils/elementCreation.ts` - Definition converter
 3. `utils/elementUtils.ts` - Raw API wrapper
 
-**해결 방안:**
-```
-레이어 정리:
-├── stores/utils/elementCreation.ts (최상위 레이어)
-│   └─→ services/api/ElementsApiService.ts (중간 레이어)
-│       └─→ Supabase (데이터 레이어)
-│
-└── factories/utils/elementCreation.ts (별도 레이어 - 유지)
-    └─→ Definition → Element 변환만 담당
-```
+**완료 내역 (2025-11-12):**
+- ✅ `utils/elementUtils.ts` 리팩토링 (138줄 → API wrapper 제거)
+- ✅ 유지된 유틸리티 함수:
+  - `generateId()` - UUID 생성
+  - `findBodyElement()` - Body 요소 찾기
+  - `migrateOrphanElementsToBody()` - 고아 요소 마이그레이션
+  - `getDescendants()` - 자식 요소 재귀 조회
+  - `isAncestor()` - 조상 체크
+  - `getElementPath()` - Breadcrumb 경로
+- ✅ 제거된 API wrapper:
+  - `createElement()` → elementsApi 직접 사용
+  - `deleteElement()` → elementsApi 직접 사용
+  - `updateElement()` → elementsApi 직접 사용
+  - `getElementsByPageId()` → elementsApi 직접 사용
+  - `updateElementProps()` → elementsApi 직접 사용
+  - `waitForParentElement()` → 사용하지 않음
+  - `createChildElementWithParentCheck()` → 사용하지 않음
 
-**조치:**
-1. `utils/elementUtils.ts`의 elementCreation 로직 삭제
-2. Store 레이어는 ElementsApiService만 호출
-3. Factory는 독립적으로 유지 (변환 로직)
-
-**예상 효과:**
-- ✅ ~150줄 정리
-- ✅ 레이어 책임 명확화
+**실제 효과:**
+- ✅ API wrapper 중복 제거 (~70줄)
+- ✅ 레이어 책임 명확화 (Utility ≠ API Service)
+- ✅ 유용한 helper 함수는 유지
+- ✅ Type check 통과
 
 ---
 
-### 이슈 #10: Tree/Hierarchy 2중 구현
+### 이슈 #10: Tree/Hierarchy 2중 구현 ⏭️ **SKIPPED**
 
 **문제:**
-- `builder/utils/treeUtils.ts` (80줄) - 단순 재귀 빌더
+- `builder/utils/treeUtils.ts` (245줄) - 단순 재귀 빌더, Tabs/Table 특수 정렬
 - `builder/utils/HierarchyManager.ts` (615줄) - 캐싱, 배치 처리, 검증
 
-**해결 방안:**
-HierarchyManager가 상위 집합이므로 treeUtils 삭제
+**검토 결과 (2025-11-12):**
+두 파일은 **서로 다른 용도**로 사용되므로 **둘 다 유지**:
 
-**예상 효과:**
-- ✅ 80줄 삭제
-- ✅ 단일 트리 구현
+1. **treeUtils.ts** - UI 렌더링용 (단순, 가벼움)
+   - 사용처: Layers.tsx (Layer Tree 렌더링)
+   - 역할: flat Element[] → hierarchical ElementTreeItem[] 변환
+   - 특징: Tabs/Table 특수 정렬 로직 포함
+
+2. **HierarchyManager.ts** - 고급 기능용 (복잡, 최적화)
+   - 사용처: 데이터 분석, 배치 처리
+   - 역할: 캐싱, 배치 처리, 통계, 검증
+   - 특징: 성능 최적화 (캐시, 배치)
+
+**결정:** 중복이 아님 - 각자 명확한 역할
 
 ---
 
-### 이슈 #11: Event Handler 2중 구현
+### 이슈 #11: Event Handler 2중 구현 ⏭️ **SKIPPED**
 
 **문제:**
 - `builder/preview/utils/eventHandlers.ts` - 캐싱 없음
-- `utils/eventHandlers.ts` - 캐싱 + 보안
+- `utils/eventHandlers.ts` - EventHandlerFactory 클래스, 캐싱 + 보안
 
-**해결 방안:**
-Preview가 utils/eventHandlers를 사용하도록 변경
+**검토 결과 (2025-11-12):**
+두 파일은 **서로 다른 용도**로 사용되므로 **둘 다 유지**:
 
-**예상 효과:**
-- ✅ ~100줄 삭제
-- ✅ 이벤트 핸들러 일관성
+1. **preview/utils/eventHandlers.ts** - Preview 전용 (단순)
+   - 역할: Preview에서 이벤트 실행
+   - 특징: 간단한 createEventHandler() 함수
+   - 캐싱 불필요 (Preview는 매번 새로운 DOM)
+
+2. **utils/eventHandlers.ts** - Builder 전용 (복잡)
+   - 역할: Builder에서 이벤트 관리
+   - 특징: EventHandlerFactory 클래스, 캐싱, 보안 검증
+   - 성능 최적화 필수 (Builder는 긴 수명)
+
+**결정:** 중복이 아님 - 각자 명확한 역할
 
 ---
 
-## 📋 Phase 4: Element Store와 API Service 중복 제거 (P1)
+## 📋 Phase 4: Element Store와 API Service 중복 제거 (P1) ✅ **COMPLETED**
 
-### 이슈 #12: Store Utilities가 Supabase 직접 호출
+### 이슈 #12: Store Utilities가 Supabase 직접 호출 ✅ **RESOLVED**
 
 **문제:**
 - `builder/stores/utils/elementCreation.ts`, `elementUpdate.ts`, `elementRemoval.ts`가 Supabase 직접 호출
@@ -1251,10 +1287,17 @@ Preview가 utils/eventHandlers를 사용하도록 변경
 **해결 방안:**
 Store utilities는 ElementsApiService만 호출하도록 리팩토링
 
-**예상 효과:**
-- ✅ Supabase 호출 중복 제거
-- ✅ 에러 핸들링 일관성
-- ✅ snake_case ↔ camelCase 변환 중복 제거
+**완료 내역 (2025-11-12):**
+- ✅ `elementCreation.ts`: `supabase` → `elementsApi.createElement()`, `elementsApi.createMultipleElements()`
+- ✅ `elementRemoval.ts`: `supabase` → `elementsApi.deleteMultipleElements()`
+- ✅ `elementUpdate.ts`: 이미 Supabase 호출 없음 (외부 위임 패턴 사용)
+- ✅ Supabase import 제거 완료
+- ✅ Type check 통과
+
+**실제 효과:**
+- ✅ Supabase 직접 호출 제거 (elementCreation: 40줄 → 5줄, elementRemoval: 21줄 → 5줄)
+- ✅ 에러 핸들링 일관성 확보 (BaseApiService 계층 활용)
+- ✅ snake_case ↔ camelCase 변환 중복 제거 (ElementsApiService에서 처리)
 
 ---
 

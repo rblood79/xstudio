@@ -1,15 +1,15 @@
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createSelectionSlice, SelectionState } from "./selection";
-import { createThemeSlice, ThemeState } from "./theme";
 import { createElementsSlice, ElementsState } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
+
+// ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
 // 통합 스토어 타입
 interface Store
   extends ElementsState,
     SelectionState,
-    ThemeState,
     SaveModeState,
     SettingsState {}
 
@@ -37,7 +37,6 @@ if (hasExistingStore) {
   useStore = create<Store>((...args) => ({
     ...createElementsSlice(...args),
     ...createSelectionSlice(...args),
-    ...createThemeSlice(...args),
     ...createSaveModeSlice(...args),
     ...createSettingsSlice(...args),
   }));
@@ -100,11 +99,8 @@ export const useHistoryActions = () =>
     redo: state.redo,
   }));
 
-export const useThemeActions = () =>
-  useStore((state) => ({
-    loadTheme: state.loadTheme,
-    updateTokenValue: state.updateTokenValue,
-  }));
+// ✅ useThemeActions removed - use unified theme store instead
+// import { useUnifiedThemeStore } from './themeStore.unified';
 
 // 개발 환경 디버깅
 export const useStoreDebug = () => {

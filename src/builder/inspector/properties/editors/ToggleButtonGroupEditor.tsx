@@ -4,8 +4,8 @@ import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from 
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
-//import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/elementUtils';
 
 interface SelectedButtonState {
@@ -98,7 +98,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                             onClick={async () => {
                                 try {
                                     // 실제 ToggleButton 컴포넌트를 데이터베이스에서 삭제
-                                    await ElementUtils.deleteElement(currentButton.id);
+                                    await elementsApi.deleteElement(currentButton.id);
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentButton.id);

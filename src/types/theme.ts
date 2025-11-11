@@ -1,3 +1,8 @@
+/**
+ * @deprecated This file is deprecated. Use types/theme/index.ts instead.
+ * This file will be removed in v2.0
+ */
+
 // 통합된 테마 관련 타입 정의
 export interface DesignTheme {
     id: string;

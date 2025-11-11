@@ -2,12 +2,12 @@
  * useActiveTheme Hook
  * 현재 활성 테마 관리 (Realtime 동기화)
  *
- * ⚠️ Refactored to use unified Zustand themeStore
- * This is now a wrapper around the centralized theme store
+ * ✅ Migrated to use unified theme store
+ * This is now a wrapper around the unified theme store
  */
 
 import { useEffect } from 'react';
-import { useThemeStore } from '../../builder/stores/themeStore';
+import { useUnifiedThemeStore } from '../../builder/stores/themeStore';
 import type { DesignTheme } from '../../types/theme';
 
 export interface UseActiveThemeOptions {
@@ -24,7 +24,7 @@ export interface UseActiveThemeReturn {
 }
 
 /**
- * useActiveTheme - Wrapper around Zustand themeStore
+ * useActiveTheme - Wrapper around unified theme store
  * Provides backward compatibility with existing code
  */
 export function useActiveTheme(
@@ -32,14 +32,14 @@ export function useActiveTheme(
 ): UseActiveThemeReturn {
   const { projectId, enableRealtime = true } = options;
 
-  // Use centralized Zustand store
-  const activeTheme = useThemeStore((state) => state.activeTheme);
-  const loading = useThemeStore((state) => state.loading);
-  const error = useThemeStore((state) => state.error);
-  const setProjectId = useThemeStore((state) => state.setProjectId);
-  const fetchActiveTheme = useThemeStore((state) => state.fetchActiveTheme);
-  const activateTheme = useThemeStore((state) => state.activateTheme);
-  const subscribeToThemes = useThemeStore((state) => state.subscribeToThemes);
+  // Use unified theme store
+  const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
+  const loading = useUnifiedThemeStore((state) => state.loading);
+  const error = useUnifiedThemeStore((state) => state.error);
+  const setProjectId = useUnifiedThemeStore((state) => state.setProjectId);
+  const loadActiveTheme = useUnifiedThemeStore((state) => state.loadActiveTheme);
+  const activateTheme = useUnifiedThemeStore((state) => state.activateTheme);
+  const subscribeToThemes = useUnifiedThemeStore((state) => state.subscribeToThemes);
 
   /**
    * Initialize store with projectId
@@ -48,7 +48,7 @@ export function useActiveTheme(
    */
   useEffect(() => {
     setProjectId(projectId);
-    fetchActiveTheme();
+    loadActiveTheme(projectId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -78,7 +78,7 @@ export function useActiveTheme(
     activeTheme,
     loading,
     error,
-    refetch: fetchActiveTheme,
+    refetch: async () => { await loadActiveTheme(projectId); },
     switchTheme,
   };
 }

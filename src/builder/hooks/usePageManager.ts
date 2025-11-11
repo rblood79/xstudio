@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useListData } from 'react-stately';
 import { Page, Element } from '../../types/store';
 import { pagesApi } from '../../services/api/PagesApiService';
+import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/supabase';
 import { ElementUtils } from '../../utils/elementUtils';
@@ -69,7 +70,7 @@ export const usePageManager = (): UsePageManagerReturn => {
         }
 
         try {
-            const elementsData = await ElementUtils.getElementsByPageId(pageId);
+            const elementsData = await elementsApi.getElementsByPageId(pageId);
             const { setElements, isTracking } = useStore.getState() as unknown as {
                 setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
                 isTracking: boolean;
@@ -131,7 +132,7 @@ export const usePageManager = (): UsePageManagerReturn => {
                 order_num: 0,
             };
 
-            const elementData = await ElementUtils.createElement(bodyElement);
+            const elementData = await elementsApi.createElement(bodyElement);
             addElement(elementData);
 
             console.log('✅ 페이지 추가 완료:', newPage.title);

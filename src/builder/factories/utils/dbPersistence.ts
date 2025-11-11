@@ -1,4 +1,5 @@
 import { Element } from "../../../types/store";
+import { elementsApi } from "../../../services/api/ElementsApiService";
 import { ElementUtils } from "../../../utils/elementUtils";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { updateElementId } from "./elementCreation";
@@ -19,11 +20,11 @@ export async function saveElementsToDb(
       parent_id: parentId,
       order_num: HierarchyManager.calculateNextOrderNum(
         parentId,
-        await ElementUtils.getElementsByPageId(pageId)
+        await elementsApi.getElementsByPageId(pageId)
       ),
     };
 
-    const savedParent = await ElementUtils.createElement(parentToSave);
+    const savedParent = await elementsApi.createElement(parentToSave);
 
     // 스토어에서 부모 요소 ID 업데이트 (임시 ID → 실제 DB ID)
     updateElementId(parent.id, savedParent.id);
@@ -34,7 +35,7 @@ export async function saveElementsToDb(
         ...children[i],
         parent_id: savedParent.id,
       };
-      const savedChild = await ElementUtils.createElement(childToSave);
+      const savedChild = await elementsApi.createElement(childToSave);
 
       // 스토어에서 자식 요소 ID 업데이트
       updateElementId(children[i].id, savedChild.id);

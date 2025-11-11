@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore } from '../builder/stores';
+import { useUnifiedThemeStore } from '../builder/stores/themeStore';
 import type { TokenValue, NewTokenInput } from '../types/theme';
 
 export function useTheme() {
@@ -10,26 +10,26 @@ export function useTheme() {
         semanticTokens,
         loading,
         dirty,
-        lastError,
-        loadTheme,
+        error: lastError,
+        loadTokens: loadTheme,
         updateTokenValue,
         addToken,
         deleteToken,
-        saveAll,
+        saveAllTokens: saveAll,
         snapshotVersion,
         clearError
-    } = useStore(useShallow(state => ({
+    } = useUnifiedThemeStore(useShallow(state => ({
         activeTheme: state.activeTheme,
         rawTokens: state.rawTokens,
         semanticTokens: state.semanticTokens,
         loading: state.loading,
         dirty: state.dirty,
-        lastError: state.lastError,
-        loadTheme: state.loadTheme,
+        error: state.error,
+        loadTokens: state.loadTokens,
         updateTokenValue: state.updateTokenValue,
         addToken: state.addToken,
         deleteToken: state.deleteToken,
-        saveAll: state.saveAll,
+        saveAllTokens: state.saveAllTokens,
         snapshotVersion: state.snapshotVersion,
         clearError: state.clearError
     })));
@@ -43,8 +43,12 @@ export function useTheme() {
     }, [addToken]);
 
     const handleDeleteToken = useCallback((name: string, scope: 'raw' | 'semantic') => {
-        deleteToken(name, scope);
-    }, [deleteToken]);
+        // Find token by name and scope
+        const token = (scope === 'raw' ? rawTokens : semanticTokens).find(t => t.name === name);
+        if (token) {
+            deleteToken(token.id);
+        }
+    }, [deleteToken, rawTokens, semanticTokens]);
 
     return {
         // 상태

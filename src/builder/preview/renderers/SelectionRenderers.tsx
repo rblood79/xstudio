@@ -12,6 +12,7 @@ import {
 } from "../../components/list";
 import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
+import { elementsApi } from "../../../services/api";
 import { ElementUtils } from "../../../utils/elementUtils";
 import { getVisibleColumns } from "../../../utils/columnTypeInference";
 import type { ColumnMapping } from "../../../types/unified";
@@ -639,7 +640,7 @@ export const renderSelect = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await ElementUtils.updateElementProps(element.id, updatedProps);
+          await elementsApi.updateElementProps(element.id, updatedProps);
           console.log(
             "Element props updated successfully (placeholder preserved)"
           );
@@ -888,7 +889,7 @@ export const renderComboBox = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await ElementUtils.updateElementProps(element.id, updatedProps);
+          await elementsApi.updateElementProps(element.id, updatedProps);
           console.log("ComboBox element props updated successfully");
         } catch (err) {
           console.error("Error updating ComboBox element props:", err);

@@ -5,6 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { useStore } from '../../../stores';
+import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
@@ -206,7 +207,7 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                                     order_num: maxOrderNum + 1,
                                 };
 
-                                const data = await ElementUtils.createElement(newBreadcrumb);
+                                const data = await elementsApi.createElement(newBreadcrumb);
                                 addElement(data);
                                 console.log('새 Breadcrumb 추가됨:', data);
                             } catch (error) {

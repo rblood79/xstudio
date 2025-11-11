@@ -1,24 +1,55 @@
 /**
- * Theme Store - Unified Zustand Store
- * ThemeStudio와 Builder Theme Tab이 공유하는 통합 테마 상태 관리
+ * Unified Theme Store
+ *
+ * This store combines and supersedes:
+ * - builder/stores/theme.ts (token-focused store)
+ * - builder/stores/themeStore.ts (theme-focused store)
+ *
+ * Key Features:
+ * - Single source of truth for theme AND token state
+ * - Automatic synchronization: token changes → CSS auto-injection
+ * - Automatic synchronization: theme activation → token auto-loading
+ * - Realtime subscriptions for both themes and tokens
+ * - Service layer only (no direct Supabase calls)
  */
 
 import { create } from 'zustand';
-import { ThemeService } from '../../services/theme';
-import type { DesignTheme } from '../../types/theme';
+import { devtools } from 'zustand/middleware';
+import { produce } from 'immer';
+import { v4 as uuidv4 } from 'uuid';
+import { ThemeService } from '../../services/theme/ThemeService';
+import { TokenService } from '../../services/theme/TokenService';
+import { tokensToCSS, formatCSSVars } from '../../utils/theme/tokenToCss';
+import type {
+  DesignTheme,
+  DesignToken,
+  CreateTokenInput,
+  UpdateTokenInput,
+  TokenValue,
+} from '../../types/theme';
 
-interface ThemeState {
-  // State
+interface UnifiedThemeState {
+  // ===== Theme State =====
   themes: DesignTheme[];
   activeTheme: DesignTheme | null;
-  loading: boolean;
-  error: string | null;
+  activeThemeId: string | null;
   projectId: string | null;
 
-  // Actions
+  // ===== Token State =====
+  tokens: DesignToken[]; // All tokens (raw + semantic)
+  rawTokens: DesignToken[]; // Computed getter
+  semanticTokens: DesignToken[]; // Computed getter
+
+  // ===== Loading & Error =====
+  loading: boolean;
+  error: string | null;
+  dirty: boolean; // Has unsaved token changes
+
+  // ===== Theme Actions =====
   setProjectId: (projectId: string) => void;
-  fetchThemes: () => Promise<void>;
-  fetchActiveTheme: () => Promise<void>;
+  loadThemes: (projectId: string) => Promise<void>;
+  loadActiveTheme: (projectId: string) => Promise<void>;
+  setActiveTheme: (themeId: string) => Promise<void>;
   createTheme: (
     name: string,
     parentThemeId?: string,
@@ -35,285 +66,633 @@ interface ThemeState {
     inherit?: boolean
   ) => Promise<string | null>;
   activateTheme: (themeId: string) => Promise<boolean>;
+  snapshotVersion: () => Promise<void>;
 
-  // Realtime subscription
+  // ===== Token Actions =====
+  loadTokens: (themeId: string) => Promise<void>;
+  createToken: (input: CreateTokenInput) => Promise<DesignToken>;
+  updateToken: (tokenId: string, updates: UpdateTokenInput) => Promise<void>;
+  updateTokenValue: (name: string, scope: 'raw' | 'semantic', value: TokenValue) => void;
+  addToken: (input: Omit<CreateTokenInput, 'project_id' | 'theme_id'>) => void;
+  deleteToken: (tokenId: string) => Promise<void>;
+  bulkUpsertTokens: (tokens: Partial<DesignToken>[]) => Promise<void>;
+  saveAllTokens: () => Promise<void>;
+
+  // ===== CSS Injection =====
+  injectThemeCSS: () => void;
+
+  // ===== Realtime Subscriptions =====
   subscribeToThemes: () => (() => void) | null;
+  subscribeToTokens: () => (() => void) | null;
 
-  // Internal state updates (for realtime)
+  // ===== Internal State Updates (for Realtime) =====
   _addTheme: (theme: DesignTheme) => void;
   _updateTheme: (theme: DesignTheme) => void;
   _removeTheme: (themeId: string) => void;
   _setActiveTheme: (theme: DesignTheme | null) => void;
+
+  // ===== Utilities =====
+  clearError: () => void;
+  cleanup: () => void;
+  reset: () => void;
 }
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
-  // Initial State
-  themes: [],
-  activeTheme: null,
-  loading: false,
-  error: null,
-  projectId: null,
+// Realtime subscription cleanup functions
+let unsubscribeThemes: (() => void) | null = null;
+let unsubscribeTokens: (() => void) | null = null;
 
-  /**
-   * Set Project ID
-   */
-  setProjectId: (projectId: string) => {
-    set({ projectId });
-  },
+export const useUnifiedThemeStore = create<UnifiedThemeState>()(
+  devtools(
+    (set, get) => ({
+      // ===== Initial State =====
+      themes: [],
+      activeTheme: null,
+      activeThemeId: null,
+      projectId: null,
+      tokens: [],
+      loading: false,
+      error: null,
+      dirty: false,
 
-  /**
-   * Fetch all themes for the project
-   */
-  fetchThemes: async () => {
-    const { projectId } = get();
-    if (!projectId) {
-      console.error('[ThemeStore] fetchThemes: projectId is null');
-      return;
-    }
+      // ===== Computed Properties =====
+      get rawTokens() {
+        return get().tokens.filter((t) => t.scope === 'raw');
+      },
 
-    try {
-      set({ loading: true, error: null });
-      const themes = await ThemeService.getThemesByProject(projectId);
-      set({ themes, loading: false });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 조회 실패';
-      set({ error: message, loading: false });
-      console.error('[ThemeStore] fetchThemes failed:', err);
-    }
-  },
+      get semanticTokens() {
+        return get().tokens.filter((t) => t.scope === 'semantic');
+      },
 
-  /**
-   * Fetch active theme
-   */
-  fetchActiveTheme: async () => {
-    const { projectId } = get();
-    if (!projectId) {
-      console.error('[ThemeStore] fetchActiveTheme: projectId is null');
-      return;
-    }
+      // ===== Theme Actions =====
 
-    try {
-      set({ loading: true, error: null });
-      const activeTheme = await ThemeService.getActiveTheme(projectId);
-      set({ activeTheme, loading: false });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '활성 테마 조회 실패';
-      set({ error: message, loading: false });
-      console.error('[ThemeStore] fetchActiveTheme failed:', err);
-    }
-  },
+      setProjectId: (projectId: string) => {
+        set({ projectId });
+      },
 
-  /**
-   * Create new theme
-   */
-  createTheme: async (
-    name: string,
-    parentThemeId?: string,
-    status: 'active' | 'draft' | 'archived' = 'draft'
-  ): Promise<DesignTheme | null> => {
-    const { projectId } = get();
-    if (!projectId) {
-      console.error('[ThemeStore] createTheme: projectId is null');
-      return null;
-    }
-
-    try {
-      const newTheme = await ThemeService.createTheme({
-        project_id: projectId,
-        name,
-        parent_theme_id: parentThemeId,
-        status,
-      });
-
-      // Realtime will update automatically, but we add it manually for immediate feedback
-      get()._addTheme(newTheme);
-
-      return newTheme;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 생성 실패';
-      set({ error: message });
-      console.error('[ThemeStore] createTheme failed:', err);
-      return null;
-    }
-  },
-
-  /**
-   * Update theme
-   */
-  updateTheme: async (
-    themeId: string,
-    updates: { name?: string; status?: 'active' | 'draft' | 'archived' }
-  ): Promise<DesignTheme | null> => {
-    try {
-      const updatedTheme = await ThemeService.updateTheme(themeId, updates);
-
-      // Update in local state
-      get()._updateTheme(updatedTheme);
-
-      return updatedTheme;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 업데이트 실패';
-      set({ error: message });
-      console.error('[ThemeStore] updateTheme failed:', err);
-      return null;
-    }
-  },
-
-  /**
-   * Delete theme
-   */
-  deleteTheme: async (themeId: string): Promise<boolean> => {
-    try {
-      await ThemeService.deleteTheme(themeId);
-
-      // Remove from local state
-      get()._removeTheme(themeId);
-
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 삭제 실패';
-      set({ error: message });
-      console.error('[ThemeStore] deleteTheme failed:', err);
-      return false;
-    }
-  },
-
-  /**
-   * Duplicate theme
-   */
-  duplicateTheme: async (
-    sourceThemeId: string,
-    newName: string,
-    inherit: boolean = false
-  ): Promise<string | null> => {
-    try {
-      const newThemeId = await ThemeService.duplicateTheme(
-        sourceThemeId,
-        newName,
-        inherit
-      );
-
-      // Refresh themes list
-      await get().fetchThemes();
-
-      return newThemeId;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 복제 실패';
-      set({ error: message });
-      console.error('[ThemeStore] duplicateTheme failed:', err);
-      return null;
-    }
-  },
-
-  /**
-   * Activate theme
-   */
-  activateTheme: async (themeId: string): Promise<boolean> => {
-    try {
-      await ThemeService.activateTheme(themeId);
-
-      // Realtime subscription will automatically update themes and activeTheme
-      // No need to manually fetch - this prevents conflicts with realtime updates
-
-      return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '테마 활성화 실패';
-      set({ error: message });
-      console.error('[ThemeStore] activateTheme failed:', err);
-      return false;
-    }
-  },
-
-  /**
-   * Subscribe to realtime theme updates
-   */
-  subscribeToThemes: () => {
-    const { projectId } = get();
-    if (!projectId) {
-      console.error('[ThemeStore] subscribeToThemes: projectId is null');
-      return null;
-    }
-
-    const unsubscribe = ThemeService.subscribeToProjectThemes(
-      projectId,
-      (payload) => {
-        console.log('[ThemeStore] Realtime update:', payload);
-
-        if (payload.eventType === 'INSERT') {
-          get()._addTheme(payload.new as DesignTheme);
-
-          // If new theme is active, set as active theme
-          const newTheme = payload.new as DesignTheme;
-          if (newTheme.status === 'active') {
-            get()._setActiveTheme(newTheme);
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          get()._updateTheme(payload.new as DesignTheme);
-
-          // Update active theme if it's the one being updated
-          const updatedTheme = payload.new as DesignTheme;
-          const { activeTheme } = get();
-
-          if (activeTheme && updatedTheme.id === activeTheme.id) {
-            get()._setActiveTheme(updatedTheme);
-          }
-
-          // If another theme becomes active
-          if (updatedTheme.status === 'active' && activeTheme?.id !== updatedTheme.id) {
-            get()._setActiveTheme(updatedTheme);
-          }
-
-          // If active theme becomes inactive, clear it
-          if (activeTheme && updatedTheme.id === activeTheme.id && updatedTheme.status !== 'active') {
-            get()._setActiveTheme(null);
-          }
-        } else if (payload.eventType === 'DELETE') {
-          get()._removeTheme(payload.old.id);
-
-          // If active theme is deleted, clear it
-          // The newly activated theme will be set via UPDATE realtime event
-          const { activeTheme } = get();
-          if (activeTheme && payload.old.id === activeTheme.id) {
-            get()._setActiveTheme(null);
-          }
+      /**
+       * Load all themes for the project
+       */
+      loadThemes: async (projectId: string) => {
+        set({ loading: true, error: null });
+        try {
+          const themes = await ThemeService.getThemesByProject(projectId);
+          set({ themes, loading: false, projectId });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 조회 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] loadThemes failed:', err);
         }
-      }
-    );
+      },
 
-    return unsubscribe;
-  },
+      /**
+       * Load active theme for the project
+       */
+      loadActiveTheme: async (projectId: string) => {
+        set({ loading: true, error: null });
+        try {
+          const activeTheme = await ThemeService.getActiveTheme(projectId);
 
-  /**
-   * Internal: Add theme to state (for realtime)
-   */
-  _addTheme: (theme: DesignTheme) => {
-    set((state) => ({
-      themes: [...state.themes, theme],
-    }));
-  },
+          if (!activeTheme) {
+            set({ loading: false });
+            return;
+          }
 
-  /**
-   * Internal: Update theme in state (for realtime)
-   */
-  _updateTheme: (theme: DesignTheme) => {
-    set((state) => ({
-      themes: state.themes.map((t) => (t.id === theme.id ? theme : t)),
-    }));
-  },
+          set({
+            activeTheme,
+            activeThemeId: activeTheme.id,
+            projectId,
+            loading: false,
+          });
 
-  /**
-   * Internal: Remove theme from state (for realtime)
-   */
-  _removeTheme: (themeId: string) => {
-    set((state) => ({
-      themes: state.themes.filter((t) => t.id !== themeId),
-    }));
-  },
+          // ✅ Auto-load tokens (synchronization)
+          await get().loadTokens(activeTheme.id);
 
-  /**
-   * Internal: Set active theme (for realtime)
-   */
-  _setActiveTheme: (theme: DesignTheme | null) => {
-    set({ activeTheme: theme });
-  },
-}));
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '활성 테마 조회 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] loadActiveTheme failed:', err);
+        }
+      },
+
+      /**
+       * Set active theme by ID
+       */
+      setActiveTheme: async (themeId: string) => {
+        set({ loading: true, error: null });
+        try {
+          const theme = get().themes.find((t) => t.id === themeId);
+          if (!theme) throw new Error('Theme not found');
+
+          set({
+            activeTheme: theme,
+            activeThemeId: themeId,
+          });
+
+          // ✅ Auto-load tokens (synchronization)
+          await get().loadTokens(themeId);
+
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+
+          set({ loading: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 설정 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] setActiveTheme failed:', err);
+        }
+      },
+
+      createTheme: async (
+        name: string,
+        parentThemeId?: string,
+        status: 'active' | 'draft' | 'archived' = 'draft'
+      ): Promise<DesignTheme | null> => {
+        const { projectId } = get();
+        if (!projectId) {
+          console.error('[UnifiedThemeStore] createTheme: projectId is null');
+          return null;
+        }
+
+        try {
+          const newTheme = await ThemeService.createTheme({
+            project_id: projectId,
+            name,
+            parent_theme_id: parentThemeId,
+            status,
+          });
+
+          // Add to local state for immediate feedback
+          get()._addTheme(newTheme);
+
+          return newTheme;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 생성 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] createTheme failed:', err);
+          return null;
+        }
+      },
+
+      updateTheme: async (
+        themeId: string,
+        updates: { name?: string; status?: 'active' | 'draft' | 'archived' }
+      ): Promise<DesignTheme | null> => {
+        try {
+          const updatedTheme = await ThemeService.updateTheme(themeId, updates);
+          get()._updateTheme(updatedTheme);
+          return updatedTheme;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 업데이트 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] updateTheme failed:', err);
+          return null;
+        }
+      },
+
+      deleteTheme: async (themeId: string): Promise<boolean> => {
+        try {
+          await ThemeService.deleteTheme(themeId);
+          get()._removeTheme(themeId);
+          return true;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 삭제 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] deleteTheme failed:', err);
+          return false;
+        }
+      },
+
+      duplicateTheme: async (
+        sourceThemeId: string,
+        newName: string,
+        inherit: boolean = false
+      ): Promise<string | null> => {
+        try {
+          const newThemeId = await ThemeService.duplicateTheme(
+            sourceThemeId,
+            newName,
+            inherit
+          );
+
+          // Refresh themes list
+          const { projectId } = get();
+          if (projectId) {
+            await get().loadThemes(projectId);
+          }
+
+          return newThemeId;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 복제 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] duplicateTheme failed:', err);
+          return null;
+        }
+      },
+
+      activateTheme: async (themeId: string): Promise<boolean> => {
+        try {
+          await ThemeService.activateTheme(themeId);
+          // Realtime subscription will automatically update themes and activeTheme
+          return true;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '테마 활성화 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] activateTheme failed:', err);
+          return false;
+        }
+      },
+
+      snapshotVersion: async () => {
+        const { activeTheme } = get();
+        if (!activeTheme) return;
+
+        try {
+          const newVersion = await ThemeService.createSnapshot(activeTheme.id);
+
+          set(
+            produce((state: UnifiedThemeState) => {
+              if (state.activeTheme) {
+                state.activeTheme = {
+                  ...state.activeTheme,
+                  version: newVersion,
+                  updated_at: new Date().toISOString(),
+                };
+              }
+            })
+          );
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '버전 스냅샷 생성 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] snapshotVersion failed:', err);
+        }
+      },
+
+      // ===== Token Actions =====
+
+      /**
+       * Load tokens for a theme
+       */
+      loadTokens: async (themeId: string) => {
+        set({ loading: true, error: null });
+        try {
+          const resolvedTokens = await TokenService.getResolvedTokens(themeId);
+          set({ tokens: resolvedTokens as DesignToken[], loading: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '토큰 조회 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] loadTokens failed:', err);
+        }
+      },
+
+      createToken: async (input: CreateTokenInput): Promise<DesignToken> => {
+        set({ loading: true, error: null });
+        try {
+          const newToken = await TokenService.createToken(input);
+          set((state) => ({
+            tokens: [...state.tokens, newToken],
+            dirty: false,
+            loading: false,
+          }));
+
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+
+          return newToken;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '토큰 생성 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] createToken failed:', err);
+          throw err;
+        }
+      },
+
+      updateToken: async (tokenId: string, updates: UpdateTokenInput) => {
+        set({ loading: true, error: null });
+        try {
+          await TokenService.updateToken(tokenId, updates);
+          set((state) => ({
+            tokens: state.tokens.map((t) =>
+              t.id === tokenId ? { ...t, ...updates } : t
+            ),
+            loading: false,
+          }));
+
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '토큰 업데이트 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] updateToken failed:', err);
+        }
+      },
+
+      /**
+       * Update token value (local only, mark as dirty)
+       */
+      updateTokenValue: (name, scope, value) => {
+        set(
+          produce((state: UnifiedThemeState) => {
+            const token = state.tokens.find(
+              (t) => t.name === name && t.scope === scope
+            );
+
+            if (token) {
+              token.value = value;
+              token.updated_at = new Date().toISOString();
+              state.dirty = true;
+
+              // ✅ CSS 즉시 업데이트 (synchronization)
+              // Note: injectThemeCSS() will be called after produce completes
+            }
+          })
+        );
+
+        // Inject CSS after state update
+        get().injectThemeCSS();
+      },
+
+      /**
+       * Add token (local only, mark as dirty)
+       */
+      addToken: (input) => {
+        set(
+          produce((state: UnifiedThemeState) => {
+            const newToken: DesignToken = {
+              id: uuidv4(),
+              project_id: state.activeTheme?.project_id || state.projectId || '',
+              theme_id: state.activeTheme?.id || '',
+              name: input.name,
+              type: input.type,
+              value: input.value,
+              scope: input.scope,
+              alias_of: input.alias_of,
+              css_variable: input.css_variable,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            state.tokens.push(newToken);
+            state.dirty = true;
+          })
+        );
+
+        // Inject CSS after state update
+        get().injectThemeCSS();
+      },
+
+      deleteToken: async (tokenId: string) => {
+        set({ loading: true, error: null });
+        try {
+          await TokenService.deleteToken(tokenId);
+          set((state) => ({
+            tokens: state.tokens.filter((t) => t.id !== tokenId),
+            loading: false,
+          }));
+
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '토큰 삭제 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] deleteToken failed:', err);
+        }
+      },
+
+      bulkUpsertTokens: async (tokens: Partial<DesignToken>[]) => {
+        set({ loading: true, error: null });
+        try {
+          await TokenService.bulkUpsertTokens(tokens);
+
+          // Reload tokens after bulk upsert
+          const { activeThemeId } = get();
+          if (activeThemeId) {
+            await get().loadTokens(activeThemeId);
+          }
+
+          // ✅ Auto-inject CSS (synchronization)
+          get().injectThemeCSS();
+
+          set({ loading: false, dirty: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '토큰 일괄 저장 실패';
+          set({ error: message, loading: false });
+          console.error('[UnifiedThemeStore] bulkUpsertTokens failed:', err);
+        }
+      },
+
+      /**
+       * Save all dirty tokens
+       */
+      saveAllTokens: async () => {
+        const { tokens, dirty, activeTheme } = get();
+
+        if (!activeTheme || !dirty) {
+          return;
+        }
+
+        try {
+          await TokenService.bulkUpsertTokens(tokens);
+          set({ dirty: false });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : '저장 실패';
+          set({ error: message });
+          console.error('[UnifiedThemeStore] saveAllTokens failed:', err);
+        }
+      },
+
+      // ===== CSS Injection (Unified) =====
+
+      /**
+       * Inject theme CSS variables into the document
+       */
+      injectThemeCSS: () => {
+        const { tokens } = get();
+        if (tokens.length === 0) return;
+
+        try {
+          const cssVars = tokensToCSS(tokens);
+          const cssText = formatCSSVars(cssVars);
+
+          // Inject into <style> tag
+          const styleId = 'xstudio-theme-vars';
+          let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
+
+          if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = styleId;
+            document.head.appendChild(styleTag);
+          }
+
+          styleTag.textContent = cssText;
+          console.log('[UnifiedThemeStore] CSS injected:', Object.keys(cssVars).length, 'variables');
+        } catch (err) {
+          console.error('[UnifiedThemeStore] injectThemeCSS failed:', err);
+        }
+      },
+
+      // ===== Realtime Subscriptions =====
+
+      subscribeToThemes: () => {
+        const { projectId } = get();
+        if (!projectId) {
+          console.error('[UnifiedThemeStore] subscribeToThemes: projectId is null');
+          return null;
+        }
+
+        // Cleanup existing subscription
+        if (unsubscribeThemes) {
+          unsubscribeThemes();
+        }
+
+        unsubscribeThemes = ThemeService.subscribeToProjectThemes(
+          projectId,
+          (payload) => {
+            console.log('[UnifiedThemeStore] Theme realtime update:', payload);
+
+            if (payload.eventType === 'INSERT') {
+              get()._addTheme(payload.new as DesignTheme);
+
+              const newTheme = payload.new as DesignTheme;
+              if (newTheme.status === 'active') {
+                get()._setActiveTheme(newTheme);
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              get()._updateTheme(payload.new as DesignTheme);
+
+              const updatedTheme = payload.new as DesignTheme;
+              const { activeTheme } = get();
+
+              if (activeTheme && updatedTheme.id === activeTheme.id) {
+                get()._setActiveTheme(updatedTheme);
+              }
+
+              if (updatedTheme.status === 'active' && activeTheme?.id !== updatedTheme.id) {
+                get()._setActiveTheme(updatedTheme);
+                // ✅ Auto-load tokens for newly activated theme
+                get().loadTokens(updatedTheme.id);
+              }
+
+              if (
+                activeTheme &&
+                updatedTheme.id === activeTheme.id &&
+                updatedTheme.status !== 'active'
+              ) {
+                get()._setActiveTheme(null);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              get()._removeTheme(payload.old.id);
+
+              const { activeTheme } = get();
+              if (activeTheme && payload.old.id === activeTheme.id) {
+                get()._setActiveTheme(null);
+              }
+            }
+          }
+        );
+
+        console.log('[UnifiedThemeStore] Subscribed to themes for project:', projectId);
+        return unsubscribeThemes;
+      },
+
+      subscribeToTokens: () => {
+        const { activeThemeId } = get();
+        if (!activeThemeId) {
+          console.error('[UnifiedThemeStore] subscribeToTokens: activeThemeId is null');
+          return null;
+        }
+
+        // Cleanup existing subscription
+        if (unsubscribeTokens) {
+          unsubscribeTokens();
+        }
+
+        unsubscribeTokens = TokenService.subscribeToTokenChanges(
+          activeThemeId,
+          async (payload) => {
+            console.log('[UnifiedThemeStore] Token realtime update:', payload);
+
+            try {
+              // Reload all tokens and re-inject CSS
+              await get().loadTokens(activeThemeId);
+              get().injectThemeCSS();
+            } catch (err) {
+              console.error('[UnifiedThemeStore] Failed to reload tokens:', err);
+            }
+          }
+        );
+
+        console.log('[UnifiedThemeStore] Subscribed to tokens for theme:', activeThemeId);
+        return unsubscribeTokens;
+      },
+
+      // ===== Internal State Updates (for Realtime) =====
+
+      _addTheme: (theme: DesignTheme) => {
+        set((state) => ({
+          themes: [...state.themes, theme],
+        }));
+      },
+
+      _updateTheme: (theme: DesignTheme) => {
+        set((state) => ({
+          themes: state.themes.map((t) => (t.id === theme.id ? theme : t)),
+        }));
+      },
+
+      _removeTheme: (themeId: string) => {
+        set((state) => ({
+          themes: state.themes.filter((t) => t.id !== themeId),
+        }));
+      },
+
+      _setActiveTheme: (theme: DesignTheme | null) => {
+        set({ activeTheme: theme, activeThemeId: theme?.id || null });
+      },
+
+      // ===== Utilities =====
+
+      clearError: () => set({ error: null }),
+
+      cleanup: () => {
+        // Cleanup all subscriptions
+        if (unsubscribeThemes) {
+          unsubscribeThemes();
+          unsubscribeThemes = null;
+          console.log('[UnifiedThemeStore] Unsubscribed from themes');
+        }
+
+        if (unsubscribeTokens) {
+          unsubscribeTokens();
+          unsubscribeTokens = null;
+          console.log('[UnifiedThemeStore] Unsubscribed from tokens');
+        }
+      },
+
+      reset: () => {
+        get().cleanup();
+        set({
+          themes: [],
+          activeTheme: null,
+          activeThemeId: null,
+          projectId: null,
+          tokens: [],
+          loading: false,
+          error: null,
+          dirty: false,
+        });
+      },
+    }),
+    { name: 'UnifiedThemeStore' }
+  )
+);
+
+// ===== Convenience Hooks =====
+export const useThemes = () => useUnifiedThemeStore((state) => state.themes);
+export const useActiveTheme = () => useUnifiedThemeStore((state) => state.activeTheme);
+export const useTokens = () => useUnifiedThemeStore((state) => state.tokens);
+export const useRawTokens = () => useUnifiedThemeStore((state) => state.rawTokens);
+export const useSemanticTokens = () => useUnifiedThemeStore((state) => state.semanticTokens);
+export const useThemeLoading = () => useUnifiedThemeStore((state) => state.loading);
+export const useThemeError = () => useUnifiedThemeStore((state) => state.error);

@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
+import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
@@ -382,8 +383,8 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     order_num: (tagChildren.length || 0) + 1,
                                 };
 
-                                // Use ElementUtils.createElement to handle customId conversion
-                                const data = await ElementUtils.createElement(newTag);
+                                // Use elementsApi.createElement to handle customId conversion
+                                const data = await elementsApi.createElement(newTag);
                                 addElement(data);
                                 console.log('새 Tag 추가됨:', data);
                             } catch (error) {

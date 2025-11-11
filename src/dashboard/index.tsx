@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { projectsApi, pagesApi, type Project } from '../services/api';
+import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
 import { ElementProps } from '../types/supabase';
 import { ElementUtils } from '../utils/elementUtils';
 import { Button, TextField } from '../builder/components/list';
@@ -54,7 +54,7 @@ function Dashboard() {
         order_num: 0,
       };
 
-      await ElementUtils.createElement(bodyElement);
+      await elementsApi.createElement(bodyElement);
 
       return newProject;
     },

@@ -2,12 +2,12 @@
  * useThemes Hook
  * 프로젝트의 테마 목록 관리 (Realtime 동기화)
  *
- * ⚠️ Refactored to use unified Zustand themeStore
- * This is now a wrapper around the centralized theme store
+ * ✅ Migrated to use unified theme store
+ * This is now a wrapper around the unified theme store
  */
 
 import { useEffect } from 'react';
-import { useThemeStore } from '../../builder/stores/themeStore';
+import { useUnifiedThemeStore } from '../../builder/stores/themeStore';
 import type { DesignTheme } from '../../types/theme';
 
 export interface UseThemesOptions {
@@ -39,24 +39,24 @@ export interface UseThemesReturn {
 }
 
 /**
- * useThemes - Wrapper around Zustand themeStore
+ * useThemes - Wrapper around unified theme store
  * Provides backward compatibility with existing code
  */
 export function useThemes(options: UseThemesOptions): UseThemesReturn {
   const { projectId, enableRealtime = true } = options;
 
-  // Use centralized Zustand store
-  const themes = useThemeStore((state) => state.themes);
-  const loading = useThemeStore((state) => state.loading);
-  const error = useThemeStore((state) => state.error);
-  const setProjectId = useThemeStore((state) => state.setProjectId);
-  const fetchThemes = useThemeStore((state) => state.fetchThemes);
-  const createTheme = useThemeStore((state) => state.createTheme);
-  const updateTheme = useThemeStore((state) => state.updateTheme);
-  const deleteTheme = useThemeStore((state) => state.deleteTheme);
-  const duplicateTheme = useThemeStore((state) => state.duplicateTheme);
-  const activateTheme = useThemeStore((state) => state.activateTheme);
-  const subscribeToThemes = useThemeStore((state) => state.subscribeToThemes);
+  // Use unified theme store
+  const themes = useUnifiedThemeStore((state) => state.themes);
+  const loading = useUnifiedThemeStore((state) => state.loading);
+  const error = useUnifiedThemeStore((state) => state.error);
+  const setProjectId = useUnifiedThemeStore((state) => state.setProjectId);
+  const loadThemes = useUnifiedThemeStore((state) => state.loadThemes);
+  const createTheme = useUnifiedThemeStore((state) => state.createTheme);
+  const updateTheme = useUnifiedThemeStore((state) => state.updateTheme);
+  const deleteTheme = useUnifiedThemeStore((state) => state.deleteTheme);
+  const duplicateTheme = useUnifiedThemeStore((state) => state.duplicateTheme);
+  const activateTheme = useUnifiedThemeStore((state) => state.activateTheme);
+  const subscribeToThemes = useUnifiedThemeStore((state) => state.subscribeToThemes);
 
   /**
    * Initialize store with projectId
@@ -65,7 +65,7 @@ export function useThemes(options: UseThemesOptions): UseThemesReturn {
    */
   useEffect(() => {
     setProjectId(projectId);
-    fetchThemes();
+    loadThemes(projectId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -87,7 +87,7 @@ export function useThemes(options: UseThemesOptions): UseThemesReturn {
     themes,
     loading,
     error,
-    refetch: fetchThemes,
+    refetch: async () => { await loadThemes(projectId); },
     createTheme,
     updateTheme,
     deleteTheme,

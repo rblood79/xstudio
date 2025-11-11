@@ -1,4 +1,7 @@
 /**
+ * @deprecated This file is deprecated. Use types/theme/index.ts instead.
+ * This file will be removed in v2.0
+ *
  * Token Type Definitions
  * 기존 DB 스키마 100% 호환
  */

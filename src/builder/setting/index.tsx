@@ -4,6 +4,7 @@ import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Sav
 import { Button } from 'react-aria-components';
 import { useParams } from 'react-router-dom';
 import { useStore } from '../stores';
+import { useUnifiedThemeStore } from '../stores/themeStore';
 import { saveService } from '../../services/save';
 import { PropertySwitch, PropertySelect, PropertySlider } from '../inspector/components';
 import { useThemes } from '../../hooks/theme/useThemes';
@@ -46,8 +47,8 @@ function Setting() {
     const pendingCount = pendingChanges.size;
 
     // Theme 관련 상태
-    const activeTheme = useStore((state) => state.activeTheme);
-    const loadTheme = useStore((state) => state.loadTheme);
+    const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
+    const loadActiveTheme = useUnifiedThemeStore((state) => state.loadActiveTheme);
     const { themes, loading: themesLoading } = useThemes({
         projectId: projectId || "",
         enableRealtime: false,
@@ -60,7 +61,7 @@ function Setting() {
 
         try {
             await ThemeService.activateTheme(themeId);
-            await loadTheme(projectId);
+            await loadActiveTheme(projectId);
             console.log("[Setting] Theme switched to:", themeId);
         } catch (error) {
             console.error("[Setting] Failed to switch theme:", error);
