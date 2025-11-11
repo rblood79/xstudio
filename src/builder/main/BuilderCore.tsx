@@ -20,7 +20,7 @@ import { usePageManager } from "../hooks/usePageManager";
 import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
-import { memoryMonitor } from "../utils/memoryMonitor";
+import { memoryMonitor } from "../stores/memoryMonitor";
 import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import { projectsApi, type Project } from "../../services/api";
 

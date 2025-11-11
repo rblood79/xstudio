@@ -1,5 +1,5 @@
 import type { ColumnMapping } from "../../types/unified";
-import type { EventHandler } from "./events/types";
+import type { EventHandler } from "../events/types";
 
 /**
  * Inspector에서 관리하는 선택된 요소
@@ -201,7 +201,7 @@ export type {
   ScrollToConfig,
   ToggleVisibilityConfig,
   CopyToClipboardConfig
-} from "./events/types";
+} from "../events/types";
 
 /**
  * 컴포넌트 에디터 Props (기존 PropertyEditorProps와 호환)

@@ -56,7 +56,7 @@ import {
   type MockAlbum,
   type MockPhoto,
   type MockTodo,
-} from "./mockLargeDataV2";
+} from "./mocks/mockLargeDataV2";
 
 // 확장된 CMS 목업 데이터 export
 export {
