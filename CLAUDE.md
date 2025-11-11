@@ -168,6 +168,391 @@ The project includes a comprehensive Mock Data API system for component testing 
 
 **Full Documentation:** See `src/services/api/index.ts` for all available endpoints, data structures, and implementation details.
 
+### Monitor System (Footer)
+
+The Monitor System provides real-time performance tracking and debugging information displayed in the footer area of the Builder.
+
+**Location**: `src/builder/monitor/`
+
+**Architecture**:
+- **Three Tabs**: Memory Monitor, Save Monitor, History
+- **No Console Pollution**: All status messages displayed in UI instead of console
+- **Auto-Update**: Metrics refresh automatically (Memory: 1s, Save: 5s, History: on change)
+
+#### Memory Monitor
+
+Tracks memory usage and history system performance.
+
+**Features**:
+- Total entries, command count, cache size
+- Estimated memory usage with compression ratio
+- Real-time recommendations for optimization
+- Manual memory optimization trigger
+
+**Status Messages** (displayed in UI):
+- `📈 메모리 모니터링 시작 (10초마다 수집)`
+- `📉 메모리 모니터링 중지`
+- `✨ 메모리 최적화 실행됨`
+
+**Implementation**:
+```typescript
+// src/builder/stores/memoryMonitor.ts
+export class MemoryMonitor {
+  private statusMessage: string = ''; // UI에 표시
+
+  public getStatusMessage(): string {
+    return this.statusMessage;
+  }
+}
+
+// src/builder/hooks/useMemoryMonitor.ts
+export function useMemoryMonitor() {
+  const [statusMessage, setStatusMessage] = useState<string>('');
+
+  useEffect(() => {
+    const updateStats = () => {
+      setStatusMessage(memoryMonitor.getStatusMessage());
+    };
+    const interval = setInterval(updateStats, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { stats, statusMessage, optimizeMemory };
+}
+```
+
+**Files**:
+- `src/builder/stores/memoryMonitor.ts` - Core monitoring class
+- `src/builder/hooks/useMemoryMonitor.ts` - React hook
+- `src/builder/monitor/index.tsx` - UI component
+- `src/builder/monitor/index.css` - Styles
+
+#### Save Monitor
+
+Tracks save operations, performance metrics, and validation errors.
+
+**Features**:
+- Save operations count and average time
+- Success rate calculation
+- Preview and validation skip counts
+- Validation error log (last 5 errors)
+- Metrics reset functionality
+
+**Status Messages** (displayed in UI):
+- `💾 저장할 변경사항이 없습니다.`
+- `💾 N개 변경사항 저장 시작...`
+- `✅ N개 변경사항 저장 완료`
+- `⚠️ 직렬화 불가능한 값 감지 - 필드: XXX`
+- `⚠️ 잘못된 키 형식: XXX`
+- `❌ 저장 실패: 에러 메시지`
+- `❌ Supabase 저장 실패: 에러 메시지`
+- `📊 SaveService 성능 메트릭이 리셋되었습니다.`
+
+**Implementation**:
+```typescript
+// src/services/save/saveService.ts
+export class SaveService {
+  private statusMessage: string = ''; // UI에 표시
+
+  public getStatusMessage(): string {
+    return this.statusMessage;
+  }
+
+  async saveAllPendingChanges(): Promise<void> {
+    this.statusMessage = `💾 ${changes.size}개 변경사항 저장 시작...`;
+    try {
+      await Promise.all(savePromises);
+      this.statusMessage = `✅ ${changes.size}개 변경사항 저장 완료`;
+    } catch (error) {
+      this.statusMessage = `❌ 저장 실패: ${error.message}`;
+    }
+  }
+}
+```
+
+**Files**:
+- `src/services/save/saveService.ts` - Save service with status tracking
+- `src/builder/monitor/index.tsx` - UI component (Save Monitor tab)
+
+#### History Monitor
+
+Tracks undo/redo history changes and state transitions.
+
+**Features**:
+- Current index and total entries
+- Can undo/redo status
+- Recent history changes log (last 10)
+- Page ID tracking
+
+**Files**:
+- `src/builder/monitor/index.tsx` - UI component (History tab)
+
+**Performance Impact**: ✅ Zero - All updates use existing intervals, no additional overhead.
+
+### Event System (Inspector Events Tab)
+
+The Event System enables visual programming through a drag-and-drop event handler and action configuration interface.
+
+**Status**: ✅ Phase 1-5 Complete (2025-11-11)
+
+**Location**: `src/builder/inspector/events/`
+
+**Architecture**:
+- **React Stately**: useListData-based state management for handlers and actions
+- **Three View Modes**: List (editing), Simple Flow (visualization), ReactFlow (advanced diagram)
+- **Type System**: Inspector-specific types (camelCase) with EventEngine compatibility (snake_case)
+
+#### Phase Completion Summary
+
+**Phase 1: React Stately Foundation** ✅
+- `useEventHandlers.ts` - Event handler list management with useListData
+- `useActions.ts` - Action list management with useListData
+- `useEventSelection.ts` - Handler selection state management
+
+**Phase 2: Type System Unification** ✅
+- Inspector types: `config` field, `event` field (camelCase)
+- EventEngine: Dual-field support (`config` OR `value`, camelCase + snake_case)
+- Fixed type mismatches causing data loss
+
+**Phase 3: UI Components** ✅
+- EventSection.tsx - Main event management UI with 2-level initial mount detection
+- EventHandlerManager.tsx - Handler details and actions view
+- ViewModeToggle.tsx - Three mode switcher
+- ActionListView.tsx - List mode action editing
+
+**Phase 4: Visual Modes** ✅
+- SimpleFlowView.tsx - Simple flow diagram
+- ReactFlowCanvas.tsx - Advanced ReactFlow-based diagram
+- TriggerNode.tsx - Event trigger visualization
+- ActionNode.tsx - Action visualization
+- FlowConnector.tsx - Connection logic
+
+**Phase 5: Data Persistence** ✅
+- Fixed data deletion on re-entry (initial mount detection)
+- Fixed actions disappearing on handler click (removed dependency)
+- Component remounting via key prop for clean state
+- JSON comparison for actual content change detection
+
+#### Key Architectural Decisions
+
+**1. Component Remounting**
+```typescript
+// Force clean remount when element changes
+<EventSection key={selectedElement.id} element={selectedElement} />
+```
+
+**2. Two-Level Initial Mount Detection**
+```typescript
+// Element level - prevent handlers from overwriting DB data
+const isInitialMount = useRef(true);
+useEffect(() => {
+  if (isInitialMount.current) {
+    isInitialMount.current = false;
+    handlersJsonRef.current = JSON.stringify(handlers);
+    return; // Skip first update
+  }
+  if (JSON.stringify(handlers) !== handlersJsonRef.current) {
+    updateEvents(handlers);
+  }
+}, [handlers]);
+
+// Handler level - prevent actions from overwriting when selected
+const isInitialActionMount = useRef(true);
+useEffect(() => {
+  if (currentHandlerId !== lastSelectedHandlerIdRef.current) {
+    isInitialActionMount.current = true; // Reset on handler change
+  }
+}, [selectedHandler?.id]);
+```
+
+**3. No Functions in Updates (postMessage Safety)**
+```typescript
+// ❌ WRONG - Functions can't be serialized
+list.update(id, (old) => ({ ...old, ...updates }));
+
+// ✅ CORRECT - Pass objects directly
+const current = list.getItem(id);
+if (current) {
+  list.update(id, { ...current, ...updates } as EventHandler);
+}
+```
+
+**4. Dual Field Support (EventEngine)**
+```typescript
+// Support both Inspector (config) and legacy (value) fields
+const actionData = action as {
+  config?: Record<string, unknown>;
+  value?: Record<string, unknown>
+};
+const config = (actionData.config || actionData.value || {}) as ActionConfig;
+```
+
+#### Event System Files
+
+**State Management**:
+- `src/builder/inspector/events/state/useEventHandlers.ts` - Handler CRUD with useListData
+- `src/builder/inspector/events/state/useActions.ts` - Action CRUD with useListData
+- `src/builder/inspector/events/state/useEventSelection.ts` - Selection state
+
+**UI Components**:
+- `src/builder/inspector/sections/EventSection.tsx` - Main UI with initial mount detection
+- `src/builder/inspector/events/EventEditor.tsx` - Legacy event editor
+- `src/builder/inspector/events/EventList.tsx` - Event list view
+
+**Action Editors** (21 editors):
+- `src/builder/inspector/events/actions/ActionEditor.tsx` - Base action editor wrapper
+- `src/builder/inspector/events/actions/CustomFunctionActionEditor.tsx` - Code editor with Monaco
+- `src/builder/inspector/events/actions/SetStateActionEditor.tsx` - Global state updates
+- `src/builder/inspector/events/actions/SetComponentStateActionEditor.tsx` - Component-specific state
+- `src/builder/inspector/events/actions/UpdateStateActionEditor.tsx` - State modifications
+- `src/builder/inspector/events/actions/NavigateActionEditor.tsx` - Page navigation
+- `src/builder/inspector/events/actions/ShowModalActionEditor.tsx` - Modal show control
+- `src/builder/inspector/events/actions/HideModalActionEditor.tsx` - Modal hide control
+- `src/builder/inspector/events/actions/ShowToastActionEditor.tsx` - Toast notifications
+- `src/builder/inspector/events/actions/APICallActionEditor.tsx` - REST API requests
+- `src/builder/inspector/events/actions/ValidateFormActionEditor.tsx` - Form validation
+- `src/builder/inspector/events/actions/SubmitFormActionEditor.tsx` - Form submission
+- `src/builder/inspector/events/actions/ResetFormActionEditor.tsx` - Form reset
+- `src/builder/inspector/events/actions/UpdateFormFieldActionEditor.tsx` - Field updates
+- `src/builder/inspector/events/actions/FilterCollectionActionEditor.tsx` - Data filtering
+- `src/builder/inspector/events/actions/SelectItemActionEditor.tsx` - Item selection
+- `src/builder/inspector/events/actions/ClearSelectionActionEditor.tsx` - Clear selections
+- `src/builder/inspector/events/actions/ScrollToActionEditor.tsx` - Scroll control
+- `src/builder/inspector/events/actions/ToggleVisibilityActionEditor.tsx` - Show/hide elements
+- `src/builder/inspector/events/actions/TriggerComponentActionEditor.tsx` - Component triggers
+- `src/builder/inspector/events/actions/CopyToClipboardActionEditor.tsx` - Clipboard operations
+
+**Event Components**:
+- `src/builder/inspector/events/components/EventHandlerManager.tsx` - Handler details view
+- `src/builder/inspector/events/components/ActionListView.tsx` - List mode action editing
+- `src/builder/inspector/events/components/ViewModeToggle.tsx` - Mode switcher (List/Simple/ReactFlow)
+- `src/builder/inspector/events/components/ConditionEditor.tsx` - Conditional execution
+- `src/builder/inspector/events/components/DebounceThrottleEditor.tsx` - Timing controls
+- `src/builder/inspector/events/components/ActionDelayEditor.tsx` - Action delay settings
+- `src/builder/inspector/events/components/ComponentSelector.tsx` - Component selection UI
+- `src/builder/inspector/events/components/ExecutionDebugger.tsx` - Runtime debugging
+
+**Visual Mode Components**:
+- `src/builder/inspector/events/components/visualMode/SimpleFlowView.tsx` - Simple flow diagram
+- `src/builder/inspector/events/components/visualMode/ReactFlowCanvas.tsx` - ReactFlow diagram
+- `src/builder/inspector/events/components/visualMode/TriggerNode.tsx` - Event trigger node
+- `src/builder/inspector/events/components/visualMode/ActionNode.tsx` - Action node
+- `src/builder/inspector/events/components/visualMode/FlowNode.tsx` - Base flow node
+- `src/builder/inspector/events/components/visualMode/FlowConnector.tsx` - Connection logic
+
+**Pickers**:
+- `src/builder/inspector/events/pickers/EventTypePicker.tsx` - Event type selection
+- `src/builder/inspector/events/pickers/ActionTypePicker.tsx` - Action type selection with categories
+
+**Data & Metadata**:
+- `src/builder/inspector/events/data/actionMetadata.ts` - Action type metadata
+- `src/builder/inspector/events/data/eventCategories.ts` - Event categorization
+- `src/builder/inspector/events/data/eventTemplates.ts` - Pre-built event templates
+- `src/builder/inspector/events/data/index.ts` - Data exports
+
+**Execution Engine**:
+- `src/builder/inspector/events/execution/eventExecutor.ts` - Event execution orchestration
+- `src/builder/inspector/events/execution/conditionEvaluator.ts` - Condition evaluation
+- `src/builder/inspector/events/execution/executionLogger.ts` - Execution logging
+
+**Hooks**:
+- `src/builder/inspector/events/hooks/useEventFlow.tsx` - Flow diagram state management
+- `src/builder/inspector/events/hooks/useApplyTemplate.ts` - Template application
+- `src/builder/inspector/events/hooks/useCopyPasteActions.ts` - Action copy/paste
+- `src/builder/inspector/events/hooks/useEventSearch.ts` - Event search functionality
+- `src/builder/inspector/events/hooks/useRecommendedEvents.ts` - AI-based recommendations
+
+**Utilities**:
+- `src/builder/inspector/events/utils/actionHelpers.ts` - Action utility functions
+
+**Types**:
+- `src/builder/inspector/events/types/eventTypes.ts` - Event type definitions
+- `src/builder/inspector/events/types/templateTypes.ts` - Template type definitions
+- `src/builder/inspector/events/types/index.ts` - Type exports
+- `src/types/events.ts` - Global types (snake_case, backward compatibility)
+
+**Event Engine** (Preview):
+- `src/utils/eventEngine.ts` - Event execution engine with dual-field support
+
+#### Key Features
+
+**1. Event Templates**
+Pre-built event patterns for common use cases:
+- Form submission with validation
+- API call with loading states
+- Multi-step workflows
+- Data filtering and sorting
+- Component state synchronization
+
+**2. Conditional Execution**
+```typescript
+// Handler-level condition (applies to all actions)
+handler.condition = "state.isAuthenticated === true";
+
+// Action-level condition (individual action)
+action.condition = "response.status === 200";
+```
+
+**3. Timing Controls**
+- **Debounce**: Delay execution until input stops (e.g., search-as-you-type)
+- **Throttle**: Limit execution frequency (e.g., scroll events)
+- **Delay**: Add delay before action execution
+
+**4. Visual Flow Modes**
+- **List Mode**: Traditional action list editing with drag-drop reordering
+- **Simple Flow**: Simplified flow diagram for quick visualization
+- **ReactFlow Mode**: Advanced flow diagram with complex branching
+
+**5. Action Categories**
+- **State Management**: setState, updateState, setComponentState
+- **Navigation**: navigate, scrollTo
+- **UI Control**: showModal, hideModal, showToast, toggleVisibility
+- **Form Actions**: submitForm, validateForm, resetForm, updateFormField
+- **Data Operations**: apiCall, filterCollection, selectItem, clearSelection
+- **Component Actions**: triggerComponent
+- **Utilities**: customFunction, copyToClipboard
+
+**6. Execution Debugging**
+- Real-time execution logging
+- Condition evaluation results
+- Action success/failure tracking
+- Performance metrics
+
+**7. Copy/Paste Actions**
+- Copy single or multiple actions
+- Paste across different handlers
+- Preserve action configuration
+
+**8. Event Search**
+- Search by event type
+- Search by action type
+- Search by condition
+- Filter by enabled/disabled state
+
+**9. Recommended Events**
+AI-powered event recommendations based on:
+- Component type
+- Common patterns
+- User behavior
+- Best practices
+
+#### Known Issues & Solutions
+
+**Issue**: Custom function data not saving
+**Solution**: Use Inspector types throughout, `config` field instead of `value`
+
+**Issue**: Data deleted on re-entry
+**Solution**: Initial mount detection with JSON comparison
+
+**Issue**: Actions disappear on handler click
+**Solution**: Remove `selectedHandler` from useEffect dependencies
+
+**Issue**: postMessage DataCloneError
+**Solution**: Pass objects directly to list.update(), no functions
+
+**Issue**: Events stored in props.events, not element.events
+**Solution**: Read from `(builderElement?.props as any)?.events`
+
 ## Critical Coding Rules
 
 ### CSS Architecture
@@ -1188,6 +1573,14 @@ export const elementStore = create((set, get) => ({
 | Create initial component | Only 1 child item as template | `SelectionComponents.ts` |
 | Implement TagGroup removal | Use `removedItemIds` array to track hidden items non-destructively | `TagGroup.tsx:131-151`, `CollectionRenderers.tsx:321-365` |
 | Restore removed TagGroup items | Inspector button: `updateProp('removedItemIds', [])` | `TagGroupEditor.tsx:197-214` |
+| Add event handler | Use `useEventHandlers` hook with `addHandler(eventType)` | `src/builder/inspector/events/state/useEventHandlers.ts` |
+| Add action to handler | Use `useActions` hook with `addAction(actionType, config)` | `src/builder/inspector/events/state/useActions.ts` |
+| Create action editor | Extend ActionEditor base, use PropertyInput/Select/Switch | `src/builder/inspector/events/actions/` |
+| Add conditional execution | Use ConditionEditor component, evaluate with conditionEvaluator | `src/builder/inspector/events/components/ConditionEditor.tsx` |
+| Add event template | Define in eventTemplates.ts with handler and actions | `src/builder/inspector/events/data/eventTemplates.ts` |
+| Add timing controls | Use DebounceThrottleEditor for handler-level, ActionDelayEditor for action-level | `src/builder/inspector/events/components/` |
+| Debug event execution | Use ExecutionDebugger component, check executionLogger | `src/builder/inspector/events/components/ExecutionDebugger.tsx` |
+| Create visual flow node | Extend TriggerNode or ActionNode, use ReactFlow components | `src/builder/inspector/events/components/visualMode/` |
 
 ### For Cursor AI
 
@@ -1203,6 +1596,44 @@ Copilot learns from code patterns. Tips:
 2. **Comment your intent:** Add comments before code blocks
 3. **Use consistent naming:** `ComponentName.css` in styles/, `elementAction.ts`, `createActionName(set, get)`
 4. **CSS Variables:** Start typing `var(--` and Copilot will suggest available tokens
+
+---
+
+## 📋 Recent Updates
+
+### 🎯 Event System (2025-11-11)
+
+**Status**: ✅ Phase 1-5 Complete
+
+**Major Updates**:
+- ✅ React Stately-based state management (useEventHandlers, useActions)
+- ✅ 21 action editors for comprehensive event handling
+- ✅ Three visual modes (List, Simple Flow, ReactFlow)
+- ✅ Event templates and AI-powered recommendations
+- ✅ Conditional execution and timing controls
+- ✅ Execution debugging and logging
+- ✅ Copy/paste actions functionality
+- ✅ Event search and filtering
+- ✅ Complete type system unification (Inspector + EventEngine)
+
+**Files**: 65+ files in `src/builder/inspector/events/`
+
+**Key Features**: Templates, Conditional Execution, Visual Flows, Debugging, Search, Recommendations
+
+### 📊 Monitor System (2025-11-11)
+
+**Status**: ✅ Complete
+
+**Major Updates**:
+- ✅ Memory Monitor with real-time stats
+- ✅ Save Monitor with performance metrics
+- ✅ History Monitor with undo/redo tracking
+- ✅ All console logs moved to UI
+- ✅ Zero performance impact
+
+**Files**: `src/builder/monitor/`, `src/builder/stores/memoryMonitor.ts`, `src/services/save/saveService.ts`
+
+**Key Features**: No Console Pollution, Auto-Update, Performance Tracking
 
 ---
 
