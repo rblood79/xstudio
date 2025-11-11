@@ -158,7 +158,7 @@ function Inspector() {
         </TabPanel>
 
         <TabPanel id="events" className="inspector-tab-panel">
-          <EventSection element={selectedElement} />
+          <EventSection key={selectedElement.id} element={selectedElement} />
         </TabPanel>
       </Tabs>
     </div>

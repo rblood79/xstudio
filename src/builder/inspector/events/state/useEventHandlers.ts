@@ -6,7 +6,6 @@
  */
 
 import { useListData } from 'react-stately';
-import { useEffect, useRef } from 'react';
 import type { Key } from 'react-stately';
 import type { EventType } from '@/types/events';
 import type { EventHandler } from '../types';
@@ -41,29 +40,6 @@ export function useEventHandlers(initialEvents: EventHandler[]) {
     initialItems: sanitizedEvents,
     getKey: (item) => item.id,
   });
-
-  // 외부 이벤트 변경 추적 (DB에서 로드된 데이터와 동기화)
-  const externalEventsJsonRef = useRef<string>(JSON.stringify(sanitizedEvents));
-
-  // 외부 이벤트가 변경될 때 list 동기화
-  useEffect(() => {
-    const sanitized = initialEvents.map(event => ({
-      ...event,
-      actions: event.actions || [],
-    }));
-
-    const currentExternalJson = JSON.stringify(sanitized);
-    const currentListJson = JSON.stringify(list.items);
-
-    // 외부 데이터가 변경되고, 현재 list와 다를 때만 동기화
-    if (currentExternalJson !== externalEventsJsonRef.current && currentExternalJson !== currentListJson) {
-      externalEventsJsonRef.current = currentExternalJson;
-
-      // setItems를 사용하여 전체 교체
-      list.setItems(sanitized);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialEvents]); // initialEvents가 변경될 때만 체크
 
   /**
    * 새 이벤트 핸들러 추가

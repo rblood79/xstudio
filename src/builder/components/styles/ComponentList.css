@@ -50,6 +50,7 @@
   }
 
   .component-list button {
+    position: relative;
     width: var(--text-3xl);
     height: var(--text-3xl);
     display: flex;
@@ -62,6 +63,18 @@
     border-radius: var(--radius-md);
     color: var(--text-color);
     transition: all 0.2s ease;
+  }
+
+  .component-list button .react-aria-Badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    translate: 33% -33%;
+    background-color: var(--color-red-400);
+    color: var(--color-white);
+    border-radius: 48px;
+    padding: 2px;
+    font-size: var(--text-xs);
   }
 
   .component-list button:hover {

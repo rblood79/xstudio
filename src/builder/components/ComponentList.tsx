@@ -44,6 +44,7 @@ import { useRecentComponents } from "../hooks/useRecentComponents";
 import { useFavoriteComponents } from "../hooks/useFavoriteComponents";
 import { useCategoryExpansion } from "../hooks/useCategoryExpansion";
 import "./styles/ComponentList.css";
+import { Badge } from "./Badge";
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';
 
 interface ComponentListProps {
@@ -140,6 +141,8 @@ const ComponentItem = ({
   component,
   onAdd,
   selectedElementId,
+  isRecent = false,
+  count = 0,
 }: {
   component: {
     tag: string;
@@ -148,6 +151,8 @@ const ComponentItem = ({
   };
   onAdd: (tag: string, parentId?: string) => void;
   selectedElementId?: string | null;
+  isRecent?: boolean;
+  count?: number;
 }) => {
   const handleClick = useCallback(() => {
     onAdd(component.tag, selectedElementId || undefined);
@@ -157,6 +162,9 @@ const ComponentItem = ({
     <div className="component-list-item">
       <button onClick={handleClick} title={`Add ${component.label} element`}>
         <component.icon strokeWidth={1} width={16} height={16} />
+        {isRecent && count > 0 && (
+          <Badge size="xs">{count}</Badge>
+        )}
       </button>
       <label>{component.label}</label>
     </div>
@@ -168,7 +176,7 @@ ComponentItem.displayName = "ComponentItem";
 // 메인 컴포넌트
 const ComponentList = memo(
   ({ handleAddElement, selectedElementId }: ComponentListProps) => {
-    const { recentTags, addRecentComponent, clearRecentComponents } =
+    const { recentTags, addRecentComponent, clearRecentComponents, getComponentCount } =
       useRecentComponents();
     const { favoriteTags } = useFavoriteComponents();
     const [searchQuery, setSearchQuery] = useState("");
@@ -388,6 +396,8 @@ const ComponentList = memo(
                   component={component}
                   onAdd={handleComponentAdd}
                   selectedElementId={selectedElementId}
+                  isRecent={true}
+                  count={getComponentCount(component.tag)}
                 />
               ))}
             </div>
