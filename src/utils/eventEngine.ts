@@ -24,6 +24,7 @@ export class EventEngine {
 
     private initializeActionHandlers() {
         this.actionHandlers = {
+            // Legacy snake_case
             'update_state': this.executeUpdateStateAction.bind(this),
             'navigate': this.executeNavigateAction.bind(this),
             'toggle_visibility': this.executeToggleVisibilityAction.bind(this),
@@ -34,6 +35,30 @@ export class EventEngine {
             'custom_function': this.executeCustomFunctionAction.bind(this),
             'validate_form': this.executeValidateFormAction.bind(this),
             'reset_form': this.executeResetFormAction.bind(this),
+
+            // New camelCase (Inspector)
+            'updateState': this.executeUpdateStateAction.bind(this),
+            'setState': this.executeUpdateStateAction.bind(this),
+            'scrollTo': this.executeScrollToAction.bind(this),
+            'showModal': this.executeShowModalAction.bind(this),
+            'hideModal': this.executeHideModalAction.bind(this),
+            'showToast': this.executeShowToastAction.bind(this),
+            'toggleVisibility': this.executeToggleVisibilityAction.bind(this),
+            'validateForm': this.executeValidateFormAction.bind(this),
+            'resetForm': this.executeResetFormAction.bind(this),
+            'submitForm': this.executeSubmitFormAction.bind(this),
+            'copyToClipboard': this.executeCopyToClipboardAction.bind(this),
+            'customFunction': this.executeCustomFunctionAction.bind(this),
+            'apiCall': this.executeAPICallAction.bind(this),
+
+            // Component Interaction (Phase 3)
+            'setComponentState': this.executeSetComponentStateAction.bind(this),
+            'triggerComponentAction': this.executeTriggerComponentActionAction.bind(this),
+            'updateFormField': this.executeUpdateFormFieldAction.bind(this),
+            // Collection Interaction (Phase 4)
+            'filterCollection': this.executeFilterCollectionAction.bind(this),
+            'selectItem': this.executeSelectItemAction.bind(this),
+            'clearSelection': this.executeClearSelectionAction.bind(this),
         };
     }
 
@@ -155,7 +180,13 @@ export class EventEngine {
 
     // 보안 강화된 custom_function 실행
     private async executeCustomFunctionAction(action: EventAction, context: EventContext): Promise<unknown> {
-        const { code } = action.value as { code: string };
+        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
+        const config = (actionData.config || actionData.value || {}) as { code: string; params?: Record<string, unknown> };
+        const code = config.code;
+
+        if (!code) {
+            throw new Error('Custom function code is required');
+        }
 
         // 코드 검증
         if (!this.isValidCustomCode(code)) {
@@ -168,6 +199,7 @@ export class EventEngine {
                 event: context.event,
                 element: context.element,
                 state: this.getState(),
+                params: config.params || {},
                 console: {
                     log: (...args: unknown[]) => console.log('[Custom Function]', ...args),
                     error: (...args: unknown[]) => console.error('[Custom Function]', ...args),
@@ -189,7 +221,7 @@ export class EventEngine {
             // with 문 대신 직접 컨텍스트 객체를 사용
             const func = new Function('context', `
                 "use strict";
-                const { event, element, state, console, document } = context;
+                const { event, element, state, params, console, document } = context;
                 ${code}
             `);
 
@@ -507,6 +539,171 @@ export class EventEngine {
 
         if (form) {
             form.reset();
+        }
+    }
+
+    private async executeSubmitFormAction(action: EventAction): Promise<void> {
+        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
+        const config = (actionData.config || actionData.value || {}) as { formId: string };
+        const form = document.getElementById(config.formId) as HTMLFormElement;
+
+        if (form) {
+            form.requestSubmit();
+        }
+    }
+
+    private async executeShowToastAction(action: EventAction): Promise<void> {
+        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
+        const config = (actionData.config || actionData.value || {}) as {
+            message: string;
+            variant?: 'info' | 'success' | 'warning' | 'error';
+            duration?: number;
+        };
+
+        // postMessage로 Builder에 토스트 표시 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SHOW_TOAST',
+                payload: config
+            }, '*');
+        } else {
+            console.log(`[Toast ${config.variant || 'info'}]: ${config.message}`);
+        }
+    }
+
+    private async executeAPICallAction(action: EventAction): Promise<unknown> {
+        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
+        const config = (actionData.config || actionData.value || {}) as {
+            endpoint: string;
+            method?: string;
+            headers?: Record<string, string>;
+            body?: unknown;
+        };
+
+        try {
+            const response = await fetch(config.endpoint, {
+                method: config.method || 'GET',
+                headers: config.headers,
+                body: config.body ? JSON.stringify(config.body) : undefined,
+            });
+
+            if (!response.ok) {
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('[EventEngine] API call failed:', error);
+            throw error;
+        }
+    }
+
+    // ===== Phase 3: Component Interaction Actions =====
+
+    private async executeSetComponentStateAction(action: EventAction): Promise<void> {
+        const config = action.value as { targetId: string; statePath: string; value: unknown };
+
+        // postMessage로 Preview에 상태 변경 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SET_COMPONENT_STATE',
+                payload: config
+            }, '*');
+        } else {
+            console.warn('[EventEngine] setComponentState in published mode not yet implemented');
+        }
+    }
+
+    private async executeTriggerComponentActionAction(action: EventAction): Promise<void> {
+        const config = action.value as { targetId: string; action: string; params?: Record<string, unknown> };
+
+        // postMessage로 Preview에 액션 실행 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'TRIGGER_COMPONENT_ACTION',
+                payload: config
+            }, '*');
+        } else {
+            console.warn('[EventEngine] triggerComponentAction in published mode not yet implemented');
+        }
+    }
+
+    private async executeUpdateFormFieldAction(action: EventAction): Promise<void> {
+        const config = action.value as { formId?: string; fieldName: string; value: unknown };
+
+        let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null;
+
+        if (config.formId) {
+            const form = document.getElementById(config.formId) as HTMLFormElement;
+            if (form) {
+                field = form.querySelector(`[name="${config.fieldName}"]`);
+            }
+        } else {
+            field = document.querySelector(`[name="${config.fieldName}"]`);
+        }
+
+        if (field) {
+            field.value = String(config.value);
+            // trigger change event
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            console.warn(`[EventEngine] Form field not found: ${config.fieldName}`);
+        }
+    }
+
+    // ===== Phase 4: Collection Interaction Actions =====
+
+    private async executeFilterCollectionAction(action: EventAction): Promise<void> {
+        const config = action.value as {
+            targetId: string;
+            filterMode: 'text' | 'function' | 'field';
+            query?: string;
+            filterFn?: string;
+            fieldName?: string;
+            fieldValue?: unknown;
+        };
+
+        // postMessage로 Preview에 필터링 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'FILTER_COLLECTION',
+                payload: config
+            }, '*');
+        } else {
+            console.warn('[EventEngine] filterCollection in published mode not yet implemented');
+        }
+    }
+
+    private async executeSelectItemAction(action: EventAction): Promise<void> {
+        const config = action.value as {
+            targetId: string;
+            itemId?: string;
+            itemIndex?: number;
+            behavior: 'replace' | 'add' | 'toggle';
+        };
+
+        // postMessage로 Preview에 선택 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SELECT_ITEM',
+                payload: config
+            }, '*');
+        } else {
+            console.warn('[EventEngine] selectItem in published mode not yet implemented');
+        }
+    }
+
+    private async executeClearSelectionAction(action: EventAction): Promise<void> {
+        const config = action.value as { targetId: string };
+
+        // postMessage로 Preview에 선택 해제 요청
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'CLEAR_SELECTION',
+                payload: config
+            }, '*');
+        } else {
+            console.warn('[EventEngine] clearSelection in published mode not yet implemented');
         }
     }
 

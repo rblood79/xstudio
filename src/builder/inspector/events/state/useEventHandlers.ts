@@ -6,8 +6,10 @@
  */
 
 import { useListData } from 'react-stately';
+import { useEffect, useRef } from 'react';
 import type { Key } from 'react-stately';
-import type { ElementEvent, EventType } from '@/types/events';
+import type { EventType } from '@/types/events';
+import type { EventHandler } from '../types';
 
 /**
  * EventHandler 목록 관리 훅
@@ -28,7 +30,7 @@ import type { ElementEvent, EventType } from '@/types/events';
  * // 이벤트 삭제
  * removeHandler(handlerId);
  */
-export function useEventHandlers(initialEvents: ElementEvent[]) {
+export function useEventHandlers(initialEvents: EventHandler[]) {
   // Ensure all events have actions array initialized
   const sanitizedEvents = initialEvents.map(event => ({
     ...event,
@@ -40,16 +42,39 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
     getKey: (item) => item.id,
   });
 
+  // 외부 이벤트 변경 추적 (DB에서 로드된 데이터와 동기화)
+  const externalEventsJsonRef = useRef<string>(JSON.stringify(sanitizedEvents));
+
+  // 외부 이벤트가 변경될 때 list 동기화
+  useEffect(() => {
+    const sanitized = initialEvents.map(event => ({
+      ...event,
+      actions: event.actions || [],
+    }));
+
+    const currentExternalJson = JSON.stringify(sanitized);
+    const currentListJson = JSON.stringify(list.items);
+
+    // 외부 데이터가 변경되고, 현재 list와 다를 때만 동기화
+    if (currentExternalJson !== externalEventsJsonRef.current && currentExternalJson !== currentListJson) {
+      externalEventsJsonRef.current = currentExternalJson;
+
+      // setItems를 사용하여 전체 교체
+      list.setItems(sanitized);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEvents]); // initialEvents가 변경될 때만 체크
+
   /**
    * 새 이벤트 핸들러 추가
    *
    * @param eventType - 이벤트 타입 (onClick, onHover 등)
    * @returns 생성된 이벤트 핸들러
    */
-  const addHandler = (eventType: EventType): ElementEvent => {
-    const newHandler: ElementEvent = {
+  const addHandler = (eventType: EventType): EventHandler => {
+    const newHandler: EventHandler = {
       id: `event-${eventType}-${Date.now()}`,
-      event_type: eventType,
+      event: eventType,
       actions: [],
       enabled: true,
     };
@@ -64,14 +89,17 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
    * @param id - 이벤트 핸들러 ID
    * @param updates - 업데이트할 속성 또는 완전한 핸들러 객체
    */
-  const updateHandler = (id: Key, updates: Partial<ElementEvent> | ElementEvent) => {
-    // updates가 완전한 ElementEvent인지 확인 (id와 event_type 존재)
-    if ('id' in updates && 'event_type' in updates) {
+  const updateHandler = (id: Key, updates: Partial<EventHandler> | EventHandler) => {
+    // updates가 완전한 EventHandler인지 확인 (id와 event 존재)
+    if ('id' in updates && 'event' in updates) {
       // 완전한 객체를 전달받은 경우 그대로 사용
-      list.update(id, updates as ElementEvent);
+      list.update(id, updates as EventHandler);
     } else {
-      // Partial인 경우 병합
-      list.update(id, (old) => ({ ...old, ...updates }));
+      // Partial인 경우 병합 (함수 사용하지 않고 직접 병합)
+      const current = list.getItem(id);
+      if (current) {
+        list.update(id, { ...current, ...updates } as EventHandler);
+      }
     }
   };
 
@@ -81,11 +109,11 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
    * @param id - 복제할 이벤트 핸들러 ID
    * @returns 복제된 이벤트 핸들러 또는 undefined
    */
-  const duplicateHandler = (id: Key): ElementEvent | undefined => {
+  const duplicateHandler = (id: Key): EventHandler | undefined => {
     const original = list.getItem(id);
     if (!original) return undefined;
 
-    const duplicate: ElementEvent = {
+    const duplicate: EventHandler = {
       ...original,
       id: `${id}-copy-${Date.now()}`,
       actions: (original.actions || []).map((action) => ({
@@ -106,7 +134,7 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
   const toggleHandler = (id: Key) => {
     const handler = list.getItem(id);
     if (handler) {
-      list.update(id, (old) => ({ ...old, enabled: !old.enabled }));
+      list.update(id, { ...handler, enabled: !handler.enabled });
     }
   };
 
@@ -115,7 +143,7 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
    */
   const enableAll = () => {
     list.items.forEach((handler) => {
-      list.update(handler.id, (old) => ({ ...old, enabled: true }));
+      list.update(handler.id, { ...handler, enabled: true });
     });
   };
 
@@ -124,7 +152,7 @@ export function useEventHandlers(initialEvents: ElementEvent[]) {
    */
   const disableAll = () => {
     list.items.forEach((handler) => {
-      list.update(handler.id, (old) => ({ ...old, enabled: false }));
+      list.update(handler.id, { ...handler, enabled: false });
     });
   };
 

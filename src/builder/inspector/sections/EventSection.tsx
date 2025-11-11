@@ -9,7 +9,7 @@
  * - ActionTypePicker (간단한 Select)
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { SelectedElement } from "../types";
 import type { EventType, ActionType } from "@/types/events";
@@ -20,7 +20,10 @@ import { ActionTypePicker } from "../events/pickers/ActionTypePicker";
 import { useEventHandlers } from "../events/state/useEventHandlers";
 import { useActions } from "../events/state/useActions";
 import { useEventSelection } from "../events/state/useEventSelection";
-
+import { ConditionEditor } from "../events/components/ConditionEditor";
+import { DebounceThrottleEditor } from "../events/components/DebounceThrottleEditor";
+import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
+import { iconProps } from "@/utils/uiConstants";
 export interface EventSectionProps {
   element: SelectedElement;
 }
@@ -55,22 +58,61 @@ export function EventSection(props: EventSectionProps) {
   } = useActions(selectedHandler?.actions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
-  const registeredEventTypes: EventType[] = handlers.map((h) => h.event_type);
+  const registeredEventTypes: EventType[] = handlers.map((h) => h.event);
 
-  // Actions 변경 시 Handler 업데이트
+  // Actions의 실제 내용 변경 추적
+  const actionsJsonRef = useRef<string>("");
+
+  // Actions 변경 시 Handler 업데이트 (내용 변경 시에만)
   useEffect(() => {
     if (selectedHandler) {
-      // useListData의 update는 함수를 받지만, 우리는 직접 객체를 전달
-      // 함수를 전달하면 postMessage로 직렬화할 수 없어 에러 발생
-      const updatedHandler = { ...selectedHandler, actions };
-      updateHandler(selectedHandler.id, updatedHandler);
-    }
-  }, [actions, selectedHandler, updateHandler]);
+      const currentJson = JSON.stringify(actions);
 
-  // Handlers 변경 시 Inspector 동기화
+      // 실제 내용이 변경되었을 때만 updateHandler 호출
+      if (currentJson !== actionsJsonRef.current) {
+        actionsJsonRef.current = currentJson;
+        // useListData의 update는 함수를 받지만, 우리는 직접 객체를 전달
+        // 함수를 전달하면 postMessage로 직렬화할 수 없어 에러 발생
+        const updatedHandler = { ...selectedHandler, actions };
+        updateHandler(selectedHandler.id, updatedHandler);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions, selectedHandler]);
+
+  // Handlers의 실제 내용 변경 추적 (참조가 아닌 내용 비교)
+  const handlersJsonRef = useRef<string>("");
+  const isInitialMount = useRef(true);
+  const lastElementIdRef = useRef<string | null>(null);
+
+  // selectedElement가 변경될 때 isInitialMount 리셋
   useEffect(() => {
-    updateEvents(handlers);
-  }, [handlers, updateEvents]);
+    const currentElementId = selectedElement?.id || null;
+    if (currentElementId !== lastElementIdRef.current) {
+      lastElementIdRef.current = currentElementId;
+      isInitialMount.current = true;
+    }
+  }, [selectedElement?.id]);
+
+  // Handlers 변경 시 Inspector 동기화 (내용 변경 시에만)
+  useEffect(() => {
+    const currentJson = JSON.stringify(handlers);
+
+    // 초기 마운트 시에는 updateEvents 호출하지 않음 (데이터베이스에서 로드된 데이터 보존)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      handlersJsonRef.current = currentJson;
+      return;
+    }
+
+    // 실제 내용이 변경되었을 때만 updateEvents 호출
+    if (currentJson !== handlersJsonRef.current) {
+      handlersJsonRef.current = currentJson;
+      updateEvents(handlers);
+    }
+    // handlers는 매 렌더링마다 새 참조이지만 내용을 비교하여 중복 호출 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handlers]);
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
@@ -95,18 +137,16 @@ export function EventSection(props: EventSectionProps) {
   return (
     <div className="event-section">
       <div className="section-header">
-        <div className="section-title">Events</div>
-      </div>
-
-      <div className="section-content">
-        {/* EventTypePicker - 간단한 Select로 대체 */}
-        <div className="add-event-container">
+        <h3 className="section-title">Events</h3>
+        <div className="section-actions">
           <EventTypePicker
             onSelect={handleAddEvent}
             registeredTypes={registeredEventTypes}
           />
         </div>
+      </div>
 
+      <div className="section-content">
         {/* 등록된 이벤트 핸들러 목록 */}
         {handlers.length === 0 ? (
           <p className="empty-message">
@@ -122,37 +162,99 @@ export function EventSection(props: EventSectionProps) {
                     className="react-aria-Button"
                     onPress={() => selectHandler(null)}
                   >
-                    ← Back
+                    <ChevronLeft color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                   </Button>
                   <span className="selected-handler-type">
-                    {selectedHandler.event_type}
+                    {selectedHandler.event}
                   </span>
                   <Button
                     className="react-aria-Button"
                     onPress={() => handleRemoveHandler(selectedHandler.id)}
                   >
-                    🗑️
+                    <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                   </Button>
                 </div>
 
-                {/* ActionTypePicker - 간단한 Select로 대체 */}
-                {showAddAction ? (
-                  <div className="add-action-container">
-                    <ActionTypePicker
-                      onSelect={handleAddAction}
-                      showCategories={true}
-                    />
-                    <Button
-                      onPress={() => setShowAddAction(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <EventHandlerManager
-                    eventHandler={selectedHandler}
+                {/* Handler-level Advanced Settings */}
+                <div className="handler-advanced-settings">
+                  <ConditionEditor
+                    condition={selectedHandler.condition}
+                    onChange={(condition) => {
+                      const updated = { ...selectedHandler, condition };
+                      updateHandler(selectedHandler.id, updated);
+                    }}
+                    label="Execute handler when"
+                    placeholder="state.isEnabled === true"
                   />
-                )}
+
+                  <DebounceThrottleEditor
+                    debounce={selectedHandler.debounce}
+                    throttle={selectedHandler.throttle}
+                    onChange={({ debounce, throttle }) => {
+                      const updated = {
+                        ...selectedHandler,
+                        debounce,
+                        throttle,
+                      };
+                      updateHandler(selectedHandler.id, updated);
+                    }}
+                  />
+                </div>
+
+                {/* Actions Section */}
+                <div className="actions-section">
+                  <div className="actions-header">
+                    <h4 className="actions-title">Actions</h4>
+                    {!showAddAction && (
+                      <Button
+                        className="iconButton"
+                        onPress={() => setShowAddAction(true)}
+                        aria-label="Add Action"
+                      >
+                        <CirclePlus
+                          color={iconProps.color}
+                          strokeWidth={iconProps.stroke}
+                          size={iconProps.size}
+                        />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* ActionTypePicker - 간단한 Select로 대체 */}
+                  {showAddAction ? (
+                    <div className="add-action-container">
+                      <ActionTypePicker
+                        onSelect={handleAddAction}
+                        showCategories={true}
+                      />
+                      <Button
+                        className="react-aria-Button"
+                        onPress={() => setShowAddAction(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <EventHandlerManager
+                      eventHandler={selectedHandler}
+                      onUpdateAction={(actionId, updates) => {
+                        const action = actions.find(a => a.id === actionId);
+                        if (action) {
+                          const updatedActions = actions.map(a =>
+                            a.id === actionId ? { ...a, ...updates } : a
+                          );
+                          const updatedHandler = { ...selectedHandler, actions: updatedActions };
+                          updateHandler(selectedHandler.id, updatedHandler);
+                        }
+                      }}
+                      onRemoveAction={(actionId) => {
+                        const updatedActions = actions.filter(a => a.id !== actionId);
+                        const updatedHandler = { ...selectedHandler, actions: updatedActions };
+                        updateHandler(selectedHandler.id, updatedHandler);
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             ) : (
               // 핸들러 목록 화면
@@ -164,7 +266,7 @@ export function EventSection(props: EventSectionProps) {
                     onClick={() => selectHandler(handler.id)}
                   >
                     <div className="handler-info">
-                      <span className="handler-type">{handler.event_type}</span>
+                      <span className="handler-type">{handler.event}</span>
                       <span className="handler-action-count">
                         {handler.actions?.length || 0} action
                         {(handler.actions?.length || 0) !== 1 ? "s" : ""}

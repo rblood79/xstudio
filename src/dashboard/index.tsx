@@ -20,7 +20,7 @@ function Dashboard() {
   const [newProjectName, setNewProjectName] = useState("");
 
   // Fetch projects with useAsyncQuery
-  const projectsQuery = useAsyncQuery<Project[]>(
+  const projectsQuery = useAsyncQuery<Project>(
     async () => await projectsApi.fetchProjects()
   );
 
@@ -60,7 +60,7 @@ function Dashboard() {
     },
     {
       onSuccess: (newProject) => {
-        projectsQuery.refetch(); // 목록 갱신
+        projectsQuery.reload(); // 목록 갱신
         setNewProjectName("");
         navigate(`/builder/${newProject.id}`);
       },
@@ -74,7 +74,7 @@ function Dashboard() {
     },
     {
       onSuccess: () => {
-        projectsQuery.refetch(); // 목록 갱신
+        projectsQuery.reload(); // 목록 갱신
       },
     }
   );
@@ -141,6 +141,8 @@ function Dashboard() {
           />
           <Button
             type="submit"
+            variant="primary"
+            size="sm"
             isDisabled={loading || !newProjectName.trim()}
             children={createProjectMutation.isLoading ? 'Creating...' : 'Add Project'}
           />
@@ -161,13 +163,13 @@ function Dashboard() {
                   onPress={() => navigate(`/builder/${project.id}`)}
                   isDisabled={loading}
                   children="Edit"
-                  variant="surface"
+                  variant="primary"
                 />
                 <Button
                   onPress={() => navigate(`/theme/${project.id}`)}
                   isDisabled={loading}
                   children="Theme"
-                  variant="surface"
+                  variant="primary"
                 />
                 <Button
                   onPress={() => handleDeleteProject(project.id)}

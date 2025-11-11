@@ -75,7 +75,7 @@
 }
 
 .elementItemActions .iconButton {
-  padding: calc(var(--spacing) * 1.375);
+  padding: var(--spacing-sm);
 }
 
 .elementItem:hover .elementItemActions,

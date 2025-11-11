@@ -345,6 +345,140 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         placeholder: "console.log('Hello');"
       }
     ]
+  },
+
+  setComponentState: {
+    label: "컴포넌트 상태 설정",
+    description: "다른 컴포넌트의 상태를 변경합니다",
+    icon: "🔧",
+    category: "ui",
+    configFields: [
+      {
+        name: "targetId",
+        label: "Target Component",
+        type: "text",
+        required: true,
+        placeholder: "component-id"
+      },
+      {
+        name: "statePath",
+        label: "State Path",
+        type: "text",
+        required: true,
+        placeholder: "selectedKeys, isOpen, value"
+      }
+    ]
+  },
+
+  triggerComponentAction: {
+    label: "컴포넌트 액션 실행",
+    description: "다른 컴포넌트의 메서드를 호출합니다",
+    icon: "▶️",
+    category: "ui",
+    configFields: [
+      {
+        name: "targetId",
+        label: "Target Component",
+        type: "text",
+        required: true,
+        placeholder: "component-id"
+      },
+      {
+        name: "action",
+        label: "Action",
+        type: "text",
+        required: true,
+        placeholder: "select, clear, focus"
+      }
+    ]
+  },
+
+  updateFormField: {
+    label: "폼 필드 업데이트",
+    description: "폼 필드의 값을 업데이트합니다",
+    icon: "📝",
+    category: "form",
+    configFields: [
+      {
+        name: "fieldName",
+        label: "Field Name",
+        type: "text",
+        required: true,
+        placeholder: "email, password"
+      }
+    ]
+  },
+
+  filterCollection: {
+    label: "컬렉션 필터링",
+    description: "컬렉션 컴포넌트의 아이템을 필터링합니다",
+    icon: "🔍",
+    category: "ui",
+    configFields: [
+      {
+        name: "targetId",
+        label: "Target Collection",
+        type: "text",
+        required: true,
+        placeholder: "listbox-id"
+      },
+      {
+        name: "filterMode",
+        label: "Filter Mode",
+        type: "select",
+        required: true,
+        options: [
+          { value: "text", label: "Text Search" },
+          { value: "function", label: "Custom Function" },
+          { value: "field", label: "Field Match" }
+        ],
+        defaultValue: "text"
+      }
+    ]
+  },
+
+  selectItem: {
+    label: "아이템 선택",
+    description: "컬렉션에서 특정 아이템을 선택합니다",
+    icon: "✓",
+    category: "ui",
+    configFields: [
+      {
+        name: "targetId",
+        label: "Target Collection",
+        type: "text",
+        required: true,
+        placeholder: "listbox-id"
+      },
+      {
+        name: "behavior",
+        label: "Selection Behavior",
+        type: "select",
+        required: true,
+        options: [
+          { value: "replace", label: "Replace" },
+          { value: "add", label: "Add" },
+          { value: "toggle", label: "Toggle" }
+        ],
+        defaultValue: "replace"
+      }
+    ]
+  },
+
+  clearSelection: {
+    label: "선택 해제",
+    description: "컬렉션의 모든 선택을 해제합니다",
+    icon: "✕",
+    category: "ui",
+    configFields: [
+      {
+        name: "targetId",
+        label: "Target Collection",
+        type: "text",
+        required: true,
+        placeholder: "listbox-id"
+      }
+    ]
   }
 };
 
@@ -355,8 +489,18 @@ export const ACTION_CATEGORIES = {
   navigation: ["navigate", "scrollTo"],
   state: ["setState", "updateState"],
   api: ["apiCall"],
-  ui: ["showModal", "hideModal", "showToast", "toggleVisibility"],
-  form: ["validateForm", "resetForm", "submitForm"],
+  ui: [
+    "showModal",
+    "hideModal",
+    "showToast",
+    "toggleVisibility",
+    "setComponentState",
+    "triggerComponentAction",
+    "filterCollection",
+    "selectItem",
+    "clearSelection"
+  ],
+  form: ["validateForm", "resetForm", "submitForm", "updateFormField"],
   utility: ["copyToClipboard", "customFunction"]
 } as const;
 

@@ -99,6 +99,16 @@ export type ActionType =
   | "resetForm"
   | "submitForm"
 
+  // Component Interaction
+  | "setComponentState"
+  | "triggerComponentAction"
+  | "updateFormField"
+
+  // Collection Interaction (NEW)
+  | "filterCollection"
+  | "selectItem"
+  | "clearSelection"
+
   // Utilities
   | "copyToClipboard"
   | "customFunction";
@@ -117,7 +127,13 @@ export type ActionConfig =
   | CustomConfig
   | ScrollToConfig
   | ToggleVisibilityConfig
-  | CopyToClipboardConfig;
+  | CopyToClipboardConfig
+  | SetComponentStateConfig
+  | TriggerComponentActionConfig
+  | UpdateFormFieldConfig
+  | FilterCollectionConfig
+  | SelectItemConfig
+  | ClearSelectionConfig;
 
 /**
  * Navigate 액션 설정
@@ -221,6 +237,67 @@ export interface CopyToClipboardConfig {
   source?: "static" | "element" | "state";
   elementId?: string;
   stateKey?: string;
+}
+
+/**
+ * Set Component State 액션 설정
+ */
+export interface SetComponentStateConfig {
+  targetId: string; // customId or element ID
+  targetType?: string; // Button, ListBox, etc. (optional, for validation)
+  statePath: string; // e.g., "selectedKeys", "isOpen"
+  value: unknown;
+  source?: "static" | "state" | "event";
+}
+
+/**
+ * Trigger Component Action 액션 설정
+ */
+export interface TriggerComponentActionConfig {
+  targetId: string; // customId or element ID
+  targetType?: string; // Button, ListBox, etc.
+  action: string; // "select", "clear", "focus", etc.
+  params?: Record<string, unknown>;
+}
+
+/**
+ * Update Form Field 액션 설정
+ */
+export interface UpdateFormFieldConfig {
+  formId?: string; // optional, if targeting specific form
+  fieldName: string; // field name attribute
+  value: unknown;
+  source?: "static" | "state" | "event";
+}
+
+/**
+ * Filter Collection 액션 설정
+ */
+export interface FilterCollectionConfig {
+  targetId: string; // customId or element ID of Collection component
+  filterMode: "text" | "function" | "field";
+  query?: string; // for text mode
+  filterFn?: string; // JavaScript function for function mode (e.g., "item => item.category === 'premium'")
+  fieldName?: string; // for field mode
+  fieldValue?: unknown; // for field mode
+}
+
+/**
+ * Select Item 액션 설정
+ */
+export interface SelectItemConfig {
+  targetId: string; // customId or element ID of Collection component
+  itemId?: string; // specific item ID
+  itemIndex?: number; // or index
+  behavior: "replace" | "add" | "toggle"; // selection behavior
+  source?: "static" | "state" | "event"; // where itemId comes from
+}
+
+/**
+ * Clear Selection 액션 설정
+ */
+export interface ClearSelectionConfig {
+  targetId: string; // customId or element ID of Collection component
 }
 
 /**
@@ -348,6 +425,12 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   validateForm: "폼 검증",
   resetForm: "폼 리셋",
   submitForm: "폼 제출",
+  setComponentState: "컴포넌트 상태 설정",
+  triggerComponentAction: "컴포넌트 액션 실행",
+  updateFormField: "폼 필드 업데이트",
+  filterCollection: "컬렉션 필터링",
+  selectItem: "아이템 선택",
+  clearSelection: "선택 해제",
   copyToClipboard: "클립보드 복사",
   customFunction: "커스텀 함수"
 };

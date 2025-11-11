@@ -132,8 +132,11 @@ body {
 
     .projects-grid {
       width: 100%;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
       gap: var(--spacing-md);
 
       .project-card {

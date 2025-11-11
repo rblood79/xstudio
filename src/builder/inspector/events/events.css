@@ -560,7 +560,7 @@
 .simple-flow-view {
   display: flex;
   flex-direction: column;
-  padding: var(--spacing-lg);
+  padding: 0;
   background: var(--builder-inspector-bg);
   border-radius: var(--radius-md);
   min-height: 300px;
@@ -574,6 +574,7 @@
 }
 
 .flow-item {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -581,7 +582,7 @@
 }
 
 .flow-node {
-  min-width: 250px;
+  width: 100%;
   padding: var(--spacing-md);
   background: var(--builder-inspector-surface);
   border: 2px solid var(--builder-inspector-border);
@@ -833,8 +834,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs);
+  font-size: var(--text-xs);
   color: var(--builder-inspector-text-secondary);
   background: transparent;
   border: 1px solid transparent;
@@ -861,4 +862,129 @@
 
 .mode-label {
   font-weight: 500;
+}
+
+/* ===== EventTypePicker Styles ===== */
+
+.event-type-picker .iconButton {
+  padding: var(--spacing-sm);
+}
+
+/* ===== Actions Section Styles ===== */
+
+.actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.actions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+}
+
+.actions-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--builder-inspector-text-primary);
+  margin: 0;
+}
+
+.actions-header .iconButton {
+  padding: var(--spacing-sm);
+}
+
+/* ===== ActionListView Styles ===== */
+
+.action-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.action-list-empty {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.action-list-empty .empty-message {
+  color: var(--builder-inspector-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.action-list-item {
+  border: 1px solid var(--builder-inspector-border-color);
+  border-radius: var(--radius-md);
+  background: var(--builder-inspector-bg-primary);
+  overflow: hidden;
+  transition: all 200ms;
+}
+
+.action-list-item.expanded {
+  border-color: var(--builder-inspector-accent-primary);
+}
+
+.action-list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: var(--spacing) 0;
+  cursor: pointer;
+  transition: background 200ms;
+}
+
+.action-list-item-header:hover {
+  background: var(--builder-inspector-bg-hover);
+}
+
+.action-list-item-drag {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--builder-inspector-text-tertiary);
+}
+
+.action-list-item-drag:active {
+  cursor: grabbing;
+}
+
+.action-list-item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+}
+
+.action-list-item .action-index {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--builder-inspector-text-tertiary);
+  min-width: 24px;
+}
+
+.action-list-item .action-icon {
+  font-size: var(--font-size-lg);
+}
+
+.action-list-item .action-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--builder-inspector-text-primary);
+}
+
+.action-list-item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.action-list-item-actions .iconButton {
+  padding: var(--spacing-xs);
+}
+
+.action-list-item-editor {
+  padding: var(--spacing-2xs);
+  border-top: 1px solid var(--builder-inspector-border-color);
+  background: var(--builder-inspector-bg-secondary);
 }

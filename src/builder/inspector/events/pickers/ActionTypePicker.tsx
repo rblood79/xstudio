@@ -85,7 +85,7 @@ export function ActionTypePicker({
       </Button>
       <Popover>
         <ListBox>
-          <Section>
+          <Section key="navigation">
             <Header>네비게이션</Header>
             {ACTION_CATEGORIES.navigation.map((actionType) => (
               <ListBoxItem key={actionType} id={actionType}>
@@ -94,7 +94,7 @@ export function ActionTypePicker({
             ))}
           </Section>
 
-          <Section>
+          <Section key="interaction">
             <Header>인터랙션</Header>
             {ACTION_CATEGORIES.interaction.map((actionType) => (
               <ListBoxItem key={actionType} id={actionType}>
@@ -103,7 +103,7 @@ export function ActionTypePicker({
             ))}
           </Section>
 
-          <Section>
+          <Section key="data">
             <Header>데이터</Header>
             {ACTION_CATEGORIES.data.map((actionType) => (
               <ListBoxItem key={actionType} id={actionType}>
@@ -112,7 +112,7 @@ export function ActionTypePicker({
             ))}
           </Section>
 
-          <Section>
+          <Section key="media">
             <Header>미디어</Header>
             {ACTION_CATEGORIES.media.map((actionType) => (
               <ListBoxItem key={actionType} id={actionType}>
@@ -121,7 +121,7 @@ export function ActionTypePicker({
             ))}
           </Section>
 
-          <Section>
+          <Section key="custom">
             <Header>커스텀</Header>
             {ACTION_CATEGORIES.custom.map((actionType) => (
               <ListBoxItem key={actionType} id={actionType}>

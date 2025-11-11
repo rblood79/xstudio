@@ -59,6 +59,27 @@ function TriggerNode({
 }) {
   const metadata = EVENT_METADATA[eventType];
 
+  // Fallback for missing metadata
+  if (!metadata) {
+    console.warn(`⚠️ Missing EVENT_METADATA for event type: ${eventType}`);
+    return (
+      <div
+        className={`flow-node flow-trigger-node ${isSelected ? "selected" : ""}`}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flow-node-header trigger-header">
+          <span className="flow-node-icon">⚡</span>
+          <span className="flow-node-title">Trigger</span>
+        </div>
+        <div className="flow-node-content">
+          <div className="trigger-event-type">{eventType}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`flow-node flow-trigger-node ${isSelected ? "selected" : ""}`}
@@ -93,6 +114,25 @@ function ActionNode({
   isSelected: boolean;
 }) {
   const metadata = ACTION_METADATA[action.type];
+
+  // Fallback for missing metadata
+  if (!metadata) {
+    console.warn(`⚠️ Missing ACTION_METADATA for action type: ${action.type}`);
+    return (
+      <div
+        className={`flow-node flow-action-node ${isSelected ? "selected" : ""}`}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="flow-node-header action-header">
+          <span className="flow-node-icon">⚙️</span>
+          <span className="flow-node-title">{action.type}</span>
+          <span className="flow-node-index">#{index + 1}</span>
+        </div>
+      </div>
+    );
+  }
 
   // Generate config summary
   const configSummary = generateActionSummary(action);
@@ -150,6 +190,25 @@ function generateActionSummary(action: EventAction): string {
 
     case "customFunction":
       return config.functionName;
+
+    // Phase 3-4 new action types
+    case "setComponentState":
+      return `${config.targetId} → ${config.statePath}`;
+
+    case "triggerComponentAction":
+      return `${config.targetId}.${config.action}()`;
+
+    case "updateFormField":
+      return `Form: ${config.fieldName}`;
+
+    case "filterCollection":
+      return `Filter: ${config.targetId} (${config.filterMode})`;
+
+    case "selectItem":
+      return `Select: ${config.targetId} (${config.behavior})`;
+
+    case "clearSelection":
+      return `Clear: ${config.targetId}`;
 
     default:
       return "";

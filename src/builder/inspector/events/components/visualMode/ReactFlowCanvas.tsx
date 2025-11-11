@@ -6,7 +6,7 @@ import ReactFlow, {
   type NodeTypes
 } from "reactflow";
 import "reactflow/dist/style.css";
-import type { ElementEvent } from "@/types/events";
+import type { EventHandler } from "../../types";
 import { useEventFlow } from "../../hooks/useEventFlow";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
@@ -17,7 +17,7 @@ const nodeTypes: NodeTypes = {
 };
 
 export interface ReactFlowCanvasProps {
-  eventHandler: ElementEvent;
+  eventHandler: EventHandler;
   onSelectAction?: (actionId: string) => void;
 }
 

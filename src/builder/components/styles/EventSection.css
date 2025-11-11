@@ -141,11 +141,15 @@
   .selected-handler-header {
     display: flex;
     align-items: center;
-    gap: var(--spacing-3);
-    padding: var(--spacing-3);
+    gap: var(--gap);
+    padding: var(--spacing);
     background: var(--surface-tertiary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
+
+    .react-aria-Button {
+      padding: var(--spacing);
+    }
   }
 
   .back-button {

@@ -14,6 +14,22 @@ export interface ActionNodeData {
 export const ActionNode = memo(({ data }: NodeProps<ActionNodeData>) => {
   const metadata = ACTION_METADATA[data.action.type];
 
+  // Fallback for missing metadata
+  if (!metadata) {
+    console.warn(`⚠️ Missing ACTION_METADATA for action type: ${data.action.type}`);
+    return (
+      <div className="reactflow-action-node">
+        <Handle type="target" position={Position.Top} id="action-in" />
+        <div className="node-header">
+          <span className="node-icon">⚙️</span>
+          <span className="node-title">{data.action.type}</span>
+          <span className="node-index">#{data.index + 1}</span>
+        </div>
+        <Handle type="source" position={Position.Bottom} id="action-out" />
+      </div>
+    );
+  }
+
   // Generate config summary
   const configSummary = generateActionSummary(data.action);
 

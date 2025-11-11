@@ -1,12 +1,17 @@
 import './index.css';
 import React from 'react';
-import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save } from 'lucide-react';
+import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save, Moon, Sun } from 'lucide-react';
 import { Button } from 'react-aria-components';
+import { useParams } from 'react-router-dom';
 import { useStore } from '../stores';
 import { saveService } from '../../services/save';
 import { PropertySwitch, PropertySelect, PropertySlider } from '../inspector/components';
+import { useThemes } from '../../hooks/theme/useThemes';
+import { ThemeService } from '../../services/theme';
 
 function Setting() {
+    const { projectId } = useParams<{ projectId: string }>();
+    
     const showOverlay = useStore((state) => state.showOverlay);
     const setShowOverlay = useStore((state) => state.setShowOverlay);
 
@@ -40,7 +45,36 @@ function Setting() {
     const setRealtimeMode = useStore((state) => state.setRealtimeMode);
     const pendingCount = pendingChanges.size;
 
+    // Theme 관련 상태
+    const activeTheme = useStore((state) => state.activeTheme);
+    const loadTheme = useStore((state) => state.loadTheme);
+    const { themes, loading: themesLoading } = useThemes({
+        projectId: projectId || "",
+        enableRealtime: false,
+    });
+
     const [isSaving, setIsSaving] = React.useState(false);
+
+    const handleThemeChange = async (themeId: string): Promise<void> => {
+        if (!projectId) return;
+
+        try {
+            await ThemeService.activateTheme(themeId);
+            await loadTheme(projectId);
+            console.log("[Setting] Theme switched to:", themeId);
+        } catch (error) {
+            console.error("[Setting] Failed to switch theme:", error);
+        }
+    };
+
+    // Theme Mode에 따른 아이콘 결정
+    const getThemeModeIcon = () => {
+        if (themeMode === 'dark') return Moon;
+        if (themeMode === 'light') return Sun;
+        // auto인 경우 시스템 설정 확인
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        return prefersDark ? Moon : Sun;
+    };
 
     const themeModeOptions = [
         { value: 'light', label: 'Light' },
@@ -220,12 +254,26 @@ function Setting() {
                     </div>
                     <div className="section-content">
                         <div className="component-props">
+                            {/* Theme Select */}
+                            {projectId && themes.length > 0 && (
+                                <PropertySelect
+                                    label="Theme Select"
+                                    value={activeTheme?.id || ""}
+                                    onChange={handleThemeChange}
+                                    options={themes.map((theme) => ({
+                                        value: theme.id,
+                                        label: theme.name
+                                    }))}
+                                    icon={Palette}
+                                />
+                            )}
+
                             <PropertySelect
                                 label="Theme Mode"
                                 value={themeMode}
                                 onChange={handleThemeModeChange}
                                 options={themeModeOptions}
-                                icon={Palette}
+                                icon={getThemeModeIcon()}
                             />
 
                             <PropertySelect

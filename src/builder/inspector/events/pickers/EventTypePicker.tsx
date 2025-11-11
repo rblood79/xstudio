@@ -8,9 +8,10 @@
  */
 
 import { Select, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
-import { Plus } from 'lucide-react';
+import { CirclePlus } from 'lucide-react';
 import type { EventType } from '@/types/events';
 import { EVENT_TYPE_LABELS } from '@/types/events';
+import { iconProps } from '@/utils/uiConstants';
 
 interface EventTypePickerProps {
   /** 이벤트 선택 시 호출되는 콜백 */
@@ -51,10 +52,12 @@ export function EventTypePicker({
       isDisabled={isDisabled || availableEventTypes.length === 0}
       className="event-type-picker"
     >
-      
-      <Button>
-        <Plus size={16}/>
-        <span>이벤트 추가</span>
+      <Button className="iconButton" aria-label="Add Event">
+        <CirclePlus
+          color={iconProps.color}
+          strokeWidth={iconProps.stroke}
+          size={iconProps.size}
+        />
       </Button>
       <Popover>
         <ListBox>

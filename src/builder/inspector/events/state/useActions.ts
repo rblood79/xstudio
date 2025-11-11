@@ -7,7 +7,7 @@
 
 import { useListData } from 'react-stately';
 import type { Key } from 'react-stately';
-import type { EventAction, ActionType } from '@/types/events';
+import type { EventAction, ActionType } from '../types';
 
 /**
  * Action 목록 관리 훅
@@ -38,17 +38,17 @@ export function useActions(initialActions: EventAction[]) {
    * 새 액션 추가
    *
    * @param actionType - 액션 타입 (navigate, updateState 등)
-   * @param value - 액션 설정 값
+   * @param config - 액션 설정 값
    * @returns 생성된 액션
    */
   const addAction = (
     actionType: ActionType,
-    value: Record<string, unknown> = {}
+    config: Record<string, unknown> = {}
   ): EventAction => {
     const newAction: EventAction = {
       id: `action-${actionType}-${Date.now()}`,
       type: actionType,
-      value,
+      config: config as EventAction['config'],
       enabled: true,
     };
 

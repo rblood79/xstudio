@@ -1,6 +1,6 @@
 import { ToggleButtonGroup, ToggleButton, Key } from "../../../components/list";
 
-export type ViewMode = "simple" | "reactflow";
+export type ViewMode = "list" | "simple" | "reactflow";
 
 export interface ViewModeToggleProps {
   value: ViewMode;
@@ -8,9 +8,11 @@ export interface ViewModeToggleProps {
 }
 
 /**
- * ViewModeToggle - Toggle between Simple Flow and ReactFlow modes
+ * ViewModeToggle - Toggle between List, Simple Flow and ReactFlow modes
  *
- * Phase 1: listMode removed, only visualMode (simple/reactflow) supported
+ * - list: 액션 목록 및 편집 모드
+ * - simple: 간단한 플로우 다이어그램
+ * - reactflow: ReactFlow 기반 고급 다이어그램
  */
 export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
   console.log("🎚️ ViewModeToggle rendered with value:", value);
@@ -31,6 +33,9 @@ export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
       onSelectionChange={handleSelectionChange}
       selectionMode="single"
     >
+      <ToggleButton id="list" className="view-mode-button">
+        <span className="mode-label">List</span>
+      </ToggleButton>
       <ToggleButton id="simple" className="view-mode-button">
         <span className="mode-label">Simple</span>
       </ToggleButton>

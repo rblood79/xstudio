@@ -46,11 +46,13 @@
           align-items: center;
           justify-content: center;
           gap: var(--spacing);
+          position: relative;
 
           &.screen {
             .sizeInfo {
+              position: absolute;
               width: 64px;
-              text-align: right;
+              left: -64px;
             }
 
             .react-aria-RadioGroup {
@@ -389,7 +391,7 @@
           justify-content: space-between;
 
           .iconButton {
-            padding: calc(var(--spacing) * 1.375);
+            padding: var(--spacing-sm);
           }
 
           .panel-title {
