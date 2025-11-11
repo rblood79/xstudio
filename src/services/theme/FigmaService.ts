@@ -14,7 +14,7 @@ import type {
   FigmaVariable,
   FigmaFileResponse
 } from '../../types/theme/figma.types';
-import type { DesignToken, ColorValueRGB } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueRGB } from '../../types/theme';
 import { TokenService } from './TokenService';
 import { rgbToHsl } from '../../utils/theme/colorUtils';
 

@@ -13,7 +13,7 @@ import type {
   ColorShades,
   ThemeGenerationError,
 } from '../../types/theme/generation.types';
-import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../types/theme';
 import {
   parseColorString,
   getSplitComplementaryColors,

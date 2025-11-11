@@ -3,7 +3,7 @@
  * 토큰을 다양한 형식으로 Export
  */
 
-import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../types/theme';
 import { hslToString, hslToHex } from '../../utils/theme/colorUtils';
 
 export type ExportFormat = 'css' | 'tailwind' | 'scss' | 'json';

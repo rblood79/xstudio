@@ -10,7 +10,7 @@ import type {
   CreateTokenInput,
   UpdateTokenInput,
   TokenFilter,
-} from '../../types/theme/token.types';
+} from '../../types/theme';
 import {
   parseTokens,
   filterTokensByCategory,

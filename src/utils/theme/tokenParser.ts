@@ -8,7 +8,7 @@ import type {
   ParsedTokenName,
   ParsedToken,
   TokenGroup,
-} from '../../types/theme/token.types';
+} from '../../types/theme';
 
 /**
  * 토큰 이름 파싱

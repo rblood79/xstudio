@@ -9,7 +9,7 @@ import type {
   ResolvedToken,
   CreateTokenInput,
   UpdateTokenInput,
-} from '../../types/theme/token.types';
+} from '../../types/theme';
 
 export class TokenService {
   /**

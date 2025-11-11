@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TokenService } from '../../services/theme';
-import type { ResolvedToken } from '../../types/theme/token.types';
+import type { ResolvedToken } from '../../types/theme';
 
 export interface UseTokenSearchOptions {
   themeId: string;

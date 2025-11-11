@@ -3,7 +3,7 @@
  * 라이트 모드 토큰을 다크 모드로 자동 변환
  */
 
-import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../types/theme';
 
 export interface DarkModeOptions {
   /**

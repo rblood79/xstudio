@@ -4,7 +4,7 @@
  */
 
 import { hslToString, rgbToString } from './colorUtils';
-import type { DesignToken } from '../../types/theme/token.types';
+import type { DesignToken } from '../../types/theme';
 
 /**
  * 단일 토큰을 CSS 변수로 변환

@@ -10,7 +10,7 @@ import { DarkModeService } from '../../../services/theme/DarkModeService';
 import type { DarkModeOptions } from '../../../services/theme/DarkModeService';
 import { useTokens } from '../../../hooks/theme/useTokens';
 import { useThemes } from '../../../hooks/theme/useThemes';
-import type { DesignToken, ColorValueHSL } from '../../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../../types/theme';
 import '../styles/DarkModeGenerator.css';
 
 const darkModeStyles = tv({

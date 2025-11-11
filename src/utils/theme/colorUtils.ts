@@ -3,7 +3,7 @@
  * HSL ↔ RGB ↔ HEX 변환 및 색상 조작
  */
 
-import type { ColorValueHSL, ColorValueRGB } from '../../types/theme/token.types';
+import type { ColorValueHSL, ColorValueRGB } from '../../types/theme';
 
 /**
  * HSL → RGB 변환

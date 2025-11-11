@@ -3,7 +3,7 @@
  * XStudio 토큰을 Figma Plugin으로 Export
  */
 
-import type { DesignToken, ColorValueHSL } from '../../types/theme/token.types';
+import type { DesignToken, ColorValueHSL } from '../../types/theme';
 import { hslToRgb } from '../../utils/theme/colorUtils';
 
 export interface FigmaPluginExportOptions {
