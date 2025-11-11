@@ -1,5 +1,5 @@
 import { Element } from '../types/store';
-import { ElementEvent, IMPLEMENTED_EVENT_TYPES } from '../types/events';
+import { ElementEvent, EventType, IMPLEMENTED_EVENT_TYPES } from '../types/events';
 import { EventEngine } from './eventEngine';
 import { createHash } from 'crypto';
 
@@ -117,7 +117,7 @@ export class EventHandlerFactory {
 
     private isValidEventType(eventType: string): boolean {
         // Registry 기반 검증
-        return IMPLEMENTED_EVENT_TYPES.includes(eventType as any);
+        return IMPLEMENTED_EVENT_TYPES.includes(eventType as EventType);
     }
 
     private registerCleanup(cleanupFn: () => void) {

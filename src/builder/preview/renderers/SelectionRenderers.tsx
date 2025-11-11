@@ -13,7 +13,6 @@ import {
 import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
 import { elementsApi } from "../../../services/api";
-import { ElementUtils } from "../../../utils/elementUtils";
 import { getVisibleColumns } from "../../../utils/columnTypeInference";
 import type { ColumnMapping } from "../../../types/unified";
 

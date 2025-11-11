@@ -260,21 +260,24 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                         }
                         const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
-                        const newElement: Omit<Element, 'id' | 'created_at' | 'updated_at'> = {
+                        const newElement: Element = {
+                            id: crypto.randomUUID(), // UUID 생성
                             tag,
                             customId: generateCustomId(tag, elements),
                             props: getDefaultProps(tag),
                             page_id: currentPageId,
                             parent_id: parentId,
-                            order_num: orderNum
+                            order_num: orderNum,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
                         };
 
-                        const data = await elementsApi.createElement(newElement);
-                        addElement(data);
+                        // addElement 호출 (내부에서 DB 저장 처리)
+                        addElement(newElement);
 
                         // 증분 업데이트로 캐시 최적화
-                        const updatedElements = [...elements, data];
-                        HierarchyManager.incrementalUpdate(updatedElements, data.id);
+                        const updatedElements = [...elements, newElement];
+                        HierarchyManager.incrementalUpdate(updatedElements, newElement.id);
 
                         // iframe에 업데이트된 요소들 전송
                         sendElementsToIframe(updatedElements);

@@ -13,6 +13,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { SelectedElement } from "../types";
 import type { EventType, ActionType } from "@/types/events";
+import type { ComponentElementProps } from "@/types/unified";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { EventHandlerManager } from "../events/components/EventHandlerManager";
 import { EventTypePicker } from "../events/pickers/EventTypePicker";
@@ -43,7 +44,7 @@ export function EventSection(props: EventSectionProps) {
   );
 
   // events는 props 안에 저장됨 (DB 스키마)
-  const eventsFromProps = (builderElement?.props as any)?.events;
+  const eventsFromProps = (builderElement?.props as ComponentElementProps)?.events;
 
   // React Stately로 이벤트 핸들러 관리 - props.events 사용
   const {

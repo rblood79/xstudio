@@ -23,6 +23,57 @@ export interface ApiError {
 export const classifyError = (error: unknown, operation: string): ApiError => {
     const timestamp = new Date().toISOString();
 
+    // Supabase PostgrestError 감지
+    if (error && typeof error === 'object' && 'code' in error) {
+        const supabaseError = error as { code: string; message: string; details?: string; hint?: string };
+
+        // 23505: unique_violation (중복 키)
+        if (supabaseError.code === '23505') {
+            return {
+                type: ApiErrorType.VALIDATION_ERROR,
+                message: '이미 존재하는 데이터입니다.',
+                code: supabaseError.code,
+                details: supabaseError.details || supabaseError.message,
+                operation,
+                timestamp
+            };
+        }
+
+        // 23503: foreign_key_violation
+        if (supabaseError.code === '23503') {
+            return {
+                type: ApiErrorType.VALIDATION_ERROR,
+                message: '참조하는 데이터가 존재하지 않습니다.',
+                code: supabaseError.code,
+                details: supabaseError.details || supabaseError.message,
+                operation,
+                timestamp
+            };
+        }
+
+        // 23514: check_violation
+        if (supabaseError.code === '23514') {
+            return {
+                type: ApiErrorType.VALIDATION_ERROR,
+                message: '데이터 제약 조건을 위반했습니다.',
+                code: supabaseError.code,
+                details: supabaseError.details || supabaseError.message,
+                operation,
+                timestamp
+            };
+        }
+
+        // 기타 Supabase 에러
+        return {
+            type: ApiErrorType.SERVER_ERROR,
+            message: supabaseError.message || '데이터베이스 오류가 발생했습니다.',
+            code: supabaseError.code,
+            details: supabaseError.details,
+            operation,
+            timestamp
+        };
+    }
+
     if (error instanceof Error) {
         const message = error.message.toLowerCase();
 
@@ -97,10 +148,32 @@ export const classifyError = (error: unknown, operation: string): ApiError => {
         }
     }
 
-    // 알 수 없는 에러
+    // 알 수 없는 에러 - 에러 객체를 직렬화 가능한 형태로 변환
+    let originalError: unknown;
+    if (error instanceof Error) {
+        // Error 인스턴스는 name, message, stack 추출
+        originalError = {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        };
+    } else if (typeof error === 'object' && error !== null) {
+        // 일반 객체는 JSON 직렬화 시도
+        try {
+            originalError = JSON.parse(JSON.stringify(error));
+        } catch {
+            // 직렬화 실패시 문자열 변환
+            originalError = String(error);
+        }
+    } else {
+        // 기타 타입은 문자열 변환
+        originalError = String(error);
+    }
+
     return {
         type: ApiErrorType.UNKNOWN_ERROR,
         message: '알 수 없는 오류가 발생했습니다.',
+        details: originalError, // 직렬화된 에러 정보
         operation,
         timestamp
     };
@@ -113,7 +186,14 @@ export const logError = (error: ApiError) => {
 
     // 개발 환경에서만 상세 로깅
     if (import.meta.env.DEV) {
-        console.error('Error details:', error);
+        console.error('Error details:', {
+            ...error,
+            originalError: error.details // 원본 에러 메시지 강조
+        });
+        // details 내용을 별도로 출력하여 확인 용이하게
+        if (error.details) {
+            console.error('📋 Detailed error information:', error.details);
+        }
     }
 
     // 프로덕션에서는 에러 모니터링 서비스로 전송

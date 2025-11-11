@@ -49,7 +49,7 @@ function Setting() {
     // Theme 관련 상태
     const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
     const loadActiveTheme = useUnifiedThemeStore((state) => state.loadActiveTheme);
-    const { themes, loading: themesLoading } = useThemes({
+    const { themes } = useThemes({
         projectId: projectId || "",
         enableRealtime: false,
     });

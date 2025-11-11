@@ -1,6 +1,5 @@
 import { Element } from "../../../types/store";
 import { elementsApi } from "../../../services/api/ElementsApiService";
-import { ElementUtils } from "../../../utils/elementUtils";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { updateElementId } from "./elementCreation";
 
