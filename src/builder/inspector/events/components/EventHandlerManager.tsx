@@ -27,18 +27,14 @@ export function EventHandlerManager({
   const [selectedActionId, setSelectedActionId] = useState<string | null>(null);
 
   const handleViewModeChange = (mode: ViewMode) => {
-    console.log("🔄 ViewMode changed:", mode);
     setViewMode(mode);
   };
 
   // Handle action selection from visual modes
   const handleSelectAction = (actionId: string) => {
-    console.log("🎯 Action selected:", actionId);
     setSelectedActionId(actionId);
     setViewMode("list");
   };
-
-  console.log("📊 Current viewMode:", viewMode);
 
   return (
     <div className="event-handler-manager">

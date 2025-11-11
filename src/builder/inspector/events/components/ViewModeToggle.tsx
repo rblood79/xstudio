@@ -15,13 +15,10 @@ export interface ViewModeToggleProps {
  * - reactflow: ReactFlow 기반 고급 다이어그램
  */
 export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
-  console.log("🎚️ ViewModeToggle rendered with value:", value);
-
   const handleSelectionChange = (keys: Set<Key>) => {
     const selectedKey = Array.from(keys)[0];
     if (selectedKey && typeof selectedKey === "string") {
       const selectedMode = selectedKey as ViewMode;
-      console.log("🎚️ Selection changed:", selectedMode);
       onChange(selectedMode);
     }
   };
