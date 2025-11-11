@@ -16,6 +16,7 @@ export class MemoryMonitor {
     private intervalId: ReturnType<typeof setInterval> | null = null;
     private readonly collectionInterval = 10000; // 10초마다 수집
     private readonly maxStatsHistory = 60; // 10분치 기록 (60 * 10초)
+    private statusMessage: string = ''; // 상태 메시지 (콘솔 대신 UI에 표시)
 
     constructor() {
         this.startMonitoring();
@@ -78,9 +79,7 @@ export class MemoryMonitor {
         if (!this.intervalId) {
             this.collectStats(); // 초기 1회 수집
             this.intervalId = setInterval(() => this.collectStats(), this.collectionInterval);
-            if (import.meta.env.DEV) {
-                console.log(`📈 Memory monitoring started, collecting every ${this.collectionInterval / 1000} seconds.`);
-            }
+            this.statusMessage = `📈 메모리 모니터링 시작 (${this.collectionInterval / 1000}초마다 수집)`;
         }
     }
 
@@ -88,9 +87,7 @@ export class MemoryMonitor {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
-            if (import.meta.env.DEV) {
-                console.log('📉 Memory monitoring stopped.');
-            }
+            this.statusMessage = '📉 메모리 모니터링 중지';
         }
     }
 
@@ -102,12 +99,14 @@ export class MemoryMonitor {
         return [...this.statsHistory];
     }
 
+    public getStatusMessage(): string {
+        return this.statusMessage;
+    }
+
     // 수동으로 메모리 최적화 호출
     public optimizeMemory(): void {
         historyManager.optimizeMemory();
-        if (import.meta.env.DEV) {
-            console.log('✨ Manual memory optimization triggered.');
-        }
+        this.statusMessage = '✨ 메모리 최적화 실행됨';
     }
 }
 

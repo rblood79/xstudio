@@ -40,8 +40,6 @@ export class MemoryMonitor {
         this.monitoringInterval = setInterval(() => {
             this.collectStats();
         }, intervalMs);
-
-        console.log('🔍 메모리 모니터링 시작');
     }
 
     /**
@@ -53,7 +51,6 @@ export class MemoryMonitor {
             this.monitoringInterval = null;
         }
         this.isMonitoring = false;
-        console.log('⏹️ 메모리 모니터링 중지');
     }
 
     /**
@@ -167,15 +164,11 @@ export class MemoryMonitor {
      * 메모리 최적화 실행
      */
     optimizeMemory(): void {
-        console.log('🔧 메모리 최적화 실행 중...');
-
         // 히스토리 시스템 최적화
         historyManager.optimizeMemory();
 
         // 통계 초기화
         this.stats = [];
-
-        console.log('✅ 메모리 최적화 완료');
     }
 
     /**

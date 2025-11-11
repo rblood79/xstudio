@@ -16,9 +16,10 @@ interface HistoryLog {
 }
 
 export const Monitor: React.FC = () => {
-    const { stats, optimizeMemory } = useMemoryMonitor();
+    const { stats, statusMessage, optimizeMemory } = useMemoryMonitor();
     const [saveMetrics, setSaveMetrics] = useState<PerformanceMetrics | null>(null);
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+    const [saveStatusMessage, setSaveStatusMessage] = useState<string>('');
     const [activeTab, setActiveTab] = useState<'memory' | 'save' | 'history'>('memory');
     const [historyLogs, setHistoryLogs] = useState<HistoryLog[]>([]);
 
@@ -31,8 +32,10 @@ export const Monitor: React.FC = () => {
         const updateSaveMetrics = () => {
             const metrics = saveService.getPerformanceMetrics();
             const errors = saveService.getValidationErrors();
+            const statusMsg = saveService.getStatusMessage();
             setSaveMetrics(metrics);
             setValidationErrors(errors);
+            setSaveStatusMessage(statusMsg);
         };
 
         // 초기 로드
@@ -128,14 +131,21 @@ export const Monitor: React.FC = () => {
                 {activeTab === 'memory' ? (
                     <div className="monitor">
                         {stats ? (
-                            <ul className="stats">
-                                <li>Total Entries: {stats.totalEntries}</li>
-                                <li>Command Count: {stats.commandCount}</li>
-                                <li>Cache Size: {stats.cacheSize}</li>
-                                <li>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</li>
-                                <li>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</li>
-                                <li>Recommendation: {stats.recommendation}</li>
-                            </ul>
+                            <>
+                                <ul className="stats">
+                                    <li>Total Entries: {stats.totalEntries}</li>
+                                    <li>Command Count: {stats.commandCount}</li>
+                                    <li>Cache Size: {stats.cacheSize}</li>
+                                    <li>Estimated Usage: {formatBytes(stats.estimatedMemoryUsage)}</li>
+                                    <li>Compression Ratio: {(stats.compressionRatio * 100).toFixed(1)}%</li>
+                                    <li>Recommendation: {stats.recommendation}</li>
+                                </ul>
+                                {statusMessage && (
+                                    <div className="status-message">
+                                        <strong>상태:</strong> {statusMessage}
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <li>Loading memory stats...</li>
                         )}
@@ -152,6 +162,11 @@ export const Monitor: React.FC = () => {
                                     <li>Validation Skips: {saveMetrics.skipCounts.validation}</li>
                                     <li>Total Skips: {totalSkips}</li>
                                 </ul>
+                                {saveStatusMessage && (
+                                    <div className="status-message">
+                                        <strong>상태:</strong> {saveStatusMessage}
+                                    </div>
+                                )}
 
                                 {validationErrors.length > 0 && (
                                     <div className="validation-errors">

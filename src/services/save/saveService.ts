@@ -86,6 +86,7 @@ export interface ValidationError {
 export class SaveService {
   private static instance: SaveService;
   private validationErrors: ValidationError[] = [];
+  private statusMessage: string = ''; // 상태 메시지 (콘솔 대신 UI에 표시)
   private metrics: PerformanceMetrics = {
     saveOperations: 0,
     averageSaveTime: 0,
@@ -122,6 +123,13 @@ export class SaveService {
   }
 
   /**
+   * 상태 메시지 조회
+   */
+  getStatusMessage(): string {
+    return this.statusMessage;
+  }
+
+  /**
    * 성능 지표 조회
    */
   getPerformanceMetrics() {
@@ -146,7 +154,7 @@ export class SaveService {
           timestamp: new Date()
         });
         this.metrics.skipCounts.validation++;
-        console.warn(`⚠️ 직렬화 불가능한 값 감지 - 필드: ${key}, 값:`, value);
+        this.statusMessage = `⚠️ 직렬화 불가능한 값 감지 - 필드: ${key}`;
       }
     }
 
@@ -210,18 +218,18 @@ export class SaveService {
     const changes = getPendingChanges();
 
     if (changes.size === 0) {
-      console.log("💾 저장할 변경사항이 없습니다.");
+      this.statusMessage = "💾 저장할 변경사항이 없습니다.";
       return;
     }
 
-    console.log(`💾 ${changes.size}개 변경사항 저장 시작...`);
+    this.statusMessage = `💾 ${changes.size}개 변경사항 저장 시작...`;
 
     const savePromises: Promise<void>[] = [];
 
     changes.forEach((data: Record<string, unknown>, key: string) => {
       const [table, id] = key.split(":");
       if (!table || !id) {
-        console.warn(`⚠️ 잘못된 키 형식: ${key}`);
+        this.statusMessage = `⚠️ 잘못된 키 형식: ${key}`;
         return;
       }
 
@@ -237,9 +245,9 @@ export class SaveService {
     try {
       await Promise.all(savePromises);
       clearPendingChanges();
-      console.log(`✅ ${changes.size}개 변경사항 저장 완료`);
+      this.statusMessage = `✅ ${changes.size}개 변경사항 저장 완료`;
     } catch (error) {
-      console.error("❌ 저장 실패:", error);
+      this.statusMessage = `❌ 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
       throw error;
     }
   }
@@ -253,7 +261,7 @@ export class SaveService {
     const { error } = await supabase.from(table).update(data).eq("id", id);
 
     if (error) {
-      console.error(`❌ Supabase 저장 실패:`, error);
+      this.statusMessage = `❌ Supabase 저장 실패: ${error.message}`;
       throw error;
     }
   }
@@ -270,7 +278,7 @@ export class SaveService {
         validation: 0
       }
     };
-    console.log("📊 SaveService 성능 메트릭이 리셋되었습니다.");
+    this.statusMessage = "📊 SaveService 성능 메트릭이 리셋되었습니다.";
   }
 
   /**

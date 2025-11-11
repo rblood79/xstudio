@@ -5,11 +5,13 @@ import { memoryMonitor, MemoryStats } from '../stores/memoryMonitor';
 export function useMemoryMonitor() {
     const [stats, setStats] = useState<MemoryStats | null>(null);
     const [statsHistory, setStatsHistory] = useState<MemoryStats[]>([]);
+    const [statusMessage, setStatusMessage] = useState<string>('');
 
     useEffect(() => {
         const updateStats = () => {
             setStats(memoryMonitor.getCurrentStats());
             setStatsHistory(memoryMonitor.getStatsHistory());
+            setStatusMessage(memoryMonitor.getStatusMessage());
         };
 
         // 모니터링 시작 (이미 시작되어 있을 수 있지만, 안전하게 다시 호출)
@@ -33,7 +35,8 @@ export function useMemoryMonitor() {
         // 최적화 후 통계 즉시 업데이트
         setStats(memoryMonitor.getCurrentStats());
         setStatsHistory(memoryMonitor.getStatsHistory());
+        setStatusMessage(memoryMonitor.getStatusMessage());
     };
 
-    return { stats, statsHistory, optimizeMemory };
+    return { stats, statsHistory, statusMessage, optimizeMemory };
 }
