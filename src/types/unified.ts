@@ -58,6 +58,8 @@ export interface Element {
   deleted?: boolean; // 삭제 여부 (UI 필터링용) ⭐
   // Inspector 데이터 바인딩 (선택적)
   dataBinding?: DataBinding;
+  // Inspector 이벤트 핸들러 (선택적)
+  events?: unknown[]; // EventHandler[] 타입 (순환 참조 방지를 위해 unknown 사용)
 }
 
 // === 통합된 Page 타입 ===

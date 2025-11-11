@@ -24,6 +24,7 @@ import { ConditionEditor } from "../events/components/ConditionEditor";
 import { DebounceThrottleEditor } from "../events/components/DebounceThrottleEditor";
 import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "@/utils/uiConstants";
+import { useStore } from "../../stores";
 export interface EventSectionProps {
   element: SelectedElement;
 }
@@ -36,13 +37,21 @@ export function EventSection(props: EventSectionProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const updateEvents = useInspectorState((state) => state.updateEvents);
 
-  // React Stately로 이벤트 핸들러 관리
+  // Builder store에서 실제 element 가져오기 (DB 데이터 보존을 위해)
+  const builderElement = useStore((state) =>
+    state.elements.find((el) => el.id === selectedElement?.id)
+  );
+
+  // events는 props 안에 저장됨 (DB 스키마)
+  const eventsFromProps = (builderElement?.props as any)?.events;
+
+  // React Stately로 이벤트 핸들러 관리 - props.events 사용
   const {
     handlers,
     addHandler,
     updateHandler,
     removeHandler,
-  } = useEventHandlers(selectedElement?.events || []);
+  } = useEventHandlers(eventsFromProps || []);
 
   // 이벤트 선택 관리
   const {
@@ -62,11 +71,33 @@ export function EventSection(props: EventSectionProps) {
 
   // Actions의 실제 내용 변경 추적
   const actionsJsonRef = useRef<string>("");
+  const isInitialActionMount = useRef(true);
+  const lastSelectedHandlerIdRef = useRef<string | null>(null);
+
+  // selectedHandler가 변경될 때 초기화 플래그 리셋
+  useEffect(() => {
+    const currentHandlerId = selectedHandler?.id || null;
+    if (currentHandlerId !== lastSelectedHandlerIdRef.current) {
+      lastSelectedHandlerIdRef.current = currentHandlerId;
+      isInitialActionMount.current = true;
+      // 새 핸들러 선택 시 actions 초기 상태 저장
+      if (selectedHandler) {
+        actionsJsonRef.current = JSON.stringify(selectedHandler.actions || []);
+      }
+    }
+  }, [selectedHandler?.id]);
 
   // Actions 변경 시 Handler 업데이트 (내용 변경 시에만)
   useEffect(() => {
     if (selectedHandler) {
       const currentJson = JSON.stringify(actions);
+
+      // 초기 마운트 시에는 updateHandler 호출하지 않음
+      if (isInitialActionMount.current) {
+        isInitialActionMount.current = false;
+        actionsJsonRef.current = currentJson;
+        return;
+      }
 
       // 실제 내용이 변경되었을 때만 updateHandler 호출
       if (currentJson !== actionsJsonRef.current) {
@@ -78,7 +109,7 @@ export function EventSection(props: EventSectionProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actions, selectedHandler]);
+  }, [actions]);
 
   // Handlers의 실제 내용 변경 추적 (참조가 아닌 내용 비교)
   const handlersJsonRef = useRef<string>("");
@@ -240,8 +271,9 @@ export function EventSection(props: EventSectionProps) {
                       onUpdateAction={(actionId, updates) => {
                         const action = actions.find(a => a.id === actionId);
                         if (action) {
+                          const updatedAction = { ...action, ...updates };
                           const updatedActions = actions.map(a =>
-                            a.id === actionId ? { ...a, ...updates } : a
+                            a.id === actionId ? updatedAction : a
                           );
                           const updatedHandler = { ...selectedHandler, actions: updatedActions };
                           updateHandler(selectedHandler.id, updatedHandler);

@@ -63,7 +63,7 @@
   );
 }
 
-.resize-handle {
+/*.resize-handle {
   position: absolute;
   bottom: 0;
   right: 0;
@@ -76,4 +76,4 @@
   border-radius: 0px;
   cursor: ew-resize;
   pointer-events: auto;
-}
+}*/
