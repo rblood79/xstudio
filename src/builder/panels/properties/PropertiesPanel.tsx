@@ -20,14 +20,16 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
     return (
-      <div className="panel-empty-state">
-        <p className="empty-message">요소를 선택하세요</p>
+      <div className="inspector-container empty">
+        <div className="empty-state">
+          <p className="empty-message">요소를 선택하세요</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="properties-panel">
+    <div className="inspector-container">
       <PropertiesSection element={selectedElement} />
     </div>
   );

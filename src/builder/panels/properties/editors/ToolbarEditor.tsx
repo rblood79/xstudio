@@ -1,5 +1,5 @@
 import { Minus, Type, Hash } from "lucide-react";
-import { PropertyInput, PropertyCustomId, PropertySelect } from "../../components";
+import { PropertyInput, PropertyCustomId, PropertySelect } from "../../../inspector/components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";

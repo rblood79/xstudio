@@ -1,6 +1,4 @@
 @import "./styles/styles.css";
-@import "./data/data.css";
-@import "./events/events.css";
 
 @layer builder-system {
   :root {

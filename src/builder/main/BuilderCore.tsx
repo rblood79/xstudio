@@ -28,6 +28,7 @@ import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import { projectsApi, type Project } from "../../services/api";
 
 import "./index.css";
+import "../inspector/index.css";
 import { MessageService } from "../../utils/messaging";
 
 export const BuilderCore: React.FC = () => {
