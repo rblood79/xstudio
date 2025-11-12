@@ -6,12 +6,9 @@ import { ElementProps } from '../../types/integrations/supabase.types';
 import { Element, Page } from '../../types/core/store.types'; // Page 타입도 추가
 import { Nodes } from '../nodes';
 import Components from '../components';
-import Library from '../library';
-import Dataset from '../dataset';
-import Theme from '../theme';
-import AI from '../ai';
-import User from '../user';
-import Setting from '../setting';
+import Theme from '../panels/themes';
+import AI from '../panels/ai';
+import Setting from '../panels/settings';
 import { SidebarNav } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
@@ -1445,22 +1442,6 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
             );
         }
 
-        if (activeTabs.has('library')) {
-            contents.push(
-                <div key="library" className="sidebar-section library">
-                    <Library />
-                </div>
-            );
-        }
-
-        if (activeTabs.has('dataset')) {
-            contents.push(
-                <div key="dataset" className="sidebar-section dataset">
-                    <Dataset />
-                </div>
-            );
-        }
-
         if (activeTabs.has('theme')) {
             contents.push(
                 <div key="theme" className="sidebar-section theme">
@@ -1473,14 +1454,6 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
             contents.push(
                 <div key="ai" className="sidebar-section ai">
                     <AI />
-                </div>
-            );
-        }
-
-        if (activeTabs.has('user')) {
-            contents.push(
-                <div key="user" className="sidebar-section user">
-                    <User />
                 </div>
             );
         }

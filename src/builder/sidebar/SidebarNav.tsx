@@ -3,11 +3,8 @@ import React from "react";
 import {
   File,
   SquarePlus,
-  DatabaseZap,
-  LibraryBig,
   Palette,
   WandSparkles,
-  Users,
   Settings,
   ChevronLeft,
 } from "lucide-react";
@@ -16,11 +13,8 @@ import { iconProps } from "../../utils/ui/uiConstants";
 export type Tab =
   | "nodes"
   | "components"
-  | "library"
-  | "dataset"
   | "theme"
   | "ai"
-  | "user"
   | "settings";
 
 interface SidebarNavProps {
@@ -58,28 +52,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       ),
     },
     {
-      id: "library",
-      label: "라이브러리",
-      icon: (
-        <LibraryBig
-          color={iconProps.color}
-          strokeWidth={iconProps.stroke}
-          size={iconProps.size}
-        />
-      ),
-    },
-    {
-      id: "dataset",
-      label: "데이터셋",
-      icon: (
-        <DatabaseZap
-          color={iconProps.color}
-          strokeWidth={iconProps.stroke}
-          size={iconProps.size}
-        />
-      ),
-    },
-    {
       id: "theme",
       label: "테마",
       icon: (
@@ -95,17 +67,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       label: "AI",
       icon: (
         <WandSparkles
-          color={iconProps.color}
-          strokeWidth={iconProps.stroke}
-          size={iconProps.size}
-        />
-      ),
-    },
-    {
-      id: "user",
-      label: "사용자",
-      icon: (
-        <Users
           color={iconProps.color}
           strokeWidth={iconProps.stroke}
           size={iconProps.size}
