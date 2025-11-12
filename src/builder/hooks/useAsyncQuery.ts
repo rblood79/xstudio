@@ -1,6 +1,6 @@
 import { useAsyncList } from "react-stately";
 import { useCallback } from "react";
-import type { AsyncListLoadOptions } from "../../types/stately";
+import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 
 /**
  * useAsyncQuery - 범용 API 데이터 로딩 훅

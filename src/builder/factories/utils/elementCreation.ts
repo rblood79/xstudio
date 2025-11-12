@@ -1,5 +1,5 @@
-import { Element } from "../../../types/store";
-import { ElementUtils } from "../../../utils/elementUtils";
+import { Element } from "../../../types/core/store.types";
+import { ElementUtils } from "../../../utils/element/elementUtils";
 import { useStore } from "../../stores";
 import { ComponentDefinition } from "../types";
 import { generateCustomId } from "../../utils/idGeneration";

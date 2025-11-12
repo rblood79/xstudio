@@ -7,7 +7,7 @@ import { tv } from "tailwind-variants";
 import type {
   ComponentSizeSubset,
   ToggleButtonVariant,
-} from "../../types/componentVariants";
+} from "../../types/builder/componentVariants.types";
 import "./styles/ToggleButton.css";
 
 export interface ToggleButtonExtendedProps extends ToggleButtonProps {

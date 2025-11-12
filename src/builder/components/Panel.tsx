@@ -1,6 +1,6 @@
 import React from 'react';
 import { tv } from 'tailwind-variants';
-import type { PanelVariant } from '../../types/componentVariants';
+import type { PanelVariant } from '../../types/builder/componentVariants.types';
 import './styles/Panel.css';
 
 export interface PanelProps {

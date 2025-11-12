@@ -13,7 +13,7 @@ import {
 import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
-import type { ComponentSizeSubset, SwitchVariant } from '../../types/componentVariants';
+import type { ComponentSizeSubset, SwitchVariant } from '../../types/builder/componentVariants.types';
 
 import './styles/Switch.css';
 

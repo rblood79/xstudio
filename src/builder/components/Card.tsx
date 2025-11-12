@@ -1,6 +1,6 @@
 import React from "react";
 import { tv } from "tailwind-variants";
-import type { CardVariant, ComponentSizeSubset } from "../../types/componentVariants";
+import type { CardVariant, ComponentSizeSubset } from "../../types/builder/componentVariants.types";
 import './styles/Card.css';
 
 export type CardAssetType = 'file' | 'folder' | 'image' | 'video' | 'audio';

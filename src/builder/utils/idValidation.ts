@@ -1,4 +1,4 @@
-import type { Element } from "../../types/unified";
+import type { Element } from "../../types/builder/unified.types";
 
 /**
  * Validates if a custom ID follows HTML ID rules

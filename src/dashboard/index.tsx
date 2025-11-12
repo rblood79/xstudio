@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
-import { ElementProps } from '../types/supabase';
-import { ElementUtils } from '../utils/elementUtils';
+import { ElementProps } from '../types/integrations/supabase.types';
+import { ElementUtils } from '../utils/element/elementUtils';
 import { Button, TextField } from '../builder/components/list';
 import { useAsyncQuery } from '../builder/hooks/useAsyncQuery';
 import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';

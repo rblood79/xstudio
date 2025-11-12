@@ -12,7 +12,7 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import type { ComponentSizeSubset, MeterVariant } from '../../types/componentVariants';
+import type { ComponentSizeSubset, MeterVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/numberUtils';
 
 import './styles/Meter.css';

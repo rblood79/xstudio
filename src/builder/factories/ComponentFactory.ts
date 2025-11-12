@@ -1,4 +1,4 @@
-import { Element } from "../../types/store";
+import { Element } from "../../types/core/store.types";
 import {
   ComponentCreationResult,
   ComponentCreationContext,
@@ -10,7 +10,7 @@ import {
   addElementsToStore,
 } from "./utils/elementCreation";
 import { saveElementsInBackground } from "./utils/dbPersistence";
-import { ElementUtils } from "../../utils/elementUtils";
+import { ElementUtils } from "../../utils/element/elementUtils";
 
 // 컴포넌트 정의 임포트
 import { createTextFieldDefinition } from "./definitions/FormComponents";

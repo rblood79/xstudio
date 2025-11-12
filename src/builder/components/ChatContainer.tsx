@@ -8,8 +8,8 @@ import { useEffect, useRef } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { MessageCircle, Trash2 } from 'lucide-react';
-import { iconProps } from '../../utils/uiConstants';
-import type { ChatMessage as ChatMessageType } from '../../types/chat';
+import { iconProps } from '../../utils/ui/uiConstants';
+import type { ChatMessage as ChatMessageType } from '../../types/integrations/chat.types';
 import './styles/ChatContainer.css';
 
 export interface ChatContainerProps {

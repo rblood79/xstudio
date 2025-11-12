@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-import { Element } from '../../types/store';
-import { ElementUtils } from '../../utils/elementUtils';
+import { Element } from '../../types/core/store.types';
+import { ElementUtils } from '../../utils/element/elementUtils';
 
 export interface ErrorInfo {
     id: string;

@@ -1,4 +1,4 @@
-import { ElementProps } from "../../../types/supabase";
+import { ElementProps } from "../../../types/integrations/supabase.types";
 
 /**
  * Props 변환 유틸리티

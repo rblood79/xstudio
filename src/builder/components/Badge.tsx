@@ -3,7 +3,7 @@ import { tv } from "tailwind-variants";
 import type {
   ButtonVariant,
   ComponentSize,
-} from "../../types/componentVariants";
+} from "../../types/builder/componentVariants.types";
 import "./styles/Badge.css";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {

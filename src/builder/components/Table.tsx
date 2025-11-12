@@ -22,7 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { apiConfig } from "../../services/api";
-import { ElementUtils } from "../../utils/elementUtils";
+import { ElementUtils } from "../../utils/element/elementUtils";
 export type PaginationMode = "pagination" | "infinite";
 
 export interface ColumnDefinition<T> {

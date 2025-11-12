@@ -1,5 +1,5 @@
-import { ComponentElementProps } from "../../../types/store";
-import { ElementUtils } from "../../../utils/elementUtils";
+import { ComponentElementProps } from "../../../types/core/store.types";
+import { ElementUtils } from "../../../utils/element/elementUtils";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 

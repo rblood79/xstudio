@@ -1,5 +1,5 @@
-import { EventEngine } from "../../../utils/eventEngine";
-import { EventContext } from "../../../types/events";
+import { EventEngine } from "../../../utils/events/eventEngine";
+import { EventContext } from "../../../types/events/events.types";
 import { PreviewElement, EventHandlerMap } from "../types";
 
 /**

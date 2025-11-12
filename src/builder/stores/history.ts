@@ -1,4 +1,4 @@
-import { Element, ComponentElementProps } from '../../types/unified';
+import { Element, ComponentElementProps } from '../../types/builder/unified.types';
 import { commandDataStore } from './commandDataStore';
 
 /**

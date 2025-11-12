@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pages } from './Pages';
 import { Layers } from './Layers';
-import { ElementProps } from '../../types/supabase';
-import { Page, Element } from '../../types/store'; // 통합된 타입 사용
-import type { ElementTreeItem } from '../../types/stately';
+import { ElementProps } from '../../types/integrations/supabase.types';
+import { Page, Element } from '../../types/core/store.types'; // 통합된 타입 사용
+import type { ElementTreeItem } from '../../types/builder/stately.types';
 import './index.css';
 
 interface NodesProps {

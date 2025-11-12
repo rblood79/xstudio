@@ -1,7 +1,7 @@
 import { useAsyncList } from "react-stately";
 import { useMemo, useState, useCallback } from "react";
-import type { DataBinding } from "../../types/unified";
-import type { AsyncListLoadOptions } from "../../types/stately";
+import type { DataBinding } from "../../types/builder/unified.types";
+import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 
 /**
  * Collection 데이터 바인딩을 위한 공통 Hook

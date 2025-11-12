@@ -1,10 +1,10 @@
 import React from 'react';
 import { CopyMinus } from 'lucide-react'; // CopyMinus 추가
-import { ElementProps } from '../../types/supabase';
-import { Element } from '../../types/store'; // 통합된 타입 사용
+import { ElementProps } from '../../types/integrations/supabase.types';
+import { Element } from '../../types/core/store.types'; // 통합된 타입 사용
 import { useStore } from '../stores'; // useStore import 추가
 import { MessageService } from '../../utils/messaging'; // 메시징 서비스 추가
-import type { ElementTreeItem } from '../../types/stately';
+import type { ElementTreeItem } from '../../types/builder/stately.types';
 import { buildTreeFromElements } from '../utils/treeUtils';
 import './index.css';
 

@@ -11,7 +11,7 @@ import {
   Settings,
   ChevronLeft,
 } from "lucide-react";
-import { iconProps } from "../../utils/uiConstants";
+import { iconProps } from "../../utils/ui/uiConstants";
 
 export type Tab =
   | "nodes"

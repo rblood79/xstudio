@@ -9,7 +9,7 @@ import { mergeProps } from "@react-aria/utils";
 import type {
   ButtonVariant,
   ComponentSize,
-} from "../../types/componentVariants";
+} from "../../types/builder/componentVariants.types";
 import "./styles/Button.css";
 
 export interface ButtonProps extends RACButtonProps {

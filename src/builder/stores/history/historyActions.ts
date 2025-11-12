@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import type { StateCreator } from "zustand";
-import { Element, ComponentElementProps } from "../../../types/store";
+import { Element, ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { supabase } from "../../../env/supabase.client";
 import { sanitizeElement } from "../utils/elementSanitizer";

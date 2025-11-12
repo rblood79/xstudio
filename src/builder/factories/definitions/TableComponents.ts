@@ -1,12 +1,12 @@
-import { Element, ComponentElementProps } from "../../../types/store";
-import { ElementUtils } from "../../../utils/elementUtils";
+import { Element, ComponentElementProps } from "../../../types/core/store.types";
+import { ElementUtils } from "../../../utils/element/elementUtils";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentCreationContext, ComponentCreationResult } from "../types";
 import {
   createDefaultTableProps,
   createDefaultTableHeaderProps,
   createDefaultColumnGroupProps,
-} from "../../../types/unified";
+} from "../../../types/builder/unified.types";
 import { addElementsToStore } from "../utils/elementCreation";
 import { saveElementsToDb } from "../utils/dbPersistence";
 import { generateCustomId } from "../../utils/idGeneration";

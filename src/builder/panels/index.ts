@@ -1,0 +1,38 @@
+/**
+ * Panels Module
+ *
+ * 패널 시스템의 진입점
+ * - Panel configurations
+ * - Panel registry
+ * - Panel components
+ * - Panel hooks
+ */
+
+// Core
+export * from "./core/types";
+export { PanelRegistry } from "./core/PanelRegistry";
+export { PANEL_CONFIGS, registerAllPanels } from "./core/panelConfigs";
+
+// Panel components
+// Navigation panels
+export { NodesPanel } from "./nodes/NodesPanel";
+export { ComponentsPanel } from "./components/ComponentsPanel";
+export { LibraryPanel } from "./library/LibraryPanel";
+export { DatasetPanel } from "./dataset/DatasetPanel";
+
+// Tool panels
+export { ThemePanel } from "./theme/ThemePanel";
+export { AIPanel } from "./ai/AIPanel";
+
+// System panels
+export { UserPanel } from "./user/UserPanel";
+export { SettingsPanel } from "./settings/SettingsPanel";
+
+// Editor panels
+export { PropertiesPanel } from "./properties/PropertiesPanel";
+export { StylesPanel } from "./styles/StylesPanel";
+export { DataPanel } from "./data/DataPanel";
+export { EventsPanel } from "./events/EventsPanel";
+
+// Side effect: Register all panels when this module is imported
+import "./core/panelConfigs";

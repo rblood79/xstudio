@@ -8,7 +8,7 @@ import {
   Popover,
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
-import { iconProps } from "../../../utils/uiConstants";
+import { iconProps } from "../../../utils/ui/uiConstants";
 
 interface PropertyUnitInputProps {
   label?: string;

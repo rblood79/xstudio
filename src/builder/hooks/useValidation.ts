@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Element } from '../../types/store';
+import { Element } from '../../types/core/store.types';
 
 export interface UseValidationReturn {
     validateOrderNumbers: (elements: Element[]) => void;

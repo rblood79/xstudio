@@ -3,16 +3,15 @@ import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
-import { Element } from "../../types/store"; // 훅들이 기대하는 Element 타입
+import { Element } from "../../types/core/store.types"; // 훅들이 기대하는 Element 타입
 import { historyManager } from "../stores/history";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderWorkspace } from "./BuilderWorkspace";
 import { BuilderViewport } from "./BuilderViewport";
-import Inspector from "../inspector";
-import Sidebar from "../sidebar";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
+import { PanelSlot } from "../layout";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import { useElementCreator } from "../hooks/useElementCreator";
@@ -20,7 +19,7 @@ import { usePageManager } from "../hooks/usePageManager";
 import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
-import { memoryMonitor } from "../utils/memoryMonitor";
+import { memoryMonitor } from "../stores/memoryMonitor";
 import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import { projectsApi, type Project } from "../../services/api";
 
@@ -453,17 +452,12 @@ export const BuilderCore: React.FC = () => {
           {showOverlay && <SelectionOverlay />}
         </BuilderWorkspace>
 
-        <Sidebar
-          pages={pages}
-          pageList={pageList}
-          handleAddPage={handleAddPage}
-          handleAddElement={handleAddElementWrapper}
-          fetchElements={fetchElementsWrapper}
-          selectedPageId={selectedPageId}
-        />
+        <aside className="sidebar">
+          <PanelSlot side="left" />
+        </aside>
 
         <aside className="inspector">
-          <Inspector />
+          <PanelSlot side="right" />
         </aside>
 
         {/* 기존 footer 태그를 BuilderFooter 컴포넌트로 대체 */}

@@ -1,0 +1,128 @@
+import { AppWindow, Type, Menu, PointerOff, Hash } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
+import { PropertyEditorProps } from '../types/editorTypes';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
+import { useStore } from '../../../stores';
+
+// 상수 정의
+const TAB_VARIANTS = [
+    { value: 'default', label: PROPERTY_LABELS.TAB_VARIANT_DEFAULT },
+    { value: 'bordered', label: PROPERTY_LABELS.TAB_VARIANT_BORDERED },
+    { value: 'underlined', label: PROPERTY_LABELS.TAB_VARIANT_UNDERLINED },
+    { value: 'pill', label: PROPERTY_LABELS.TAB_VARIANT_PILL }
+];
+
+const TAB_APPEARANCES = [
+    { value: 'light', label: PROPERTY_LABELS.TAB_APPEARANCE_LIGHT },
+    { value: 'dark', label: PROPERTY_LABELS.TAB_APPEARANCE_DARK },
+    { value: 'solid', label: PROPERTY_LABELS.TAB_APPEARANCE_SOLID },
+    { value: 'bordered', label: PROPERTY_LABELS.TAB_APPEARANCE_BORDERED }
+];
+
+export function TabEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+    // Get customId from element in store
+    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+    const customId = element?.customId || '';
+
+    const updateProp = (key: string, value: unknown) => {
+        const updatedProps = {
+            ...currentProps,
+            [key]: value
+        };
+        onUpdate(updatedProps);
+    };
+
+    const updateCustomId = (newCustomId: string) => {
+        // Update customId in store (not in props)
+        const updateElement = useStore.getState().updateElement;
+        if (updateElement && elementId) {
+            updateElement(elementId, { customId: newCustomId });
+        }
+    };
+
+    return (
+        <div className="component-props">
+            <PropertyCustomId
+                label="ID"
+                value={customId}
+                elementId={elementId}
+                onChange={updateCustomId}
+                placeholder="tab_1"
+            />
+
+            {/* Content Section */}
+            <fieldset className="properties-group">
+                <legend>Content</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.TAB_TITLE}
+                    value={String(currentProps.title || '')}
+                    onChange={(value) => updateProp('title', value || undefined)}
+                    icon={Type}
+                />
+            </fieldset>
+
+            {/* Behavior Section */}
+            <fieldset className="properties-group">
+                <legend>Behavior</legend>
+
+                <PropertySwitch
+                    label={PROPERTY_LABELS.DISABLED}
+                    isSelected={Boolean(currentProps.isDisabled)}
+                    onChange={(checked) => updateProp('isDisabled', checked)}
+                    icon={PointerOff}
+                />
+            </fieldset>
+
+            {/* Design Section */}
+            <fieldset className="properties-design">
+                <legend>Design</legend>
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.VARIANT}
+                    value={String(currentProps.variant || 'default')}
+                    onChange={(value) => updateProp('variant', value)}
+                    options={TAB_VARIANTS}
+                    icon={Menu}
+                />
+
+                <PropertySelect
+                    label={PROPERTY_LABELS.APPEARANCE}
+                    value={String(currentProps.appearance || 'light')}
+                    onChange={(value) => updateProp('appearance', value)}
+                    options={TAB_APPEARANCES}
+                    icon={AppWindow}
+                />
+            </fieldset>
+
+            {/* Accessibility Section */}
+            <fieldset className="properties-group">
+                <legend>Accessibility</legend>
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABEL}
+                    value={String(currentProps['aria-label'] || '')}
+                    onChange={(value) => updateProp('aria-label', value || undefined)}
+                    icon={Type}
+                    placeholder="Tab label for screen readers"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+                    value={String(currentProps['aria-labelledby'] || '')}
+                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
+                    icon={Hash}
+                    placeholder="label-element-id"
+                />
+
+                <PropertyInput
+                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+                    value={String(currentProps['aria-describedby'] || '')}
+                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
+                    icon={Hash}
+                    placeholder="description-element-id"
+                />
+            </fieldset>
+        </div>
+    );
+}

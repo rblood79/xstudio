@@ -1,4 +1,4 @@
-import type { Element } from "../../types/unified";
+import type { Element } from "../../types/builder/unified.types";
 
 /**
  * Generates a unique custom ID for a component based on its tag

@@ -3,6 +3,7 @@ import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
+import { createPanelLayoutSlice, PanelLayoutState } from "./panelLayout";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -11,7 +12,8 @@ interface Store
   extends ElementsState,
     SelectionState,
     SaveModeState,
-    SettingsState {}
+    SettingsState,
+    PanelLayoutState {}
 
 type UseStoreType = UseBoundStore<StoreApi<Store>>;
 
@@ -39,6 +41,7 @@ if (hasExistingStore) {
     ...createSelectionSlice(...args),
     ...createSaveModeSlice(...args),
     ...createSettingsSlice(...args),
+    ...createPanelLayoutSlice(...args),
   }));
 
   if (typeof window !== "undefined") {
@@ -97,6 +100,16 @@ export const useHistoryActions = () =>
   useStore((state) => ({
     undo: state.undo,
     redo: state.redo,
+  }));
+
+// Panel Layout 선택기들
+export const usePanelLayoutState = () => useStore((state) => state.panelLayout);
+export const usePanelLayoutActions = () =>
+  useStore((state) => ({
+    setPanelLayout: state.setPanelLayout,
+    resetPanelLayout: state.resetPanelLayout,
+    savePanelLayoutToStorage: state.savePanelLayoutToStorage,
+    loadPanelLayoutFromStorage: state.loadPanelLayoutFromStorage,
   }));
 
 // ✅ useThemeActions removed - use unified theme store instead

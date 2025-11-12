@@ -12,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { X } from 'lucide-react';
 import type { Key, Selection } from '@react-types/shared';
-import type { DataBinding, ColumnMapping } from '../../types/unified';
+import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import { useCollectionData } from '../hooks/useCollectionData';
 import './styles/TagGroup.css';
 

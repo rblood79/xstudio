@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import { useStore } from "../stores";
 import styles from "./index.module.css";
-import { EventEngine } from "../../utils/eventEngine";
+import { EventEngine } from "../../utils/events/eventEngine";
 import { PreviewElement } from "./types";
 import { rendererMap } from "./renderers";
 import { handleMessage } from "./utils/messageHandlers";

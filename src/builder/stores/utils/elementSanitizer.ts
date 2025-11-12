@@ -1,4 +1,4 @@
-import { Element } from "../../../types/store";
+import { Element } from "../../../types/core/store.types";
 
 /**
  * Element 직렬화 유틸리티 함수

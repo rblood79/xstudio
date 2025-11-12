@@ -1,8 +1,8 @@
 import React from "react";
 import Table, { type ColumnDefinition } from "../../components/Table";
 import { PreviewElement, RenderContext } from "../types";
-import { ElementProps } from "../../../types/supabase";
-import { ElementUtils } from "../../../utils/elementUtils";
+import { ElementProps } from "../../../types/integrations/supabase.types";
+import { ElementUtils } from "../../../utils/element/elementUtils";
 
 /**
  * Table 컴포넌트 렌더러

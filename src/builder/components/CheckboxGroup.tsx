@@ -10,8 +10,8 @@ import {
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
 import { tv } from 'tailwind-variants';
-import type { DataBinding, ColumnMapping } from '../../types/unified';
-import type { ComponentSizeSubset, CheckboxVariant } from '../../types/componentVariants';
+import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
+import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
 import { useCollectionData } from '../hooks/useCollectionData';
 
 import './styles/CheckboxGroup.css';

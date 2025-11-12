@@ -1,4 +1,4 @@
-import { Element } from '../../types/store';
+import { Element } from '../../types/core/store.types';
 
 /**
  * 메모리 최적화된 CommandDataStore

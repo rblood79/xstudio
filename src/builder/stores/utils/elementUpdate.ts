@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import type { StateCreator } from "zustand";
-import { ComponentElementProps } from "../../../types/store";
+import { ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { findElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
@@ -99,7 +99,7 @@ export const createUpdateElementPropsAction =
  */
 export const createUpdateElementAction =
   (set: SetState, get: GetState) =>
-  async (elementId: string, updates: Partial<import("../../../types/store").Element>) => {
+  async (elementId: string, updates: Partial<import("../../../types/core/store.types").Element>) => {
     const state = get();
     const element = findElementById(state.elements, elementId);
     if (!element) return;
