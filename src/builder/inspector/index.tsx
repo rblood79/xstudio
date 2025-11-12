@@ -125,10 +125,6 @@ function Inspector() {
 
   return (
     <div className="inspector-container">
-      {/*<div className="inspector-header">
-        <span className="inspector-id">{selectedElement.id}</span>
-      </div>*/}
-
       <Tabs className="react-aria-Tabs">
         <TabList className="react-aria-TabList">
           <Tab id="properties" className="react-aria-Tab">
