@@ -1,5 +1,5 @@
-import { DataSourceSelector } from "../../panels/data/DataSourceSelector";
-import type { SelectedElement } from "../types";
+import { DataSourceSelector } from "./DataSourceSelector";
+import type { SelectedElement } from "../../inspector/types";
 
 export interface DataSectionProps {
   element: SelectedElement;
