@@ -165,5 +165,6 @@ export const PanelRegistry = new PanelRegistryClass();
  * 개발 모드에서 전역 접근 허용 (디버깅용)
  */
 if (import.meta.env.DEV) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).PanelRegistry = PanelRegistry;
 }

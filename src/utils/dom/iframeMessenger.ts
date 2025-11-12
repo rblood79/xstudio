@@ -1,6 +1,6 @@
 import { Element } from '../types/core/store.types';
-import type { DesignToken } from '../types/theme';
-import { ElementUtils } from './elementUtils';
+import type { DesignToken } from '../types/theme/theme.types';
+import { ElementUtils } from '../element/elementUtils';
 
 // 메시지 데이터 타입 정의
 export interface MessageData {

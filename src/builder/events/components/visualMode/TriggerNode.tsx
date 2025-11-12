@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import type { EventType } from "../../types";
+import type { EventType } from "../../types/eventTypes";
 import { EVENT_METADATA } from "../../data/eventCategories";
 
 export interface TriggerNodeData {

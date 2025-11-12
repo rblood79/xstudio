@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { EventHandler } from "../../types";
+import type { EventHandler } from "../../types/eventTypes";
 import { FlowNode, type FlowNodeData } from "./FlowNode";
 import { FlowConnector } from "./FlowConnector";
 

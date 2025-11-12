@@ -41,7 +41,7 @@ function loadLayoutFromStorage(): PanelLayoutState | null {
       const parsed = JSON.parse(stored);
 
       // 마이그레이션: 구 형식(activeLeftPanel/activeRightPanel) → 신 형식(배열)
-      let migrated = { ...parsed };
+      const migrated = { ...parsed };
 
       // activeLeftPanel(구) → activeLeftPanels(신)
       if ('activeLeftPanel' in parsed && !Array.isArray(parsed.activeLeftPanels)) {

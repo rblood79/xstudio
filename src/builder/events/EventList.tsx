@@ -1,5 +1,5 @@
 import { Button } from "react-aria-components";
-import type { SelectedElement, EventHandler } from "../types";
+import type { SelectedElement, EventHandler } from "../types/eventTypes";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { useComponentMeta } from "../hooks/useComponentMeta";
 

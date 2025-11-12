@@ -2,12 +2,11 @@
  * DataPanel - 데이터 바인딩 패널
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * 내부적으로 DataSection을 사용하여 기존 로직 유지
  */
 
 import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
-import { DataSection } from "../../inspector/sections/DataSection";
+import { DataSourceSelector } from "./DataSourceSelector";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 
 export function DataPanel({ isActive }: PanelProps) {
@@ -31,7 +30,14 @@ export function DataPanel({ isActive }: PanelProps) {
 
   return (
     <div className="inspector-container">
-      <DataSection element={selectedElement} />
+      <div className="data-section">
+        <div className="section-header">
+          <div className="section-title">{selectedElement.type}</div>
+        </div>
+        <div className="section-content">
+          <DataSourceSelector element={selectedElement} />
+        </div>
+      </div>
     </div>
   );
 }

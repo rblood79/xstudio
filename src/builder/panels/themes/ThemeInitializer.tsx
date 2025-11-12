@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useUnifiedThemeStore } from '../../stores/themeStore';
+import { useUnifiedThemeStore } from '../../../stores/themeStore';
 
 export function ThemeInitializer({ projectId }: { projectId: string }) {
     const loadActiveTheme = useUnifiedThemeStore(s => s.loadActiveTheme);

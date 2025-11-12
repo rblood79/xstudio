@@ -1,13 +1,13 @@
-import { ToggleButton, ToggleButtonGroup, Button } from "../../components/list";
+import { ToggleButton, ToggleButtonGroup, Button } from "../../components";
 import {
   PropertySelect,
   //PropertyInput,
   PropertyUnitInput,
   PropertyColor,
-} from "../components";
-import { useInspectorState } from "../hooks/useInspectorState";
+} from "../../shared/ui";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import type { SelectedElement } from "../types";
+import type { SelectedElement } from "../../inspector/types";
 
 import {
   Square,

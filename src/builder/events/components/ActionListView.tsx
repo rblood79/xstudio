@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "react-aria-components";
 import { Trash, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
-import type { EventAction } from "../../../types/events/events.types";
+import type { EventAction } from "../types/eventTypes";
 import { ACTION_METADATA } from "../data/actionMetadata";
 import { ActionEditor } from "../actions/ActionEditor";
 import { iconProps } from "../../../utils/ui/uiConstants";

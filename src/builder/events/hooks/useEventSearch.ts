@@ -5,7 +5,7 @@
 import { useMemo } from "react";
 import Fuse from "fuse.js";
 import { EVENT_METADATA, isEventCompatible } from "../data/eventCategories";
-import type { EventType, EventMetadata } from "../types";
+import type { EventType, EventMetadata } from "../types/eventTypes";
 
 /**
  * 검색 가능한 이벤트 아이템

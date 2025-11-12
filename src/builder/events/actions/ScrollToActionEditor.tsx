@@ -10,7 +10,7 @@ import {
   Popover,
   Checkbox,
 } from "react-aria-components";
-import type { ScrollToConfig } from "../../types";
+import type { ScrollToConfig } from "../types/eventTypes";
 
 export interface ScrollToActionEditorProps {
   config: ScrollToConfig;

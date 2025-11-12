@@ -5,9 +5,9 @@
 
 import { useState, useEffect } from 'react';
 import { tv } from 'tailwind-variants';
-import { useThemes, useActiveTheme } from '../../hooks/theme';
+import { useThemes, useActiveTheme } from '../../../hooks/theme';
 import { Moon, Sun } from 'lucide-react';
-import '../components/index.css';
+import '../../components/index.css';
 import './styles/ThemeStudio.css';
 
 // 하위 컴포넌트 import
@@ -284,7 +284,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                     onChange={async (e) => {
                       const newValue = e.target.checked;
                       try {
-                        const { supabase } = await import('../../env/supabase.client');
+                        const { supabase } = await import('../../../env/supabase.client');
                         await supabase
                           .from('design_themes')
                           .update({ supports_dark_mode: newValue })
@@ -317,3 +317,5 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
     </div>
   );
 }
+
+export default ThemeStudio;

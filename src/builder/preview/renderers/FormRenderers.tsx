@@ -595,7 +595,7 @@ export const renderTailSwatch = (
     color = parseColor("#3b82f6");
   }
 
-  const handleColorChange = (newColor: any) => {
+  const handleColorChange = (newColor: Color) => {
     const hexColor = newColor.toString("hex");
     const updatedProps = {
       ...element.props,

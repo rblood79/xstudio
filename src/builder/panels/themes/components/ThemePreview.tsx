@@ -1,4 +1,15 @@
-import { Input, Tabs, TabList, Tab, TabPanel, Button, TextField, Select, SelectItem, Slider, Checkbox, RadioGroup, Radio, Calendar, DatePicker, DateRangePicker } from '../../components/list';
+import { Button } from '../../../components/Button';
+import { TextField } from '../../../components/TextField';
+import { Select, SelectItem } from '../../../components/Select';
+import { Slider } from '../../../components/Slider';
+import { Checkbox } from '../../../components/Checkbox';
+import { RadioGroup } from '../../../components/RadioGroup';
+import { Radio } from '../../../components/Radio';
+import { Calendar } from '../../../components/Calendar';
+import { DatePicker } from '../../../components/DatePicker';
+import { DateRangePicker } from '../../../components/DateRangePicker';
+import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
+import { Input } from 'react-aria-components';
 import './ThemePreview.css';
 
 interface Option {

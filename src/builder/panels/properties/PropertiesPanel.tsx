@@ -7,7 +7,7 @@
 
 import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
-import { PropertiesSection } from "../../inspector/sections/PropertiesSection";
+import { PropertiesSection } from "../sections/PropertiesSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 
 export function PropertiesPanel({ isActive }: PanelProps) {

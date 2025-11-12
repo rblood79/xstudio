@@ -5,10 +5,10 @@
 
 import { useState, useMemo } from 'react';
 import { tv } from 'tailwind-variants';
-import { useTokens, useTokenStats } from '../../../hooks/theme';
+import { useTokens, useTokenStats } from '../../../../hooks/theme';
 import type { DesignToken, ColorValueHSL } from '../../../types/theme';
-import { parseTokenName } from '../../../utils/theme/tokenParser';
-import { generateDarkVariant } from '../../../utils/theme/colorUtils';
+import { parseTokenName } from '../../../../utils/theme/tokenParser';
+import { generateDarkVariant } from '../../../../utils/theme/colorUtils';
 import '../styles/TokenEditor.css';
 
 const tokenEditorStyles = tv({

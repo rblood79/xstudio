@@ -7,8 +7,8 @@ import { useStore } from '../../stores';
 import { useUnifiedThemeStore } from '../../../stores/themeStore';
 import { saveService } from '../../../services/save';
 import { PropertySwitch, PropertySelect, PropertySlider } from '../../shared/ui';
-import { useThemes } from '../../hooks/theme/useThemes';
-import { ThemeService } from '../../services/theme';
+import { useThemes } from '../../../hooks/theme/useThemes';
+import { ThemeService } from '../../../services/theme';
 
 function Setting() {
     const { projectId } = useParams<{ projectId: string }>();

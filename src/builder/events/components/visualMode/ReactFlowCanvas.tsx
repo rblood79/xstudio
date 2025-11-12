@@ -6,7 +6,7 @@ import ReactFlow, {
   type NodeTypes
 } from "reactflow";
 import "reactflow/dist/style.css";
-import type { EventHandler } from "../../types";
+import type { EventHandler } from "../../types/eventTypes";
 import { useEventFlow } from "../../hooks/useEventFlow";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";

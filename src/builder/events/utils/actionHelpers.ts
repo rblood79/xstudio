@@ -3,7 +3,7 @@
  */
 
 import { ACTION_METADATA } from "../data/actionMetadata";
-import type { ActionType, ActionConfig } from "../types";
+import type { ActionType, ActionConfig } from "../types/eventTypes";
 
 /**
  * 액션 타입에 따라 기본 config 생성

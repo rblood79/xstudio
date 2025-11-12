@@ -20,7 +20,7 @@ import type {
   ToggleVisibilityConfig,
   CopyToClipboardConfig,
   CustomConfig,
-} from "../../types";
+} from "../types/eventTypes";
 import type {
   SetComponentStateConfig,
   TriggerComponentActionConfig,

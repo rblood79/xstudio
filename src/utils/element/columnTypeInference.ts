@@ -5,7 +5,7 @@
  * Table, ListBox, Select 등 Collection 컴포넌트에서 사용됩니다.
  */
 
-import type { FieldType, FieldDefinition, ColumnMapping } from "../types/builder/unified.types";
+import type { FieldType, FieldDefinition, ColumnMapping } from "../../types/builder/unified.types";
 
 /**
  * 값의 타입을 자동으로 추론

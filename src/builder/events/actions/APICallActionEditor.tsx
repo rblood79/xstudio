@@ -11,7 +11,7 @@ import {
   TextArea,
 } from "react-aria-components";
 import { useState } from "react";
-import type { APICallConfig } from "../../types";
+import type { APICallConfig } from "../types/eventTypes";
 
 export interface APICallActionEditorProps {
   config: APICallConfig;

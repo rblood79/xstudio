@@ -10,7 +10,7 @@ import {
   ListBoxItem,
   Popover,
 } from "react-aria-components";
-import type { ShowToastConfig } from "../../types";
+import type { ShowToastConfig } from "../types/eventTypes";
 
 export interface ShowToastActionEditorProps {
   config: ShowToastConfig;

@@ -1,4 +1,4 @@
-import type { EventType, EventAction } from "../../types";
+import type { EventType, EventAction } from "../../types/eventTypes";
 import { EVENT_METADATA } from "../../data/eventCategories";
 import { ACTION_METADATA } from "../../data/actionMetadata";
 

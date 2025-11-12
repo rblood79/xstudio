@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Node, Edge } from "reactflow";
-import type { EventHandler } from "../types";
+import type { EventHandler } from "../types/eventTypes";
 import type { TriggerNodeData } from "../components/visualMode/TriggerNode";
 import type { ActionNodeData } from "../components/visualMode/ActionNode";
 

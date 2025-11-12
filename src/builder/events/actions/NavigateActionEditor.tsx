@@ -1,5 +1,5 @@
 import { TextField, Input, Label, Checkbox } from "react-aria-components";
-import type { NavigateConfig } from "../../types";
+import type { NavigateConfig } from "../types/eventTypes";
 
 export interface NavigateActionEditorProps {
   config: NavigateConfig;

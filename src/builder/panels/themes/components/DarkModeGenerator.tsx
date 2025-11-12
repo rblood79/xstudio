@@ -5,11 +5,11 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
-import { useAsyncMutation } from '../../hooks/useAsyncMutation';
-import { DarkModeService } from '../../../services/theme/DarkModeService';
-import type { DarkModeOptions } from '../../../services/theme/DarkModeService';
-import { useTokens } from '../../../hooks/theme/useTokens';
-import { useThemes } from '../../../hooks/theme/useThemes';
+import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { DarkModeService } from '../../../../services/theme/DarkModeService';
+import type { DarkModeOptions } from '../../../../services/theme/DarkModeService';
+import { useTokens } from '../../../../hooks/theme/useTokens';
+import { useThemes } from '../../../../hooks/theme/useThemes';
 import type { DesignToken, ColorValueHSL } from '../../../types/theme';
 import '../styles/DarkModeGenerator.css';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TailwindColorName } from '../../types/theme';
 
-import { Button, ToggleButton, ToggleButtonGroup } from '../components/list';
+import { Button, ToggleButton, ToggleButtonGroup } from '../../../components';
 
 interface ColorSpectrumProps {
     selectedColor: TailwindColorName | 'custom';

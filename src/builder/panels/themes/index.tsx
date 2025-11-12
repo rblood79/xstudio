@@ -2,7 +2,7 @@
 import './index.css';
 
 import { useParams } from 'react-router-dom';
-import { Button } from '../components/list';
+import { Button } from '../../components/Button';
 import { Palette } from 'lucide-react';
 import ThemeEditor from './ThemeEditor';
 import { ThemeInitializer } from './ThemeInitializer';

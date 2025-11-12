@@ -1,16 +1,21 @@
-import { useEffect, useState, JSX } from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router";
-import './index.css'
-import App from './App.tsx'
-import Dashboard from './dashboard';
-import Builder from './builder';
-import Preview from './builder/preview/index.tsx';
-import Signin from './auth/Signin';
-import { ThemeStudio } from './builder/theme/ThemeStudio';
-//import { HistoryDemo } from './demo/HistoryDemo';
-import { supabase } from './env/supabase.client';
-import { Session } from '@supabase/supabase-js';
+import { useEffect, useState, JSX } from "react";
+import ReactDOM from "react-dom/client";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+} from "react-router";
+import "./index.css";
+import App from "./App.tsx";
+import Dashboard from "./dashboard";
+import Builder from "./builder";
+import Preview from "./builder/preview/index.tsx";
+import Signin from "./auth/Signin";
+import { ThemeStudio } from "./builder/panels/themes/ThemeStudio.tsx";
+import { supabase } from "./env/supabase.client";
+import { Session } from "@supabase/supabase-js";
 
 export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -18,7 +23,9 @@ export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   useEffect(() => {
     const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSession(session);
       setLoading(false);
     };
@@ -42,13 +49,39 @@ ReactDOM.createRoot(root!).render(
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<App />} />
-      {/* <Route path="/history" element={<HistoryDemo />} /> */}
       <Route path="/signin" element={<Signin />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/builder/:projectId" element={<ProtectedRoute><Builder /></ProtectedRoute>} />
-      <Route path="/preview/:projectId" element={<ProtectedRoute><Preview /></ProtectedRoute>} />
-      <Route path="/theme/:projectId" element={<ProtectedRoute><ThemeStudioRoute /></ProtectedRoute>} />
-
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/builder/:projectId"
+        element={
+          <ProtectedRoute>
+            <Builder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/preview/:projectId"
+        element={
+          <ProtectedRoute>
+            <Preview />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/theme/:projectId"
+        element={
+          <ProtectedRoute>
+            <ThemeStudioRoute />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   </BrowserRouter>
-)
+);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { EventAction } from "../types";
+import type { EventAction } from "../types/eventTypes";
 
 const CLIPBOARD_KEY = "xstudio-event-actions-clipboard";
 

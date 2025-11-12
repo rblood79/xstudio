@@ -5,8 +5,8 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
-import { useAsyncMutation } from '../../hooks/useAsyncMutation';
-import { createThemeGenerationService } from '../../../services/theme';
+import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { createThemeGenerationService } from '../../../../services/theme';
 import type {
   ThemeGenerationRequest,
   ThemeGenerationProgress,

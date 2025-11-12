@@ -1,5 +1,5 @@
 import { TextField, Input, Label } from "react-aria-components";
-import type { HideModalConfig } from "../../types";
+import type { HideModalConfig } from "../types/eventTypes";
 
 export interface HideModalActionEditorProps {
   config: HideModalConfig;

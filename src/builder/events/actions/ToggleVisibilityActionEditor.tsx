@@ -9,7 +9,7 @@ import {
   ListBoxItem,
   Popover,
 } from "react-aria-components";
-import type { ToggleVisibilityConfig } from "../../types";
+import type { ToggleVisibilityConfig } from "../types/eventTypes";
 
 export interface ToggleVisibilityActionEditorProps {
   config: ToggleVisibilityConfig;

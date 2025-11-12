@@ -1,6 +1,6 @@
 import { TextField, Input, Label, TextArea } from "react-aria-components";
 import { useState } from "react";
-import type { ShowModalConfig } from "../../types";
+import type { ShowModalConfig } from "../types/eventTypes";
 
 export interface ShowModalActionEditorProps {
   config: ShowModalConfig;

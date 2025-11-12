@@ -1,6 +1,6 @@
 import { TextField, Input, Label, TextArea, Checkbox } from "react-aria-components";
 import { useState } from "react";
-import type { SetStateConfig } from "../../types";
+import type { SetStateConfig } from "../types/eventTypes";
 
 export interface UpdateStateActionEditorProps {
   config: SetStateConfig;

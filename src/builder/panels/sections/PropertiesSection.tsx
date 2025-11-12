@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ComponentType } from "react";
-import { getEditor } from "../editors/registry";
-import { useInspectorState } from "../hooks/useInspectorState";
-import type { SelectedElement, ComponentEditorProps } from "../types";
+import { getEditor } from "../../inspector/editors/registry";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
+import type { SelectedElement, ComponentEditorProps } from "../../inspector/types";
 
 export interface PropertiesSectionProps {
   element: SelectedElement;

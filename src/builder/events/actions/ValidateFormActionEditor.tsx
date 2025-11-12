@@ -1,5 +1,5 @@
 import { TextField, Input, Label } from "react-aria-components";
-import type { ValidateFormConfig } from "../../types";
+import type { ValidateFormConfig } from "../types/eventTypes";
 
 export interface ValidateFormActionEditorProps {
   config: ValidateFormConfig;

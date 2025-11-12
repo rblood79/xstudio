@@ -7,7 +7,7 @@ import {
   getRecommendedEvents,
   EVENT_METADATA
 } from "../data/eventCategories";
-import type { EventType, EventMetadata } from "../types";
+import type { EventType, EventMetadata } from "../types/eventTypes";
 
 /**
  * 추천 이벤트 아이템 (메타데이터 포함)

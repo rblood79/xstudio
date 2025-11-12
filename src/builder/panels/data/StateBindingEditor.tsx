@@ -1,7 +1,7 @@
 import React from "react";
 import { Database, Filter, Workflow } from "lucide-react";
 import { Button } from "../../components/list";
-import { PropertyInput } from '../../../shared/ui';
+import { PropertyInput } from '../../shared/ui';
 import type {
   DataBindingType,
   StateCollectionConfig,

@@ -9,7 +9,7 @@ import {
   ListBoxItem,
   Popover,
 } from "react-aria-components";
-import type { CopyToClipboardConfig } from "../../types";
+import type { CopyToClipboardConfig } from "../types/eventTypes";
 
 export interface CopyToClipboardActionEditorProps {
   config: CopyToClipboardConfig;

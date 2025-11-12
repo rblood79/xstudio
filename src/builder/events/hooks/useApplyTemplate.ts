@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { EventTemplate } from "../data/eventTemplates";
-import type { EventHandler } from "../types";
+import type { EventHandler } from "../types/eventTypes";
 
 export interface ApplyTemplateOptions {
   /**

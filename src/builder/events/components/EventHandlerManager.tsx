@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { EventHandler, EventAction } from "../types";
+import type { EventHandler, EventAction } from "../types/eventTypes";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
 import { SimpleFlowView } from "./visualMode/SimpleFlowView";
 import { ReactFlowCanvas } from "./visualMode/ReactFlowCanvas";

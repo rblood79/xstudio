@@ -7,7 +7,7 @@
 
 import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
-import { StyleSection } from "../../inspector/sections/StyleSection";
+import { StyleSection } from "../sections/StyleSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 
 export function StylesPanel({ isActive }: PanelProps) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Hash } from "lucide-react";
 import { PropertyFieldset } from "./PropertyFieldset";
 import { useStore } from "../../stores";
-import { useInspectorState } from "../hooks/useInspectorState";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { validateCustomId } from "../../utils/idValidation";
 
 interface PropertyCustomIdProps {

@@ -9,13 +9,13 @@
  */
 
 import { useEffect, useCallback } from "react";
-import { ChatContainer } from "../components/ChatContainer";
-import { useConversationStore } from "../stores/conversation";
-import { useStore } from "../stores";
-import { createGroqService } from "../../services/ai/GroqService";
-import { intentParser } from "../../services/ai/IntentParser";
-import type { ComponentIntent, BuilderContext } from "../../types/integrations/chat.types";
-import type { Element } from "../../types/core/store.types";
+import { ChatContainer } from "../../components/ChatContainer";
+import { useConversationStore } from "../../stores/conversation";
+import { useStore } from "../../stores";
+import { createGroqService } from "../../../services/ai/GroqService";
+import { intentParser } from "../../../services/ai/IntentParser";
+import type { ComponentIntent, BuilderContext } from "../../../types/integrations/chat.types";
+import type { Element } from "../../../types/core/store.types";
 
 let groqService: ReturnType<typeof createGroqService> | null = null;
 

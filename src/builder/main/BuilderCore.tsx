@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
-import { Element } from "../../types/core/store.types"; // 훅들이 기대하는 Element 타입
 import { historyManager } from "../stores/history";
 
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
@@ -18,7 +17,7 @@ import { PanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
-import { useElementCreator } from "../hooks/useElementCreator";
+// import { useElementCreator } from "../hooks/useElementCreator";  // 사용하지 않음
 import { usePageManager } from "../hooks/usePageManager";
 import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
@@ -37,7 +36,7 @@ export const BuilderCore: React.FC = () => {
   // Store 상태
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
-  const selectedElementId = useStore((state) => state.selectedElementId);
+  // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const showOverlay = useStore((state) => state.showOverlay);
   const themeMode = useStore((state) => state.themeMode);
@@ -116,14 +115,14 @@ export const BuilderCore: React.FC = () => {
   // 훅 사용
   const { error, isLoading, setError, setIsLoading, handleError, clearError } =
     useErrorHandler();
-  const { handleAddElement } = useElementCreator();
+  // const { handleAddElement } = useElementCreator();  // 사용하지 않음
   const {
     pages,
-    selectedPageId,
+    // selectedPageId,  // 사용하지 않음
     fetchElements,
-    addPage,
+    // addPage,  // 사용하지 않음
     initializeProject,
-    pageList,
+    // pageList,  // 사용하지 않음
   } = usePageManager();
   const {
     handleIframeLoad,
@@ -305,62 +304,58 @@ export const BuilderCore: React.FC = () => {
     };
   }, [pages, fetchElements, handleError]);
 
-  // 페이지 추가 핸들러
-  const handleAddPage = useCallback(async () => {
-    if (!projectId) return;
+  // 페이지 추가 핸들러 (사용하지 않음 - 주석 처리)
+  // const handleAddPage = useCallback(async () => {
+  //   if (!projectId) return;
+  //   const addElement = useStore.getState().addElement as (
+  //     element: Element
+  //   ) => void;
+  //   const result = await addPage(projectId, addElement);
+  //   if (!result.success) {
+  //     handleError(result.error || new Error("페이지 생성 실패"), "페이지 생성");
+  //   }
+  // }, [projectId, addPage, handleError]);
 
-    // 타입 변환을 통해 호환성 확보
-    const addElement = useStore.getState().addElement as (
-      element: Element
-    ) => void;
+  // 요소 추가 핸들러 (사용하지 않음 - 주석 처리)
+  // const handleAddElementWrapper = useCallback(
+  //   async (tag: string, parentId?: string) => {
+  //     if (!currentPageId) return;
+  //     try {
+  //       const addElement = useStore.getState().addElement as (
+  //         element: Element
+  //       ) => void;
+  //       await handleAddElement(
+  //         tag,
+  //         currentPageId,
+  //         parentId || selectedElementId,
+  //         elements,
+  //         addElement,
+  //         sendElementsToIframe
+  //       );
+  //     } catch (error) {
+  //       handleError(error, "요소 생성");
+  //     }
+  //   },
+  //   [
+  //     currentPageId,
+  //     selectedElementId,
+  //     elements,
+  //     handleAddElement,
+  //     sendElementsToIframe,
+  //     handleError,
+  //   ]
+  // );
 
-    const result = await addPage(projectId, addElement);
-    if (!result.success) {
-      handleError(result.error || new Error("페이지 생성 실패"), "페이지 생성");
-    }
-  }, [projectId, addPage, handleError]);
-
-  // 요소 추가 핸들러
-  const handleAddElementWrapper = useCallback(
-    async (tag: string, parentId?: string) => {
-      if (!currentPageId) return;
-      try {
-        // 타입 변환을 통해 호환성 확보
-        const addElement = useStore.getState().addElement as (
-          element: Element
-        ) => void;
-        await handleAddElement(
-          tag,
-          currentPageId,
-          parentId || selectedElementId, // parentId가 있으면 사용, 없으면 selectedElementId 사용
-          elements,
-          addElement,
-          sendElementsToIframe
-        );
-      } catch (error) {
-        handleError(error, "요소 생성");
-      }
-    },
-    [
-      currentPageId,
-      selectedElementId,
-      elements,
-      handleAddElement,
-      sendElementsToIframe,
-      handleError,
-    ]
-  );
-
-  // 요소 로드 핸들러
-  const fetchElementsWrapper = useCallback(
-    async (pageId: string) => {
-      const result = await fetchElements(pageId);
-      if (!result.success) {
-        handleError(result.error || new Error("요소 로드 실패"), "요소 로드");
-      }
-    },
-    [fetchElements, handleError]
-  );
+  // 요소 로드 핸들러 (사용하지 않음 - 주석 처리)
+  // const fetchElementsWrapper = useCallback(
+  //   async (pageId: string) => {
+  //     const result = await fetchElements(pageId);
+  //     if (!result.success) {
+  //       handleError(result.error || new Error("요소 로드 실패"), "요소 로드");
+  //     }
+  //   },
+  //   [fetchElements, handleError]
+  // );
 
   // 프리뷰 관련 핸들러들
   const handlePreview = useCallback(() => {

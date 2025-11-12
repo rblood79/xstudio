@@ -1,6 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { Element, ComponentElementProps } from '../../types/builder/unified.types';
-import { elementsApi } from '../../services/api/ElementsApiService';
 import { HierarchyManager } from '../utils/HierarchyManager';
 import { ComponentFactory } from '../factories/ComponentFactory';
 import { useErrorHandler, type ErrorInfo } from './useErrorHandler';

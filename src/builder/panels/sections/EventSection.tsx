@@ -11,10 +11,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
-import type { SelectedElement } from "../types";
+import type { SelectedElement } from "../../inspector/types";
 import type { EventType, ActionType } from "../../../types/events/events.types";
 import type { ComponentElementProps } from "../../../types/builder/unified.types";
-import { useInspectorState } from "../hooks/useInspectorState";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventHandlerManager } from "../../events/components/EventHandlerManager";
 import { EventTypePicker } from "../../events/pickers/EventTypePicker";
 import { ActionTypePicker } from "../../events/pickers/ActionTypePicker";

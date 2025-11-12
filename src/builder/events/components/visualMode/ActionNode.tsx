@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import type { EventAction } from "../../types";
+import type { EventAction } from "../../types/eventTypes";
 import { ACTION_METADATA } from "../../data/actionMetadata";
 
 export interface ActionNodeData {

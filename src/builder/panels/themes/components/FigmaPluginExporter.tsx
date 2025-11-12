@@ -5,13 +5,13 @@
 
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
-import { useAsyncMutation } from '../../hooks/useAsyncMutation';
-import { FigmaPluginService } from '../../../services/theme/FigmaPluginService';
+import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { FigmaPluginService } from '../../../../services/theme/FigmaPluginService';
 import type {
   FigmaPluginExportOptions,
   FigmaPluginExportResult,
-} from '../../../services/theme/FigmaPluginService';
-import { useTokens } from '../../../hooks/theme/useTokens';
+} from '../../../../services/theme/FigmaPluginService';
+import { useTokens } from '../../../../hooks/theme/useTokens';
 import '../styles/FigmaPluginExporter.css';
 
 const figmaPluginStyles = tv({

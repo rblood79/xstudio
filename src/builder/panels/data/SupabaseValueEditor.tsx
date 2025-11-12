@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Table as TableIcon, Columns } from "lucide-react";
-import { PropertySelect } from '../../../shared/ui';
+import { PropertySelect } from '../../shared/ui';
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseValueConfig } from "../../inspector/types";
 

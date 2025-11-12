@@ -1,6 +1,6 @@
 import { Label, TextArea } from "react-aria-components";
 import { useState } from "react";
-import type { CustomConfig } from "../../types";
+import type { CustomConfig } from "../types/eventTypes";
 
 export interface CustomFunctionActionEditorProps {
   config: CustomConfig;
