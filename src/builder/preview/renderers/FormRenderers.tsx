@@ -588,13 +588,12 @@ export const renderTailSwatch = (
 
   // Parse color value or use default
   const colorValue = element.props.value || "#3b82f6";
-  const color = React.useMemo(() => {
-    try {
-      return parseColor(colorValue as string);
-    } catch {
-      return parseColor("#3b82f6");
-    }
-  }, [colorValue]);
+  let color;
+  try {
+    color = parseColor(colorValue as string);
+  } catch {
+    color = parseColor("#3b82f6");
+  }
 
   const handleColorChange = (newColor: any) => {
     const hexColor = newColor.toString("hex");
