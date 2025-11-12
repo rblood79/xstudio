@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Table as TableIcon, ArrowUpDown, Hash } from "lucide-react";
-import { PropertySelect, PropertyInput } from "../../inspector/components";
+import { PropertySelect, PropertyInput } from '../../../shared/ui';
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import { supabase } from "../../../env/supabase.client";
 import type { SupabaseCollectionConfig } from "../../inspector/types";

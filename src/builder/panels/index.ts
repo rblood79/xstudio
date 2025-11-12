@@ -17,16 +17,13 @@ export { PANEL_CONFIGS, registerAllPanels } from "./core/panelConfigs";
 // Navigation panels
 export { NodesPanel } from "./nodes/NodesPanel";
 export { ComponentsPanel } from "./components/ComponentsPanel";
-export { LibraryPanel } from "./library/LibraryPanel";
-export { DatasetPanel } from "./dataset/DatasetPanel";
 
 // Tool panels
-export { ThemePanel } from "./theme/ThemePanel";
-export { AIPanel } from "./ai/AIPanel";
+export { ThemePanel } from "./themes";
+export { AIPanel } from "./ai";
 
 // System panels
-export { UserPanel } from "./user/UserPanel";
-export { SettingsPanel } from "./settings/SettingsPanel";
+export { SettingsPanel } from "./settings";
 
 // Editor panels
 export { PropertiesPanel } from "./properties/PropertiesPanel";

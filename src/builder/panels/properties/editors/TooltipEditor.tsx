@@ -1,5 +1,5 @@
 import { MessageSquare, Move, MapPin } from "lucide-react";
-import { PropertyInput, PropertyCustomId, PropertySelect } from "../../../inspector/components";
+import { PropertyInput, PropertyCustomId, PropertySelect } from '../../../shared/ui';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";

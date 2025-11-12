@@ -1,5 +1,5 @@
 import { Type, FileText, Layout, EyeOff, PointerOff, PencilRuler, Image, Link as LinkIcon, ArrowUpDown, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../../inspector/components';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../../shared/ui';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

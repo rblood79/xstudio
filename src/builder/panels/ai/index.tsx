@@ -17,3 +17,4 @@ function AI() {
 }
 
 export default AI;
+export { AI as AIPanel };

@@ -1,5 +1,5 @@
 import { Paintbrush, Palette, PointerOff, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker } from '../../../inspector/components';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker } from '../../../shared/ui';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

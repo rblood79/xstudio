@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Database, Columns, Type } from "lucide-react";
 import { Button } from "../../components/list";
-import { PropertyInput } from "../../inspector/components";
+import { PropertyInput } from '../../../shared/ui';
 import type {
   DataBindingType,
   StaticCollectionConfig,
