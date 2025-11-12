@@ -18,3 +18,6 @@ export { PropertiesPanel } from "./properties/PropertiesPanel";
 export { StylesPanel } from "./styles/StylesPanel";
 export { DataPanel } from "./data/DataPanel";
 export { EventsPanel } from "./events/EventsPanel";
+
+// Side effect: Register all panels when this module is imported
+import "./core/panelConfigs";

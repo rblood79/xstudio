@@ -13,6 +13,7 @@ import Inspector from "../inspector";
 import Sidebar from "../sidebar";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
+import { PanelSlot } from "../layout";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import { useElementCreator } from "../hooks/useElementCreator";
@@ -463,7 +464,7 @@ export const BuilderCore: React.FC = () => {
         />
 
         <aside className="inspector">
-          <Inspector />
+          <PanelSlot side="right" />
         </aside>
 
         {/* 기존 footer 태그를 BuilderFooter 컴포넌트로 대체 */}
