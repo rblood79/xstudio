@@ -1,15 +1,15 @@
 /**
- * DataPanel - 데이터 바인딩 패널
+ * EventsPanel - 이벤트 관리 패널
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * 내부적으로 DataSection을 사용하여 기존 로직 유지
+ * 내부적으로 EventSection을 사용하여 기존 로직 유지
  */
 
 import type { PanelProps } from "../core/types";
-import { DataSection } from "../../inspector/sections/DataSection";
+import { EventSection } from "../../inspector/sections/EventSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 
-export function DataPanel({ isActive }: PanelProps) {
+export function EventsPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
@@ -27,8 +27,8 @@ export function DataPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="data-panel">
-      <DataSection element={selectedElement} />
+    <div className="events-panel">
+      <EventSection key={selectedElement.id} element={selectedElement} />
     </div>
   );
 }
