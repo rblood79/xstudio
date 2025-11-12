@@ -27,9 +27,9 @@ export function PanelSlot({ side }: PanelSlotProps) {
   // 디버깅 로그
   console.log(`[PanelSlot ${side}]`, {
     panelIds,
-    activePanel: activePanels, // 배열로 변경
+    activePanels,
     show,
-    layout,
+    isArray: Array.isArray(activePanels),
   });
 
   // 패널 클릭 핸들러 - Toggle 동작

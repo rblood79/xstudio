@@ -1,6 +1,6 @@
 import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe, DollarSign } from 'lucide-react';
-import { PropertySwitch } from '../../components';
-import { PropertyInput, PropertyCustomId, PropertySelect } from '../../components';
+import { PropertySwitch } from '../../../inspector/components';
+import { PropertyInput, PropertyCustomId, PropertySelect } from '../../../inspector/components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

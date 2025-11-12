@@ -15,6 +15,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
 import { PanelSlot } from "../layout";
+import { InspectorSync } from "../inspector/InspectorSync";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 import { useElementCreator } from "../hooks/useElementCreator";
@@ -425,6 +426,9 @@ export const BuilderCore: React.FC = () => {
       )}
 
       <BuilderViewport>
+        {/* Inspector 상태 동기화 (항상 마운트) */}
+        <InspectorSync />
+
         <BuilderHeader
           projectId={projectId}
           projectName={projectInfo?.name}

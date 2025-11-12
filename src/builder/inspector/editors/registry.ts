@@ -14,8 +14,8 @@ async function importEditor(
   editorName: string
 ): Promise<ComponentType<ComponentEditorProps> | null> {
   try {
-    // properties/editors 경로에서 import
-    const module = await import(`../properties/editors/${editorName}.tsx`);
+    // panels/properties/editors 경로에서 import (패널 시스템)
+    const module = await import(`../../panels/properties/editors/${editorName}.tsx`);
     return module.default || module[editorName];
   } catch (error) {
     console.warn(`Editor not found: ${editorName}`, error);
@@ -29,23 +29,32 @@ async function importEditor(
 export async function getEditor(
   type: string
 ): Promise<ComponentType<ComponentEditorProps> | null> {
+  console.log('[getEditor] Looking for editor:', type);
+
   // 캐시 확인
   if (editorCache.has(type)) {
+    console.log('[getEditor] Found in cache:', type);
     return editorCache.get(type)!;
   }
 
   // 메타데이터에서 에디터 정보 확인
   const metadata = componentMetadata.find((c) => c.type === type);
+  console.log('[getEditor] Metadata found:', type, !!metadata, metadata?.inspector);
 
   if (!metadata?.inspector.hasCustomEditor || !metadata.inspector.editorName) {
+    console.warn('[getEditor] No custom editor for:', type);
     return null;
   }
 
   // 동적 import
+  console.log('[getEditor] Importing editor:', metadata.inspector.editorName);
   const editor = await importEditor(metadata.inspector.editorName);
 
   if (editor) {
     editorCache.set(type, editor);
+    console.log('[getEditor] Editor cached:', type);
+  } else {
+    console.warn('[getEditor] Failed to import editor:', metadata.inspector.editorName);
   }
 
   return editor;

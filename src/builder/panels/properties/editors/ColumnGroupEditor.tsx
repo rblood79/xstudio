@@ -1,5 +1,5 @@
 import { Settings, Type, Grid, Pin } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../../inspector/components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/builder/unified.types';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

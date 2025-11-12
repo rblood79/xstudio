@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput } from '../../components/PropertyInput';
 import { PropertySwitch } from '../../components/PropertySwitch';
-import { PropertyCustomId } from '../../components';
+import { PropertyCustomId } from '../../../inspector/components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

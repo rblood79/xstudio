@@ -39,11 +39,47 @@ function loadLayoutFromStorage(): PanelLayoutState | null {
     const stored = localStorage.getItem(PANEL_LAYOUT_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
+
+      // 마이그레이션: 구 형식(activeLeftPanel/activeRightPanel) → 신 형식(배열)
+      let migrated = { ...parsed };
+
+      // activeLeftPanel(구) → activeLeftPanels(신)
+      if ('activeLeftPanel' in parsed && !Array.isArray(parsed.activeLeftPanels)) {
+        migrated.activeLeftPanels = parsed.activeLeftPanel ? [parsed.activeLeftPanel] : [];
+        delete migrated.activeLeftPanel;
+      }
+
+      // activeRightPanel(구) → activeRightPanels(신)
+      if ('activeRightPanel' in parsed && !Array.isArray(parsed.activeRightPanels)) {
+        migrated.activeRightPanels = parsed.activeRightPanel ? [parsed.activeRightPanel] : [];
+        delete migrated.activeRightPanel;
+      }
+
       // 기본값과 병합하여 누락된 필드 방지
-      return {
+      const result = {
         ...DEFAULT_PANEL_LAYOUT,
-        ...parsed,
+        ...migrated,
       };
+
+      // 배열 유효성 검증
+      if (!Array.isArray(result.activeLeftPanels)) {
+        result.activeLeftPanels = DEFAULT_PANEL_LAYOUT.activeLeftPanels;
+      }
+      if (!Array.isArray(result.activeRightPanels)) {
+        result.activeRightPanels = DEFAULT_PANEL_LAYOUT.activeRightPanels;
+      }
+
+      // 🔧 임시 수정: 너무 많은 패널이 활성화된 경우 기본값으로 리셋
+      if (result.activeLeftPanels.length > 2 || result.activeRightPanels.length > 2) {
+        console.warn('[PanelLayout] 너무 많은 패널이 활성화되어 있습니다. 기본값으로 리셋합니다.');
+        result.activeLeftPanels = DEFAULT_PANEL_LAYOUT.activeLeftPanels;
+        result.activeRightPanels = DEFAULT_PANEL_LAYOUT.activeRightPanels;
+        // 리셋된 값을 저장
+        saveLayoutToStorage(result);
+      }
+
+      console.log('[PanelLayout] Loaded from localStorage:', result);
+      return result;
     }
   } catch (error) {
     console.error('[PanelLayout] Failed to load from localStorage:', error);

@@ -2,7 +2,7 @@ import {
     Tag, Binary, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, Hash, Focus, Type, Keyboard, Shield
 } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../components';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../../inspector/components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

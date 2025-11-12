@@ -17,17 +17,18 @@ export function PropertiesSection({ element }: PropertiesSectionProps) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    console.log('[PropertiesSection] Loading editor for type:', element.type, element);
     getEditor(element.type)
       .then((editor) => {
-         
+        console.log('[PropertiesSection] Editor loaded:', element.type, !!editor);
         setEditor(() => editor);
-         
+
         setLoading(false);
       })
-      .catch(() => {
-         
+      .catch((error) => {
+        console.error('[PropertiesSection] Failed to load editor:', element.type, error);
         setEditor(null);
-         
+
         setLoading(false);
       });
   }, [element.type]);

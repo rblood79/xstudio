@@ -1,5 +1,5 @@
 import { Tag, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp, Globe, DollarSign } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../../inspector/components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
