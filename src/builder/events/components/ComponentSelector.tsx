@@ -7,7 +7,7 @@ import {
   Popover,
   Label,
 } from "react-aria-components";
-import { useComponentRegistry } from "@/builder/stores/componentRegistry";
+import { useComponentRegistry } from "../../stores/componentRegistry";
 
 export interface ComponentSelectorProps {
   /** Selected component ID (customId or element ID) */

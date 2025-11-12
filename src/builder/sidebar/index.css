@@ -69,9 +69,22 @@
 }
 
 /* Move the before element based on active button index */
+.panel-slot {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+}
+
+/* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
+.nodes-panel .sidebar-nav {
+    display: none;
+}
+
 .sidebar-container {
     display: flex;
     flex-direction: row;
+    width: auto;
 }
 
 .sidebar-content {
@@ -107,7 +120,8 @@
     display: none;
 }
 
-.sidebar-empty-state {
+.sidebar-empty-state,
+.panel-empty-state {
     display: flex;
     justify-content: center;
     align-items: center;

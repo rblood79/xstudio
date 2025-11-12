@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import { Database, Columns, Type } from "lucide-react";
 import { Button } from "../../components/list";
-import { PropertyInput } from "../components";
+import { PropertyInput } from "../../inspector/components";
 import type {
   DataBindingType,
   StaticCollectionConfig,
   StaticValueConfig,
-} from "../types";
+} from "../../inspector/types";
 import "./data.css";
 
 // 컬럼 매핑 타입 정의

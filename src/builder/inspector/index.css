@@ -11,6 +11,8 @@
 
   .inspector {
     border-left: 1px solid var(--builder-inspector-border);
+    background: red; /* 임시 디버깅 */
+    min-width: 280px;
 
     .inspector-container {
       flex: 1;

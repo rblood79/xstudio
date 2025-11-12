@@ -2,6 +2,7 @@ import { CirclePlus } from 'lucide-react';
 import { iconProps } from '../../utils/ui/uiConstants';
 import { Database } from '../../types/integrations/supabase.types';
 import { supabase } from '../../env/supabase.client';
+import { useStore } from '../stores';
 
 type Page = Database['public']['Tables']['pages']['Row'];
 
@@ -19,6 +20,32 @@ interface PagesProps {
 }
 
 export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElements }: PagesProps) {
+    const setPages = useStore((state) => state.setPages);
+
+    console.log('[Pages] Rendering:', {
+        pagesCount: pages.length,
+        pages: pages.map(p => ({ id: p.id, title: p.title })),
+        renderTree: typeof renderTree
+    });
+
+    const handleDeletePage = async (page: Page) => {
+        // 1. DB에서 삭제
+        const { error } = await supabase.from("pages").delete().eq("id", page.id);
+        if (error) {
+            console.error("페이지 삭제 에러:", error);
+            return;
+        }
+
+        // 2. pageList에서 제거
+        pageList.remove(page.id);
+
+        // 3. Zustand store에서도 제거
+        const updatedPages = pages.filter(p => p.id !== page.id);
+        setPages(updatedPages);
+
+        console.log('✅ 페이지 삭제 완료:', page.title);
+    };
+
     return (
         <div className="sidebar_pages">
             <div className="panel-header">
@@ -42,11 +69,7 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
                         pages,
                         (page) => page.title,
                         (page) => fetchElements(page.id),
-                        async (page) => {
-                            const { error } = await supabase.from("pages").delete().eq("id", page.id);
-                            if (error) console.error("페이지 삭제 에러:", error);
-                            else pageList.remove(page.id);
-                        }
+                        handleDeletePage
                     )
                 )}
             </div>

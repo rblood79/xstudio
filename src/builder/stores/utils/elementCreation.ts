@@ -44,20 +44,8 @@ export const createAddElementAction =
       })
     );
 
-    // 2. iframe 업데이트
-    if (typeof window !== "undefined" && window.parent) {
-      try {
-        window.parent.postMessage(
-          {
-            type: "ELEMENT_ADDED",
-            payload: { element: sanitizeElement(element) },
-          },
-          "*"
-        );
-      } catch (error) {
-        console.warn("postMessage 직렬화 실패:", error);
-      }
-    }
+    // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
+    // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
     // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
     try {
@@ -115,25 +103,8 @@ export const createAddComplexElementAction =
       })
     );
 
-    // 2. iframe 업데이트
-    if (typeof window !== "undefined" && window.parent) {
-      try {
-        window.parent.postMessage(
-          {
-            type: "COMPLEX_ELEMENT_ADDED",
-            payload: {
-              parentElement: sanitizeElement(parentElement),
-              childElements: childElements.map((child) =>
-                sanitizeElement(child)
-              ),
-            },
-          },
-          "*"
-        );
-      } catch (error) {
-        console.warn("postMessage 직렬화 실패:", error);
-      }
-    }
+    // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
+    // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
     // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
     try {

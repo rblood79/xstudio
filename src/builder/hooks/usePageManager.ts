@@ -58,6 +58,7 @@ export const usePageManager = (): UsePageManagerReturn => {
     const initializingRef = useRef<string | null>(null);
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
+    const setPages = useStore((state) => state.setPages);
 
     /**
      * fetchElements - 페이지 요소 로드
@@ -117,23 +118,29 @@ export const usePageManager = (): UsePageManagerReturn => {
                 order_num: pageList.items.length,
             });
 
-            // useListData로 자동 추가
+            // useListData에 추가
             pageList.append(newPage);
             setSelectedPageId(newPage.id);
             setCurrentPageId(newPage.id);
 
+            // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
+            const currentPages = useStore.getState().pages;
+            setPages([...currentPages, newPage]);
+
             // 새 페이지에 기본 body 요소 생성
-            const bodyElement = {
+            const bodyElement: Element = {
                 id: ElementUtils.generateId(),
                 tag: 'body',
                 props: {} as ElementProps,
                 parent_id: null,
                 page_id: newPage.id,
                 order_num: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
             };
 
-            const elementData = await elementsApi.createElement(bodyElement);
-            addElement(elementData);
+            // addElement가 DB 저장까지 처리하므로 직접 호출만 하면 됨
+            await addElement(bodyElement);
 
             console.log('✅ 페이지 추가 완료:', newPage.title);
             return { success: true, data: newPage };
@@ -168,6 +175,9 @@ export const usePageManager = (): UsePageManagerReturn => {
                 pageList.remove(...existingKeys);
             }
             projectPages.forEach((page) => pageList.append(page));
+
+            // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
+            setPages(projectPages);
 
             // 3. 첫 번째 페이지가 있으면 선택하고 요소들 로드
             if (projectPages.length > 0) {

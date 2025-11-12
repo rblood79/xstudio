@@ -17,8 +17,8 @@ export interface PanelNavProps {
   /** 이 사이드에 배치된 패널 ID 목록 */
   panelIds: PanelId[];
 
-  /** 현재 활성 패널 ID */
-  activePanel: PanelId | null;
+  /** 현재 활성 패널 ID 배열 (Multi toggle 지원) */
+  activePanels: PanelId[];
 
   /** 패널 클릭 시 콜백 */
   onPanelClick: (panelId: PanelId) => void;
@@ -30,7 +30,7 @@ export interface PanelNavProps {
 export function PanelNav({
   side,
   panelIds,
-  activePanel,
+  activePanels,
   onPanelClick,
   onClose,
 }: PanelNavProps) {
@@ -42,7 +42,7 @@ export function PanelNav({
           if (!panelConfig) return null;
 
           const Icon = panelConfig.icon;
-          const isActive = activePanel === panelId;
+          const isActive = activePanels.includes(panelId); // 배열에서 확인
 
           return (
             <li key={panelId}>

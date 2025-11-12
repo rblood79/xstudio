@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Database } from "lucide-react";
-import { PropertySelect } from "../components";
-import { useComponentMeta } from "../hooks/useComponentMeta";
-import { useInspectorState } from "../hooks/useInspectorState";
+import { PropertySelect } from "../../inspector/components";
+import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { useStore } from "../../stores/elements";
 import { deleteTableColumns } from "./utils/deleteTableColumns";
 import { SupabaseCollectionEditor } from "./SupabaseCollectionEditor.tsx";

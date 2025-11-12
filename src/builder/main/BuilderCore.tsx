@@ -6,6 +6,9 @@ import { useStore } from "../stores";
 import { Element } from "../../types/core/store.types"; // 훅들이 기대하는 Element 타입
 import { historyManager } from "../stores/history";
 
+// 패널 등록 (side effect import - registerAllPanels() 자동 실행)
+import "../panels";
+
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderWorkspace } from "./BuilderWorkspace";
 import { BuilderViewport } from "./BuilderViewport";

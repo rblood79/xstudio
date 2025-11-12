@@ -1,5 +1,5 @@
 import { useAsyncList } from "react-stately";
-import type { AsyncListLoadOptions, ColumnListItem } from "@/types/builder/stately.types";
+import type { AsyncListLoadOptions, ColumnListItem } from "../../../../types/builder/stately.types";
 
 /**
  * useColumnLoader - API 컬럼 로딩 자동화

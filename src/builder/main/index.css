@@ -9,7 +9,7 @@
       display: grid;
 
       grid-template-rows: auto 1fr auto;
-      grid-template-columns: auto 1fr var(--sidebar-width);
+      grid-template-columns: auto 1fr auto;
       grid-template-areas:
         "header header header"
         "sidebar main inspector"

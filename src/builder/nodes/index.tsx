@@ -47,6 +47,12 @@ export function Nodes({
     sendElementSelectedMessage,
     collapseAllTreeItems
 }: NodesProps) {
+    console.log('[Nodes] Props:', {
+        pagesCount: pages.length,
+        pages: pages.map(p => ({ id: p.id, title: p.title, parent_id: p.parent_id })),
+        renderTree: typeof renderTree
+    });
+
     return (
         <div className="sidebar-content nodes">
             <Pages

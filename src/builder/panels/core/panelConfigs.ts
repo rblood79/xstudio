@@ -5,7 +5,8 @@
  */
 
 import {
-  FileTree,
+  //FileTree,
+  ListTree,
   Box,
   Library,
   Database,
@@ -46,7 +47,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     id: "nodes",
     name: "노드",
     nameEn: "Nodes",
-    icon: FileTree,
+    icon: ListTree,
     component: NodesPanel,
     category: "navigation",
     defaultPosition: "left",

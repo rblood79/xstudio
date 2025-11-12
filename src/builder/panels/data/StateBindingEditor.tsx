@@ -1,12 +1,12 @@
 import React from "react";
 import { Database, Filter, Workflow } from "lucide-react";
 import { Button } from "../../components/list";
-import { PropertyInput } from "../components";
+import { PropertyInput } from "../../inspector/components";
 import type {
   DataBindingType,
   StateCollectionConfig,
   StateValueConfig,
-} from "../types";
+} from "../../inspector/types";
 
 export interface StateBindingEditorProps {
   bindingType: DataBindingType;

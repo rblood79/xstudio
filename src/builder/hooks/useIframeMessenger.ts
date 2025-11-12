@@ -253,29 +253,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // Preview에서 Column이 자동 생성되었을 때 Builder Store에도 추가
-        if (event.data.type === "ELEMENT_ADDED" && event.data.payload?.element) {
-            console.log("📥 Builder: Preview에서 Element 추가 메시지 수신:", event.data.payload.element);
-            
-            // 무한 루프 방지: Store 배열에 직접 추가 (postMessage 없이)
-            const { elements } = useStore.getState();
-            const newElement = event.data.payload.element;
-            
-            // 중복 체크
-            if (elements.some(el => el.id === newElement.id)) {
-                console.log("⚠️ 이미 존재하는 Element, 추가 건너뛰기:", newElement.id);
-                return;
-            }
-            
-            // Store에 직접 추가 (postMessage 발생 안함)
-            useStore.setState(state => ({
-                elements: [...state.elements, newElement]
-            }));
-            
-            console.log("✅ Builder Store에 Element 추가 완료 (postMessage 없이):", newElement.id);
-            return;
-        }
-
         if (event.data.type === "UPDATE_ELEMENTS" && event.data.elements) {
             const { setElements } = useStore.getState();
             // 히스토리 기록을 방지하기 위해 skipHistory 옵션 사용

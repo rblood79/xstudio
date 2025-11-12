@@ -2,10 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import { TextField, Input } from "react-aria-components";
 import { Database, Send, Link, Settings, Lock, Map, Route, Download } from "lucide-react";
 import { iconProps } from '../../../utils/ui/uiConstants';
-import { PropertySelect, PropertyInput, PropertyFieldset } from "../components";
+import { PropertySelect, PropertyInput, PropertyFieldset } from "../../inspector/components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
-import type { APICollectionConfig } from "../types";
+import type { APICollectionConfig } from "../../inspector/types";
 import { detectColumnsFromData } from "../../../utils/element/columnTypeInference";
 import type { ColumnMapping } from "../../../types/builder/unified.types";
 import { apiConfig } from "../../../services/api";

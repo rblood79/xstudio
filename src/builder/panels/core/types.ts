@@ -111,11 +111,11 @@ export interface PanelLayoutState {
   /** 우측 인스펙터에 배치된 패널 ID 배열 */
   rightPanels: PanelId[];
 
-  /** 좌측에서 현재 활성화된 패널 ID */
-  activeLeftPanel: PanelId | null;
+  /** 좌측에서 현재 활성화된 패널 ID 배열 (Multi toggle 지원) */
+  activeLeftPanels: PanelId[];
 
-  /** 우측에서 현재 활성화된 패널 ID */
-  activeRightPanel: PanelId | null;
+  /** 우측에서 현재 활성화된 패널 ID 배열 (Multi toggle 지원) */
+  activeRightPanels: PanelId[];
 
   /** 좌측 사이드바 표시 여부 */
   showLeft: boolean;
@@ -146,8 +146,8 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
     'data',
     'events',
   ],
-  activeLeftPanel: 'nodes',
-  activeRightPanel: 'properties',
+  activeLeftPanels: ['nodes'], // Multi toggle 지원: 배열
+  activeRightPanels: ['properties'], // Multi toggle 지원: 배열
   showLeft: true,
   showRight: true,
 };
@@ -159,10 +159,7 @@ export interface PanelLayoutActions {
   /** 패널을 다른 사이드로 이동 */
   movePanel: (panelId: PanelId, from: PanelSide, to: PanelSide) => void;
 
-  /** 활성 패널 설정 */
-  setActivePanel: (side: PanelSide, panelId: PanelId | null) => void;
-
-  /** 패널 토글 (활성화/비활성화) */
+  /** 패널 토글 (활성화/비활성화) - Multi toggle 지원 */
   togglePanel: (side: PanelSide, panelId: PanelId) => void;
 
   /** 사이드바/인스펙터 표시/숨김 토글 */

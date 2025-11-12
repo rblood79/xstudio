@@ -16,17 +16,25 @@ export interface PanelSlotProps {
 }
 
 export function PanelSlot({ side }: PanelSlotProps) {
-  const { layout, setActivePanel, toggleSide } = usePanelLayout();
+  const { layout, togglePanel, toggleSide } = usePanelLayout();
 
   // 현재 사이드의 상태 가져오기
   const panelIds = side === "left" ? layout.leftPanels : layout.rightPanels;
-  const activePanel =
-    side === "left" ? layout.activeLeftPanel : layout.activeRightPanel;
+  const activePanels =
+    side === "left" ? layout.activeLeftPanels : layout.activeRightPanels;
   const show = side === "left" ? layout.showLeft : layout.showRight;
 
-  // 패널 클릭 핸들러
+  // 디버깅 로그
+  console.log(`[PanelSlot ${side}]`, {
+    panelIds,
+    activePanel: activePanels, // 배열로 변경
+    show,
+    layout,
+  });
+
+  // 패널 클릭 핸들러 - Toggle 동작
   const handlePanelClick = (panelId: typeof panelIds[number]) => {
-    setActivePanel(side, panelId);
+    togglePanel(side, panelId);
   };
 
   // 사이드 닫기 핸들러
@@ -36,15 +44,29 @@ export function PanelSlot({ side }: PanelSlotProps) {
 
   return (
     <div className={`panel-slot panel-slot-${side}`}>
-      <PanelNav
-        side={side}
-        panelIds={panelIds}
-        activePanel={activePanel}
-        onPanelClick={handlePanelClick}
-        onClose={handleClose}
-      />
-      {show && (
-        <PanelContainer side={side} activePanel={activePanel} show={show} />
+      {/* Left: Nav → Container, Right: Container → Nav */}
+      {side === "left" ? (
+        <>
+          <PanelNav
+            side={side}
+            panelIds={panelIds}
+            activePanels={activePanels}
+            onPanelClick={handlePanelClick}
+            onClose={handleClose}
+          />
+          <PanelContainer side={side} activePanels={activePanels} show={show} />
+        </>
+      ) : (
+        <>
+          <PanelContainer side={side} activePanels={activePanels} show={show} />
+          <PanelNav
+            side={side}
+            panelIds={panelIds}
+            activePanels={activePanels}
+            onPanelClick={handlePanelClick}
+            onClose={handleClose}
+          />
+        </>
       )}
     </div>
   );

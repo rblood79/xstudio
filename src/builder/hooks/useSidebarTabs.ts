@@ -53,6 +53,18 @@ export function useSidebarTabs() {
         saveTabsToStorage(activeTabs);
     }, [activeTabs]);
 
+    // storage 이벤트 리스너: localStorage 변경 감지
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent | Event) => {
+            if ('key' in e && e.key !== SIDEBAR_TABS_KEY) return;
+            const newTabs = loadTabsFromStorage();
+            setActiveTabs(newTabs);
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     // 탭 토글
     const toggleTab = (tab: Tab) => {
         setActiveTabs(prev => {

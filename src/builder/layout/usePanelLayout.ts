@@ -29,6 +29,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
 
       const fromKey = from === 'left' ? 'leftPanels' : 'rightPanels';
       const toKey = to === 'left' ? 'leftPanels' : 'rightPanels';
+      const fromActiveKey = from === 'left' ? 'activeLeftPanels' : 'activeRightPanels';
 
       const fromPanels = layout[fromKey];
       const toPanels = layout[toKey];
@@ -44,15 +45,9 @@ export function usePanelLayout(): UsePanelLayoutReturn {
         ...layout,
         [fromKey]: fromPanels.filter((id) => id !== panelId),
         [toKey]: [...toPanels, panelId],
+        // 활성 패널에서도 제거
+        [fromActiveKey]: layout[fromActiveKey].filter((id) => id !== panelId),
       };
-
-      // 활성 패널이 이동된 패널이면 비활성화
-      if (layout.activeLeftPanel === panelId && from === 'left') {
-        newLayout.activeLeftPanel = null;
-      }
-      if (layout.activeRightPanel === panelId && from === 'right') {
-        newLayout.activeRightPanel = null;
-      }
 
       setPanelLayout(newLayout);
     },
@@ -60,39 +55,33 @@ export function usePanelLayout(): UsePanelLayoutReturn {
   );
 
   /**
-   * 활성 패널 설정
+   * 패널 토글 (활성화/비활성화) - Multi toggle 지원
    */
-  const setActivePanel = useCallback(
-    (side: PanelSide, panelId: PanelId | null) => {
+  const togglePanel = useCallback(
+    (side: PanelSide, panelId: PanelId) => {
       const panelsKey = side === 'left' ? 'leftPanels' : 'rightPanels';
-      const activeKey = side === 'left' ? 'activeLeftPanel' : 'activeRightPanel';
+      const activeKey = side === 'left' ? 'activeLeftPanels' : 'activeRightPanels';
 
-      // panelId가 null이 아니면 해당 사이드에 패널이 있는지 확인
-      if (panelId !== null && !layout[panelsKey].includes(panelId)) {
+      // 패널이 해당 사이드에 없으면 무시
+      if (!layout[panelsKey].includes(panelId)) {
         console.warn(`[usePanelLayout] Panel "${panelId}" not available on ${side} side`);
         return;
       }
 
+      const currentActive = layout[activeKey];
+      const isActive = currentActive.includes(panelId);
+
+      // 이미 활성화된 패널이면 제거, 아니면 추가
+      const newActive = isActive
+        ? currentActive.filter((id) => id !== panelId)
+        : [...currentActive, panelId];
+
       setPanelLayout({
         ...layout,
-        [activeKey]: panelId,
+        [activeKey]: newActive,
       });
     },
     [layout, setPanelLayout]
-  );
-
-  /**
-   * 패널 토글 (활성화/비활성화)
-   */
-  const togglePanel = useCallback(
-    (side: PanelSide, panelId: PanelId) => {
-      const activeKey = side === 'left' ? 'activeLeftPanel' : 'activeRightPanel';
-      const currentActive = layout[activeKey];
-
-      // 이미 활성화된 패널이면 비활성화, 아니면 활성화
-      setActivePanel(side, currentActive === panelId ? null : panelId);
-    },
-    [layout, setActivePanel]
   );
 
   /**
@@ -134,7 +123,6 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     isLoading: false, // 나중에 비동기 로딩 추가 시 사용
     isLoaded: true,
     movePanel,
-    setActivePanel,
     togglePanel,
     toggleSide,
     resetLayout,

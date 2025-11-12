@@ -32,17 +32,24 @@ interface SidebarProps {
 export default function Sidebar({ pages, pageList, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
     // 메모이제이션 추가
     const elements = useStore((state) => state.elements);
+    const currentPageId = useStore((state) => state.currentPageId);
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
     // 활성 탭 상태 관리 (localStorage 연동)
     const { activeTabs, toggleTab, closeAll } = useSidebarTabs();
+
+    // 현재 페이지의 요소만 필터링
+    const currentPageElements = React.useMemo(() => {
+        if (!currentPageId) return [];
+        return elements.filter(el => el.page_id === currentPageId);
+    }, [elements, currentPageId]);
     const [iconEditProps] = React.useState({ color: "#171717", stroke: 1, size: 16 });
 
     // React Stately 기반 트리 펼치기/접기 상태 관리
     const { expandedKeys, toggleKey, collapseAll } = useTreeExpandState({
         selectedElementId,
-        elements,
+        elements: currentPageElements,
     });
 
     const setElements: React.Dispatch<React.SetStateAction<Element[]>> = (elementsOrFn) => {
@@ -1419,7 +1426,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                         renderTree={renderTree}
                         renderElementTree={renderElementTree}
                         fetchElements={fetchElements}
-                        elements={elements}
+                        elements={currentPageElements}
                         setElements={setElements}
                         selectedElementId={selectedElementId}
                         setSelectedElement={setSelectedElement}

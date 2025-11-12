@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Table as TableIcon, Columns } from "lucide-react";
-import { PropertySelect } from "../components";
+import { PropertySelect } from "../../inspector/components";
 import { supabase } from "../../../env/supabase.client";
-import type { SupabaseValueConfig } from "../types";
+import type { SupabaseValueConfig } from "../../inspector/types";
 
 export interface SupabaseValueEditorProps {
   config: SupabaseValueConfig;
