@@ -4,7 +4,7 @@ import {
     EventContext,
     EventExecutionResult,
     isImplementedActionType
-} from '../types/events/events.types';
+} from '../../types/events/events.types';
 
 export class EventEngine {
     private static instance: EventEngine;

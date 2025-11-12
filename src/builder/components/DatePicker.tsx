@@ -24,7 +24,7 @@ import {
   getLocalTimeZone,
   today
 } from '@internationalized/date';
-import { safeParseDateString } from '../../utils/dateUtils';
+import { safeParseDateString } from '../../utils/core/dateUtils';
 
 import "./styles/DatePicker.css";
 

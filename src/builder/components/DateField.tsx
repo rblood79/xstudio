@@ -10,7 +10,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 import { getLocalTimeZone, today } from '@internationalized/date';
-import { safeParseDateString } from '../../utils/dateUtils';
+import { safeParseDateString } from '../../utils/core/dateUtils';
 
 import './styles/DateField.css';
 

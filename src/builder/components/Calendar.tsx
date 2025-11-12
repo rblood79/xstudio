@@ -11,7 +11,7 @@ import {
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getLocalTimeZone, today } from '@internationalized/date';
-import { safeParseDateString } from '../../utils/dateUtils';
+import { safeParseDateString } from '../../utils/core/dateUtils';
 
 import './styles/Calendar.css';
 
