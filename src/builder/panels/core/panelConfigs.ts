@@ -23,21 +23,19 @@ import { PanelRegistry } from "./PanelRegistry";
 
 // Navigation panels
 import { NodesPanel } from "../nodes/NodesPanel";
+import { ComponentsPanel } from "../components/ComponentsPanel";
+import { LibraryPanel } from "../library/LibraryPanel";
+import { DatasetPanel } from "../dataset/DatasetPanel";
+import { ThemePanel } from "../theme/ThemePanel";
+import { AIPanel } from "../ai/AIPanel";
+import { UserPanel } from "../user/UserPanel";
+import { SettingsPanel } from "../settings/SettingsPanel";
 
-// Editor panels (실제 구현)
+// Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
 import { DataPanel } from "../data/DataPanel";
 import { EventsPanel } from "../events/EventsPanel";
-
-// Placeholder component for panels not yet implemented
-function PlaceholderPanel() {
-  return (
-    <div className="panel-placeholder">
-      <p>패널 구현 예정</p>
-    </div>
-  );
-}
 
 /**
  * 12개 패널 설정
@@ -62,7 +60,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "컴포넌트",
     nameEn: "Components",
     icon: Box,
-    component: PlaceholderPanel,
+    component: ComponentsPanel,
     category: "navigation",
     defaultPosition: "left",
     minWidth: 240,
@@ -75,7 +73,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "라이브러리",
     nameEn: "Library",
     icon: Library,
-    component: PlaceholderPanel,
+    component: LibraryPanel,
     category: "navigation",
     defaultPosition: "left",
     minWidth: 240,
@@ -87,7 +85,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "데이터셋",
     nameEn: "Dataset",
     icon: Database,
-    component: PlaceholderPanel,
+    component: DatasetPanel,
     category: "navigation",
     defaultPosition: "left",
     minWidth: 240,
@@ -101,7 +99,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "테마",
     nameEn: "Theme",
     icon: Palette,
-    component: PlaceholderPanel,
+    component: ThemePanel,
     category: "tool",
     defaultPosition: "left",
     minWidth: 240,
@@ -113,7 +111,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "AI",
     nameEn: "AI",
     icon: Sparkles,
-    component: PlaceholderPanel,
+    component: AIPanel,
     category: "tool",
     defaultPosition: "left",
     minWidth: 240,
@@ -127,7 +125,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "사용자",
     nameEn: "User",
     icon: User,
-    component: PlaceholderPanel,
+    component: UserPanel,
     category: "system",
     defaultPosition: "left",
     minWidth: 240,
@@ -139,7 +137,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "설정",
     nameEn: "Settings",
     icon: Settings,
-    component: PlaceholderPanel,
+    component: SettingsPanel,
     category: "system",
     defaultPosition: "left",
     minWidth: 240,
@@ -148,7 +146,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     shortcut: "Ctrl+,",
   },
 
-  // Editor panels (구현 완료)
+  // Editor panels
   {
     id: "properties",
     name: "속성",
