@@ -5,7 +5,7 @@
  * Provides simple pattern matching for common design requests
  */
 
-import type { ComponentIntent, BuilderContext } from '../../types/chat';
+import type { ComponentIntent, BuilderContext } from '../../types/integrations/chat.types';
 
 export class IntentParser {
   /**

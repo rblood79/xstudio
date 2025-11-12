@@ -1,7 +1,7 @@
 import { Tag, Link, PointerOff, Type, Hash, CheckCircle } from 'lucide-react';
 import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

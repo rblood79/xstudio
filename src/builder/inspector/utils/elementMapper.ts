@@ -1,4 +1,4 @@
-import type { Element } from "../../../types/store";
+import type { Element } from "../../../types/core/store.types";
 import type { SelectedElement } from "../types";
 
 /**

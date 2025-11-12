@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Tag, Binary, PointerOff, FileText, Link2, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { iconProps } from '../../../../utils/ui/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
-import { ElementUtils } from '../../../../utils/elementUtils';
+import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

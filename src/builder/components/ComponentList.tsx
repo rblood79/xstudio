@@ -39,7 +39,7 @@ import {
   Link,
   Paintbrush,
 } from "lucide-react";
-import { iconProps } from "../../utils/uiConstants";
+import { iconProps } from "../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
 import { useRecentComponents } from "../hooks/useRecentComponents";
 import { useFavoriteComponents } from "../hooks/useFavoriteComponents";

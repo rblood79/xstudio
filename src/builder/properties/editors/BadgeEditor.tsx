@@ -1,7 +1,7 @@
 import { Type, Parentheses, Circle, Activity } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

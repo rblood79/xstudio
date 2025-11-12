@@ -9,7 +9,7 @@ import {
   Popover,
   SubmenuTrigger,
 } from "react-aria-components";
-import type { DataBinding, ColumnMapping } from "../../types/unified";
+import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
 import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Menu.css";

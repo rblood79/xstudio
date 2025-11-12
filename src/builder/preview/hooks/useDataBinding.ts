@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Element } from "../../../types/unified";
+import type { Element } from "../../../types/builder/unified.types";
 
 interface APICollectionConfig {
   baseUrl: string;

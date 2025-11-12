@@ -1,7 +1,7 @@
 import { Type, Layout, ToggleLeft, X, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

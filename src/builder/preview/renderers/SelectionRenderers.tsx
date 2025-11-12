@@ -13,8 +13,8 @@ import {
 import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
 import { elementsApi } from "../../../services/api";
-import { getVisibleColumns } from "../../../utils/columnTypeInference";
-import type { ColumnMapping } from "../../../types/unified";
+import { getVisibleColumns } from "../../../utils/element/columnTypeInference";
+import type { ColumnMapping } from "../../../types/builder/unified.types";
 
 /**
  * Selection 관련 컴포넌트 렌더러

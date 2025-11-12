@@ -12,7 +12,7 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import type { ComponentSizeSubset, ProgressBarVariant } from '../../types/componentVariants';
+import type { ComponentSizeSubset, ProgressBarVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/numberUtils';
 
 import './styles/ProgressBar.css';

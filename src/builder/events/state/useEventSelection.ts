@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Key } from 'react-stately';
-import type { ElementEvent } from '@/types/events';
+import type { ElementEvent } from '@/types/events/events.types';
 
 /**
  * 이벤트 핸들러 선택 상태 관리 훅

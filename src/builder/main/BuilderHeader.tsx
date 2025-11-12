@@ -16,7 +16,7 @@ import {
   Key,
   Label,
 } from "react-aria-components";
-import { iconProps } from "../../utils/uiConstants";
+import { iconProps } from "../../utils/ui/uiConstants";
 
 export interface Breakpoint {
   id: string;

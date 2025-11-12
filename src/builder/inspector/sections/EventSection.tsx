@@ -12,8 +12,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { SelectedElement } from "../types";
-import type { EventType, ActionType } from "@/types/events";
-import type { ComponentElementProps } from "@/types/unified";
+import type { EventType, ActionType } from "@/types/events/events.types";
+import type { ComponentElementProps } from "@/types/builder/unified.types";
 import { useInspectorState } from "../hooks/useInspectorState";
 import { EventHandlerManager } from "../events/components/EventHandlerManager";
 import { EventTypePicker } from "../events/pickers/EventTypePicker";
@@ -24,7 +24,7 @@ import { useEventSelection } from "../events/state/useEventSelection";
 import { ConditionEditor } from "../events/components/ConditionEditor";
 import { DebounceThrottleEditor } from "../events/components/DebounceThrottleEditor";
 import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
-import { iconProps } from "@/utils/uiConstants";
+import { iconProps } from "@/utils/ui/uiConstants";
 import { useStore } from "../../stores";
 export interface EventSectionProps {
   element: SelectedElement;

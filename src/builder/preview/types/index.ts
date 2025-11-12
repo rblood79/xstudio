@@ -1,7 +1,7 @@
 import React from "react";
-import { ElementProps } from "../../../types/supabase";
-import { DataBinding } from "../../../types/unified";
-import { EventEngine } from "../../../utils/eventEngine";
+import { ElementProps } from "../../../types/integrations/supabase.types";
+import { DataBinding } from "../../../types/builder/unified.types";
+import { EventEngine } from "../../../utils/events/eventEngine";
 
 /**
  * Preview에서 사용하는 Element 타입

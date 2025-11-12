@@ -6,7 +6,7 @@ import {
   PropertyColor,
 } from "../components";
 import { useInspectorState } from "../hooks/useInspectorState";
-import { iconProps } from "../../../utils/uiConstants";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import type { SelectedElement } from "../types";
 
 import {

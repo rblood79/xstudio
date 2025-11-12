@@ -1,16 +1,16 @@
 import { useState, useMemo, useEffect } from "react";
 import { TextField, Input } from "react-aria-components";
 import { Database, Send, Link, Settings, Lock, Map, Route, Download } from "lucide-react";
-import { iconProps } from '../../../utils/uiConstants';
+import { iconProps } from '../../../utils/ui/uiConstants';
 import { PropertySelect, PropertyInput, PropertyFieldset } from "../components";
 
 import { Button, Checkbox, CheckboxGroup } from "../../components/list";
 import type { APICollectionConfig } from "../types";
-import { detectColumnsFromData } from "../../../utils/columnTypeInference";
-import type { ColumnMapping } from "../../../types/unified";
+import { detectColumnsFromData } from "../../../utils/element/columnTypeInference";
+import type { ColumnMapping } from "../../../types/builder/unified.types";
 import { apiConfig } from "../../../services/api";
-import { ElementUtils } from "../../../utils/elementUtils";
-import { Element } from "../../../types/store";
+import { ElementUtils } from "../../../utils/element/elementUtils";
+import { Element } from "../../../types/core/store.types";
 import { useStore } from "../../stores";
 import { useColumnLoader } from "./hooks";
 import "./data.css";

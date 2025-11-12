@@ -1,7 +1,7 @@
 import { Type, Link as LinkIcon, ExternalLink, Parentheses, PointerOff, Eye, Hash } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

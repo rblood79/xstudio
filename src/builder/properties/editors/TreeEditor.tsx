@@ -2,11 +2,11 @@ import { useMemo, useState, useEffect } from 'react';
 import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
-import { iconProps } from '../../../../utils/uiConstants'; // 추가
-import { ElementUtils } from '../../../../utils/elementUtils';
+import { iconProps } from '../../../../utils/ui/uiConstants'; // 추가
+import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 // 상수 정의

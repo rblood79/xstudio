@@ -1,7 +1,7 @@
 import { Minus, PencilRuler, Layout, Type } from 'lucide-react';
 import { PropertySelect, PropertyCustomId, PropertyInput } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

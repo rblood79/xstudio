@@ -1,7 +1,7 @@
 import { MessageSquare, Move, MapPin } from "lucide-react";
 import { PropertyInput, PropertyCustomId, PropertySelect } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
-import { PROPERTY_LABELS } from "../../../../utils/labels";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
 export function TooltipEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { historyManager } from "../history";
-import type { Element } from "../../../types/unified";
+import type { Element } from "../../../types/builder/unified.types";
 
 describe("HistoryManager", () => {
   beforeAll(() => {

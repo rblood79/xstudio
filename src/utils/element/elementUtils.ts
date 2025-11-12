@@ -6,7 +6,7 @@
  * - Kept essential utility functions (generateId, findBodyElement, etc.)
  */
 
-import { Element } from '../types/store';
+import { Element } from '../types/core/store.types';
 
 // 통합 요소 관리 유틸리티
 export class ElementUtils {

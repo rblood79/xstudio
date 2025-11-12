@@ -7,7 +7,7 @@
 
 import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps, composeRenderProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import type { SeparatorVariant, ComponentSizeSubset } from '../../types/componentVariants';
+import type { SeparatorVariant, ComponentSizeSubset } from '../../types/builder/componentVariants.types';
 import './styles/Separator.css';
 
 export interface SeparatorProps extends AriaSeparatorProps {

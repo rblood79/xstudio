@@ -1,6 +1,6 @@
 import React from "react";
 import { FieldErrorProps, Group, GroupProps, InputProps, LabelProps, FieldError as RACFieldError, Input as RACInput, Label as RACLabel, TextProps, Text as RACText } from "react-aria-components";
-import type { FieldType } from "../../types/unified";
+import type { FieldType } from "../../types/builder/unified.types";
 
 import "./styles/Field.css";
 

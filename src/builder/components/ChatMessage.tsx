@@ -4,7 +4,7 @@
  * Displays a single chat message with avatar and timestamp
  */
 
-import type { ChatMessage as ChatMessageType } from '../../types/chat';
+import type { ChatMessage as ChatMessageType } from '../../types/integrations/chat.types';
 import './styles/ChatMessage.css';
 
 export interface ChatMessageProps {

@@ -1,4 +1,4 @@
-import type { ColumnMapping } from "../../types/unified";
+import type { ColumnMapping } from "../../types/builder/unified.types";
 import type { EventHandler } from "../events/types";
 
 /**

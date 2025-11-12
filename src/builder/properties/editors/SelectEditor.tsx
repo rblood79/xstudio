@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { iconProps } from '../../../../utils/ui/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
 

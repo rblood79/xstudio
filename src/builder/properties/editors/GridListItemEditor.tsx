@@ -1,7 +1,7 @@
 import { Tag, Binary, PointerOff, FileText, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function GridListItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

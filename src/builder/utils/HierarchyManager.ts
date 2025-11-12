@@ -1,4 +1,4 @@
-import { Element } from '../../types/store';
+import { Element } from '../../types/core/store.types';
 
 export interface ElementNode {
     element: Element;

@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand';
-import type { ConversationState, ChatMessage, ComponentIntent, BuilderContext } from '../../types/chat';
+import type { ConversationState, ChatMessage, ComponentIntent, BuilderContext } from '../../types/integrations/chat.types';
 
 export const useConversationStore = create<ConversationState>((set) => ({
   messages: [],

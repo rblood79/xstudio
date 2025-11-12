@@ -1,5 +1,5 @@
 import React from 'react';
-import { iconProps } from '../../../utils/uiConstants';
+import { iconProps } from '../../../utils/ui/uiConstants';
 
 interface PropertyFieldsetProps {
     legend?: string;

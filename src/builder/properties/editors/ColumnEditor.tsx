@@ -1,9 +1,9 @@
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
-import type { ColumnElementProps } from '../../../../types/store';
+import type { ColumnElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
 import { Type, Crown, Ruler, ArrowLeft, ArrowRight, ArrowUpDown, Key, Move } from 'lucide-react';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 
 // interface ColumnEditorProps {
 //     // element: Element;

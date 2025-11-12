@@ -1,10 +1,10 @@
 
 import { PropertyInput, PropertySelect, PropertyCustomId } from '../../components';
-import type { CellElementProps } from '../../../../types/store';
+import type { CellElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
 import { Type, AlignLeft, Palette, Grid } from 'lucide-react';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 
 // interface CellEditorProps {
 //     // element: Element;

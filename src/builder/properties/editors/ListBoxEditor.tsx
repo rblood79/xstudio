@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
-import { iconProps } from "../../../../utils/uiConstants";
-import { PROPERTY_LABELS } from "../../../../utils/labels";
+import { iconProps } from "../../../../utils/ui/uiConstants";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useCollectionItemManager } from "../../../hooks/useCollectionItemManager";
 

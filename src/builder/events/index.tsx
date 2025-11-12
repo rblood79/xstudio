@@ -19,7 +19,7 @@ import {
   ACTION_TYPE_LABELS,
   DEFAULT_DEBOUNCE_TIME,
   DEFAULT_THROTTLE_TIME,
-} from "../../../types/events";
+} from "../../../types/events/events.types";
 import { saveService } from "../../../services/save";
 import { useActions } from "./state/useActions";
 

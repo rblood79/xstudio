@@ -5,7 +5,7 @@ import {
     SliderThumb,
     SliderOutput
 } from 'react-aria-components';
-import { iconProps } from '../../../utils/uiConstants';
+import { iconProps } from '../../../utils/ui/uiConstants';
 
 interface PropertySliderProps {
     label: string;

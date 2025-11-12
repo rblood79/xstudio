@@ -13,13 +13,13 @@ import {
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from "../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
-import { iconProps } from "../../../../utils/uiConstants";
-import { PROPERTY_LABELS } from "../../../../utils/labels";
+import { iconProps } from "../../../../utils/ui/uiConstants";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { supabase } from "../../../../env/supabase.client";
 import { useStore } from "../../../stores";
-import { Element } from "../../../../types/store";
-import { ElementUtils } from "../../../../utils/elementUtils";
-import { TableElementProps } from "../../../../types/unified";
+import { Element } from "../../../../types/core/store.types";
+import { ElementUtils } from "../../../../utils/element/elementUtils";
+import { TableElementProps } from "../../../../types/builder/unified.types";
 import { useCallback } from "react";
 import { generateCustomId } from '../../../utils/idGeneration';
 import './styles/TableEditor.css';

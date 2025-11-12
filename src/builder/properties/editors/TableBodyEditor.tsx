@@ -2,7 +2,7 @@ import { useStore } from '../../../stores';
 import { PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 
 interface TableBodyElementProps {
     variant?: 'default' | 'striped' | 'bordered' | 'hover';

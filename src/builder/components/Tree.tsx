@@ -11,7 +11,7 @@ import {
 } from "react-aria-components";
 import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
 import { MyCheckbox } from "./Checkbox";
-import type { DataBinding } from "../../types/unified";
+import type { DataBinding } from "../../types/builder/unified.types";
 import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Tree.css";

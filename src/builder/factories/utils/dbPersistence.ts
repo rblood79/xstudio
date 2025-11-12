@@ -1,4 +1,4 @@
-import { Element } from "../../../types/store";
+import { Element } from "../../../types/core/store.types";
 import { elementsApi } from "../../../services/api/ElementsApiService";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { updateElementId } from "./elementCreation";

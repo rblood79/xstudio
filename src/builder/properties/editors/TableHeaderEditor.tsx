@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { ColumnElementProps, Element } from '../../../../types/store';
+import { ColumnElementProps, Element } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
 import { PropertySelect, PropertyInput, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
+import { iconProps } from '../../../../utils/ui/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
 import { supabase } from '../../../../env/supabase.client';
-import { ElementUtils } from '../../../../utils/elementUtils';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { ElementUtils } from '../../../../utils/element/elementUtils';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 interface TableHeaderElementProps {

@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { useListData } from 'react-stately';
-import { Page, Element } from '../../types/store';
+import { Page, Element } from '../../types/core/store.types';
 import { pagesApi } from '../../services/api/PagesApiService';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
-import type { ElementProps } from '../../types/supabase';
-import { ElementUtils } from '../../utils/elementUtils';
+import type { ElementProps } from '../../types/integrations/supabase.types';
+import { ElementUtils } from '../../utils/element/elementUtils';
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)

@@ -4,9 +4,9 @@
  * flat Element[] 배열을 hierarchical ElementTreeItem[] 구조로 변환
  */
 
-import type { Element } from '../../types/store';
-import type { ElementTreeItem } from '../../types/stately';
-import type { ElementProps } from '../../types/supabase';
+import type { Element } from '../../types/core/store.types';
+import type { ElementTreeItem } from '../../types/builder/stately.types';
+import type { ElementProps } from '../../types/integrations/supabase.types';
 
 /**
  * flat Element 배열을 hierarchical ElementTreeItem 구조로 변환

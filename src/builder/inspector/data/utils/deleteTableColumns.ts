@@ -1,6 +1,6 @@
 import { elementsApi } from "../../../../services";
 import { useStore } from "../../../stores/elements";
-import type { Element } from "../../../../types/unified";
+import type { Element } from "../../../../types/builder/unified.types";
 
 /**
  * Table의 모든 Column Elements를 삭제합니다.

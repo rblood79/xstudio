@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { Key } from 'react-stately';
-import type { Element } from '../../types/store';
+import type { Element } from '../../types/core/store.types';
 
 export interface UseTreeExpandStateOptions {
   /** 초기 펼쳐진 키 */

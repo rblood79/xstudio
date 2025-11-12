@@ -4,7 +4,7 @@ import { PropertyInput } from '../../components/PropertyInput';
 import { PropertySwitch } from '../../components/PropertySwitch';
 import { PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

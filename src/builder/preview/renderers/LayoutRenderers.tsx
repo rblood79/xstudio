@@ -17,7 +17,7 @@ import {
   Breadcrumb,
 } from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
-import { createEventHandlerMap } from "../utils/eventHandlers";
+import { createEventHandlerMap } from "../utils/events/eventHandlers";
 
 
 /**

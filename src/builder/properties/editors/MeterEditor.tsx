@@ -2,7 +2,7 @@ import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe,
 import { PropertySwitch } from '../../components';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

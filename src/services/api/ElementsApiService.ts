@@ -1,5 +1,5 @@
 import { BaseApiService } from "./BaseApiService";
-import { Element } from "../../types/store";
+import { Element } from "../../types/core/store.types";
 
 export class ElementsApiService extends BaseApiService {
   async fetchElements(pageId: string): Promise<Element[]> {

@@ -1,8 +1,8 @@
 import { Settings, Type, Grid, Pin } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { ColumnGroupElementProps } from '../../../../types/unified';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { ColumnGroupElementProps } from '../../../../types/builder/unified.types';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {

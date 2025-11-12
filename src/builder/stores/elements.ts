@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { produce } from "immer";
 import { StateCreator } from "zustand";
-import { Element, ComponentElementProps } from "../../types/store";
+import { Element, ComponentElementProps } from "../../types/core/store.types";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
 import {
@@ -18,7 +18,7 @@ import {
   createUpdateElementPropsAction,
   createUpdateElementAction,
 } from "./utils/elementUpdate";
-import { ElementUtils } from "../../utils/elementUtils";
+import { ElementUtils } from "../../utils/element/elementUtils";
 import { elementsApi } from "../../services/api";
 
 interface Page {

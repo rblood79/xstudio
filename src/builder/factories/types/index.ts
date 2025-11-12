@@ -1,4 +1,4 @@
-import { Element } from "../../../types/store";
+import { Element } from "../../../types/core/store.types";
 
 /**
  * 컴포넌트 생성 결과 타입

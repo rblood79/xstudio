@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
-import { Element } from "../../types/store"; // 훅들이 기대하는 Element 타입
+import { Element } from "../../types/core/store.types"; // 훅들이 기대하는 Element 타입
 import { historyManager } from "../stores/history";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";

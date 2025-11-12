@@ -20,9 +20,9 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useStore } from '../stores';
-import { ElementUtils } from '../../utils/elementUtils';
+import { ElementUtils } from '../../utils/element/elementUtils';
 import { supabase } from '../../env/supabase.client';
-import type { Element } from '../../types/store';
+import type { Element } from '../../types/core/store.types';
 
 export interface UseCollectionItemManagerOptions {
   /** 부모 Collection 요소 ID (ListBox, GridList, Select, ComboBox 등) */

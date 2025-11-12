@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, Hash, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { iconProps } from '../../../../utils/ui/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
-import { ElementUtils } from '../../../../utils/elementUtils';
+import { ElementUtils } from '../../../../utils/element/elementUtils';
 
 interface SelectedCheckboxState {
     parentId: string;

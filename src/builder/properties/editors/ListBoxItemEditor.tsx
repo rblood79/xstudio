@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { Tag, Binary, PointerOff, SquarePlus, Database, FileText, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { ElementUtils } from '../../../../utils/elementUtils';
-import { iconProps } from '../../../../utils/uiConstants';
+import { ElementUtils } from '../../../../utils/element/elementUtils';
+import { iconProps } from '../../../../utils/ui/uiConstants';
 
 export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, currentPageId, setSelectedElement } = useStore();

@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '../../env/supabase.client';
-import { Element } from '../../types/store';
+import { Element } from '../../types/core/store.types';
 import { classifyError, logError, ApiError, ApiErrorType } from './ErrorHandler';
 
 export abstract class BaseApiService {

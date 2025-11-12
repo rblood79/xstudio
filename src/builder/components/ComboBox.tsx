@@ -14,7 +14,7 @@ import {
   ValidationResult
 } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
-import type { DataBinding, ColumnMapping } from '../../types/unified';
+import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import { useCollectionData } from '../hooks/useCollectionData';
 import './styles/ComboBox.css';
 

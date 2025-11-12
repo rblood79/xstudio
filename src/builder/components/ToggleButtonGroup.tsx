@@ -6,11 +6,11 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import type { DataBinding, ColumnMapping } from "../../types/unified";
+import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
 import type {
   ComponentSizeSubset,
   ToggleButtonVariant,
-} from "../../types/componentVariants";
+} from "../../types/builder/componentVariants.types";
 import { useCollectionData } from "../hooks/useCollectionData";
 import "./styles/ToggleButtonGroup.css";
 

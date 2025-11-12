@@ -2,12 +2,12 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AppWindow, Plus, Ratio, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { iconProps } from '../../../../utils/ui/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
-import type { Element } from '../../../../types/store'; // 통합된 타입 사용
-import { ElementUtils } from '../../../../utils/elementUtils';
+import type { Element } from '../../../../types/core/store.types'; // 통합된 타입 사용
+import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 // 상수 정의

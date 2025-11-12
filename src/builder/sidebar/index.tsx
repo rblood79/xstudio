@@ -2,8 +2,8 @@ import "./index.css";
 import React, { useCallback } from "react";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react';
 import { useStore } from '../stores';
-import { ElementProps } from '../../types/supabase';
-import { Element, Page } from '../../types/store'; // Page 타입도 추가
+import { ElementProps } from '../../types/integrations/supabase.types';
+import { Element, Page } from '../../types/core/store.types'; // Page 타입도 추가
 import { Nodes } from '../nodes';
 import Components from '../components';
 import Library from '../library';
@@ -17,7 +17,7 @@ import { SidebarNav } from './SidebarNav';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useTreeExpandState } from '../hooks/useTreeExpandState';
 import { useSidebarTabs } from '../hooks/useSidebarTabs';
-import type { ElementTreeItem } from '../../types/stately';
+import type { ElementTreeItem } from '../../types/builder/stately.types';
 
 interface SidebarProps {
     pages: Page[];

@@ -9,9 +9,9 @@
 
 import { Select, Label, Button, Popover, ListBox, ListBoxItem, Section, Header } from 'react-aria-components';
 import { Plus } from 'lucide-react';
-import type { ActionType } from '@/types/events';
-import { ACTION_TYPE_LABELS } from '@/types/events';
-import { ACTION_CATEGORIES } from '@/types/events.registry';
+import type { ActionType } from '@/types/events/events.types';
+import { ACTION_TYPE_LABELS } from '@/types/events/events.types';
+import { ACTION_CATEGORIES } from '@/types/events/events.registry';
 
 interface ActionTypePickerProps {
   /** 액션 선택 시 호출되는 콜백 */

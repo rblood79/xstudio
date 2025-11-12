@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "../../components/list";
 import { useStore } from "../../stores/elements";
 import { elementsApi } from "../../../services";
-import type { Element } from "../../../types/store";
+import type { Element } from "../../../types/core/store.types";
 
 interface NoneDataSourceEditorProps {
   elementId: string;

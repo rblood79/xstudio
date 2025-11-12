@@ -1,4 +1,4 @@
-import { Element, ComponentElementProps } from '../types/store';
+import { Element, ComponentElementProps } from '../types/core/store.types';
 // 통합 메시징 유틸리티
 export class MessageService {
     private static iframe: HTMLIFrameElement | null = null;

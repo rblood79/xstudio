@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { iconProps } from '../../../../utils/uiConstants';
-import { PROPERTY_LABELS } from '../../../../utils/labels';
+import { iconProps } from '../../../../utils/ui/uiConstants';
+import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { supabase } from '../../../../env/supabase.client';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
-import { ElementUtils } from '../../../../utils/elementUtils';
+import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 interface SelectedTagState {

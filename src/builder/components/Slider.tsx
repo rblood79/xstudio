@@ -8,7 +8,7 @@ import {
     composeRenderProps
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import type { ComponentSizeSubset, SliderVariant } from '../../types/componentVariants';
+import type { ComponentSizeSubset, SliderVariant } from '../../types/builder/componentVariants.types';
 import { formatNumber, formatPercent, formatUnit } from '../../utils/numberUtils';
 
 import './styles/Slider.css';

@@ -14,7 +14,7 @@ import { CheckIcon, Minus } from 'lucide-react';
 import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
-import type { ComponentSizeSubset, CheckboxVariant } from '../../types/componentVariants';
+import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
 
 import './styles/Checkbox.css';
 

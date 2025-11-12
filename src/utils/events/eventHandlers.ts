@@ -1,5 +1,5 @@
-import { Element } from '../types/store';
-import { ElementEvent, EventType, IMPLEMENTED_EVENT_TYPES } from '../types/events';
+import { Element } from '../types/core/store.types';
+import { ElementEvent, EventType, IMPLEMENTED_EVENT_TYPES } from '../types/events/events.types';
 import { EventEngine } from './eventEngine';
 import { createHash } from 'crypto';
 

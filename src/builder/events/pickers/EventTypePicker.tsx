@@ -9,9 +9,9 @@
 
 import { Select, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
 import { CirclePlus } from 'lucide-react';
-import type { EventType } from '@/types/events';
-import { EVENT_TYPE_LABELS } from '@/types/events';
-import { iconProps } from '@/utils/uiConstants';
+import type { EventType } from '@/types/events/events.types';
+import { EVENT_TYPE_LABELS } from '@/types/events/events.types';
+import { iconProps } from '@/utils/ui/uiConstants';
 
 interface EventTypePickerProps {
   /** 이벤트 선택 시 호출되는 콜백 */

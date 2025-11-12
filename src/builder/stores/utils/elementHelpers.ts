@@ -1,4 +1,4 @@
-import { Element, ComponentElementProps } from "../../../types/store";
+import { Element, ComponentElementProps } from "../../../types/core/store.types";
 
 /**
  * Element 조회 및 속성 관리 헬퍼 함수들
