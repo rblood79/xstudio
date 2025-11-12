@@ -3,10 +3,10 @@ import React from 'react';
 import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save, Moon, Sun } from 'lucide-react';
 import { Button } from 'react-aria-components';
 import { useParams } from 'react-router-dom';
-import { useStore } from '../stores';
-import { useUnifiedThemeStore } from '../../stores/themeStore';
-import { saveService } from '../../services/save';
-import { PropertySwitch, PropertySelect, PropertySlider } from '../inspector/components';
+import { useStore } from '../../stores';
+import { useUnifiedThemeStore } from '../../../stores/themeStore';
+import { saveService } from '../../../services/save';
+import { PropertySwitch, PropertySelect, PropertySlider } from '../../shared/ui';
 import { useThemes } from '../../hooks/theme/useThemes';
 import { ThemeService } from '../../services/theme';
 
@@ -292,4 +292,4 @@ function Setting() {
     );
 }
 
-export default Setting;
+export default Setting;export { Setting as SettingsPanel };

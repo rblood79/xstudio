@@ -5,6 +5,7 @@
  * 내부적으로 StyleSection을 사용하여 기존 로직 유지
  */
 
+import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
 import { StyleSection } from "../../inspector/sections/StyleSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";

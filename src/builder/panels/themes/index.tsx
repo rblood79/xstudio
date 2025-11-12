@@ -46,4 +46,4 @@ export default function Theme() {
             )}
         </div>
     );
-}
+}export { default as ThemePanel } from './ThemeStudio';

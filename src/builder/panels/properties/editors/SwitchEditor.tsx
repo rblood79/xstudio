@@ -1,5 +1,5 @@
 import { ToggleLeft, Eye, PointerOff, PenOff, CheckSquare, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText, Tag } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../../inspector/components';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../../shared/ui';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

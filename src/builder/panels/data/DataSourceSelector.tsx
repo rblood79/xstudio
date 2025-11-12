@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Database } from "lucide-react";
-import { PropertySelect } from "../../inspector/components";
+import { PropertySelect } from '../../../shared/ui';
 import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { useStore } from "../../stores/elements";

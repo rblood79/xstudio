@@ -5,6 +5,7 @@
  * 내부적으로 EventSection을 사용하여 기존 로직 유지
  */
 
+import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
 import { EventSection } from "../../inspector/sections/EventSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";

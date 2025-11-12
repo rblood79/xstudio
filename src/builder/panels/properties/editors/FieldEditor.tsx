@@ -3,7 +3,7 @@ import {
   PropertySelect,
   PropertySwitch,
   PropertyCustomId,
-} from "../../../inspector/components";
+} from '../../../shared/ui';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { Tag, Type, Eye, EyeOff, Hash } from "lucide-react";

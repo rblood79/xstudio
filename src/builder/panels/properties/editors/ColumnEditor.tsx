@@ -1,4 +1,4 @@
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../../inspector/components';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../../shared/ui';
 import type { ColumnElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';

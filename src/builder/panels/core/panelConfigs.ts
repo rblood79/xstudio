@@ -1,18 +1,15 @@
 /**
  * Panel Configurations
  *
- * 12개 패널의 설정 정의 및 PanelRegistry 등록
+ * 9개 패널의 설정 정의 및 PanelRegistry 등록
  */
 
 import {
   //FileTree,
   ListTree,
   Box,
-  Library,
-  Database,
   Palette,
   Sparkles,
-  User,
   Settings,
   Sliders,
   Paintbrush,
@@ -25,12 +22,9 @@ import { PanelRegistry } from "./PanelRegistry";
 // Navigation panels
 import { NodesPanel } from "../nodes/NodesPanel";
 import { ComponentsPanel } from "../components/ComponentsPanel";
-import { LibraryPanel } from "../library/LibraryPanel";
-import { DatasetPanel } from "../dataset/DatasetPanel";
-import { ThemePanel } from "../theme/ThemePanel";
-import { AIPanel } from "../ai/AIPanel";
-import { UserPanel } from "../user/UserPanel";
-import { SettingsPanel } from "../settings/SettingsPanel";
+import { ThemePanel } from "../themes";
+import { AIPanel } from "../ai";
+import { SettingsPanel } from "../settings";
 
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
@@ -39,7 +33,7 @@ import { DataPanel } from "../data/DataPanel";
 import { EventsPanel } from "../events/EventsPanel";
 
 /**
- * 12개 패널 설정
+ * 9개 패널 설정
  */
 export const PANEL_CONFIGS: PanelConfig[] = [
   // Navigation panels
@@ -69,30 +63,6 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     description: "컴포넌트 라이브러리",
     shortcut: "Ctrl+Shift+C",
   },
-  {
-    id: "library",
-    name: "라이브러리",
-    nameEn: "Library",
-    icon: Library,
-    component: LibraryPanel,
-    category: "navigation",
-    defaultPosition: "left",
-    minWidth: 240,
-    maxWidth: 400,
-    description: "재사용 가능한 에셋",
-  },
-  {
-    id: "dataset",
-    name: "데이터셋",
-    nameEn: "Dataset",
-    icon: Database,
-    component: DatasetPanel,
-    category: "navigation",
-    defaultPosition: "left",
-    minWidth: 240,
-    maxWidth: 400,
-    description: "데이터 소스 관리",
-  },
 
   // Tool panels
   {
@@ -121,18 +91,6 @@ export const PANEL_CONFIGS: PanelConfig[] = [
   },
 
   // System panels
-  {
-    id: "user",
-    name: "사용자",
-    nameEn: "User",
-    icon: User,
-    component: UserPanel,
-    category: "system",
-    defaultPosition: "left",
-    minWidth: 240,
-    maxWidth: 400,
-    description: "사용자 프로필 및 계정",
-  },
   {
     id: "settings",
     name: "설정",
