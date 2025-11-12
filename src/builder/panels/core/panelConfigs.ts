@@ -21,6 +21,9 @@ import {
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
 
+// Navigation panels
+import { NodesPanel } from "../nodes/NodesPanel";
+
 // Editor panels (실제 구현)
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
@@ -46,7 +49,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "노드",
     nameEn: "Nodes",
     icon: FileTree,
-    component: PlaceholderPanel,
+    component: NodesPanel,
     category: "navigation",
     defaultPosition: "left",
     minWidth: 240,

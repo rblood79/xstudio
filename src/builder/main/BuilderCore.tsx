@@ -9,8 +9,6 @@ import { historyManager } from "../stores/history";
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderWorkspace } from "./BuilderWorkspace";
 import { BuilderViewport } from "./BuilderViewport";
-import Inspector from "../inspector";
-import Sidebar from "../sidebar";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
 import { PanelSlot } from "../layout";
@@ -454,14 +452,9 @@ export const BuilderCore: React.FC = () => {
           {showOverlay && <SelectionOverlay />}
         </BuilderWorkspace>
 
-        <Sidebar
-          pages={pages}
-          pageList={pageList}
-          handleAddPage={handleAddPage}
-          handleAddElement={handleAddElementWrapper}
-          fetchElements={fetchElementsWrapper}
-          selectedPageId={selectedPageId}
-        />
+        <aside className="sidebar">
+          <PanelSlot side="left" />
+        </aside>
 
         <aside className="inspector">
           <PanelSlot side="right" />

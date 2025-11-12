@@ -13,7 +13,11 @@ export * from "./core/types";
 export { PanelRegistry } from "./core/PanelRegistry";
 export { PANEL_CONFIGS, registerAllPanels } from "./core/panelConfigs";
 
-// Panel components (editor panels)
+// Panel components
+// Navigation panels
+export { NodesPanel } from "./nodes/NodesPanel";
+
+// Editor panels
 export { PropertiesPanel } from "./properties/PropertiesPanel";
 export { StylesPanel } from "./styles/StylesPanel";
 export { DataPanel } from "./data/DataPanel";
