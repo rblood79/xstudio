@@ -111,11 +111,32 @@ export const usePageManager = (): UsePageManagerReturn => {
         addElement: (element: Element) => void
     ): Promise<ApiResult<Page>> => {
         try {
+            // Zustand store의 pages를 사용하여 최대 order_num을 찾기
+            const currentPages = useStore.getState().pages;
+
+            console.log('🔍 현재 페이지들:', {
+                pageListItems: pageList.items.length,
+                storePages: currentPages.length,
+                storePagesData: currentPages.map(p => ({ id: p.id, title: p.title, order_num: p.order_num }))
+            });
+
+            // 현재 페이지들의 최대 order_num을 찾아서 +1
+            const maxOrderNum = currentPages.reduce((max, page) =>
+                Math.max(max, page.order_num || 0), -1
+            );
+            const nextOrderNum = maxOrderNum + 1;
+
+            console.log('📊 order_num 계산:', {
+                maxOrderNum,
+                nextOrderNum,
+                pageTitle: `Page ${nextOrderNum + 1}`
+            });
+
             const newPage = await pagesApi.createPage({
                 project_id: projectId,
-                title: `Page ${pageList.items.length + 1}`,
-                slug: `page-${pageList.items.length + 1}`,
-                order_num: pageList.items.length,
+                title: `Page ${nextOrderNum + 1}`,
+                slug: `page-${nextOrderNum + 1}`,
+                order_num: nextOrderNum,
             });
 
             // useListData에 추가
@@ -124,7 +145,6 @@ export const usePageManager = (): UsePageManagerReturn => {
             setCurrentPageId(newPage.id);
 
             // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            const currentPages = useStore.getState().pages;
             setPages([...currentPages, newPage]);
 
             // 새 페이지에 기본 body 요소 생성

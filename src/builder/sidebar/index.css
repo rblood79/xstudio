@@ -2,33 +2,17 @@
   :root {
     --hover-bg: var(--builder-sidebar-hover-bg);
     --sidebar-width: 240px;
-    --sidebar-nav-width: 48px;
+    --panel-nav-width: 48px;
   }
 
-
-
-/* Navigation */
-/*.panel-header {
-    @apply flex flex-row items-center justify-between px-2 border-b border-gray-200;
-  }
-
-  .panel-header button {
-    padding: calc(var(--spacing) * 1.375);
-  }
-
-  .panel-title {
-    @apply text-gray-700 flex-1 p-2 text-sm;
-  }
-    */
-
-.sidebar-nav {
+/* Panel Navigation */
+.panel-nav {
     position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    /* Updated gap to use --element-padding */
     padding: var(--spacing-sm);
-    width: var(--sidebar-nav-width);
+    width: var(--panel-nav-width);
     height: 100%;
     justify-content: space-between;
     background-color: var(--builder-sidebar-nav-bg);
@@ -68,7 +52,7 @@
     }
 }
 
-/* Move the before element based on active button index */
+/* Panel Slot */
 .panel-slot {
     display: flex;
     flex-direction: row;
@@ -77,11 +61,12 @@
 }
 
 /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
-.nodes-panel .sidebar-nav {
+.nodes-panel .panel-nav {
     display: none;
 }
 
-.sidebar-container {
+/* Panel Container */
+.panel-container {
     display: flex;
     flex-direction: row;
     width: auto;
@@ -99,8 +84,13 @@
     overflow-y: auto;
 }
 
-.sidebar-section {
+/* Panel Content */
+.panel-content {
     border-right: 1px solid var(--builder-sidebar-border);
+}
+
+.panel-section {
+    /* border-right: 1px solid var(--builder-sidebar-border); */
 
     &.sidebar-content {
         display: flex;
@@ -110,7 +100,6 @@
     &.components {
         width: var(--sidebar-width);
     }
-
 }
 
 .sidebar-section-title {
@@ -120,6 +109,8 @@
     display: none;
 }
 
+/* Empty States */
+.panel-empty-state,
 .sidebar-empty-state,
 .panel-empty-state {
     display: flex;
@@ -130,6 +121,7 @@
     font-size: var(--text-sm);
 }
 
+/* Element Tree Icons */
 .elementItemIcon {
     display: flex;
     align-items: center;
@@ -147,7 +139,42 @@
     cursor: pointer;
 }
 
-  /*.element[data-has-children="true"].expanded>.elementItem>.elementItemIcon {
-      transform: rotate(90deg);
-  }*/
+/* Backward Compatibility - 기존 sidebar-* 클래스들 유지 */
+.sidebar-nav {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    width: var(--panel-nav-width);
+    height: 100%;
+    justify-content: space-between;
+    background-color: var(--builder-sidebar-nav-bg);
+    border-right: 1px solid var(--builder-sidebar-border);
+}
+
+.sidebar-container {
+    display: flex;
+    flex-direction: row;
+    width: auto;
+}
+
+.sidebar-section {
+    /* border-right: 1px solid var(--builder-sidebar-border); */
+
+    &.sidebar-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &.components {
+        width: var(--sidebar-width);
+    }
+}
+
+/* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
+.nodes-panel .sidebar-nav {
+    display: none;
+}
+
 }

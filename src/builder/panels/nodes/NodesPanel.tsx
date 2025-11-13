@@ -5,7 +5,7 @@
  * 내부적으로 Sidebar의 Nodes 섹션을 재사용
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import Sidebar from "../../sidebar";
@@ -23,8 +23,16 @@ export function NodesPanel({ isActive }: PanelProps) {
   const addElement = useStore((state) => state.addElement);
 
   // Hooks
-  const { pageList, addPage, fetchElements } = usePageManager();
+  const { pageList, addPage, fetchElements, initializeProject } = usePageManager();
   const { handleAddElement } = useElementCreator();
+
+  // 프로젝트 초기화 - pages가 비어있으면 초기화
+  useEffect(() => {
+    if (projectId && pages.length === 0 && isActive) {
+      console.log('🔄 NodesPanel: 프로젝트 초기화 시작', projectId);
+      initializeProject(projectId);
+    }
+  }, [projectId, pages.length, isActive, initializeProject]);
 
   // addPage wrapper
   const handleAddPage = useCallback(async () => {
@@ -52,7 +60,7 @@ export function NodesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="nodes-panel sidebar-section">
+    <div className="nodes-panel panel-section">
       <Sidebar
         pages={pages}
         pageList={pageList}

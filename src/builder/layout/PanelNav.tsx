@@ -35,7 +35,7 @@ export function PanelNav({
   onClose,
 }: PanelNavProps) {
   return (
-    <nav className="sidebar-nav">
+    <nav className="panel-nav">
       <ul className="nav-list">
         {panelIds.map((panelId) => {
           const panelConfig = PanelRegistry.getPanel(panelId);

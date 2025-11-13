@@ -401,7 +401,7 @@
         }
 
         .panel-content {
-          padding: calc(var(--spacing-sm));
+          padding: 0;
 
           display: flex;
           flex-direction: column;

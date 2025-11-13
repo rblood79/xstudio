@@ -9,7 +9,7 @@
     /* ==================== Builder-Specific Sizes ==================== */
     --sizes-inspectorWidth: 320px;
     --sidebar-width: 240px;
-    --sidebar-nav-width: 48px;
+    --panel-nav-width: 48px;
 
     /* Inspector control sizes */
     --inspector-control-size: 27px;
