@@ -1,5 +1,5 @@
 import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -25,7 +25,9 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -33,10 +35,10 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                 onChange={updateCustomId}
                 placeholder="daterangepicker_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -65,11 +67,10 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                     onChange={(value) => updateProp('placeholder', value || undefined)}
                     placeholder="Select date range"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertyInput
                     label="Timezone"
@@ -113,11 +114,10 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Options Section */}
-            <fieldset className="properties-group">
-                <legend>Options</legend>
+            <PropertySection title="Options">
 
                 <PropertySwitch
                     label="Show Week Numbers"
@@ -139,11 +139,10 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                     onChange={(checked) => updateProp('allowClear', checked)}
                     icon={Type}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -165,11 +164,10 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -194,8 +192,8 @@ export function DateRangePickerEditor({ elementId, currentProps, onUpdate }: Pro
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }
 

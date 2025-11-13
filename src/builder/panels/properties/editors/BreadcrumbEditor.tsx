@@ -1,5 +1,5 @@
 import { Tag, Link, PointerOff, Type, Hash, CheckCircle } from 'lucide-react';
-import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect } from '../../common';
+import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -25,7 +25,9 @@ export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: Property
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -33,10 +35,10 @@ export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: Property
                 onChange={updateCustomId}
                 placeholder="breadcrumb_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.TEXT}
@@ -52,11 +54,10 @@ export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: Property
                     placeholder="/"
                     icon={Link}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.TARGET}
@@ -93,11 +94,10 @@ export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: Property
                     onChange={(checked) => updateProp('isCurrent', checked)}
                     icon={CheckCircle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -138,7 +138,7 @@ export function BreadcrumbEditor({ elementId, currentProps, onUpdate }: Property
                     ]}
                     icon={CheckCircle}
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

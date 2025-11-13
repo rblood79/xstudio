@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary, Type, Hash, FormInput, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -60,9 +60,8 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
         if (!currentItem) return null;
 
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
-                    <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_PROPERTIES}</legend>
+        <>
+                <PropertySection title="{PROPERTY_LABELS.ITEM_PROPERTIES}">
 
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
@@ -149,7 +148,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             {PROPERTY_LABELS.DELETE_THIS_ITEM}
                         </button>
                     </div>
-                </fieldset>
+                </PropertySection>
 
                 {/* 아이템 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -166,7 +165,9 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
 
     // GridList 컴포넌트 전체 설정 UI
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -174,10 +175,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={updateCustomId}
                 placeholder="gridlist_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -199,11 +200,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(value) => updateProp('errorMessage', value || undefined)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -240,11 +240,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -273,11 +272,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('renderEmptyState', checked)}
                     icon={Square}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -296,11 +294,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         { value: 'aria', label: 'ARIA' }
                     ]}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -325,11 +322,10 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Item Management Section */}
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -367,7 +363,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         {PROPERTY_LABELS.ADD_ITEM}
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

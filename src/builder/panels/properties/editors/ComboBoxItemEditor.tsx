@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput } from '../../components/PropertyInput';
 import { PropertySwitch } from '../../components/PropertySwitch';
-import { PropertyCustomId } from '../../common';
+import { PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -64,7 +64,9 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -72,10 +74,10 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                 onChange={updateCustomId}
                 placeholder="comboboxitem_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -104,11 +106,10 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                     onChange={(value) => handlePropertyChange('textValue', value || undefined)}
                     icon={Binary}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -116,11 +117,10 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                     onChange={(checked) => handlePropertyChange('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -145,7 +145,7 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

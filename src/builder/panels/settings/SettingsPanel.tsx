@@ -5,7 +5,6 @@
  * Builder 설정, 테마, 저장 모드 등 시스템 설정 제공
  */
 
-import "./index.css";
 import React from "react";
 import {
   Eye,
@@ -20,7 +19,6 @@ import {
   Save,
   Moon,
   Sun,
-  ChevronUp,
 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
@@ -28,10 +26,14 @@ import type { PanelProps } from "../core/types";
 import { useStore } from "../../stores";
 import { useUnifiedThemeStore } from "../../../stores/themeStore";
 import { saveService } from "../../../services/save";
-import { PropertySwitch, PropertySelect, PropertySlider } from "../common";
+import {
+  PropertySwitch,
+  PropertySelect,
+  PropertySlider,
+  PropertySection,
+} from "../common";
 import { useThemes } from "../../../hooks/theme/useThemes";
 import { ThemeService } from "../../../services/theme";
-import { iconProps } from "../../../utils/ui/uiConstants";
 
 function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -166,201 +168,119 @@ function SettingsContent() {
   return (
     <div className="panel-settings">
       {/* Save Mode Section */}
+      <PropertySection title="Save Mode">
+        <PropertySwitch
+          label="Auto Save"
+          isSelected={isRealtimeMode}
+          onChange={handleRealtimeModeChange}
+          icon={Save}
+        />
 
-      <div className="section">
-        <div className="section-header">
-          <div className="section-title">Save Mode</div>
-          <div className="header-actions">
-            <button className="iconButton">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
-          <div className="component-props">
-            <PropertySwitch
-              label="Auto Save"
-              isSelected={isRealtimeMode}
-              onChange={handleRealtimeModeChange}
-              icon={Save}
-            />
-
-            <Button
-              onPress={handleSave}
-              isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
-              className="save-button"
-            >
-              <Save size={16} strokeWidth={1.5} />
-              {isSaving
-                ? "Saving..."
-                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-            </Button>
-          </div>
-        </div>
-      </div>
+        <Button
+          onPress={handleSave}
+          isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
+          className="save-button"
+        >
+          {isSaving
+            ? "Saving..."
+            : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+        </Button>
+      </PropertySection>
 
       {/* Preview & Overlay Section */}
-      <div className="section">
-        <div className="section-header">
-          <div className="section-title">Preview & Overlay</div>
-          <div className="header-actions">
-            <button className="iconButton">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
-          <div className="component-props">
-            <PropertySwitch
-              label="Show Selection Overlay"
-              isSelected={showOverlay}
-              onChange={setShowOverlay}
-              icon={Eye}
-            />
-          </div>
-        </div>
-      </div>
+      <PropertySection title="Preview & Overlay">
+        <PropertySwitch
+          label="Show Selection Overlay"
+          isSelected={showOverlay}
+          onChange={setShowOverlay}
+          icon={Eye}
+        />
+      </PropertySection>
 
       {/* Grid & Guides Section */}
-      <div className="section">
-        <div className="section-header">
-          <div className="section-title">Grid & Guides</div>
-          <div className="header-actions">
-            <button className="iconButton">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
-          <div className="component-props">
-            <PropertySwitch
-              label="Show Grid"
-              isSelected={showGrid}
-              onChange={setShowGrid}
-              icon={Grid3x3}
-            />
+      <PropertySection title="Grid & Guides">
+        <PropertySwitch
+          label="Show Grid"
+          isSelected={showGrid}
+          onChange={setShowGrid}
+          icon={Grid3x3}
+        />
 
-            <PropertySwitch
-              label="Snap to Grid"
-              isSelected={snapToGrid}
-              onChange={setSnapToGrid}
-              icon={Magnet}
-            />
+        <PropertySwitch
+          label="Snap to Grid"
+          isSelected={snapToGrid}
+          onChange={setSnapToGrid}
+          icon={Magnet}
+        />
 
-            <PropertySelect
-              label="Grid Size"
-              value={String(gridSize)}
-              onChange={handleGridSizeChange}
-              options={gridSizeOptions}
-              icon={Ruler}
-            />
-          </div>
-        </div>
-      </div>
+        <PropertySelect
+          label="Grid Size"
+          value={String(gridSize)}
+          onChange={handleGridSizeChange}
+          options={gridSizeOptions}
+          icon={Ruler}
+        />
+      </PropertySection>
 
       {/* Element Visualization Section */}
-      <div className="section">
-        <div className="section-header">
-          <div className="section-title">Element Visualization</div>
-          <div className="header-actions">
-            <button className="iconButton">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
-          <div className="component-props">
-            <PropertySwitch
-              label="Show Element Borders"
-              isSelected={showElementBorders}
-              onChange={setShowElementBorders}
-              icon={Square}
-            />
+      <PropertySection title="Element Visualization">
+        <PropertySwitch
+          label="Show Element Borders"
+          isSelected={showElementBorders}
+          onChange={setShowElementBorders}
+          icon={Square}
+        />
 
-            <PropertySwitch
-              label="Show Element Labels"
-              isSelected={showElementLabels}
-              onChange={setShowElementLabels}
-              icon={Tag}
-            />
+        <PropertySwitch
+          label="Show Element Labels"
+          isSelected={showElementLabels}
+          onChange={setShowElementLabels}
+          icon={Tag}
+        />
 
-            <PropertySlider
-              label="Overlay Opacity"
-              value={overlayOpacity}
-              onChange={setOverlayOpacity}
-              min={0}
-              max={100}
-              step={5}
-              icon={Percent}
-            />
-          </div>
-        </div>
-      </div>
+        <PropertySlider
+          label="Overlay Opacity"
+          value={overlayOpacity}
+          onChange={setOverlayOpacity}
+          min={0}
+          max={100}
+          step={5}
+          icon={Percent}
+        />
+      </PropertySection>
 
       {/* Theme Settings Section */}
-      <div className="section">
-        <div className="section-header">
-          <div className="section-title">Theme & Appearance</div>
-          <div className="header-actions">
-            <button className="iconButton">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
-          <div className="component-props">
-            {/* Theme Select */}
-            {projectId && themes.length > 0 && (
-              <PropertySelect
-                label="Theme Select"
-                value={activeTheme?.id || ""}
-                onChange={handleThemeChange}
-                options={themes.map((theme) => ({
-                  value: theme.id,
-                  label: theme.name,
-                }))}
-                icon={Palette}
-              />
-            )}
+      <PropertySection title="Theme & Appearance">
+        {/* Theme Select */}
+        {projectId && themes.length > 0 && (
+          <PropertySelect
+            label="Theme Select"
+            value={activeTheme?.id || ""}
+            onChange={handleThemeChange}
+            options={themes.map((theme) => ({
+              value: theme.id,
+              label: theme.name,
+            }))}
+            icon={Palette}
+          />
+        )}
 
-            <PropertySelect
-              label="Theme Mode"
-              value={themeMode}
-              onChange={handleThemeModeChange}
-              options={themeModeOptions}
-              icon={getThemeModeIcon()}
-            />
+        <PropertySelect
+          label="Theme Mode"
+          value={themeMode}
+          onChange={handleThemeModeChange}
+          options={themeModeOptions}
+          icon={getThemeModeIcon()}
+        />
 
-            <PropertySelect
-              label="UI Scale"
-              value={String(uiScale)}
-              onChange={handleUiScaleChange}
-              options={uiScaleOptions}
-              icon={ZoomIn}
-            />
-          </div>
-        </div>
-      </div>
+        <PropertySelect
+          label="UI Scale"
+          value={String(uiScale)}
+          onChange={handleUiScaleChange}
+          options={uiScaleOptions}
+          icon={ZoomIn}
+        />
+      </PropertySection>
     </div>
   );
 }

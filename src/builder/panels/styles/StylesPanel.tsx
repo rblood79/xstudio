@@ -5,7 +5,7 @@
  * 복잡한 스타일 편집 로직을 직접 포함 (이전 StyleSection 통합)
  */
 
-import "../../panels/common/styles.css";
+import "../../inspector/index.css";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components";
@@ -208,7 +208,7 @@ export function StylesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="inspector styles-panel">
+    <div className="styles-panel">
       <div className="style-section">
         <div className="section-header">
           <h3 className="section-title">Transform</h3>

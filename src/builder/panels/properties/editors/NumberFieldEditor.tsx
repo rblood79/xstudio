@@ -2,7 +2,7 @@ import {
     Tag, Hash, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick, Globe, Hash as HashIcon
 } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -41,7 +41,9 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
     const formatOptions = currentProps.formatOptions || {};
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -49,10 +51,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                 onChange={updateCustomId}
                 placeholder="numberfield_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -82,11 +84,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(value) => updateProp('description', value)}
                     icon={FileText}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Internationalization Section */}
-            <fieldset className="properties-group">
-                <legend>Internationalization</legend>
+            <PropertySection title="Internationalization">
 
                 <PropertyInput
                     label="Locale"
@@ -165,11 +166,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('showGroupSeparator', checked)}
                     icon={Hash}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Number Format Section (Legacy formatOptions) */}
-            <fieldset className="properties-group">
-                <legend>Advanced Format Options</legend>
+            <PropertySection title="Advanced Format Options">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.MIN_FRACTION_DIGITS}
@@ -186,11 +186,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={Hash}
                     placeholder="3"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Validation Section */}
-            <fieldset className="properties-group">
-                <legend>Validation</legend>
+            <PropertySection title="Validation">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
@@ -229,11 +228,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
@@ -262,11 +260,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isWheelDisabled', checked)}
                     icon={MousePointerClick}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -283,11 +280,10 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={FileText}
                     placeholder="form-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -328,7 +324,7 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={ArrowDown}
                     placeholder="Decrement"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

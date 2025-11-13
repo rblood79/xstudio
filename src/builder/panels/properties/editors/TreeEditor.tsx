@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -99,7 +99,9 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -107,10 +109,10 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 onChange={updateCustomId}
                 placeholder="tree_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -125,11 +127,10 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('description', value || undefined)}
                     icon={FileText}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -193,11 +194,10 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     }}
                     placeholder="item1"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -212,11 +212,10 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -241,11 +240,10 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Tree Items Section */}
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TREE_ITEMS}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TREE_ITEMS}">
 
                 <div className='tree-overview'>
                     <p className='tree-overview-text'>
@@ -266,7 +264,7 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         Add TreeItem
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

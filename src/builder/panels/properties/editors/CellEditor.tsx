@@ -1,5 +1,5 @@
 
-import { PropertyInput, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import type { CellElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
@@ -42,17 +42,19 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     };
 
     return (
-        <div className="component-props">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="cell_1"
-            />
+        <>
+            {/* Basic */}
+            <PropertySection title="Basic">
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="cell_1"
+                />
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.CELL_CONTENT}</legend>
+            <PropertySection title={PROPERTY_LABELS.CELL_CONTENT}>
 
                 {/* Cell Content */}
                 <PropertyInput
@@ -62,10 +64,9 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     placeholder="Enter cell content"
                     icon={Type}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TEXT_ALIGNMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TEXT_ALIGNMENT}">
 
                 {/* Text Alignment */}
                 <PropertySelect
@@ -92,10 +93,9 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(key) => updateProps({ verticalAlign: key as 'top' | 'middle' | 'bottom' })}
                     icon={Grid}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.STYLING}</legend>
+            <PropertySection title="{PROPERTY_LABELS.STYLING}">
 
                 {/* Background Color */}
                 <PropertyInput
@@ -114,7 +114,7 @@ export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProps({ color: value })}
                     icon={Palette}
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

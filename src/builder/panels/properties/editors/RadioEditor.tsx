@@ -1,5 +1,5 @@
 import { Tag, PointerOff, CheckCheck, PenOff, Binary, Focus, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -32,7 +32,9 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -40,10 +42,10 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 onChange={updateCustomId}
                 placeholder="radio_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -58,11 +60,10 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(value) => updateProp('value', value)}
                     icon={Binary}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.SELECTED}
@@ -70,11 +71,10 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(checked) => updateProp('isSelected', checked)}
                     icon={CheckCheck}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
@@ -96,11 +96,10 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -125,13 +124,13 @@ export function RadioEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {isChildOfRadioGroup && (
                 <p style={{ fontSize: '12px', color: 'var(--text-color-secondary)', marginTop: '8px' }}>
                     💡 Variant and size are controlled by the parent RadioGroup
                 </p>
             )}
-        </div>
+        </>
     );
 }

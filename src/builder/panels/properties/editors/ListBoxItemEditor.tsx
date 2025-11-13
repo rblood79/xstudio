@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Tag, Binary, PointerOff, SquarePlus, Database, FileText, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -43,8 +43,8 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
     // Field 자식이 있으면 Field 관리 UI
     if (hasFieldChildren) {
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
+        <>
+                <div className="properties-aria">
                     <legend className="fieldset-legend">
                         <Database size={16} /> Field Management
                     </legend>
@@ -126,14 +126,17 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                             Add Field
                         </button>
                     </div>
-                </fieldset>
+                </PropertySection>
             </div>
         );
     }
 
     // Field 자식이 없으면 기존 정적 아이템 편집 UI
     return (
-        <div className="component-props">
+        <>
+            {/* Basic */}
+            <PropertySection title="Basic">
+<>
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -141,17 +144,16 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                 onChange={updateCustomId}
                 placeholder="listboxitem_1"
             />
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className="fieldset-legend">Static Item Properties</legend>
+            <PropertySection title="Static Item Properties">
                 <p className="tab-overview-help">
                     💡 This is a static ListBoxItem. Add Field elements to enable dynamic data rendering.
                 </p>
-            </fieldset>
+            </PropertySection>
 
             {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -180,11 +182,10 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(value) => updateProp('textValue', value || undefined)}
                     icon={Binary}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -192,11 +193,10 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -221,10 +221,10 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Add Field Option */}
-            <fieldset className="properties-aria">
+            <div className="properties-aria">
                 <legend className="fieldset-legend">
                     <Database size={16} /> Convert to Dynamic Item
                 </legend>
@@ -272,8 +272,8 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                         />
                         Add First Field
                     </button>
-                </div>
-            </fieldset>
-        </div>
+                </>
+            </PropertySection>
+        </>
     );
 }

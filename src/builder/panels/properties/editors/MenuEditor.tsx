@@ -1,5 +1,5 @@
 import { Tag, PointerOff, Focus, SquareX, Menu, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -32,7 +32,9 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -40,10 +42,10 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 onChange={updateCustomId}
                 placeholder="menu_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -51,11 +53,10 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -91,11 +92,10 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     }}
                     placeholder="item1"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -110,11 +110,10 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -139,7 +138,7 @@ export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

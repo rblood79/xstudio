@@ -1,5 +1,5 @@
 import { Paintbrush, Palette, PointerOff, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -26,7 +26,9 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,10 +36,10 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
                 onChange={updateCustomId}
                 placeholder="tailswatch_1"
             />
+      </PropertySection>
 
-            {/* Color Section */}
-            <fieldset className="properties-group">
-                <legend>Color Value</legend>
+      {/* Color Section */}
+            <PropertySection title="Color Value">
 
                 <PropertyColorPicker
                     label="Color"
@@ -53,11 +55,10 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Palette}
                     placeholder="#3b82f6"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Color Space Section */}
-            <fieldset className="properties-design">
-                <legend>Color Space</legend>
+            <PropertySection title="Color Space">
 
                 <PropertySelect
                     label="Color Space"
@@ -70,11 +71,10 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
                     ]}
                     icon={Palette}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -82,11 +82,10 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -111,7 +110,7 @@ export function TailSwatchEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

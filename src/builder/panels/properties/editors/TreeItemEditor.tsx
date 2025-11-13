@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Tag, Binary, PointerOff, FileText, Link2, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -84,7 +84,9 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -92,10 +94,10 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={updateCustomId}
                 placeholder="treeitem_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.TITLE}
@@ -125,11 +127,10 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Link2}
                     placeholder="https://example.com"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -137,11 +138,10 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -166,11 +166,10 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Child TreeItems Section */}
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Child TreeItems</legend>
+            <PropertySection title="Child TreeItems">
 
                 <div className='tree-item-overview'>
                     <p className='tree-item-overview-text'>
@@ -191,7 +190,7 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         Add Child TreeItem
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

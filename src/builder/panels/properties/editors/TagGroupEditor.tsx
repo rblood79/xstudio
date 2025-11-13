@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -55,8 +55,8 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
         if (!currentTag) return null;
 
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
+        <>
+                <div className="properties-aria">
                     <PropertyInput
                         label={PROPERTY_LABELS.TEXT}
                         value={String((currentTag.props as Record<string, unknown>).children || '')}
@@ -110,7 +110,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             Delete Tag
                         </button>
                     </div>
-                </fieldset>
+                </PropertySection>
 
                 <div className='tab-actions'>
                     <button
@@ -125,7 +125,9 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
     }
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -133,10 +135,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={updateCustomId}
                 placeholder="taggroup_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -158,11 +160,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -188,11 +189,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     ]}
                     icon={PencilRuler}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.SELECTION_MODE}
@@ -237,11 +237,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -270,11 +269,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('allowsCustomValue', checked)}
                     icon={PenOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -283,11 +281,10 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={FormInput}
                     placeholder="tag-group-name"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -312,10 +309,9 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TAG_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TAG_MANAGEMENT}">
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -396,7 +392,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         Add Tag
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

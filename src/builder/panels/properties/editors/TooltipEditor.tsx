@@ -1,5 +1,5 @@
 import { MessageSquare, Move, MapPin } from "lucide-react";
-import { PropertyInput, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
@@ -26,7 +26,9 @@ export function TooltipEditor({ elementId, currentProps, onUpdate }: PropertyEdi
   };
 
   return (
-    <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
       <PropertyCustomId
         label="ID"
         value={customId}
@@ -34,10 +36,10 @@ export function TooltipEditor({ elementId, currentProps, onUpdate }: PropertyEdi
         onChange={updateCustomId}
         placeholder="tooltip_1"
       />
+      </PropertySection>
 
       {/* Content Section */}
-      <fieldset className="properties-group">
-        <legend>Content</legend>
+      <PropertySection title="Content">
 
         <PropertyInput
           label={PROPERTY_LABELS.TEXT}
@@ -45,11 +47,10 @@ export function TooltipEditor({ elementId, currentProps, onUpdate }: PropertyEdi
           onChange={(value) => updateProp("children", value)}
           icon={MessageSquare}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Position Section */}
-      <fieldset className="properties-group">
-        <legend>Position</legend>
+      <PropertySection title="Position">
 
         <PropertySelect
           label={PROPERTY_LABELS.PLACEMENT}
@@ -73,7 +74,7 @@ export function TooltipEditor({ elementId, currentProps, onUpdate }: PropertyEdi
           icon={Move}
           placeholder="0"
         />
-      </fieldset>
-    </div>
-  );
+      </PropertySection>
+    </>
+    );
 }

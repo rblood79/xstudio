@@ -26,7 +26,10 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
     };
 
     return (
-        <div className="component-props">
+        <>
+            {/* Basic */}
+            <PropertySection title="Basic">
+<>
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,9 +37,10 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                 onChange={updateCustomId}
                 placeholder="columngroup_1"
             />
+            </PropertySection>
 
             {/* 첫 번째 그룹: 기본 속성 */}
-            <fieldset className="component-fieldset">
+            <div className="component-fieldset">
                 <legend className="component-legend">
                     <Grid className="legend-icon" />
                     {PROPERTY_LABELS.COLUMN_GROUP_PROPERTIES}
@@ -56,10 +60,10 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(span) => updateGroupProps({ span: parseInt(span) || 2 })}
                     type="number"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* 두 번째 그룹: 스타일 및 정렬 */}
-            <fieldset className="component-fieldset">
+            <div className="component-fieldset">
                 <legend className="component-legend">
                     <Settings className="legend-icon" />
                     {PROPERTY_LABELS.STYLE_AND_ALIGNMENT}
@@ -88,10 +92,10 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     ]}
                     onChange={(variant) => updateGroupProps({ variant: variant as 'default' | 'primary' | 'secondary' })}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* 세 번째 그룹: 고급 설정 */}
-            <fieldset className="component-fieldset">
+            <div className="component-fieldset">
                 <legend className="component-legend">
                     <Pin className="legend-icon" />
                     {PROPERTY_LABELS.ADVANCED_SETTINGS}
@@ -108,8 +112,8 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     <span className="help-text">
                         💡 Column Group visually groups related columns for clearer table structure.
                     </span>
-                </div>
-            </fieldset>
-        </div>
+                </>
+            </PropertySection>
+        </>
     );
 }

@@ -1,5 +1,5 @@
 import { Type, FileText, Layout, EyeOff, PointerOff, PencilRuler, Image, Link as LinkIcon, ArrowUpDown, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -25,19 +25,20 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     };
 
     return (
-        <div className="component-props">
+        <>
             {/* Basic */}
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="card_1"
-            />
+            <PropertySection title="Basic">
+                <PropertyCustomId
+                    label="ID"
+                    value={customId}
+                    elementId={elementId}
+                    onChange={updateCustomId}
+                    placeholder="card_1"
+                />
+            </PropertySection>
 
             {/* Content - Headings */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label="Heading"
@@ -79,11 +80,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={FileText}
                     placeholder="Footer text"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design - Variant & Size */}
-            <fieldset className="properties-group">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -124,11 +124,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     ]}
                     icon={ArrowUpDown}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Asset & Preview */}
-            <fieldset className="properties-group">
-                <legend>Asset & Media</legend>
+            <PropertySection title="Asset & Media">
 
                 <PropertySelect
                     label="Asset Type"
@@ -164,11 +163,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         placeholder="https://example.com/preview.jpg"
                     />
                 )}
-            </fieldset>
+            </PropertySection>
 
             {/* Interactions */}
-            <fieldset className="properties-group">
-                <legend>Interactions</legend>
+            <PropertySection title="Interactions">
 
                 <PropertyInput
                     label="Link (href)"
@@ -206,11 +204,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         icon={CheckSquare}
                     />
                 )}
-            </fieldset>
+            </PropertySection>
 
             {/* States */}
-            <fieldset className="properties-group">
-                <legend>States</legend>
+            <PropertySection title="States">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.IS_QUIET}
@@ -225,12 +222,10 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
-
+            <PropertySection title="Accessibility">
                 <PropertyInput
                     label="ARIA Label"
                     value={String(currentProps['aria-label'] || '')}
@@ -244,7 +239,7 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(value) => updateProp('aria-describedby', value)}
                     placeholder="description-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

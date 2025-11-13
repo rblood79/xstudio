@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -57,8 +57,8 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         if (!currentOption) return null;
 
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
+        <>
+                <div className="properties-aria">
 
 
                     {/* 옵션 라벨 편집 */}
@@ -131,7 +131,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             Delete This Item
                         </button>
                     </div>
-                </fieldset>
+                </PropertySection>
 
                 {/* 옵션 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -148,7 +148,9 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
     // Select 컴포넌트 전체 설정 UI
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -156,10 +158,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 onChange={updateCustomId}
                 placeholder="select_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -188,11 +190,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(value) => updateProp('placeholder', value || undefined)}
                     icon={SpellCheck2}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.VALUE}
@@ -221,11 +222,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -258,11 +258,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     ]}
                     icon={Menu}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -281,11 +280,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         { value: 'aria', label: 'ARIA' }
                     ]}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -310,11 +308,10 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Item Management Section */}
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -353,7 +350,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         Add Item
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { SquarePlus, PointerOff, Tag, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -52,8 +52,8 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
         const breadcrumbProps = currentBreadcrumb.props as Record<string, unknown>;
 
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
+        <>
+                <div className="properties-aria">
                     <PropertyInput
                         label={PROPERTY_LABELS.TEXT}
                         value={String(breadcrumbProps.children || '')}
@@ -79,7 +79,7 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                         }}
                         placeholder="/"
                     />
-                </fieldset>
+                </PropertySection>
 
                 <div className='tab-actions'>
                     <button
@@ -95,7 +95,9 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
 
     // Breadcrumbs 전체 설정 모드
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -103,10 +105,10 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                 onChange={updateCustomId}
                 placeholder="breadcrumbs_1"
             />
+      </PropertySection>
 
-            {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+      {/* Behavior Section */}
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -114,11 +116,10 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -143,10 +144,9 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Breadcrumb Management</legend>
+            <PropertySection title="Breadcrumb Management">
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -219,7 +219,7 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                         Add Breadcrumb
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

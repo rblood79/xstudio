@@ -1,5 +1,5 @@
 import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Clock, Globe, Focus, FileText, Type, Hash, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -26,7 +26,9 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,10 +36,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                 onChange={updateCustomId}
                 placeholder="datepicker_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -66,11 +68,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     onChange={(value) => updateProp('placeholderValue', value || undefined)}
                     placeholder="YYYY-MM-DD"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertyInput
                     label="Timezone"
@@ -121,11 +122,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -153,11 +153,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     isSelected={currentProps.shouldCloseOnSelect !== false}
                     onChange={(checked) => updateProp('shouldCloseOnSelect', checked)}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.GRANULARITY}
@@ -225,11 +224,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     ]}
                     icon={CalendarDays}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -264,11 +262,10 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                         { value: 'aria', label: 'ARIA' }
                     ]}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -293,7 +290,7 @@ export function DatePickerEditor({ elementId, currentProps, onUpdate }: Property
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

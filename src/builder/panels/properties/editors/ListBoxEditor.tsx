@@ -15,7 +15,7 @@ import {
   FormInput,
   CheckSquare,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -77,8 +77,8 @@ export function ListBoxEditor({
     if (!currentItem) return null;
 
     return (
-      <div className="component-props">
-        <fieldset className="properties-aria">
+        <>
+        <div className="properties-aria">
           {/* 아이템 라벨 편집 */}
           <PropertyInput
             label={PROPERTY_LABELS.LABEL}
@@ -144,7 +144,7 @@ export function ListBoxEditor({
               Delete This Item
             </button>
           </div>
-        </fieldset>
+        </PropertySection>
 
         {/* 아이템 편집 모드 종료 버튼 */}
         <div className="tab-actions">
@@ -161,7 +161,9 @@ export function ListBoxEditor({
 
   // ListBox 컴포넌트 전체 설정 UI
   return (
-    <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
       <PropertyCustomId
         label="ID"
         value={customId}
@@ -169,10 +171,10 @@ export function ListBoxEditor({
         onChange={updateCustomId}
         placeholder="listbox_1"
       />
+      </PropertySection>
 
       {/* Content Section */}
-      <fieldset className="properties-group">
-        <legend>Content</legend>
+      <PropertySection title="Content">
 
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
@@ -194,11 +196,10 @@ export function ListBoxEditor({
           onChange={(value) => updateProp("errorMessage", value || undefined)}
           icon={AlertTriangle}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* State Section */}
-      <fieldset className="properties-group">
-        <legend>State</legend>
+      <PropertySection title="State">
 
         <PropertySelect
           label={PROPERTY_LABELS.SELECTION_MODE}
@@ -227,11 +228,10 @@ export function ListBoxEditor({
           onChange={(checked) => updateProp("isRequired", checked)}
           icon={CheckSquare}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Behavior Section */}
-      <fieldset className="properties-group">
-        <legend>Behavior</legend>
+      <PropertySection title="Behavior">
 
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
@@ -246,11 +246,10 @@ export function ListBoxEditor({
           onChange={(checked) => updateProp("autoFocus", checked)}
           icon={Focus}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Form Integration Section */}
-      <fieldset className="properties-group">
-        <legend>Form Integration</legend>
+      <PropertySection title="Form Integration">
 
         <PropertyInput
           label={PROPERTY_LABELS.NAME}
@@ -269,11 +268,10 @@ export function ListBoxEditor({
             { value: "aria", label: "ARIA" },
           ]}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Accessibility Section */}
-      <fieldset className="properties-group">
-        <legend>Accessibility</legend>
+      <PropertySection title="Accessibility">
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
@@ -298,11 +296,10 @@ export function ListBoxEditor({
           icon={Hash}
           placeholder="description-element-id"
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Item Management Section */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">{PROPERTY_LABELS.ITEM_MANAGEMENT}</legend>
+      <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
 
         <div className="tab-overview">
           <p className="tab-overview-text">
@@ -347,7 +344,7 @@ export function ListBoxEditor({
             Add Item
           </button>
         </div>
-      </fieldset>
-    </div>
-  );
+      </PropertySection>
+    </>
+    );
 }

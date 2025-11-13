@@ -61,8 +61,7 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_BODY_PROPERTIES}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TABLE_BODY_PROPERTIES}">
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -108,10 +107,9 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
                     onChange={(key) => updateProps({ selectable: key === 'true' })}
                     icon={Grid}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>Row Overview</legend>
+            <PropertySection title="Row Overview">
 
                 {/* 행 목록 */}
                 {rows.length > 0 && (
@@ -142,7 +140,7 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
                         </p>
                     </div>
                 )}
-            </fieldset>
+            </PropertySection>
         </div>
     );
 }

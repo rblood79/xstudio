@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { AppWindow, Plus, Ratio, PointerOff, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -136,7 +136,9 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
 
     // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -144,10 +146,10 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 onChange={updateCustomId}
                 placeholder="tabs_1"
             />
+      </PropertySection>
 
-            {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+      {/* State Section */}
+            <PropertySection title="State">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.DEFAULT_TAB}
@@ -160,11 +162,10 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     }))}
                     icon={AppWindow}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -172,11 +173,10 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.ORIENTATION}
@@ -185,11 +185,10 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     options={ORIENTATIONS}
                     icon={Ratio}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -214,11 +213,10 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Tab Management Section */}
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TAB_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TAB_MANAGEMENT}">
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>
@@ -239,8 +237,8 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                         {PROPERTY_LABELS.ADD_TAB}
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }
 

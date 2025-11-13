@@ -1,5 +1,5 @@
 import { Minus, PencilRuler, Layout, Type } from 'lucide-react';
-import { PropertySelect, PropertyCustomId, PropertyInput } from '../../common';
+import { PropertySelect, PropertyCustomId, PropertyInput , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -26,7 +26,9 @@ export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyE
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,10 +36,10 @@ export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyE
                 onChange={updateCustomId}
                 placeholder="separator_1"
             />
+      </PropertySection>
 
-            {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+      {/* Design Section */}
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -73,11 +75,10 @@ export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyE
                     ]}
                     icon={Minus}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -86,8 +87,8 @@ export function SeparatorEditor({ elementId, currentProps, onUpdate }: PropertyE
                     icon={Type}
                     placeholder="Section divider (optional)"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }
 

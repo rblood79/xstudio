@@ -170,8 +170,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}</legend>
+            <PropertySection title="{PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}">
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -217,10 +216,9 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(key) => updateProps({ sticky: key === 'true' })}
                     icon={Pin}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.COLUMN_MANAGEMENT}">
 
                 {/* 컬럼 개수 표시 */}
                 <div className='tab-overview'>
@@ -326,7 +324,7 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                         </button>
                     )}
                 </div>
-            </fieldset>
+            </PropertySection>
         </div>
     );
 }

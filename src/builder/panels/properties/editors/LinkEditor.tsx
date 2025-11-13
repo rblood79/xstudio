@@ -1,6 +1,6 @@
 import { Type, Link as LinkIcon, ExternalLink, Parentheses, PointerOff, Eye, Hash } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
@@ -25,7 +25,9 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -33,10 +35,10 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 onChange={updateCustomId}
                 placeholder="link_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.TEXT}
@@ -53,11 +55,10 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={LinkIcon}
                     placeholder="https://example.com"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -87,11 +88,10 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     ]}
                     icon={Parentheses}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label="External Link"
@@ -113,11 +113,10 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -142,8 +141,8 @@ export function LinkEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }
 

@@ -1,5 +1,5 @@
 import { Minus, Type, Hash } from "lucide-react";
-import { PropertyInput, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
@@ -26,7 +26,9 @@ export function ToolbarEditor({ elementId, currentProps, onUpdate }: PropertyEdi
   };
 
   return (
-    <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
       <PropertyCustomId
         label="ID"
         value={customId}
@@ -34,10 +36,10 @@ export function ToolbarEditor({ elementId, currentProps, onUpdate }: PropertyEdi
         onChange={updateCustomId}
         placeholder="toolbar_1"
       />
+      </PropertySection>
 
       {/* Design Section */}
-      <fieldset className="properties-design">
-        <legend>Design</legend>
+      <PropertySection title="Design">
 
         <PropertySelect
           label={PROPERTY_LABELS.ORIENTATION}
@@ -49,11 +51,10 @@ export function ToolbarEditor({ elementId, currentProps, onUpdate }: PropertyEdi
           ]}
           icon={Minus}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Accessibility Section */}
-      <fieldset className="properties-group">
-        <legend>Accessibility</legend>
+      <PropertySection title="Accessibility">
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
@@ -78,7 +79,7 @@ export function ToolbarEditor({ elementId, currentProps, onUpdate }: PropertyEdi
           icon={Hash}
           placeholder="description-element-id"
         />
-      </fieldset>
-    </div>
-  );
+      </PropertySection>
+    </>
+    );
 }

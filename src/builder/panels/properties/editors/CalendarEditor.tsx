@@ -1,5 +1,5 @@
 import { Calendar, PointerOff, PenOff, AlertTriangle, Focus, Type, Hash, Globe, CalendarDays } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -26,7 +26,9 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,10 +36,10 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={updateCustomId}
                 placeholder="calendar_1"
             />
+      </PropertySection>
 
-            {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+      {/* State Section */}
+            <PropertySection title="State">
 
                 <PropertyInput
                     label="Timezone"
@@ -88,11 +90,10 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -114,11 +115,10 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('autoFocus', checked)}
                     icon={Focus}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.PAGE_BEHAVIOR}
@@ -166,11 +166,10 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(value) => updateProp('visibleDuration', value || undefined)}
                     placeholder="e.g., {months: 1}"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -195,7 +194,7 @@ export function CalendarEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

@@ -55,8 +55,7 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.ROW_INFORMATION}</legend>
+            <PropertySection title="{PROPERTY_LABELS.ROW_INFORMATION}">
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -107,10 +106,9 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                     onChange={(key) => updateProps({ variant: key as 'default' | 'striped' | 'hover' })}
                     icon={Grid}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.CELL_OVERVIEW}</legend>
+            <PropertySection title="{PROPERTY_LABELS.CELL_OVERVIEW}">
 
                 {/* 셀 목록 */}
                 {rowCells.length > 0 && (
@@ -135,7 +133,7 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                         </p>
                     </div>
                 )}
-            </fieldset>
+            </PropertySection>
         </div>
     );
 }

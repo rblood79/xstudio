@@ -1,5 +1,5 @@
 import { Tag, CheckSquare, PointerOff, PenOff, Minus, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -32,7 +32,9 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -40,10 +42,10 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 onChange={updateCustomId}
                 placeholder="checkbox_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -51,12 +53,11 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(value) => updateProp('children', value)}
                     icon={Tag}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section - Only if NOT child of CheckboxGroup */}
             {!isChildOfCheckboxGroup && (
-                <fieldset className="properties-design">
-                    <legend>Design</legend>
+                <PropertySection title="Design">
 
                     <PropertySelect
                         label={PROPERTY_LABELS.VARIANT}
@@ -82,12 +83,11 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         ]}
                         icon={PencilRuler}
                     />
-                </fieldset>
+                </PropertySection>
             )}
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.SELECTED}
@@ -116,11 +116,10 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertCircle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
@@ -142,11 +141,10 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -171,11 +169,10 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={FileText}
                     placeholder="form-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -200,7 +197,7 @@ export function CheckboxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

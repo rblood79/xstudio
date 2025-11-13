@@ -11,10 +11,7 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { Square } from "lucide-react";
-import { PanelHeader, SectionHeader } from "../common";
-import { iconProps } from "../../../utils/ui/uiConstants";
-import "../../panels/common/styles.css";
+import "../common/styles.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
@@ -96,28 +93,11 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="properties-panel">
-      <PanelHeader
-        title="Properties"
-        actions={
-          <button className="iconButton" type="button">
-            <Square
-              color={iconProps.color}
-              strokeWidth={iconProps.stroke}
-              size={iconProps.size}
-            />
-          </button>
-        }
+      <Editor
+        elementId={selectedElement.id}
+        currentProps={selectedElement.properties}
+        onUpdate={handleUpdate}
       />
-
-      <SectionHeader title={selectedElement.type} />
-
-      <div className="section-content">
-        <Editor
-          elementId={selectedElement.id}
-          currentProps={selectedElement.properties}
-          onUpdate={handleUpdate}
-        />
-      </div>
     </div>
   );
 }

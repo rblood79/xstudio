@@ -11,7 +11,7 @@ import {
   BookOpen,
   RulerDimensionLine,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -275,9 +275,9 @@ export function TableEditor({
     : [];
 
   return (
-    <div className="component-props">
-      <fieldset className="properties-aria">
-        {/* Custom ID */}
+    <>
+      {/* Basic */}
+      <PropertySection title="Basic">
         <PropertyCustomId
           label="ID"
           value={customId}
@@ -285,7 +285,10 @@ export function TableEditor({
           onChange={updateCustomId}
           placeholder="table_1"
         />
+      </PropertySection>
 
+      {/* Configuration */}
+      <PropertySection title="Configuration">
         {/* Selection Mode */}
         <PropertySelect
           label={PROPERTY_LABELS.SELECTION_MODE}
@@ -367,10 +370,10 @@ export function TableEditor({
           }
           icon={Settings}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* 페이지네이션 모드 설정 */}
-      <fieldset className="component-fieldset">
+      <div className="component-fieldset">
         <legend className="component-legend">
           <List className="legend-icon" />
           {PROPERTY_LABELS.PAGINATION_MODE}
@@ -413,10 +416,10 @@ export function TableEditor({
             type="number"
           />
         )}
-      </fieldset>
+      </PropertySection>
 
       {/* 가상화 설정 */}
-      <fieldset className="component-fieldset">
+      <div className="component-fieldset">
         <legend className="component-legend">
           <Grid className="legend-icon" />
           {PROPERTY_LABELS.VIRTUALIZATION_SETTINGS}
@@ -529,10 +532,10 @@ export function TableEditor({
           }
           type="number"
         />
-      </fieldset>
+      </PropertySection>
 
       {/* 정렬 설정 */}
-      <fieldset className="component-fieldset">
+      <div className="component-fieldset">
         <legend className="component-legend">
           <List className="legend-icon" />
           {PROPERTY_LABELS.SORTING_SETTINGS}
@@ -576,10 +579,9 @@ export function TableEditor({
             })
           }
         />
-      </fieldset>
+      </PropertySection>
 
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">{PROPERTY_LABELS.COLUMN_MANAGEMENT}</legend>
+      <PropertySection title="{PROPERTY_LABELS.COLUMN_MANAGEMENT}">
 
         {/* 컬럼 개수 표시 */}
         <div className="tab-overview">
@@ -641,11 +643,10 @@ export function TableEditor({
             </p>
           </div>
         )}
-      </fieldset>
+      </PropertySection>
 
       {/* Column Group Management */}
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Column Group Management</legend>
+      <PropertySection title="Column Group Management">
 
         {/* Column Group 개수 표시 */}
         <div className="tab-overview">
@@ -729,10 +730,9 @@ export function TableEditor({
             <br />• 중첩된 그룹 구조도 지원합니다
           </p>
         </div>
-      </fieldset>
+      </PropertySection>
 
-      <fieldset className="properties-aria">
-        <legend className="fieldset-legend">Row Management</legend>
+      <PropertySection title="Row Management">
 
         {/* 행 개수 표시 */}
         <div className="tab-overview">
@@ -782,7 +782,7 @@ export function TableEditor({
             Add Row
           </button>
         </div>
-      </fieldset>
-    </div>
+      </PropertySection>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, Hash, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -56,8 +56,8 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
         if (!currentCheckbox) return null;
 
         return (
-            <div className="component-props">
-                <fieldset className="properties-aria">
+        <>
+                <div className="properties-aria">
 
 
                     {/* 체크박스 라벨 편집 */}
@@ -165,7 +165,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                             {PROPERTY_LABELS.DELETE_THIS_CHECKBOX}
                         </button>
                     </div>
-                </fieldset>
+                </PropertySection>
 
                 {/* 체크박스 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -182,7 +182,9 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
 
     // CheckboxGroup 컴포넌트 전체 설정 UI
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -190,10 +192,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                 onChange={updateCustomId}
                 placeholder="checkboxgroup_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -215,11 +217,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -256,11 +257,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     ]}
                     icon={Ratio}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.REQUIRED}
@@ -275,11 +275,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertTriangle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -294,11 +293,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -307,11 +305,10 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={FormInput}
                     placeholder="checkbox-group-name"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -336,10 +333,9 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.CHECKBOX_MANAGEMENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.CHECKBOX_MANAGEMENT}">
 
                 {/* 체크박스 개수 표시 */}
                 <div className='tab-overview'>
@@ -422,7 +418,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         {PROPERTY_LABELS.ADD_CHECKBOX}
                     </button>
                 </div>
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

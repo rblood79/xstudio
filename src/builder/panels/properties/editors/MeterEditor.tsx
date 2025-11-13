@@ -1,5 +1,5 @@
 import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe, DollarSign } from 'lucide-react';
-import { PropertySwitch } from '../../common';
+import { PropertySwitch , PropertySection} from '../../common';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -33,7 +33,9 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -41,10 +43,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 onChange={updateCustomId}
                 placeholder="meter_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -60,11 +62,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={Gauge}
                     placeholder="50"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Number Formatting Section */}
-            <fieldset className="properties-group">
-                <legend>Number Formatting</legend>
+            <PropertySection title="Number Formatting">
 
                 <PropertyInput
                     label="Locale"
@@ -92,11 +93,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(checked) => updateProp('showValue', checked)}
                     icon={Gauge}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -122,11 +122,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     ]}
                     icon={PencilRuler}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Range Section */}
-            <fieldset className="properties-group">
-                <legend>Range</legend>
+            <PropertySection title="Range">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.MIN_VALUE}
@@ -143,11 +142,10 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={ArrowUp}
                     placeholder="100"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -172,7 +170,7 @@ export function MeterEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

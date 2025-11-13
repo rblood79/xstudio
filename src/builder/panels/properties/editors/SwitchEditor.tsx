@@ -1,5 +1,5 @@
 import { ToggleLeft, Eye, PointerOff, PenOff, CheckSquare, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText, Tag } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -26,7 +26,9 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -34,10 +36,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 onChange={updateCustomId}
                 placeholder="switch_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -45,11 +47,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(value) => updateProp('children', value)}
                     icon={ToggleLeft}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -75,11 +76,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     ]}
                     icon={PencilRuler}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section */}
-            <fieldset className="properties-group">
-                <legend>State</legend>
+            <PropertySection title="State">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.SELECTED}
@@ -101,11 +101,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(checked) => updateProp('isInvalid', checked)}
                     icon={AlertCircle}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
@@ -127,11 +126,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(checked) => updateProp('isReadOnly', checked)}
                     icon={PenOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -156,11 +154,10 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={FileText}
                     placeholder="form-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -185,7 +182,7 @@ export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

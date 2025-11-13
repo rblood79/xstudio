@@ -1,5 +1,5 @@
 import { Tag, BarChart3, ToggleLeft, Layout, PencilRuler, Hash, Type, ArrowDown, ArrowUp, Globe, DollarSign } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -32,7 +32,9 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -40,10 +42,10 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                 onChange={updateCustomId}
                 placeholder="progressbar_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -59,11 +61,10 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={BarChart3}
                     placeholder="50"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Number Formatting Section */}
-            <fieldset className="properties-group">
-                <legend>Number Formatting</legend>
+            <PropertySection title="Number Formatting">
 
                 <PropertyInput
                     label="Locale"
@@ -91,11 +92,10 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('showValue', checked)}
                     icon={BarChart3}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -121,11 +121,10 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     ]}
                     icon={PencilRuler}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Range Section */}
-            <fieldset className="properties-group">
-                <legend>Range</legend>
+            <PropertySection title="Range">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.MIN_VALUE}
@@ -149,11 +148,10 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(checked) => updateProp('isIndeterminate', checked)}
                     icon={ToggleLeft}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -178,7 +176,7 @@ export function ProgressBarEditor({ elementId, currentProps, onUpdate }: Propert
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

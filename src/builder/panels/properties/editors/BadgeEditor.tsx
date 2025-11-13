@@ -1,6 +1,6 @@
 import { Type, Parentheses, Circle, Activity } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
@@ -25,7 +25,9 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -33,10 +35,10 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 onChange={updateCustomId}
                 placeholder="badge_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.TEXT}
@@ -45,11 +47,10 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={Type}
                     placeholder="5"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -79,11 +80,10 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     ]}
                     icon={Parentheses}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label="Dot Badge"
@@ -98,8 +98,8 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(checked) => updateProp('isPulsing', checked)}
                     icon={Activity}
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }
 

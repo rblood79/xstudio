@@ -44,8 +44,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
 
     return (
         <div className="component-props">
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_CONTENT}</legend>
+            <PropertySection title="{PROPERTY_LABELS.COLUMN_CONTENT}">
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -95,10 +94,9 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(isSelected) => updateProps({ allowsSorting: isSelected })}
                     icon={ArrowUpDown}
                 />
-            </fieldset>
+            </PropertySection>
 
-            <fieldset className="properties-aria">
-                <legend className='fieldset-legend'>{PROPERTY_LABELS.COLUMN_SIZING}</legend>
+            <PropertySection title="{PROPERTY_LABELS.COLUMN_SIZING}">
 
                 {/* Enable Resizing */}
                 <PropertySwitch
@@ -143,7 +141,7 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     type="number"
                     icon={ArrowRight}
                 />
-            </fieldset>
+            </PropertySection>
         </div>
     );
 }

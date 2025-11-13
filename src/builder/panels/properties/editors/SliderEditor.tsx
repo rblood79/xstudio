@@ -2,7 +2,7 @@ import {
     Type, Layout, NotebookTabs, Ruler, Ratio,
     ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff, Globe, DollarSign
 } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -35,7 +35,9 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -43,10 +45,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 onChange={updateCustomId}
                 placeholder="slider_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -62,11 +64,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={NotebookTabs}
                     placeholder="0"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Number Formatting Section */}
-            <fieldset className="properties-group">
-                <legend>Number Formatting</legend>
+            <PropertySection title="Number Formatting">
 
                 <PropertyInput
                     label="Locale"
@@ -105,11 +106,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(checked) => updateProp('showValue', checked)}
                     icon={NotebookTabs}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.VARIANT}
@@ -146,11 +146,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     ]}
                     icon={Ratio}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Range Section */}
-            <fieldset className="properties-group">
-                <legend>Range</legend>
+            <PropertySection title="Range">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.MIN_VALUE}
@@ -175,11 +174,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={Move}
                     placeholder="1"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.DISABLED}
@@ -187,11 +185,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     onChange={(checked) => updateProp('isDisabled', checked)}
                     icon={PointerOff}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -208,11 +205,10 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={FileText}
                     placeholder="form-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -237,7 +233,7 @@ export function SliderEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

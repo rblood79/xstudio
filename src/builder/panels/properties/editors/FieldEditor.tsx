@@ -3,7 +3,7 @@ import {
   PropertySelect,
   PropertySwitch,
   PropertyCustomId,
-} from '../../common';
+, PropertySection} from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { Tag, Type, Eye, EyeOff, Hash } from "lucide-react";
@@ -54,7 +54,9 @@ export function FieldEditor({
   };
 
   return (
-    <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
       <PropertyCustomId
         label="ID"
         value={customId}
@@ -62,10 +64,10 @@ export function FieldEditor({
         onChange={updateCustomId}
         placeholder="field_1"
       />
+      </PropertySection>
 
       {/* Content Section */}
-      <fieldset className="properties-group">
-        <legend>Content</legend>
+      <PropertySection title="Content">
 
         <PropertyInput
           label={PROPERTY_LABELS.DATA_KEY}
@@ -83,11 +85,10 @@ export function FieldEditor({
           placeholder={PROPERTY_LABELS.FIELD_LABEL_PLACEHOLDER}
           icon={Type}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Behavior Section */}
-      <fieldset className="properties-group">
-        <legend>Behavior</legend>
+      <PropertySection title="Behavior">
 
         <PropertySwitch
           label={PROPERTY_LABELS.VISIBLE}
@@ -95,11 +96,10 @@ export function FieldEditor({
           onChange={(isSelected) => updateProps({ visible: isSelected })}
           icon={fieldProps?.visible !== false ? Eye : EyeOff}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Design Section */}
-      <fieldset className="properties-design">
-        <legend>Design</legend>
+      <PropertySection title="Design">
 
         <PropertySelect
           label={PROPERTY_LABELS.TYPE}
@@ -118,11 +118,10 @@ export function FieldEditor({
           }
           icon={Type}
         />
-      </fieldset>
+      </PropertySection>
 
       {/* Accessibility Section */}
-      <fieldset className="properties-group">
-        <legend>Accessibility</legend>
+      <PropertySection title="Accessibility">
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
@@ -147,7 +146,7 @@ export function FieldEditor({
           icon={Hash}
           placeholder="description-element-id"
         />
-      </fieldset>
-    </div>
-  );
+      </PropertySection>
+    </>
+    );
 }

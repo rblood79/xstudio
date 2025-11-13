@@ -2,7 +2,7 @@ import {
     Tag, Binary, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, Hash, Focus, Type, Keyboard, Shield
 } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -29,7 +29,9 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
     };
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -37,10 +39,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                 onChange={updateCustomId}
                 placeholder="textfield_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
@@ -70,11 +72,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     onChange={(value) => updateProp('description', value)}
                     icon={FileText}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Input Type Section */}
-            <fieldset className="properties-group">
-                <legend>Input Type</legend>
+            <PropertySection title="Input Type">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.INPUT_TYPE}
@@ -126,11 +127,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     ]}
                     icon={SpellCheck2}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Validation Section */}
-            <fieldset className="properties-group">
-                <legend>Validation</legend>
+            <PropertySection title="Validation">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ERROR_MESSAGE}
@@ -169,11 +169,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     onChange={(checked) => updateProp('isRequired', checked)}
                     icon={CheckSquare}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Behavior Section */}
-            <fieldset className="properties-group">
-                <legend>Behavior</legend>
+            <PropertySection title="Behavior">
 
                 <PropertySwitch
                     label={PROPERTY_LABELS.AUTO_FOCUS}
@@ -209,11 +208,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     onChange={(checked) => updateProp('autoCorrect', checked)}
                     icon={SpellCheck2}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Form Integration Section */}
-            <fieldset className="properties-group">
-                <legend>Form Integration</legend>
+            <PropertySection title="Form Integration">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.NAME}
@@ -230,11 +228,10 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     icon={FileText}
                     placeholder="form-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -259,7 +256,7 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
-        </div>
+            </PropertySection>
+        </>
     );
 }

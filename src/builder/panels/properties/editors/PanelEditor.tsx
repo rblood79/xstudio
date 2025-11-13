@@ -1,5 +1,5 @@
 import { Type, Layout, ToggleLeft, X, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -29,7 +29,9 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
     const isTabPanel = currentProps.tabIndex !== undefined;
 
     return (
-        <div className="component-props">
+        <>
+      {/* Basic */}
+      <PropertySection title="Basic">
             <PropertyCustomId
                 label="ID"
                 value={customId}
@@ -37,10 +39,10 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 onChange={updateCustomId}
                 placeholder="panel_1"
             />
+      </PropertySection>
 
-            {/* Content Section */}
-            <fieldset className="properties-group">
-                <legend>Content</legend>
+      {/* Content Section */}
+            <PropertySection title="Content">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.TITLE}
@@ -48,11 +50,10 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     onChange={(value) => updateProp('title', value)}
                     icon={Type}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Design Section */}
-            <fieldset className="properties-design">
-                <legend>Design</legend>
+            <PropertySection title="Design">
 
                 <PropertySelect
                     label={PROPERTY_LABELS.STYLE}
@@ -66,12 +67,11 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     ]}
                     icon={Layout}
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* State Section (Tab Panel이 아닌 경우만) */}
             {!isTabPanel && (
-                <fieldset className="properties-group">
-                    <legend>State</legend>
+                <PropertySection title="State">
 
                     <PropertySwitch
                         label={PROPERTY_LABELS.IS_OPEN}
@@ -86,12 +86,11 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                         onChange={(checked) => updateProp('isDismissable', checked)}
                         icon={X}
                     />
-                </fieldset>
+                </PropertySection>
             )}
 
             {/* Accessibility Section */}
-            <fieldset className="properties-group">
-                <legend>Accessibility</legend>
+            <PropertySection title="Accessibility">
 
                 <PropertyInput
                     label={PROPERTY_LABELS.ARIA_LABEL}
@@ -116,7 +115,7 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     icon={Hash}
                     placeholder="description-element-id"
                 />
-            </fieldset>
+            </PropertySection>
 
             {/* Tab 패널인 경우 tabIndex 정보 표시 */}
             {isTabPanel && (
@@ -129,6 +128,6 @@ export function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                     </p>
                 </div>
             )}
-        </div>
+        </>
     );
 }
