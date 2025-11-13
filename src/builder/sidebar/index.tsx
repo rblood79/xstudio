@@ -6,9 +6,9 @@ import { ElementProps } from '../../types/integrations/supabase.types';
 import { Element, Page } from '../../types/core/store.types'; // Page 타입도 추가
 import { Nodes } from '../nodes';
 import Components from '../components';
-import Theme from '../panels/themes';
-import AI from '../panels/ai';
-import Setting from '../panels/settings';
+import { ThemesPanel } from '../panels/themes/ThemesPanel';
+import { AIPanel } from '../panels/ai/AIPanel';
+import { SettingsPanel } from '../panels/settings/SettingsPanel';
 import { SidebarNav } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
@@ -24,17 +24,19 @@ interface SidebarProps {
     fetchElements: (pageId: string) => Promise<void>;
     selectedPageId: string | null;
     children?: React.ReactNode;
+    forcedActiveTabs?: Set<string>; // 외부에서 강제로 활성화할 탭 지정
 }
 
-export default function Sidebar({ pages, pageList, handleAddPage, handleAddElement, fetchElements, selectedPageId, children }: SidebarProps) {
+export default function Sidebar({ pages, pageList, handleAddPage, handleAddElement, fetchElements, selectedPageId, children, forcedActiveTabs }: SidebarProps) {
     // 메모이제이션 추가
     const elements = useStore((state) => state.elements);
     const currentPageId = useStore((state) => state.currentPageId);
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
-    // 활성 탭 상태 관리 (localStorage 연동)
-    const { activeTabs, toggleTab, closeAll } = useSidebarTabs();
+    // 활성 탭 상태 관리 (localStorage 연동) - forcedActiveTabs가 있으면 그것을 사용
+    const { activeTabs: storedActiveTabs, toggleTab, closeAll } = useSidebarTabs();
+    const activeTabs = forcedActiveTabs || storedActiveTabs;
 
     // 현재 페이지의 요소만 필터링
     const currentPageElements = React.useMemo(() => {
@@ -1445,7 +1447,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
         if (activeTabs.has('theme')) {
             contents.push(
                 <div key="theme" className="sidebar-section theme">
-                    <Theme />
+                    <ThemesPanel isActive={true} />
                 </div>
             );
         }
@@ -1453,7 +1455,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
         if (activeTabs.has('ai')) {
             contents.push(
                 <div key="ai" className="sidebar-section ai">
-                    <AI />
+                    <AIPanel isActive={true} />
                 </div>
             );
         }
@@ -1461,7 +1463,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
         if (activeTabs.has('settings')) {
             contents.push(
                 <div key="settings" className="sidebar-section settings settings">
-                    <Setting />
+                    <SettingsPanel isActive={true} />
                 </div>
             );
         }

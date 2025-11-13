@@ -22,9 +22,9 @@ import { PanelRegistry } from "./PanelRegistry";
 // Navigation panels
 import { NodesPanel } from "../nodes/NodesPanel";
 import { ComponentsPanel } from "../components/ComponentsPanel";
-import { ThemePanel } from "../themes";
-import { AIPanel } from "../ai";
-import { SettingsPanel } from "../settings";
+import { ThemesPanel } from "../themes/ThemesPanel";
+import { AIPanel } from "../ai/AIPanel";
+import { SettingsPanel } from "../settings/SettingsPanel";
 
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
@@ -70,7 +70,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     name: "테마",
     nameEn: "Theme",
     icon: Palette,
-    component: ThemePanel,
+    component: ThemesPanel,
     category: "tool",
     defaultPosition: "left",
     minWidth: 240,

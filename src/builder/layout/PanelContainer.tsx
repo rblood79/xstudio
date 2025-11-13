@@ -57,6 +57,7 @@ export function PanelContainer({
 
             return (
               <PanelComponent
+                key={panelId}
                 isActive={true}
                 side={side}
                 onClose={undefined}

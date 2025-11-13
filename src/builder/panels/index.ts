@@ -19,11 +19,11 @@ export { NodesPanel } from "./nodes/NodesPanel";
 export { ComponentsPanel } from "./components/ComponentsPanel";
 
 // Tool panels
-export { ThemePanel } from "./themes";
-export { AIPanel } from "./ai";
+export { ThemesPanel } from "./themes/ThemesPanel";
+export { AIPanel } from "./ai/AIPanel";
 
 // System panels
-export { SettingsPanel } from "./settings";
+export { SettingsPanel } from "./settings/SettingsPanel";
 
 // Editor panels
 export { PropertiesPanel } from "./properties/PropertiesPanel";

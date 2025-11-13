@@ -1,8 +1,16 @@
+/**
+ * SettingsPanel - 설정 관리 패널
+ *
+ * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
+ * Builder 설정, 테마, 저장 모드 등 시스템 설정 제공
+ */
+
 import './index.css';
 import React from 'react';
 import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save, Moon, Sun } from 'lucide-react';
 import { Button } from 'react-aria-components';
 import { useParams } from 'react-router-dom';
+import type { PanelProps } from '../core/types';
 import { useStore } from '../../stores';
 import { useUnifiedThemeStore } from '../../../stores/themeStore';
 import { saveService } from '../../../services/save';
@@ -10,7 +18,7 @@ import { PropertySwitch, PropertySelect, PropertySlider } from '../../shared/ui'
 import { useThemes } from '../../../hooks/theme/useThemes';
 import { ThemeService } from '../../../services/theme';
 
-function Setting() {
+function SettingsContent() {
     const { projectId } = useParams<{ projectId: string }>();
 
     const showOverlay = useStore((state) => state.showOverlay);
@@ -302,4 +310,11 @@ function Setting() {
     );
 }
 
-export default Setting; export { Setting as SettingsPanel };
+export function SettingsPanel({ isActive }: PanelProps) {
+    // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
+    if (!isActive) {
+        return null;
+    }
+
+    return <SettingsContent />;
+}

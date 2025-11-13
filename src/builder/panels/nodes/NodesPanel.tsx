@@ -5,7 +5,7 @@
  * 내부적으로 Sidebar의 Nodes 섹션을 재사용
  */
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import Sidebar from "../../sidebar";
@@ -43,6 +43,9 @@ export function NodesPanel({ isActive }: PanelProps) {
     await addPage(projectId, addElement);
   }, [projectId, addPage, addElement]);
 
+  // Force nodes tab to be active
+  const forcedActiveTabs = useMemo(() => new Set(['nodes']), []);
+
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
@@ -51,16 +54,14 @@ export function NodesPanel({ isActive }: PanelProps) {
   // 현재 페이지가 없으면 빈 상태 표시
   if (!currentPageId) {
     return (
-      <div className="inspector-container empty">
-        <div className="empty-state">
-          <p className="empty-message">페이지를 선택하세요</p>
-        </div>
+      <div className="panel-empty-state">
+        <p className="empty-message">페이지를 선택하세요</p>
       </div>
     );
   }
 
   return (
-    <div className="nodes-panel panel-section">
+    <div className="nodes-panel">
       <Sidebar
         pages={pages}
         pageList={pageList}
@@ -68,6 +69,7 @@ export function NodesPanel({ isActive }: PanelProps) {
         handleAddElement={handleAddElement}
         fetchElements={fetchElements}
         selectedPageId={currentPageId}
+        forcedActiveTabs={forcedActiveTabs}
       />
     </div>
   );
