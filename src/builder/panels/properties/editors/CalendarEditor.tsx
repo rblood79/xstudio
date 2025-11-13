@@ -1,5 +1,5 @@
 import { Calendar, PointerOff, PenOff, AlertTriangle, Focus, Type, Hash, Globe, CalendarDays } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../../shared/ui';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

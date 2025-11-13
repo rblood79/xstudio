@@ -1,5 +1,5 @@
 import { Tag, Binary, PointerOff, FileText, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../../shared/ui';
+import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

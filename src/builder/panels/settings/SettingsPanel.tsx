@@ -14,7 +14,7 @@ import type { PanelProps } from '../core/types';
 import { useStore } from '../../stores';
 import { useUnifiedThemeStore } from '../../../stores/themeStore';
 import { saveService } from '../../../services/save';
-import { PropertySwitch, PropertySelect, PropertySlider } from '../../shared/ui';
+import { PropertySwitch, PropertySelect, PropertySlider } from '../common';
 import { useThemes } from '../../../hooks/theme/useThemes';
 import { ThemeService } from '../../../services/theme';
 

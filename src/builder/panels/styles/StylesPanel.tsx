@@ -13,7 +13,7 @@ import {
   PropertySelect,
   PropertyUnitInput,
   PropertyColor,
-} from "../../shared/ui";
+} from '../common';
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { SelectedElement } from "../../inspector/types";
 import {

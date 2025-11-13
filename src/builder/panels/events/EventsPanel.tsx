@@ -24,7 +24,7 @@ import { DebounceThrottleEditor } from "../../events/components/DebounceThrottle
 import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
-import { PanelHeader } from "../../shared/ui";
+import { PanelHeader } from '../common';
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);

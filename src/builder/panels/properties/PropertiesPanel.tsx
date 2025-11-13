@@ -12,7 +12,7 @@ import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
 import { Square } from "lucide-react";
-import { PanelHeader, SectionHeader } from "../../shared/ui";
+import { PanelHeader, SectionHeader } from '../common';
 import "../../shared/ui/styles.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {

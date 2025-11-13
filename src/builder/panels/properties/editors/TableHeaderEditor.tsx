@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ColumnElementProps, Element } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyInput, PropertyCustomId } from '../../../shared/ui';
+import { PropertySelect, PropertyInput, PropertyCustomId } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';

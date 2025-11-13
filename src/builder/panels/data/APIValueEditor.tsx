@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Route, Send, Map, Settings, Lock } from "lucide-react";
-import { PropertyInput, PropertySelect } from '../../shared/ui';
+import { PropertyInput, PropertySelect } from '../common';
 import { APIValueConfig } from "../../inspector/types";
 
 interface APIValueEditorProps {

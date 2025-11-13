@@ -1,5 +1,5 @@
 import { Tag, Link, PointerOff, Type, Hash, CheckCircle } from 'lucide-react';
-import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect } from '../../../shared/ui';
+import { PropertyInput, PropertyCustomId, PropertySwitch, PropertySelect } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
