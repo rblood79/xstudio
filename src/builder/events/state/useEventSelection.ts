@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Key } from 'react-stately';
-import type { ElementEvent } from '@/types/events/events.types';
+import type { EventHandler } from '../types/eventTypes';
 
 /**
  * 이벤트 핸들러 선택 상태 관리 훅
@@ -28,7 +28,7 @@ import type { ElementEvent } from '@/types/events/events.types';
  * // 선택 해제
  * clearSelection();
  */
-export function useEventSelection(handlers: ElementEvent[]) {
+export function useEventSelection(handlers: EventHandler[]) {
   const [selectedHandlerId, setSelectedHandlerId] = useState<Key | null>(null);
 
   /**
