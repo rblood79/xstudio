@@ -7,241 +7,261 @@
 }
 
 /* Settings Section - Inspector와 동일한 구조 */
-.settings-section {
+.section {
   display: flex;
   flex-direction: column;
   margin-bottom: var(--spacing-sm);
-}
 
-.settings-section .section-header {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  background-color: var(--surface-tertiary);
-  border-bottom: 1px solid var(--surface-secondary);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
+  .section-header {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    background-color: var(--builder-inspector-header-bg);
+    border-bottom: 1px solid var(--builder-inspector-control-bg);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-.settings-section .section-header .section-title {
-  padding-left: calc(var(--spacing-sm));
-  border-bottom: 0px;
-  padding: var(--spacing-sm);
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--text-sm);
-}
+  .section-header .section-title {
+    padding-left: calc(var(--spacing-sm));
+    border-bottom: 0px;
+    padding: var(--spacing-sm);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-sm);
+  }
 
-.settings-section .section-header .header-actions {
-  display: flex;
-  gap: var(--spacing-xs);
-}
+  .section-header .header-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+  }
 
-.settings-section .section-header .header-actions .iconButton {
-  padding: var(--spacing-sm);
-}
+  .section-header .header-actions .iconButton {
+    padding: var(--spacing-sm);
+  }
 
-.settings-section .section-content {
-  padding: var(--spacing-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
+  .section-content {
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
 
-/* Component Props - Inspector와 동일 */
-.settings-section .section-content .component-props {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
+  /* Component Props - Inspector와 동일 */
+  .component-props {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
 
-/* Properties ARIA - Inspector와 동일 */
-.settings-section .section-content .properties-aria {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
+  /* Properties ARIA - Inspector와 동일 */
+  .section-content .properties-aria {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
 
-/* Fieldset Legend */
-.settings-section .fieldset-legend {
-  font-size: var(--text-2xs);
-  color: var(--text-color-placeholder);
-}
+  /* Fieldset Legend */
+  .fieldset-legend {
+    font-size: var(--text-2xs);
+    color: var(--text-color-placeholder);
+  }
 
-/* Control Group */
-.settings-section .react-aria-control {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+  /* Control Group */
+  .react-aria-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-.settings-section .react-aria-Group {
-  background-color: var(--builder-inspector-control-bg);
-  border: 1px solid var(--builder-inspector-border);
-  border-radius: var(--radius-md);
-  width: 100%;
-  min-width: 0;
-  min-height: var(--inspector-control-size, 27px);
-}
+  .react-aria-Group {
+    background-color: var(--builder-inspector-control-bg);
+    border: 1px solid var(--builder-inspector-border);
+    border-radius: var(--radius-md);
+    width: 100%;
+    min-width: 0;
+    min-height: var(--inspector-control-size, 27px);
+  }
 
-/* Control Label - Icon */
-.settings-section .control-label {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--inspector-label-width, 27px);
-  height: 25px;
-  padding: var(--spacing-2xs) var(--spacing-2xs);
-  text-align: center;
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-right-width: 0;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  font-size: var(--text-xs);
-  color: var(--text-color);
-}
+  /* Control Label - Icon */
+  .control-label {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--inspector-label-width, 27px);
+    height: 25px;
+    padding: var(--spacing-2xs) var(--spacing-2xs);
+    text-align: center;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-right-width: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    font-size: var(--text-xs);
+    color: var(--text-color);
+  }
 
-/* Select in Settings - Inspector와 동일 */
-.settings-section .react-aria-Select {
-  width: 100%;
-  min-width: 0;
-}
+  input.control-input {
+    height: var(--inspector-control-size);
+  }
 
-.settings-section .react-aria-Select .react-aria-Button {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0 3px 0 0;
-  background-color: transparent;
-  border-color: transparent;
-  min-width: 0;
-  width: 100%;
-}
+  .react-aria-Input {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-left-width: 0;
+    border-radius: var(--border-radius);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    padding: calc(var(--spacing) * 1.125);
+    padding-inline-start: var(--inspector-label-width);
 
-.settings-section .react-aria-Select .react-aria-Button .control-label {
-  position: static;
-  flex-shrink: 0;
-}
+    &:focus {
+      outline: 2px solid var(--focus-ring-color);
+      box-shadow: var(--inset-shadow-sm);
+    }
+  }
 
-.settings-section .react-aria-Select .react-aria-Button span[aria-hidden] {
-  width: var(--text-xl);
-  height: var(--text-xl);
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
+  /* Select in Settings - Inspector와 동일 */
+  .react-aria-Select {
+    width: 100%;
+    min-width: 0;
+  }
 
-.settings-section .react-aria-Select .react-aria-SelectValue {
-  font-size: var(--text-xs);
-  color: var(--text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-}
+  .react-aria-Select .react-aria-Button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0 3px 0 0;
+    background-color: transparent;
+    border-color: transparent;
+    min-width: 0;
+    width: 100%;
+  }
 
-/* Switch in Settings */
-.settings-section .react-aria-Switch {
-  width: 100%;
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-left-width: 0px;
-  border-radius: var(--border-radius);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs--line-height);
-  padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
-    calc(var(--spacing) * 1.378);
-  padding-inline-start: var(--inspector-label-width, 27px);
-  flex-direction: row-reverse;
-}
+  .react-aria-Select .react-aria-Button .control-label {
+    position: static;
+    flex-shrink: 0;
+  }
 
-.settings-section .react-aria-Switch[data-focused],
-.settings-section .react-aria-Switch[data-pressed] {
-  outline: 2px solid var(--focus-ring-color);
-  box-shadow: var(--inset-shadow-sm);
-}
+  .react-aria-Select .react-aria-Button span[aria-hidden] {
+    width: var(--text-xl);
+    height: var(--text-xl);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
 
-/* Slider in Settings */
-.settings-section .react-aria-Slider {
-  width: 100%;
-}
+  .react-aria-Select .react-aria-SelectValue {
+    font-size: var(--text-xs);
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
 
-.settings-section .slider-container {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding-left: var(--inspector-label-width, 27px);
-  padding-right: var(--spacing-sm);
-}
+  /* Switch in Settings */
+  .react-aria-Switch {
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-left-width: 0px;
+    border-radius: var(--border-radius);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
+      calc(var(--spacing) * 1.378);
+    padding-inline-start: var(--inspector-label-width, 27px);
+    flex-direction: row-reverse;
+  }
 
-.settings-section .slider-track {
-  flex: 1;
-  height: 4px;
-  background: var(--border-color);
-  border-radius: var(--radius-full);
-  position: relative;
-}
+  .react-aria-Switch[data-focused],
+  .react-aria-Switch[data-pressed] {
+    outline: 2px solid var(--focus-ring-color);
+    box-shadow: var(--inset-shadow-sm);
+  }
 
-.settings-section .slider-thumb {
-  width: 16px;
-  height: 16px;
-  background: var(--action-primary-bg);
-  border: 2px solid var(--surface-primary);
-  border-radius: var(--radius-full);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  transition: background-color 200ms;
-}
+  /* Slider in Settings */
+  .react-aria-Slider {
+    width: 100%;
+  }
 
-.settings-section .slider-thumb[data-focused],
-.settings-section .slider-thumb[data-dragging] {
-  background: var(--action-primary-bg-pressed);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-left: var(--inspector-label-width, 27px);
+    padding-right: var(--spacing-sm);
+  }
 
-.settings-section .slider-output {
-  font-size: var(--text-xs);
-  color: var(--text-color);
-  min-width: 40px;
-  text-align: right;
-}
+  .slider-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+    position: relative;
+  }
 
-/* Save Button */
-.settings-section .save-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing) var(--spacing-lg);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-color-inverse);
-  background-color: var(--action-primary-bg);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s;
-}
+  .slider-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--action-primary-bg);
+    border: 2px solid var(--surface-primary);
+    border-radius: var(--radius-full);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background-color 200ms;
+  }
 
-.settings-section .save-button:hover:not(:disabled) {
-  background-color: var(--action-primary-bg-hover);
-}
+  .slider-thumb[data-focused],
+  .slider-thumb[data-dragging] {
+    background: var(--action-primary-bg-pressed);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
 
-.settings-section .save-button:active:not(:disabled) {
-  background-color: var(--action-primary-bg-pressed);
-}
+  .slider-output {
+    font-size: var(--text-xs);
+    color: var(--text-color);
+    min-width: 40px;
+    text-align: right;
+  }
 
-.settings-section .save-button[data-focused] {
-  outline: 2px solid var(--focus-ring-color);
-  outline-offset: 2px;
-}
+  /* Save Button */
+  .save-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing) var(--spacing-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-color-inverse);
+    background-color: var(--action-primary-bg);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
 
-.settings-section .save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  .save-button:hover:not(:disabled) {
+    background-color: var(--action-primary-bg-hover);
+  }
+
+  .save-button:active:not(:disabled) {
+    background-color: var(--action-primary-bg-pressed);
+  }
+
+  .save-button[data-focused] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  .save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }

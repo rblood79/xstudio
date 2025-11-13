@@ -4,7 +4,7 @@
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
  */
 
-import "../../shared/ui/styles.css";
+import "../../panels/common/styles.css";
 import type { PanelProps } from "../core/types";
 import { DataSourceSelector } from "./DataSourceSelector";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
@@ -33,10 +33,7 @@ export function DataPanel({ isActive }: PanelProps) {
       <div className="panel-header">
         <h3 className="panel-title">Data Binding</h3>
         <div className="header-actions">
-          <button
-            className="iconButton"
-            type="button"
-          >
+          <button className="iconButton" type="button">
             <Square size={16} />
           </button>
         </div>

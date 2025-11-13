@@ -5,15 +5,11 @@
  * 복잡한 스타일 편집 로직을 직접 포함 (이전 StyleSection 통합)
  */
 
-import "../../shared/ui/styles.css";
+import "../../panels/common/styles.css";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components";
-import {
-  PropertySelect,
-  PropertyUnitInput,
-  PropertyColor,
-} from '../common';
+import { PropertySelect, PropertyUnitInput, PropertyColor } from "../common";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { SelectedElement } from "../../inspector/types";
 import {
@@ -63,15 +59,15 @@ function getStyleValue(
   // Properties that should only show inline styles (not computed)
   // Reason: computedStyle.width/height always returns pixel values, even when not explicitly set
   const inlineOnlyProperties: string[] = [
-    'width',
-    'height',
-    'top',
-    'left',
-    'right',
-    'bottom',
-    'padding',
-    'margin',
-    'gap',
+    "width",
+    "height",
+    "top",
+    "left",
+    "right",
+    "bottom",
+    "padding",
+    "margin",
+    "gap",
   ];
 
   // Priority 1: Inline style
@@ -97,7 +93,7 @@ function getVerticalAlignmentKeys(element: SelectedElement): string[] {
   const alignItems = getStyleValue(element, "alignItems", "");
   const reverseMap: Record<string, string> = {
     "flex-start": "align-vertical-start",
-    "center": "align-vertical-center",
+    center: "align-vertical-center",
     "flex-end": "align-vertical-end",
   };
   return alignItems && reverseMap[alignItems] ? [reverseMap[alignItems]] : [];
@@ -108,10 +104,12 @@ function getHorizontalAlignmentKeys(element: SelectedElement): string[] {
   const justifyContent = getStyleValue(element, "justifyContent", "");
   const reverseMap: Record<string, string> = {
     "flex-start": "align-horizontal-start",
-    "center": "align-horizontal-center",
+    center: "align-horizontal-center",
     "flex-end": "align-horizontal-end",
   };
-  return justifyContent && reverseMap[justifyContent] ? [reverseMap[justifyContent]] : [];
+  return justifyContent && reverseMap[justifyContent]
+    ? [reverseMap[justifyContent]]
+    : [];
 }
 
 // Helper function: Get selected flex alignment button ID (3x3 grid)
@@ -142,7 +140,10 @@ function getFlexAlignmentKeys(element: SelectedElement): string[] {
 
   // Only select if both values are valid alignment values (flex-start, center, flex-end)
   const validAlignmentValues = ["flex-start", "center", "flex-end"];
-  if (!validAlignmentValues.includes(horizontal) || !validAlignmentValues.includes(vertical)) {
+  if (
+    !validAlignmentValues.includes(horizontal) ||
+    !validAlignmentValues.includes(vertical)
+  ) {
     return []; // No selection if values don't match grid
   }
 
@@ -462,19 +463,53 @@ export function StylesPanel({ isActive }: PanelProps) {
                   const value = Array.from(keys)[0] as string;
                   if (value) {
                     // Get current flex-direction to determine axis mapping
-                    const currentFlexDirection = getStyleValue(selectedElement, "flexDirection", "row");
+                    const currentFlexDirection = getStyleValue(
+                      selectedElement,
+                      "flexDirection",
+                      "row"
+                    );
 
                     // Map button position to horizontal and vertical alignment values
-                    const positionMap: Record<string, { horizontal: string; vertical: string }> = {
-                      leftTop: { horizontal: "flex-start", vertical: "flex-start" },
-                      centerTop: { horizontal: "center", vertical: "flex-start" },
-                      rightTop: { horizontal: "flex-end", vertical: "flex-start" },
-                      leftCenter: { horizontal: "flex-start", vertical: "center" },
-                      centerCenter: { horizontal: "center", vertical: "center" },
-                      rightCenter: { horizontal: "flex-end", vertical: "center" },
-                      leftBottom: { horizontal: "flex-start", vertical: "flex-end" },
-                      centerBottom: { horizontal: "center", vertical: "flex-end" },
-                      rightBottom: { horizontal: "flex-end", vertical: "flex-end" },
+                    const positionMap: Record<
+                      string,
+                      { horizontal: string; vertical: string }
+                    > = {
+                      leftTop: {
+                        horizontal: "flex-start",
+                        vertical: "flex-start",
+                      },
+                      centerTop: {
+                        horizontal: "center",
+                        vertical: "flex-start",
+                      },
+                      rightTop: {
+                        horizontal: "flex-end",
+                        vertical: "flex-start",
+                      },
+                      leftCenter: {
+                        horizontal: "flex-start",
+                        vertical: "center",
+                      },
+                      centerCenter: {
+                        horizontal: "center",
+                        vertical: "center",
+                      },
+                      rightCenter: {
+                        horizontal: "flex-end",
+                        vertical: "center",
+                      },
+                      leftBottom: {
+                        horizontal: "flex-start",
+                        vertical: "flex-end",
+                      },
+                      centerBottom: {
+                        horizontal: "center",
+                        vertical: "flex-end",
+                      },
+                      rightBottom: {
+                        horizontal: "flex-end",
+                        vertical: "flex-end",
+                      },
                     };
 
                     const position = positionMap[value];
@@ -638,7 +673,11 @@ export function StylesPanel({ isActive }: PanelProps) {
             <PropertyColor
               icon={Square}
               label="Background Color"
-              value={getStyleValue(selectedElement, "backgroundColor", "#FFFFFF")}
+              value={getStyleValue(
+                selectedElement,
+                "backgroundColor",
+                "#FFFFFF"
+              )}
               onChange={(value) => updateInlineStyle("backgroundColor", value)}
               placeholder="#FFFFFF"
             />
@@ -831,7 +870,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               <ToggleButtonGroup
                 aria-label="Text alignment"
                 indicator
-                selectedKeys={[getStyleValue(selectedElement, "textAlign", "left")]}
+                selectedKeys={[
+                  getStyleValue(selectedElement, "textAlign", "left"),
+                ]}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
                   if (value) updateInlineStyle("textAlign", value);
@@ -866,7 +907,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               <ToggleButtonGroup
                 aria-label="Vertical alignment"
                 indicator
-                selectedKeys={[getStyleValue(selectedElement, "verticalAlign", "baseline")]}
+                selectedKeys={[
+                  getStyleValue(selectedElement, "verticalAlign", "baseline"),
+                ]}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
                   if (value) updateInlineStyle("verticalAlign", value);
@@ -913,7 +956,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               <ToggleButtonGroup
                 aria-label="Text decoration"
                 indicator
-                selectedKeys={[getStyleValue(selectedElement, "textDecoration", "none")]}
+                selectedKeys={[
+                  getStyleValue(selectedElement, "textDecoration", "none"),
+                ]}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
                   if (value) updateInlineStyle("textDecoration", value);
@@ -948,7 +993,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               <ToggleButtonGroup
                 aria-label="Font style"
                 indicator
-                selectedKeys={[getStyleValue(selectedElement, "fontStyle", "normal")]}
+                selectedKeys={[
+                  getStyleValue(selectedElement, "fontStyle", "normal"),
+                ]}
                 onSelectionChange={(keys) => {
                   const value = Array.from(keys)[0] as string;
                   if (value) updateInlineStyle("fontStyle", value);
@@ -973,7 +1020,7 @@ export function StylesPanel({ isActive }: PanelProps) {
                     color={iconProps.color}
                     size={iconProps.size}
                     strokeWidth={iconProps.stroke}
-                    style={{ fontStyle: 'oblique', transform: 'skewX(-10deg)' }}
+                    style={{ fontStyle: "oblique", transform: "skewX(-10deg)" }}
                   />
                 </ToggleButton>
               </ToggleButtonGroup>
@@ -995,7 +1042,9 @@ export function StylesPanel({ isActive }: PanelProps) {
             <ToggleButtonGroup
               aria-label="Text transform"
               indicator
-              selectedKeys={[getStyleValue(selectedElement, "textTransform", "none")]}
+              selectedKeys={[
+                getStyleValue(selectedElement, "textTransform", "none"),
+              ]}
               onSelectionChange={(keys) => {
                 const value = Array.from(keys)[0] as string;
                 if (value) updateInlineStyle("textTransform", value);

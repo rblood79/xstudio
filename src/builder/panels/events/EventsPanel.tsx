@@ -5,7 +5,7 @@
  * React Stately 기반 이벤트 관리 로직을 직접 포함 (이전 EventSection 통합)
  */
 
-import "../../shared/ui/styles.css";
+import "../../panels/common/styles.css";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
@@ -24,7 +24,7 @@ import { DebounceThrottleEditor } from "../../events/components/DebounceThrottle
 import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
-import { PanelHeader } from '../common';
+import { PanelHeader } from "../common";
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);
@@ -49,7 +49,14 @@ export function EventsPanel({ isActive }: PanelProps) {
     );
   }
 
-  return <EventsPanelContent selectedElement={selectedElement} updateEvents={updateEvents} showAddAction={showAddAction} setShowAddAction={setShowAddAction} />;
+  return (
+    <EventsPanelContent
+      selectedElement={selectedElement}
+      updateEvents={updateEvents}
+      showAddAction={showAddAction}
+      setShowAddAction={setShowAddAction}
+    />
+  );
 }
 
 interface EventsPanelContentProps {
@@ -59,35 +66,31 @@ interface EventsPanelContentProps {
   setShowAddAction: (show: boolean) => void;
 }
 
-function EventsPanelContent({ selectedElement, updateEvents, showAddAction, setShowAddAction }: EventsPanelContentProps) {
+function EventsPanelContent({
+  selectedElement,
+  updateEvents,
+  showAddAction,
+  setShowAddAction,
+}: EventsPanelContentProps) {
   // Builder store에서 실제 element 가져오기 (DB 데이터 보존을 위해)
   const builderElement = useStore((state) =>
     state.elements.find((el) => el.id === selectedElement?.id)
   );
 
   // events는 props 안에 저장됨 (DB 스키마)
-  const eventsFromProps = (builderElement?.props as ComponentElementProps)?.events;
+  const eventsFromProps = (builderElement?.props as ComponentElementProps)
+    ?.events;
 
   // React Stately로 이벤트 핸들러 관리 - props.events 사용
-  const {
-    handlers,
-    addHandler,
-    updateHandler,
-    removeHandler,
-  } = useEventHandlers(eventsFromProps || []);
+  const { handlers, addHandler, updateHandler, removeHandler } =
+    useEventHandlers(eventsFromProps || []);
 
   // 이벤트 선택 관리
-  const {
-    selectedHandler,
-    selectHandler,
-    selectAfterDelete,
-  } = useEventSelection(handlers);
+  const { selectedHandler, selectHandler, selectAfterDelete } =
+    useEventSelection(handlers);
 
   // Actions 관리 (선택된 핸들러의 액션만)
-  const {
-    actions,
-    addAction,
-  } = useActions(selectedHandler?.actions || []);
+  const { actions, addAction } = useActions(selectedHandler?.actions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
   const registeredEventTypes: EventType[] = handlers.map((h) => h.event);
@@ -217,7 +220,11 @@ function EventsPanelContent({ selectedElement, updateEvents, showAddAction, setS
                       className="react-aria-Button"
                       onPress={() => selectHandler(null)}
                     >
-                      <ChevronLeft color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                      <ChevronLeft
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                      />
                     </Button>
                     <span className="selected-handler-type">
                       {selectedHandler.event}
@@ -226,7 +233,11 @@ function EventsPanelContent({ selectedElement, updateEvents, showAddAction, setS
                       className="react-aria-Button"
                       onPress={() => handleRemoveHandler(selectedHandler.id)}
                     >
-                      <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                      <Trash
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                      />
                     </Button>
                   </div>
 
@@ -293,19 +304,27 @@ function EventsPanelContent({ selectedElement, updateEvents, showAddAction, setS
                       <EventHandlerManager
                         eventHandler={selectedHandler}
                         onUpdateAction={(actionId, updates) => {
-                          const action = actions.find(a => a.id === actionId);
+                          const action = actions.find((a) => a.id === actionId);
                           if (action) {
                             const updatedAction = { ...action, ...updates };
-                            const updatedActions = actions.map(a =>
+                            const updatedActions = actions.map((a) =>
                               a.id === actionId ? updatedAction : a
                             );
-                            const updatedHandler = { ...selectedHandler, actions: updatedActions };
+                            const updatedHandler = {
+                              ...selectedHandler,
+                              actions: updatedActions,
+                            };
                             updateHandler(selectedHandler.id, updatedHandler);
                           }
                         }}
                         onRemoveAction={(actionId) => {
-                          const updatedActions = actions.filter(a => a.id !== actionId);
-                          const updatedHandler = { ...selectedHandler, actions: updatedActions };
+                          const updatedActions = actions.filter(
+                            (a) => a.id !== actionId
+                          );
+                          const updatedHandler = {
+                            ...selectedHandler,
+                            actions: updatedActions,
+                          };
                           updateHandler(selectedHandler.id, updatedHandler);
                         }}
                       />

@@ -12,14 +12,16 @@ import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
 import { Square } from "lucide-react";
-import { PanelHeader, SectionHeader } from '../common';
-import "../../shared/ui/styles.css";
+import { PanelHeader, SectionHeader } from "../common";
+import { iconProps } from "../../../utils/ui/uiConstants";
+import "../../panels/common/styles.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const updateProperties = useInspectorState((state) => state.updateProperties);
 
-  const [Editor, setEditor] = useState<ComponentType<ComponentEditorProps> | null>(null);
+  const [Editor, setEditor] =
+    useState<ComponentType<ComponentEditorProps> | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 요소 타입에 맞는 에디터 동적 로드
@@ -31,16 +33,27 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     }
 
     setLoading(true);
-    console.log('[PropertiesPanel] Loading editor for type:', selectedElement.type);
+    console.log(
+      "[PropertiesPanel] Loading editor for type:",
+      selectedElement.type
+    );
 
     getEditor(selectedElement.type)
       .then((editor) => {
-        console.log('[PropertiesPanel] Editor loaded:', selectedElement.type, !!editor);
+        console.log(
+          "[PropertiesPanel] Editor loaded:",
+          selectedElement.type,
+          !!editor
+        );
         setEditor(() => editor);
         setLoading(false);
       })
       .catch((error) => {
-        console.error('[PropertiesPanel] Failed to load editor:', selectedElement.type, error);
+        console.error(
+          "[PropertiesPanel] Failed to load editor:",
+          selectedElement.type,
+          error
+        );
         setEditor(null);
         setLoading(false);
       });
@@ -87,7 +100,11 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         title="Properties"
         actions={
           <button className="iconButton" type="button">
-            <Square size={16} />
+            <Square
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
           </button>
         }
       />

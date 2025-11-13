@@ -5,316 +5,371 @@
  * Builder 설정, 테마, 저장 모드 등 시스템 설정 제공
  */
 
-import './index.css';
-import React from 'react';
-import { Eye, Grid3x3, Magnet, Ruler, Square, Tag, Percent, Palette, ZoomIn, Save, Moon, Sun } from 'lucide-react';
-import { Button } from 'react-aria-components';
-import { useParams } from 'react-router-dom';
-import type { PanelProps } from '../core/types';
-import { useStore } from '../../stores';
-import { useUnifiedThemeStore } from '../../../stores/themeStore';
-import { saveService } from '../../../services/save';
-import { PropertySwitch, PropertySelect, PropertySlider } from '../common';
-import { useThemes } from '../../../hooks/theme/useThemes';
-import { ThemeService } from '../../../services/theme';
+import "./index.css";
+import React from "react";
+import {
+  Eye,
+  Grid3x3,
+  Magnet,
+  Ruler,
+  Square,
+  Tag,
+  Percent,
+  Palette,
+  ZoomIn,
+  Save,
+  Moon,
+  Sun,
+  ChevronUp,
+} from "lucide-react";
+import { Button } from "react-aria-components";
+import { useParams } from "react-router-dom";
+import type { PanelProps } from "../core/types";
+import { useStore } from "../../stores";
+import { useUnifiedThemeStore } from "../../../stores/themeStore";
+import { saveService } from "../../../services/save";
+import { PropertySwitch, PropertySelect, PropertySlider } from "../common";
+import { useThemes } from "../../../hooks/theme/useThemes";
+import { ThemeService } from "../../../services/theme";
+import { iconProps } from "../../../utils/ui/uiConstants";
 
 function SettingsContent() {
-    const { projectId } = useParams<{ projectId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
 
-    const showOverlay = useStore((state) => state.showOverlay);
-    const setShowOverlay = useStore((state) => state.setShowOverlay);
+  const showOverlay = useStore((state) => state.showOverlay);
+  const setShowOverlay = useStore((state) => state.setShowOverlay);
 
-    const showGrid = useStore((state) => state.showGrid);
-    const setShowGrid = useStore((state) => state.setShowGrid);
+  const showGrid = useStore((state) => state.showGrid);
+  const setShowGrid = useStore((state) => state.setShowGrid);
 
-    const snapToGrid = useStore((state) => state.snapToGrid);
-    const setSnapToGrid = useStore((state) => state.setSnapToGrid);
+  const snapToGrid = useStore((state) => state.snapToGrid);
+  const setSnapToGrid = useStore((state) => state.setSnapToGrid);
 
-    const gridSize = useStore((state) => state.gridSize);
-    const setGridSize = useStore((state) => state.setGridSize);
+  const gridSize = useStore((state) => state.gridSize);
+  const setGridSize = useStore((state) => state.setGridSize);
 
-    const showElementBorders = useStore((state) => state.showElementBorders);
-    const setShowElementBorders = useStore((state) => state.setShowElementBorders);
+  const showElementBorders = useStore((state) => state.showElementBorders);
+  const setShowElementBorders = useStore(
+    (state) => state.setShowElementBorders
+  );
 
-    const showElementLabels = useStore((state) => state.showElementLabels);
-    const setShowElementLabels = useStore((state) => state.setShowElementLabels);
+  const showElementLabels = useStore((state) => state.showElementLabels);
+  const setShowElementLabels = useStore((state) => state.setShowElementLabels);
 
-    const overlayOpacity = useStore((state) => state.overlayOpacity);
-    const setOverlayOpacity = useStore((state) => state.setOverlayOpacity);
+  const overlayOpacity = useStore((state) => state.overlayOpacity);
+  const setOverlayOpacity = useStore((state) => state.setOverlayOpacity);
 
-    const themeMode = useStore((state) => state.themeMode);
-    const setThemeMode = useStore((state) => state.setThemeMode);
+  const themeMode = useStore((state) => state.themeMode);
+  const setThemeMode = useStore((state) => state.setThemeMode);
 
-    const uiScale = useStore((state) => state.uiScale);
-    const setUiScale = useStore((state) => state.setUiScale);
+  const uiScale = useStore((state) => state.uiScale);
+  const setUiScale = useStore((state) => state.setUiScale);
 
-    // SaveMode 상태
-    const isRealtimeMode = useStore((state) => state.isRealtimeMode);
-    const pendingChanges = useStore((state) => state.pendingChanges);
-    const setRealtimeMode = useStore((state) => state.setRealtimeMode);
-    const pendingCount = pendingChanges.size;
+  // SaveMode 상태
+  const isRealtimeMode = useStore((state) => state.isRealtimeMode);
+  const pendingChanges = useStore((state) => state.pendingChanges);
+  const setRealtimeMode = useStore((state) => state.setRealtimeMode);
+  const pendingCount = pendingChanges.size;
 
-    // Theme 관련 상태
-    const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
-    const loadActiveTheme = useUnifiedThemeStore((state) => state.loadActiveTheme);
-    const { themes } = useThemes({
-        projectId: projectId || "",
-        enableRealtime: false,
-    });
+  // Theme 관련 상태
+  const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
+  const loadActiveTheme = useUnifiedThemeStore(
+    (state) => state.loadActiveTheme
+  );
+  const { themes } = useThemes({
+    projectId: projectId || "",
+    enableRealtime: false,
+  });
 
-    const [isSaving, setIsSaving] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
 
-    const handleThemeChange = async (themeId: string): Promise<void> => {
-        if (!projectId) return;
+  const handleThemeChange = async (themeId: string): Promise<void> => {
+    if (!projectId) return;
 
-        try {
-            await ThemeService.activateTheme(themeId);
-            await loadActiveTheme(projectId);
-            console.log("[Setting] Theme switched to:", themeId);
-        } catch (error) {
-            console.error("[Setting] Failed to switch theme:", error);
-        }
-    };
+    try {
+      await ThemeService.activateTheme(themeId);
+      await loadActiveTheme(projectId);
+      console.log("[Setting] Theme switched to:", themeId);
+    } catch (error) {
+      console.error("[Setting] Failed to switch theme:", error);
+    }
+  };
 
-    // Theme Mode에 따른 아이콘 결정
-    const getThemeModeIcon = () => {
-        if (themeMode === 'dark') return Moon;
-        if (themeMode === 'light') return Sun;
-        // auto인 경우 시스템 설정 확인
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        return prefersDark ? Moon : Sun;
-    };
+  // Theme Mode에 따른 아이콘 결정
+  const getThemeModeIcon = () => {
+    if (themeMode === "dark") return Moon;
+    if (themeMode === "light") return Sun;
+    // auto인 경우 시스템 설정 확인
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    return prefersDark ? Moon : Sun;
+  };
 
-    const themeModeOptions = [
-        { value: 'light', label: 'Light' },
-        { value: 'dark', label: 'Dark' },
-        { value: 'auto', label: 'Auto (System)' },
-    ];
+  const themeModeOptions = [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+    { value: "auto", label: "Auto (System)" },
+  ];
 
-    const uiScaleOptions = [
-        { value: '80', label: '80%' },
-        { value: '100', label: '100%' },
-        { value: '120', label: '120%' },
-    ];
+  const uiScaleOptions = [
+    { value: "80", label: "80%" },
+    { value: "100", label: "100%" },
+    { value: "120", label: "120%" },
+  ];
 
-    const gridSizeOptions = [
-        { value: '8', label: '8px' },
-        { value: '16', label: '16px' },
-        { value: '24', label: '24px' },
-    ];
+  const gridSizeOptions = [
+    { value: "8", label: "8px" },
+    { value: "16", label: "16px" },
+    { value: "24", label: "24px" },
+  ];
 
-    const handleGridSizeChange = (value: string) => {
-        const size = parseInt(value) as 8 | 16 | 24;
-        setGridSize(size);
-    };
+  const handleGridSizeChange = (value: string) => {
+    const size = parseInt(value) as 8 | 16 | 24;
+    setGridSize(size);
+  };
 
-    const handleThemeModeChange = (value: string) => {
-        const mode = value as 'light' | 'dark' | 'auto';
-        setThemeMode(mode);
-    };
+  const handleThemeModeChange = (value: string) => {
+    const mode = value as "light" | "dark" | "auto";
+    setThemeMode(mode);
+  };
 
-    const handleUiScaleChange = (value: string) => {
-        const scale = parseInt(value) as 80 | 100 | 120;
-        setUiScale(scale);
-    };
+  const handleUiScaleChange = (value: string) => {
+    const scale = parseInt(value) as 80 | 100 | 120;
+    setUiScale(scale);
+  };
 
-    const handleSave = (): void => {
-        setIsSaving(true);
-        saveService
-            .saveAllPendingChanges()
-            .then(() => {
-                console.log("✅ 저장 완료");
-            })
-            .catch((error) => {
-                console.error("❌ 저장 실패:", error);
-            })
-            .finally(() => {
-                setIsSaving(false);
-            });
-    };
+  const handleSave = (): void => {
+    setIsSaving(true);
+    saveService
+      .saveAllPendingChanges()
+      .then(() => {
+        console.log("✅ 저장 완료");
+      })
+      .catch((error) => {
+        console.error("❌ 저장 실패:", error);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
+  };
 
-    const handleRealtimeModeChange = (enabled: boolean): void => {
-        setRealtimeMode(enabled);
+  const handleRealtimeModeChange = (enabled: boolean): void => {
+    setRealtimeMode(enabled);
 
-        if (enabled && pendingChanges.size > 0) {
-            // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
-            handleSave();
-        }
-    };
+    if (enabled && pendingChanges.size > 0) {
+      // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
+      handleSave();
+    }
+  };
 
-    return (
+  return (
+    <div className="panel-settings">
+      {/* Save Mode Section */}
 
-        <div className="settingsPanel">
-            {/* Save Mode Section */}
-            <div className="panel-header">
-                <h3 className="panel-title">Settings</h3>
-                <div className="header-actions">
-                    <button
-                        className="iconButton"
-                        type="button"
-                    >
-                        <Square size={16}/>
-                    </button>
-                </div>
-            </div>
-            <div className="settings-section">
-                <div className="section-header">
-                    <div className="section-title">Save Mode</div>
-                </div>
-                <div className="section-content">
-                    <div className="component-props">
-                        <PropertySwitch
-                            label="Auto Save"
-                            isSelected={isRealtimeMode}
-                            onChange={handleRealtimeModeChange}
-                            icon={Save}
-                        />
-
-                        <Button
-                            onPress={handleSave}
-                            isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
-                            className="save-button"
-                        >
-                            <Save size={16} strokeWidth={1.5} />
-                            {isSaving
-                                ? "Saving..."
-                                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Preview & Overlay Section */}
-            <div className="settings-section">
-                <div className="section-header">
-                    <div className="section-title">Preview & Overlay</div>
-                </div>
-                <div className="section-content">
-                    <div className="component-props">
-                        <PropertySwitch
-                            label="Show Selection Overlay"
-                            isSelected={showOverlay}
-                            onChange={setShowOverlay}
-                            icon={Eye}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Grid & Guides Section */}
-            <div className="settings-section">
-                <div className="section-header">
-                    <div className="section-title">Grid & Guides</div>
-                </div>
-                <div className="section-content">
-                    <div className="component-props">
-                        <PropertySwitch
-                            label="Show Grid"
-                            isSelected={showGrid}
-                            onChange={setShowGrid}
-                            icon={Grid3x3}
-                        />
-
-                        <PropertySwitch
-                            label="Snap to Grid"
-                            isSelected={snapToGrid}
-                            onChange={setSnapToGrid}
-                            icon={Magnet}
-                        />
-
-                        <PropertySelect
-                            label="Grid Size"
-                            value={String(gridSize)}
-                            onChange={handleGridSizeChange}
-                            options={gridSizeOptions}
-                            icon={Ruler}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Element Visualization Section */}
-            <div className="settings-section">
-                <div className="section-header">
-                    <div className="section-title">Element Visualization</div>
-                </div>
-                <div className="section-content">
-                    <div className="component-props">
-                        <PropertySwitch
-                            label="Show Element Borders"
-                            isSelected={showElementBorders}
-                            onChange={setShowElementBorders}
-                            icon={Square}
-                        />
-
-                        <PropertySwitch
-                            label="Show Element Labels"
-                            isSelected={showElementLabels}
-                            onChange={setShowElementLabels}
-                            icon={Tag}
-                        />
-
-                        <PropertySlider
-                            label="Overlay Opacity"
-                            value={overlayOpacity}
-                            onChange={setOverlayOpacity}
-                            min={0}
-                            max={100}
-                            step={5}
-                            icon={Percent}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Theme Settings Section */}
-            <div className="settings-section">
-                <div className="section-header">
-                    <div className="section-title">Theme & Appearance</div>
-                </div>
-                <div className="section-content">
-                    <div className="component-props">
-                        {/* Theme Select */}
-                        {projectId && themes.length > 0 && (
-                            <PropertySelect
-                                label="Theme Select"
-                                value={activeTheme?.id || ""}
-                                onChange={handleThemeChange}
-                                options={themes.map((theme) => ({
-                                    value: theme.id,
-                                    label: theme.name
-                                }))}
-                                icon={Palette}
-                            />
-                        )}
-
-                        <PropertySelect
-                            label="Theme Mode"
-                            value={themeMode}
-                            onChange={handleThemeModeChange}
-                            options={themeModeOptions}
-                            icon={getThemeModeIcon()}
-                        />
-
-                        <PropertySelect
-                            label="UI Scale"
-                            value={String(uiScale)}
-                            onChange={handleUiScaleChange}
-                            options={uiScaleOptions}
-                            icon={ZoomIn}
-                        />
-                    </div>
-                </div>
-            </div>
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Save Mode</div>
+          <div className="header-actions">
+            <button className="iconButton">
+              <ChevronUp
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+          </div>
         </div>
-    );
+        <div className="section-content">
+          <div className="component-props">
+            <PropertySwitch
+              label="Auto Save"
+              isSelected={isRealtimeMode}
+              onChange={handleRealtimeModeChange}
+              icon={Save}
+            />
+
+            <Button
+              onPress={handleSave}
+              isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
+              className="save-button"
+            >
+              <Save size={16} strokeWidth={1.5} />
+              {isSaving
+                ? "Saving..."
+                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview & Overlay Section */}
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Preview & Overlay</div>
+          <div className="header-actions">
+            <button className="iconButton">
+              <ChevronUp
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="section-content">
+          <div className="component-props">
+            <PropertySwitch
+              label="Show Selection Overlay"
+              isSelected={showOverlay}
+              onChange={setShowOverlay}
+              icon={Eye}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Grid & Guides Section */}
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Grid & Guides</div>
+          <div className="header-actions">
+            <button className="iconButton">
+              <ChevronUp
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="section-content">
+          <div className="component-props">
+            <PropertySwitch
+              label="Show Grid"
+              isSelected={showGrid}
+              onChange={setShowGrid}
+              icon={Grid3x3}
+            />
+
+            <PropertySwitch
+              label="Snap to Grid"
+              isSelected={snapToGrid}
+              onChange={setSnapToGrid}
+              icon={Magnet}
+            />
+
+            <PropertySelect
+              label="Grid Size"
+              value={String(gridSize)}
+              onChange={handleGridSizeChange}
+              options={gridSizeOptions}
+              icon={Ruler}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Element Visualization Section */}
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Element Visualization</div>
+          <div className="header-actions">
+            <button className="iconButton">
+              <ChevronUp
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="section-content">
+          <div className="component-props">
+            <PropertySwitch
+              label="Show Element Borders"
+              isSelected={showElementBorders}
+              onChange={setShowElementBorders}
+              icon={Square}
+            />
+
+            <PropertySwitch
+              label="Show Element Labels"
+              isSelected={showElementLabels}
+              onChange={setShowElementLabels}
+              icon={Tag}
+            />
+
+            <PropertySlider
+              label="Overlay Opacity"
+              value={overlayOpacity}
+              onChange={setOverlayOpacity}
+              min={0}
+              max={100}
+              step={5}
+              icon={Percent}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Theme Settings Section */}
+      <div className="section">
+        <div className="section-header">
+          <div className="section-title">Theme & Appearance</div>
+          <div className="header-actions">
+            <button className="iconButton">
+              <ChevronUp
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="section-content">
+          <div className="component-props">
+            {/* Theme Select */}
+            {projectId && themes.length > 0 && (
+              <PropertySelect
+                label="Theme Select"
+                value={activeTheme?.id || ""}
+                onChange={handleThemeChange}
+                options={themes.map((theme) => ({
+                  value: theme.id,
+                  label: theme.name,
+                }))}
+                icon={Palette}
+              />
+            )}
+
+            <PropertySelect
+              label="Theme Mode"
+              value={themeMode}
+              onChange={handleThemeModeChange}
+              options={themeModeOptions}
+              icon={getThemeModeIcon()}
+            />
+
+            <PropertySelect
+              label="UI Scale"
+              value={String(uiScale)}
+              onChange={handleUiScaleChange}
+              options={uiScaleOptions}
+              icon={ZoomIn}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function SettingsPanel({ isActive }: PanelProps) {
-    // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
-    if (!isActive) {
-        return null;
-    }
+  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
+  if (!isActive) {
+    return null;
+  }
 
-    return <SettingsContent />;
+  return <SettingsContent />;
 }
