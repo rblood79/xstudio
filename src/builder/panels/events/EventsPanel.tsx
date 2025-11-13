@@ -5,7 +5,6 @@
  * React Stately 기반 이벤트 관리 로직을 직접 포함 (이전 EventSection 통합)
  */
 
-import "../../panels/common/styles.css";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
@@ -25,6 +24,7 @@ import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
 import { PanelHeader } from "../common";
+import "../../panels/common/index.css";
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);

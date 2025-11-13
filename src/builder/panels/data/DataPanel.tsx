@@ -4,7 +4,7 @@
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
  */
 
-import "../../panels/common/styles.css";
+import "../../panels/common/index.css";
 import type { PanelProps } from "../core/types";
 import { DataSourceSelector } from "./DataSourceSelector";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";

@@ -5,17 +5,21 @@
  * 복잡한 스타일 편집 로직을 직접 포함 (이전 StyleSection 통합)
  */
 
-import "../../inspector/index.css";
+import "../../panels/common/index.css";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButton, ToggleButtonGroup, Button } from "../../components";
-import { PropertySelect, PropertyUnitInput, PropertyColor } from "../common";
+import {
+  PropertySelect,
+  PropertyUnitInput,
+  PropertyColor,
+  PropertySection,
+} from "../common";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import type { SelectedElement } from "../../inspector/types";
 import {
   Square,
   SquareDashed,
-  ChevronUp,
   EllipsisVertical,
   Frame,
   LayoutGrid,
@@ -210,19 +214,7 @@ export function StylesPanel({ isActive }: PanelProps) {
   return (
     <div className="styles-panel">
       <div className="style-section">
-        <div className="section-header">
-          <h3 className="section-title">Transform</h3>
-          <div className="header-actions">
-            <button className="iconButton" aria-label="Add Element">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-        <div className="section-content">
+        <PropertySection title="Transform">
           <fieldset className="transform-alignment">
             <legend className="fieldset-legend">Alignment</legend>
             <div className="alignment-controls-horizontal">
@@ -390,22 +382,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               </Button>
             </div>
           </div>
-        </div>
+        </PropertySection>
 
-        <div className="section-header">
-          <h3 className="section-title">Layout</h3>
-          <div className="header-actions">
-            <button className="iconButton" aria-label="Add Element">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div className="section-content">
+        <PropertySection title="Layout">
           <fieldset className="layout-direction">
             <div className="direction-controls">
               <ToggleButtonGroup
@@ -653,22 +632,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               </Button>
             </div>
           </div>
-        </div>
+        </PropertySection>
 
-        <div className="section-header">
-          <h3 className="section-title">Style</h3>
-          <div className="header-actions">
-            <button className="iconButton" aria-label="Add Element">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div className="section-content">
+        <PropertySection title="Style">
           <div className="style-background">
             <PropertyColor
               icon={Square}
@@ -749,22 +715,9 @@ export function StylesPanel({ isActive }: PanelProps) {
               </Button>
             </div>
           </div>
-        </div>
+        </PropertySection>
 
-        <div className="section-header">
-          <h3 className="section-title">Text</h3>
-          <div className="header-actions">
-            <button className="iconButton" aria-label="Add Element">
-              <ChevronUp
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-            </button>
-          </div>
-        </div>
-
-        <div className="section-content">
+        <PropertySection title="Text">
           <PropertySelect
             icon={Type}
             label="Font Family"
@@ -1080,7 +1033,7 @@ export function StylesPanel({ isActive }: PanelProps) {
               </ToggleButton>
             </ToggleButtonGroup>
           </fieldset>
-        </div>
+        </PropertySection>
       </div>
     </div>
   );

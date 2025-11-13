@@ -1,0 +1,602 @@
+/* Import Section Structure Styles */
+@import "./section.css";
+
+@layer builder-system {
+  :root {
+    /* Inspector 전용 크기 토큰 */
+    --inspector-control-size: 27px;
+    --inspector-label-width: 27px;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+
+    &.empty,
+    &.loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+    }
+
+    label,
+    legend {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      &::before {
+        top: 2px;
+        left: 2px;
+        width: calc(var(--indicator-width) - var(--spacing));
+        height: calc(var(--indicator-height) - var(--spacing));
+        border-radius: var(--radius-sm);
+        background: var(--builder-inspector-bg);
+      }
+
+      .react-aria-ToggleButton {
+        background-color: transparent;
+        border-color: transparent;
+
+        &[data-pressed] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--builder-inspector-text-primary);
+        }
+
+        &[data-selected] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--builder-inspector-bg);
+
+          &[data-pressed] {
+            background: transparent;
+            border-color: transparent;
+            color: var(--builder-inspector-bg);
+          }
+        }
+      }
+    }
+    /* Section Header */
+    .section-header {
+      font-size: var(--text-xs);
+      font-weight: var(--font-weight-bold);
+      background-color: var(--builder-inspector-header-bg);
+      border-bottom: 1px solid var(--builder-inspector-control-bg);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-header .section-title {
+      padding-left: calc(var(--spacing-sm));
+      border-bottom: 0px;
+      padding: var(--spacing-sm);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--text-sm);
+    }
+
+    .section-header .header-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+
+    .section-header .header-actions .iconButton {
+      padding: var(--spacing-sm);
+    }
+
+    /* Section Content */
+    .section-content {
+      padding: var(--spacing-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+
+      .component-props {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .properties-aria {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+
+        .react-aria-ListBoxItem {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      }
+
+      .transform-size-height {
+        .react-aria-control {
+          .control-label {
+            svg {
+              transform: rotate(90deg);
+            }
+          }
+        }
+      }
+
+      .component-fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .transform-alignment,
+      .spacing-controls-container {
+        display: grid;
+        grid-template-rows: auto var(--inspector-control-size);
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-areas:
+          "label label label"
+          "input1 input2 icon";
+        gap: var(--spacing) var(--spacing-sm);
+
+        .alignment-controls-horizontal,
+        .color-control,
+        .size-control-width,
+        .position-control-x,
+        .spacing-control {
+          grid-area: input1;
+          display: flex;
+        }
+
+        .alignment-controls-vertical,
+        .size-control-height,
+        .position-control-y {
+          grid-area: input2;
+          display: flex;
+        }
+      }
+
+      .style-border,
+      .style-border-width,
+      .style-border-radius,
+      .style-border-style,
+      .typography-font {
+        display: grid;
+        grid-template-rows: 12px auto;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-areas:
+          "label label label"
+          "input1 input2 icon";
+        gap: 0;
+      }
+
+      .typography-font {
+        display: grid;
+        grid-template-rows: auto var(--inspector-control-size);
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-areas:
+          "label label label"
+          "input1 input1 icon";
+        gap: var(--spacing) var(--spacing-sm);
+
+        .color-control {
+          grid-area: input1;
+          display: flex;
+        }
+      }
+
+      .style-background,
+      .layout-container,
+      .transform-size,
+      .transform-position,
+      .text-size,
+      .text-alignment,
+      .text-decoration-style,
+      .text-weight-spacing {
+        display: flex;
+        flex-direction: row;
+        gap: var(--spacing-sm);
+        align-items: flex-end;
+        justify-content: space-between;
+
+        > .properties-aria {
+          flex: 1;
+          min-width: 0;
+        }
+
+        > .fieldset-actions {
+          flex-shrink: 0;
+        }
+      }
+
+      .spacing-padding,
+      .spacing-margin {
+        display: grid;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "label"
+          "input1";
+        gap: var(--spacing) var(--spacing-sm);
+      }
+
+      .border-controls-container {
+        display: grid;
+        grid-template-rows: auto auto;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-areas:
+          "input1 input2 ."
+          "input3 input4 icon";
+        gap: var(--spacing-sm);
+
+        .color-control {
+          grid-area: input1;
+          display: flex;
+        }
+
+        .border-width-control {
+          grid-area: input2;
+          display: flex;
+        }
+
+        .border-radius-control {
+          grid-area: input3;
+          display: flex;
+        }
+
+        .border-style-control {
+          grid-area: input4;
+          display: flex;
+        }
+
+        .fieldset-actions {
+          align-items: flex-end;
+        }
+      }
+
+      .style-border,
+      .style-border-width,
+      .style-border-radius,
+      .style-border-style {
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "label"
+          "input1";
+        gap: 0px;
+      }
+
+      .style-border,
+      .font-select-control {
+        grid-area: input1;
+      }
+
+      .style-border-width {
+        grid-area: input2;
+      }
+
+      .style-border-radius {
+        grid-area: input3;
+      }
+
+      .style-border-style {
+        grid-area: input4;
+      }
+
+      .fieldset-legend {
+        grid-area: label;
+        font-size: var(--text-2xs);
+        color: var(--builder-inspector-text-secondary);
+      }
+
+      .fieldset-actions {
+        grid-area: icon;
+        display: flex;
+
+        .react-aria-Button {
+          background-color: var(--builder-inspector-control-bg);
+          border-color: transparent;
+          padding: var(--spacing);
+          height: var(--inspector-control-size);
+          width: var(--inspector-control-size);
+        }
+      }
+
+      .layout-direction {
+        display: grid;
+        grid-template-rows: auto var(--inspector-control-size);
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-areas:
+          "label label label"
+          "input1 input2 icon"
+          "input3 input2 icon"
+          "input4 input2 icon";
+        gap: var(--spacing) var(--spacing-sm);
+
+        .direction-controls {
+          grid-area: input1;
+          display: flex;
+        }
+
+        .direction-alignment-grid {
+          grid-area: input2;
+
+          .react-aria-ToggleButtonGroup {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            border-radius: var(--radius-md);
+
+            .react-aria-ToggleButton {
+              margin-inline-start: 0;
+              height: var(--inspector-control-size);
+
+              .alignment-dot {
+                width: var(--spacing);
+                height: var(--spacing);
+                background-color: var(--builder-inspector-divider);
+              }
+            }
+          }
+        }
+
+        .justify-control {
+          grid-area: input3;
+          display: flex;
+        }
+
+        .gap-control {
+          grid-area: input4;
+          display: flex;
+        }
+      }
+    }
+
+    .react-aria-Group {
+      background-color: var(--builder-inspector-control-bg);
+      border-radius: var(--radius-md);
+      width: 100%;
+      min-width: 0;
+      min-height: var(--inspector-control-size);
+
+      .react-aria-Select,
+      .react-aria-ComboBox {
+        width: 100%;
+        padding: 0;
+
+        .react-aria-Button {
+          span[aria-hidden] {
+            width: var(--text-xl);
+            height: var(--text-xl);
+            border-radius: var(--radius-sm);
+          }
+        }
+      }
+      .react-aria-UnitComboBox {
+        .react-aria-Button {
+          width: var(--text-xl);
+          height: var(--text-xl);
+          border-radius: var(--radius-sm);
+        }
+      }
+    }
+
+    .react-aria-control {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      /* Show focus ring on container when Switch is focused */
+      &:has(.react-aria-Switch:focus-visible),
+      &:has(.react-aria-Switch[data-focused]),
+      &:has(.react-aria-Switch[data-focus-visible]) {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
+
+      .react-aria-Checkbox {
+        width: 100%;
+        /*justify-content: space-between;
+        flex-direction: row-reverse;
+        padding: 0;*/
+      }
+
+      .react-aria-Select {
+        width: 100%;
+        min-width: 0;
+
+        .react-aria-Button {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          padding: 0 3px 0 0;
+          background-color: transparent;
+          border-color: transparent;
+          min-width: 0;
+          width: 100%;
+
+          .control-label {
+            position: static;
+            flex-shrink: 0;
+          }
+
+          span[aria-hidden] {
+            width: var(--text-xl);
+            height: var(--text-xl);
+            border-radius: var(--radius-sm);
+            flex-shrink: 0;
+          }
+        }
+
+        .react-aria-SelectValue {
+          font-size: var(--text-xs);
+          color: var(--builder-inspector-text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+        }
+      }
+
+      .react-aria-Switch {
+        width: 100%;
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-left-width: 0px;
+        border-radius: var(--border-radius);
+        font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
+        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
+          calc(var(--spacing) * 1.378);
+        padding-inline-start: var(--inspector-label-width);
+        flex-direction: row-reverse;
+
+        /* Remove focus ring from Switch itself */
+        &[data-focused],
+        &[data-pressed],
+        &[data-focus-visible] {
+          outline: none !important;
+          box-shadow: none;
+        }
+
+        /* Remove focus ring from indicator */
+        .indicator {
+          outline: none !important;
+        }
+
+        &[data-focus-visible] .indicator {
+          outline: none !important;
+        }
+      }
+    }
+
+    .control-label {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--inspector-label-width);
+      height: 25px;
+      padding: var(--spacing-2xs) var(--spacing-2xs);
+      text-align: center;
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-right-width: 0;
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--builder-inspector-text-secondary);
+    }
+
+    input.control-input {
+      height: var(--inspector-control-size);
+    }
+
+    .react-aria-Input {
+      background-color: transparent;
+      border: 1px solid transparent;
+      border-left-width: 0;
+      border-radius: var(--border-radius);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
+      padding: calc(var(--spacing) * 1.125);
+      padding-inline-start: var(--inspector-label-width);
+
+      &:focus {
+        outline: 2px solid var(--focus-ring-color);
+        box-shadow: var(--inset-shadow-sm);
+      }
+    }
+
+    .react-aria-ToggleButtonGroup {
+      width: 100%;
+      background-color: var(--builder-inspector-control-bg);
+      border-radius: var(--radius-md);
+      box-shadow: var(--inset-shadow-sm);
+
+      .react-aria-ToggleButton {
+        padding: var(--spacing);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        border-color: transparent;
+
+        &[data-selected] {
+          background: var(--builder-inspector-bg);
+          border-radius: var(--radius-md);
+          border-color: var(--builder-inspector-divider);
+          border-width: 1px;
+        }
+      }
+    }
+
+    .react-aria-CheckboxGroup {
+      background-color: var(--builder-inspector-control-bg);
+      border-radius: var(--radius-md);
+      gap: 0;
+
+      .react-aria-Checkbox {
+        padding-left: calc(var(--spacing) * 1.5);
+
+        .checkbox {
+          width: var(--spacing-lg);
+          height: var(--spacing-lg);
+        }
+      }
+    }
+
+    .loading-message,
+    .empty-message {
+      color: var(--builder-inspector-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .section-placeholder {
+      padding: var(--spacing-4);
+      background: var(--builder-inspector-warning-bg);
+      border: 1px solid var(--builder-inspector-warning-border);
+      border-radius: var(--radius-md);
+      color: var(--builder-inspector-warning-text);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-4);
+    }
+
+    .section-info {
+      padding: var(--spacing-4);
+      background: var(--builder-inspector-surface);
+      border: 1px solid var(--builder-inspector-divider);
+      border-radius: var(--radius-md);
+
+      h4 {
+        margin: 0 0 var(--spacing-2) 0;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        color: var(--builder-inspector-text-primary);
+      }
+
+      pre {
+        margin: 0;
+        padding: var(--spacing-2);
+        background: var(--builder-inspector-control-bg);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-family: var(--font-mono);
+        overflow-x: auto;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: var(--spacing-4);
+        font-size: var(--font-size-sm);
+        color: var(--builder-inspector-text-secondary);
+      }
+    }
+  }
+}
