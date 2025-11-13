@@ -44,11 +44,9 @@ export function ComponentsPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="components-panel sidebar-section components">
-      <Components
-        handleAddElement={handleAddElement}
-        selectedElementId={selectedElementId}
-      />
-    </div>
+    <Components
+      handleAddElement={handleAddElement}
+      selectedElementId={selectedElementId}
+    />
   );
 }

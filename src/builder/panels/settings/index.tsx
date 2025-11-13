@@ -12,7 +12,7 @@ import { ThemeService } from '../../../services/theme';
 
 function Setting() {
     const { projectId } = useParams<{ projectId: string }>();
-    
+
     const showOverlay = useStore((state) => state.showOverlay);
     const setShowOverlay = useStore((state) => state.setShowOverlay);
 
@@ -135,156 +135,155 @@ function Setting() {
     };
 
     return (
-        <div className="sidebar-content">
-            <div className="settings-container">
-                {/* Save Mode Section */}
-                <div className="settings-section">
-                    <div className="section-header">
-                        <div className="section-title">Save Mode</div>
-                    </div>
-                    <div className="section-content">
-                        <div className="component-props">
-                            <PropertySwitch
-                                label="Auto Save"
-                                isSelected={isRealtimeMode}
-                                onChange={handleRealtimeModeChange}
-                                icon={Save}
-                            />
 
-                            <Button
-                                onPress={handleSave}
-                                isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
-                                className="save-button"
-                            >
-                                <Save size={16} strokeWidth={1.5} />
-                                {isSaving
-                                    ? "Saving..."
-                                    : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-                            </Button>
-                        </div>
+        <div className="settingsPanel">
+            {/* Save Mode Section */}
+            <div className="settings-section">
+                <div className="section-header">
+                    <div className="section-title">Save Mode</div>
+                </div>
+                <div className="section-content">
+                    <div className="component-props">
+                        <PropertySwitch
+                            label="Auto Save"
+                            isSelected={isRealtimeMode}
+                            onChange={handleRealtimeModeChange}
+                            icon={Save}
+                        />
+
+                        <Button
+                            onPress={handleSave}
+                            isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
+                            className="save-button"
+                        >
+                            <Save size={16} strokeWidth={1.5} />
+                            {isSaving
+                                ? "Saving..."
+                                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+                        </Button>
                     </div>
                 </div>
+            </div>
 
-                {/* Preview & Overlay Section */}
-                <div className="settings-section">
-                    <div className="section-header">
-                        <div className="section-title">Preview & Overlay</div>
-                    </div>
-                    <div className="section-content">
-                        <div className="component-props">
-                            <PropertySwitch
-                                label="Show Selection Overlay"
-                                isSelected={showOverlay}
-                                onChange={setShowOverlay}
-                                icon={Eye}
-                            />
-                        </div>
+            {/* Preview & Overlay Section */}
+            <div className="settings-section">
+                <div className="section-header">
+                    <div className="section-title">Preview & Overlay</div>
+                </div>
+                <div className="section-content">
+                    <div className="component-props">
+                        <PropertySwitch
+                            label="Show Selection Overlay"
+                            isSelected={showOverlay}
+                            onChange={setShowOverlay}
+                            icon={Eye}
+                        />
                     </div>
                 </div>
+            </div>
 
-                {/* Grid & Guides Section */}
-                <div className="settings-section">
-                    <div className="section-header">
-                        <div className="section-title">Grid & Guides</div>
+            {/* Grid & Guides Section */}
+            <div className="settings-section">
+                <div className="section-header">
+                    <div className="section-title">Grid & Guides</div>
+                </div>
+                <div className="section-content">
+                    <div className="component-props">
+                        <PropertySwitch
+                            label="Show Grid"
+                            isSelected={showGrid}
+                            onChange={setShowGrid}
+                            icon={Grid3x3}
+                        />
+
+                        <PropertySwitch
+                            label="Snap to Grid"
+                            isSelected={snapToGrid}
+                            onChange={setSnapToGrid}
+                            icon={Magnet}
+                        />
+
+                        <PropertySelect
+                            label="Grid Size"
+                            value={String(gridSize)}
+                            onChange={handleGridSizeChange}
+                            options={gridSizeOptions}
+                            icon={Ruler}
+                        />
                     </div>
-                    <div className="section-content">
-                        <div className="component-props">
-                            <PropertySwitch
-                                label="Show Grid"
-                                isSelected={showGrid}
-                                onChange={setShowGrid}
-                                icon={Grid3x3}
-                            />
+                </div>
+            </div>
 
-                            <PropertySwitch
-                                label="Snap to Grid"
-                                isSelected={snapToGrid}
-                                onChange={setSnapToGrid}
-                                icon={Magnet}
-                            />
+            {/* Element Visualization Section */}
+            <div className="settings-section">
+                <div className="section-header">
+                    <div className="section-title">Element Visualization</div>
+                </div>
+                <div className="section-content">
+                    <div className="component-props">
+                        <PropertySwitch
+                            label="Show Element Borders"
+                            isSelected={showElementBorders}
+                            onChange={setShowElementBorders}
+                            icon={Square}
+                        />
 
+                        <PropertySwitch
+                            label="Show Element Labels"
+                            isSelected={showElementLabels}
+                            onChange={setShowElementLabels}
+                            icon={Tag}
+                        />
+
+                        <PropertySlider
+                            label="Overlay Opacity"
+                            value={overlayOpacity}
+                            onChange={setOverlayOpacity}
+                            min={0}
+                            max={100}
+                            step={5}
+                            icon={Percent}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Theme Settings Section */}
+            <div className="settings-section">
+                <div className="section-header">
+                    <div className="section-title">Theme & Appearance</div>
+                </div>
+                <div className="section-content">
+                    <div className="component-props">
+                        {/* Theme Select */}
+                        {projectId && themes.length > 0 && (
                             <PropertySelect
-                                label="Grid Size"
-                                value={String(gridSize)}
-                                onChange={handleGridSizeChange}
-                                options={gridSizeOptions}
-                                icon={Ruler}
+                                label="Theme Select"
+                                value={activeTheme?.id || ""}
+                                onChange={handleThemeChange}
+                                options={themes.map((theme) => ({
+                                    value: theme.id,
+                                    label: theme.name
+                                }))}
+                                icon={Palette}
                             />
-                        </div>
-                    </div>
-                </div>
+                        )}
 
-                {/* Element Visualization Section */}
-                <div className="settings-section">
-                    <div className="section-header">
-                        <div className="section-title">Element Visualization</div>
-                    </div>
-                    <div className="section-content">
-                        <div className="component-props">
-                            <PropertySwitch
-                                label="Show Element Borders"
-                                isSelected={showElementBorders}
-                                onChange={setShowElementBorders}
-                                icon={Square}
-                            />
+                        <PropertySelect
+                            label="Theme Mode"
+                            value={themeMode}
+                            onChange={handleThemeModeChange}
+                            options={themeModeOptions}
+                            icon={getThemeModeIcon()}
+                        />
 
-                            <PropertySwitch
-                                label="Show Element Labels"
-                                isSelected={showElementLabels}
-                                onChange={setShowElementLabels}
-                                icon={Tag}
-                            />
-
-                            <PropertySlider
-                                label="Overlay Opacity"
-                                value={overlayOpacity}
-                                onChange={setOverlayOpacity}
-                                min={0}
-                                max={100}
-                                step={5}
-                                icon={Percent}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Theme Settings Section */}
-                <div className="settings-section">
-                    <div className="section-header">
-                        <div className="section-title">Theme & Appearance</div>
-                    </div>
-                    <div className="section-content">
-                        <div className="component-props">
-                            {/* Theme Select */}
-                            {projectId && themes.length > 0 && (
-                                <PropertySelect
-                                    label="Theme Select"
-                                    value={activeTheme?.id || ""}
-                                    onChange={handleThemeChange}
-                                    options={themes.map((theme) => ({
-                                        value: theme.id,
-                                        label: theme.name
-                                    }))}
-                                    icon={Palette}
-                                />
-                            )}
-
-                            <PropertySelect
-                                label="Theme Mode"
-                                value={themeMode}
-                                onChange={handleThemeModeChange}
-                                options={themeModeOptions}
-                                icon={getThemeModeIcon()}
-                            />
-
-                            <PropertySelect
-                                label="UI Scale"
-                                value={String(uiScale)}
-                                onChange={handleUiScaleChange}
-                                options={uiScaleOptions}
-                                icon={ZoomIn}
-                            />
-                        </div>
+                        <PropertySelect
+                            label="UI Scale"
+                            value={String(uiScale)}
+                            onChange={handleUiScaleChange}
+                            options={uiScaleOptions}
+                            icon={ZoomIn}
+                        />
                     </div>
                 </div>
             </div>
@@ -292,4 +291,4 @@ function Setting() {
     );
 }
 
-export default Setting;export { Setting as SettingsPanel };
+export default Setting; export { Setting as SettingsPanel };

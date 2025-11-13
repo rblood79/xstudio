@@ -10,9 +10,7 @@ import { ChatInterface } from './ChatInterface';
 
 function AI() {
     return (
-        <div className="sidebar-section-ai">
-            <ChatInterface />
-        </div>
+        <ChatInterface />
     );
 }
 

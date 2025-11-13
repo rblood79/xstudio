@@ -20,7 +20,7 @@ import { FigmaPluginExporter } from './components/FigmaPluginExporter';
 
 const themeStudioStyles = tv({
   slots: {
-    container: 'theme-studio-container',
+    container: 'themePanel',
     header: 'theme-studio-header',
     sidebar: 'theme-studio-sidebar',
     main: 'theme-studio-main',

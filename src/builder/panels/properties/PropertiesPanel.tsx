@@ -30,8 +30,6 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="inspector-container">
-      <PropertiesSection element={selectedElement} />
-    </div>
+    <PropertiesSection element={selectedElement} />
   );
 }

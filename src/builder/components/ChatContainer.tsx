@@ -44,7 +44,7 @@ export function ChatContainer({
   };
 
   return (
-    <div className="chat-container">
+    <div className="chatPanel">
       <div className="panel-header">
         <h3 className="panel-title">AI Assistant</h3>
         <div className="header-actions">

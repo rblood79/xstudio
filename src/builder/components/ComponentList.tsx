@@ -340,7 +340,7 @@ const ComponentList = memo(
     }, [searchQuery, filteredGroups, expandCategories]);
 
     return (
-      <div className="sidebar-content">
+      <div className="componentsPanel">
         <div className="panel-header">
           <h3 className="panel-title">Components</h3>
           <div className="header-actions">

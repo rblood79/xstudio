@@ -43,39 +43,27 @@ export function PanelContainer({
   // 여러 패널을 동시에 렌더링
   return (
     <div className="panel-container">
-      {activePanels.map((panelId) => {
-        const panelConfig = PanelRegistry.getPanel(panelId);
+      <div className="panel-content">
+        {
+          activePanels.map((panelId) => {
+            const panelConfig = PanelRegistry.getPanel(panelId);
 
-        if (!panelConfig) {
-          console.warn(`[PanelContainer] Panel "${panelId}" not found in registry`);
-          return null;
-        }
+            if (!panelConfig) {
+              console.warn(`[PanelContainer] Panel "${panelId}" not found in registry`);
+              return null;
+            }
 
-        const PanelComponent = panelConfig.component;
+            const PanelComponent = panelConfig.component;
 
-        // PanelConfig에서 width 읽기
-        const panelStyle: React.CSSProperties = {};
-        if (panelConfig.minWidth) {
-          panelStyle.minWidth = `${panelConfig.minWidth}px`;
-        }
-        if (panelConfig.maxWidth) {
-          panelStyle.maxWidth = `${panelConfig.maxWidth}px`;
-        }
-        // width 기본값: minWidth 사용
-        if (panelConfig.minWidth && !panelConfig.maxWidth) {
-          panelStyle.width = `${panelConfig.minWidth}px`;
-        }
-
-        return (
-          <div key={panelId} className="panel-content" style={panelStyle}>
-            <PanelComponent
-              isActive={true}
-              side={side}
-              onClose={undefined}
-            />
-          </div>
-        );
-      })}
+            return (
+              <PanelComponent
+                isActive={true}
+                side={side}
+                onClose={undefined}
+              />
+            );
+          })}
+      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@
  */
 
 @layer components {
-  .chat-container {
+  .chatPanel {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -14,7 +14,7 @@
   /* Header styles are now inherited from global .panel-header */
   /* See sidebar/index.css for panel-header, panel-title, header-actions, iconButton */
 
-  .chat-content{
+  .chatPanel{
     flex: 1;
     overflow-y: auto;
     display: flex;

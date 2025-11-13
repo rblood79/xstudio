@@ -5,7 +5,7 @@
 
 @layer components {
   /* Container */
-  .theme-studio-container {
+  .themePanel {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -13,7 +13,7 @@
   }
 
   /* Dark Mode Container */
-  [data-theme='dark'] .theme-studio-container {
+  [data-theme='dark'] .themePanel {
     background: var(--text-color);
   }
 
