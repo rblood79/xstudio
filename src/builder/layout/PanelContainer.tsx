@@ -32,7 +32,7 @@ export function PanelContainer({
   // 활성 패널이 없는 경우
   if (activePanels.length === 0) {
     return (
-      <div className="sidebar-container inspector">
+      <div className="sidebar-container">
         <div className="sidebar-empty-state">
           <p className="empty-message">패널을 선택하세요</p>
         </div>
@@ -42,7 +42,7 @@ export function PanelContainer({
 
   // 여러 패널을 동시에 렌더링
   return (
-    <div className="sidebar-container inspector">
+    <div className="sidebar-container">
       {activePanels.map((panelId) => {
         const panelConfig = PanelRegistry.getPanel(panelId);
 

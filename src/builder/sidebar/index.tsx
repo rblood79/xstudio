@@ -1497,7 +1497,6 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
 
     return (
         <aside className="sidebar">
-            <SidebarNav activeTabs={activeTabs} onTabChange={toggleTab} onCloseAll={closeAll} />
             <div className="sidebar-container">
                 {renderContent()}
             </div>
