@@ -9,7 +9,6 @@ import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
 import { EventSection } from "../sections/EventSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
-
 export function EventsPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
 

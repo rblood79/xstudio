@@ -168,9 +168,11 @@ export function EventSection(props: EventSectionProps) {
 
   return (
     <div className="event-section">
-      <div className="section-header">
-        <h3 className="section-title">Events</h3>
-        <div className="section-actions">
+      
+
+      <div className="panel-header">
+        <h3 className="panel-title">Events</h3>
+        <div className="panel-actions">
           <EventTypePicker
             onSelect={handleAddEvent}
             registeredTypes={registeredEventTypes}

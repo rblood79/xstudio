@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { SelectedElement, ComponentEditorProps } from "../../inspector/types";
+import { Square } from "lucide-react";
 
 export interface PropertiesSectionProps {
   element: SelectedElement;
@@ -56,6 +57,17 @@ export function PropertiesSection({ element }: PropertiesSectionProps) {
 
   return (
     <div className="properties-section">
+      <div className="panel-header">
+        <h3 className="panel-title">Properties</h3>
+        <div className="header-actions">
+          <button
+            className="iconButton"
+            type="button"
+          >
+            <Square size={16} />
+          </button>
+        </div>
+      </div>
       <div className="section-header">
         <div className="section-title">{element.type}</div>
       </div>

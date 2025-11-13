@@ -9,7 +9,7 @@ import "../../shared/ui/styles.css";
 import type { PanelProps } from "../core/types";
 import { StyleSection } from "../sections/StyleSection";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
-
+import { Square } from "lucide-react";
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
 
@@ -31,6 +31,17 @@ export function StylesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="inspector-container">
+      <div className="panel-header">
+        <h3 className="panel-title">Styles</h3>
+        <div className="header-actions">
+          <button
+            className="iconButton"
+            type="button"
+          >
+            <Square size={16} />
+          </button>
+        </div>
+      </div>
       <StyleSection element={selectedElement} />
     </div>
   );
