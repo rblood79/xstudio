@@ -1,5 +1,5 @@
 import { Minus, PencilRuler, Layout, Type } from 'lucide-react';
-import { PropertySelect, PropertyCustomId, PropertyInput } from '../../../shared/ui';
+import { PropertySelect, PropertyCustomId, PropertyInput } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

@@ -1,0 +1,45 @@
+/**
+ * PanelHeader - 패널 최상위 헤더 컴포넌트
+ *
+ * 모든 패널의 최상위 헤더에 사용되는 공통 컴포넌트
+ * title + actions 구조를 일관되게 제공
+ */
+
+import type { ReactNode } from "react";
+
+export interface PanelHeaderProps {
+  /** 헤더 제목 */
+  title: string;
+  /** 헤더 우측 액션 버튼들 (ReactNode) */
+  actions?: ReactNode;
+  /** 추가 CSS 클래스 */
+  className?: string;
+}
+
+/**
+ * 패널 헤더 컴포넌트
+ *
+ * @example
+ * ```tsx
+ * <PanelHeader
+ *   title="Properties"
+ *   actions={<button className="iconButton"><Square size={16} /></button>}
+ * />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * <PanelHeader
+ *   title="Events"
+ *   actions={<EventTypePicker onSelect={handleAddEvent} />}
+ * />
+ * ```
+ */
+export function PanelHeader({ title, actions, className = "" }: PanelHeaderProps) {
+  return (
+    <div className={`panel-header ${className}`.trim()}>
+      <h3 className="panel-title">{title}</h3>
+      {actions && <div className="panel-actions">{actions}</div>}
+    </div>
+  );
+}

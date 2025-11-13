@@ -1,5 +1,5 @@
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyCustomId } from '../../../shared/ui';
+import { PropertySelect, PropertyCustomId } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

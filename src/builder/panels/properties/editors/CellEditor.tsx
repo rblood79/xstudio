@@ -1,5 +1,5 @@
 
-import { PropertyInput, PropertySelect, PropertyCustomId } from '../../../shared/ui';
+import { PropertyInput, PropertySelect, PropertyCustomId } from '../../common';
 import type { CellElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';

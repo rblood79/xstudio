@@ -2,7 +2,7 @@ import {
     Tag, Hash, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, ArrowUp, ArrowDown, Move, Focus, Type, DollarSign, MousePointerClick, Globe, Hash as HashIcon
 } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../../shared/ui';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

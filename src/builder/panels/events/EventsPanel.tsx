@@ -24,6 +24,7 @@ import { DebounceThrottleEditor } from "../../events/components/DebounceThrottle
 import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
+import { PanelHeader } from '../common';
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);
@@ -190,15 +191,15 @@ function EventsPanelContent({ selectedElement, updateEvents, showAddAction, setS
   return (
     <div className="inspector events-panel">
       <div className="event-section">
-        <div className="panel-header">
-          <h3 className="panel-title">Events</h3>
-          <div className="panel-actions">
+        <PanelHeader
+          title="Events"
+          actions={
             <EventTypePicker
               onSelect={handleAddEvent}
               registeredTypes={registeredEventTypes}
             />
-          </div>
-        </div>
+          }
+        />
 
         <div className="section-content">
           {/* 등록된 이벤트 핸들러 목록 */}
