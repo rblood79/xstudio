@@ -12,6 +12,7 @@ import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
 import { Square } from "lucide-react";
+import { PanelHeader, SectionHeader } from "../../shared/ui";
 import "../../shared/ui/styles.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -82,18 +83,16 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="properties-panel">
-      <div className="panel-header">
-        <h3 className="panel-title">Properties</h3>
-        <div className="panel-actions">
+      <PanelHeader
+        title="Properties"
+        actions={
           <button className="iconButton" type="button">
             <Square size={16} />
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="section-header">
-        <div className="section-title">{selectedElement.type}</div>
-      </div>
+      <SectionHeader title={selectedElement.type} />
 
       <div className="section-content">
         <Editor
