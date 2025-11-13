@@ -88,10 +88,12 @@ export function useThemes(options: UseThemesOptions): UseThemesReturn {
     loading,
     error,
     refetch: async () => { await loadThemes(projectId); },
-    createTheme,
+    createTheme: (name, parentThemeId, status) => 
+      createTheme(name, parentThemeId, status, projectId),
     updateTheme,
-    deleteTheme,
-    duplicateTheme,
-    activateTheme,
+    deleteTheme: (themeId) => deleteTheme(themeId, projectId),
+    duplicateTheme: (sourceThemeId, newName, inherit) =>
+      duplicateTheme(sourceThemeId, newName, inherit, projectId),
+    activateTheme: (themeId) => activateTheme(themeId, projectId),
   };
 }

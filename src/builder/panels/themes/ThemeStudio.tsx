@@ -85,82 +85,73 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
     );
   }
 
+
   return (
     <div
       className={styles.container()}
       data-theme={isPreviewDarkMode ? 'dark' : undefined}
     >
       {/* Header */}
-      <header className={styles.header()}>
-        <div className="header-content">
-          <h1 className="studio-title">ThemeStudio</h1>
-
-          {/* Active Theme Selector */}
-          <div className="active-theme-selector">
-            <label>활성 테마:</label>
-            <select
-              value={activeTheme?.id || ''}
-              onChange={(e) => handleActivateTheme(e.target.value)}
-            >
-              {themes.map((theme) => (
-                <option key={theme.id} value={theme.id}>
-                  {theme.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
+      <div className="panel-header">
+        <h3 className="panel-title">Theme</h3>
+        <div className="header-actions">
+          <select
+            value={activeTheme?.id || ''}
+            onChange={(e) => handleActivateTheme(e.target.value)}
+          >
+            {themes.map((theme) => (
+              <option key={theme.id} value={theme.id}>
+                {theme.name}
+              </option>
+            ))}
+          </select>
           {/* Dark Mode Preview Toggle */}
           <button
-            className="preview-dark-mode-toggle"
+            className="iconButton preview-dark-mode-toggle"
             onClick={handleTogglePreviewDarkMode}
             title={isPreviewDarkMode ? 'Light 모드로 전환' : 'Dark 모드로 전환'}
           >
-            {isPreviewDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {isPreviewDarkMode ? <Sun size={16} /> : <Moon size={16} />}
             <span>{isPreviewDarkMode ? 'Light' : 'Dark'}</span>
           </button>
-
-          {/* View Tabs */}
-          <nav className="view-tabs">
-            <button
-              className={currentView === 'tokens' ? 'active' : ''}
-              onClick={() => setCurrentView('tokens')}
-            >
-              토큰 편집
-            </button>
-            <button
-              className={currentView === 'ai-generator' ? 'active' : ''}
-              onClick={() => setCurrentView('ai-generator')}
-            >
-              AI 생성
-            </button>
-            <button
-              className={currentView === 'figma-import' ? 'active' : ''}
-              onClick={() => setCurrentView('figma-import')}
-            >
-              Figma Import
-            </button>
-            <button
-              className={currentView === 'dark-mode' ? 'active' : ''}
-              onClick={() => setCurrentView('dark-mode')}
-            >
-              다크 모드
-            </button>
-            <button
-              className={currentView === 'figma-plugin' ? 'active' : ''}
-              onClick={() => setCurrentView('figma-plugin')}
-            >
-              Figma Plugin
-            </button>
-            <button
-              className={currentView === 'settings' ? 'active' : ''}
-              onClick={() => setCurrentView('settings')}
-            >
-              설정
-            </button>
-          </nav>
+          <button
+            className={currentView === 'tokens' ? 'active' : ''}
+            onClick={() => setCurrentView('tokens')}
+          >
+            토큰 편집
+          </button>
+          <button
+            className={currentView === 'ai-generator' ? 'active' : ''}
+            onClick={() => setCurrentView('ai-generator')}
+          >
+            AI 생성
+          </button>
+          <button
+            className={currentView === 'figma-import' ? 'active' : ''}
+            onClick={() => setCurrentView('figma-import')}
+          >
+            Figma Import
+          </button>
+          <button
+            className={currentView === 'dark-mode' ? 'active' : ''}
+            onClick={() => setCurrentView('dark-mode')}
+          >
+            다크 모드
+          </button>
+          <button
+            className={currentView === 'figma-plugin' ? 'active' : ''}
+            onClick={() => setCurrentView('figma-plugin')}
+          >
+            Figma Plugin
+          </button>
+          <button
+            className={currentView === 'settings' ? 'active' : ''}
+            onClick={() => setCurrentView('settings')}
+          >
+            설정
+          </button>
         </div>
-      </header>
+      </div>
 
       <div className="studio-body">
         {/* Sidebar - Theme List */}

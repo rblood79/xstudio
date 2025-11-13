@@ -138,6 +138,17 @@ function Setting() {
 
         <div className="settingsPanel">
             {/* Save Mode Section */}
+            <div className="panel-header">
+                <h3 className="panel-title">Settings</h3>
+                <div className="header-actions">
+                    <button
+                        className="iconButton"
+                        type="button"
+                    >
+                        <Square size={16}/>
+                    </button>
+                </div>
+            </div>
             <div className="settings-section">
                 <div className="section-header">
                     <div className="section-title">Save Mode</div>

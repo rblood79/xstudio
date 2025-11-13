@@ -399,6 +399,11 @@
             border-bottom: 0px;
           }
         }
+        .header-actions {
+          display: flex;
+          flex-direction: row;
+          gap: var(--spacing-xs);
+        }
 
         .panel-content {
           padding: 0;

@@ -53,19 +53,21 @@ interface UnifiedThemeState {
   createTheme: (
     name: string,
     parentThemeId?: string,
-    status?: 'active' | 'draft' | 'archived'
+    status?: 'active' | 'draft' | 'archived',
+    projectId?: string
   ) => Promise<DesignTheme | null>;
   updateTheme: (
     themeId: string,
     updates: { name?: string; status?: 'active' | 'draft' | 'archived' }
   ) => Promise<DesignTheme | null>;
-  deleteTheme: (themeId: string) => Promise<boolean>;
+  deleteTheme: (themeId: string, projectId?: string) => Promise<boolean>;
   duplicateTheme: (
     sourceThemeId: string,
     newName: string,
-    inherit?: boolean
+    inherit?: boolean,
+    projectId?: string
   ) => Promise<string | null>;
-  activateTheme: (themeId: string) => Promise<boolean>;
+  activateTheme: (themeId: string, projectId?: string) => Promise<boolean>;
   snapshotVersion: () => Promise<void>;
 
   // ===== Token Actions =====
@@ -207,17 +209,18 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
       createTheme: async (
         name: string,
         parentThemeId?: string,
-        status: 'active' | 'draft' | 'archived' = 'draft'
+        status: 'active' | 'draft' | 'archived' = 'draft',
+        projectId?: string
       ): Promise<DesignTheme | null> => {
-        const { projectId } = get();
-        if (!projectId) {
+        const finalProjectId = projectId || get().projectId;
+        if (!finalProjectId) {
           console.error('[UnifiedThemeStore] createTheme: projectId is null');
           return null;
         }
 
         try {
           const newTheme = await ThemeService.createTheme({
-            project_id: projectId,
+            project_id: finalProjectId,
             name,
             parent_theme_id: parentThemeId,
             status,
@@ -251,7 +254,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         }
       },
 
-      deleteTheme: async (themeId: string): Promise<boolean> => {
+      deleteTheme: async (themeId: string, projectId?: string): Promise<boolean> => {
         try {
           await ThemeService.deleteTheme(themeId);
           get()._removeTheme(themeId);
@@ -267,7 +270,8 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
       duplicateTheme: async (
         sourceThemeId: string,
         newName: string,
-        inherit: boolean = false
+        inherit: boolean = false,
+        projectId?: string
       ): Promise<string | null> => {
         try {
           const newThemeId = await ThemeService.duplicateTheme(
@@ -277,9 +281,9 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           );
 
           // Refresh themes list
-          const { projectId } = get();
-          if (projectId) {
-            await get().loadThemes(projectId);
+          const finalProjectId = projectId || get().projectId;
+          if (finalProjectId) {
+            await get().loadThemes(finalProjectId);
           }
 
           return newThemeId;
@@ -291,7 +295,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         }
       },
 
-      activateTheme: async (themeId: string): Promise<boolean> => {
+      activateTheme: async (themeId: string, projectId?: string): Promise<boolean> => {
         try {
           await ThemeService.activateTheme(themeId);
           // Realtime subscription will automatically update themes and activeTheme
