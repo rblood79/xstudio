@@ -1916,4 +1916,171 @@ src/builder/styles/
 
 ---
 
+## 🎯 Panel System Standardization (2025-11-13)
+
+**Status**: ✅ Complete
+
+### Overview
+
+Complete refactoring of the panel system to establish consistent architecture, naming conventions, and eliminate duplicate structures.
+
+### Major Changes
+
+**1. File Naming Standardization** ✅
+- Converted all panels to `XxxPanel.tsx` pattern
+- Eliminated `index.tsx` anti-pattern
+- Updated all import paths and barrel exports
+
+| Before | After | Status |
+|--------|-------|--------|
+| `ai/index.tsx` | `ai/AIPanel.tsx` | ✅ |
+| `settings/index.tsx` | `settings/SettingsPanel.tsx` | ✅ |
+| `themes/index.tsx` | `themes/ThemesPanel.tsx` | ✅ |
+
+**2. Panel/Section Duplication Cleanup** ✅
+- Removed obsolete Section files
+- Integrated simple sections into panels
+- Retained complex sections (1000+ lines)
+
+| File | Action | Reason |
+|------|--------|--------|
+| `PropertiesSection.tsx` | ✅ Deleted | Already integrated into PropertiesPanel |
+| `DataSection.tsx` | ✅ Deleted | Unused, DataPanel implements directly |
+| `StyleSection.tsx` | ✅ Retained | Complex (1024 lines) - reused by StylesPanel |
+| `EventSection.tsx` | ✅ Retained | Complex (320 lines) - reused by EventsPanel |
+
+**3. React Hooks Compliance** ✅
+- Fixed PropertiesPanel hooks order violation
+- Moved all hooks to component top (before conditional returns)
+- Added proper dependency arrays with optional chaining
+
+**4. DEFAULT_PANEL_LAYOUT Cleanup** ✅
+- Removed unregistered panel IDs: `library`, `dataset`, `user`
+- Updated to match actual registered panels (9 panels)
+
+**5. NodesPanel Integration** ✅
+- Added `forcedActiveTabs` prop to Sidebar component
+- Fixed `renderTree` error by using complete Sidebar implementation
+- Proper project initialization and page management
+
+**6. Inspector Styles Fixed** ✅
+- Added `.inspector` class to all panels using `shared/ui/styles.css`
+- Restored fieldset, property components, and React Aria overrides
+- All panels now properly styled with Builder tokens
+
+### Final Panel Structure
+
+```
+src/builder/panels/
+├── core/
+│   ├── types.ts              # PanelProps, PanelConfig, PanelLayoutState
+│   ├── PanelRegistry.ts      # Panel registration system
+│   └── panelConfigs.ts       # 9 panel configurations
+│
+├── sections/                 # Complex reusable sections only
+│   ├── index.ts             # ✅ Cleaned up
+│   ├── StyleSection.tsx     # ✅ Retained (1024 lines)
+│   └── EventSection.tsx     # ✅ Retained (320 lines)
+│
+├── nodes/NodesPanel.tsx       # ✅ Uses Sidebar with forcedActiveTabs
+├── components/ComponentsPanel.tsx  # ✅ Standard pattern
+├── properties/PropertiesPanel.tsx  # ✅ Section integrated + hooks fixed
+├── styles/StylesPanel.tsx     # → Uses StyleSection
+├── data/DataPanel.tsx         # ✅ Direct implementation
+├── events/EventsPanel.tsx     # → Uses EventSection
+├── themes/ThemesPanel.tsx     # ✅ Standard pattern
+├── ai/AIPanel.tsx            # ✅ Standard pattern
+└── settings/SettingsPanel.tsx # ✅ Standard pattern
+```
+
+### Key Architectural Decisions
+
+**1. Panel Naming Convention**
+```typescript
+// ✅ CORRECT - XxxPanel.tsx pattern
+export function ThemesPanel({ isActive }: PanelProps) {
+  if (!isActive) return null;
+  return <div className="inspector themes-panel">...</div>;
+}
+```
+
+**2. Hooks Order Compliance**
+```typescript
+// ✅ CORRECT - All hooks at top
+export function PropertiesPanel({ isActive }: PanelProps) {
+  // 1️⃣ All hooks first (unconditional)
+  const selectedElement = useInspectorState(...);
+  const [Editor, setEditor] = useState(null);
+
+  useEffect(() => {
+    // Internal condition OK
+    if (!selectedElement) return;
+    // ... load editor
+  }, [selectedElement?.type]); // Optional chaining
+
+  // 2️⃣ Conditional rendering after hooks
+  if (!isActive) return null;
+  if (!selectedElement) return <EmptyState />;
+
+  return <div>...</div>;
+}
+```
+
+**3. Inspector Class Pattern**
+```typescript
+// ✅ CORRECT - Add .inspector class
+return (
+  <div className="inspector properties-panel">
+    <fieldset className="properties-group">
+      {/* shared/ui styles now apply */}
+    </fieldset>
+  </div>
+);
+```
+
+**4. Section Retention Criteria**
+- **Delete**: < 100 lines, simple logic, unused
+- **Retain**: > 300 lines, complex state, reused by multiple panels
+
+### Updated Files
+
+**Modified (13 files)**:
+1. `panels/nodes/NodesPanel.tsx` - Sidebar integration with forcedActiveTabs
+2. `panels/properties/PropertiesPanel.tsx` - Hooks order + .inspector class
+3. `panels/styles/StylesPanel.tsx` - .inspector class
+4. `panels/data/DataPanel.tsx` - .inspector class
+5. `panels/events/EventsPanel.tsx` - .inspector class
+6. `panels/settings/SettingsPanel.tsx` - .inspector class
+7. `panels/ai/AIPanel.tsx` - Renamed from index.tsx
+8. `panels/themes/ThemesPanel.tsx` - Renamed from index.tsx
+9. `panels/core/panelConfigs.ts` - Updated imports
+10. `panels/core/types.ts` - Cleaned DEFAULT_PANEL_LAYOUT
+11. `panels/index.ts` - Updated barrel exports
+12. `panels/sections/index.ts` - Removed deleted sections
+13. `sidebar/index.tsx` - Added forcedActiveTabs prop
+
+**Deleted (3 files)**:
+1. `panels/sections/PropertiesSection.tsx`
+2. `panels/sections/DataSection.tsx`
+3. `panels/themes/index.tsx` (obsolete after rename)
+
+### Validation
+
+- ✅ TypeScript compilation: No errors
+- ✅ All 9 panels registered in PanelRegistry
+- ✅ React Hooks rules compliance
+- ✅ Inspector styles applied correctly
+- ✅ NodesPanel renders page/layer tree
+- ✅ All panel navigation works
+
+### Benefits
+
+1. **Consistency**: All panels follow PanelProps pattern
+2. **Maintainability**: Clear file naming, reduced duplication
+3. **Type Safety**: Strict TypeScript, proper hooks usage
+4. **Styling**: Unified `.inspector` class for shared styles
+5. **Performance**: Removed unused code, optimized renders
+
+---
+
 **Remember:** This project prioritizes accessibility (React Aria), maintainability (CSS variables, semantic classes), and type safety (strict TypeScript). AI suggestions should align with these values.
