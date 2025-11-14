@@ -46,57 +46,81 @@ export function buildTreeFromElements(
   elements: Element[],
   parentId: string | null = null
 ): ElementTreeItem[] {
-  // 삭제된 요소 제외
-  let filteredElements = elements.filter((el) => {
-    if (el.deleted === true) return false;
-    const matchesParent =
-      el.parent_id === parentId || (parentId === null && el.parent_id === undefined);
-    return matchesParent;
-  });
+  // Phase 1.3 최적화: Map 기반 조회로 O(n²) → O(n)
+  // 첫 호출에서만 Map 생성 (한 번만 실행)
+  const isRootCall = parentId === null;
 
-  // 부모가 있으면 특수 정렬 로직 적용
-  if (parentId) {
-    const parentElement = elements.find((el) => el.id === parentId);
+  if (isRootCall) {
+    // O(n): childrenMap과 elementsMap 생성
+    const childrenMap = new Map<string, Element[]>();
+    const elementsMap = new Map<string, Element>();
 
-    // Tabs 특수 정렬: Tab과 Panel을 tabId 기준으로 쌍으로 그룹화
-    if (parentElement && parentElement.tag === 'Tabs') {
-      filteredElements = sortTabsChildren(filteredElements);
-    }
-    // Table 특수 정렬은 보류 (기존 로직 유지)
-    else if (parentElement && parentElement.tag === 'Table') {
-      // Table 정렬은 기존 renderTree 로직 사용 (보류)
-      filteredElements = filteredElements.sort(
-        (a, b) => (a.order_num || 0) - (b.order_num || 0)
-      );
-    }
-    // 일반 정렬: order_num 기준
-    else {
-      filteredElements = filteredElements.sort(
-        (a, b) => (a.order_num || 0) - (b.order_num || 0)
-      );
-    }
-  } else {
-    // 루트 레벨은 order_num 기준 정렬
-    filteredElements = filteredElements.sort(
-      (a, b) => (a.order_num || 0) - (b.order_num || 0)
-    );
-  }
+    elements.forEach((el) => {
+      if (el.deleted === true) return; // 삭제된 요소 제외
 
-  // hierarchical 구조 생성
-  return filteredElements.map((el) => {
-    const treeItem: ElementTreeItem = {
-      id: el.id,
-      tag: el.tag,
-      parent_id: el.parent_id,
-      order_num: el.order_num,
-      props: el.props as Record<string, unknown>,
-      deleted: el.deleted,
-      dataBinding: el.dataBinding as Record<string, unknown> | undefined,
-      children: buildTreeFromElements(elements, el.id), // 재귀적으로 자식 구성
+      elementsMap.set(el.id, el);
+
+      const key = el.parent_id || 'root';
+      if (!childrenMap.has(key)) {
+        childrenMap.set(key, []);
+      }
+      childrenMap.get(key)!.push(el);
+    });
+
+    // 내부 재귀 함수 (Map을 재사용)
+    const buildTree = (parentKey: string): ElementTreeItem[] => {
+      let children = childrenMap.get(parentKey) || [];
+
+      // 부모가 root가 아니면 특수 정렬 로직 적용
+      if (parentKey !== 'root') {
+        const parentElement = elementsMap.get(parentKey);
+
+        // Tabs 특수 정렬: Tab과 Panel을 tabId 기준으로 쌍으로 그룹화
+        if (parentElement && parentElement.tag === 'Tabs') {
+          children = sortTabsChildren(children);
+        }
+        // Table 특수 정렬은 보류 (기존 로직 유지)
+        else if (parentElement && parentElement.tag === 'Table') {
+          children = [...children].sort(
+            (a, b) => (a.order_num || 0) - (b.order_num || 0)
+          );
+        }
+        // 일반 정렬: order_num 기준
+        else {
+          children = [...children].sort(
+            (a, b) => (a.order_num || 0) - (b.order_num || 0)
+          );
+        }
+      } else {
+        // 루트 레벨은 order_num 기준 정렬
+        children = [...children].sort(
+          (a, b) => (a.order_num || 0) - (b.order_num || 0)
+        );
+      }
+
+      // hierarchical 구조 생성
+      return children.map((el) => {
+        const treeItem: ElementTreeItem = {
+          id: el.id,
+          tag: el.tag,
+          parent_id: el.parent_id,
+          order_num: el.order_num,
+          props: el.props as Record<string, unknown>,
+          deleted: el.deleted,
+          dataBinding: el.dataBinding as Record<string, unknown> | undefined,
+          children: buildTree(el.id), // O(1) Map 조회로 재귀
+        };
+
+        return treeItem;
+      });
     };
 
-    return treeItem;
-  });
+    return buildTree('root');
+  }
+
+  // 이 경로는 실행되지 않음 (deprecated - 하위 호환성만 유지)
+  console.warn('buildTreeFromElements: 비권장 경로 실행 (parentId 전달)');
+  return [];
 }
 
 /**

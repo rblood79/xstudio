@@ -3,7 +3,7 @@ import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { elementsApi } from "../../../services/api/ElementsApiService";
-import { findElementById } from "./elementHelpers";
+import { getElementById } from "./elementHelpers";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 
@@ -30,7 +30,8 @@ export const createRemoveElementAction =
   (set: SetState, get: GetState) => async (elementId: string) => {
     console.log("🗑️ removeElement 시작:", { elementId });
     const state = get();
-    const element = findElementById(state.elements, elementId);
+    // produce 외부에서는 elementsMap 사용 가능
+    const element = getElementById(state.elementsMap, elementId);
     if (!element) {
       console.log("❌ removeElement: 요소를 찾을 수 없음", { elementId });
       return;

@@ -33,7 +33,9 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
     const currentPageId = useStore((state) => state.currentPageId);
     const selectedElementId = useStore(useCallback(state => state.selectedElementId, []));
     const selectedTab = useStore((state) => state.selectedTab);
-    const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
+    const storeSetElements = useStore((state) => state.setElements);
+    const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const selectTabElement = useStore((state) => state.selectTabElement);
     // 활성 탭 상태 관리 (localStorage 연동) - forcedActiveTabs가 있으면 그것을 사용
     const { activeTabs: storedActiveTabs } = useSidebarTabs();
     const activeTabs = forcedActiveTabs || storedActiveTabs;

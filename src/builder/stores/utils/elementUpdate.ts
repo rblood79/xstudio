@@ -2,7 +2,7 @@ import { produce } from "immer";
 import type { StateCreator } from "zustand";
 import { ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
-import { findElementById, createCompleteProps } from "./elementHelpers";
+import { getElementById, findElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
@@ -27,7 +27,8 @@ export const createUpdateElementPropsAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, props: ComponentElementProps) => {
     const state = get();
-    const element = findElementById(state.elements, elementId);
+    // produce 외부에서는 elementsMap 사용 가능
+    const element = getElementById(state.elementsMap, elementId);
     if (!element) return;
 
     console.log("🔧 updateElementProps 호출:", {
@@ -40,6 +41,7 @@ export const createUpdateElementPropsAction =
     // 1. 메모리 상태 업데이트 (우선)
     set(
       produce((state: ElementsState) => {
+        // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
         const element = findElementById(state.elements, elementId);
         if (!element) return;
 
@@ -105,7 +107,8 @@ export const createUpdateElementAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, updates: Partial<import("../../../types/core/store.types").Element>) => {
     const state = get();
-    const element = findElementById(state.elements, elementId);
+    // produce 외부에서는 elementsMap 사용 가능
+    const element = getElementById(state.elementsMap, elementId);
     if (!element) return;
 
     console.log("🔄 updateElement 호출:", {
@@ -118,6 +121,7 @@ export const createUpdateElementAction =
     // 1. 메모리 상태 업데이트
     set(
       produce((state: ElementsState) => {
+        // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
         const element = findElementById(state.elements, elementId);
         if (!element) return;
 

@@ -5,6 +5,7 @@ import { historyManager } from "../history";
 import { supabase } from "../../../env/supabase.client";
 import { sanitizeElement } from "../utils/elementSanitizer";
 import {
+  getElementById,
   findElementById,
   createCompleteProps,
 } from "../utils/elementHelpers";
@@ -206,6 +207,7 @@ export const createUndoAction =
               });
 
               // 이전 상태로 복원
+              // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
               const element = findElementById(state.elements, entry.elementId);
               if (element && prevProps) {
                 console.log("🔄 Undo: Props 복원", {
@@ -478,6 +480,7 @@ export const createRedoAction =
 
             case "update": {
               // 업데이트 적용
+              // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
               const element = findElementById(state.elements, entry.elementId);
               if (element && propsToUpdate) {
                 element.props = { ...element.props, ...propsToUpdate };
@@ -552,7 +555,7 @@ export const createRedoAction =
             }
 
             if (entry.data.props) {
-              const element = findElementById(get().elements, entry.elementId);
+              const element = getElementById(get().elementsMap, entry.elementId);
               if (element) {
                 await supabase
                   .from("elements")
