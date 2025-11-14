@@ -376,6 +376,9 @@ export const createRemoveElementAction =
       })
     );
 
+    // 🔧 CRITICAL: elementsMap 재구축 (요소 삭제 후 캐시 업데이트)
+    get()._rebuildIndexes();
+
     // order_num 재정렬 (삭제 후) - 컬렉션 아이템 삭제의 경우 Undo 후에만 재정렬
     const currentPageId = get().currentPageId;
     if (currentPageId) {

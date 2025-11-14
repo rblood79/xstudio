@@ -44,6 +44,9 @@ export const createAddElementAction =
       })
     );
 
+    // 🔧 CRITICAL: elementsMap 재구축 (요소 추가 후 캐시 업데이트)
+    get()._rebuildIndexes();
+
     // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
@@ -74,12 +77,11 @@ export const createAddElementAction =
  * 예: Tabs 컴포넌트 추가 시 Tab + Panel 쌍을 함께 생성
  *
  * @param set - Zustand setState 함수
- * @param _get - Zustand getState 함수 (현재 미사용, 향후 확장 대비)
+ * @param get - Zustand getState 함수
  * @returns addComplexElement 액션 함수
  */
 export const createAddComplexElementAction =
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- _get은 factory pattern 시그니처 통일을 위해 유지
-  (set: SetState, _get: GetState) =>
+  (set: SetState, get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
     const allElements = [parentElement, ...childElements];
 
@@ -102,6 +104,9 @@ export const createAddComplexElementAction =
         state.elements.push(...allElements);
       })
     );
+
+    // 🔧 CRITICAL: elementsMap 재구축 (복합 요소 추가 후 캐시 업데이트)
+    get()._rebuildIndexes();
 
     // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)

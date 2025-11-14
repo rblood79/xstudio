@@ -5,27 +5,27 @@
  * 패널 시스템에서 이 컴포넌트를 항상 마운트하여 동기화 유지
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useInspectorState, useSyncWithBuilder } from "./hooks";
 import { useStore } from "../stores";
 import { mapElementToSelected } from "./utils/elementMapper";
 
 export function InspectorSync() {
-  const selectedElement = useInspectorState((state) => state.selectedElement);
   const setSelectedElement = useInspectorState(
     (state) => state.setSelectedElement
   );
   const isSyncingToBuilder = useInspectorState(
     (state) => state.isSyncingToBuilder
   );
-  const setSyncingToBuilder = useInspectorState(
-    (state) => state.setSyncingToBuilder
-  );
+  const syncVersion = useInspectorState((state) => state.syncVersion);
 
   // Builder의 전역 상태
   const selectedElementId = useStore((state) => state.selectedElementId);
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
+
+  // 마지막으로 처리한 syncVersion 추적 (Inspector → Builder 변경 무시)
+  const lastProcessedSyncVersionRef = useRef<number>(0);
 
   // 선택된 요소만 메모이제이션 (Map 사용)
   const selectedBuilderElement = useMemo(() => {
@@ -44,6 +44,22 @@ export function InspectorSync() {
       return;
     }
 
+    // syncVersion이 증가했으면 Inspector가 변경한 것이므로 건너뛰기
+    // (useSyncWithBuilder가 Builder 업데이트 완료 후 confirmSync를 호출하면
+    // isSyncingToBuilder=false가 되지만, 이는 Inspector가 시작한 변경이므로 무시)
+    if (syncVersion > lastProcessedSyncVersionRef.current) {
+      lastProcessedSyncVersionRef.current = syncVersion;
+      console.log(
+        "⏭️ Inspector가 시작한 변경이므로 Builder → Inspector 동기화 건너뛰기 (v" +
+          syncVersion +
+          ")"
+      );
+      return;
+    }
+
+    // useEffect 내부에서 최신 selectedElement 가져오기 (stale closure 방지)
+    const selectedElement = useInspectorState.getState().selectedElement;
+
     if (!selectedBuilderElement) {
       if (selectedElement) {
         setSelectedElement(null);
@@ -55,16 +71,11 @@ export function InspectorSync() {
 
     // 최초 선택이거나 ID가 변경된 경우
     if (!selectedElement || selectedElement.id !== selectedBuilderElement.id) {
-      setSyncingToBuilder(false);
       setSelectedElement(mappedElement);
       return;
     }
 
-    // 같은 요소인 경우 props 비교
-    // ⚠️ IMPORTANT: Inspector에서 수정 중일 때는 Builder 변경 무시
-    // useSyncWithBuilder에서 isSyncingToBuilder=true로 설정하므로
-    // 여기서는 추가 체크 불필요 (위의 early return으로 이미 처리됨)
-
+    // 같은 요소인 경우 props 비교 (Builder에서 외부 변경 감지용)
     const currentPropsJson = JSON.stringify(
       selectedElement.properties,
       Object.keys(selectedElement.properties || {}).sort()
@@ -105,16 +116,22 @@ export function InspectorSync() {
       currentComputedStyleJson !== newComputedStyleJson ||
       currentEventsJson !== newEventsJson
     ) {
-      // 🔧 실제 차이가 있는 경우에만 업데이트
-      // isSyncingToBuilder=true인 경우 early return으로 이미 차단됨
+      // 🔧 Builder에서 외부 변경 감지 (undo/redo, 다른 사용자 등)
+      console.log("🔄 Builder → Inspector 동기화 (외부 변경 감지)");
       setSelectedElement(mappedElement);
     }
+    // 🚨 IMPORTANT: selectedElement를 의존성에서 제거
+    // - Inspector에서 selectedElement를 변경하면 이 useEffect가 다시 실행됨
+    // - 하지만 syncVersion 체크로 이미 차단되므로 중복 업데이트 방지
+    // - selectedBuilderElement 변경 시에만 동기화 (Builder → Inspector)
+    // - getState()로 최신 selectedElement를 가져와 stale closure 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedBuilderElement,
-    selectedElement,
+    // selectedElement 제거 (Inspector → Builder 변경 시 중복 실행 방지)
     setSelectedElement,
     isSyncingToBuilder,
-    setSyncingToBuilder,
+    syncVersion,
   ]);
 
   // 렌더링하지 않음 (상태 동기화만 수행)

@@ -77,6 +77,10 @@ export const createUpdateElementPropsAction =
       })
     );
 
+    // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
+    // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
+    get()._rebuildIndexes();
+
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
     // 3. SaveService는 외부(Preview, PropertyPanel 등)에서 호출하도록 변경
@@ -153,6 +157,10 @@ export const createUpdateElementAction =
         }
       })
     );
+
+    // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
+    // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
+    get()._rebuildIndexes();
 
     // 2. SaveService를 통한 저장 (실시간/수동 모드 확인)
     // useSyncWithBuilder에서 이미 saveService를 호출하므로 여기서는 중복 저장 방지
