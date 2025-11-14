@@ -34,7 +34,7 @@ export const BuilderCore: React.FC = () => {
   const [projectInfo, setProjectInfo] = useState<Project | null>(null);
 
   // Store 상태
-  const elements = useStore((state) => state.elements);
+  // 성능 최적화: elements는 히스토리 동기화에 필요 없음 (제거)
   const currentPageId = useStore((state) => state.currentPageId);
   // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
@@ -45,12 +45,21 @@ export const BuilderCore: React.FC = () => {
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
 
   // 히스토리 정보 업데이트
+  // 성능 최적화: elements 의존성 제거 (currentPageId만 필요)
   useEffect(() => {
     if (currentPageId) {
       const info = historyManager.getCurrentPageHistory();
       setHistoryInfo(info);
+
+      // 히스토리 변경 이벤트 구독
+      const unsubscribe = historyManager.subscribe(() => {
+        const updatedInfo = historyManager.getCurrentPageHistory();
+        setHistoryInfo(updatedInfo);
+      });
+
+      return unsubscribe;
     }
-  }, [currentPageId, elements, setHistoryInfo]);
+  }, [currentPageId, setHistoryInfo]);
 
   // Theme Mode 적용 (전역)
   useEffect(() => {

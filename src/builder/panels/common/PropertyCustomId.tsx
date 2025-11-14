@@ -25,7 +25,8 @@ export function PropertyCustomId({
   const [error, setError] = useState<string | undefined>(undefined);
 
   // Get all elements from store for validation
-  const elements = useStore((state) => state.elements);
+  // 성능 최적화: Map 사용 (validation에서 customId 중복 체크)
+  const elementsMap = useStore((state) => state.elementsMap);
 
   // Use Inspector state to update customId (triggers useSyncWithBuilder)
   const updateCustomIdInInspector = useInspectorState((state) => state.updateCustomId);
@@ -52,7 +53,9 @@ export function PropertyCustomId({
 
   const handleBlur = () => {
     // Validate before saving
-    const validation = validateCustomId(inputValue, elementId, elements);
+    // 성능 최적화: Map을 배열로 변환 (validation에서만 필요)
+    const elementsArray = Array.from(elementsMap.values());
+    const validation = validateCustomId(inputValue, elementId, elementsArray);
 
     if (!validation.isValid) {
       setError(validation.error);
