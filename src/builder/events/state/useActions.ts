@@ -7,7 +7,7 @@
 
 import { useListData } from 'react-stately';
 import type { Key } from 'react-stately';
-import type { EventAction, ActionType } from '../../../../types/events/events.types';
+import type { EventAction, ActionType } from '../types/eventTypes';
 
 /**
  * Action 목록 관리 훅

@@ -1,7 +1,7 @@
 // 통합된 타입 정의 파일
 import React from "react";
-import { ElementEvent } from "./events";
-import { TokenValue } from "./theme";
+import { ElementEvent } from "../events/events.types";
+import { TokenValue } from "../theme";
 
 // === 기본 타입 정의 ===
 export interface BaseElementProps {

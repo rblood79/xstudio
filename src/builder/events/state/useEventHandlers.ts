@@ -7,8 +7,7 @@
 
 import { useListData } from 'react-stately';
 import type { Key } from 'react-stately';
-import type { EventType } from '@/types/events/events.types';
-import type { EventHandler } from '../../../../types/events/events.types';
+import type { EventType, EventHandler } from '../types/eventTypes';
 
 /**
  * EventHandler 목록 관리 훅
