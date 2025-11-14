@@ -71,7 +71,6 @@ export function SelectItemEditor({ elementId, currentProps, onUpdate }: Property
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="selectitem_1"
             />
       </PropertySection>

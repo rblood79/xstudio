@@ -71,7 +71,6 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="comboboxitem_1"
             />
       </PropertySection>

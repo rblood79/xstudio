@@ -1,7 +1,20 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import type { EventAction } from "../../types/eventTypes";
+import type { EventAction, ActionConfig } from "../../types/eventTypes";
 import { ACTION_METADATA } from "../../data/actionMetadata";
+
+/**
+ * Helper function to safely get a config value
+ */
+function getConfigValue(config: ActionConfig | undefined, key: string): string {
+  if (!config) return '';
+  const value: unknown = config[key];
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'boolean') return String(value);
+  return String(value);
+}
 
 export interface ActionNodeData {
   action: EventAction;
@@ -63,21 +76,21 @@ function generateActionSummary(action: EventAction): string {
 
   switch (type) {
     case "navigate":
-      return `→ ${config.path}`;
+      return `→ ${getConfigValue(config, 'path')}`;
     case "scrollTo":
-      return `→ ${config.target}`;
+      return `→ ${getConfigValue(config, 'target')}`;
     case "setState":
-      return `${config.key} = ${String(config.value)}`;
+      return `${getConfigValue(config, 'key')} = ${getConfigValue(config, 'value')}`;
     case "apiCall":
-      return `${config.method} ${config.endpoint}`;
+      return `${getConfigValue(config, 'method')} ${getConfigValue(config, 'endpoint')}`;
     case "showModal":
-      return config.modalId;
+      return getConfigValue(config, 'modalId');
     case "showToast":
-      return config.message;
+      return getConfigValue(config, 'message');
     case "toggleVisibility":
-      return config.targetId;
+      return getConfigValue(config, 'targetId');
     case "customFunction":
-      return config.functionName;
+      return getConfigValue(config, 'functionName');
     default:
       return "";
   }
