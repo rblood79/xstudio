@@ -269,8 +269,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   updateElementOrder: (elementId, orderNum) =>
     set(
       produce((state: ElementsState) => {
-        // 최적화: Map 사용 (O(1) 조회)
-        const element = state.elementsMap.get(elementId);
+        // Immer는 Map을 직접 수정할 수 없으므로 elements 배열에서 찾기
+        const element = state.elements.find(el => el.id === elementId);
         if (element) {
           element.order_num = orderNum;
         }
