@@ -135,7 +135,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                             {PROPERTY_LABELS.DELETE_THIS_RADIO}
                         </button>
                     </div>
-                </PropertySection>
+                </div>
 
                 {/* 라디오 버튼 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -146,7 +146,7 @@ export function RadioGroupEditor({ elementId, currentProps, onUpdate }: Property
                         {PROPERTY_LABELS.BACK_TO_RADIO_GROUP_SETTINGS}
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

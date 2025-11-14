@@ -113,7 +113,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                             Delete This Button
                         </button>
                     </div>
-                </PropertySection>
+                </div>
 
                 {/* 버튼 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -124,7 +124,7 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                         Back to ToggleButtonGroup Settings
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

@@ -79,7 +79,7 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                         }}
                         placeholder="/"
                     />
-                </PropertySection>
+                </div>
 
                 <div className='tab-actions'>
                     <button
@@ -89,7 +89,7 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                         Back to Breadcrumbs Settings
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

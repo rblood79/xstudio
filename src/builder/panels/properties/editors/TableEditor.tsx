@@ -416,7 +416,7 @@ export function TableEditor({
             type="number"
           />
         )}
-      </PropertySection>
+      </div>
 
       {/* 가상화 설정 */}
       <div className="component-fieldset">
@@ -532,7 +532,7 @@ export function TableEditor({
           }
           type="number"
         />
-      </PropertySection>
+      </div>
 
       {/* 정렬 설정 */}
       <div className="component-fieldset">
@@ -579,7 +579,7 @@ export function TableEditor({
             })
           }
         />
-      </PropertySection>
+      </div>
 
       <PropertySection title="{PROPERTY_LABELS.COLUMN_MANAGEMENT}">
 

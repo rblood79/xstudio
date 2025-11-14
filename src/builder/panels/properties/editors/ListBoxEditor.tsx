@@ -144,7 +144,7 @@ export function ListBoxEditor({
               Delete This Item
             </button>
           </div>
-        </PropertySection>
+        </div>
 
         {/* 아이템 편집 모드 종료 버튼 */}
         <div className="tab-actions">
@@ -155,7 +155,7 @@ export function ListBoxEditor({
             Back to ListBox Settings
           </button>
         </div>
-      </div>
+      </>
     );
   }
 

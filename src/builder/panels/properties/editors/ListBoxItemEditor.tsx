@@ -126,8 +126,8 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                             Add Field
                         </button>
                     </div>
-                </PropertySection>
-            </div>
+                </div>
+            </>
         );
     }
 
@@ -136,8 +136,7 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
         <>
             {/* Basic */}
             <PropertySection title="Basic">
-<>
-            <PropertyCustomId
+                <PropertyCustomId
                 label="ID"
                 value={customId}
                 elementId={elementId}
@@ -272,8 +271,8 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                         />
                         Add First Field
                     </button>
-                </>
-            </PropertySection>
+                </div>
+            </div>
         </>
     );
 }

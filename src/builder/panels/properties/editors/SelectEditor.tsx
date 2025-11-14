@@ -131,7 +131,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                             Delete This Item
                         </button>
                     </div>
-                </PropertySection>
+                </div>
 
                 {/* 옵션 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -142,7 +142,7 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                         {PROPERTY_LABELS.CLOSE}
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

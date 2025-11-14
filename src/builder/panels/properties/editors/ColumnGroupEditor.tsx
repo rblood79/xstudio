@@ -29,8 +29,7 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
         <>
             {/* Basic */}
             <PropertySection title="Basic">
-<>
-            <PropertyCustomId
+                <PropertyCustomId
                 label="ID"
                 value={customId}
                 elementId={elementId}
@@ -60,7 +59,7 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     onChange={(span) => updateGroupProps({ span: parseInt(span) || 2 })}
                     type="number"
                 />
-            </PropertySection>
+            </div>
 
             {/* 두 번째 그룹: 스타일 및 정렬 */}
             <div className="component-fieldset">
@@ -92,7 +91,7 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     ]}
                     onChange={(variant) => updateGroupProps({ variant: variant as 'default' | 'primary' | 'secondary' })}
                 />
-            </PropertySection>
+            </div>
 
             {/* 세 번째 그룹: 고급 설정 */}
             <div className="component-fieldset">
@@ -112,8 +111,8 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                     <span className="help-text">
                         💡 Column Group visually groups related columns for clearer table structure.
                     </span>
-                </>
-            </PropertySection>
+                </div>
+            </div>
         </>
     );
 }
