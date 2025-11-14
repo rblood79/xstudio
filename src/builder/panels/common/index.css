@@ -59,6 +59,7 @@
     /* Section Header */
     .section-header {
       font-size: var(--text-xs);
+      line-height: var(--text-xs);
       font-weight: var(--font-weight-bold);
       background-color: var(--builder-inspector-header-bg);
       border-bottom: 1px solid var(--builder-inspector-control-bg);

@@ -2,7 +2,7 @@
 
 .sidebar_pages,
 .sidebar_elements {
-  width: var(--sidebar-width);
+  width: 100%;
   position: relative;
 }
 

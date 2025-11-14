@@ -1,3 +1,12 @@
+/* Import Preview System Tokens - CSS Variables Only */
+@import '../styles/1-theme/preview-system.css';
+@import '../styles/1-theme/shared-tokens.css';
+
+/* Import React Aria Component Styles for Preview
+ * Note: These are needed because Preview renders React Aria components
+ * and they need their styles. This is separate from Builder UI. */
+@import '../components/styles/index.css';
+
 @layer utilities {
     :root {
         --color-border: var(--border-color);

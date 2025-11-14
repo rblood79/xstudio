@@ -87,6 +87,10 @@
 /* Panel Content */
 .panel-content {
     border-right: 1px solid var(--builder-sidebar-border);
+    & > div {
+        min-width: 233px;
+        width: 233px;
+    }
 }
 
 .panel-section {
@@ -156,12 +160,11 @@
 .sidebar-container {
     display: flex;
     flex-direction: row;
-    width: auto;
+    width: 100%;
 }
 
 .sidebar-section {
-    /* border-right: 1px solid var(--builder-sidebar-border); */
-
+    width: 100%;
     &.sidebar-content {
         display: flex;
         flex-direction: column;

@@ -108,6 +108,11 @@ export interface NavigateToPageMessage extends PreviewMessage {
   };
 }
 
+export interface SetDarkModeMessage extends PreviewMessage {
+  type: "SET_DARK_MODE";
+  isDark: boolean;
+}
+
 export type MessageType =
   | UpdateElementsMessage
   | UpdateElementPropsMessage
@@ -116,4 +121,5 @@ export type MessageType =
   | ThemeVarsMessage
   | UpdateThemeTokensMessage
   | AddColumnElementsMessage
-  | NavigateToPageMessage;
+  | NavigateToPageMessage
+  | SetDarkModeMessage;

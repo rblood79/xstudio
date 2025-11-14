@@ -370,20 +370,13 @@
           overflow: auto;
         }
 
-        &.inspector {
-          grid-area: inspector;
-          height: 100%;
-          display: flex;
-          position: relative;
-          overflow: auto;
-        }
+        
 
         .panel-header {
           font-size: var(--text-xs);
+          line-height: var(--text-xs);
           font-weight: var(--font-weight-bold);
-          /*padding-left: calc(var(--spacing-lg));*/
           background-color: var(--builder-inspector-header-bg);
-          /*border-top: 1px solid var(--builder-inspector-divider);*/
           border-bottom: 1px solid var(--builder-inspector-control-bg);
           display: flex;
           flex-direction: row;
@@ -395,7 +388,7 @@
           }
 
           .panel-title {
-            padding-left: calc(var(--spacing-sm));
+            padding-left: var(--spacing-sm);
             border-bottom: 0px;
           }
         }

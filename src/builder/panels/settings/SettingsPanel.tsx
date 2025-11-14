@@ -92,6 +92,27 @@ function SettingsContent() {
       await ThemeService.activateTheme(themeId);
       await loadActiveTheme(projectId);
       console.log("[Setting] Theme switched to:", themeId);
+
+      // Preview iframe에도 테마 토큰 전송
+      const { tokens } = useUnifiedThemeStore.getState();
+      if (tokens.length > 0) {
+        const { MessageService } = await import('../../../utils/messaging');
+        const { tokensToCSS } = await import('../../../utils/theme/tokenToCss');
+        const iframe = MessageService.getIframe();
+
+        if (iframe?.contentWindow) {
+          // tokensToCSS로 CSS 변수 생성
+          const cssVars = tokensToCSS(tokens);
+
+          // Builder와 동일한 형식으로 전송 (UPDATE_THEME_TOKENS 사용)
+          iframe.contentWindow.postMessage(
+            { type: 'UPDATE_THEME_TOKENS', styles: cssVars },
+            window.location.origin
+          );
+
+          console.log('[Setting] Theme tokens sent to preview iframe:', Object.keys(cssVars).length);
+        }
+      }
     } catch (error) {
       console.error("[Setting] Failed to switch theme:", error);
     }
@@ -131,9 +152,24 @@ function SettingsContent() {
     setGridSize(size);
   };
 
-  const handleThemeModeChange = (value: string) => {
+  const handleThemeModeChange = async (value: string) => {
     const mode = value as "light" | "dark" | "auto";
     setThemeMode(mode);
+
+    // Preview iframe에 dark mode 상태 전송
+    const { MessageService } = await import('../../../utils/messaging');
+    const iframe = MessageService.getIframe();
+
+    if (iframe?.contentWindow) {
+      const isDark = mode === "dark" || (mode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+      iframe.contentWindow.postMessage(
+        { type: 'SET_DARK_MODE', isDark },
+        window.location.origin
+      );
+
+      console.log('[Setting] Dark mode sent to preview iframe:', isDark);
+    }
   };
 
   const handleUiScaleChange = (value: string) => {
