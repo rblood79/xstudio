@@ -46,18 +46,11 @@ export const BuilderCore: React.FC = () => {
 
   // 히스토리 정보 업데이트
   // 성능 최적화: elements 의존성 제거 (currentPageId만 필요)
+  // 히스토리 정보는 handleUndo/handleRedo에서 수동으로 업데이트
   useEffect(() => {
     if (currentPageId) {
       const info = historyManager.getCurrentPageHistory();
       setHistoryInfo(info);
-
-      // 히스토리 변경 이벤트 구독
-      const unsubscribe = historyManager.subscribe(() => {
-        const updatedInfo = historyManager.getCurrentPageHistory();
-        setHistoryInfo(updatedInfo);
-      });
-
-      return unsubscribe;
     }
   }, [currentPageId, setHistoryInfo]);
 
