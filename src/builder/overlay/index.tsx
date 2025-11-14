@@ -14,18 +14,19 @@ interface Rect {
 
 export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
-  const elements = useStore((state) => state.elements);
+  // 성능 최적화: Map 사용 (O(1) 조회)
+  const elementsMap = useStore((state) => state.elementsMap);
   const overlayOpacity = useStore((state) => state.overlayOpacity);
   const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
   const [selectedTag, setSelectedTag] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  // Tag 표시 로직 (useMemo로 최적화)
+  // Tag 표시 로직 (useMemo로 최적화, Map 사용)
   const displayTag = useMemo(() => {
-    const element = elements.find((el) => el.id === selectedElementId);
+    const element = selectedElementId ? elementsMap.get(selectedElementId) : null;
     return element?.tag || selectedTag || "";
-  }, [elements, selectedElementId, selectedTag]);
+  }, [elementsMap, selectedElementId, selectedTag]);
 
   const updatePosition = useCallback(() => {
     // 이미 대기 중인 업데이트가 있으면 취소

@@ -24,14 +24,15 @@ export function InspectorSync() {
 
   // Builder의 전역 상태
   const selectedElementId = useStore((state) => state.selectedElementId);
-  const elements = useStore((state) => state.elements);
+  // 성능 최적화: Map 사용 (O(1) 조회)
+  const elementsMap = useStore((state) => state.elementsMap);
 
-  // 선택된 요소만 메모이제이션
+  // 선택된 요소만 메모이제이션 (Map 사용)
   const selectedBuilderElement = useMemo(() => {
     return selectedElementId
-      ? elements.find((el) => el.id === selectedElementId)
+      ? elementsMap.get(selectedElementId) || null
       : null;
-  }, [selectedElementId, elements]);
+  }, [selectedElementId, elementsMap]);
 
   // Inspector → Builder 동기화
   useSyncWithBuilder();

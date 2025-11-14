@@ -31,12 +31,18 @@ interface Page {
 
 export interface ElementsState {
   elements: Element[];
+  // 성능 최적화: O(1) 조회를 위한 Map 인덱스
+  elementsMap: Map<string, Element>;
+  childrenMap: Map<string, Element[]>;
   selectedElementId: string | null;
   selectedElementProps: ComponentElementProps;
   selectedTab: { parentId: string; tabIndex: number } | null;
   pages: Page[];
   currentPageId: string | null;
   historyOperationInProgress: boolean;
+
+  // 내부 헬퍼: 인덱스 재구축
+  _rebuildIndexes: () => void;
 
   setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
@@ -89,8 +95,31 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const updateElementProps = createUpdateElementPropsAction(set, get);
   const updateElement = createUpdateElementAction(set, get);
 
+  // 인덱스 재구축 함수
+  const _rebuildIndexes = () => {
+    const { elements } = get();
+    const elementsMap = new Map<string, Element>();
+    const childrenMap = new Map<string, Element[]>();
+
+    elements.forEach((el) => {
+      // elementsMap: id -> Element
+      elementsMap.set(el.id, el);
+
+      // childrenMap: parent_id -> Element[]
+      const parentId = el.parent_id || 'root';
+      if (!childrenMap.has(parentId)) {
+        childrenMap.set(parentId, []);
+      }
+      childrenMap.get(parentId)!.push(el);
+    });
+
+    set({ elementsMap, childrenMap });
+  };
+
   return {
     elements: [],
+    elementsMap: new Map(),
+    childrenMap: new Map(),
     selectedElementId: null,
     selectedElementProps: {},
     selectedTab: null,
@@ -98,7 +127,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     currentPageId: null,
     historyOperationInProgress: false,
 
-  setElements: (elements) =>
+    _rebuildIndexes,
+
+  setElements: (elements) => {
     set(
       produce((state: ElementsState) => {
         state.elements = elements;
@@ -106,7 +137,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
         // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
       })
-    ),
+    );
+    // 인덱스 자동 재구축
+    get()._rebuildIndexes();
+  },
 
   loadPageElements: (elements, pageId) => {
     // orphan 요소들을 body로 마이그레이션
@@ -122,6 +156,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         historyManager.setCurrentPage(pageId);
       })
     );
+
+    // 인덱스 자동 재구축
+    get()._rebuildIndexes();
 
     // 마이그레이션된 요소가 있으면 DB에도 저장 (백그라운드)
     if (updatedElements.length > 0) {
@@ -166,7 +203,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
             ...(computedStyle ? { computedStyle } : {}),
           };
         } else if (elementId) {
-          const element = findElementById(state.elements, elementId);
+          // 최적화: Map 사용 (O(1) 조회)
+          const element = state.elementsMap.get(elementId);
           if (element) {
             state.selectedElementProps = {
               ...createCompleteProps(element),
@@ -231,7 +269,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   updateElementOrder: (elementId, orderNum) =>
     set(
       produce((state: ElementsState) => {
-        const element = findElementById(state.elements, elementId);
+        // 최적화: Map 사용 (O(1) 조회)
+        const element = state.elementsMap.get(elementId);
         if (element) {
           element.order_num = orderNum;
         }

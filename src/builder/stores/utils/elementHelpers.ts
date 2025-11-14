@@ -5,7 +5,8 @@ import { Element, ComponentElementProps } from "../../../types/core/store.types"
  */
 
 /**
- * ID로 요소를 찾는 헬퍼 함수
+ * ID로 요소를 찾는 헬퍼 함수 (배열 기반 - O(n))
+ * @deprecated 성능 최적화를 위해 elementsMap 사용을 권장합니다
  *
  * @param elements - 검색할 요소 배열
  * @param id - 찾을 요소의 ID
@@ -19,6 +20,32 @@ export const findElementById = (
     if (element.id === id) return element;
   }
   return null;
+};
+
+/**
+ * ID로 요소를 찾는 헬퍼 함수 (Map 기반 - O(1))
+ * @param elementsMap - 요소 Map (id -> Element)
+ * @param id - 찾을 요소의 ID
+ * @returns 찾은 요소 또는 null
+ */
+export const getElementById = (
+  elementsMap: Map<string, Element>,
+  id: string
+): Element | null => {
+  return elementsMap.get(id) || null;
+};
+
+/**
+ * 부모 ID로 자식 요소들을 찾는 헬퍼 함수 (Map 기반 - O(1))
+ * @param childrenMap - 자식 Map (parent_id -> Element[])
+ * @param parentId - 부모 요소의 ID
+ * @returns 자식 요소 배열
+ */
+export const getChildElements = (
+  childrenMap: Map<string, Element[]>,
+  parentId: string
+): Element[] => {
+  return childrenMap.get(parentId) || [];
 };
 
 /**
