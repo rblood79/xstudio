@@ -10,9 +10,16 @@ import { cleanPropsForHTML } from "./utils/propsConverter";
 
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
-  const elements = useStore((state) => state.elements) as PreviewElement[];
-  const { setElements, updateElementProps } = useStore();
+  const builderElements = useStore((state) => state.elements) as PreviewElement[];
   const eventEngine = EventEngine.getInstance();
+
+  // 🔧 Preview 로컬 state (Builder store 수정 방지)
+  const [elements, setElements] = React.useState<PreviewElement[]>(builderElements);
+
+  // Builder store 변경 감지하여 로컬 state 동기화
+  React.useEffect(() => {
+    setElements(builderElements);
+  }, [builderElements]);
 
   // Console error/warning suppression for development
   useEffect(() => {
@@ -51,12 +58,19 @@ function Preview() {
     }
   }, []);
 
+  // 로컬 updateElementProps (Builder store 수정 방지)
+  const updateElementProps = useCallback((id: string, props: Record<string, unknown>) => {
+    setElements((prev) =>
+      prev.map((el) => (el.id === id ? { ...el, props: { ...el.props, ...props } } : el))
+    );
+  }, []);
+
   // postMessage 핸들러 (useCallback으로 메모이제이션)
   const messageHandler = useCallback(
     (event: MessageEvent) => {
       handleMessage(event, elements, setElements, updateElementProps);
     },
-    [elements, setElements, updateElementProps]
+    [elements, updateElementProps]
   );
 
   useEffect(() => {
