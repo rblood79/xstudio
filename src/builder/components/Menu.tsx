@@ -140,7 +140,7 @@ export function MenuButton<T extends object>({
 
         if (hasSubmenu) {
           const submenuItems = item.children!.map(
-            (child: Record<string, unknown>, childIndex: number) => ({
+            (child: MenuItem, childIndex: number) => ({
               id: String(child.id || `${item.id}-${childIndex}`),
               label: String(
                 child.label ||
@@ -175,7 +175,7 @@ export function MenuButton<T extends object>({
               </AriaMenuItem>
               <Popover>
                 <Menu items={submenuItems as Iterable<T>}>
-                  {(subItem) => renderMenuItem(subItem)}
+                  {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
                 </Menu>
               </Popover>
             </SubmenuTrigger>
@@ -203,7 +203,7 @@ export function MenuButton<T extends object>({
           <Button>{label}</Button>
           <Popover>
             <Menu items={menuItems as Iterable<T>}>
-              {(item) => renderMenuItem(item)}
+              {(item) => renderMenuItem(item as unknown as MenuItem)}
             </Menu>
           </Popover>
         </MenuTrigger>

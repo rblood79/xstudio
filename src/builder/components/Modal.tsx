@@ -1,3 +1,4 @@
+import React from 'react';
 import { Modal as RACModal, ModalOverlayProps } from 'react-aria-components';
 import { FocusScope } from '@react-aria/focus';
 import './styles/Modal.css';
@@ -56,7 +57,7 @@ export function Modal({
         autoFocus={autoFocus}
         restoreFocus={restoreFocus}
       >
-        {children}
+        {children as React.ReactNode}
       </FocusScope>
     </RACModal>
   );

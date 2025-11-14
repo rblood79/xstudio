@@ -71,9 +71,11 @@ export function Link(props: LinkProps) {
       }
     : {};
 
+  const allProps = mergeProps(restProps as object, focusProps as object, externalProps);
+
   return (
     <RACLink
-      {...mergeProps(restProps, focusProps, externalProps)}
+      {...(allProps as RACLinkProps)}
       data-focus-visible={isFocusVisible}
       data-external={isExternal}
       className={composeRenderProps(

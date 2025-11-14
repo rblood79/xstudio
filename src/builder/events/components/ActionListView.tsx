@@ -58,6 +58,12 @@ export function ActionListView({
   return (
     <div className="action-list-view">
       {actions.map((action, index) => {
+        // Skip actions without IDs (type safety)
+        if (!action.id) {
+          console.warn('Action without ID detected, skipping render:', action);
+          return null;
+        }
+
         const metadata = ACTION_METADATA[action.type];
         const isExpanded = expandedActionId === action.id;
 

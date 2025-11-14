@@ -1,5 +1,6 @@
 import { Button } from "react-aria-components";
-import type { SelectedElement, EventHandler } from "./types/eventTypes";
+import type { EventHandler, EventType } from "./types/eventTypes";
+import type { SelectedElement } from "../inspector/types";
 import { useInspectorState } from "../inspector/hooks/useInspectorState";
 import { useComponentMeta } from "../inspector/hooks/useComponentMeta";
 
@@ -20,7 +21,7 @@ export function EventList({ element, onSelectEvent }: EventListProps) {
     const timestamp = Date.now();
     const newEvent: EventHandler = {
       id: `${eventName}-${timestamp}`,
-      event: eventName,
+      event: eventName as EventType,
       actions: [],
     };
     addEvent(newEvent);
@@ -40,7 +41,7 @@ export function EventList({ element, onSelectEvent }: EventListProps) {
         <p className="empty-message">이벤트가 등록되지 않았습니다.</p>
       ) : (
         <div className="registered-events">
-          {registeredEvents.map((event) => (
+          {registeredEvents.map((event: EventHandler) => (
             <div key={event.id} className="event-item">
               <div className="event-info" onClick={() => onSelectEvent(event)}>
                 <span className="event-name">{event.event}</span>
@@ -68,7 +69,7 @@ export function EventList({ element, onSelectEvent }: EventListProps) {
               key={eventName}
               className="add-event-button"
               onPress={() => handleAddEvent(eventName)}
-              isDisabled={registeredEvents.some((e) => e.event === eventName)}
+              isDisabled={registeredEvents.some((e: EventHandler) => e.event === eventName)}
             >
               + {eventName}
             </Button>

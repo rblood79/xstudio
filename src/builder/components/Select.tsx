@@ -109,7 +109,7 @@ export function Select<T extends object>({
 
   // Render ListBox content based on state - memoized to prevent unnecessary re-renders
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const listBoxContent = React.useMemo(() => {
+  const listBoxContent: React.ReactNode | ((item: T) => React.ReactNode) = React.useMemo(() => {
     // Loading state
     if (hasDataBinding && loading) {
       return (
@@ -135,16 +135,21 @@ export function Select<T extends object>({
 
     // Dynamic collection without columnMapping
     if (hasDataBinding && !columnMapping && boundData.length > 0) {
-      return (item: Record<string, unknown>) => (
-        <ListBoxItem
-          key={item.id}
-          id={item.id}
-          textValue={item.label}
-          className="react-aria-ListBoxItem"
-        >
-          {item.label}
-        </ListBoxItem>
-      );
+      return ((item: Record<string, unknown>) => {
+        const itemId = item.id !== undefined && item.id !== null ? String(item.id) : undefined;
+        const itemLabel = item.label !== undefined && item.label !== null ? String(item.label) : undefined;
+
+        return (
+          <ListBoxItem
+            key={itemId}
+            id={itemId}
+            textValue={itemLabel}
+            className="react-aria-ListBoxItem"
+          >
+            {itemLabel}
+          </ListBoxItem>
+        );
+      }) as (item: T) => React.ReactNode;
     }
 
     // Static children

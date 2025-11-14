@@ -5,8 +5,8 @@
     --panel-nav-width: 48px;
   }
 
-/* Panel Navigation */
-.panel-nav {
+  /* Panel Navigation */
+  .panel-nav {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -16,16 +16,16 @@
     height: 100%;
     justify-content: space-between;
     background-color: var(--builder-sidebar-nav-bg);
-}
+  }
 
-.nav-list {
+  .nav-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
     z-index: 1;
-}
+  }
 
-.nav-button {
+  .nav-button {
     position: relative;
     width: 32px;
     height: 32px;
@@ -37,41 +37,46 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s ease;
-}
+    transition: all 0.2s ease;
+  }
 
-.nav-button.active {
+  .nav-button:hover {
+    background-color: var(--builder-sidebar-hover-bg);
+    border-radius: 6px;
+  }
+
+  .nav-button.active {
     background-color: var(--builder-sidebar-active-bg);
     border-radius: 6px;
 
     svg {
-        stroke: var(--builder-sidebar-active-text);
-        stroke-width: 1.5;
-        transition: color 0.2s ease;
+      stroke: var(--builder-sidebar-active-text);
+      stroke-width: 1.5;
+      transition: color 0.2s ease;
     }
-}
+  }
 
-/* Panel Slot */
-.panel-slot {
+  /* Panel Slot */
+  .panel-slot {
     display: flex;
     flex-direction: row;
     height: 100%;
     width: 100%;
-}
+  }
 
-/* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
-.nodes-panel .panel-nav {
+  /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
+  .nodes-panel .panel-nav {
     display: none;
-}
+  }
 
-/* Panel Container */
-.panel-container {
+  /* Panel Container */
+  .panel-container {
     display: flex;
     flex-direction: row;
     width: auto;
-}
+  }
 
-.sidebar-content {
+  .sidebar-content {
     flex: 1;
     position: relative;
     top: 0;
@@ -81,91 +86,90 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-}
+  }
 
-/* Panel Content */
-.panel-content {
-    
+  /* Panel Content */
+  .panel-content {
     & > div {
-        min-width: 233px;
-        width: 233px;
+      min-width: 233px;
+      width: 233px;
     }
-}
+  }
 
-.sidebar {
-    .panel-nav{
+  .sidebar {
+    .panel-nav {
+      border-right: 1px solid var(--builder-sidebar-border);
+    }
+    .panel-content {
+      & > div {
         border-right: 1px solid var(--builder-sidebar-border);
+      }
+    }
+  }
+
+  .inspector {
+    .panel-nav {
+      border-left: 1px solid var(--builder-sidebar-border);
     }
     .panel-content {
-        & > div {
-            border-right: 1px solid var(--builder-sidebar-border);
-        }
-    }
-}
-
-.inspector {
-    .panel-nav{
+      & > div {
         border-left: 1px solid var(--builder-sidebar-border);
+      }
     }
-    .panel-content {
-        & > div {
-            border-left: 1px solid var(--builder-sidebar-border);
-        }
-    }
-}
+  }
 
-.panel-section {
+  .panel-section {
     /* border-right: 1px solid var(--builder-sidebar-border); */
 
     &.sidebar-content {
-        display: flex;
-        flex-direction: column;
+      display: flex;
+      flex-direction: column;
     }
 
     &.components {
-        width: var(--sidebar-width);
+      width: var(--sidebar-width);
     }
-}
+  }
 
-.sidebar-section-title {
+  .sidebar-section-title {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     padding: 0 12px;
     display: none;
-}
+  }
 
-/* Empty States */
-.panel-empty-state,
-.sidebar-empty-state,
-.panel-empty-state {
+  /* Empty States */
+  .panel-empty-state,
+  .sidebar-empty-state,
+  .panel-empty-state {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100px;
     color: var(--builder-sidebar-icon);
     font-size: var(--text-sm);
-}
+  }
 
-/* Element Tree Icons */
-.elementItemIcon {
+  /* Element Tree Icons */
+  .elementItemIcon {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 16px;
     height: 16px;
     transition: transform 0.2s ease;
-}
+  }
 
-.elementItemIcon.no-children svg {
+  .elementItemIcon.no-children svg {
     opacity: 0.3;
-}
+  }
 
-.element[data-has-children="true"]>.elementItem>.elementItemIcon {
+  .element[data-has-children="true"] > .elementItem > .elementItemIcon {
     cursor: pointer;
-}
+  }
 
-/* Backward Compatibility - 기존 sidebar-* 클래스들 유지 */
-.sidebar-nav {
+  /* Backward Compatibility - 기존 sidebar-* 클래스들 유지 */
+  .sidebar-nav {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -176,29 +180,28 @@
     justify-content: space-between;
     background-color: var(--builder-sidebar-nav-bg);
     border-right: 1px solid var(--builder-sidebar-border);
-}
+  }
 
-.sidebar-container {
+  .sidebar-container {
     display: flex;
     flex-direction: row;
     width: 100%;
-}
+  }
 
-.sidebar-section {
+  .sidebar-section {
     width: 100%;
     &.sidebar-content {
-        display: flex;
-        flex-direction: column;
+      display: flex;
+      flex-direction: column;
     }
 
     &.components {
-        width: var(--sidebar-width);
+      width: var(--sidebar-width);
     }
-}
+  }
 
-/* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
-.nodes-panel .sidebar-nav {
+  /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
+  .nodes-panel .sidebar-nav {
     display: none;
-}
-
+  }
 }
