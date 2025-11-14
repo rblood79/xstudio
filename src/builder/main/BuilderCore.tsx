@@ -34,7 +34,7 @@ export const BuilderCore: React.FC = () => {
   const [projectInfo, setProjectInfo] = useState<Project | null>(null);
 
   // Store 상태
-  // 성능 최적화: elements는 히스토리 동기화에 필요 없음 (제거)
+  const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
   // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
