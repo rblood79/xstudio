@@ -7,6 +7,9 @@
  * This ensures type system and runtime implementation stay synchronized.
  */
 
+// Import from registry for use in this file
+import type { EventType, ActionType } from './events.registry';
+
 // Re-export from registry (single source of truth)
 export type { EventType, ActionType } from './events.registry';
 export {

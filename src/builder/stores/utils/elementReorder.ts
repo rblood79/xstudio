@@ -2,6 +2,28 @@ import { Element } from "../../../types/core/store.types";
 import { supabase } from "../../../env/supabase.client";
 
 /**
+ * Helper function to safely get a string property from element props
+ */
+function getPropValue(props: Record<string, unknown>, key: string): string {
+  const value = props[key];
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (value != null && typeof value === 'object' && 'toString' in value) {
+    return String(value);
+  }
+  return '';
+}
+
+/**
+ * Helper function to get text content for sorting (children, title, or label)
+ */
+function getTextContent(props: Record<string, unknown>): string {
+  return getPropValue(props, 'children') ||
+         getPropValue(props, 'title') ||
+         getPropValue(props, 'label');
+}
+
+/**
  * order_num 재정렬 유틸리티 함수
  *
  * 페이지의 모든 요소를 부모별로 그룹화하여 order_num을 재정렬합니다.
@@ -79,8 +101,8 @@ export const reorderElements = async (
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
             // order_num이 같을 경우, title로 추가 정렬 (Tab 1 < Tab 2 < Tab 3)
-            const titleA = (a.props as { title?: string }).title || "";
-            const titleB = (b.props as { title?: string }).title || "";
+            const titleA = getPropValue(a.props, 'title');
+            const titleB = getPropValue(b.props, 'title');
             return titleA.localeCompare(titleB);
           }
           return orderDiff;
@@ -92,8 +114,8 @@ export const reorderElements = async (
           const orderDiff = (a.order_num || 0) - (b.order_num || 0);
           if (orderDiff === 0) {
             // order_num이 같을 경우, title로 추가 정렬
-            const titleA = (a.props as { title?: string }).title || "";
-            const titleB = (b.props as { title?: string }).title || "";
+            const titleA = getPropValue(a.props, 'title');
+            const titleB = getPropValue(b.props, 'title');
             return titleA.localeCompare(titleB);
           }
           return orderDiff;
@@ -106,10 +128,10 @@ export const reorderElements = async (
         sorted.push(tab);
 
         // Tab의 tabId와 일치하는 Panel 찾기
-        const tabId = (tab.props as { tabId?: string }).tabId;
+        const tabId = getPropValue(tab.props, 'tabId');
         if (tabId) {
           const matchingPanel = panels.find((panel) => {
-            const panelTabId = (panel.props as { tabId?: string }).tabId;
+            const panelTabId = getPropValue(panel.props, 'tabId');
             return panelTabId === tabId && !usedPanelIds.has(panel.id);
           });
 
@@ -132,18 +154,17 @@ export const reorderElements = async (
       );
       console.log("📋 Tab 정렬 순서:");
       tabs.forEach((tab, index) => {
+        const title = getPropValue(tab.props, 'title');
+        const tabId = getPropValue(tab.props, 'tabId');
         console.log(
-          `  ${index + 1}. ${(tab.props as { title?: string }).title} (order: ${
-            tab.order_num
-          }, tabId: ${(tab.props as { tabId?: string }).tabId?.slice(0, 8)}...)`
+          `  ${index + 1}. ${title} (order: ${tab.order_num}, tabId: ${tabId.slice(0, 8)}...)`
         );
       });
       console.log("📋 최종 정렬된 순서:");
       sorted.forEach((el, index) => {
+        const title = getPropValue(el.props, 'title');
         console.log(
-          `  ${index + 1}. ${el.tag}: ${
-            (el.props as { title?: string }).title
-          } (new order: ${index + 1})`
+          `  ${index + 1}. ${el.tag}: ${title} (new order: ${index + 1})`
         );
       });
     } else if (isTableHeaderChildren) {
@@ -156,9 +177,9 @@ export const reorderElements = async (
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
           // order_num이 같을 경우, label로 추가 정렬
-          const labelA = (a.props as { label?: string }).label || "";
-          const labelB = (b.props as { label?: string }).label || "";
-          const comparison = String(labelA).localeCompare(String(labelB));
+          const labelA = getPropValue(a.props, 'label');
+          const labelB = getPropValue(b.props, 'label');
+          const comparison = labelA.localeCompare(labelB);
 
           if (comparison === 0) {
             // label도 같으면 ID로 정렬 (안정적인 순서 보장)
@@ -171,8 +192,8 @@ export const reorderElements = async (
 
       console.log(`📊 ${parentTag} 정렬된 ColumnGroup 순서:`);
       sorted.forEach((group, index) => {
-        const label = (group.props as { label?: string }).label || "Untitled";
-        const span = (group.props as { span?: number }).span || 1;
+        const label = getPropValue(group.props, 'label') || "Untitled";
+        const span = getPropValue(group.props, 'span') || "1";
         console.log(
           `  ${index + 1}. ColumnGroup: ${label} (span: ${span}, order: ${
             group.order_num
@@ -197,53 +218,9 @@ export const reorderElements = async (
         const orderDiff = (a.order_num || 0) - (b.order_num || 0);
         if (orderDiff === 0) {
           // order_num이 같을 경우, children 텍스트나 title, label로 추가 정렬
-          const textA =
-            (
-              a.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).children ||
-            (
-              a.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).title ||
-            (
-              a.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).label ||
-            "";
-          const textB =
-            (
-              b.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).children ||
-            (
-              b.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).title ||
-            (
-              b.props as {
-                children?: React.ReactNode;
-                title?: string;
-                label?: string;
-              }
-            ).label ||
-            "";
-          const comparison = String(textA).localeCompare(String(textB));
+          const textA = getTextContent(a.props);
+          const textB = getTextContent(b.props);
+          const comparison = textA.localeCompare(textB);
 
           if (comparison === 0) {
             // 텍스트도 같으면 ID로 정렬 (안정적인 순서 보장)
@@ -256,29 +233,7 @@ export const reorderElements = async (
 
       console.log(`📋 ${parentTag} 정렬된 순서:`);
       sorted.forEach((item, index) => {
-        const text =
-          (
-            item.props as {
-              children?: React.ReactNode;
-              title?: string;
-              label?: string;
-            }
-          ).children ||
-          (
-            item.props as {
-              children?: React.ReactNode;
-              title?: string;
-              label?: string;
-            }
-          ).title ||
-          (
-            item.props as {
-              children?: React.ReactNode;
-              title?: string;
-              label?: string;
-            }
-          ).label ||
-          "Untitled";
+        const text = getTextContent(item.props) || "Untitled";
         console.log(
           `  ${index + 1}. ${item.tag}: ${text} (order: ${item.order_num} → ${
             index + 1
@@ -350,32 +305,10 @@ export const reorderElements = async (
           collectionItems
             .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
             .forEach((el) => {
-              const text =
-                (
-                  el.props as {
-                    children?: React.ReactNode;
-                    title?: string;
-                    label?: string;
-                  }
-                ).children ||
-                (
-                  el.props as {
-                    children?: React.ReactNode;
-                    title?: string;
-                    label?: string;
-                  }
-                ).title ||
-                (
-                  el.props as {
-                    children?: React.ReactNode;
-                    title?: string;
-                    label?: string;
-                  }
-                ).label ||
-                "Untitled";
+              const text = getTextContent(el.props) || "Untitled";
               const extraInfo =
                 el.tag === "Tab" || el.tag === "Panel"
-                  ? `, tabId: ${(el.props as { tabId?: string }).tabId}`
+                  ? `, tabId: ${getPropValue(el.props, 'tabId')}`
                   : "";
               console.log(
                 `  ${el.tag}: ${text} (order: ${el.order_num}${extraInfo})`

@@ -1,4 +1,5 @@
 import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../../types/theme';
+import { isColorValueHSL } from '../../types/theme';
 
 // 토큰 값을 CSS 값으로 변환
 export function tokenValueToCss(token: DesignToken): string {
@@ -6,9 +7,8 @@ export function tokenValueToCss(token: DesignToken): string {
 
     switch (token.type) {
         case 'color':
-            if (typeof value === 'object' && 'h' in value) {
-                const color = value as ColorValue;
-                return `hsla(${color.h}, ${color.s}%, ${color.l}%, ${color.a})`;
+            if (isColorValueHSL(value)) {
+                return `hsla(${value.h}, ${value.s}%, ${value.l}%, ${value.a})`;
             }
             return value as string;
 

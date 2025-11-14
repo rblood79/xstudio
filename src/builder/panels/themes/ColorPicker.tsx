@@ -1,13 +1,13 @@
-import { ColorValue } from '../../../types/theme';
+import { ColorValueHSL } from '../../../types/theme';
 
 interface ColorPickerProps {
     label: string;
-    value: ColorValue;
-    onChange: (color: ColorValue) => void;
+    value: ColorValueHSL;
+    onChange: (color: ColorValueHSL) => void;
 }
 
 export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
-    const handleChange = (property: keyof ColorValue, newValue: number) => {
+    const handleChange = (property: keyof ColorValueHSL, newValue: number) => {
         onChange({
             ...value,
             [property]: newValue

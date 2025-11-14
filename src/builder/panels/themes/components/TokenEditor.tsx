@@ -6,7 +6,8 @@
 import { useState, useMemo } from 'react';
 import { tv } from 'tailwind-variants';
 import { useTokens, useTokenStats } from '../../../../hooks/theme';
-import type { DesignToken, ColorValueHSL } from '../../../../types/theme';
+import type { DesignToken, ColorValueHSL, TokenType } from '../../../../types/theme';
+import { isColorValueHSL } from '../../../../types/theme';
 import { parseTokenName } from '../../../../utils/theme/tokenParser';
 import { generateDarkVariant } from '../../../../utils/theme/colorUtils';
 import '../styles/TokenEditor.css';
@@ -71,7 +72,8 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
     const name = prompt('토큰 이름 (예: color.brand.primary):');
     if (!name) return;
 
-    const type = prompt('토큰 타입 (color/typography/spacing/shadow):') || 'color';
+    const typeInput = prompt('토큰 타입 (color/typography/spacing/shadow):') || 'color';
+    const type = typeInput as TokenType;
     const value = prompt('토큰 값:');
     if (!value) return;
 
@@ -100,6 +102,10 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
   const handleGenerateDarkVariant = async () => {
     if (!selectedToken) return;
     if (selectedToken.type !== 'color') return;
+    if (!isColorValueHSL(selectedToken.value)) {
+      alert('HSL 색상 값이 아닙니다.');
+      return;
+    }
     if (selectedToken.name.endsWith('.dark')) {
       alert('이미 다크모드 토큰입니다.');
       return;
@@ -114,7 +120,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
     }
 
     // Generate dark variant color
-    const lightColor = selectedToken.value as ColorValueHSL;
+    const lightColor = selectedToken.value;
     const darkColor = generateDarkVariant(lightColor);
 
     // Create new dark token
@@ -242,7 +248,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                 <div className="token-item-body">
                   <span className="token-type">{token.type}</span>
                   <div className="token-preview">
-                    {token.type === 'color' && token.value && (
+                    {token.type === 'color' && isColorValueHSL(token.value) && (
                       <div
                         className="color-preview-box"
                         style={{
@@ -296,7 +302,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                 <label>타입</label>
                 <select
                   value={selectedToken.type}
-                  onChange={(e) => handleUpdateToken({ type: e.target.value })}
+                  onChange={(e) => handleUpdateToken({ type: e.target.value as TokenType })}
                 >
                   <option value="color">Color</option>
                   <option value="typography">Typography</option>
@@ -322,7 +328,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
               {/* Token Value (타입별 편집) */}
               <div className="form-group">
                 <label>값</label>
-                {selectedToken.type === 'color' && selectedToken.value && (
+                {selectedToken.type === 'color' && isColorValueHSL(selectedToken.value) && (
                   <div className="color-editor">
                     <div className="color-inputs">
                       <input
@@ -370,7 +376,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                   </div>
                 )}
 
-                {selectedToken.type !== 'color' && (
+                {(selectedToken.type !== 'color' || !isColorValueHSL(selectedToken.value)) && (
                   <textarea
                     value={JSON.stringify(selectedToken.value, null, 2)}
                     onChange={(e) => {
@@ -400,7 +406,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
             {/* Token Preview */}
             <div className="token-preview">
               <h3>미리보기</h3>
-              {selectedToken.type === 'color' && selectedToken.value && (
+              {selectedToken.type === 'color' && isColorValueHSL(selectedToken.value) && (
                 <div className="preview-content">
                   <div
                     className="color-preview-large"
@@ -420,7 +426,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                 </div>
               )}
 
-              {selectedToken.type !== 'color' && (
+              {(selectedToken.type !== 'color' || !isColorValueHSL(selectedToken.value)) && (
                 <div className="preview-content">
                   <pre>{JSON.stringify(selectedToken.value, null, 2)}</pre>
                 </div>
