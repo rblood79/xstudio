@@ -28,6 +28,11 @@ import type {
   TokenValue,
 } from '../types/theme';
 
+// Phase 3.1 최적화: Getter 메모이제이션 캐시
+let cachedRawTokens: DesignToken[] | null = null;
+let cachedSemanticTokens: DesignToken[] | null = null;
+let cachedTokensVersion = 0;
+
 interface UnifiedThemeState {
   // ===== Theme State =====
   themes: DesignTheme[];
@@ -39,6 +44,9 @@ interface UnifiedThemeState {
   tokens: DesignToken[]; // All tokens (raw + semantic)
   rawTokens: DesignToken[]; // Computed getter
   semanticTokens: DesignToken[]; // Computed getter
+
+  // Phase 3.1: 캐시 무효화를 위한 내부 버전
+  _tokensVersion: number;
 
   // ===== Loading & Error =====
   loading: boolean;
@@ -112,17 +120,29 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
       activeThemeId: null,
       projectId: null,
       tokens: [],
+      _tokensVersion: 0,
       loading: false,
       error: null,
       dirty: false,
 
       // ===== Computed Properties =====
+      // Phase 3.1 최적화: 메모이제이션된 getter
       get rawTokens() {
-        return get().tokens.filter((t) => t.scope === 'raw');
+        const currentVersion = get()._tokensVersion;
+        if (cachedTokensVersion !== currentVersion || !cachedRawTokens) {
+          cachedRawTokens = get().tokens.filter((t) => t.scope === 'raw');
+          cachedTokensVersion = currentVersion;
+        }
+        return cachedRawTokens;
       },
 
       get semanticTokens() {
-        return get().tokens.filter((t) => t.scope === 'semantic');
+        const currentVersion = get()._tokensVersion;
+        if (cachedTokensVersion !== currentVersion || !cachedSemanticTokens) {
+          cachedSemanticTokens = get().tokens.filter((t) => t.scope === 'semantic');
+          // cachedTokensVersion은 rawTokens에서 이미 업데이트됨
+        }
+        return cachedSemanticTokens;
       },
 
       // ===== Theme Actions =====
@@ -342,7 +362,11 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         set({ loading: true, error: null });
         try {
           const resolvedTokens = await TokenService.getResolvedTokens(themeId);
-          set({ tokens: resolvedTokens as DesignToken[], loading: false });
+          set((state) => ({
+            tokens: resolvedTokens as DesignToken[],
+            _tokensVersion: state._tokensVersion + 1,
+            loading: false
+          }));
         } catch (err) {
           const message = err instanceof Error ? err.message : '토큰 조회 실패';
           set({ error: message, loading: false });
@@ -356,6 +380,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           const newToken = await TokenService.createToken(input);
           set((state) => ({
             tokens: [...state.tokens, newToken],
+            _tokensVersion: state._tokensVersion + 1,
             dirty: false,
             loading: false,
           }));
@@ -380,6 +405,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
             tokens: state.tokens.map((t) =>
               t.id === tokenId ? { ...t, ...updates } : t
             ),
+            _tokensVersion: state._tokensVersion + 1,
             loading: false,
           }));
 
@@ -406,6 +432,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
               token.value = value;
               token.updated_at = new Date().toISOString();
               state.dirty = true;
+              state._tokensVersion += 1; // Phase 3.1: 캐시 무효화
 
               // ✅ CSS 즉시 업데이트 (synchronization)
               // Note: injectThemeCSS() will be called after produce completes
@@ -439,6 +466,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
 
             state.tokens.push(newToken);
             state.dirty = true;
+            state._tokensVersion += 1; // Phase 3.1: 캐시 무효화
           })
         );
 
@@ -452,6 +480,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           await TokenService.deleteToken(tokenId);
           set((state) => ({
             tokens: state.tokens.filter((t) => t.id !== tokenId),
+            _tokensVersion: state._tokensVersion + 1,
             loading: false,
           }));
 
@@ -683,6 +712,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           activeThemeId: null,
           projectId: null,
           tokens: [],
+          _tokensVersion: 0,
           loading: false,
           error: null,
           dirty: false,

@@ -31,12 +31,14 @@ export const createUpdateElementPropsAction =
     const element = getElementById(state.elementsMap, elementId);
     if (!element) return;
 
-    console.log("🔧 updateElementProps 호출:", {
-      elementId,
-      elementTag: element.tag,
-      변경props: props,
-      호출위치: new Error().stack?.split("\n")[2]?.trim(),
-    });
+    // Phase 3.3 최적화: stack trace 캡처 제거 (비용 절감)
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔧 updateElementProps 호출:", {
+        elementId,
+        elementTag: element.tag,
+        변경props: props,
+      });
+    }
 
     // 1. 메모리 상태 업데이트 (우선)
     set(
@@ -52,12 +54,15 @@ export const createUpdateElementPropsAction =
           const newPropsClone = JSON.parse(JSON.stringify(props));
           const prevElementClone = JSON.parse(JSON.stringify(element));
 
-          console.log("📝 Props 변경 히스토리 추가:", {
-            elementId,
-            elementTag: element.tag,
-            prevProps: prevPropsClone,
-            newProps: newPropsClone,
-          });
+          // Phase 3.3 최적화: dev 모드에서만 로깅
+          if (process.env.NODE_ENV === 'development') {
+            console.log("📝 Props 변경 히스토리 추가:", {
+              elementId,
+              elementTag: element.tag,
+              prevProps: prevPropsClone,
+              newProps: newPropsClone,
+            });
+          }
           historyManager.addEntry({
             type: "update",
             elementId: elementId,
@@ -111,12 +116,15 @@ export const createUpdateElementAction =
     const element = getElementById(state.elementsMap, elementId);
     if (!element) return;
 
-    console.log("🔄 updateElement 호출:", {
-      elementId,
-      elementTag: element.tag,
-      updates,
-      hasDataBinding: !!updates.dataBinding,
-    });
+    // Phase 3.3 최적화: dev 모드에서만 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔄 updateElement 호출:", {
+        elementId,
+        elementTag: element.tag,
+        updates,
+        hasDataBinding: !!updates.dataBinding,
+      });
+    }
 
     // 1. 메모리 상태 업데이트
     set(
@@ -132,12 +140,15 @@ export const createUpdateElementAction =
           const newPropsClone = JSON.parse(JSON.stringify(updates.props));
           const prevElementClone = JSON.parse(JSON.stringify(element));
 
-          console.log("📝 Element 변경 히스토리 추가:", {
-            elementId,
-            elementTag: element.tag,
-            prevProps: prevPropsClone,
-            newProps: newPropsClone,
-          });
+          // Phase 3.3 최적화: dev 모드에서만 로깅
+          if (process.env.NODE_ENV === 'development') {
+            console.log("📝 Element 변경 히스토리 추가:", {
+              elementId,
+              elementTag: element.tag,
+              prevProps: prevPropsClone,
+              newProps: newPropsClone,
+            });
+          }
           historyManager.addEntry({
             type: "update",
             elementId: elementId,
