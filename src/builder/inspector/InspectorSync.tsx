@@ -125,7 +125,6 @@ export function InspectorSync() {
     // - 하지만 syncVersion 체크로 이미 차단되므로 중복 업데이트 방지
     // - selectedBuilderElement 변경 시에만 동기화 (Builder → Inspector)
     // - getState()로 최신 selectedElement를 가져와 stale closure 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedBuilderElement,
     // selectedElement 제거 (Inspector → Builder 변경 시 중복 실행 방지)

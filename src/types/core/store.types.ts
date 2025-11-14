@@ -11,7 +11,7 @@ export type {
     ColumnElementProps,
     CellElementProps,
     RowElementProps
-} from './unified';
+} from '../builder/unified.types';
 
 // 테마 타입은 별도 모듈에서 import
-export type { DesignToken } from './theme';
+export type { DesignToken } from '../theme';

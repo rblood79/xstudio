@@ -10,7 +10,7 @@ import { createFigmaService } from '../../../../services/theme';
 import type {
   FigmaImportRequest,
   FigmaImportResult,
-} from '../../../types/theme/figma.types';
+} from '../../../../types/theme/figma.types';
 import '../styles/FigmaImporter.css';
 
 const figmaImporterStyles = tv({

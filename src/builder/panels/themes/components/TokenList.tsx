@@ -1,4 +1,4 @@
-import { DesignToken, TokenValue } from '../../../types/theme';
+import { DesignToken, TokenValue } from '../../../../types/theme';
 
 interface TokenListProps {
     tokens: DesignToken[];

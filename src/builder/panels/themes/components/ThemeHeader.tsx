@@ -1,4 +1,4 @@
-import { DesignTheme } from '../../../types/theme';
+import { DesignTheme } from '../../../../types/theme';
 
 interface ThemeHeaderProps {
     theme: DesignTheme | null;

@@ -5,7 +5,6 @@ import { Element, ComponentElementProps } from "../../types/core/store.types";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
 import {
-  findElementById,
   createCompleteProps,
 } from "./utils/elementHelpers";
 import { createUndoAction, createRedoAction } from "./history/historyActions";

@@ -1,6 +1,6 @@
 import React from 'react';
-import { TokenValue } from './theme';
-import type { ElementEvent } from './events';
+import { TokenValue } from '../theme';
+import type { ElementEvent } from '../events/events.types';
 
 type AriaRole = 'button' | 'checkbox' | 'menuitem' | 'menubar' | 'navigation' | 'progressbar' | 'separator' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'presentation' | undefined;
 

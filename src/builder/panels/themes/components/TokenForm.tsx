@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DesignToken, NewTokenInput, TokenValue } from '../../../types/theme';
+import { DesignToken, NewTokenInput, TokenValue } from '../../../../types/theme';
 
 interface TokenFormProps {
     rawTokens: DesignToken[];

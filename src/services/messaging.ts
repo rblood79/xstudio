@@ -29,8 +29,8 @@
  */
 
 import { IframeMessenger, MessageResponse } from '../../utils/iframeMessenger';
-import { Element, ComponentElementProps } from '../../types/core/store.types';
-import { DesignToken } from '../../types/theme';
+import { Element, ComponentElementProps } from '../types/core/store.types';
+import { DesignToken } from '../types/theme';
 
 /**
  * Unified message payload type

@@ -254,7 +254,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         }
       },
 
-      deleteTheme: async (themeId: string, projectId?: string): Promise<boolean> => {
+      deleteTheme: async (themeId: string): Promise<boolean> => {
         try {
           await ThemeService.deleteTheme(themeId);
           get()._removeTheme(themeId);
@@ -295,7 +295,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         }
       },
 
-      activateTheme: async (themeId: string, projectId?: string): Promise<boolean> => {
+      activateTheme: async (themeId: string): Promise<boolean> => {
         try {
           await ThemeService.activateTheme(themeId);
           // Realtime subscription will automatically update themes and activeTheme

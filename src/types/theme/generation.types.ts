@@ -3,7 +3,7 @@
  * AI 기반 테마 생성을 위한 입력/출력 타입
  */
 
-import type { ColorValueHSL, DesignToken } from './token.types';
+import type { ColorValueHSL, DesignToken } from '.';
 
 // ===== 테마 생성 요청 타입 =====
 

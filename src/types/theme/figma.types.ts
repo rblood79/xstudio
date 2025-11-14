@@ -3,7 +3,7 @@
  * Figma API 및 플러그인 연동을 위한 타입
  */
 
-import type { DesignToken } from './token.types';
+import type { DesignToken } from '.';
 
 // ===== Figma API 타입 =====
 

@@ -9,7 +9,6 @@ import Components from '../components';
 import { ThemesPanel } from '../panels/themes/ThemesPanel';
 import { AIPanel } from '../panels/ai/AIPanel';
 import { SettingsPanel } from '../panels/settings/SettingsPanel';
-import { SidebarNav } from './SidebarNav';
 //import { MessageService } from '../../utils/messaging';
 import { useIframeMessenger } from '../hooks/useIframeMessenger';
 import { useTreeExpandState } from '../hooks/useTreeExpandState';
@@ -35,7 +34,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
     const selectedTab = useStore((state) => state.selectedTab);
     const { setElements: storeSetElements, setSelectedElement, selectTabElement } = useStore();
     // 활성 탭 상태 관리 (localStorage 연동) - forcedActiveTabs가 있으면 그것을 사용
-    const { activeTabs: storedActiveTabs, toggleTab, closeAll } = useSidebarTabs();
+    const { activeTabs: storedActiveTabs } = useSidebarTabs();
     const activeTabs = forcedActiveTabs || storedActiveTabs;
 
     // 현재 페이지의 요소만 필터링

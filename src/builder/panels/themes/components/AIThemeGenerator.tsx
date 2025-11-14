@@ -12,7 +12,7 @@ import type {
   ThemeGenerationProgress,
   ThemeGenerationStage,
   ThemeGenerationResponse,
-} from '../../../types/theme/generation.types';
+} from '../../../../types/theme/generation.types';
 import '../styles/AIThemeGenerator.css';
 
 const aiGeneratorStyles = tv({

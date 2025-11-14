@@ -1,4 +1,4 @@
-import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../types/theme/theme.types';
+import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../../types/theme';
 
 // 토큰 값을 CSS 값으로 변환
 export function tokenValueToCss(token: DesignToken): string {

@@ -132,7 +132,7 @@ export const BuilderCore: React.FC = () => {
     handleIframeLoad,
     handleMessage,
     // iframeUndo, iframeRedo는 사용하지 않음
-    sendElementsToIframe,
+    // sendElementsToIframe는 사용하지 않음
     // updateElementProps는 제거됨
     iframeReadyState,
   } = useIframeMessenger();

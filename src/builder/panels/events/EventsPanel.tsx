@@ -61,7 +61,7 @@ export function EventsPanel({ isActive }: PanelProps) {
 
 interface EventsPanelContentProps {
   selectedElement: SelectedElement;
-  updateEvents: (handlers: any[]) => void;
+  updateEvents: (handlers: EventHandler[]) => void;
   showAddAction: boolean;
   setShowAddAction: (show: boolean) => void;
 }
@@ -111,7 +111,7 @@ function EventsPanelContent({
         actionsJsonRef.current = JSON.stringify(selectedHandler.actions || []);
       }
     }
-  }, [selectedHandler?.id]);
+  }, [selectedHandler]);
 
   // Actions 변경 시 Handler 업데이트 (내용 변경 시에만)
   useEffect(() => {
