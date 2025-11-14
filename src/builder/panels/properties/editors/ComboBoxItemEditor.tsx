@@ -55,14 +55,6 @@ export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: Proper
         };
     }, []);
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <>
       {/* Basic */}

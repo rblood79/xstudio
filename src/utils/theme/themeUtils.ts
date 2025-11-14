@@ -1,4 +1,4 @@
-import type { DesignToken, ColorValue, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../../types/theme';
+import type { DesignToken, TypographyValue, ShadowValue, BorderValue, TokenValue, TokenType } from '../../types/theme';
 import { isColorValueHSL } from '../../types/theme';
 
 // 토큰 값을 CSS 값으로 변환

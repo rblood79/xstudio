@@ -64,7 +64,7 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // handleAddElement wrapper - match Sidebar signature
   const handleAddElementWrapper = useCallback(
-    async (tag: string, _parentId?: string, _position?: number) => {
+    async (tag: string) => {
       if (!currentPageId) return;
       await handleAddElement(
         tag,

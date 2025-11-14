@@ -291,7 +291,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     if (columnGroups.length === 0) {
       // Column Group이 없으면 기본 컬럼 정의 반환
       const basicColumns = effectiveColumns.map((c) =>
-        columnHelper.accessor(String(c.key) as any, {
+        columnHelper.accessor(String(c.key) as keyof T, {
           id: String(c.key),
           header: () => (
             <span
@@ -354,7 +354,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       if (groupColumns.length > 0) {
         // 하위 컬럼들을 columnHelper.accessor()로 생성
         const subColumns = groupColumns.map((c) =>
-          columnHelper.accessor(String(c.key) as any, {
+          columnHelper.accessor(String(c.key) as keyof T, {
             id: String(c.key),
             header: () => <span style={{}}>{c.label}</span>,
             size: c.width ?? 150,
@@ -414,7 +414,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       const remainingColumns = sortedColumns.slice(columnIndex);
       for (const c of remainingColumns) {
         result.push(
-          columnHelper.accessor(String(c.key) as any, {
+          columnHelper.accessor(String(c.key) as keyof T, {
             id: String(c.key),
             header: () => (
               <span

@@ -123,8 +123,7 @@ export const parseZonedDate = (
  * @example parseAbsoluteDate('2024-05-15T14:30:00Z')
  */
 export const parseAbsoluteDate = (
-  isoString: string,
-  _timezone: string = getLocalTimeZone()
+  isoString: string
 ): ZonedDateTime => {
   return parseAbsoluteToLocal(isoString);
 };
@@ -409,8 +408,7 @@ export const isWeekday = (date: DateValue, locale: string = LOCALES.KOREAN): boo
  * Convert date to specific timezone
  */
 export const convertToTimezone = (
-  date: ZonedDateTime,
-  _targetTimezone: string
+  date: ZonedDateTime
 ): ZonedDateTime => {
   return date.toAbsoluteString()
     ? parseAbsoluteToLocal(date.toAbsoluteString())

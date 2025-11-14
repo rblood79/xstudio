@@ -15,6 +15,7 @@ import { formatNumber, formatCurrency } from '../utils/core/numberUtils';
 /**
  * I18n Context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const I18nContext = createContext<I18nContextValue | null>(null);
 
 /**
@@ -75,7 +76,7 @@ export function I18nProvider({ children, initialLocale }: I18nProviderProps) {
       });
       return formatter.format(date);
     },
-    [locale, config.locale]
+    [locale]
   );
 
   /**

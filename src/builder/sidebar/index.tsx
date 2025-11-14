@@ -1070,10 +1070,10 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {hasTableChildren ? (
                                         renderTableStructure(
                                             // flat elements 필요 (renderTableStructure가 flat 기반)
-                                            elements as any,
+                                            elements as Array<{ id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: ElementProps }>,
                                             (el) => el.tag || '',
-                                            onClick as any,
-                                            onDelete as any,
+                                            onClick as (item: { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: ElementProps }) => void,
+                                            onDelete as (item: { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: ElementProps }) => Promise<void>,
                                             item.id,
                                             depth,
                                             isExpanded,

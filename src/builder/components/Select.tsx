@@ -108,7 +108,6 @@ export function Select<T extends object>({
   }, [hasDataBinding, loading, error, boundData, columnMapping, dataBinding, items]);
 
   // Render ListBox content based on state - memoized to prevent unnecessary re-renders
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const listBoxContent: React.ReactNode | ((item: T) => React.ReactNode) = React.useMemo(() => {
     // Loading state
     if (hasDataBinding && loading) {

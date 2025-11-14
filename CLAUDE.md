@@ -732,6 +732,185 @@ This pattern enables:
 - Modular, testable code
 - Separation of concerns while maintaining store access
 
+#### Common TypeScript Error Patterns & Solutions
+
+**Updated: 2025-11-15** - Based on Phase 3 TypeScript error fixing (280 errors resolved)
+
+**1. PropertyCustomId Component Pattern**
+
+PropertyCustomId was refactored to manage customId internally via Inspector state. DO NOT pass onChange prop.
+
+```typescript
+// ❌ WRONG - onChange not accepted
+const updateCustomId = (newCustomId: string) => {
+  const updateElement = useStore.getState().updateElement;
+  updateElement(elementId, { customId: newCustomId });
+};
+
+<PropertyCustomId
+  label="ID"
+  value={customId}
+  elementId={elementId}
+  onChange={updateCustomId}  // ❌ This prop doesn't exist
+/>
+
+// ✅ CORRECT - Component handles updates internally
+const element = useStore((state) => state.elements.find((el) => el.id === elementId));
+const customId = element?.customId || '';
+
+<PropertyCustomId
+  label="ID"
+  value={customId}
+  elementId={elementId}
+  placeholder="component_1"
+/>
+```
+
+**2. Page Type Separation (API vs Store)**
+
+The project has two different Page types - use appropriate type in each context:
+
+```typescript
+// ❌ WRONG - Type confusion
+import { Page } from '../../services/api/PagesApiService';
+const storePage: Page = { name: 'Home', ... };  // Error: 'name' doesn't exist
+
+// ✅ CORRECT - Use type aliases
+import { Page as ApiPage } from '../../services/api/PagesApiService';
+import type { Page } from '../../types/builder/unified.types';
+
+// Convert ApiPage (title field) → store Page (name field)
+const storePage: Page = {
+  id: apiPage.id,
+  name: apiPage.title,  // Convert title → name
+  slug: apiPage.slug,
+  parent_id: apiPage.parent_id,
+  order_num: apiPage.order_num
+};
+```
+
+**3. Component Size Type Migration**
+
+Always use standard size types, NOT legacy size values:
+
+```typescript
+// ❌ WRONG - Legacy sizes
+size={(props.size as "small" | "medium" | "large" | undefined) || "medium"}
+
+// ✅ CORRECT - ComponentSizeSubset
+import type { ComponentSizeSubset } from '../../types/builder/componentVariants.types';
+
+size={(props.size as ComponentSizeSubset | undefined) || "md"}
+// ComponentSizeSubset = "sm" | "md" | "lg"
+```
+
+**4. Delete Operator on Non-Optional Properties**
+
+Use destructuring instead of delete operator:
+
+```typescript
+// ❌ WRONG - Delete operator on required property
+const element = { id: '1', customId: 'foo', props: {} };
+delete element.customId;  // Error: customId not optional
+
+// ✅ CORRECT - Use destructuring
+const { customId, ...elementRest } = element;
+const elementForDB = { ...elementRest, custom_id: customId };
+```
+
+**5. Type Assertions for Incompatible Types**
+
+Use double assertion via `unknown` when types are incompatible:
+
+```typescript
+// ❌ WRONG - Direct assertion fails
+const events = (element.events as EventHandler[]);  // Error: ElementEvent[] → EventHandler[]
+
+// ✅ CORRECT - Double assertion via unknown
+const events = (element.events as unknown as EventHandler[]);
+```
+
+**6. Supabase Direct Insert Pattern**
+
+ElementUtils.createChildElementWithParentCheck was deleted - use direct Supabase insert:
+
+```typescript
+// ❌ WRONG - Method deleted
+const data = await ElementUtils.createChildElementWithParentCheck(newElement, pageId, parentId);
+
+// ✅ CORRECT - Direct Supabase insert
+import { supabase } from '../../lib/supabase';
+
+const { data, error } = await supabase
+  .from('elements')
+  .insert(newElement)
+  .select()
+  .single();
+
+if (error) throw error;
+if (!data) throw new Error('Failed to create element');
+addElement(data as Element);
+```
+
+**7. Optional Property Handling**
+
+Always handle potentially undefined properties with optional chaining or fallbacks:
+
+```typescript
+// ❌ WRONG - Assumes property exists
+const timestamp = new Date(token.updated_at).getTime();
+
+// ✅ CORRECT - Provide fallback
+const timestamp = new Date(token.updated_at || 0).getTime();
+
+// ✅ CORRECT - Optional chaining
+const parentTag = element.parent?.tag;
+```
+
+**8. DataBinding Type Conversions**
+
+DataBinding type requires explicit conversions between Record<string, unknown>:
+
+```typescript
+// Building tree (Element → ElementTreeItem)
+const treeItem: ElementTreeItem = {
+  id: el.id,
+  dataBinding: el.dataBinding as Record<string, unknown> | undefined,
+  // ...
+};
+
+// Flattening tree (ElementTreeItem → Element)
+const element: Element = {
+  id: item.id,
+  dataBinding: item.dataBinding as DataBinding | undefined,
+  // ...
+};
+```
+
+**9. Array Filter Type Assertions**
+
+When filtering arrays with unknown types, assert type before filtering:
+
+```typescript
+// ❌ WRONG - Array type unknown
+const lightVars = data.vars.filter((v) => !v.isDark);  // Error
+
+// ✅ CORRECT - Assert array type first
+const lightVars = (data.vars as { isDark?: boolean; name: string; value: string }[])
+  .filter((v) => !v.isDark);
+```
+
+**10. Import Completeness**
+
+Always import required types - don't assume they're in scope:
+
+```typescript
+// Common missing imports that cause errors:
+import type { DesignToken, DataBinding } from '../../types/theme';
+import { supabase } from '../../lib/supabase';
+import type { Element } from '../../types/core/store.types';
+```
+
 ### React Aria Components
 
 - All UI components must use React Aria for accessibility

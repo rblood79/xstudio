@@ -45,7 +45,7 @@ export const createEventHandler = (
     // 각 이벤트 실행
     for (const elementEvent of matchingEvents) {
       try {
-        await eventEngine.executeEvent(elementEvent as any, context);
+        await eventEngine.executeEvent(elementEvent as Record<string, unknown>, context);
       } catch (error) {
         console.error("이벤트 실행 오류:", error);
       }

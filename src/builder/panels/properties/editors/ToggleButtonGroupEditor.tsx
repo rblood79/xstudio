@@ -28,7 +28,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
 
     useEffect(() => {
         // 버튼 선택 상태 초기화
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedButton(null);
     }, [elementId]);
 
