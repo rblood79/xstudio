@@ -151,7 +151,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                         });
 
                         isSendingRef.current = true;
-                        lastSentElementsRef.current = currentElements;
+                        const currentHash = currentElements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
+                        lastSentElementsHashRef.current = currentHash;
                         sendElementsToIframe(currentElements);
 
                         setTimeout(() => {
@@ -401,8 +402,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // sendElementSelectedMessage(selectedElementId, element.props);
 
     // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
-    // 성능 최적화: elements 참조 추적 (Zustand 불변성 활용)
-    const lastSentElementsRef = useRef<Element[] | null>(null);
+    // 성능 최적화: elements 깊은 비교 (Preview setElements 무한 루프 방지)
+    const lastSentElementsHashRef = useRef<string>('');
     const isSendingRef = useRef(false);
 
     useEffect(() => {
@@ -411,9 +412,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 성능 최적화: elements 참조가 변경되지 않았으면 스킵
-        // Zustand는 불변성을 보장하므로 실제 변경시에만 새 참조 생성
-        if (lastSentElementsRef.current === elements) {
+        // 성능 최적화: 실제 내용 변경만 체크 (id + props 기반 해시)
+        // Preview의 setElements가 같은 내용으로 호출되면 스킵
+        const currentHash = elements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
+        if (lastSentElementsHashRef.current === currentHash) {
             return;
         }
 
@@ -425,7 +427,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
-        lastSentElementsRef.current = elements;
+        lastSentElementsHashRef.current = currentHash;
 
         // iframe에 요소 전송만 수행 (setElements 호출하지 않음)
         sendElementsToIframe(elements);
