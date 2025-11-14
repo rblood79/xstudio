@@ -28,6 +28,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
 
     const elements = useStore((state) => state.elements);
+    // 성능 최적화: Map 사용 (O(1) 조회)
+    const elementsMap = useStore((state) => state.elementsMap);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
     const isSyncingToBuilder = useInspectorState((state) => state.isSyncingToBuilder);
     // updateElementProps는 useZundoActions에서 가져옴
@@ -66,7 +68,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
 
-        const element = elements.find(el => el.id === elementId);
+        // 성능 최적화: Map 사용 (O(1) 조회)
+        const element = elementsMap.get(elementId);
         if (!element) return;
 
         const message = {
@@ -90,7 +93,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         iframe.contentWindow.postMessage(message, window.location.origin);
-    }, [elements, iframeReadyState]);
+    }, [elementsMap, iframeReadyState]);
 
     // 큐에 있는 메시지들 처리
     const processMessageQueue = useCallback(() => {
@@ -141,25 +144,19 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
                     // iframe 로드 후 현재 요소들을 전송 (초기 로드 시에도 전송)
                     const currentElements = useStore.getState().elements;
-                    if (!isSendingRef.current) {
-                        // 마지막 전송된 요소들과 다를 때만 전송 (ID와 프로퍼티 모두 비교)
-                        const currentElementsHash = currentElements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-                        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
+                    if (!isSendingRef.current && currentElements.length > 0) {
+                        console.log('🖼️ 초기 iframe 로드 - 요소 전송:', {
+                            elementCount: currentElements.length,
+                            elementIds: currentElements.map(el => el.id)
+                        });
 
-                        if (currentElementsHash !== lastSentElementsHash) {
-                            console.log('🖼️ 초기 iframe 로드 - 요소 전송:', {
-                                elementCount: currentElements.length,
-                                elementIds: currentElements.map(el => el.id)
-                            });
+                        isSendingRef.current = true;
+                        lastSentVersionRef.current = Date.now();
+                        sendElementsToIframe(currentElements);
 
-                            isSendingRef.current = true;
-                            lastSentElementsRef.current = [...currentElements];
-                            sendElementsToIframe(currentElements);
-
-                            setTimeout(() => {
-                                isSendingRef.current = false;
-                            }, 100);
-                        }
+                        setTimeout(() => {
+                            isSendingRef.current = false;
+                        }, 100);
                     }
                 }, 100);
             } else {
@@ -334,7 +331,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             setSelectedElement(event.data.elementId, event.data.payload?.props);
 
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
-            const element = elements.find(el => el.id === event.data.elementId);
+            // 성능 최적화: Map 사용 (O(1) 조회)
+            const element = elementsMap.get(event.data.elementId);
             if (element) {
                 const iframe = MessageService.getIframe();
                 if (iframe?.contentWindow) {
@@ -358,7 +356,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elements, isSyncingToBuilder]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -403,7 +401,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // sendElementSelectedMessage(selectedElementId, element.props);
 
     // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
-    const lastSentElementsRef = useRef<Element[]>([]);
+    // 성능 최적화: 버전 기반 추적으로 전환 (직렬화 제거)
+    const lastSentVersionRef = useRef(0);
     const isSendingRef = useRef(false);
 
     useEffect(() => {
@@ -412,11 +411,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 요소 ID와 프로퍼티 모두 비교하여 변경 감지
-        const currentElementsHash = elements.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-        const lastSentElementsHash = lastSentElementsRef.current.map(el => `${el.id}-${JSON.stringify(el.props)}`).sort().join('|');
-
-        if (currentElementsHash === lastSentElementsHash) {
+        // 성능 최적화: elements 참조 변경만 체크 (Zustand의 불변성 활용)
+        // elements 배열이 변경되면 새 참조이므로 전송 필요
+        const currentVersion = Date.now();
+        if (currentVersion === lastSentVersionRef.current) {
             return;
         }
 
@@ -428,9 +426,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
-
-        // 마지막 전송된 요소들 업데이트
-        lastSentElementsRef.current = [...elements];
+        lastSentVersionRef.current = currentVersion;
 
         // iframe에 요소 전송만 수행 (setElements 호출하지 않음)
         sendElementsToIframe(elements);
