@@ -22,6 +22,7 @@ export interface CardProps {
   // Selection
   isSelectable?: boolean;
   isSelected?: boolean;
+  isFocused?: boolean;
   onSelectionChange?: (isSelected: boolean) => void;
 
   // Content
@@ -86,6 +87,9 @@ const card = tv({
     isSelected: {
       true: "selected",
     },
+    isFocused: {
+      true: "focused",
+    },
   },
   defaultVariants: {
     variant: "default",
@@ -119,6 +123,7 @@ export function Card({
   isDisabled = false,
   isSelectable = false,
   isSelected = false,
+  isFocused = false,
   onSelectionChange,
   heading,
   subheading,
@@ -163,6 +168,7 @@ export function Card({
     isDisabled,
     isSelectable,
     isSelected,
+    isFocused,
     className,
   });
 
