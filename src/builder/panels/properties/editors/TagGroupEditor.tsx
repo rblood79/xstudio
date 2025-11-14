@@ -110,7 +110,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             Delete Tag
                         </button>
                     </div>
-                </PropertySection>
+                </div>
 
                 <div className='tab-actions'>
                     <button
@@ -120,7 +120,7 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         Back to Tag Group Settings
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

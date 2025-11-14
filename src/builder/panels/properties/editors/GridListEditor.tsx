@@ -159,7 +159,7 @@ export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         {PROPERTY_LABELS.BACK_TO_GRID_LIST_SETTINGS}
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

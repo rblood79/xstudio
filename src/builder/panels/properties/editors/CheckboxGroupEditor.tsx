@@ -165,7 +165,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                             {PROPERTY_LABELS.DELETE_THIS_CHECKBOX}
                         </button>
                     </div>
-                </PropertySection>
+                </div>
 
                 {/* 체크박스 편집 모드 종료 버튼 */}
                 <div className='tab-actions'>
@@ -176,7 +176,7 @@ export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: Prope
                         {PROPERTY_LABELS.BACK_TO_CHECKBOX_GROUP_SETTINGS}
                     </button>
                 </div>
-            </div>
+            </>
         );
     }
 

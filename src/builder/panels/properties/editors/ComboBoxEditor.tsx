@@ -167,8 +167,8 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         </button>
                     </div>
 
-                </PropertySection>
-            </div>
+                </div>
+            </>
         );
     }
 
@@ -177,8 +177,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
         <>
             {/* Basic */}
             <PropertySection title="Basic">
-<>
-            <PropertyCustomId
+                <PropertyCustomId
                 label="ID"
                 value={customId}
                 elementId={elementId}
@@ -364,7 +363,7 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                         <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
                         {PROPERTY_LABELS.ADD_OPTION}
                     </button>
-                </>
+                </div>
             </PropertySection>
         </>
     );
