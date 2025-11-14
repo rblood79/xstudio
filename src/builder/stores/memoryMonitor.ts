@@ -18,8 +18,10 @@ export class MemoryMonitor {
     private readonly maxStatsHistory = 60; // 10분치 기록 (60 * 10초)
     private statusMessage: string = ''; // 상태 메시지 (콘솔 대신 UI에 표시)
 
+    // Phase 4.1 최적화: constructor에서 자동 시작 제거
+    // useMemoryMonitor 훅에서 명시적으로 시작/정지 관리
     constructor() {
-        this.startMonitoring();
+        // 자동 시작 제거 - 지연 초기화
     }
 
     private collectStats(): void {

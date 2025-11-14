@@ -94,6 +94,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
     const childrenAs = <C,>(v: unknown): C[] => (Array.isArray(v) ? (v as C[]) : []);
 
     // Table 구조를 특별히 렌더링하는 함수
+    // Phase 2.4 최적화: 단일 패스로 5회 순회 → 1회 순회
     const renderTableStructure = <T extends { id: string; parent_id?: string | null; order_num?: number; tag?: string; props?: ElementProps }>(
         items: T[],
         _getLabel: (item: T) => string,
@@ -105,18 +106,26 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
         toggleExpand: (id: string) => void,
         expandedKeys: Set<string>
     ): React.ReactNode => {
-        const tableHeader = items.find(child =>
-            child.parent_id === tableId && child.tag === 'TableHeader'
-        );
+        // 단일 패스로 TableHeader, ColumnGroups, Columns 수집
+        const result = items.reduce((acc, child) => {
+            if (child.parent_id === tableId && child.tag === 'TableHeader') {
+                acc.tableHeader = child;
+            } else if (acc.tableHeader && child.parent_id === acc.tableHeader.id) {
+                if (child.tag === 'ColumnGroup') {
+                    acc.columnGroups.push(child);
+                } else if (child.tag === 'Column') {
+                    acc.columns.push(child);
+                }
+            }
+            return acc;
+        }, { tableHeader: null as T | null, columnGroups: [] as T[], columns: [] as T[] });
+
+        const tableHeader = result.tableHeader;
         if (!tableHeader) return null;
 
-        const columnGroups = items.filter(child =>
-            child.parent_id === tableHeader.id && child.tag === 'ColumnGroup'
-        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        const columns = items.filter(child =>
-            child.parent_id === tableHeader.id && child.tag === 'Column'
-        ).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        // 정렬 (이미 수집된 배열만)
+        const columnGroups = result.columnGroups.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+        const columns = result.columns.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         return (
             <>

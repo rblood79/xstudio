@@ -286,15 +286,12 @@ export const BuilderCore: React.FC = () => {
     };
   }, [iframeReadyState]); // ✅ sendThemeTokens 의존성 제거 (subscribe 재등록 방지)
 
-  // order_num 검증 (reorderElements 완료 후 실행하도록 지연)
+  // Phase 4.2 최적화: setTimeout 제거, useEffect batching 활용
+  // order_num 검증 (dev 모드 전용)
   useEffect(() => {
     if (elements.length > 0) {
-      // reorderElements(50ms)가 완료될 시간을 주기 위해 충분히 지연
-      const timer = setTimeout(() => {
-        validateOrderNumbers(elements);
-      }, 300);
-
-      return () => clearTimeout(timer);
+      // React의 자연스러운 batching으로 reorderElements 후 실행됨
+      validateOrderNumbers(elements);
     }
   }, [elements, validateOrderNumbers]);
 

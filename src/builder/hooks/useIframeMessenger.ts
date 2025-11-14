@@ -173,9 +173,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                     elementIds: currentElements.map(el => el.id)
                 });
 
-                // 전송 해시 업데이트 (중복 전송 방지)
-                const currentHash = currentElements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
-                lastSentElementsHashRef.current = currentHash;
+                // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
+                lastSentElementsRef.current = currentElements;
 
                 sendElementsToIframe(currentElements);
             }
@@ -426,8 +425,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // sendElementSelectedMessage(selectedElementId, element.props);
 
     // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
-    // 성능 최적화: elements 깊은 비교 (Preview setElements 무한 루프 방지)
-    const lastSentElementsHashRef = useRef<string>('');
+    // Phase 2.1 최적화: JSON.stringify 제거, 구조적 참조 비교
+    const lastSentElementsRef = useRef<Element[]>([]);
     const isSendingRef = useRef(false);
 
     useEffect(() => {
@@ -443,11 +442,23 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 성능 최적화: 실제 내용 변경만 체크 (id + props 기반 해시)
-        // Preview의 setElements가 같은 내용으로 호출되면 스킵
-        const currentHash = elements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
-        if (lastSentElementsHashRef.current === currentHash) {
-            return;
+        // Phase 2.1 최적화: 구조적 참조 비교 (JSON.stringify 제거)
+        // 배열 길이와 각 요소의 참조 비교
+        const prevElements = lastSentElementsRef.current;
+        if (prevElements.length === elements.length) {
+            let isSame = true;
+            for (let i = 0; i < elements.length; i++) {
+                // 요소 참조가 다르거나 id/tag가 다르면 변경됨
+                if (prevElements[i] !== elements[i] ||
+                    prevElements[i].id !== elements[i].id ||
+                    prevElements[i].tag !== elements[i].tag) {
+                    isSame = false;
+                    break;
+                }
+            }
+            if (isSame) {
+                return;
+            }
         }
 
         console.log('🔄 요소 변경 감지 - iframe 전송:', {
@@ -458,7 +469,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
-        lastSentElementsHashRef.current = currentHash;
+        lastSentElementsRef.current = elements;
 
         // iframe에 요소 전송 (ACK를 받으면 isSendingRef.current = false로 해제됨)
         sendElementsToIframe(elements);

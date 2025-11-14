@@ -27,10 +27,18 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
     const showElementBorders = useStore((state) => state.showElementBorders);
     const showElementLabels = useStore((state) => state.showElementLabels);
 
-    // 메시지 이벤트 리스너 등록
-    useEffect(() => {
+    // Phase 2.2 최적화: useRef 패턴으로 리스너 재등록 방지
+    const onMessageRef = React.useRef(onMessage);
+
+    // onMessage 변경 시 ref만 업데이트 (리스너 재등록 없음)
+    React.useEffect(() => {
+        onMessageRef.current = onMessage;
+    }, [onMessage]);
+
+    // 메시지 이벤트 리스너 등록 (한 번만)
+    React.useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            onMessage(event);
+            onMessageRef.current(event);
         };
 
         window.addEventListener('message', handleMessage);
@@ -38,7 +46,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
         return () => {
             window.removeEventListener('message', handleMessage);
         };
-    }, [onMessage]);
+    }, []); // 빈 의존성 배열 = 마운트 시 한 번만
 
     // Element Borders 및 Labels 시각화
     useEffect(() => {

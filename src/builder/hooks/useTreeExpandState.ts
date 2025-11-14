@@ -111,15 +111,20 @@ export function useTreeExpandState(
 
   /**
    * 선택된 요소의 모든 부모 자동 펼치기
+   * Phase 2.3 최적화: Map 기반 조회로 O(depth × n) → O(depth)
    */
   const expandParents = useCallback((elementId: string, allElements: Element[]) => {
-    const parentIds = new Set<string>();
-    let currentElement = allElements.find((el) => el.id === elementId);
+    // O(n): elementsMap 생성
+    const elementsMap = new Map<string, Element>();
+    allElements.forEach((el) => elementsMap.set(el.id, el));
 
-    // 부모 체인 순회
+    const parentIds = new Set<string>();
+    let currentElement = elementsMap.get(elementId); // O(1)
+
+    // 부모 체인 순회 (O(depth))
     while (currentElement?.parent_id) {
       parentIds.add(currentElement.parent_id);
-      currentElement = allElements.find((el) => el.id === currentElement?.parent_id);
+      currentElement = elementsMap.get(currentElement.parent_id); // O(1)
     }
 
     // 기존 expandedKeys에 부모 ID 추가
