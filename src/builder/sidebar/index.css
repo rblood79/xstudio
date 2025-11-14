@@ -16,7 +16,6 @@
     height: 100%;
     justify-content: space-between;
     background-color: var(--builder-sidebar-nav-bg);
-    border-right: 1px solid var(--builder-sidebar-border);
 }
 
 .nav-list {
@@ -86,10 +85,32 @@
 
 /* Panel Content */
 .panel-content {
-    border-right: 1px solid var(--builder-sidebar-border);
+    
     & > div {
         min-width: 233px;
         width: 233px;
+    }
+}
+
+.sidebar {
+    .panel-nav{
+        border-right: 1px solid var(--builder-sidebar-border);
+    }
+    .panel-content {
+        & > div {
+            border-right: 1px solid var(--builder-sidebar-border);
+        }
+    }
+}
+
+.inspector {
+    .panel-nav{
+        border-left: 1px solid var(--builder-sidebar-border);
+    }
+    .panel-content {
+        & > div {
+            border-left: 1px solid var(--builder-sidebar-border);
+        }
     }
 }
 

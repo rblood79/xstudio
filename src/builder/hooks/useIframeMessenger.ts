@@ -24,8 +24,10 @@ export interface UseIframeMessengerReturn {
 
 export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const [iframeReadyState, setIframeReadyState] = useState<IframeReadyState>('not_initialized');
+    const iframeReadyStateRef = useRef<IframeReadyState>('not_initialized'); // 🔧 Ref로 즉시 상태 변경
     const isProcessingRef = useRef(false);
     const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
+    const lastAckTimestampRef = useRef<number>(0); // ✅ 마지막 ACK 시점
 
     const elements = useStore((state) => state.elements);
     // 성능 최적화: Map 사용 (O(1) 조회)
@@ -44,11 +46,20 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
         const iframe = MessageService.getIframe();
 
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인 (비동기 state 업데이트 회피)
+        const currentReadyState = iframeReadyStateRef.current;
+
+        console.log('📤 [Builder] sendElementsToIframe called:', {
+            elementCount: elementsToSend.length,
+            iframeReadyState: currentReadyState,
+            hasIframe: !!iframe,
+            hasContentWindow: !!iframe?.contentWindow,
+            targetOrigin: window.location.origin
+        });
+
         // iframe이 준비되지 않았으면 큐에 넣기
-        if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
-            if (process.env.NODE_ENV === 'development') {
-                //console.log('🔄 Queue elements update, iframe not ready:', iframeReadyState);
-            }
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            console.log('⏸️ [Builder] Queue elements update, iframe not ready:', currentReadyState);
             messageQueueRef.current.push({
                 type: "UPDATE_ELEMENTS",
                 payload: elementsToSend
@@ -59,10 +70,11 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
         iframe.contentWindow.postMessage(message, window.location.origin);
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`📤 Sent ${elementsToSend.length} elements to iframe`);
-        }
-    }, [iframeReadyState]);
+        console.log(`✅ [Builder] Sent ${elementsToSend.length} elements to iframe`, {
+            messageType: message.type,
+            targetOrigin: window.location.origin
+        });
+    }, []); // ✅ 의존성 제거 (Ref 사용)
 
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
@@ -83,8 +95,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             source: "builder"
         };
 
-        // iframe이 준비되지 않았으면 큐에 넣기
-        if (iframeReadyState !== 'ready' || !iframe?.contentWindow) {
+        // 🔧 FIX: Ref 사용
+        if (iframeReadyStateRef.current !== 'ready' || !iframe?.contentWindow) {
             messageQueueRef.current.push({
                 type: "ELEMENT_SELECTED",
                 payload: message
@@ -93,11 +105,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         iframe.contentWindow.postMessage(message, window.location.origin);
-    }, [elementsMap, iframeReadyState]);
+    }, [elementsMap]); // ✅ 의존성에서 iframeReadyState 제거
 
     // 큐에 있는 메시지들 처리
     const processMessageQueue = useCallback(() => {
-        if (iframeReadyState !== 'ready') return;
+        // 🔧 FIX: Ref 사용
+        if (iframeReadyStateRef.current !== 'ready') return;
 
         const iframe = MessageService.getIframe();
         if (!iframe?.contentWindow) return;
@@ -105,8 +118,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         const queue = [...messageQueueRef.current];
         messageQueueRef.current = [];
 
-        if (queue.length > 0 && process.env.NODE_ENV === 'development') {
-            //console.log(`🔄 Processing ${queue.length} queued messages`);
+        if (queue.length > 0) {
+            console.log(`🔄 [Builder] Processing ${queue.length} queued messages`);
         }
 
         queue.forEach(item => {
@@ -115,63 +128,74 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                     type: "UPDATE_ELEMENTS",
                     elements: item.payload
                 }, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${(item.payload as Element[]).length} elements`);
             } else if (item.type === "ELEMENT_SELECTED") {
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
             }
         });
-    }, [iframeReadyState]);
+    }, []); // ✅ 의존성 제거 (Ref 사용)
 
     const handleIframeLoad = useCallback(() => {
+        console.log('🖼️ [Builder] iframe onLoad event triggered');
+
+        // 🔧 FIX: Ref도 업데이트
+        iframeReadyStateRef.current = 'loading';
         setIframeReadyState('loading');
 
-        if (process.env.NODE_ENV === 'development') {
-            //console.log('🖼️ iframe loading started');
-        }
-
-        // iframe이 완전히 준비될 때까지 기다리는 함수
-        const waitForIframeReady = () => {
-            const iframe = MessageService.getIframe();
-            if (iframe?.contentDocument && iframe.contentDocument.readyState === 'complete') {
-                setIframeReadyState('ready');
-
-                if (process.env.NODE_ENV === 'development') {
-                    //console.log('✅ iframe ready, processing queued messages');
-                }
-
-                // 대기 중인 메시지 처리
-                setTimeout(() => {
-                    processMessageQueue();
-
-                    // iframe 로드 후 현재 요소들을 전송 (초기 로드 시에도 전송)
-                    const currentElements = useStore.getState().elements;
-                    if (!isSendingRef.current && currentElements.length > 0) {
-                        console.log('🖼️ 초기 iframe 로드 - 요소 전송:', {
-                            elementCount: currentElements.length,
-                            elementIds: currentElements.map(el => el.id)
-                        });
-
-                        isSendingRef.current = true;
-                        const currentHash = currentElements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
-                        lastSentElementsHashRef.current = currentHash;
-                        sendElementsToIframe(currentElements);
-
-                        setTimeout(() => {
-                            isSendingRef.current = false;
-                        }, 100);
-                    }
-                }, 100);
-            } else {
-                // 아직 준비되지 않았으면 다시 시도
-                setTimeout(waitForIframeReady, 100);
-            }
-        };
-
-        waitForIframeReady();
-    }, [sendElementsToIframe, processMessageQueue]);
+        // 🔧 FIX: 요소 전송은 PREVIEW_READY 핸들러에서 처리
+        // (여기서는 DOM 로드만 확인하고, Preview의 React 앱 마운트를 기다림)
+        console.log('⏳ [Builder] Waiting for PREVIEW_READY from Preview iframe...');
+    }, []);
 
     const handleMessage = useCallback((event: MessageEvent) => {
         if (event.origin !== window.location.origin) {
             console.warn("Received message from untrusted origin:", event.origin);
+            return;
+        }
+
+        // 🔧 FIX: Preview가 준비되었다는 신호 처리
+        if (event.data.type === "PREVIEW_READY") {
+            console.log('✅ [Builder] Received PREVIEW_READY from Preview iframe');
+
+            // 🔧 FIX: Ref를 먼저 업데이트 (동기적 상태 변경)
+            iframeReadyStateRef.current = 'ready';
+            // State도 업데이트 (UI 반영)
+            setIframeReadyState('ready');
+
+            // ✅ 즉시 처리 (setTimeout 제거)
+            processMessageQueue();
+
+            // 현재 요소들을 전송 (초기 로드 시에도 전송)
+            const currentElements = useStore.getState().elements;
+            if (currentElements.length > 0) {
+                console.log('🚀 [Builder] PREVIEW_READY 후 요소 전송:', {
+                    elementCount: currentElements.length,
+                    elementIds: currentElements.map(el => el.id)
+                });
+
+                // 전송 해시 업데이트 (중복 전송 방지)
+                const currentHash = currentElements.map(el => `${el.id}:${el.tag}:${JSON.stringify(el.props)}`).join('|');
+                lastSentElementsHashRef.current = currentHash;
+
+                sendElementsToIframe(currentElements);
+            }
+
+            return;
+        }
+
+        // ✅ ACK: Preview가 요소를 받았다는 확인
+        if (event.data.type === "ELEMENTS_UPDATED_ACK") {
+            console.log('✅ [Builder] Received ELEMENTS_UPDATED_ACK from Preview:', {
+                elementCount: event.data.elementCount,
+                timestamp: event.data.timestamp
+            });
+
+            // ACK 시점 기록
+            lastAckTimestampRef.current = event.data.timestamp || Date.now();
+
+            // 전송 플래그 해제 (즉시)
+            isSendingRef.current = false;
+
             return;
         }
 
@@ -357,7 +381,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -407,8 +431,15 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isSendingRef = useRef(false);
 
     useEffect(() => {
-        // iframe이 준비되지 않았거나 이미 전송 중이면 스킵
-        if (iframeReadyState !== 'ready' || isSendingRef.current) {
+        // 🔧 FIX: Ref 사용
+        if (iframeReadyStateRef.current !== 'ready' || isSendingRef.current) {
+            return;
+        }
+
+        // ✅ ACK 기반 중복 방지: 마지막 ACK 이후 100ms 이내면 스킵
+        const timeSinceLastAck = Date.now() - lastAckTimestampRef.current;
+        if (timeSinceLastAck < 100) {
+            console.log('⏭️ [Builder] ACK 직후 중복 전송 스킵 (마지막 ACK:', timeSinceLastAck, 'ms 전)');
             return;
         }
 
@@ -422,28 +453,27 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('🔄 요소 변경 감지 - iframe 전송:', {
             elementCount: elements.length,
             elementIds: elements.map(el => el.id),
-            iframeReadyState
+            iframeReadyState: iframeReadyStateRef.current
         });
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
         lastSentElementsHashRef.current = currentHash;
 
-        // iframe에 요소 전송만 수행 (setElements 호출하지 않음)
+        // iframe에 요소 전송 (ACK를 받으면 isSendingRef.current = false로 해제됨)
         sendElementsToIframe(elements);
 
-        // 전송 완료 후 플래그 해제
+        // ✅ 백업: ACK를 못 받으면 1초 후 플래그 강제 해제
         setTimeout(() => {
-            isSendingRef.current = false;
-        }, 100);
-    }, [elements, iframeReadyState, sendElementsToIframe]);
+            if (isSendingRef.current) {
+                console.warn('⚠️ [Builder] ACK timeout - 플래그 강제 해제');
+                isSendingRef.current = false;
+            }
+        }, 1000);
+    }, [elements, sendElementsToIframe]); // ✅ iframeReadyState 의존성 제거
 
-    // useEffect - iframeReadyState가 변경될 때 큐 처리
-    useEffect(() => {
-        if (iframeReadyState === 'ready') {
-            processMessageQueue();
-        }
-    }, [iframeReadyState, processMessageQueue]);
+    // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
+    // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
     return {
         iframeReadyState,

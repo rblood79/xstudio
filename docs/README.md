@@ -6,15 +6,33 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 
 ```
 /docs
+  ├── /archive         # 완료된 리팩토링 문서 및 과거 문서
   ├── /guides          # 개발 가이드
-  └── /features        # 기능 구현 문서
+  ├── /features        # 기능 구현 문서
+  └── /research        # 리서치 및 참고 자료
 ```
+
+## 📋 핵심 문서 (Core Documentation)
+
+프로젝트의 주요 문서입니다.
+
+- [CHANGELOG.md](./CHANGELOG.md) - 프로젝트 변경 이력 **⭐ 최신 업데이트 확인**
+  - **2025-11-14**: Theme System & iframe Communication 수정
+    - Theme 교차 선택 버그 수정
+    - Theme 새로고침 적용 수정
+    - iframe stale 참조 감지 개선
+    - Debug 로그 정리
+- [CSS_ARCHITECTURE.md](./CSS_ARCHITECTURE.md) - CSS 아키텍처 (ITCSS, Layer System, Theme Tokens)
+- [REACT_ARIA_INTEGRATION.md](./REACT_ARIA_INTEGRATION.md) - React Aria Components 통합 가이드
+- [API_ENDPOINTS.md](./API_ENDPOINTS.md) - Mock Data API 엔드포인트 레퍼런스
+- [supabase-schema.md](./supabase-schema.md) - Supabase 데이터베이스 스키마
 
 ## 📚 가이드 (Guides)
 
 개발 가이드 및 참고 문서입니다.
 
-- 현재 가이드 문서가 없습니다. 필요시 `/docs/guides` 디렉토리에 추가하세요.
+- [README_prompts.md](./guides/README_prompts.md) - README 작성 가이드
+- [TREE_COMPONENT_GUIDE.md](./guides/TREE_COMPONENT_GUIDE.md) - Tree 컴포넌트 사용 가이드
 
 ## ⚙️ 기능 구현 문서 (Features)
 
@@ -58,6 +76,29 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
   - **TagGroup Restore**: Inspector에서 제거된 항목 복구
   - **Initial Component Creation**: 모든 Collection 컴포넌트 1개 child item 통일
   - 구현 완료: ListBox, GridList, Select, ComboBox, TagGroup
+
+---
+
+## 🔬 리서치 (Research)
+
+프로젝트 개발을 위한 리서치 및 참고 자료입니다.
+
+- [claudecodeui-inspiration.md](./research/claudecodeui-inspiration.md) - Claude Code UI 디자인 영감
+
+---
+
+## 📦 아카이브 (Archive)
+
+완료된 리팩토링 문서 및 과거 문서가 보관되어 있습니다.
+
+- [archive/](./archive/) - 완료된 리팩토링 계획 및 요약 문서
+  - REFACTORING_PLAN.md - 초기 리팩토링 계획
+  - PR_DESCRIPTION.md - PR 설명 템플릿
+  - CSS_REFACTORING_SUMMARY.md - CSS 리팩토링 요약
+  - REACT_STATELY_PROGRESS.md - React Stately 진행 상황
+  - REFACTOR_EXECUTION_PLAN.md - 리팩토링 실행 계획
+  - REFACTORING_SUMMARY.md - 리팩토링 요약
+  - CSS_INSPECTOR_ANALYSIS.md - CSS Inspector 분석
 
 ---
 

@@ -22,9 +22,11 @@ import { usePageManager } from "../hooks/usePageManager";
 import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
+import { useThemeMessenger } from "../hooks/useThemeMessenger";
 import { memoryMonitor } from "../stores/memoryMonitor";
 import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import { projectsApi, type Project } from "../../services/api";
+import { useUnifiedThemeStore } from "../../stores/themeStore";
 
 import "./index.css";
 import { MessageService } from "../../utils/messaging";
@@ -136,6 +138,7 @@ export const BuilderCore: React.FC = () => {
   } = useIframeMessenger();
   const { applyThemeTokens, loadProjectTheme } = useThemeManager();
   const { validateOrderNumbers } = useValidation();
+  const { sendThemeTokens } = useThemeMessenger();
 
   // Local 상태
   const [breakpoint, setBreakpoint] = useState<Set<Key>>(() => {
@@ -210,7 +213,14 @@ export const BuilderCore: React.FC = () => {
       }
 
       setIsLoading(false);
+
+      // ✅ 테마 로드 (비동기 처리 - 완료 기다리지 않음)
+      // iframe ready 시 subscribe가 자동으로 전송 처리
       loadProjectTheme(projectId);
+
+      // Preview iframe에 초기 테마 토큰 전송
+      // iframe이 준비되면 자동으로 전송되도록 별도 useEffect 사용
+
       initializedProjectId.current = projectId;
       isInitializing.current = false;
 
@@ -224,42 +234,57 @@ export const BuilderCore: React.FC = () => {
 
     initialize();
 
-    // 컴포넌트 언마운트 시 메모리 모니터링 중지
+    // 컴포넌트 언마운트 시 정리
     return () => {
+      MessageService.clearIframeCache();
+
       if (import.meta.env.DEV) {
         memoryMonitor.stopMonitoring();
       }
     };
   }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
 
-  // 프로젝트 초기화 후 프리뷰에 요소 전송 (중복 전송 방지)
-  // ⚠️ 최적화: elements 배열 전체가 아닌 구조 변경만 감지 (선택 변경 시 재전송 방지)
-  const elementStructure = React.useMemo(
-    () => elements.map((el) => `${el.id}:${el.tag}:${el.parent_id}`).join(","),
-    [elements]
-  );
-
-  useEffect(() => {
-    if (projectId && elements.length > 0 && iframeReadyState === "ready") {
-      // 중복 전송 방지를 위한 디바운싱
-      const timeoutId = setTimeout(() => {
-        console.log("🚀 프로젝트 초기화 후 프리뷰 전송:", {
-          projectId,
-          elementCount: elements.length,
-          elementIds: elements.map((el) => el.id),
-        });
-        sendElementsToIframe(elements);
-      }, 100); // 100ms 디바운싱
-
-      return () => clearTimeout(timeoutId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, elementStructure, iframeReadyState, sendElementsToIframe]);
+  // 🔧 FIX: 프리뷰 요소 전송은 PREVIEW_READY 핸들러에서 처리
+  // (BuilderCore에서 중복 전송하지 않음 - useIframeMessenger.ts:178-201 참고)
 
   // 테마 토큰 적용
   useEffect(() => {
     applyThemeTokens();
   }, [applyThemeTokens]);
+
+  // Preview iframe에 테마 토큰 전송 (초기 로드 + 토큰 변경 시)
+  // ✅ 개선: dynamic import 제거, useThemeMessenger 사용
+  // ✅ sendThemeTokens를 Ref에 저장하여 최신 함수 참조
+  const sendThemeTokensRef = React.useRef(sendThemeTokens);
+  React.useEffect(() => {
+    sendThemeTokensRef.current = sendThemeTokens;
+  }, [sendThemeTokens]);
+
+  useEffect(() => {
+    if (iframeReadyState !== 'ready') return;
+
+    // 즉시 전송 (이미 로드된 경우)
+    const { tokens } = useUnifiedThemeStore.getState();
+    if (tokens.length > 0) {
+      sendThemeTokensRef.current(tokens);
+    }
+
+    // 토큰 변경 구독 (전체 store 구독 방식)
+    // ⚠️ Selector 방식이 아닌 전체 상태 구독으로 변경 (타이밍 이슈 방지)
+    let prevTokensLength = tokens.length;
+    const unsubscribe = useUnifiedThemeStore.subscribe((state) => {
+      const currentTokensLength = state.tokens.length;
+
+      if (currentTokensLength > 0 && prevTokensLength !== currentTokensLength) {
+        sendThemeTokensRef.current(state.tokens);
+        prevTokensLength = currentTokensLength;
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [iframeReadyState]); // ✅ sendThemeTokens 의존성 제거 (subscribe 재등록 방지)
 
   // order_num 검증 (reorderElements 완료 후 실행하도록 지연)
   useEffect(() => {

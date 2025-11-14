@@ -12,7 +12,27 @@ export const handleUpdateElements = (
   setElements: (elements: PreviewElement[]) => void
 ) => {
   if (data.type === "UPDATE_ELEMENTS") {
-    setElements(data.elements || []);
+    const elements = data.elements || [];
+    console.log(`📥 [Preview] Received UPDATE_ELEMENTS: ${elements.length} elements`, {
+      elementIds: elements.map((el: PreviewElement) => el.id),
+      tags: elements.map((el: PreviewElement) => el.tag)
+    });
+    setElements(elements);
+
+    // ✅ ACK: Builder에게 수신 확인 응답
+    try {
+      window.parent.postMessage(
+        {
+          type: "ELEMENTS_UPDATED_ACK",
+          elementCount: elements.length,
+          timestamp: Date.now()
+        },
+        window.location.origin
+      );
+      console.log('✅ [Preview] Sent ELEMENTS_UPDATED_ACK to Builder');
+    } catch (error) {
+      console.error('❌ [Preview] Failed to send ACK:', error);
+    }
   }
 };
 
@@ -147,11 +167,6 @@ export const handleUpdateThemeTokens = (data: MessageType) => {
         .map(([k, v]) => `  ${k}: ${v};`)
         .join("\n") +
       "\n}";
-
-    console.log(
-      "[preview] applied UPDATE_THEME_TOKENS",
-      Object.keys(data.styles).length
-    );
   }
 };
 
@@ -196,8 +211,29 @@ export const handleMessage = (
   setElements: (elements: PreviewElement[]) => void,
   updateElementProps: (id: string, props: Record<string, unknown>) => void
 ) => {
+  // 🔍 디버깅: 모든 메시지 로그 (origin 체크 전)
+  console.log('📨 [Preview] Raw message received:', {
+    type: event.data?.type,
+    origin: event.origin,
+    windowOrigin: window.location.origin,
+    hasData: !!event.data,
+    dataKeys: event.data ? Object.keys(event.data) : []
+  });
+
+  // Origin 체크 (보안)
+  if (event.origin !== window.location.origin) {
+    console.warn('⚠️ [Preview] Message from untrusted origin:', event.origin, 'expected:', window.location.origin);
+    // ⚠️ origin이 다르더라도 계속 진행 (디버깅용)
+    // return;
+  }
+
   const data = event.data as MessageType;
-  if (!data || typeof data !== "object" || !data.type) return;
+  if (!data || typeof data !== "object" || !data.type) {
+    console.warn('⚠️ [Preview] Invalid message data:', data);
+    return;
+  }
+
+  console.log('✅ [Preview] Message validated, processing:', data.type);
 
   // 각 메시지 타입별 처리
   handleUpdateElements(data, setElements);

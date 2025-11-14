@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
-import { useStore } from "../stores";
 import styles from "./index.module.css";
 import { EventEngine } from "../../utils/events/eventEngine";
 import { PreviewElement } from "./types";
@@ -10,16 +9,13 @@ import { cleanPropsForHTML } from "./utils/propsConverter";
 
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
-  const builderElements = useStore((state) => state.elements) as PreviewElement[];
   const eventEngine = EventEngine.getInstance();
 
-  // 🔧 Preview 로컬 state (Builder store 수정 방지)
-  const [elements, setElements] = React.useState<PreviewElement[]>(builderElements);
+  // 🔧 FIX: Preview는 오직 postMessage를 통해서만 데이터 수신 (Zustand store 사용 안 함)
+  // Builder store를 참조하면 iframe 재로드 시 요소가 사라지는 문제 발생
+  const [elements, setElements] = React.useState<PreviewElement[]>([]);
 
-  // Builder store 변경 감지하여 로컬 state 동기화
-  React.useEffect(() => {
-    setElements(builderElements);
-  }, [builderElements]);
+  // ❌ REMOVED: Builder store 동기화 (postMessage로만 업데이트)
 
   // Console error/warning suppression for development
   useEffect(() => {
@@ -65,26 +61,45 @@ function Preview() {
     );
   }, []);
 
-  // postMessage 핸들러 (useCallback으로 메모이제이션)
-  const messageHandler = useCallback(
-    (event: MessageEvent) => {
-      handleMessage(event, elements, setElements, updateElementProps);
-    },
-    [elements, updateElementProps]
-  );
+  // 🔧 FIX: Ref를 사용하여 최신 값 참조 (Race Condition 방지)
+  const elementsRef = React.useRef(elements);
+  const updateElementPropsRef = React.useRef(updateElementProps);
 
+  // Ref 업데이트 (최신 값 유지)
+  React.useEffect(() => {
+    elementsRef.current = elements;
+    updateElementPropsRef.current = updateElementProps;
+  }, [elements, updateElementProps]);
+
+  // ✅ 의존성 없는 messageHandler (한 번만 생성, 메시지 손실 방지)
+  const messageHandler = useCallback((event: MessageEvent) => {
+    handleMessage(
+      event,
+      elementsRef.current,
+      setElements,
+      updateElementPropsRef.current
+    );
+  }, []); // ✅ 빈 의존성 - 리스너 재등록 방지
+
+  // ✅ PREVIEW_READY는 한 번만 전송 (mount 시에만)
   useEffect(() => {
+    console.log('🖼️ [Preview] Mounting - registering message listener');
+
     window.addEventListener("message", messageHandler);
 
-    // 준비 신호
+    // 준비 신호 (한 번만 전송)
     try {
       window.parent.postMessage({ type: "PREVIEW_READY" }, "*");
-    } catch {
-      console.error("Error posting PREVIEW_READY message");
+      console.log('✅ [Preview] PREVIEW_READY sent to parent');
+    } catch (error) {
+      console.error("❌ [Preview] Error posting PREVIEW_READY message:", error);
     }
 
-    return () => window.removeEventListener("message", messageHandler);
-  }, [messageHandler]);
+    return () => {
+      console.log('🧹 [Preview] Unmounting - removing message listener');
+      window.removeEventListener("message", messageHandler);
+    };
+  }, [messageHandler]); // messageHandler는 변경되지 않으므로 한 번만 실행
 
   document.documentElement.classList.add(styles.root);
 

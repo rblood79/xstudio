@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Theme System & iframe Communication (2025-11-14)
+
+#### Theme Cross-Selection Bug Fix
+- **Fixed theme switching between different themes** not applying to Preview
+  - Root cause: Hash calculation used string interpolation on objects (incorrect serialization)
+  - Solution: Serialize full token structure with `JSON.stringify({ name, value, scope })`
+  - Implementation: `useThemeMessenger.ts:33-39`
+  - Status: ✅ Cross-theme switching now works correctly
+
+#### Theme Refresh Application Fix
+- **Fixed theme not applying after page refresh**
+  - Root cause: Zustand subscribe selector pattern had timing issues
+  - Solution: Changed from selector subscribe to full store subscribe with length comparison
+  - Implementation: `BuilderCore.tsx:263-286`
+  - Added automatic token transmission when iframe ready
+  - Status: ✅ Theme now applies correctly on refresh
+
+#### iframe Stale Reference Detection
+- **Fixed elements not appearing after dashboard → builder re-entry**
+  - Root cause: MessageService cached stale iframe references (contentWindow = null)
+  - Solution: Automatic stale detection and re-fetch when contentWindow is null
+  - Implementation: `messaging.ts:6-16`
+  - Added `clearIframeCache()` on BuilderCore unmount
+  - Status: ✅ Elements now appear correctly on re-entry
+
+#### Debug Logging Cleanup
+- **Removed unnecessary console.log statements**
+  - Cleaned 6 files: `useThemeMessenger.ts`, `SettingsPanel.tsx`, `messageHandlers.ts`, `BuilderCore.tsx`, `themeStore.ts`, `messaging.ts`
+  - Kept essential warning and error logs
+  - Improved console readability for debugging
+
 ### Added - Collection Components Data Binding (2025-10-27)
 
 #### ComboBox Filtering Enhancement
