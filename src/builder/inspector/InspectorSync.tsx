@@ -61,6 +61,10 @@ export function InspectorSync() {
     }
 
     // 같은 요소인 경우 props 비교
+    // ⚠️ IMPORTANT: Inspector에서 수정 중일 때는 Builder 변경 무시
+    // useSyncWithBuilder에서 isSyncingToBuilder=true로 설정하므로
+    // 여기서는 추가 체크 불필요 (위의 early return으로 이미 처리됨)
+
     const currentPropsJson = JSON.stringify(
       selectedElement.properties,
       Object.keys(selectedElement.properties || {}).sort()
@@ -101,6 +105,8 @@ export function InspectorSync() {
       currentComputedStyleJson !== newComputedStyleJson ||
       currentEventsJson !== newEventsJson
     ) {
+      // 🔧 실제 차이가 있는 경우에만 업데이트
+      // isSyncingToBuilder=true인 경우 early return으로 이미 차단됨
       setSelectedElement(mappedElement);
     }
   }, [

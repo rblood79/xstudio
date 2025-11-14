@@ -266,13 +266,14 @@ export function useSyncWithBuilder(): void {
         // 다른 컴포넌트의 timeout이 이미 시작된 경우 무시
         if (currentTimeoutId === timeoutIdRef.current) {
           pendingTimeoutRef.current = null;
-          // 동기화 완료 후 플래그 해제 (50ms 후 - Builder 상태 반영 대기)
+          // 동기화 완료 후 플래그 해제 (300ms 후 - Builder/iframe 동기화 완료 대기)
+          // 🔧 50ms → 300ms: updateElement + iframe 전송 + Preview 업데이트 대기
           setTimeout(() => {
-            // 플래그 해제 시에도 다시 한 번 확인 (50ms 사이에 새 timeout 시작 가능)
+            // 플래그 해제 시에도 다시 한 번 확인 (300ms 사이에 새 timeout 시작 가능)
             if (currentTimeoutId === timeoutIdRef.current) {
               setSyncingToBuilder(false);
             }
-          }, 50);
+          }, 300);
         }
       }
     }, 100);
