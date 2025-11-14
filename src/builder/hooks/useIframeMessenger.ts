@@ -151,7 +151,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                         });
 
                         isSendingRef.current = true;
-                        lastSentVersionRef.current = Date.now();
+                        lastSentElementsRef.current = currentElements;
                         sendElementsToIframe(currentElements);
 
                         setTimeout(() => {
@@ -401,8 +401,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // sendElementSelectedMessage(selectedElementId, element.props);
 
     // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
-    // 성능 최적화: 버전 기반 추적으로 전환 (직렬화 제거)
-    const lastSentVersionRef = useRef(0);
+    // 성능 최적화: elements 참조 추적 (Zustand 불변성 활용)
+    const lastSentElementsRef = useRef<Element[] | null>(null);
     const isSendingRef = useRef(false);
 
     useEffect(() => {
@@ -411,10 +411,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 성능 최적화: elements 참조 변경만 체크 (Zustand의 불변성 활용)
-        // elements 배열이 변경되면 새 참조이므로 전송 필요
-        const currentVersion = Date.now();
-        if (currentVersion === lastSentVersionRef.current) {
+        // 성능 최적화: elements 참조가 변경되지 않았으면 스킵
+        // Zustand는 불변성을 보장하므로 실제 변경시에만 새 참조 생성
+        if (lastSentElementsRef.current === elements) {
             return;
         }
 
@@ -426,7 +425,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
-        lastSentVersionRef.current = currentVersion;
+        lastSentElementsRef.current = elements;
 
         // iframe에 요소 전송만 수행 (setElements 호출하지 않음)
         sendElementsToIframe(elements);
