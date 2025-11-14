@@ -4,10 +4,13 @@ import type { SelectedElement, EventHandler, DataBinding } from "../types";
 interface InspectorState {
   selectedElement: SelectedElement | null;
   isSyncingToBuilder: boolean; // Inspector → Builder 동기화 중 플래그
+  syncVersion: number; // 동기화 버전 (Inspector → Builder 업데이트 추적)
 
   // 요소 선택
   setSelectedElement: (element: SelectedElement | null) => void;
   setSyncingToBuilder: (syncing: boolean) => void;
+  incrementSyncVersion: () => number; // 버전 증가 및 반환
+  confirmSync: (version: number) => void; // Builder 업데이트 완료 확인
 
   // CustomId 업데이트
   updateCustomId: (customId: string) => void;
@@ -37,32 +40,47 @@ interface InspectorState {
   removeEvent: (id: string) => void;
 }
 
-export const useInspectorState = create<InspectorState>((set) => ({
+export const useInspectorState = create<InspectorState>((set, get) => ({
   selectedElement: null,
   isSyncingToBuilder: false,
+  syncVersion: 0,
 
   setSelectedElement: (element) => set({ selectedElement: element }),
   setSyncingToBuilder: (syncing) => set({ isSyncingToBuilder: syncing }),
 
+  incrementSyncVersion: () => {
+    const newVersion = get().syncVersion + 1;
+    set({ syncVersion: newVersion, isSyncingToBuilder: true });
+    return newVersion;
+  },
+
+  confirmSync: (version) => {
+    const currentVersion = get().syncVersion;
+    // 확인하려는 버전이 현재 버전과 같으면 동기화 완료
+    if (version === currentVersion) {
+      set({ isSyncingToBuilder: false });
+    }
+    // 다른 버전이면 새로운 변경사항이 있으므로 플래그 유지
+  },
+
   // CustomId
-  updateCustomId: (customId) =>
+  updateCustomId: (customId) => {
+    const version = get().incrementSyncVersion();
+    console.log("🔖 updateCustomId 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      customId,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
-
-      console.log("🔖 updateCustomId 호출:", {
-        elementId: state.selectedElement.id,
-        oldCustomId: state.selectedElement.customId,
-        newCustomId: customId,
-      });
-
       return {
-        isSyncingToBuilder: true, // 즉시 플래그 설정 (Builder → Inspector 동기화 차단)
         selectedElement: {
           ...state.selectedElement,
           customId,
         },
       };
-    }),
+    });
+  },
 
   // Properties
   updateProperty: (key, value) =>
@@ -80,12 +98,13 @@ export const useInspectorState = create<InspectorState>((set) => ({
       };
     }),
 
-  updateProperties: (properties) =>
+  updateProperties: (properties) => {
+    const version = get().incrementSyncVersion();
+    console.log("📝 updateProperties 호출 (v" + version + ")");
+
     set((state) => {
       if (!state.selectedElement) return state;
-
       return {
-        isSyncingToBuilder: true, // 즉시 플래그 설정 (Builder → Inspector 동기화 차단)
         selectedElement: {
           ...state.selectedElement,
           properties: {
@@ -94,7 +113,8 @@ export const useInspectorState = create<InspectorState>((set) => ({
           },
         },
       };
-    }),
+    });
+  },
 
   // Styles
   updateSemanticClasses: (classes) =>
@@ -159,10 +179,12 @@ export const useInspectorState = create<InspectorState>((set) => ({
     }),
 
   // Inline Styles
-  updateInlineStyle: (property, value) =>
+  updateInlineStyle: (property, value) => {
+    const version = get().incrementSyncVersion();
+    console.log("🎨 updateInlineStyle 호출 (v" + version + "):", { property, value });
+
     set((state) => {
       if (!state.selectedElement) return state;
-      console.log("🎨 updateInlineStyle 호출:", { property, value });
 
       const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, string | number>;
 
@@ -174,18 +196,20 @@ export const useInspectorState = create<InspectorState>((set) => ({
       }
 
       return {
-        isSyncingToBuilder: true, // 즉시 플래그 설정 (Builder → Inspector 동기화 차단)
         selectedElement: {
           ...state.selectedElement,
           style: currentStyle,
         },
       };
-    }),
+    });
+  },
 
-  updateInlineStyles: (styles) =>
+  updateInlineStyles: (styles) => {
+    const version = get().incrementSyncVersion();
+    console.log("🎨 updateInlineStyles 호출 (v" + version + "):", styles);
+
     set((state) => {
       if (!state.selectedElement) return state;
-      console.log("🎨 updateInlineStyles 호출:", styles);
 
       const currentStyle = { ...(state.selectedElement.style || {}) } as Record<string, string | number>;
 
@@ -199,103 +223,110 @@ export const useInspectorState = create<InspectorState>((set) => ({
       });
 
       return {
-        isSyncingToBuilder: true, // 즉시 플래그 설정 (Builder → Inspector 동기화 차단)
         selectedElement: {
           ...state.selectedElement,
           style: currentStyle,
         },
       };
-    }),
+    });
+  },
 
   // Data Binding
-  updateDataBinding: (binding) =>
+  updateDataBinding: (binding) => {
+    const version = get().incrementSyncVersion();
+    console.log("📊 updateDataBinding 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      elementType: get().selectedElement?.type,
+      newBinding: binding,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
-
-      console.log("📊 updateDataBinding 호출:", {
-        elementId: state.selectedElement.id,
-        elementType: state.selectedElement.type,
-        oldBinding: state.selectedElement.dataBinding,
-        newBinding: binding,
-      });
-
       return {
-        isSyncingToBuilder: true, // 플래그 설정하여 역동기화 차단
         selectedElement: {
           ...state.selectedElement,
           dataBinding: binding,
         },
       };
-    }),
+    });
+  },
 
   // Events
-  updateEvents: (events) =>
+  updateEvents: (events) => {
+    const version = get().incrementSyncVersion();
+    console.log("⚡ updateEvents 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      eventCount: events.length,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
-      console.log("⚡ updateEvents 호출:", {
-        elementId: state.selectedElement.id,
-        eventCount: events.length,
-      });
       return {
-        isSyncingToBuilder: true, // 동기화 플래그 설정
         selectedElement: {
           ...state.selectedElement,
           events,
         },
       };
-    }),
+    });
+  },
 
-  addEvent: (event) =>
+  addEvent: (event) => {
+    const version = get().incrementSyncVersion();
+    console.log("➕ addEvent 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      eventId: event.id,
+      eventType: event.event,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
       const currentEvents = state.selectedElement.events || [];
-      console.log("➕ addEvent 호출:", {
-        elementId: state.selectedElement.id,
-        eventId: event.id,
-        eventType: event.event,
-      });
       return {
-        isSyncingToBuilder: true, // 동기화 플래그 설정
         selectedElement: {
           ...state.selectedElement,
           events: [...currentEvents, event],
         },
       };
-    }),
+    });
+  },
 
-  updateEvent: (id, event) =>
+  updateEvent: (id, event) => {
+    const version = get().incrementSyncVersion();
+    console.log("📝 updateEvent 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      eventId: id,
+      eventType: event.event,
+      actionCount: event.actions.length,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
       const currentEvents = state.selectedElement.events || [];
-      console.log("📝 updateEvent 호출:", {
-        elementId: state.selectedElement.id,
-        eventId: id,
-        eventType: event.event,
-        actionCount: event.actions.length,
-      });
       return {
-        isSyncingToBuilder: true, // 동기화 플래그 설정
         selectedElement: {
           ...state.selectedElement,
           events: currentEvents.map((e) => (e.id === id ? event : e)),
         },
       };
-    }),
+    });
+  },
 
-  removeEvent: (id) =>
+  removeEvent: (id) => {
+    const version = get().incrementSyncVersion();
+    console.log("🗑️ removeEvent 호출 (v" + version + "):", {
+      elementId: get().selectedElement?.id,
+      eventId: id,
+    });
+
     set((state) => {
       if (!state.selectedElement) return state;
       const currentEvents = state.selectedElement.events || [];
-      console.log("🗑️ removeEvent 호출:", {
-        elementId: state.selectedElement.id,
-        eventId: id,
-      });
       return {
-        isSyncingToBuilder: true, // 동기화 플래그 설정
         selectedElement: {
           ...state.selectedElement,
           events: currentEvents.filter((e) => e.id !== id),
         },
       };
-    }),
+    });
+  },
 }));

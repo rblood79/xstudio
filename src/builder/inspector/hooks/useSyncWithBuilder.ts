@@ -10,9 +10,8 @@ import { elementsApi } from "../../../services/api";
  */
 export function useSyncWithBuilder(): void {
   const selectedElement = useInspectorState((state) => state.selectedElement);
-  const setSyncingToBuilder = useInspectorState(
-    (state) => state.setSyncingToBuilder
-  );
+  const syncVersion = useInspectorState((state) => state.syncVersion);
+  const confirmSync = useInspectorState((state) => state.confirmSync);
   const updateElement = useStore((state) => state.updateElement);
   const setElements = useStore((state) => state.setElements);
   const elements = useStore((state) => state.elements);
@@ -23,8 +22,6 @@ export function useSyncWithBuilder(): void {
   // 마지막으로 동기화한 element를 추적
   const lastSyncedElementRef = useRef<string | null>(null);
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // timeout의 고유 ID를 추적하여 레이스 컨디션 방지
-  const timeoutIdRef = useRef<number>(0);
 
   useEffect(() => {
     // 히스토리 작업 중이면 동기화 건너뛰기
@@ -97,9 +94,9 @@ export function useSyncWithBuilder(): void {
       clearTimeout(pendingTimeoutRef.current);
     }
 
-    // timeout에 고유 ID 할당 (레이스 컨디션 방지)
-    timeoutIdRef.current += 1;
-    const currentTimeoutId = timeoutIdRef.current;
+    // 현재 동기화 버전을 캡처 (클로저)
+    const currentSyncVersion = syncVersion;
+    console.log("🔄 동기화 시작 (v" + currentSyncVersion + ")");
 
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
@@ -261,44 +258,36 @@ export function useSyncWithBuilder(): void {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
         // 저장 실패 시 lastSyncedElementRef 초기화하여 다음번에 다시 시도 가능하도록 함
         lastSyncedElementRef.current = null;
+        // 저장 실패해도 동기화 완료로 처리 (새로운 시도 허용)
+        confirmSync(currentSyncVersion);
       } finally {
-        // 레이스 컨디션 방지: 이 timeout이 최신인 경우에만 ref와 플래그 정리
-        // 다른 컴포넌트의 timeout이 이미 시작된 경우 무시
-        if (currentTimeoutId === timeoutIdRef.current) {
-          pendingTimeoutRef.current = null;
-          // 동기화 완료 후 플래그 해제 (300ms 후 - Builder/iframe 동기화 완료 대기)
-          // 🔧 50ms → 300ms: updateElement + iframe 전송 + Preview 업데이트 대기
-          setTimeout(() => {
-            // 플래그 해제 시에도 다시 한 번 확인 (300ms 사이에 새 timeout 시작 가능)
-            if (currentTimeoutId === timeoutIdRef.current) {
-              setSyncingToBuilder(false);
-            }
-          }, 300);
-        }
+        pendingTimeoutRef.current = null;
+        // 🎯 동기화 완료 확인 (버전 기반)
+        // - currentSyncVersion이 현재 버전과 같으면 플래그 해제
+        // - 다르면 새로운 변경사항이 있으므로 플래그 유지
+        console.log("✅ 동기화 완료 확인 (v" + currentSyncVersion + ")");
+        confirmSync(currentSyncVersion);
       }
     }, 100);
 
     return () => {
       // ⚠️ IMPORTANT: timeout을 취소하지 않음 (대기 중인 변경사항 보존)
       // timeout은 클로저로 이전 selectedElement를 참조하므로 안전하게 완료됨
-      // ref 정리는 finally 블록에서 timeoutId 체크 후 안전하게 처리됨
 
       // 새 컴포넌트 선택 시 추적 ref만 초기화 (다음 동기화가 이전 데이터 참조 방지)
       lastSyncedElementRef.current = null;
-
-      // 플래그 해제하여 새로운 컴포넌트 선택이 차단되지 않도록 함
-      setSyncingToBuilder(false);
     };
     // Note: elements를 의존성 배열에 포함하지 않음
     // - useStore는 항상 최신 상태를 반환하므로 useEffect 내에서 최신 elements 참조 가능
     // - elements 변경으로 인한 불필요한 재실행 방지 (무한 루프 방지)
-    // - selectedElement가 변경될 때만 동기화 필요
+    // - selectedElement/syncVersion 변경 시에만 동기화 필요
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedElement,
+    syncVersion,
     updateElement,
     setElements,
-    setSyncingToBuilder,
+    confirmSync,
     historyOperationInProgress,
   ]);
 }
