@@ -17,7 +17,7 @@ export const createEventHandler = (
 ) => {
   return async (event: Event) => {
     // 요소의 이벤트 찾기
-    const elementEvents = (element.props.events as Array<Record<string, unknown>>) || [];
+    const elementEvents = (element.props.events as unknown as Array<Record<string, unknown>>) || [];
 
     // 두 가지 타입 시스템 지원:
     // 1. 기존: { event_type: "onClick", actions: [...] }
@@ -45,7 +45,7 @@ export const createEventHandler = (
     // 각 이벤트 실행
     for (const elementEvent of matchingEvents) {
       try {
-        await eventEngine.executeEvent(elementEvent, context);
+        await eventEngine.executeEvent(elementEvent as any, context);
       } catch (error) {
         console.error("이벤트 실행 오류:", error);
       }
@@ -64,7 +64,7 @@ export const createEventHandlerMap = (
   const eventHandlers: EventHandlerMap = {};
 
   if (element.props.events && Array.isArray(element.props.events)) {
-    const events = element.props.events as Array<Record<string, unknown>>;
+    const events = element.props.events as unknown as Array<Record<string, unknown>>;
 
     // 두 가지 타입 시스템 지원:
     // 1. 기존: { event_type: "onClick", ... }
@@ -75,7 +75,7 @@ export const createEventHandlerMap = (
 
     // 중복 제거 후 각 이벤트 타입별 핸들러 생성
     [...new Set(enabledEventTypes)].forEach((eventType) => {
-      if (!eventType) return; // undefined 제외
+      if (!eventType || typeof eventType !== 'string') return; // undefined와 non-string 제외
 
       const handler = createEventHandler(
         element,

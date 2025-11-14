@@ -1,4 +1,4 @@
-import { PropertyInput, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
 import type { ColumnElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
@@ -34,14 +34,6 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
         });
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <div className="component-props">
             <PropertySection title="{PROPERTY_LABELS.COLUMN_CONTENT}">
@@ -51,7 +43,6 @@ export function ColumnEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                     label="ID"
                     value={customId}
                     elementId={elementId}
-                    onChange={updateCustomId}
                     placeholder="column_1"
                 />
 

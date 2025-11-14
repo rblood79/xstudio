@@ -12,9 +12,10 @@ import type {
   FigmaTextStyle,
   FigmaEffectStyle,
   FigmaVariable,
-  FigmaFileResponse
+  FigmaFileResponse,
+  FigmaImportError
 } from '../../types/theme/figma.types';
-import type { DesignToken, ColorValueRGB } from '../../types/theme';
+import type { DesignToken, ColorValueRGB, ColorValueHSL } from '../../types/theme';
 import { TokenService } from './TokenService';
 import { rgbToHsl } from '../../utils/theme/colorUtils';
 
@@ -193,10 +194,10 @@ export class FigmaService {
   private async importColorStyles(
     styles: FigmaColorStyle[],
     request: FigmaImportRequest,
-    existingTokens: DesignToken[],
+    _existingTokens: DesignToken[],
     errors: FigmaImportError[]
-  ): Promise<Partial<DesignToken>[]> {
-    const tokens: Partial<DesignToken>[] = [];
+  ): Promise<DesignToken[]> {
+    const tokens: DesignToken[] = [];
 
     for (const style of styles) {
       try {
@@ -204,7 +205,7 @@ export class FigmaService {
         const tokenName = this.convertFigmaNameToTokenName(style.name);
 
         // 충돌 검사
-        const conflict = existingTokens.find((t) => t.name === tokenName);
+        const conflict = _existingTokens.find((t: DesignToken) => t.name === tokenName);
         if (conflict) {
           if (request.conflictResolution === 'skip') {
             continue;
@@ -240,7 +241,7 @@ export class FigmaService {
     request: FigmaImportRequest,
     style: FigmaColorStyle,
     tokenName: string
-  ): Partial<DesignToken> {
+  ): DesignToken {
     // Figma RGB (0-1) → HSL 변환
     let colorValue: ColorValueHSL;
 
@@ -265,7 +266,7 @@ export class FigmaService {
       value: colorValue,
       scope: 'raw',
       css_variable: `--${tokenName.replace(/\./g, '-')}`,
-    };
+    } as DesignToken;
   }
 
   /**
@@ -274,17 +275,17 @@ export class FigmaService {
   private async importTextStyles(
     styles: FigmaTextStyle[],
     request: FigmaImportRequest,
-    existingTokens: DesignToken[],
+    _existingTokens: DesignToken[],
     errors: FigmaImportError[]
-  ): Promise<Partial<DesignToken>[]> {
-    const tokens: Partial<DesignToken>[] = [];
+  ): Promise<DesignToken[]> {
+    const tokens: DesignToken[] = [];
 
     for (const style of styles) {
       try {
         const tokenName = this.convertFigmaNameToTokenName(style.name);
 
         // 충돌 검사
-        const conflict = existingTokens.find((t) => t.name === tokenName);
+        const conflict = _existingTokens.find((t: DesignToken) => t.name === tokenName);
         if (conflict && request.conflictResolution === 'skip') {
           continue;
         }
@@ -299,7 +300,7 @@ export class FigmaService {
             value: style.fontFamily,
             scope: 'raw',
             css_variable: `--${tokenName.replace(/\./g, '-')}-font`,
-          },
+          } as DesignToken,
           {
             project_id: request.projectId,
             theme_id: request.themeId,
@@ -308,7 +309,7 @@ export class FigmaService {
             value: `${style.fontSize}px`,
             scope: 'raw',
             css_variable: `--${tokenName.replace(/\./g, '-')}-size`,
-          },
+          } as DesignToken,
           {
             project_id: request.projectId,
             theme_id: request.themeId,
@@ -317,7 +318,7 @@ export class FigmaService {
             value: style.fontWeight,
             scope: 'raw',
             css_variable: `--${tokenName.replace(/\./g, '-')}-weight`,
-          }
+          } as DesignToken
         );
       } catch (error) {
         errors.push({
@@ -338,10 +339,10 @@ export class FigmaService {
   private async importEffectStyles(
     styles: FigmaEffectStyle[],
     request: FigmaImportRequest,
-    existingTokens: DesignToken[],
+    _existingTokens: DesignToken[],
     errors: FigmaImportError[]
-  ): Promise<Partial<DesignToken>[]> {
-    const tokens: Partial<DesignToken>[] = [];
+  ): Promise<DesignToken[]> {
+    const tokens: DesignToken[] = [];
 
     for (const style of styles) {
       try {
@@ -367,7 +368,7 @@ export class FigmaService {
           },
           scope: 'raw',
           css_variable: `--${tokenName.replace(/\./g, '-')}`,
-        });
+        } as DesignToken);
       } catch (error) {
         errors.push({
           styleName: style.name,
@@ -387,10 +388,10 @@ export class FigmaService {
   private async importVariables(
     variables: FigmaVariable[],
     request: FigmaImportRequest,
-    existingTokens: DesignToken[],
+    _existingTokens: DesignToken[],
     errors: FigmaImportError[]
-  ): Promise<Partial<DesignToken>[]> {
-    const tokens: Partial<DesignToken>[] = [];
+  ): Promise<DesignToken[]> {
+    const tokens: DesignToken[] = [];
 
     for (const variable of variables) {
       try {
@@ -417,7 +418,7 @@ export class FigmaService {
             value: hsl,
             scope: 'raw',
             css_variable: `--${tokenName.replace(/\./g, '-')}`,
-          });
+          } as DesignToken);
         } else if (value.type === 'FLOAT') {
           tokens.push({
             project_id: request.projectId,
@@ -427,7 +428,7 @@ export class FigmaService {
             value: `${value.value}px`,
             scope: 'raw',
             css_variable: `--${tokenName.replace(/\./g, '-')}`,
-          });
+          } as DesignToken);
         }
       } catch (error) {
         errors.push({

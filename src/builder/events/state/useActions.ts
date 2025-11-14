@@ -31,7 +31,7 @@ import type { EventAction, ActionType } from '../types/eventTypes';
 export function useActions(initialActions: EventAction[]) {
   const list = useListData({
     initialItems: initialActions,
-    getKey: (item) => item.id,
+    getKey: (item) => item.id || '',
   });
 
   /**
@@ -63,7 +63,10 @@ export function useActions(initialActions: EventAction[]) {
    * @param updates - 업데이트할 속성
    */
   const updateAction = (id: Key, updates: Partial<EventAction>) => {
-    list.update(id, (old) => ({ ...old, ...updates }));
+    const current = list.getItem(id);
+    if (current) {
+      list.update(id, { ...current, ...updates } as EventAction);
+    }
   };
 
   /**
@@ -123,7 +126,7 @@ export function useActions(initialActions: EventAction[]) {
   const toggleAction = (actionId: Key) => {
     const action = list.getItem(actionId);
     if (action) {
-      list.update(actionId, (old) => ({ ...old, enabled: !old.enabled }));
+      list.update(actionId, { ...action, enabled: !action.enabled } as EventAction);
     }
   };
 
@@ -132,7 +135,9 @@ export function useActions(initialActions: EventAction[]) {
    */
   const enableAll = () => {
     list.items.forEach((action) => {
-      list.update(action.id, (old) => ({ ...old, enabled: true }));
+      if (action.id) {
+        list.update(action.id, { ...action, enabled: true } as EventAction);
+      }
     });
   };
 
@@ -141,7 +146,9 @@ export function useActions(initialActions: EventAction[]) {
    */
   const disableAll = () => {
     list.items.forEach((action) => {
-      list.update(action.id, (old) => ({ ...old, enabled: false }));
+      if (action.id) {
+        list.update(action.id, { ...action, enabled: false } as EventAction);
+      }
     });
   };
 
@@ -157,7 +164,11 @@ export function useActions(initialActions: EventAction[]) {
    * 모든 액션 삭제
    */
   const removeAll = () => {
-    list.items.forEach((action) => list.remove(action.id));
+    list.items.forEach((action) => {
+      if (action.id) {
+        list.remove(action.id);
+      }
+    });
   };
 
   return {

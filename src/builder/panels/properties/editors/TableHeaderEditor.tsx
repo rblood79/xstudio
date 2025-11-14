@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ColumnElementProps, Element } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyInput, PropertyCustomId } from '../../common';
+import { PropertySelect, PropertyInput, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';
@@ -46,14 +46,6 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
             ...currentProps,
             ...newProps
         });
-    };
-
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
     };
 
     // 현재 테이블 헤더의 컬럼들 찾기
@@ -177,7 +169,6 @@ export function TableHeaderEditor({ elementId, currentProps, onUpdate }: Propert
                     label="ID"
                     value={customId}
                     elementId={elementId}
-                    onChange={updateCustomId}
                     placeholder="tableheader_1"
                 />
 

@@ -22,7 +22,7 @@ import type {
   StaticValueConfig,
   APICollectionConfig,
   APIValueConfig,
-} from "../core/types";
+} from "../../inspector/types";
 
 export interface DataSourceSelectorProps {
   element: SelectedElement;

@@ -1,11 +1,11 @@
-import { Element } from "../../../types/core/store.types";
+import { Element, ComponentElementProps } from "../../../types/core/store.types";
 import { supabase } from "../../../env/supabase.client";
 
 /**
  * Helper function to safely get a string property from element props
  */
-function getPropValue(props: Record<string, unknown>, key: string): string {
-  const value = props[key];
+function getPropValue(props: ComponentElementProps | Record<string, unknown>, key: string): string {
+  const value = (props as Record<string, unknown>)[key];
   if (typeof value === 'string') return value;
   if (typeof value === 'number') return String(value);
   if (value != null && typeof value === 'object' && 'toString' in value) {
@@ -17,7 +17,7 @@ function getPropValue(props: Record<string, unknown>, key: string): string {
 /**
  * Helper function to get text content for sorting (children, title, or label)
  */
-function getTextContent(props: Record<string, unknown>): string {
+function getTextContent(props: ComponentElementProps | Record<string, unknown>): string {
   return getPropValue(props, 'children') ||
          getPropValue(props, 'title') ||
          getPropValue(props, 'label');

@@ -54,10 +54,14 @@ export class ElementsApiService extends BaseApiService {
     });
 
     // 응답을 camelCase로 변환
+    if (!result) {
+      throw new Error('createElement returned null');
+    }
+    const data = result as Record<string, unknown>;
     return {
-      ...result,
-      customId: result.custom_id,
-      dataBinding: result.data_binding,
+      ...data,
+      customId: data.custom_id,
+      dataBinding: data.data_binding,
     } as Element;
   }
 
@@ -134,10 +138,14 @@ export class ElementsApiService extends BaseApiService {
     });
 
     // 응답을 camelCase로 변환
+    if (!result) {
+      throw new Error('updateElement returned null');
+    }
+    const data = result as Record<string, unknown>;
     return {
-      ...result,
-      customId: result.custom_id,
-      dataBinding: result.data_binding,
+      ...data,
+      customId: data.custom_id,
+      dataBinding: data.data_binding,
     } as Element;
   }
 

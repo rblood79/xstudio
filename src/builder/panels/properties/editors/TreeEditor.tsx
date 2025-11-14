@@ -37,14 +37,6 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // Tree의 실제 TreeItem 자식 요소들을 찾기
     const treeItemChildren = useMemo(() => {
         const { elements } = useStore.getState();
@@ -106,7 +98,6 @@ export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="tree_1"
             />
       </PropertySection>

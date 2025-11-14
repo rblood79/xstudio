@@ -5,6 +5,7 @@
 
 import type { DesignToken, ColorValueHSL } from '../../types/theme';
 import { hslToString, hslToHex } from '../../utils/theme/colorUtils';
+import { isShadowValue } from '../../types/theme';
 
 export type ExportFormat = 'css' | 'tailwind' | 'scss' | 'json';
 
@@ -110,7 +111,7 @@ export class ExportService {
     tokens: DesignToken[],
     options: ExportOptions
   ): ExportResult {
-    const config: Record<string, unknown> = {
+    const config: Record<string, any> = {
       theme: {
         extend: {},
       },
@@ -257,7 +258,7 @@ export class ExportService {
         return String(token.value);
 
       case 'shadow':
-        if (token.value && typeof token.value === 'object') {
+        if (isShadowValue(token.value)) {
           const shadow = token.value;
           return `${shadow.offsetX} ${shadow.offsetY} ${shadow.blur} ${shadow.spread} ${shadow.color}`;
         }

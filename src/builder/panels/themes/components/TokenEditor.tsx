@@ -6,7 +6,7 @@
 import { useState, useMemo } from 'react';
 import { tv } from 'tailwind-variants';
 import { useTokens, useTokenStats } from '../../../../hooks/theme';
-import type { DesignToken, ColorValueHSL, TokenType } from '../../../../types/theme';
+import type { DesignToken, TokenType } from '../../../../types/theme';
 import { isColorValueHSL } from '../../../../types/theme';
 import { parseTokenName } from '../../../../utils/theme/tokenParser';
 import { generateDarkVariant } from '../../../../utils/theme/colorUtils';
@@ -337,7 +337,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.h || 0}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...selectedToken.value, h: parseInt(e.target.value) },
+                            value: { ...(selectedToken.value as any), h: parseInt(e.target.value) },
                           })
                         }
                       />
@@ -347,7 +347,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.s || 0}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...selectedToken.value, s: parseInt(e.target.value) },
+                            value: { ...(selectedToken.value as any), s: parseInt(e.target.value) },
                           })
                         }
                       />
@@ -357,7 +357,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.l || 50}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...selectedToken.value, l: parseInt(e.target.value) },
+                            value: { ...(selectedToken.value as any), l: parseInt(e.target.value) },
                           })
                         }
                       />
@@ -368,7 +368,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.a || 1}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...selectedToken.value, a: parseFloat(e.target.value) },
+                            value: { ...(selectedToken.value as any), a: parseFloat(e.target.value) },
                           })
                         }
                       />

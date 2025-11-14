@@ -9,6 +9,8 @@ import type {
   ResolvedToken,
   CreateTokenInput,
   UpdateTokenInput,
+  TokenType,
+  TokenValue,
 } from '../../types/theme';
 
 export class TokenService {
@@ -379,7 +381,7 @@ export class TokenService {
         if (!current[parts[i]]) {
           current[parts[i]] = {};
         }
-        current = current[parts[i]];
+        current = current[parts[i]] as Record<string, Record<string, unknown>>;
       }
 
       const lastPart = parts[parts.length - 1];
@@ -411,18 +413,19 @@ export class TokenService {
         if (value && typeof value === 'object') {
           if ('$type' in value && '$value' in value) {
             // W3C 토큰 발견
+            const tokenValue = value as { $type: unknown; $value: unknown };
             tokens.push({
               project_id: projectId,
               theme_id: themeId,
               name: [...path, key].join('.'),
-              type: value.$type,
-              value: value.$value,
+              type: tokenValue.$type as TokenType | undefined,
+              value: tokenValue.$value as TokenValue | undefined,
               scope: 'raw', // 기본값
               css_variable: this.generateCSSVariable([...path, key].join('.')),
             });
           } else {
             // 중첩 객체, 재귀 탐색
-            traverse(value, [...path, key]);
+            traverse(value as Record<string, unknown>, [...path, key]);
           }
         }
       }

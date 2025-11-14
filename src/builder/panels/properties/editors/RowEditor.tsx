@@ -1,6 +1,6 @@
 import { CellElementProps } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
-import { PropertyInput, PropertySelect, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Ruler, Palette, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -40,14 +40,6 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
         });
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // 현재 행의 셀들 찾기
     const rowCells = elements.filter(el =>
         el.parent_id === element.id && el.tag === 'Cell'
@@ -62,7 +54,6 @@ export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorP
                     label="ID"
                     value={customId}
                     elementId={elementId}
-                    onChange={updateCustomId}
                     placeholder="row_1"
                 />
 

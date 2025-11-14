@@ -4,6 +4,7 @@ import { Settings2, Trash, ChevronRight, Box, Folder, File } from 'lucide-react'
 import { useStore } from '../stores';
 import { ElementProps } from '../../types/integrations/supabase.types';
 import { Element, Page } from '../../types/core/store.types'; // Page 타입도 추가
+import type { DataBinding } from '../../types/builder/unified.types';
 import { Nodes } from '../nodes';
 import Components from '../components';
 import { ThemesPanel } from '../panels/themes/ThemesPanel';
@@ -606,7 +607,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                 <>
                                     {/* Table 컴포넌트의 경우 특별한 구조로 렌더링 */}
                                     {hasTableChildren ? (
-                                        renderTableStructure(items, getLabel, onClick, onDelete, item.id, depth, isExpanded, toggleExpand, expandedKeys)
+                                        renderTableStructure(items, getLabel, onClick, onDelete, item.id, depth, isExpanded, toggleExpand, expandedKeys as Set<string>)
                                     ) : (
                                         /* 일반 자식 노드들 렌더링 (Table 제외) */
                                         hasChildNodes && renderTree(items, getLabel, onClick, onDelete, item.id, depth + 1)
@@ -618,7 +619,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {hasToggleChildren && (
                                         <>
                                             {/* ToggleButtonGroup 가상 자식 노드들 */}
-                                            {childrenAs<ButtonItem>(item.props.children).map((button, index) => (
+                                            {childrenAs<ButtonItem>(item.props?.children).map((button, index) => (
                                                 <div
                                                     key={`${item.id}-toggle-${index}`}
                                                     data-depth={depth + 1}
@@ -653,7 +654,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* CheckboxGroup 가상 자식 노드들 */}
                                     {hasCheckboxChildren && (
                                         <>
-                                            {childrenAs<CheckboxItem>(item.props.children).map((checkbox, index) => (
+                                            {childrenAs<CheckboxItem>(item.props?.children).map((checkbox, index) => (
                                                 <div
                                                     key={`${item.id}-checkbox-${index}`}
                                                     data-depth={depth + 1}
@@ -687,7 +688,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* RadioGroup 가상 자식 노드들 */}
                                     {hasRadioChildren && (
                                         <>
-                                            {childrenAs<RadioItem>(item.props.children).map((radio, index) => (
+                                            {childrenAs<RadioItem>(item.props?.children).map((radio, index) => (
                                                 <div
                                                     key={`${item.id}-radio-${index}`}
                                                     data-depth={depth + 1}
@@ -721,7 +722,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* ListBox 가상 자식 노드들 */}
                                     {hasListBoxChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((listItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((listItem, index) => (
                                                 <div
                                                     key={`${item.id}-listitem-${index}`}
                                                     data-depth={depth + 1}
@@ -755,7 +756,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* GridList 가상 자식 노드들 */}
                                     {hasGridListChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((gridItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((gridItem, index) => (
                                                 <div
                                                     key={`${item.id}-griditem-${index}`}
                                                     data-depth={depth + 1}
@@ -789,7 +790,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* Select 가상 자식 노드들 */}
                                     {hasSelectChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((selectItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((selectItem, index) => (
                                                 <div
                                                     key={`${item.id}-selectitem-${index}`}
                                                     data-depth={depth + 1}
@@ -823,7 +824,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* ComboBox 가상 자식 노드들 */}
                                     {hasComboBoxChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((comboItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((comboItem, index) => (
                                                 <div
                                                     key={`${item.id}-comboitem-${index}`}
                                                     data-depth={depth + 1}
@@ -857,7 +858,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* Tree 가상 자식 노드들 */}
                                     {hasTreeChildren && (
                                         <>
-                                            {childrenAs<TreeItem>(item.props.children).map((treeItem, index) => (
+                                            {childrenAs<TreeItem>(item.props?.children).map((treeItem, index) => (
                                                 <div
                                                     key={`${item.id}-treeitem-${index}`}
                                                     data-depth={depth + 1}
@@ -978,7 +979,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                         order_num: item.order_num,
                         props: item.props as ElementProps,
                         deleted: item.deleted,
-                        dataBinding: item.dataBinding,
+                        dataBinding: item.dataBinding as DataBinding | undefined,
                         page_id: '',
                         created_at: '',
                         updated_at: '',
@@ -1069,15 +1070,15 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {hasTableChildren ? (
                                         renderTableStructure(
                                             // flat elements 필요 (renderTableStructure가 flat 기반)
-                                            elements,
-                                            (el) => el.tag,
-                                            onClick,
-                                            onDelete,
+                                            elements as any,
+                                            (el) => el.tag || '',
+                                            onClick as any,
+                                            onDelete as any,
                                             item.id,
                                             depth,
                                             isExpanded,
                                             toggleExpand,
-                                            expandedKeys
+                                            expandedKeys as Set<string>
                                         )
                                     ) : (
                                         /* 일반 hierarchical 자식 노드들 재귀 렌더링 */
@@ -1087,7 +1088,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* Collection 컴포넌트들의 가상 자식 노드들 (기존 로직 유지) */}
                                     {hasToggleChildren && (
                                         <>
-                                            {childrenAs<ButtonItem>(item.props.children).map((button, index) => (
+                                            {childrenAs<ButtonItem>(item.props?.children).map((button, index) => (
                                                 <div
                                                     key={`${item.id}-toggle-${index}`}
                                                     data-depth={depth + 1}
@@ -1121,7 +1122,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* CheckboxGroup 가상 자식 노드들 */}
                                     {hasCheckboxChildren && (
                                         <>
-                                            {childrenAs<CheckboxItem>(item.props.children).map((checkbox, index) => (
+                                            {childrenAs<CheckboxItem>(item.props?.children).map((checkbox, index) => (
                                                 <div
                                                     key={`${item.id}-checkbox-${index}`}
                                                     data-depth={depth + 1}
@@ -1155,7 +1156,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* RadioGroup 가상 자식 노드들 */}
                                     {hasRadioChildren && (
                                         <>
-                                            {childrenAs<RadioItem>(item.props.children).map((radio, index) => (
+                                            {childrenAs<RadioItem>(item.props?.children).map((radio, index) => (
                                                 <div
                                                     key={`${item.id}-radio-${index}`}
                                                     data-depth={depth + 1}
@@ -1189,7 +1190,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* ListBox 가상 자식 노드들 */}
                                     {hasListBoxChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((listItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((listItem, index) => (
                                                 <div
                                                     key={`${item.id}-listitem-${index}`}
                                                     data-depth={depth + 1}
@@ -1223,7 +1224,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* GridList 가상 자식 노드들 */}
                                     {hasGridListChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((gridItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((gridItem, index) => (
                                                 <div
                                                     key={`${item.id}-griditem-${index}`}
                                                     data-depth={depth + 1}
@@ -1257,7 +1258,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* Select 가상 자식 노드들 */}
                                     {hasSelectChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((selectItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((selectItem, index) => (
                                                 <div
                                                     key={`${item.id}-selectitem-${index}`}
                                                     data-depth={depth + 1}
@@ -1291,7 +1292,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* ComboBox 가상 자식 노드들 */}
                                     {hasComboBoxChildren && (
                                         <>
-                                            {childrenAs<ListItem>(item.props.children).map((comboItem, index) => (
+                                            {childrenAs<ListItem>(item.props?.children).map((comboItem, index) => (
                                                 <div
                                                     key={`${item.id}-comboitem-${index}`}
                                                     data-depth={depth + 1}
@@ -1325,7 +1326,7 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     {/* Tree 가상 자식 노드들 */}
                                     {hasTreeChildren && (
                                         <>
-                                            {childrenAs<TreeItem>(item.props.children).map((treeItem, index) => (
+                                            {childrenAs<TreeItem>(item.props?.children).map((treeItem, index) => (
                                                 <div
                                                     key={`${item.id}-treeitem-${index}`}
                                                     data-depth={depth + 1}

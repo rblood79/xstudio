@@ -1,5 +1,5 @@
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyCustomId } from '../../common';
+import { PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -38,14 +38,6 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
         });
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // 현재 테이블 바디의 행들 찾기
     const rows = elements.filter(el =>
         el.parent_id === element.id && el.tag === 'Row'
@@ -68,7 +60,6 @@ export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyE
                     label="ID"
                     value={customId}
                     elementId={elementId}
-                    onChange={updateCustomId}
                     placeholder="tablebody_1"
                 />
 

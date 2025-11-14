@@ -3,7 +3,7 @@ import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
-import { createPanelLayoutSlice, PanelLayoutState } from "./panelLayout";
+import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -13,7 +13,7 @@ interface Store
     SelectionState,
     SaveModeState,
     SettingsState,
-    PanelLayoutState {}
+    PanelLayoutSlice {}
 
 type UseStoreType = UseBoundStore<StoreApi<Store>>;
 

@@ -27,6 +27,10 @@ export const PROPERTY_LABELS = {
     // Selection properties
     SELECTED_KEY: 'Selected Key',
     DEFAULT_SELECTED_KEY: 'Default Selected Key',
+    SELECTED_KEYS: 'Selected Keys',
+    DEFAULT_SELECTED_KEYS: 'Default Selected Keys',
+    EXPANDED_KEYS: 'Expanded Keys',
+    DEFAULT_EXPANDED_KEYS: 'Default Expanded Keys',
     INPUT_VALUE: 'Input Value',
     DEFAULT_INPUT_VALUE: 'Default Input Value',
     ALLOWS_CUSTOM_VALUE: 'Allows Custom Value',

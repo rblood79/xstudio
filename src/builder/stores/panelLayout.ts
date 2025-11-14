@@ -29,12 +29,12 @@ export interface PanelLayoutSliceActions {
 /**
  * Panel Layout Slice 전체 타입
  */
-export type PanelLayoutState = PanelLayoutSliceState & PanelLayoutSliceActions;
+export type PanelLayoutSlice = PanelLayoutSliceState & PanelLayoutSliceActions;
 
 /**
  * LocalStorage에서 레이아웃 로드
  */
-function loadLayoutFromStorage(): PanelLayoutState | null {
+function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutState | null {
   try {
     const stored = localStorage.getItem(PANEL_LAYOUT_STORAGE_KEY);
     if (stored) {
@@ -90,7 +90,7 @@ function loadLayoutFromStorage(): PanelLayoutState | null {
 /**
  * LocalStorage에 레이아웃 저장
  */
-function saveLayoutToStorage(layout: PanelLayoutState): void {
+function saveLayoutToStorage(layout: import('../panels/core/types').PanelLayoutState): void {
   try {
     localStorage.setItem(PANEL_LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   } catch (error) {
@@ -102,10 +102,10 @@ function saveLayoutToStorage(layout: PanelLayoutState): void {
  * Panel Layout Slice 생성
  */
 export const createPanelLayoutSlice: StateCreator<
-  PanelLayoutState,
+  PanelLayoutSlice,
   [],
   [],
-  PanelLayoutState
+  PanelLayoutSlice
 > = (set, get) => ({
   // 초기 상태: localStorage에서 로드하거나 기본값 사용
   panelLayout: loadLayoutFromStorage() || DEFAULT_PANEL_LAYOUT,
@@ -113,7 +113,7 @@ export const createPanelLayoutSlice: StateCreator<
   /**
    * 레이아웃 설정 및 자동 저장
    */
-  setPanelLayout: (layout) => {
+  setPanelLayout: (layout: import('../panels/core/types').PanelLayoutState) => {
     set({ panelLayout: layout });
     saveLayoutToStorage(layout);
   },
