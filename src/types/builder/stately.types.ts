@@ -6,7 +6,7 @@
  */
 
 import type { Key, Selection } from 'react-stately';
-import type { FieldType } from './unified';
+import type { FieldType } from './unified.types';
 
 /**
  * 리스트 데이터 아이템 기본 인터페이스

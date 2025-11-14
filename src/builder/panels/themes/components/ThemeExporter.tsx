@@ -11,7 +11,7 @@ import type {
   ExportFormat,
   ExportOptions,
   ExportResult,
-} from '../../../services/theme/ExportService';
+} from '../../../../services/theme/ExportService';
 import { useTokens } from '../../../../hooks/theme/useTokens';
 import '../styles/ThemeExporter.css';
 

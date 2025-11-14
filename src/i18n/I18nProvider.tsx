@@ -10,7 +10,7 @@ import { I18nProvider as AriaI18nProvider } from '@react-aria/i18n';
 import type { I18nContextValue, SupportedLocale } from './types';
 import { getTranslation, replacePlaceholders } from './translations';
 import { getLocaleConfig, getStoredLocale, setStoredLocale } from './locales';
-import { formatNumber, formatCurrency } from '../utils/numberUtils';
+import { formatNumber, formatCurrency } from '../utils/core/numberUtils';
 
 /**
  * I18n Context

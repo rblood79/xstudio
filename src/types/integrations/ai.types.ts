@@ -4,7 +4,7 @@
  * Defines types for AI integration and natural language processing
  */
 
-import type { ComponentIntent, BuilderContext } from './chat';
+import type { ComponentIntent, BuilderContext } from './chat.types';
 
 export interface AIProvider {
   chat(message: string, context: BuilderContext): Promise<string>;

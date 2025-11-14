@@ -28,7 +28,7 @@
  * - Origin validation
  */
 
-import { IframeMessenger, MessageResponse } from '../../utils/iframeMessenger';
+import { IframeMessenger, MessageResponse } from '../utils/dom/iframeMessenger';
 import { Element, ComponentElementProps } from '../types/core/store.types';
 import { DesignToken } from '../types/theme';
 

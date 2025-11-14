@@ -1,7 +1,7 @@
 import { Button } from "react-aria-components";
 import type { SelectedElement, EventHandler } from "./types/eventTypes";
-import { useInspectorState } from "../hooks/useInspectorState";
-import { useComponentMeta } from "../hooks/useComponentMeta";
+import { useInspectorState } from "../inspector/hooks/useInspectorState";
+import { useComponentMeta } from "../inspector/hooks/useComponentMeta";
 
 export interface EventListProps {
   element: SelectedElement;

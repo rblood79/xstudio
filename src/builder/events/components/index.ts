@@ -3,7 +3,7 @@
  */
 
 // List Mode
-export * from "./listMode";
+export { ActionListView } from "./ActionListView";
 
 // Visual Mode
 export * from "./visualMode";

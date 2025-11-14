@@ -6,8 +6,8 @@
  */
 
 import Groq from 'groq-sdk';
-import type { AIProvider, GroqConfig } from '../../types/ai.types';
-import type { BuilderContext, ComponentIntent } from '../../types/chat.types';
+import type { AIProvider, GroqConfig } from '../../types/integrations/ai.types';
+import type { BuilderContext, ComponentIntent } from '../../types/integrations/chat.types';
 
 const SYSTEM_PROMPT = `당신은 웹 디자인 어시스턴트입니다. 사용자의 자연어 요청을 분석하여 웹 컴포넌트 생성/수정 명령으로 변환합니다.
 
