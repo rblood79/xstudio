@@ -39,20 +39,31 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
         // 2. pageList에서 제거
         pageList.remove(page.id);
 
-        // 3. Zustand store에서도 제거
+        // 3. 남은 페이지 목록 계산
+        const remainingPages = pages.filter(p => p.id !== page.id);
+
+        // 4. Zustand store에서도 제거
         // Database Page 타입을 store Page 타입으로 변환 (title → name)
-        const updatedPages = pages
-            .filter(p => p.id !== page.id)
-            .map(p => ({
-                id: p.id,
-                name: p.title,
-                slug: p.slug,
-                parent_id: p.parent_id,
-                order_num: p.order_num
-            }));
+        const updatedPages = remainingPages.map(p => ({
+            id: p.id,
+            name: p.title,
+            slug: p.slug,
+            parent_id: p.parent_id,
+            order_num: p.order_num
+        }));
         setPages(updatedPages);
 
         console.log('✅ 페이지 삭제 완료:', page.title);
+
+        // 5. 남은 페이지가 있으면 자동으로 선택
+        if (remainingPages.length > 0) {
+            // order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
+            const homePage = remainingPages.find(p => p.order_num === 0);
+            const pageToSelect = homePage || remainingPages[0];
+
+            console.log('🔄 삭제 후 자동 페이지 선택:', pageToSelect.title);
+            await fetchElements(pageToSelect.id);
+        }
     };
 
     return (

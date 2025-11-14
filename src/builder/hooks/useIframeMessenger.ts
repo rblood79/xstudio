@@ -19,6 +19,7 @@ export interface UseIframeMessengerReturn {
     handleRedo: DebouncedFunc<() => Promise<void>>;
     sendElementsToIframe: (elements: Element[]) => void;
     sendElementSelectedMessage: (elementId: string, props?: ElementProps) => void;
+    requestElementSelection: (elementId: string) => void;
     isIframeReady: boolean;
 }
 
@@ -131,6 +132,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${(item.payload as Element[]).length} elements`);
             } else if (item.type === "ELEMENT_SELECTED") {
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+            } else if (item.type === "REQUEST_ELEMENT_SELECTION") {
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued REQUEST_ELEMENT_SELECTION`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -486,6 +490,29 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
+    // Preview에 요소 선택 요청 (rect 정보와 함께 응답받기)
+    const requestElementSelection = useCallback((elementId: string) => {
+        const iframe = MessageService.getIframe();
+
+        const message = {
+            type: "REQUEST_ELEMENT_SELECTION",
+            elementId,
+        };
+
+        // 🔧 FIX: iframe이 준비되지 않았으면 큐에 넣기
+        if (iframeReadyStateRef.current !== 'ready' || !iframe?.contentWindow) {
+            console.log('⏸️ [Builder] Queue REQUEST_ELEMENT_SELECTION, iframe not ready');
+            messageQueueRef.current.push({
+                type: "REQUEST_ELEMENT_SELECTION",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('📤 [Builder] Sent REQUEST_ELEMENT_SELECTION:', elementId);
+    }, []); // ✅ 의존성 제거 (Ref 사용)
+
     return {
         iframeReadyState,
         handleIframeLoad,
@@ -494,6 +521,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         handleRedo,
         sendElementsToIframe,
         sendElementSelectedMessage,
+        requestElementSelection,
         // updateElementProps는 제거됨
         isIframeReady
     };

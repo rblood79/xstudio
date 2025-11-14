@@ -6,6 +6,7 @@ import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
+import { MessageService } from '../../utils/messaging';
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
@@ -72,8 +73,9 @@ export const usePageManager = (): UsePageManagerReturn => {
 
         try {
             const elementsData = await elementsApi.getElementsByPageId(pageId);
-            const { setElements, isTracking } = useStore.getState() as unknown as {
+            const { setElements, setSelectedElement, isTracking } = useStore.getState() as unknown as {
                 setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
+                setSelectedElement: (elementId: string | null) => void;
                 isTracking: boolean;
             };
 
@@ -88,6 +90,28 @@ export const usePageManager = (): UsePageManagerReturn => {
             // 페이지 변경 시 현재 페이지 ID 업데이트
             setCurrentPageId(pageId);
             setSelectedPageId(pageId);
+
+            // 페이지 선택 시 order_num이 0인 요소(body) 자동 선택
+            const bodyElement = elementsData.find(el => el.order_num === 0);
+            if (bodyElement) {
+                setSelectedElement(bodyElement.id);
+                console.log('✅ body 요소 자동 선택:', bodyElement.id);
+
+                // Preview에 요소 선택 요청 (overlay 표시)
+                setTimeout(() => {
+                    const iframe = MessageService.getIframe();
+                    if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage(
+                            {
+                                type: "REQUEST_ELEMENT_SELECTION",
+                                elementId: bodyElement.id,
+                            },
+                            window.location.origin
+                        );
+                        console.log('📤 body 요소 overlay 표시 요청:', bodyElement.id);
+                    }
+                }, 300); // Preview DOM 렌더링 대기
+            }
 
             console.log('📄 페이지 요소 로드 완료:', {
                 pageId,
@@ -167,8 +191,13 @@ export const usePageManager = (): UsePageManagerReturn => {
                 updated_at: new Date().toISOString(),
             };
 
-            // addElement가 DB 저장까지 처리하므로 직접 호출만 하면 됨
-            await addElement(bodyElement);
+            // DB에 직접 저장 (store 업데이트 건너뛰기)
+            // store를 업데이트하면 이전 페이지의 모든 요소가 함께 Preview에 전송되므로
+            // DB에만 저장하고 fetchElements로 새 페이지의 요소만 로드
+            await elementsApi.createElement(bodyElement);
+
+            // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
+            await fetchElements(newPage.id);
 
             console.log('✅ 페이지 추가 완료:', newPage.title);
             return { success: true, data: newPage };
@@ -215,12 +244,15 @@ export const usePageManager = (): UsePageManagerReturn => {
             }));
             setPages(storePages);
 
-            // 3. 첫 번째 페이지가 있으면 선택하고 요소들 로드
+            // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
             if (projectPages.length > 0) {
-                const firstPage = projectPages[0];
-                setCurrentPageId(firstPage.id);
+                const homePage = projectPages.find(p => p.order_num === 0);
+                const pageToSelect = homePage || projectPages[0];
 
-                const result = await fetchElements(firstPage.id);
+                setCurrentPageId(pageToSelect.id);
+                console.log('✅ 기본 페이지 선택:', pageToSelect.title, '(order_num:', pageToSelect.order_num, ')');
+
+                const result = await fetchElements(pageToSelect.id);
                 if (!result.success) {
                     initializingRef.current = null;
                     return { success: false, error: result.error };

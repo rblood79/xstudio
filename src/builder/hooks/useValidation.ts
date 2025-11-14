@@ -22,7 +22,8 @@ export const useValidation = (): UseValidationReturn => {
             const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
             sorted.forEach((child, index) => {
-                const expectedOrder = index + 1;
+                // order_num은 0부터 시작 (0-based indexing)
+                const expectedOrder = index;
                 const actualOrder = child.order_num || 0;
                 const isValid = actualOrder === expectedOrder;
 

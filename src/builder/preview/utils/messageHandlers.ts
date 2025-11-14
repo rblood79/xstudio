@@ -203,6 +203,95 @@ export const handleNavigateToPage = (
 };
 
 /**
+ * REQUEST_ELEMENT_SELECTION 메시지 처리
+ * Builder가 요청한 요소를 선택하고 rect 정보와 함께 응답
+ */
+export const handleRequestElementSelection = (
+  data: MessageType,
+  elements: PreviewElement[]
+) => {
+  if (data.type === "REQUEST_ELEMENT_SELECTION" && data.elementId) {
+    const elementId = data.elementId;
+    const element = elements.find((el) => el.id === elementId);
+
+    if (!element) {
+      console.warn(`⚠️ [Preview] Element not found for selection:`, elementId);
+      return;
+    }
+
+    // DOM에서 요소 찾기
+    const elementWithId = document.querySelector(`[data-element-id="${elementId}"]`);
+    if (!elementWithId) {
+      console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
+      return;
+    }
+
+    // Computed styles 수집 (Preview의 collectComputedStyle 로직과 동일)
+    const computed = window.getComputedStyle(elementWithId);
+    const computedStyle = {
+      // Layout
+      display: computed.display,
+      position: computed.position,
+      width: computed.width,
+      height: computed.height,
+      margin: computed.margin,
+      padding: computed.padding,
+
+      // Flexbox
+      flexDirection: computed.flexDirection,
+      justifyContent: computed.justifyContent,
+      alignItems: computed.alignItems,
+      gap: computed.gap,
+
+      // Background
+      backgroundColor: computed.backgroundColor,
+
+      // Border
+      border: computed.border,
+      borderRadius: computed.borderRadius,
+
+      // Typography
+      color: computed.color,
+      fontSize: computed.fontSize,
+      fontFamily: computed.fontFamily,
+      fontWeight: computed.fontWeight,
+      fontStyle: computed.fontStyle,
+      lineHeight: computed.lineHeight,
+      letterSpacing: computed.letterSpacing,
+      textAlign: computed.textAlign,
+      textDecoration: computed.textDecoration,
+      textTransform: computed.textTransform,
+    };
+
+    // Rect 정보 수집
+    const rect = elementWithId.getBoundingClientRect();
+
+    // Builder에 ELEMENT_SELECTED 응답 전송
+    window.parent.postMessage(
+      {
+        type: "ELEMENT_SELECTED",
+        elementId: elementId,
+        payload: {
+          rect: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          },
+          props: element.props,
+          tag: element.tag,
+          style: element.props?.style || {},
+          computedStyle,
+        },
+      },
+      window.location.origin
+    );
+
+    console.log('✅ [Preview] Sent ELEMENT_SELECTED response for auto-selection:', elementId);
+  }
+};
+
+/**
  * 모든 메시지 타입 처리
  */
 export const handleMessage = (
@@ -243,4 +332,5 @@ export const handleMessage = (
   handleThemeVars(data);
   handleUpdateThemeTokens(data);
   handleSetDarkMode(data);
+  handleRequestElementSelection(data, elements);
 };

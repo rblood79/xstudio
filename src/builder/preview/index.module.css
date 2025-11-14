@@ -1,18 +1,21 @@
 /* Import Preview System Tokens - CSS Variables Only */
-@import '../styles/1-theme/preview-system.css';
-@import '../styles/1-theme/shared-tokens.css';
+@import "../styles/1-theme/preview-system.css";
+@import "../styles/1-theme/shared-tokens.css";
 
 /* Import React Aria Component Styles for Preview
  * Note: These are needed because Preview renders React Aria components
  * and they need their styles. This is separate from Builder UI. */
-@import '../components/styles/index.css';
+@import "../components/styles/index.css";
 
 @layer utilities {
-    :root {
-        --color-border: var(--border-color);
-        --color-background: var(--background);
-        --highlight-background: var(--action-primary-bg);
-        --highlight-foreground: var(--action-primary-text);
-        --overlay-background: var(--surface-tertiary);
+  :root {
+    --color-border: var(--border-color);
+    --color-background: var(--background);
+    --highlight-background: var(--action-primary-bg);
+    --highlight-foreground: var(--action-primary-text);
+    --overlay-background: var(--surface-tertiary);
+    [data-original-tag="body"] {
+      height: 100%;
     }
+  }
 }

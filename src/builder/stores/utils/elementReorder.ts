@@ -253,7 +253,8 @@ export const reorderElements = async (
     }
 
     sorted.forEach((child, index) => {
-      const newOrderNum = index + 1;
+      // order_num은 0부터 시작 (0-based indexing)
+      const newOrderNum = index;
       if (child.order_num !== newOrderNum) {
         updates.push({ id: child.id, order_num: newOrderNum });
         // 메모리에서도 업데이트 (스토어를 통해)

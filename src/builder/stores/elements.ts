@@ -6,6 +6,7 @@ import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
 import {
   createCompleteProps,
+  findElementById,
 } from "./utils/elementHelpers";
 import { createUndoAction, createRedoAction } from "./history/historyActions";
 import { createRemoveElementAction } from "./utils/elementRemoval";
@@ -202,8 +203,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
             ...(computedStyle ? { computedStyle } : {}),
           };
         } else if (elementId) {
-          // 최적화: Map 사용 (O(1) 조회)
-          const element = state.elementsMap.get(elementId);
+          // produce 내부에서는 배열 순회 사용 (elementsMap은 produce 외부에서만 사용 가능)
+          const element = findElementById(state.elements, elementId);
           if (element) {
             state.selectedElementProps = {
               ...createCompleteProps(element),
