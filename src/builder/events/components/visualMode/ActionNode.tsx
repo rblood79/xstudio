@@ -8,7 +8,7 @@ import { ACTION_METADATA } from "../../data/actionMetadata";
  */
 function getConfigValue(config: ActionConfig | undefined, key: string): string {
   if (!config) return '';
-  const value: unknown = config[key];
+  const value: unknown = (config as Record<string, unknown>)[key];
   if (value === undefined || value === null) return '';
   if (typeof value === 'string') return value;
   if (typeof value === 'number') return String(value);

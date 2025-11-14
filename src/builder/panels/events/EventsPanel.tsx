@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
-import type { EventType, ActionType } from "../../../types/events/events.types";
+import type { EventType, ActionType, EventHandler } from "../../events/types/eventTypes";
 import type { ComponentElementProps } from "../../../types/builder/unified.types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventHandlerManager } from "../../events/components/EventHandlerManager";
@@ -83,7 +83,7 @@ function EventsPanelContent({
 
   // React Stately로 이벤트 핸들러 관리 - props.events 사용
   const { handlers, addHandler, updateHandler, removeHandler } =
-    useEventHandlers(eventsFromProps || []);
+    useEventHandlers((eventsFromProps || []) as unknown as EventHandler[]);
 
   // 이벤트 선택 관리
   const { selectedHandler, selectHandler, selectAfterDelete } =
@@ -199,7 +199,7 @@ function EventsPanelContent({
           actions={
             <EventTypePicker
               onSelect={handleAddEvent}
-              registeredTypes={registeredEventTypes}
+              registeredTypes={registeredEventTypes as unknown as EventType[]}
             />
           }
         />
@@ -290,7 +290,7 @@ function EventsPanelContent({
                     {showAddAction ? (
                       <div className="add-action-container">
                         <ActionTypePicker
-                          onSelect={handleAddAction}
+                          onSelect={(actionType) => handleAddAction(actionType as ActionType)}
                           showCategories={true}
                         />
                         <Button

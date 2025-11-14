@@ -40,7 +40,16 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
         pageList.remove(page.id);
 
         // 3. Zustand store에서도 제거
-        const updatedPages = pages.filter(p => p.id !== page.id);
+        // Database Page 타입을 store Page 타입으로 변환 (title → name)
+        const updatedPages = pages
+            .filter(p => p.id !== page.id)
+            .map(p => ({
+                id: p.id,
+                name: p.title,
+                slug: p.slug,
+                parent_id: p.parent_id,
+                order_num: p.order_num
+            }));
         setPages(updatedPages);
 
         console.log('✅ 페이지 삭제 완료:', page.title);

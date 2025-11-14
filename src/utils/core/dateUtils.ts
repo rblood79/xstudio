@@ -124,9 +124,9 @@ export const parseZonedDate = (
  */
 export const parseAbsoluteDate = (
   isoString: string,
-  timezone: string = getLocalTimeZone()
+  _timezone: string = getLocalTimeZone()
 ): ZonedDateTime => {
-  return parseAbsoluteToLocal(isoString, timezone);
+  return parseAbsoluteToLocal(isoString);
 };
 
 /**
@@ -410,10 +410,10 @@ export const isWeekday = (date: DateValue, locale: string = LOCALES.KOREAN): boo
  */
 export const convertToTimezone = (
   date: ZonedDateTime,
-  targetTimezone: string
+  _targetTimezone: string
 ): ZonedDateTime => {
   return date.toAbsoluteString()
-    ? parseAbsoluteToLocal(date.toAbsoluteString(), targetTimezone)
+    ? parseAbsoluteToLocal(date.toAbsoluteString())
     : date;
 };
 

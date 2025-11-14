@@ -111,9 +111,9 @@ export const handleThemeVars = (data: MessageType) => {
     }
 
     // Light 모드 토큰 (isDark가 없거나 false인 것들)
-    const lightVars = data.vars.filter((v: { isDark?: boolean }) => !v.isDark);
+    const lightVars = (data.vars as { isDark?: boolean; name: string; value: string }[]).filter((v) => !v.isDark);
     // Dark 모드 토큰 (isDark가 true인 것들)
-    const darkVars = data.vars.filter((v: { isDark?: boolean }) => v.isDark);
+    const darkVars = (data.vars as { isDark?: boolean; name: string; value: string }[]).filter((v) => v.isDark);
 
     let cssText = "";
 

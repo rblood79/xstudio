@@ -17,13 +17,6 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <>
             {/* Basic */}
@@ -32,7 +25,6 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     label="ID"
                     value={customId}
                     elementId={elementId}
-                    onChange={updateCustomId}
                     placeholder="card_1"
                 />
             </PropertySection>
@@ -144,7 +136,7 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={Image}
                 />
 
-                {currentProps.asset && (
+                {Boolean(currentProps.asset) && (
                     <PropertyInput
                         label="Asset Source URL"
                         value={String(currentProps.assetSrc || '')}
@@ -176,7 +168,7 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     placeholder="https://example.com"
                 />
 
-                {currentProps.href && (
+                {Boolean(currentProps.href) && (
                     <PropertySelect
                         label="Link Target"
                         value={String(currentProps.target || '_self')}
@@ -196,7 +188,7 @@ export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                     icon={CheckSquare}
                 />
 
-                {currentProps.isSelectable && (
+                {Boolean(currentProps.isSelectable) && (
                     <PropertySwitch
                         label="Selected"
                         isSelected={Boolean(currentProps.isSelected)}

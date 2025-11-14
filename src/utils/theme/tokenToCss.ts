@@ -4,7 +4,7 @@
  */
 
 import { hslToString, rgbToString } from './colorUtils';
-import type { DesignToken, TypographyValue, ShadowValue, BorderValue } from '../../types/theme';
+import type { DesignToken } from '../../types/theme';
 import { isColorValueHSL, isColorValueRGB, isTypographyValue, isShadowValue, isBorderValue } from '../../types/theme';
 
 /**

@@ -30,13 +30,6 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // Breadcrumbs의 자식 Breadcrumb 요소들 찾기
     const breadcrumbChildren = useMemo(() => {
         return elements
@@ -102,7 +95,6 @@ export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: Propert
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="breadcrumbs_1"
             />
       </PropertySection>

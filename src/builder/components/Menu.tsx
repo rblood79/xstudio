@@ -141,11 +141,12 @@ export function MenuButton<T extends object>({
         if (hasSubmenu) {
           const submenuItems = item.children!.map(
             (child: MenuItem, childIndex: number) => ({
+              ...child,
               id: String(child.id || `${item.id}-${childIndex}`),
               label: String(
                 child.label ||
-                  child.text ||
-                  child.name ||
+                  (child as any).text ||
+                  (child as any).name ||
                   `Item ${childIndex + 1}`
               ),
               isDisabled: Boolean(child.isDisabled),
@@ -155,7 +156,6 @@ export function MenuButton<T extends object>({
               children: Array.isArray(child.children)
                 ? child.children
                 : undefined,
-              ...child,
             })
           );
 

@@ -5,7 +5,7 @@
  * Based on React Aria Components Separator
  */
 
-import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps, composeRenderProps } from 'react-aria-components';
+import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { SeparatorVariant, ComponentSizeSubset } from '../../types/builder/componentVariants.types';
 import './styles/Separator.css';
@@ -58,21 +58,18 @@ const separator = tv({
 export function Separator(props: SeparatorProps) {
   const { orientation = 'horizontal', variant = 'default', size = 'md' } = props;
 
+  const className = separator({
+    variant,
+    size,
+    orientation,
+    className: props.className,
+  });
+
   return (
     <AriaSeparator
       {...props}
       orientation={orientation}
-      className={composeRenderProps(
-        props.className,
-        (className) => {
-          return separator({
-            variant,
-            size,
-            orientation,
-            className,
-          });
-        }
-      )}
+      className={className}
     />
   );
 }

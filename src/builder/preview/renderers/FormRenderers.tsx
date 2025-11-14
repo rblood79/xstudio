@@ -15,6 +15,7 @@ import {
 } from "../../components/list";
 import { MyColorSwatches } from "../../components/TailSwatch";
 import { parseColor } from "react-aria-components";
+import type { Color } from "@react-types/color";
 import { PreviewElement, RenderContext } from "../types";
 import { saveService } from "../../../services/save";
 
@@ -602,7 +603,7 @@ export const renderTailSwatch = (
       value: hexColor,
     };
     updateElementProps(element.id, updatedProps);
-    saveService.scheduleElementSave(element.id);
+    // Save will be handled by updateElementProps
   };
 
   return (
@@ -623,12 +624,12 @@ export const renderTailSwatch = (
         sliderProps={{
           value: color,
           onChange: handleColorChange,
+          channel: "hue" as const,
           isDisabled: Boolean(element.props.isDisabled),
         }}
         swatchPickerProps={{
           value: color,
           onChange: handleColorChange,
-          isDisabled: Boolean(element.props.isDisabled),
         }}
       />
     </div>

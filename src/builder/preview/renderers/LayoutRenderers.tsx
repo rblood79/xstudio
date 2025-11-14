@@ -178,7 +178,7 @@ export const renderCard = (
         (element.props.variant as "default" | "elevated" | "outlined") ||
         "default"
       }
-      size={(element.props.size as "small" | "medium" | "large") || "medium"}
+      size={(element.props.size as "sm" | "md" | "lg" | undefined) || "md"}
       isQuiet={Boolean(element.props.isQuiet)}
       isSelected={Boolean(element.props.isSelected)}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -473,7 +473,7 @@ export const renderLink = (
   return (
     <Link
       key={element.id}
-      id={element.customId}
+      id={element.customId || undefined}
       data-element-id={element.id}
       href={String(element.props.href || "")}
       variant={

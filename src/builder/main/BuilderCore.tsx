@@ -228,7 +228,7 @@ export const BuilderCore: React.FC = () => {
 
       // 메모리 모니터링 시작 (개발 모드에서만)
       if (import.meta.env.DEV) {
-        memoryMonitor.startMonitoring(10000); // 10초마다 모니터링
+        memoryMonitor.startMonitoring(); // Interval set in constructor
       }
     };
 

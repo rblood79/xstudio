@@ -298,8 +298,8 @@ export function useCollectionData({
     // 정렬 적용
     if (sortDescriptor) {
       result.sort((a, b) => {
-        const aVal = a[sortDescriptor.column];
-        const bVal = b[sortDescriptor.column];
+        const aVal = a[sortDescriptor.column] as string | number;
+        const bVal = b[sortDescriptor.column] as string | number;
 
         let comparison = 0;
         if (aVal < bVal) {

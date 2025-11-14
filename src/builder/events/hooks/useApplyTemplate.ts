@@ -39,7 +39,7 @@ export function useApplyTemplate(
       for (const templateEvent of template.events) {
         // Find existing handler with same event type
         const existingIndex = mergedHandlers.findIndex(
-          (handler) => handler.type === templateEvent.type
+          (handler) => handler.event === templateEvent.event
         );
 
         if (existingIndex >= 0) {
@@ -77,10 +77,10 @@ export function generateEventHandlerIds(
 ): EventHandler[] {
   return handlers.map((handler, handlerIndex) => ({
     ...handler,
-    id: `${prefix}-${handler.type}-${handlerIndex}-${Date.now()}`,
+    id: `${prefix}-${handler.event}-${handlerIndex}-${Date.now()}`,
     actions: handler.actions.map((action, actionIndex) => ({
       ...action,
-      id: `${prefix}-${handler.type}-action-${actionIndex}-${Date.now()}`
+      id: `${prefix}-${handler.event}-action-${actionIndex}-${Date.now()}`
     }))
   }));
 }

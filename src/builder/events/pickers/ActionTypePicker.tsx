@@ -7,7 +7,7 @@
  * Phase 1: Inspector Events React Stately 전환
  */
 
-import { Select, Label, Button, Popover, ListBox, ListBoxItem, Section, Header } from 'react-aria-components';
+import { Select, Label, Button, Popover, ListBox, ListBoxItem, Section, Header, type Key } from 'react-aria-components';
 import { Plus } from 'lucide-react';
 import type { ActionType } from '@/types/events/events.types';
 import { ACTION_TYPE_LABELS } from '@/types/events/events.types';
@@ -36,7 +36,7 @@ export function ActionTypePicker({
   isDisabled = false,
   showCategories = true,
 }: ActionTypePickerProps) {
-  const handleSelect = (key: string | number) => {
+  const handleSelect = (key: Key | null) => {
     if (key) {
       onSelect(key as ActionType);
     }

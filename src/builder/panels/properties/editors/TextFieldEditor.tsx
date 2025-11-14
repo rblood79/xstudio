@@ -20,14 +20,6 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <>
       {/* Basic */}
@@ -36,7 +28,6 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="textfield_1"
             />
       </PropertySection>
@@ -111,7 +102,7 @@ export function TextFieldEditor({ elementId, currentProps, onUpdate }: PropertyE
                 />
 
                 <PropertySelect
-                    label={PROPERTY_LABELS.AUTO_COMPLETE}
+                    label={PROPERTY_LABELS.AUTOCOMPLETE}
                     value={String(currentProps.autoComplete || '')}
                     onChange={(value) => updateProp('autoComplete', value || undefined)}
                     options={[

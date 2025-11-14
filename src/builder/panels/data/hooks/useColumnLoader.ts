@@ -71,10 +71,7 @@ export function useColumnLoader(
      */
     reload: list.reload,
 
-    /**
-     * 로딩 상태를 재설정합니다 (초기 상태로)
-     */
-    setLoadingState: list.setLoadingState,
+    // setLoadingState is not available on AsyncListData
   };
 }
 

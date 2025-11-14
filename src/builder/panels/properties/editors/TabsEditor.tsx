@@ -103,13 +103,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
 
     // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
     const tabChildren = useMemo(() => {
@@ -143,7 +136,6 @@ export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditor
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="tabs_1"
             />
       </PropertySection>
@@ -300,10 +292,10 @@ async function createNewTab(
     try {
         // Tab과 Panel을 함께 upsert (중복 방지)
         // Convert customId to custom_id for database
-        const tabForDB = { ...newTabElement, custom_id: newTabElement.customId };
-        const panelForDB = { ...newPanelElement, custom_id: newPanelElement.customId };
-        delete tabForDB.customId;
-        delete panelForDB.customId;
+        const { customId: tabCustomId, ...tabRest } = newTabElement;
+        const { customId: panelCustomId, ...panelRest } = newPanelElement;
+        const tabForDB = { ...tabRest, custom_id: tabCustomId };
+        const panelForDB = { ...panelRest, custom_id: panelCustomId };
 
         const { data, error } = await supabase
             .from('elements')

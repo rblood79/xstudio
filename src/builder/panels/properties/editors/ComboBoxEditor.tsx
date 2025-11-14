@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
+import { supabase } from '../../../../env/supabase.client';
 
 export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Collection Item 관리 훅
@@ -45,14 +46,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
     if (selectedItemIndex !== null) {
         const currentOption = children[selectedItemIndex];
@@ -69,8 +62,8 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             const updatedProps = {
                                 ...currentOption.props,
                                 label: value
-                            } as typeof currentOption.props & { label: string };
-                            updateItem(currentOption.id, updatedProps);
+                            };
+                            updateItem(currentOption.id, updatedProps as Record<string, unknown>);
 
                             // 부모 ComboBox의 defaultSelectedKey가 현재 옵션의 value와 같다면 업데이트
                             if (currentProps.defaultSelectedKey === (currentOption.props as Record<string, unknown>).value) {
@@ -181,7 +174,6 @@ export function ComboBoxEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="combobox_1"
             />
             </PropertySection>

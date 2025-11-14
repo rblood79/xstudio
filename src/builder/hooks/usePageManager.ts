@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useListData } from 'react-stately';
-import { Page, Element } from '../../types/core/store.types';
-import { pagesApi } from '../../services/api/PagesApiService';
+import { Element } from '../../types/core/store.types';
+import { pagesApi, type Page as ApiPage } from '../../services/api/PagesApiService';
 import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
@@ -17,14 +17,14 @@ export interface ApiResult<T> {
 }
 
 export interface UsePageManagerReturn {
-    pages: Page[];
+    pages: ApiPage[];
     selectedPageId: string | null;
     setSelectedPageId: (id: string | null) => void;
     fetchElements: (pageId: string) => Promise<ApiResult<Element[]>>;
-    addPage: (projectId: string, addElement: (element: Element) => void) => Promise<ApiResult<Page>>;
-    initializeProject: (projectId: string) => Promise<ApiResult<Page[]>>;
+    addPage: (projectId: string, addElement: (element: Element) => void) => Promise<ApiResult<ApiPage>>;
+    initializeProject: (projectId: string) => Promise<ApiResult<ApiPage[]>>;
     // 직접 접근 (필요시)
-    pageList: ReturnType<typeof useListData<Page>>;
+    pageList: ReturnType<typeof useListData<ApiPage>>;
 }
 
 /**
@@ -46,7 +46,7 @@ export interface UsePageManagerReturn {
  */
 export const usePageManager = (): UsePageManagerReturn => {
     // 1. pages 관리: useListData (append/remove 자동)
-    const pageList = useListData<Page>({
+    const pageList = useListData<ApiPage>({
         initialItems: [],
         getKey: (page) => page.id,
     });
@@ -109,7 +109,7 @@ export const usePageManager = (): UsePageManagerReturn => {
     const addPage = async (
         projectId: string,
         addElement: (element: Element) => void
-    ): Promise<ApiResult<Page>> => {
+    ): Promise<ApiResult<ApiPage>> => {
         try {
             // Zustand store의 pages를 사용하여 최대 order_num을 찾기
             const currentPages = useStore.getState().pages;
@@ -117,7 +117,7 @@ export const usePageManager = (): UsePageManagerReturn => {
             console.log('🔍 현재 페이지들:', {
                 pageListItems: pageList.items.length,
                 storePages: currentPages.length,
-                storePagesData: currentPages.map(p => ({ id: p.id, title: p.title, order_num: p.order_num }))
+                storePagesData: currentPages.map(p => ({ id: p.id, name: p.name, order_num: p.order_num }))
             });
 
             // 현재 페이지들의 최대 order_num을 찾아서 +1
@@ -145,7 +145,15 @@ export const usePageManager = (): UsePageManagerReturn => {
             setCurrentPageId(newPage.id);
 
             // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            setPages([...currentPages, newPage]);
+            // ApiPage를 store의 Page 타입으로 변환 (title → name, parent_id 추가)
+            const storePage = {
+                id: newPage.id,
+                name: newPage.title,
+                slug: newPage.slug,
+                parent_id: null,
+                order_num: newPage.order_num
+            };
+            setPages([...currentPages, storePage]);
 
             // 새 페이지에 기본 body 요소 생성
             const bodyElement: Element = {
@@ -175,7 +183,7 @@ export const usePageManager = (): UsePageManagerReturn => {
      *
      * @returns ApiResult (성공 시 data, 실패 시 error)
      */
-    const initializeProject = async (projectId: string): Promise<ApiResult<Page[]>> => {
+    const initializeProject = async (projectId: string): Promise<ApiResult<ApiPage[]>> => {
         // 중복 호출 방지: 같은 프로젝트가 이미 초기화 중이면 스킵
         if (initializingRef.current === projectId) {
             console.warn('⚠️ 프로젝트가 이미 초기화 중입니다:', projectId);
@@ -197,7 +205,15 @@ export const usePageManager = (): UsePageManagerReturn => {
             projectPages.forEach((page) => pageList.append(page));
 
             // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
-            setPages(projectPages);
+            // ApiPage[]를 store의 Page 타입으로 변환 (title → name, parent_id 추가)
+            const storePages = projectPages.map(p => ({
+                id: p.id,
+                name: p.title,
+                slug: p.slug,
+                parent_id: null,
+                order_num: p.order_num
+            }));
+            setPages(storePages);
 
             // 3. 첫 번째 페이지가 있으면 선택하고 요소들 로드
             if (projectPages.length > 0) {

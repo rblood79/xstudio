@@ -20,14 +20,6 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     // formatOptions 업데이트 헬퍼
     const updateFormatOption = (key: string, value: unknown) => {
         const currentFormatOptions = currentProps.formatOptions || {};
@@ -38,7 +30,7 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
         updateProp('formatOptions', updatedFormatOptions);
     };
 
-    const formatOptions = currentProps.formatOptions || {};
+    const formatOptions = (currentProps.formatOptions || {}) as Record<string, unknown>;
 
     return (
         <>
@@ -48,7 +40,6 @@ export function NumberFieldEditor({ elementId, currentProps, onUpdate }: Propert
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="numberfield_1"
             />
       </PropertySection>

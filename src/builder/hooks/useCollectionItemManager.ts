@@ -124,13 +124,18 @@ export function useCollectionItemManager(
         order_num: currentIndex + 1,
       };
 
-      const data = await ElementUtils.createChildElementWithParentCheck(
-        newItem,
-        currentPageId || '1',
-        elementId
-      );
+      // ElementUtils.createChildElementWithParentCheck was removed
+      // Use Supabase directly
+      const { data, error } = await supabase
+        .from('elements')
+        .insert(newItem)
+        .select()
+        .single();
 
-      addElement(data);
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create element');
+
+      addElement(data as Element);
       console.log(`새 ${childTag} 추가됨:`, data);
     } catch (error) {
       console.error(`${childTag} 추가 중 오류:`, error);

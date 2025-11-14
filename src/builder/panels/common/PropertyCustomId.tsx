@@ -80,7 +80,7 @@ export function PropertyCustomId({
       e.preventDefault();
 
       // Validate before saving
-      const validation = validateCustomId(inputValue, elementId, elements);
+      const validation = validateCustomId(inputValue, elementId, Array.from(elementsMap.values()));
 
       if (!validation.isValid) {
         setError(validation.error);

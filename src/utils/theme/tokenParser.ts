@@ -146,8 +146,8 @@ export function sortTokens(
         bValue = b.type;
         break;
       case 'updated_at':
-        aValue = new Date(a.updated_at).getTime();
-        bValue = new Date(b.updated_at).getTime();
+        aValue = new Date(a.updated_at || 0).getTime();
+        bValue = new Date(b.updated_at || 0).getTime();
         break;
       default:
         aValue = a.name;

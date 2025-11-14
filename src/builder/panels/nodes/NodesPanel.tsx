@@ -12,6 +12,7 @@ import Sidebar from "../../sidebar";
 import { useStore } from "../../stores";
 import { usePageManager } from "../../hooks/usePageManager";
 import { useElementCreator } from "../../hooks/useElementCreator";
+import type { Page as UnifiedPage } from "../../../types/builder/unified.types";
 
 export function NodesPanel({ isActive }: PanelProps) {
   // URL params
@@ -34,6 +35,19 @@ export function NodesPanel({ isActive }: PanelProps) {
     }
   }, [projectId, pages.length, isActive, initializeProject]);
 
+  // Convert store pages (name) to UnifiedPage (title) for Sidebar
+  const unifiedPages: UnifiedPage[] = useMemo(() =>
+    pages.map(p => ({
+      id: p.id,
+      title: p.name, // Convert name → title
+      project_id: '', // Not used by Sidebar
+      slug: p.slug,
+      parent_id: p.parent_id,
+      order_num: p.order_num
+    })),
+    [pages]
+  );
+
   // addPage wrapper
   const handleAddPage = useCallback(async () => {
     if (!projectId) {
@@ -42,6 +56,27 @@ export function NodesPanel({ isActive }: PanelProps) {
     }
     await addPage(projectId, addElement);
   }, [projectId, addPage, addElement]);
+
+  // fetchElements wrapper - convert ApiResult to void
+  const handleFetchElements = useCallback(async (pageId: string) => {
+    await fetchElements(pageId);
+  }, [fetchElements]);
+
+  // handleAddElement wrapper - match Sidebar signature
+  const handleAddElementWrapper = useCallback(
+    async (tag: string, _parentId?: string, _position?: number) => {
+      if (!currentPageId) return;
+      await handleAddElement(
+        tag,
+        currentPageId,
+        null, // selectedElementId
+        [], // elements - will be fetched from store
+        addElement,
+        () => {} // sendElementsToIframe - not used here
+      );
+    },
+    [currentPageId, handleAddElement, addElement]
+  );
 
   // Force nodes tab to be active
   const forcedActiveTabs = useMemo(() => new Set(['nodes']), []);
@@ -63,11 +98,11 @@ export function NodesPanel({ isActive }: PanelProps) {
   return (
     <div className="nodes-panel">
       <Sidebar
-        pages={pages}
+        pages={unifiedPages}
         pageList={pageList}
         handleAddPage={handleAddPage}
-        handleAddElement={handleAddElement}
-        fetchElements={fetchElements}
+        handleAddElement={handleAddElementWrapper}
+        fetchElements={handleFetchElements}
         selectedPageId={currentPageId}
         forcedActiveTabs={forcedActiveTabs}
       />

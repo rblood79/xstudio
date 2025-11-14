@@ -63,6 +63,7 @@ export function PropertyColorPicker({
           sliderProps={{
             value: color,
             onChange: handleColorChange,
+            channel: "hue" as const,
           }}
           swatchPickerProps={{
             value: color,

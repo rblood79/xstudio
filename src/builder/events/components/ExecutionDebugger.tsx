@@ -192,7 +192,7 @@ export function ExecutionDebugger({
                     </span>
                   </div>
                   <div className="log-message">{log.message}</div>
-                  {log.data && (
+                  {Boolean(log.data) && (
                     <details className="log-data">
                       <summary>Data</summary>
                       <pre>{JSON.stringify(log.data, null, 2)}</pre>

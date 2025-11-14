@@ -134,7 +134,7 @@ export function APICollectionEditor({
     if (resultPath) {
       const paths = resultPath.split(".");
       for (const path of paths) {
-        items = items?.[path];
+        items = (items as Record<string, unknown>)?.[path];
       }
     }
 
@@ -377,9 +377,9 @@ export function APICollectionEditor({
           if (key !== config.baseUrl) {
             // Base URL이 변경되면 endpoint와 관련 데이터 초기화
             setLocalEndpoint("");
-            setAvailableColumns([]);
+            // setAvailableColumns([]); // Not needed - managed by useColumnLoader
             setLocalColumns([]);
-            setLoadError(null);
+            // setLoadError(null); // Not needed - managed by useColumnLoader
 
             // DummyJSON 선택 시 기본 dataMapping 설정
             const defaultDataMapping = key === "DUMMYJSON"
@@ -397,7 +397,7 @@ export function APICollectionEditor({
             });
 
             // columnLoader 초기화
-            columnLoader.setLoadingState("idle");
+            // columnLoader.setLoadingState("idle"); // Not available on AsyncListData
 
             // localDataMapping도 업데이트
             setLocalDataMapping(JSON.stringify(defaultDataMapping, null, 2));
@@ -420,7 +420,7 @@ export function APICollectionEditor({
               // Custom URL이 변경되면 endpoint와 관련 데이터 초기화
               setLocalEndpoint("");
               setLocalColumns([]);
-              columnLoader.setLoadingState("idle");
+              // columnLoader.setLoadingState("idle"); // Not available on AsyncListData
 
               onChange({
                 ...config,

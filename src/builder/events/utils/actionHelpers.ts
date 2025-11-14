@@ -89,6 +89,30 @@ export const DEFAULT_ACTION_CONFIGS: Record<ActionType, ActionConfig> = {
   submitForm: {
     formId: ""
   },
+  updateFormField: {
+    fieldName: "",
+    value: ""
+  },
+  setComponentState: {
+    targetId: "",
+    statePath: "",
+    value: ""
+  },
+  triggerComponentAction: {
+    targetId: "",
+    action: ""
+  },
+  filterCollection: {
+    targetId: "",
+    filterMode: "text"
+  },
+  selectItem: {
+    targetId: "",
+    behavior: "replace"
+  },
+  clearSelection: {
+    targetId: ""
+  },
   copyToClipboard: {
     text: "",
     source: "static"

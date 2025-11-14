@@ -17,13 +17,6 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <>
       {/* Basic */}
@@ -32,7 +25,6 @@ export function BadgeEditor({ elementId, currentProps, onUpdate }: PropertyEdito
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="badge_1"
             />
       </PropertySection>

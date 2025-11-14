@@ -1,5 +1,5 @@
 import { useAsyncList } from "react-stately";
-import { useCallback } from "react";
+// useCallback removed - not needed after reset function removal
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 
 /**
@@ -75,8 +75,9 @@ export interface UseAsyncQueryResult<T> {
 
   /**
    * 로딩 상태를 재설정합니다 (초기 상태로)
+   * NOTE: AsyncListData에 setLoadingState가 없어서 제거됨
    */
-  reset: () => void;
+  // reset: () => void; // Removed - not available
 }
 
 /**
@@ -146,21 +147,22 @@ export function useAsyncQuery<T extends { id?: string | number }>(
     getKey: (item) => String(item.id || Math.random()),
   });
 
-  // reset 함수: 로딩 상태를 초기화
-  const reset = useCallback(() => {
-    list.setLoadingState("idle");
-  }, [list]);
+  // reset 함수: AsyncListData에는 setLoadingState가 없어서 제거됨
+  // const reset = useCallback(() => {
+  //   list.setLoadingState("idle");
+  // }, [list]);
 
   return {
     data: list.items,
     isLoading: list.isLoading,
-    error: list.error,
+    error: list.error || null,
     reload: list.reload,
-    reset,
+    // reset 제거: AsyncListData에 setLoadingState 없음
   };
 }
 
 /**
  * useAsyncQuery의 반환 타입
+ * NOTE: Use UseAsyncQueryResult<T> directly instead
  */
-export type UseAsyncQueryResultType<T> = ReturnType<typeof useAsyncQuery<T>>;
+export type UseAsyncQueryResultType<T extends { id?: string | number }> = ReturnType<typeof useAsyncQuery<T>>;

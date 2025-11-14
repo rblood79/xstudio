@@ -6,6 +6,8 @@ import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { iconProps } from '../../../../utils/ui/uiConstants';
+import { supabase } from '../../../../env/supabase.client';
+import type { Element } from '../../../../types/core/store.types';
 
 export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, currentPageId, setSelectedElement } = useStore();
@@ -23,13 +25,6 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
         onUpdate(updatedProps);
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
 
     // Field 자식 요소들을 찾기
     const fieldChildren = useMemo(() => {
@@ -109,13 +104,16 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                                     order_num: (fieldChildren.length || 0) + 1,
                                 };
 
-                                const data = await ElementUtils.createChildElementWithParentCheck(
-                                    newField,
-                                    currentPageId || '1',
-                                    elementId
-                                );
+                                const { data, error } = await supabase
+                                    .from('elements')
+                                    .insert(newField)
+                                    .select()
+                                    .single();
 
-                                addElement(data);
+                                if (error) throw error;
+                                if (!data) throw new Error('Failed to create Field element');
+
+                                addElement(data as Element);
                             }}
                         >
                             <SquarePlus
@@ -140,7 +138,6 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="listboxitem_1"
             />
             </PropertySection>
@@ -255,13 +252,16 @@ export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: Propert
                                 order_num: 1,
                             };
 
-                            const data = await ElementUtils.createChildElementWithParentCheck(
-                                newField,
-                                currentPageId || '1',
-                                elementId
-                            );
+                            const { data, error } = await supabase
+                                .from('elements')
+                                .insert(newField)
+                                .select()
+                                .single();
 
-                            addElement(data);
+                            if (error) throw error;
+                            if (!data) throw new Error('Failed to create Field element');
+
+                            addElement(data as Element);
                         }}
                     >
                         <SquarePlus

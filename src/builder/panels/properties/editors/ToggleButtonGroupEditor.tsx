@@ -7,6 +7,8 @@ import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
+import { supabase } from '../../../../env/supabase.client';
+import type { Element } from '../../../../types/core/store.types';
 
 interface SelectedButtonState {
     parentId: string;
@@ -37,14 +39,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
         };
 
         onUpdate(updatedProps);
-    };
-
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
     };
 
     // 실제 ToggleButton 자식 요소들을 찾기 (useMemo로 최적화)
@@ -137,7 +131,6 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="togglebuttongroup_1"
             />
       </PropertySection>
@@ -356,10 +349,17 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                                     order_num: (toggleButtonChildren.length || 0) + 1,
                                 };
 
-                                const data = await ElementUtils.createChildElementWithParentCheck(newToggleButton, currentPageId || '1', elementId);
+                                const { data, error } = await supabase
+                                    .from('elements')
+                                    .insert(newToggleButton)
+                                    .select()
+                                    .single();
+
+                                if (error) throw error;
+                                if (!data) throw new Error('Failed to create ToggleButton element');
 
                                 // 스토어에 새 요소 추가
-                                addElement(data);
+                                addElement(data as Element);
                                 //console.log('새 ToggleButton 추가됨:', data);
                             } catch (error) {
                                 console.error('ToggleButton 추가 중 오류:', error);

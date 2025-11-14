@@ -62,7 +62,7 @@ export function ChatInterface() {
       elements: elements.map((el) => ({
         id: el.id,
         tag: el.tag,
-        props: el.props,
+        props: el.props as Record<string, unknown>,
         parent_id: el.parent_id ?? null,
       })),
       recentChanges: [],

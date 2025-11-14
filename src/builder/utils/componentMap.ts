@@ -1,7 +1,8 @@
 import React, { lazy } from 'react';
 
 // Component map definition (code splitting)
-export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<Record<string, unknown>>>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
     'Button': lazy(() => import('../components/Button').then(module => ({ default: module.Button }))),
     'TextField': lazy(() => import('../components/TextField').then(module => ({ default: module.TextField }))),
     'Checkbox': lazy(() => import('../components/Checkbox').then(module => ({ default: module.Checkbox }))),

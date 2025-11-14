@@ -83,7 +83,7 @@ export function ActionListView({
 
               <div
                 className="action-list-item-info"
-                onClick={() => handleToggleExpand(action.id)}
+                onClick={() => handleToggleExpand(action.id!)}
                 role="button"
                 tabIndex={0}
               >
@@ -96,7 +96,7 @@ export function ActionListView({
               <div className="action-list-item-actions">
                 <Button
                   className="iconButton"
-                  onPress={() => handleToggleExpand(action.id)}
+                  onPress={() => handleToggleExpand(action.id!)}
                   aria-label={isExpanded ? "Collapse" : "Expand"}
                 >
                   {isExpanded ? (
@@ -115,7 +115,7 @@ export function ActionListView({
                 </Button>
                 <Button
                   className="iconButton"
-                  onPress={() => onRemoveAction(action.id)}
+                  onPress={() => onRemoveAction(action.id!)}
                   aria-label="Delete Action"
                 >
                   <Trash
@@ -132,7 +132,7 @@ export function ActionListView({
                 <ActionEditor
                   action={action}
                   onChange={(updatedAction) =>
-                    handleActionChange(action.id, updatedAction)
+                    handleActionChange(action.id!, updatedAction)
                   }
                 />
               </div>

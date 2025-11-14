@@ -7,6 +7,7 @@
 import type { Element } from '../../types/core/store.types';
 import type { ElementTreeItem } from '../../types/builder/stately.types';
 import type { ElementProps } from '../../types/integrations/supabase.types';
+import type { DataBinding } from '../../types/builder/unified.types';
 
 /**
  * flat Element 배열을 hierarchical ElementTreeItem 구조로 변환
@@ -90,7 +91,7 @@ export function buildTreeFromElements(
       order_num: el.order_num,
       props: el.props as Record<string, unknown>,
       deleted: el.deleted,
-      dataBinding: el.dataBinding,
+      dataBinding: el.dataBinding as Record<string, unknown> | undefined,
       children: buildTreeFromElements(elements, el.id), // 재귀적으로 자식 구성
     };
 
@@ -178,7 +179,7 @@ export function flattenTreeToElements(tree: ElementTreeItem[]): Element[] {
         order_num: item.order_num,
         props: item.props as ElementProps,
         deleted: item.deleted,
-        dataBinding: item.dataBinding,
+        dataBinding: item.dataBinding as DataBinding | undefined,
         page_id: '', // 필요 시 추가
         created_at: '', // 필요 시 추가
         updated_at: '', // 필요 시 추가

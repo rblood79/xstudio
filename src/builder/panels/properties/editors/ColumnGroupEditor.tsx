@@ -1,5 +1,5 @@
 import { Settings, Type, Grid, Pin } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { ColumnGroupElementProps } from '../../../../types/builder/unified.types';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -17,14 +17,6 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
         });
     };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
-
     return (
         <>
             {/* Basic */}
@@ -33,7 +25,6 @@ export function ColumnGroupEditor({ elementId, currentProps, onUpdate }: Propert
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="columngroup_1"
             />
             </PropertySection>

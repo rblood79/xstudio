@@ -100,11 +100,11 @@ export function useTokens(options: UseTokensOptions): UseTokensReturn {
     let result = tokens;
 
     if (filter?.category) {
-      result = filterTokensByCategory(result, filter.category);
+      result = filterTokensByCategory(result, filter.category) as ResolvedToken[];
     }
 
     if (filter?.category && filter?.group) {
-      result = filterTokensByGroup(result, filter.category, filter.group);
+      result = filterTokensByGroup(result, filter.category, filter.group) as ResolvedToken[];
     }
 
     if (filter?.scope) {

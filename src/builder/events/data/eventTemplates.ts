@@ -74,11 +74,11 @@ function createTemplate(
     description,
     category,
     icon,
-    events: events.map((event) => ({
-      id: `${id}-${event.type}`,
-      type: event.type,
-      actions: event.actions.map((action, idx) => ({
-        id: `${id}-${event.type}-action-${idx}`,
+    events: events.map((evt) => ({
+      id: `${id}-${evt.type}`,
+      event: evt.type,
+      actions: evt.actions.map((action, idx) => ({
+        id: `${id}-${evt.type}-action-${idx}`,
         type: action.type,
         config: action.config
       }))

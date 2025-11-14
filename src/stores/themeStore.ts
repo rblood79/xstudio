@@ -586,10 +586,11 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
                 get()._setActiveTheme(null);
               }
             } else if (payload.eventType === 'DELETE') {
-              get()._removeTheme(payload.old.id);
+              const deletedTheme = payload.old as { id: string };
+              get()._removeTheme(deletedTheme.id);
 
               const { activeTheme } = get();
-              if (activeTheme && payload.old.id === activeTheme.id) {
+              if (activeTheme && deletedTheme.id === activeTheme.id) {
                 get()._setActiveTheme(null);
               }
             }

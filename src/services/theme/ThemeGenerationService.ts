@@ -24,11 +24,12 @@ import { ThemeService } from './ThemeService';
 import { TokenService } from './TokenService';
 
 export class ThemeGenerationService {
-  private client: Groq;
+  // @ts-expect-error - Reserved for future use
+  private _client: Groq;
   private model: string;
 
   constructor(apiKey: string, model: string = 'llama-3.3-70b-versatile') {
-    this.client = new Groq({
+    this._client = new Groq({
       apiKey,
       dangerouslyAllowBrowser: true,
     });
@@ -107,18 +108,19 @@ export class ThemeGenerationService {
       await TokenService.bulkUpsertTokens(tokens);
 
       // Complete
-      const response: ThemeGenerationResponse = {
+      // typography와 spacing은 theme.css에서 고정값 사용하므로 여기서는 생략
+      const response = {
         themeId: theme.id,
         themeName: request.themeName,
         description: request.description,
-        tokens,
+        tokens: tokens as DesignToken[],
         colorPalette,
         metadata: {
           generatedAt: new Date().toISOString(),
           aiModel: this.model,
           tokenCount: tokens.length,
         },
-      };
+      } as ThemeGenerationResponse;
 
       yield {
         stage: 'complete',
@@ -194,7 +196,7 @@ export class ThemeGenerationService {
       primary,
       secondary,
       surface,
-    };
+    } as ColorPaletteResponse;
   }
 
   /**
@@ -258,7 +260,7 @@ export class ThemeGenerationService {
           theme_id: themeId,
           name: `color.${paletteName}.${shade}`,
           type: 'color',
-          value: color,
+          value: color as ColorValueHSL,
           scope: 'raw',
           css_variable: `--color-${paletteName}-${shade}`,
         });

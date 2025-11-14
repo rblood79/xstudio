@@ -6,6 +6,7 @@ import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
+import { supabase } from '../../../../env/supabase.client';
 
 export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Collection Item 관리 훅
@@ -41,14 +42,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
             [key]: value
         };
         onUpdate(updatedProps);
-    };
-
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
     };
 
     // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
@@ -155,7 +148,6 @@ export function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEdit
                 label="ID"
                 value={customId}
                 elementId={elementId}
-                onChange={updateCustomId}
                 placeholder="select_1"
             />
       </PropertySection>

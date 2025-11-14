@@ -359,6 +359,7 @@
       width: 100%;
       min-width: 0;
       min-height: var(--inspector-control-size);
+      box-shadow: var(--inset-shadow-sm);
 
       .react-aria-Select,
       .react-aria-ComboBox {
@@ -516,6 +517,7 @@
       background-color: var(--builder-inspector-control-bg);
       border-radius: var(--radius-md);
       box-shadow: var(--inset-shadow-sm);
+      outline-width: 0;
 
       .react-aria-ToggleButton {
         padding: var(--spacing);

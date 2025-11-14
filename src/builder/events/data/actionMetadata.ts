@@ -515,7 +515,8 @@ export function getActionMetadata(actionType: ActionType): ActionMetadata {
  * 카테고리별 액션 가져오기
  */
 export function getActionsByCategory(category: string): ActionType[] {
-  return ACTION_CATEGORIES[category as keyof typeof ACTION_CATEGORIES] || [];
+  const actions = ACTION_CATEGORIES[category as keyof typeof ACTION_CATEGORIES];
+  return actions ? [...actions] as ActionType[] : [];
 }
 
 /**
