@@ -212,18 +212,20 @@ export const handleRequestElementSelection = (
 ) => {
   if (data.type === "REQUEST_ELEMENT_SELECTION" && data.elementId) {
     const elementId = data.elementId;
-    const element = elements.find((el) => el.id === elementId);
+    console.log('📥 [Preview] Received REQUEST_ELEMENT_SELECTION:', elementId);
 
-    if (!element) {
-      console.warn(`⚠️ [Preview] Element not found for selection:`, elementId);
-      return;
-    }
-
-    // DOM에서 요소 찾기
+    // DOM에서 요소 먼저 찾기 (타이밍 이슈 방지)
     const elementWithId = document.querySelector(`[data-element-id="${elementId}"]`);
     if (!elementWithId) {
       console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
       return;
+    }
+
+    // elements 배열에서 찾기 (props 정보 필요)
+    const element = elements.find((el) => el.id === elementId);
+    if (!element) {
+      console.warn(`⚠️ [Preview] Element not found in array, using DOM only:`, elementId);
+      // DOM만으로도 rect 정보는 수집 가능하므로 계속 진행
     }
 
     // Computed styles 수집 (Preview의 collectComputedStyle 로직과 동일)
@@ -278,9 +280,9 @@ export const handleRequestElementSelection = (
             width: rect.width,
             height: rect.height,
           },
-          props: element.props,
-          tag: element.tag,
-          style: element.props?.style || {},
+          props: element?.props || {},
+          tag: element?.tag || elementWithId.tagName.toLowerCase(),
+          style: element?.props?.style || {},
           computedStyle,
         },
       },

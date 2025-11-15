@@ -6,7 +6,6 @@ import { elementsApi } from '../../services/api/ElementsApiService';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
-import { MessageService } from '../../utils/messaging';
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
@@ -28,15 +27,21 @@ export interface UsePageManagerReturn {
     pageList: ReturnType<typeof useListData<ApiPage>>;
 }
 
+export interface UsePageManagerProps {
+    requestAutoSelectAfterUpdate?: (elementId: string) => void;
+}
+
 /**
  * usePageManager - React Stately useListData 기반 페이지 관리
  *
  * wrapper 함수 불필요: 모든 함수가 에러를 return으로 처리
  * useCallback 0개: 모두 일반 함수로 처리
  *
+ * @param props - requestAutoSelectAfterUpdate 함수 (iframe messenger에서)
  * @example
  * ```tsx
- * const { pages, selectedPageId, fetchElements, addPage, initializeProject } = usePageManager();
+ * const { requestAutoSelectAfterUpdate } = useIframeMessenger();
+ * const { pages, selectedPageId, fetchElements, addPage, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
  *
  * // wrapper 없이 직접 사용
  * const result = await fetchElements(pageId);
@@ -45,7 +50,7 @@ export interface UsePageManagerReturn {
  * }
  * ```
  */
-export const usePageManager = (): UsePageManagerReturn => {
+export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerProps = {}): UsePageManagerReturn => {
     // 1. pages 관리: useListData (append/remove 자동)
     const pageList = useListData<ApiPage>({
         initialItems: [],
@@ -84,33 +89,26 @@ export const usePageManager = (): UsePageManagerReturn => {
                 console.log('⚠️ 히스토리 추적 일시정지됨 - 페이지 요소 로드 계속 진행');
             }
 
-            // 항상 히스토리 기록하지 않음
+            // 페이지 선택 시 order_num이 0인 요소(body) 찾기
+            const bodyElement = elementsData.find(el => el.order_num === 0);
+
+            // 🎯 CRITICAL: setElements 전에 auto-select 예약 (race condition 방지)
+            if (bodyElement && requestAutoSelectAfterUpdate) {
+                requestAutoSelectAfterUpdate(bodyElement.id);
+                console.log('🎯 [fetchElements] Auto-select 예약:', bodyElement.id);
+            }
+
+            // 항상 히스토리 기록하지 않음 (useEffect → UPDATE_ELEMENTS → ACK → auto-select 실행)
             setElements(elementsData, { skipHistory: true });
 
             // 페이지 변경 시 현재 페이지 ID 업데이트
             setCurrentPageId(pageId);
             setSelectedPageId(pageId);
 
-            // 페이지 선택 시 order_num이 0인 요소(body) 자동 선택
-            const bodyElement = elementsData.find(el => el.order_num === 0);
+            // body 요소 자동 선택
             if (bodyElement) {
                 setSelectedElement(bodyElement.id);
                 console.log('✅ body 요소 자동 선택:', bodyElement.id);
-
-                // Preview에 요소 선택 요청 (overlay 표시)
-                setTimeout(() => {
-                    const iframe = MessageService.getIframe();
-                    if (iframe?.contentWindow) {
-                        iframe.contentWindow.postMessage(
-                            {
-                                type: "REQUEST_ELEMENT_SELECTION",
-                                elementId: bodyElement.id,
-                            },
-                            window.location.origin
-                        );
-                        console.log('📤 body 요소 overlay 표시 요청:', bodyElement.id);
-                    }
-                }, 300); // Preview DOM 렌더링 대기
             }
 
             console.log('📄 페이지 요소 로드 완료:', {

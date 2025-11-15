@@ -12,6 +12,7 @@ import Sidebar from "../../sidebar";
 import { useStore } from "../../stores";
 import { usePageManager } from "../../hooks/usePageManager";
 import { useElementCreator } from "../../hooks/useElementCreator";
+import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 import type { Page as UnifiedPage } from "../../../types/builder/unified.types";
 
 export function NodesPanel({ isActive }: PanelProps) {
@@ -24,7 +25,8 @@ export function NodesPanel({ isActive }: PanelProps) {
   const addElement = useStore((state) => state.addElement);
 
   // Hooks
-  const { pageList, addPage, fetchElements, initializeProject } = usePageManager();
+  const { requestAutoSelectAfterUpdate } = useIframeMessenger();
+  const { pageList, addPage, fetchElements, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
   const { handleAddElement } = useElementCreator();
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화

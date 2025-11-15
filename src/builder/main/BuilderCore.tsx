@@ -121,21 +121,22 @@ export const BuilderCore: React.FC = () => {
     useErrorHandler();
   // const { handleAddElement } = useElementCreator();  // 사용하지 않음
   const {
-    pages,
-    // selectedPageId,  // 사용하지 않음
-    fetchElements,
-    // addPage,  // 사용하지 않음
-    initializeProject,
-    // pageList,  // 사용하지 않음
-  } = usePageManager();
-  const {
     handleIframeLoad,
     handleMessage,
     // iframeUndo, iframeRedo는 사용하지 않음
     // sendElementsToIframe는 사용하지 않음
     // updateElementProps는 제거됨
     iframeReadyState,
+    requestAutoSelectAfterUpdate,
   } = useIframeMessenger();
+  const {
+    pages,
+    // selectedPageId,  // 사용하지 않음
+    fetchElements,
+    // addPage,  // 사용하지 않음
+    initializeProject,
+    // pageList,  // 사용하지 않음
+  } = usePageManager({ requestAutoSelectAfterUpdate });
   const { applyThemeTokens, loadProjectTheme } = useThemeManager();
   const { validateOrderNumbers } = useValidation();
   const { sendThemeTokens } = useThemeMessenger();
