@@ -12,13 +12,28 @@ interface Rect {
   height: number;
 }
 
+interface OverlayData {
+  rect: Rect;
+  tag: string;
+}
+
 export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
+  // ⭐ Multi-select state
+  const selectedElementIds = useStore((state) => (state as any).selectedElementIds || []);
+  const multiSelectMode = useStore((state) => (state as any).multiSelectMode || false);
+
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
   const overlayOpacity = useStore((state) => state.overlayOpacity);
+
+  // ⭐ Single select state (backward compatibility)
   const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
   const [selectedTag, setSelectedTag] = useState<string>("");
+
+  // ⭐ Multi-select state: Map of elementId -> overlay data
+  const [multiOverlays, setMultiOverlays] = useState<Map<string, OverlayData>>(new Map());
+
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
@@ -72,6 +87,45 @@ export default function SelectionOverlay() {
     });
   }, [selectedElementId]);
 
+  // ⭐ Update multi-select overlay positions
+  const updateMultiOverlays = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentDocument || selectedElementIds.length === 0) {
+      setMultiOverlays(new Map());
+      return;
+    }
+
+    const newOverlays = new Map<string, OverlayData>();
+
+    selectedElementIds.forEach((elementId: string) => {
+      const element = iframe.contentDocument!.querySelector(
+        `[data-element-id="${elementId}"]`
+      ) as HTMLElement;
+
+      if (element) {
+        const elementRect = element.getBoundingClientRect();
+        newOverlays.set(elementId, {
+          rect: {
+            top: elementRect.top,
+            left: elementRect.left,
+            width: elementRect.width,
+            height: elementRect.height,
+          },
+          tag: element.tagName.toLowerCase(),
+        });
+      }
+    });
+
+    setMultiOverlays(newOverlays);
+  }, [selectedElementIds]);
+
+  // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
+  useEffect(() => {
+    if (multiSelectMode && selectedElementIds.length > 0) {
+      updateMultiOverlays();
+    }
+  }, [multiSelectMode, selectedElementIds, updateMultiOverlays]);
+
   // 선택된 요소의 크기 변경 감지 (ResizeObserver만 사용)
   useEffect(() => {
     if (!selectedElementId || !iframeRef.current?.contentDocument) return;
@@ -111,6 +165,9 @@ export default function SelectionOverlay() {
         const { top, left, width, height } = event.data.payload.rect;
         setOverlayRect({ top, left, width, height });
         setSelectedTag(event.data.payload.tag || "");
+      } else if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
+        // ⭐ Multi-select: Update all overlay positions
+        updateMultiOverlays();
       } else if (event.data.type === "UPDATE_ELEMENT_PROPS") {
         // Props 업데이트 시 overlay 위치 동기화
         if (event.data.payload?.rect) {
@@ -119,7 +176,11 @@ export default function SelectionOverlay() {
           setOverlayRect({ top, left, width, height });
         } else {
           // rect가 없는 경우: DOM에서 직접 재계산
-          updatePosition();
+          if (multiSelectMode) {
+            updateMultiOverlays();
+          } else {
+            updatePosition();
+          }
         }
         // tag 정보가 있으면 업데이트
         if (event.data.payload?.tag) {
@@ -128,15 +189,27 @@ export default function SelectionOverlay() {
       } else if (event.data.type === "CLEAR_OVERLAY") {
         setOverlayRect(null);
         setSelectedTag("");
+        setMultiOverlays(new Map());
       }
     };
 
-    const handleScrollResize = () => updatePosition();
+    // ⭐ Handle scroll/resize for both single and multi-select
+    const handleScrollResize = () => {
+      if (multiSelectMode) {
+        updateMultiOverlays();
+      } else {
+        updatePosition();
+      }
+    };
 
     window.addEventListener("message", handleMessage);
 
     if (selectedElementId && iframe?.contentWindow) {
-      updatePosition();
+      if (multiSelectMode) {
+        updateMultiOverlays();
+      } else {
+        updatePosition();
+      }
       iframe.contentWindow.addEventListener("scroll", handleScrollResize);
       window.addEventListener("resize", handleScrollResize);
       window.addEventListener("scroll", handleScrollResize);
@@ -156,8 +229,49 @@ export default function SelectionOverlay() {
         rafIdRef.current = null;
       }
     };
-  }, [selectedElementId, updatePosition]);
+  }, [selectedElementId, multiSelectMode, updatePosition, updateMultiOverlays]);
 
+  // ⭐ Multi-select mode: Render multiple overlays
+  if (multiSelectMode && multiOverlays.size > 0) {
+    return (
+      <div className="overlay">
+        {Array.from(multiOverlays.entries()).map(([elementId, overlayData]) => {
+          const isPrimary = elementId === selectedElementId;
+          const element = elementsMap.get(elementId);
+          const tag = element?.tag || overlayData.tag || "";
+
+          return (
+            <div
+              key={elementId}
+              className={`overlay-element multi-select ${isPrimary ? 'primary' : 'secondary'}`}
+              style={{
+                top: overlayData.rect.top,
+                left: overlayData.rect.left,
+                width: overlayData.rect.width,
+                height: overlayData.rect.height,
+                opacity: overlayOpacity / 100,
+              }}
+            >
+              {isPrimary && (
+                <div className="overlay-info">
+                  <div className="overlay-tag-parent">
+                    <ChevronUp size={16} />
+                  </div>
+                  <div className="overlay-tag">{tag}</div>
+                </div>
+              )}
+              <div className="overlay-background" />
+              <div className="overlay-pattern">
+                <div className="overlay-pattern-inner" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ⭐ Single-select mode: Render single overlay (backward compatibility)
   if (!overlayRect) return null;
 
   return (

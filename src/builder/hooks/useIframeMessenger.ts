@@ -341,12 +341,36 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 return;
             }
 
-            setSelectedElement(
-                event.data.elementId,
-                event.data.payload?.props,
-                event.data.payload?.style,
-                event.data.payload?.computedStyle
-            );
+            // ⭐ 다중 선택 모드 처리
+            const { isMultiSelect } = event.data;
+
+            if (isMultiSelect) {
+                // Cmd/Ctrl + Click: 다중 선택 토글
+                const store = useStore.getState();
+                store.toggleElementInSelection(event.data.elementId);
+            } else {
+                // 일반 클릭: 단일 선택
+                setSelectedElement(
+                    event.data.elementId,
+                    event.data.payload?.props,
+                    event.data.payload?.style,
+                    event.data.payload?.computedStyle
+                );
+            }
+        }
+
+        // ⭐ 드래그 선택 (Shift + Drag Lasso Selection)
+        if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
+            //console.log('Elements drag selected from preview:', event.data.elementIds);
+
+            // Inspector → Builder 동기화 중이면 Preview의 업데이트 무시
+            if (isSyncingToBuilder) {
+                console.log('⏸️ Inspector 동기화 중 - Preview 업데이트 무시');
+                return;
+            }
+
+            const store = useStore.getState();
+            store.setSelectedElements(event.data.elementIds);
         }
 
         // ELEMENT_UPDATED 메시지 처리는 제거 (무한 루프 방지)

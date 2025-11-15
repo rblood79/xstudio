@@ -15,6 +15,14 @@ function Preview() {
   // Builder store를 참조하면 iframe 재로드 시 요소가 사라지는 문제 발생
   const [elements, setElements] = React.useState<PreviewElement[]>([]);
 
+  // ⭐ Lasso Selection (Shift + Drag)
+  const [lassoBox, setLassoBox] = React.useState<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  } | null>(null);
+
   // ❌ REMOVED: Builder store 동기화 (postMessage로만 업데이트)
 
   // Console error/warning suppression for development
@@ -282,6 +290,24 @@ function Preview() {
     };
   };
 
+  // ⭐ 충돌 검사: 두 사각형이 교차하는지 판정
+  const rectanglesIntersect = useCallback((
+    box: { startX: number; startY: number; endX: number; endY: number },
+    rect: DOMRect
+  ): boolean => {
+    const boxLeft = Math.min(box.startX, box.endX);
+    const boxRight = Math.max(box.startX, box.endX);
+    const boxTop = Math.min(box.startY, box.endY);
+    const boxBottom = Math.max(box.startY, box.endY);
+
+    return !(
+      rect.right < boxLeft ||
+      rect.left > boxRight ||
+      rect.bottom < boxTop ||
+      rect.top > boxBottom
+    );
+  }, []);
+
   const handleGlobalClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const elementWithId = target.closest("[data-element-id]");
@@ -294,6 +320,9 @@ function Preview() {
     const element = elements.find((el) => el.id === elementId);
     if (!element) return;
 
+    // ⭐ Cmd/Ctrl 키 감지 (다중 선택 모드)
+    const isMultiSelect = e.metaKey || e.ctrlKey;
+
     // Collect computed styles
     const computedStyle = collectComputedStyle(elementWithId);
 
@@ -302,6 +331,7 @@ function Preview() {
       {
         type: "ELEMENT_SELECTED",
         elementId: elementId,
+        isMultiSelect, // ⭐ 다중 선택 플래그 추가
         payload: {
           rect: {
             top: rect.top,
@@ -319,6 +349,65 @@ function Preview() {
     );
   };
 
+  // ⭐ Lasso Selection: Mouse Down (드래그 시작)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Shift 키를 누르고 있을 때만 Lasso Selection 활성화
+    if (!e.shiftKey) return;
+
+    e.preventDefault();
+    setLassoBox({
+      startX: e.clientX,
+      startY: e.clientY,
+      endX: e.clientX,
+      endY: e.clientY,
+    });
+  }, []);
+
+  // ⭐ Lasso Selection: Mouse Move (드래그 중)
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!lassoBox) return;
+
+    setLassoBox({
+      ...lassoBox,
+      endX: e.clientX,
+      endY: e.clientY,
+    });
+  }, [lassoBox]);
+
+  // ⭐ Lasso Selection: Mouse Up (드래그 종료) + Click 처리
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (lassoBox) {
+      // Lasso Selection 종료
+      // 충돌 검사: Lasso Box와 교차하는 모든 요소 찾기
+      const selectedIds = elements
+        .filter((el) => {
+          const domEl = document.querySelector(`[data-element-id="${el.id}"]`);
+          if (!domEl) return false;
+
+          const rect = domEl.getBoundingClientRect();
+          return rectanglesIntersect(lassoBox, rect);
+        })
+        .map((el) => el.id);
+
+      // 선택된 요소가 있으면 Builder에 메시지 전송
+      if (selectedIds.length > 0) {
+        window.parent.postMessage(
+          {
+            type: "ELEMENTS_DRAG_SELECTED",
+            elementIds: selectedIds,
+          },
+          window.location.origin
+        );
+      }
+
+      // Lasso Box 초기화
+      setLassoBox(null);
+    } else {
+      // 일반 클릭 처리
+      handleGlobalClick(e);
+    }
+  }, [lassoBox, elements, rectanglesIntersect]);
+
   // body 요소 확인
   const bodyElement = elements.find((el) => el.tag === "body");
   //const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
@@ -328,18 +417,40 @@ function Preview() {
     className: styles.main,
     id: projectId || "preview-container",
     "data-element-id": bodyElement?.id,
-    onMouseUp: handleGlobalClick,
-    //onMouseDown: handleGlobalClick,
+    onMouseUp: handleMouseUp, // ⭐ Lasso Selection 종료 + Click 처리
+    onMouseDown: handleMouseDown, // ⭐ Lasso Selection 시작
+    onMouseMove: handleMouseMove, // ⭐ Lasso Selection 드래그
     // body 요소의 스타일만 적용 (다른 props는 제외)
     style: bodyElement?.props?.style || {},
     // body였다면 원래 태그 정보 기록
     ...(bodyElement ? { "data-original-tag": "body" } : {}),
   };
 
+  // ⭐ Lasso Box 렌더링
+  const lassoBoxElement = lassoBox ? React.createElement("div", {
+    className: "lasso-selection-box",
+    style: {
+      position: 'fixed',
+      left: Math.min(lassoBox.startX, lassoBox.endX),
+      top: Math.min(lassoBox.startY, lassoBox.endY),
+      width: Math.abs(lassoBox.endX - lassoBox.startX),
+      height: Math.abs(lassoBox.endY - lassoBox.startY),
+      border: '2px dashed var(--action-primary-bg, #3b82f6)',
+      background: 'rgba(59, 130, 246, 0.1)',
+      pointerEvents: 'none',
+      zIndex: 9999,
+    }
+  }) : null;
+
   return React.createElement(
-    "div",
-    containerProps,
-    elements.length === 0 ? "No elements available" : renderElementsTree()
+    React.Fragment,
+    null,
+    React.createElement(
+      "div",
+      containerProps,
+      elements.length === 0 ? "No elements available" : renderElementsTree()
+    ),
+    lassoBoxElement
   );
 }
 

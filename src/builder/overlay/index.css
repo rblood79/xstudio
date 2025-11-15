@@ -77,3 +77,35 @@
   cursor: ew-resize;
   pointer-events: auto;
 }*/
+
+/* ⭐ Multi-select mode styles */
+.overlay-element.multi-select {
+  outline: 2px solid var(--action-primary-bg);
+  outline-offset: 0;
+  z-index: 2;
+}
+
+/* ⭐ Primary selection (first selected element, shown in Inspector) */
+.overlay-element.multi-select.primary {
+  outline: 2px solid var(--action-primary-bg);
+  z-index: 3;
+}
+
+/* ⭐ Secondary selections (additional selected elements) */
+.overlay-element.multi-select.secondary {
+  outline: 2px dashed var(--action-primary-bg);
+  z-index: 2;
+}
+
+/* ⭐ Multi-select background with blue tint */
+.overlay-element.multi-select .overlay-background {
+  background-color: var(--action-primary-bg);
+  opacity: 0.1;
+}
+
+/* ⭐ Lasso selection box (rendered inline in Preview) */
+.lasso-selection-box {
+  /* Styles are applied inline in Preview/index.tsx */
+  /* border: 2px dashed var(--action-primary-bg); */
+  /* background: rgba(59, 130, 246, 0.1); */
+}

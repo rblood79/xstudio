@@ -77,6 +77,10 @@ export interface ElementsState {
     childElements: Element[]
   ) => Promise<void>;
   updateElementOrder: (elementId: string, orderNum: number) => void;
+
+  // 다중 선택 관련 액션
+  toggleElementInSelection: (elementId: string) => void;
+  setSelectedElements: (elementIds: string[]) => void;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -193,7 +197,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
   setSelectedElement: (elementId, props, style, computedStyle) =>
     set(
-      produce((state: ElementsState) => {
+      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
         state.selectedElementId = elementId;
 
         if (elementId && props) {
@@ -214,6 +218,15 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           }
         } else {
           state.selectedElementProps = {};
+        }
+
+        // ⭐ SelectionState와 동기화
+        if (elementId) {
+          state.selectedElementIds = [elementId];
+          state.multiSelectMode = false;
+        } else {
+          state.selectedElementIds = [];
+          state.multiSelectMode = false;
         }
       })
     ),
@@ -273,6 +286,68 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         const element = state.elements.find(el => el.id === elementId);
         if (element) {
           element.order_num = orderNum;
+        }
+      })
+    ),
+
+  // ⭐ 다중 선택: 요소를 선택 목록에서 추가/제거 (토글)
+  toggleElementInSelection: (elementId: string) =>
+    set(
+      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
+        const isAlreadySelected = state.selectedElementIds.includes(elementId);
+
+        if (isAlreadySelected) {
+          // 이미 선택됨 → 제거
+          state.selectedElementIds = state.selectedElementIds.filter(id => id !== elementId);
+
+          // 선택이 비어있으면 다중 선택 모드 해제
+          if (state.selectedElementIds.length === 0) {
+            state.multiSelectMode = false;
+            state.selectedElementId = null;
+            state.selectedElementProps = {};
+          } else {
+            // 첫 번째 요소를 primary selection으로 유지
+            state.selectedElementId = state.selectedElementIds[0];
+            const element = findElementById(state.elements, state.selectedElementIds[0]);
+            if (element) {
+              state.selectedElementProps = createCompleteProps(element);
+            }
+          }
+        } else {
+          // 선택 안 됨 → 추가
+          state.selectedElementIds.push(elementId);
+          state.multiSelectMode = true;
+
+          // 첫 번째로 추가되는 경우 primary selection 설정
+          if (state.selectedElementIds.length === 1) {
+            state.selectedElementId = elementId;
+            const element = findElementById(state.elements, elementId);
+            if (element) {
+              state.selectedElementProps = createCompleteProps(element);
+            }
+          }
+        }
+      })
+    ),
+
+  // ⭐ 다중 선택: 여러 요소를 한 번에 선택 (드래그 선택용)
+  setSelectedElements: (elementIds: string[]) =>
+    set(
+      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
+        state.selectedElementIds = elementIds;
+        state.multiSelectMode = elementIds.length > 1;
+
+        if (elementIds.length > 0) {
+          // 첫 번째 요소를 primary selection으로 설정
+          state.selectedElementId = elementIds[0];
+          const element = findElementById(state.elements, elementIds[0]);
+          if (element) {
+            state.selectedElementProps = createCompleteProps(element);
+          }
+        } else {
+          // 선택 없음
+          state.selectedElementId = null;
+          state.selectedElementProps = {};
         }
       })
     ),

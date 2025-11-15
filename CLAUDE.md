@@ -2014,6 +2014,47 @@ Copilot learns from code patterns. Tips:
 - ✅ 37-82% code reduction across refactored files
 - ✅ Automatic anti-pattern detection before coding
 
+### 🎯 Multi-Element Selection (2025-11-16)
+
+**Status**: ✅ Complete
+
+**Major Updates**:
+- ✅ Cmd/Ctrl + Click multi-select (toggle selection)
+- ✅ Shift + Drag lasso selection (area selection)
+- ✅ Multi-overlay visual feedback with primary/secondary distinction
+- ✅ SelectionState activation (dead code reused)
+- ✅ AABB collision detection algorithm
+- ✅ Action token integration (--action-primary-bg)
+
+**Architecture**:
+1. **Type System** - `ElementSelectedMessage.isMultiSelect`, `ElementsDragSelectedMessage`
+2. **Store Integration** - `toggleElementInSelection()`, `setSelectedElements()`
+3. **Preview Interactions** - Mouse event handlers with modifier key detection
+4. **Overlay System** - Multiple overlays with primary/secondary styling
+5. **Message Protocol** - iframe postMessage communication
+
+**Files Modified**: 6 files
+- `src/builder/preview/types/index.ts` (types)
+- `src/builder/stores/elements.ts` (store actions)
+- `src/builder/preview/index.tsx` (lasso selection)
+- `src/builder/hooks/useIframeMessenger.ts` (message handling)
+- `src/builder/overlay/index.tsx` (multi-overlay rendering)
+- `src/builder/overlay/index.css` (multi-select styles)
+
+**Key Features**:
+- **Backward Compatible**: 99% existing code unchanged
+- **Primary Selection**: First element shown in Inspector (solid blue outline)
+- **Secondary Selection**: Additional elements (dashed blue outline)
+- **Lasso Box**: Real-time visual feedback during drag
+- **Performance**: O(1) Map lookups, O(n) collision detection
+
+**User Experience**:
+- Click → Single selection (orange outline)
+- Cmd/Ctrl + Click → Toggle in multi-select (blue outline)
+- Shift + Drag → Lasso selection (blue dashed box)
+
+**Future Improvements**: See `docs/MULTI_SELECT_IMPROVEMENTS.md`
+
 ---
 
 ## 🚧 Component Migration Status (Phase 0 - In Progress)
