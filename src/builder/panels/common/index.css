@@ -644,4 +644,74 @@
       }
     }
   }
+
+  /* ========================================
+   * Style Source Indicators (Phase 9a)
+   * Webflow-style color dots for style source visualization
+   * ======================================== */
+
+  .source-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-left: var(--spacing-sm);
+    vertical-align: middle;
+  }
+
+  /* Inline style - User set (Blue) */
+  .source-dot.inline {
+    background: var(--action-primary-bg);
+  }
+
+  /* Computed style - CSS class (Green) */
+  .source-dot.computed {
+    background: var(--color-success-500);
+  }
+
+  /* Inherited - Parent element (Orange) */
+  .source-dot.inherited {
+    background: var(--color-warning-500);
+  }
+
+  /* Default - Component default (Gray) */
+  .source-dot.default {
+    background: var(--builder-inspector-text-tertiary);
+  }
+
+  /* Source tooltip */
+  .source-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .source-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: var(--spacing);
+    padding: var(--spacing-sm) var(--spacing);
+    background: var(--builder-inspector-tooltip-bg);
+    color: var(--builder-inspector-tooltip-text);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  /* Modified property indicator (Blue dot before label) */
+  .property-modified::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--action-primary-bg);
+    margin-right: var(--spacing-sm);
+    vertical-align: middle;
+  }
 }
