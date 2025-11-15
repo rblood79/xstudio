@@ -13,8 +13,7 @@ import { useState, useMemo, useEffect } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
-import { GridList, GridListItem, useDragAndDrop, Button as AriaButton } from "react-aria-components";
-import { Copy, ClipboardPaste, RotateCcw, GripVertical } from "lucide-react";
+import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import {
   TransformSection,
@@ -26,7 +25,6 @@ import {
 import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
-import { useSectionOrder } from "./hooks/useSectionOrder";
 
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
@@ -40,81 +38,12 @@ export function StylesPanel({ isActive }: PanelProps) {
     toggleFocusMode,
   } = useSectionCollapse();
   const { copyStyles, pasteStyles } = useStyleActions();
-  const { sectionOrder, setSectionOrder, resetOrder } = useSectionOrder();
 
   // Calculate modified properties count
   const modifiedCount = useMemo(() => {
     if (!selectedElement) return 0;
     return getModifiedProperties(selectedElement).length;
   }, [selectedElement]);
-
-  // Section components mapping
-  const sectionComponents = useMemo(() => ({
-    transform: <TransformSection key="transform" selectedElement={selectedElement} />,
-    layout: <LayoutSection key="layout" selectedElement={selectedElement} />,
-    appearance: <AppearanceSection key="appearance" selectedElement={selectedElement} />,
-    typography: <TypographySection key="typography" selectedElement={selectedElement} />,
-  }), [selectedElement]);
-
-  // Valid section IDs (filter out any invalid entries from localStorage)
-  const validSectionIds = Object.keys(sectionComponents);
-  const filteredSectionOrder = useMemo(
-    () => sectionOrder.filter(id => validSectionIds.includes(id)),
-    [sectionOrder, validSectionIds]
-  );
-
-  // Clean up invalid section IDs from localStorage
-  useEffect(() => {
-    const hasInvalidIds = sectionOrder.some(id => !validSectionIds.includes(id));
-    const missingIds = validSectionIds.filter(id => !sectionOrder.includes(id));
-
-    if (hasInvalidIds || missingIds.length > 0) {
-      // Reset to default order if localStorage is corrupted
-      resetOrder();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount only
-
-  // Drag and drop handler
-  const { dragAndDropHooks } = useDragAndDrop({
-    getItems: (keys) =>
-      [...keys].map((key) => ({ 'text/plain': key.toString() })),
-
-    onReorder(e) {
-      // Get current filtered order
-      const currentOrder = [...filteredSectionOrder];
-
-      // Get dragged items
-      const draggedKeys = [...e.keys].map(key => key.toString());
-
-      // Remove dragged items from current order
-      const orderWithoutDragged = currentOrder.filter(id => !draggedKeys.includes(id));
-
-      // Find target position
-      const targetKey = e.target.key.toString();
-      let targetIndex = orderWithoutDragged.indexOf(targetKey);
-
-      if (targetIndex === -1) {
-        // Target not found, append at end
-        targetIndex = orderWithoutDragged.length;
-      } else if (e.target.dropPosition === 'after') {
-        targetIndex += 1;
-      }
-
-      // Insert dragged items at target position
-      const newOrder = [
-        ...orderWithoutDragged.slice(0, targetIndex),
-        ...draggedKeys,
-        ...orderWithoutDragged.slice(targetIndex)
-      ];
-
-      // Validate and save
-      const allValid = newOrder.every(id => validSectionIds.includes(id));
-      if (allValid && newOrder.length === filteredSectionOrder.length) {
-        setSectionOrder(newOrder);
-      }
-    },
-  });
 
   // Copy/Paste handlers
   const handleCopyStyles = async () => {
@@ -244,19 +173,6 @@ export function StylesPanel({ isActive }: PanelProps) {
               strokeWidth={iconProps.stroke}
             />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={resetOrder}
-            aria-label="Reset section order"
-            title="Reset section order"
-          >
-            <RotateCcw
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
         </div>
 
         {/* Focus Mode indicator */}
@@ -266,28 +182,12 @@ export function StylesPanel({ isActive }: PanelProps) {
       {/* Sections */}
       <div className="style-section">
         {filter === "all" ? (
-          <GridList
-            aria-label="Style sections"
-            selectionMode="none"
-            dragAndDropHooks={dragAndDropHooks}
-            className="sections-list"
-            items={filteredSectionOrder.map(id => ({ id, name: id }))}
-          >
-            {(item) => (
-              <GridListItem textValue={item.name} className="section-item">
-                <AriaButton slot="drag" className="drag-handle" aria-label={`Drag ${item.name} section`}>
-                  <GripVertical
-                    color={iconProps.color}
-                    size={16}
-                    strokeWidth={iconProps.stroke}
-                  />
-                </AriaButton>
-                <div className="section-content-wrapper">
-                  {sectionComponents[item.id as keyof typeof sectionComponents]}
-                </div>
-              </GridListItem>
-            )}
-          </GridList>
+          <>
+            <TransformSection selectedElement={selectedElement} />
+            <LayoutSection selectedElement={selectedElement} />
+            <AppearanceSection selectedElement={selectedElement} />
+            <TypographySection selectedElement={selectedElement} />
+          </>
         ) : (
           <ModifiedStylesSection selectedElement={selectedElement} />
         )}
