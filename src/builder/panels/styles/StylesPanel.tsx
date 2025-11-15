@@ -13,8 +13,8 @@ import { useState, useMemo, useEffect } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
-import { GridList, GridListItem, useDragAndDrop } from "react-aria-components";
-import { Copy, ClipboardPaste, RotateCcw } from "lucide-react";
+import { GridList, GridListItem, useDragAndDrop, Button as AriaButton } from "react-aria-components";
+import { Copy, ClipboardPaste, RotateCcw, GripVertical } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import {
   TransformSection,
@@ -56,31 +56,63 @@ export function StylesPanel({ isActive }: PanelProps) {
     typography: <TypographySection key="typography" selectedElement={selectedElement} />,
   }), [selectedElement]);
 
+  // Valid section IDs (filter out any invalid entries from localStorage)
+  const validSectionIds = Object.keys(sectionComponents);
+  const filteredSectionOrder = useMemo(
+    () => sectionOrder.filter(id => validSectionIds.includes(id)),
+    [sectionOrder, validSectionIds]
+  );
+
+  // Clean up invalid section IDs from localStorage
+  useEffect(() => {
+    const hasInvalidIds = sectionOrder.some(id => !validSectionIds.includes(id));
+    const missingIds = validSectionIds.filter(id => !sectionOrder.includes(id));
+
+    if (hasInvalidIds || missingIds.length > 0) {
+      // Reset to default order if localStorage is corrupted
+      resetOrder();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only
+
   // Drag and drop handler
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: (keys) =>
       [...keys].map((key) => ({ 'text/plain': key.toString() })),
 
     onReorder(e) {
-      const newOrder = [...sectionOrder];
-      const items = [...e.keys].map(key => key.toString());
+      // Get current filtered order
+      const currentOrder = [...filteredSectionOrder];
 
-      // Remove dragged items
-      items.forEach(item => {
-        const index = newOrder.indexOf(item);
-        if (index !== -1) newOrder.splice(index, 1);
-      });
+      // Get dragged items
+      const draggedKeys = [...e.keys].map(key => key.toString());
 
-      // Insert at new position
-      let targetIndex: number;
-      if (e.target.dropPosition === 'before') {
-        targetIndex = newOrder.indexOf(e.target.key.toString());
-      } else {
-        targetIndex = newOrder.indexOf(e.target.key.toString()) + 1;
+      // Remove dragged items from current order
+      const orderWithoutDragged = currentOrder.filter(id => !draggedKeys.includes(id));
+
+      // Find target position
+      const targetKey = e.target.key.toString();
+      let targetIndex = orderWithoutDragged.indexOf(targetKey);
+
+      if (targetIndex === -1) {
+        // Target not found, append at end
+        targetIndex = orderWithoutDragged.length;
+      } else if (e.target.dropPosition === 'after') {
+        targetIndex += 1;
       }
 
-      newOrder.splice(targetIndex, 0, ...items);
-      setSectionOrder(newOrder);
+      // Insert dragged items at target position
+      const newOrder = [
+        ...orderWithoutDragged.slice(0, targetIndex),
+        ...draggedKeys,
+        ...orderWithoutDragged.slice(targetIndex)
+      ];
+
+      // Validate and save
+      const allValid = newOrder.every(id => validSectionIds.includes(id));
+      if (allValid && newOrder.length === filteredSectionOrder.length) {
+        setSectionOrder(newOrder);
+      }
     },
   });
 
@@ -239,12 +271,22 @@ export function StylesPanel({ isActive }: PanelProps) {
             selectionMode="none"
             dragAndDropHooks={dragAndDropHooks}
             className="sections-list"
+            items={filteredSectionOrder.map(id => ({ id, name: id }))}
           >
-            {sectionOrder.map((sectionId) => (
-              <GridListItem key={sectionId} textValue={sectionId} className="section-item">
-                {sectionComponents[sectionId as keyof typeof sectionComponents]}
+            {(item) => (
+              <GridListItem textValue={item.name} className="section-item">
+                <AriaButton slot="drag" className="drag-handle" aria-label={`Drag ${item.name} section`}>
+                  <GripVertical
+                    color={iconProps.color}
+                    size={16}
+                    strokeWidth={iconProps.stroke}
+                  />
+                </AriaButton>
+                <div className="section-content-wrapper">
+                  {sectionComponents[item.id as keyof typeof sectionComponents]}
+                </div>
               </GridListItem>
-            ))}
+            )}
           </GridList>
         ) : (
           <ModifiedStylesSection selectedElement={selectedElement} />

@@ -213,7 +213,8 @@
                       }
 
                       &[data-focused] {
-                        outline: 2px solid var(--builder-header-input-focus-border);
+                        outline: 2px solid
+                          var(--builder-header-input-focus-border);
                         outline-offset: -2px;
                       }
                     }
@@ -370,8 +371,6 @@
           overflow: auto;
         }
 
-        
-
         .panel-header {
           font-size: var(--text-xs);
           line-height: var(--text-xs);
@@ -395,7 +394,6 @@
         .header-actions {
           display: flex;
           flex-direction: row;
-          gap: var(--spacing-xs);
         }
 
         .panel-content {

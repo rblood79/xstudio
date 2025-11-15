@@ -79,7 +79,6 @@
 
     .section-header .header-actions {
       display: flex;
-      gap: var(--spacing-xs);
     }
 
     .section-header .header-actions .iconButton {
@@ -705,7 +704,7 @@
 
   /* Modified property indicator (Blue dot before label) */
   .property-modified::before {
-    content: '';
+    content: "";
     display: inline-block;
     width: 4px;
     height: 4px;
@@ -713,5 +712,69 @@
     background: var(--action-primary-bg);
     margin-right: var(--spacing-sm);
     vertical-align: middle;
+  }
+
+  /* ========================================
+   * Drag-and-Drop Sections (Phase 8b)
+   * ======================================== */
+
+  .sections-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .section-item {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+  }
+
+  .section-item .drag-handle {
+    display: flex; /* Always visible for accessibility */
+    flex-shrink: 0;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    cursor: grab;
+    color: var(--builder-inspector-text-tertiary);
+    opacity: 0.3; /* Subtle by default */
+    transition: opacity 0.2s ease;
+  }
+
+  .section-item:hover .drag-handle {
+    opacity: 1; /* Full opacity on hover */
+  }
+
+  .section-item .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .section-item .section-content-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Dragging state */
+  .section-item[data-dragging] {
+    opacity: 0.5;
+  }
+
+  /* Drop indicator */
+  .section-item[data-drop-target]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--action-primary-bg);
+  }
+
+  .section-item[data-drop-target="before"]::before {
+    top: 0;
+  }
+
+  .section-item[data-drop-target="after"]::before {
+    bottom: 0;
   }
 }
