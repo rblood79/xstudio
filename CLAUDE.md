@@ -1505,6 +1505,50 @@ if (!previewReady) {
 }
 ```
 
+**ACK-based Auto-Select System** (Page Navigation):
+
+When a page is added/deleted/selected, the system uses an ACK-based pattern to ensure overlay displays correctly:
+
+1. **Builder**: Registers auto-select request BEFORE updating elements
+   ```tsx
+   // usePageManager.ts
+   if (bodyElement && requestAutoSelectAfterUpdate) {
+     requestAutoSelectAfterUpdate(bodyElement.id); // 1️⃣ Register first
+   }
+   setElements(elementsData); // 2️⃣ Then update store
+   ```
+
+2. **Preview**: Sends ACK after receiving elements
+   ```tsx
+   // messageHandlers.ts
+   setElements(elements);
+   window.parent.postMessage({ type: "ELEMENTS_UPDATED_ACK" }, origin);
+   ```
+
+3. **Builder**: Receives ACK and sends overlay request
+   ```tsx
+   // useIframeMessenger.ts
+   if (pendingAutoSelectElementId) {
+     iframe.contentWindow.postMessage({
+       type: "REQUEST_ELEMENT_SELECTION",
+       elementId: pendingAutoSelectElementId,
+     }, '*');
+   }
+   ```
+
+4. **Preview**: Displays overlay (DOM-first approach for timing resilience)
+   ```tsx
+   // messageHandlers.ts - DOM first, then elements array
+   const domElement = document.querySelector(`[data-element-id="${elementId}"]`);
+   const element = elements.find(el => el.id === elementId); // May be outdated
+   // Continue with domElement even if element not found in array
+   ```
+
+**Key Implementation Details**:
+- Module-level `pendingAutoSelectElementId` shared across all `useIframeMessenger` instances
+- DOM-first search prevents React state timing issues
+- No setTimeout - purely ACK-driven for reliability
+
 ### Design Tokens
 
 Use CSS variables for theming, never hardcode colors:

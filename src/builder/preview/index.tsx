@@ -73,8 +73,6 @@ function Preview() {
 
   // ✅ 의존성 없는 messageHandler (한 번만 생성, 메시지 손실 방지)
   const messageHandler = useCallback((event: MessageEvent) => {
-    // 🔍 디버깅: 모든 메시지 로그
-    console.log('🎯 [Preview iframe] Message event received:', event.data?.type);
     handleMessage(
       event,
       elementsRef.current,

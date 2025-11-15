@@ -61,7 +61,6 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
             const homePage = remainingPages.find(p => p.order_num === 0);
             const pageToSelect = homePage || remainingPages[0];
 
-            console.log('🔄 삭제 후 자동 페이지 선택:', pageToSelect.title);
             await fetchElements(pageToSelect.id);
         }
     };

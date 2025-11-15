@@ -95,7 +95,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             // 🎯 CRITICAL: setElements 전에 auto-select 예약 (race condition 방지)
             if (bodyElement && requestAutoSelectAfterUpdate) {
                 requestAutoSelectAfterUpdate(bodyElement.id);
-                console.log('🎯 [fetchElements] Auto-select 예약:', bodyElement.id);
             }
 
             // 항상 히스토리 기록하지 않음 (useEffect → UPDATE_ELEMENTS → ACK → auto-select 실행)
@@ -108,7 +107,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             // body 요소 자동 선택
             if (bodyElement) {
                 setSelectedElement(bodyElement.id);
-                console.log('✅ body 요소 자동 선택:', bodyElement.id);
             }
 
             console.log('📄 페이지 요소 로드 완료:', {

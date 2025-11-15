@@ -208,21 +208,15 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 const elementId = pendingAutoSelectElementId;
                 pendingAutoSelectElementId = null; // 초기화
 
-                console.log('🎯 [Builder] ACK 후 auto-select 실행:', elementId);
-
                 const iframe = MessageService.getIframe();
                 if (iframe?.contentWindow) {
-                    const message = {
-                        type: "REQUEST_ELEMENT_SELECTION",
-                        elementId,
-                    };
-                    iframe.contentWindow.postMessage(message, '*'); // '*' 사용 (개발환경)
-                    console.log('📤 body 요소 overlay 표시 요청:', {
-                        elementId,
-                        targetOrigin: '*',
-                        hasIframe: !!iframe,
-                        hasContentWindow: !!iframe.contentWindow
-                    });
+                    iframe.contentWindow.postMessage(
+                        {
+                            type: "REQUEST_ELEMENT_SELECTION",
+                            elementId,
+                        },
+                        '*' // 개발환경: origin 제한 없음
+                    );
                 }
             }
 
@@ -543,7 +537,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // 🎯 UPDATE_ELEMENTS 후 ACK를 받으면 자동으로 요소 선택 (모듈 레벨 변수)
     const requestAutoSelectAfterUpdate = useCallback((elementId: string) => {
         pendingAutoSelectElementId = elementId;
-        console.log('🎯 [Builder] Pending auto-select registered:', elementId);
     }, []);
 
     return {

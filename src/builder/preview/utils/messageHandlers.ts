@@ -212,9 +212,8 @@ export const handleRequestElementSelection = (
 ) => {
   if (data.type === "REQUEST_ELEMENT_SELECTION" && data.elementId) {
     const elementId = data.elementId;
-    console.log('📥 [Preview] Received REQUEST_ELEMENT_SELECTION:', elementId);
 
-    // DOM에서 요소 먼저 찾기 (타이밍 이슈 방지)
+    // DOM에서 요소 먼저 찾기 (타이밍 이슈 방지 - React state 업데이트 전에도 작동)
     const elementWithId = document.querySelector(`[data-element-id="${elementId}"]`);
     if (!elementWithId) {
       console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
@@ -223,10 +222,6 @@ export const handleRequestElementSelection = (
 
     // elements 배열에서 찾기 (props 정보 필요)
     const element = elements.find((el) => el.id === elementId);
-    if (!element) {
-      console.warn(`⚠️ [Preview] Element not found in array, using DOM only:`, elementId);
-      // DOM만으로도 rect 정보는 수집 가능하므로 계속 진행
-    }
 
     // Computed styles 수집 (Preview의 collectComputedStyle 로직과 동일)
     const computed = window.getComputedStyle(elementWithId);
@@ -288,8 +283,6 @@ export const handleRequestElementSelection = (
       },
       window.location.origin
     );
-
-    console.log('✅ [Preview] Sent ELEMENT_SELECTED response for auto-selection:', elementId);
   }
 };
 
@@ -302,29 +295,17 @@ export const handleMessage = (
   setElements: (elements: PreviewElement[]) => void,
   updateElementProps: (id: string, props: Record<string, unknown>) => void
 ) => {
-  // 🔍 디버깅: 모든 메시지 로그 (origin 체크 전)
-  console.log('📨 [Preview] Raw message received:', {
-    type: event.data?.type,
-    origin: event.origin,
-    windowOrigin: window.location.origin,
-    hasData: !!event.data,
-    dataKeys: event.data ? Object.keys(event.data) : []
-  });
-
   // Origin 체크 (보안)
   if (event.origin !== window.location.origin) {
-    console.warn('⚠️ [Preview] Message from untrusted origin:', event.origin, 'expected:', window.location.origin);
-    // ⚠️ origin이 다르더라도 계속 진행 (디버깅용)
-    // return;
+    console.warn('⚠️ [Preview] Message from untrusted origin:', event.origin);
+    // 개발 환경에서는 계속 진행
+    if (import.meta.env.PROD) return;
   }
 
   const data = event.data as MessageType;
   if (!data || typeof data !== "object" || !data.type) {
-    console.warn('⚠️ [Preview] Invalid message data:', data);
     return;
   }
-
-  console.log('✅ [Preview] Message validated, processing:', data.type);
 
   // 각 메시지 타입별 처리
   handleUpdateElements(data, setElements);
