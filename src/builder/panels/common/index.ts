@@ -12,5 +12,6 @@ export { PropertyCustomId } from './PropertyCustomId';
 export { PanelHeader } from './PanelHeader';
 export { SectionHeader } from './SectionHeader';
 export { EmptyState } from './EmptyState';
+export { LoadingSpinner } from './LoadingSpinner';
 
 

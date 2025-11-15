@@ -15,7 +15,7 @@ import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { EmptyState } from "../common";
+import { EmptyState, PanelHeader } from "../common";
 import {
   TransformSection,
   LayoutSection,
@@ -117,58 +117,62 @@ export function StylesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="styles-panel">
-      {/* Filter toggle */}
-      <div className="panel-header">
-        <ToggleButtonGroup
-          aria-label="Style filter"
-          selectionMode="single"
-          selectedKeys={[filter]}
-          onSelectionChange={(keys) => {
-            const selectedFilter = Array.from(keys)[0] as "all" | "modified";
-            setFilter(selectedFilter);
-          }}
-        >
-          <ToggleButton id="all">All</ToggleButton>
-          <ToggleButton id="modified">
-            Modified {modifiedCount > 0 && `(${modifiedCount})`}
-          </ToggleButton>
-        </ToggleButtonGroup>
+      <PanelHeader
+        title="Styles"
+        actions={
+          <>
+            <ToggleButtonGroup
+              aria-label="Style filter"
+              selectionMode="single"
+              selectedKeys={[filter]}
+              onSelectionChange={(keys) => {
+                const selectedFilter = Array.from(keys)[0] as "all" | "modified";
+                setFilter(selectedFilter);
+              }}
+            >
+              <ToggleButton id="all">All</ToggleButton>
+              <ToggleButton id="modified">
+                Modified {modifiedCount > 0 && `(${modifiedCount})`}
+              </ToggleButton>
+            </ToggleButtonGroup>
 
-        {/* Copy/Paste buttons */}
-        <div className="panel-actions">
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={handleCopyStyles}
-            aria-label="Copy styles"
-            isDisabled={
-              !selectedElement?.style ||
-              Object.keys(selectedElement.style).length === 0
-            }
-          >
-            <Copy
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={handlePasteStyles}
-            aria-label="Paste styles"
-          >
-            <ClipboardPaste
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
-        </div>
+            {/* Copy/Paste buttons */}
+            <div className="panel-actions">
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={handleCopyStyles}
+                aria-label="Copy styles"
+                isDisabled={
+                  !selectedElement?.style ||
+                  Object.keys(selectedElement.style).length === 0
+                }
+              >
+                <Copy
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={handlePasteStyles}
+                aria-label="Paste styles"
+              >
+                <ClipboardPaste
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
+            </div>
 
-        {/* Focus Mode indicator */}
-        {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
-      </div>
+            {/* Focus Mode indicator */}
+            {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
+          </>
+        }
+      />
 
       {/* Sections */}
       <div className="style-section">

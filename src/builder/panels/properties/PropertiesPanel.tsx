@@ -11,7 +11,10 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { EmptyState } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader } from "../common";
+import { Button } from "../../components";
+import { Copy, ClipboardPaste } from "lucide-react";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -76,6 +79,57 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     updateProperties(updatedProps);
   };
 
+  // Copy/Paste handlers
+  const handleCopyProperties = async () => {
+    if (!selectedElement?.properties) return;
+    try {
+      const propertiesJSON = JSON.stringify(selectedElement.properties, null, 2);
+      await navigator.clipboard.writeText(propertiesJSON);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to copy properties:', error);
+    }
+  };
+
+  const handlePasteProperties = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const properties = JSON.parse(text);
+
+      // Validate that it's an object
+      if (typeof properties !== 'object' || properties === null) {
+        throw new Error('Invalid properties format');
+      }
+
+      updateProperties(properties as Record<string, unknown>);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to paste properties:', error);
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + Shift + C: Copy Properties
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        handleCopyProperties();
+        return;
+      }
+
+      // Cmd/Ctrl + Shift + V: Paste Properties
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'v') {
+        e.preventDefault();
+        handlePasteProperties();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElement]);
+
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
@@ -87,7 +141,12 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   }
 
   if (loading) {
-    return <EmptyState message="에디터를 불러오는 중..." />;
+    return (
+      <LoadingSpinner
+        message="에디터를 불러오는 중..."
+        description={`${selectedElement.type} 속성 에디터 로드`}
+      />
+    );
   }
 
   if (!Editor) {
@@ -101,6 +160,41 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="properties-panel">
+      <PanelHeader
+        title={selectedElement.type}
+        actions={
+          <div className="panel-actions">
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={handleCopyProperties}
+              aria-label="Copy properties"
+              isDisabled={
+                !selectedElement?.properties ||
+                Object.keys(selectedElement.properties).length === 0
+              }
+            >
+              <Copy
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={handlePasteProperties}
+              aria-label="Paste properties"
+            >
+              <ClipboardPaste
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </div>
+        }
+      />
       <Editor
         elementId={selectedElement.id}
         currentProps={selectedElement.properties}
