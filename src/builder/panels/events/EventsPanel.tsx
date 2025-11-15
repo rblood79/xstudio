@@ -10,7 +10,11 @@ import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
 import type { EventType, ActionType } from "@/types/events/events.types";
-import type { EventHandler } from "../../events/types/eventTypes";
+import type {
+  EventHandler,
+  ActionType as EventHandlerActionType,
+} from "../../events/types/eventTypes";
+import { isImplementedEventType } from "@/types/events/events.types";
 import type { ComponentElementProps } from "../../../types/builder/unified.types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventHandlerManager } from "../../events/components/EventHandlerManager";
@@ -95,7 +99,10 @@ function EventsPanelContent({
   const { actions, addAction } = useActions(selectedHandler?.actions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
-  const registeredEventTypes: EventType[] = handlers.map((h) => h.event);
+  // Filter to only include implemented event types from registry
+  const registeredEventTypes: EventType[] = handlers
+    .map((h) => h.event)
+    .filter((event): event is EventType => isImplementedEventType(event));
 
   // Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
   useInitialMountDetection({
@@ -132,8 +139,29 @@ function EventsPanelContent({
 
   // 액션 추가
   const handleAddAction = (actionType: ActionType) => {
-    addAction(actionType, {});
+    // Normalize snake_case to camelCase for compatibility with eventTypes.ts
+    const normalizedActionType = normalizeActionType(actionType);
+    addAction(normalizedActionType, {});
     setShowAddAction(false);
+  };
+
+  // Helper function to normalize action types (snake_case -> camelCase)
+  // Returns ActionType from eventTypes.ts (used by handlers)
+  const normalizeActionType = (
+    actionType: ActionType
+  ): EventHandlerActionType => {
+    const mapping: Record<string, EventHandlerActionType> = {
+      scroll_to: "scrollTo",
+      toggle_visibility: "toggleVisibility",
+      update_state: "updateState",
+      show_modal: "showModal",
+      hide_modal: "hideModal",
+      copy_to_clipboard: "copyToClipboard",
+      validate_form: "validateForm",
+      reset_form: "resetForm",
+      custom_function: "customFunction",
+    };
+    return mapping[actionType] || (actionType as EventHandlerActionType);
   };
 
   return (
@@ -235,7 +263,9 @@ function EventsPanelContent({
                     {showAddAction ? (
                       <div className="add-action-container">
                         <ActionTypePicker
-                          onSelect={(actionType) => handleAddAction(actionType as ActionType)}
+                          onSelect={(actionType) =>
+                            handleAddAction(actionType as ActionType)
+                          }
                           showCategories={true}
                         />
                         <Button

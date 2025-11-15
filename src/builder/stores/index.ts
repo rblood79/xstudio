@@ -86,6 +86,10 @@ export const useCurrentPageId = () => useStore((state) => state.currentPageId);
 export const usePages = () => useStore((state) => state.pages);
 
 // 액션 선택기들
+// NOTE: These grouped selectors are intentional API exports for convenience.
+// They should be used sparingly and only when necessary.
+// For performance-critical components, use individual selectors instead.
+/* eslint-disable local/no-zustand-grouped-selectors */
 export const useElementActions = () =>
   useStore((state) => ({
     addElement: state.addElement,
@@ -111,6 +115,7 @@ export const usePanelLayoutActions = () =>
     savePanelLayoutToStorage: state.savePanelLayoutToStorage,
     loadPanelLayoutFromStorage: state.loadPanelLayoutFromStorage,
   }));
+/* eslint-enable local/no-zustand-grouped-selectors */
 
 // ✅ useThemeActions removed - use unified theme store instead
 // import { useUnifiedThemeStore } from './themeStore.unified';

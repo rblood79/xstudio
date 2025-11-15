@@ -1776,6 +1776,108 @@ export const elementStore = create((set, get) => ({
 }));
 ```
 
+❌ **Zustand Grouped Selectors with Object Returns (CRITICAL - Causes Infinite Loops):**
+```tsx
+// REJECT - Creates new object reference every render → infinite loop
+const settings = useStore((state) => ({
+  showOverlay: state.showOverlay,
+  showGrid: state.showGrid,
+  snapToGrid: state.snapToGrid,
+}));
+
+// ✅ CORRECT - Individual selectors
+const showOverlay = useStore((state) => state.showOverlay);
+const showGrid = useStore((state) => state.showGrid);
+const snapToGrid = useStore((state) => state.snapToGrid);
+```
+**ESLint Rule:** `local/no-zustand-grouped-selectors` (error)
+**Reference:** See CHANGELOG.md "Anti-Patterns Discovered" and SettingsPanel.tsx refactoring
+
+❌ **useShallow Wrapper with Zustand (CRITICAL - Also Causes Infinite Loops):**
+```tsx
+// REJECT - Selector function recreated every render → infinite loop
+import { useShallow } from "zustand/react/shallow";
+
+const settings = useStore(
+  useShallow((state) => ({
+    showOverlay: state.showOverlay,
+    showGrid: state.showGrid,
+  }))
+);
+
+// ✅ CORRECT - Individual selectors (same as above)
+const showOverlay = useStore((state) => state.showOverlay);
+const showGrid = useStore((state) => state.showGrid);
+```
+**ESLint Rule:** `local/no-zustand-use-shallow` (error)
+**Reference:** See CHANGELOG.md "Anti-Patterns Discovered"
+
+❌ **Manual Keyboard Event Listeners (Duplicate Code):**
+```tsx
+// REJECT - Duplicate code pattern
+useEffect(() => {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.metaKey && event.shiftKey && event.key === 'c') {
+      handleCopy();
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [handleCopy]);
+
+// ✅ CORRECT - Use declarative hook
+import { useKeyboardShortcutsRegistry } from '../../hooks/useKeyboardShortcutsRegistry';
+
+const shortcuts = useMemo(() => [
+  { key: 'c', modifier: 'cmdShift', handler: handleCopy, description: 'Copy' },
+  { key: 'v', modifier: 'cmdShift', handler: handlePaste, description: 'Paste' },
+], [handleCopy, handlePaste]);
+
+useKeyboardShortcutsRegistry(shortcuts, [handleCopy, handlePaste]);
+```
+**ESLint Rule:** `local/prefer-keyboard-shortcuts-registry` (warn)
+**Reference:** See `src/builder/hooks/useKeyboardShortcutsRegistry.ts`
+
+❌ **Manual Clipboard Operations (Duplicate Code):**
+```tsx
+// REJECT - Duplicate clipboard logic
+const handleCopy = useCallback(async () => {
+  try {
+    const json = JSON.stringify(data, null, 2);
+    await navigator.clipboard.writeText(json);
+  } catch (error) {
+    console.error('Failed to copy:', error);
+  }
+}, [data]);
+
+// ✅ CORRECT - Use generic hook
+import { useCopyPaste } from '../../hooks/useCopyPaste';
+
+const { copy, paste } = useCopyPaste({
+  onPaste: (data) => updateState(data),
+  validate: (data) => typeof data === 'object' && data !== null,
+  name: 'properties',
+});
+
+const handleCopy = useCallback(async () => {
+  await copy(data);
+}, [data, copy]);
+```
+**ESLint Rule:** `local/prefer-copy-paste-hook` (warn)
+**Reference:** See `src/builder/hooks/useCopyPaste.ts`
+
+❌ **EventType Import from Legacy Paths:**
+```tsx
+// REJECT - Legacy path with extra types not in registry
+import type { EventType } from "../../events/types/eventTypes";
+// This includes 'onInput' which doesn't exist in official registry
+
+// ✅ CORRECT - Official registry path
+import type { EventType } from "@/types/events/events.types";
+```
+**ESLint Rule:** `local/no-eventtype-legacy-import` (error)
+**Reference:** See CHANGELOG.md "Anti-Patterns Discovered"
+
 ### Quick Reference for AI Assistants
 
 | Task | Correct Approach | File Location |
@@ -1804,6 +1906,9 @@ export const elementStore = create((set, get) => ({
 | Add timing controls | Use DebounceThrottleEditor for handler-level, ActionDelayEditor for action-level | `src/builder/inspector/events/components/` |
 | Debug event execution | Use ExecutionDebugger component, check executionLogger | `src/builder/inspector/events/components/ExecutionDebugger.tsx` |
 | Create visual flow node | Extend TriggerNode or ActionNode, use ReactFlow components | `src/builder/inspector/events/components/visualMode/` |
+| Prevent initial mount data overwrite | Use `useInitialMountDetection` hook with resetKey | `src/builder/hooks/useInitialMountDetection.ts` |
+| Add keyboard shortcuts | Use `useKeyboardShortcutsRegistry` with declarative shortcuts array | `src/builder/hooks/useKeyboardShortcutsRegistry.ts` |
+| Add copy/paste functionality | Use `useCopyPaste` hook with validation and transform | `src/builder/hooks/useCopyPaste.ts` |
 
 ### For Cursor AI
 
@@ -1857,6 +1962,57 @@ Copilot learns from code patterns. Tips:
 **Files**: `src/builder/monitor/`, `src/builder/stores/memoryMonitor.ts`, `src/services/save/saveService.ts`
 
 **Key Features**: No Console Pollution, Auto-Update, Performance Tracking
+
+### 🔧 Panel System Refactoring (2025-11-16)
+
+**Status**: ✅ Phase 1-3 Complete
+
+**Major Updates**:
+
+**Phase 1: Stability (76% Code Reduction)**
+- ✅ Created `useInitialMountDetection` hook (106 lines)
+- ✅ Applied to EventsPanel: 62 lines → 16 lines (76% reduction)
+- ✅ DataPanel: Replaced hardcoded HTML with EmptyState component
+- ✅ AIPanel: useMemo for Groq service (better lifecycle management)
+- ✅ Fixed EventType import path conflicts
+
+**Phase 2: Performance (37-50% Code Reduction)**
+- ✅ Created `useKeyboardShortcutsRegistry` hook (147 lines)
+- ✅ PropertiesPanel: 30 lines → 15 lines (50% reduction)
+- ✅ StylesPanel: 38 lines → 24 lines (37% reduction)
+- ✅ Declarative shortcut definitions with automatic cleanup
+- ❌ SettingsPanel grouped selectors attempt **REVERTED** (caused infinite loops)
+
+**Phase 3: Reusability (80%+ Code Reduction)**
+- ✅ Created `useCopyPaste` hook (95 lines)
+- ✅ PropertiesPanel copy/paste: 15 lines → 3 lines (80% reduction)
+- ✅ useStyleActions copy/paste: 38 lines → 7 lines (82% reduction)
+- ✅ Generic clipboard utilities with validation/transformation
+
+**Anti-Patterns Discovered**:
+1. **Zustand grouped selectors** with object returns → infinite loops
+2. **useShallow wrapper** → infinite loops (function recreation)
+3. **Manual keyboard listeners** → duplicate code (use hook instead)
+4. **Manual clipboard operations** → duplicate code (use useCopyPaste)
+5. **EventType legacy imports** → type conflicts (use registry path)
+
+**ESLint Rules Added** (5 custom rules):
+- `local/no-zustand-grouped-selectors` (error)
+- `local/no-zustand-use-shallow` (error)
+- `local/prefer-keyboard-shortcuts-registry` (warn)
+- `local/prefer-copy-paste-hook` (warn)
+- `local/no-eventtype-legacy-import` (error)
+
+**Files Modified**: 6 panels (Data, AI, Events, Properties, Styles, Settings)
+**Hooks Created**: 3 reusable hooks (useInitialMountDetection, useKeyboardShortcutsRegistry, useCopyPaste)
+**Documentation**: CHANGELOG.md, CLAUDE.md, ESLint local rules
+
+**Results**:
+- ✅ Zero TypeScript errors
+- ✅ Zero Lint errors
+- ✅ Zero `any` types
+- ✅ 37-82% code reduction across refactored files
+- ✅ Automatic anti-pattern detection before coding
 
 ---
 

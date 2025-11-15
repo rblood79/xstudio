@@ -6,9 +6,25 @@
 
 import { useCallback } from 'react';
 import { useInspectorState } from '../../../inspector/hooks/useInspectorState';
+import { useCopyPaste } from '../../../hooks/useCopyPaste';
 
 export function useStyleActions() {
   const { updateInlineStyle, updateInlineStyles } = useInspectorState();
+
+  // 🔥 최적화: useCopyPaste hook 사용
+  const { copy: copyStylesInternal, paste: pasteStylesInternal } = useCopyPaste({
+    onPaste: (data) => {
+      // Convert all values to strings
+      const stylesObj: Record<string, string> = {};
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          stylesObj[key] = String(value);
+        }
+      });
+      updateInlineStyles(stylesObj);
+    },
+    name: 'styles',
+  });
 
   /**
    * 단일 스타일 속성 업데이트
@@ -161,47 +177,20 @@ export function useStyleActions() {
   );
 
   /**
-   * Copy styles to clipboard
+   * Copy styles to clipboard (wrapper around useCopyPaste)
    */
-  const copyStyles = useCallback(async (styles: Record<string, unknown>) => {
-    try {
-      const stylesJSON = JSON.stringify(styles, null, 2);
-      await navigator.clipboard.writeText(stylesJSON);
-      return true;
-    } catch (error) {
-      console.error('Failed to copy styles:', error);
-      return false;
-    }
-  }, []);
+  const copyStyles = useCallback(
+    async (styles: Record<string, unknown>) => copyStylesInternal(styles),
+    [copyStylesInternal]
+  );
 
   /**
-   * Paste styles from clipboard
+   * Paste styles from clipboard (wrapper around useCopyPaste)
    */
-  const pasteStyles = useCallback(async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      const styles = JSON.parse(text);
-
-      // Validate that it's an object
-      if (typeof styles !== 'object' || styles === null) {
-        throw new Error('Invalid styles format');
-      }
-
-      // Convert all values to strings
-      const stylesObj: Record<string, string> = {};
-      Object.entries(styles).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          stylesObj[key] = String(value);
-        }
-      });
-
-      updateInlineStyles(stylesObj);
-      return true;
-    } catch (error) {
-      console.error('Failed to paste styles:', error);
-      return false;
-    }
-  }, [updateInlineStyles]);
+  const pasteStyles = useCallback(
+    async () => pasteStylesInternal(),
+    [pasteStylesInternal]
+  );
 
   return {
     // 기본 액션

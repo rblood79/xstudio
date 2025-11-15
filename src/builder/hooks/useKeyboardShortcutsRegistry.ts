@@ -116,6 +116,7 @@ export function useKeyboardShortcutsRegistry(
       }
     };
 
+    // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps

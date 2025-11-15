@@ -3,6 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import localRules from './eslint-local-rules/index.js'
 
 export default tseslint.config(
   { ignores: ['dist'] },
@@ -16,6 +17,9 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'local': {
+        rules: localRules,
+      },
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -23,6 +27,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // XStudio Anti-Pattern Detection Rules
+      'local/no-zustand-grouped-selectors': 'error',
+      'local/no-zustand-use-shallow': 'error',
+      'local/prefer-keyboard-shortcuts-registry': 'warn',
+      'local/prefer-copy-paste-hook': 'warn',
+      'local/no-eventtype-legacy-import': 'error',
     },
   },
 )

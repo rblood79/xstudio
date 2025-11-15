@@ -16,6 +16,7 @@ import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
+import { useCopyPaste } from "../../hooks/useCopyPaste";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -80,34 +81,22 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     updateProperties(updatedProps);
   };
 
-  // Copy/Paste handlers
+  // 🔥 최적화: useCopyPaste hook 사용
+  const { copy: copyProperties, paste: pasteProperties } = useCopyPaste({
+    onPaste: updateProperties,
+    name: 'properties',
+  });
+
   const handleCopyProperties = useCallback(async () => {
     if (!selectedElement?.properties) return;
-    try {
-      const propertiesJSON = JSON.stringify(selectedElement.properties, null, 2);
-      await navigator.clipboard.writeText(propertiesJSON);
-      // TODO: Show toast notification
-    } catch (error) {
-      console.error('Failed to copy properties:', error);
-    }
-  }, [selectedElement]);
+    await copyProperties(selectedElement.properties);
+    // TODO: Show toast notification
+  }, [selectedElement, copyProperties]);
 
   const handlePasteProperties = useCallback(async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      const properties = JSON.parse(text);
-
-      // Validate that it's an object
-      if (typeof properties !== 'object' || properties === null) {
-        throw new Error('Invalid properties format');
-      }
-
-      updateProperties(properties as Record<string, unknown>);
-      // TODO: Show toast notification
-    } catch (error) {
-      console.error('Failed to paste properties:', error);
-    }
-  }, [updateProperties]);
+    await pasteProperties();
+    // TODO: Show toast notification
+  }, [pasteProperties]);
 
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
