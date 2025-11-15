@@ -72,7 +72,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return () => {
       isMounted = false;
     };
-  }, [selectedElement]);
+  }, [selectedElement?.type, selectedElement?.id]);
 
   const handleUpdate = (updatedProps: Record<string, unknown>) => {
     // 한 번에 모든 속성 업데이트 (순차 업데이트로 인한 동기화 문제 방지)
