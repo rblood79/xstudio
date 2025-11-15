@@ -8,28 +8,34 @@
  * Phase 5 완료: Copy/Paste styles (Cmd+Shift+C/V)
  */
 
-import '../../panels/common/index.css';
-import { useState, useMemo, useEffect } from 'react';
-import type { PanelProps } from '../core/types';
-import { useInspectorState } from '../../inspector/hooks/useInspectorState';
-import { ToggleButtonGroup, ToggleButton, Button } from '../../components';
-import { Copy, ClipboardPaste } from 'lucide-react';
-import { iconProps } from '../../../utils/ui/uiConstants';
+import "../../panels/common/index.css";
+import { useState, useMemo, useEffect } from "react";
+import type { PanelProps } from "../core/types";
+import { useInspectorState } from "../../inspector/hooks/useInspectorState";
+import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
+import { Copy, ClipboardPaste } from "lucide-react";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import {
   TransformSection,
   LayoutSection,
   AppearanceSection,
   TypographySection,
   ModifiedStylesSection,
-} from './sections';
-import { getModifiedProperties } from './hooks/useStyleSource';
-import { useSectionCollapse } from './hooks/useSectionCollapse';
-import { useStyleActions } from './hooks/useStyleActions';
+} from "./sections";
+import { getModifiedProperties } from "./hooks/useStyleSource";
+import { useSectionCollapse } from "./hooks/useSectionCollapse";
+import { useStyleActions } from "./hooks/useStyleActions";
 
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
-  const [filter, setFilter] = useState<'all' | 'modified'>('all');
-  const { expandAll, collapseAll, collapsedSections, focusMode, toggleFocusMode } = useSectionCollapse();
+  const [filter, setFilter] = useState<"all" | "modified">("all");
+  const {
+    expandAll,
+    collapseAll,
+    collapsedSections,
+    focusMode,
+    toggleFocusMode,
+  } = useSectionCollapse();
   const { copyStyles, pasteStyles } = useStyleActions();
 
   // Calculate modified properties count
@@ -41,43 +47,45 @@ export function StylesPanel({ isActive }: PanelProps) {
   // Copy/Paste handlers
   const handleCopyStyles = async () => {
     if (!selectedElement?.style) return;
-    const success = await copyStyles(selectedElement.style);
+    const success = await copyStyles(
+      selectedElement.style as Record<string, unknown>
+    );
     // TODO: Show toast notification
-    console.log(success ? '✅ Styles copied' : '❌ Failed to copy styles');
+    console.log(success ? "✅ Styles copied" : "❌ Failed to copy styles");
   };
 
   const handlePasteStyles = async () => {
     const success = await pasteStyles();
     // TODO: Show toast notification
-    console.log(success ? '✅ Styles pasted' : '❌ Failed to paste styles');
+    console.log(success ? "✅ Styles pasted" : "❌ Failed to paste styles");
   };
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + Shift + C: Copy Styles
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "c") {
         e.preventDefault();
         handleCopyStyles();
         return;
       }
 
       // Cmd/Ctrl + Shift + V: Paste Styles
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'v') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "v") {
         e.preventDefault();
         handlePasteStyles();
         return;
       }
 
       // Alt/Option + Shift + S: Focus Mode 토글
-      if ((e.altKey || e.metaKey) && e.shiftKey && e.key === 's') {
+      if ((e.altKey || e.metaKey) && e.shiftKey && e.key === "s") {
         e.preventDefault();
         toggleFocusMode();
         return;
       }
 
       // Alt/Option + S: 전체 펼침/접기 토글
-      if ((e.altKey || e.metaKey) && e.key === 's' && !e.shiftKey) {
+      if ((e.altKey || e.metaKey) && e.key === "s" && !e.shiftKey) {
         e.preventDefault();
         // Check if all sections are collapsed
         const allCollapsed = collapsedSections.size === 4;
@@ -89,9 +97,15 @@ export function StylesPanel({ isActive }: PanelProps) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [collapsedSections, expandAll, collapseAll, toggleFocusMode, selectedElement]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    collapsedSections,
+    expandAll,
+    collapseAll,
+    toggleFocusMode,
+    selectedElement,
+  ]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
@@ -118,7 +132,7 @@ export function StylesPanel({ isActive }: PanelProps) {
           selectionMode="single"
           selectedKeys={[filter]}
           onSelectionChange={(keys) => {
-            const selectedFilter = Array.from(keys)[0] as 'all' | 'modified';
+            const selectedFilter = Array.from(keys)[0] as "all" | "modified";
             setFilter(selectedFilter);
           }}
         >
@@ -135,7 +149,10 @@ export function StylesPanel({ isActive }: PanelProps) {
             size="sm"
             onPress={handleCopyStyles}
             aria-label="Copy styles"
-            isDisabled={!selectedElement?.style || Object.keys(selectedElement.style).length === 0}
+            isDisabled={
+              !selectedElement?.style ||
+              Object.keys(selectedElement.style).length === 0
+            }
           >
             <Copy
               color={iconProps.color}
@@ -158,16 +175,12 @@ export function StylesPanel({ isActive }: PanelProps) {
         </div>
 
         {/* Focus Mode indicator */}
-        {focusMode && (
-          <div className="focus-mode-indicator">
-            Focus Mode
-          </div>
-        )}
+        {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
       </div>
 
       {/* Sections */}
       <div className="style-section">
-        {filter === 'all' ? (
+        {filter === "all" ? (
           <>
             <TransformSection selectedElement={selectedElement} />
             <LayoutSection selectedElement={selectedElement} />
