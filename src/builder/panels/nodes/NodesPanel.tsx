@@ -15,6 +15,8 @@ import { useElementCreator } from "../../hooks/useElementCreator";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 import type { Page as UnifiedPage } from "../../../types/builder/unified.types";
 
+const { addElement: storeAddElement } = useStore.getState();
+
 export function NodesPanel({ isActive }: PanelProps) {
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
@@ -22,7 +24,6 @@ export function NodesPanel({ isActive }: PanelProps) {
   // Store state
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
-  const addElement = useStore((state) => state.addElement);
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
@@ -56,8 +57,8 @@ export function NodesPanel({ isActive }: PanelProps) {
       console.error("프로젝트 ID가 없습니다");
       return;
     }
-    await addPage(projectId, addElement);
-  }, [projectId, addPage, addElement]);
+    await addPage(projectId);
+  }, [projectId, addPage]);
 
   // fetchElements wrapper - convert ApiResult to void
   const handleFetchElements = useCallback(async (pageId: string) => {
@@ -73,11 +74,11 @@ export function NodesPanel({ isActive }: PanelProps) {
         currentPageId,
         null, // selectedElementId
         [], // elements - will be fetched from store
-        addElement,
+        storeAddElement,
         () => {} // sendElementsToIframe - not used here
       );
     },
-    [currentPageId, handleAddElement, addElement]
+    [currentPageId, handleAddElement]
   );
 
   // Force nodes tab to be active

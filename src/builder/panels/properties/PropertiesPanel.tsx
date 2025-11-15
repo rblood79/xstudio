@@ -5,7 +5,7 @@
  * 요소별 속성 에디터를 동적으로 로드하여 표시
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ComponentType } from "react";
 import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
@@ -15,6 +15,7 @@ import { EmptyState, LoadingSpinner, PanelHeader } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
+import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -72,7 +73,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return () => {
       isMounted = false;
     };
-  }, [selectedElement?.type, selectedElement?.id]);
+  }, [selectedElement]);
 
   const handleUpdate = (updatedProps: Record<string, unknown>) => {
     // 한 번에 모든 속성 업데이트 (순차 업데이트로 인한 동기화 문제 방지)
@@ -80,7 +81,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   };
 
   // Copy/Paste handlers
-  const handleCopyProperties = async () => {
+  const handleCopyProperties = useCallback(async () => {
     if (!selectedElement?.properties) return;
     try {
       const propertiesJSON = JSON.stringify(selectedElement.properties, null, 2);
@@ -89,9 +90,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     } catch (error) {
       console.error('Failed to copy properties:', error);
     }
-  };
+  }, [selectedElement]);
 
-  const handlePasteProperties = async () => {
+  const handlePasteProperties = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
       const properties = JSON.parse(text);
@@ -106,29 +107,28 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     } catch (error) {
       console.error('Failed to paste properties:', error);
     }
-  };
+  }, [updateProperties]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Shift + C: Copy Properties
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
-        e.preventDefault();
-        handleCopyProperties();
-        return;
-      }
+  // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
+  const shortcuts = useMemo(
+    () => [
+      {
+        key: 'c',
+        modifier: 'cmdShift' as const,
+        handler: handleCopyProperties,
+        description: 'Copy Properties',
+      },
+      {
+        key: 'v',
+        modifier: 'cmdShift' as const,
+        handler: handlePasteProperties,
+        description: 'Paste Properties',
+      },
+    ],
+    [handleCopyProperties, handlePasteProperties]
+  );
 
-      // Cmd/Ctrl + Shift + V: Paste Properties
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'v') {
-        e.preventDefault();
-        handlePasteProperties();
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElement]);
+  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {

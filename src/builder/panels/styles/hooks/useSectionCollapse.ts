@@ -103,12 +103,23 @@ export const useSectionCollapse = create<SectionCollapseState>()(
         focusMode: state.focusMode,
         activeFocusSection: state.activeFocusSection,
       }),
-      merge: (persistedState: any, currentState) => ({
-        ...currentState,
-        collapsedSections: new Set(persistedState?.collapsedSections || []),
-        focusMode: persistedState?.focusMode || false,
-        activeFocusSection: persistedState?.activeFocusSection || null,
-      }),
+      merge: (
+        persistedState: unknown,
+        currentState: SectionCollapseState
+      ): SectionCollapseState => {
+        const stored = persistedState as Partial<{
+          collapsedSections: string[];
+          focusMode: boolean;
+          activeFocusSection: string | null;
+        }>;
+
+        return {
+          ...currentState,
+          collapsedSections: new Set(stored?.collapsedSections || []),
+          focusMode: stored?.focusMode || false,
+          activeFocusSection: stored?.activeFocusSection || null,
+        };
+      },
     }
   )
 );

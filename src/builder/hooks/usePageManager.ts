@@ -21,7 +21,7 @@ export interface UsePageManagerReturn {
     selectedPageId: string | null;
     setSelectedPageId: (id: string | null) => void;
     fetchElements: (pageId: string) => Promise<ApiResult<Element[]>>;
-    addPage: (projectId: string, addElement: (element: Element) => void) => Promise<ApiResult<ApiPage>>;
+    addPage: (projectId: string) => Promise<ApiResult<ApiPage>>;
     initializeProject: (projectId: string) => Promise<ApiResult<ApiPage[]>>;
     // 직접 접근 (필요시)
     pageList: ReturnType<typeof useListData<ApiPage>>;
@@ -127,8 +127,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
      * @returns ApiResult (성공 시 data, 실패 시 error)
      */
     const addPage = async (
-        projectId: string,
-        addElement: (element: Element) => void
+        projectId: string
     ): Promise<ApiResult<ApiPage>> => {
         try {
             // Zustand store의 pages를 사용하여 최대 order_num을 찾기

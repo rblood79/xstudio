@@ -9,7 +9,7 @@
  */
 
 import "../../panels/common/index.css";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
@@ -26,11 +26,11 @@ import {
 import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
+import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const [filter, setFilter] = useState<"all" | "modified">("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const {
     expandAll,
     collapseAll,
@@ -47,62 +47,70 @@ export function StylesPanel({ isActive }: PanelProps) {
   }, [selectedElement]);
 
   // Copy/Paste handlers
-  const handleCopyStyles = async () => {
+  const handleCopyStyles = useCallback(async () => {
     if (!selectedElement?.style) return;
     await copyStyles(selectedElement.style as Record<string, unknown>);
     // TODO: Show toast notification
-  };
+  }, [selectedElement, copyStyles]);
 
-  const handlePasteStyles = async () => {
+  const handlePasteStyles = useCallback(async () => {
     await pasteStyles();
     // TODO: Show toast notification
-  };
+  }, [pasteStyles]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Shift + C: Copy Styles
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "c") {
-        e.preventDefault();
-        handleCopyStyles();
-        return;
-      }
+  // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
+  const shortcuts = useMemo(
+    () => [
+      {
+        key: "c",
+        modifier: "cmdShift" as const,
+        handler: handleCopyStyles,
+        description: "Copy Styles",
+      },
+      {
+        key: "v",
+        modifier: "cmdShift" as const,
+        handler: handlePasteStyles,
+        description: "Paste Styles",
+      },
+      {
+        key: "s",
+        modifier: "altShift" as const,
+        handler: toggleFocusMode,
+        description: "Toggle Focus Mode",
+      },
+      {
+        key: "s",
+        modifier: "alt" as const,
+        handler: () => {
+          // Check if all sections are collapsed
+          const allCollapsed = collapsedSections.size === 4;
+          if (allCollapsed) {
+            expandAll();
+          } else {
+            collapseAll();
+          }
+        },
+        description: "Expand/Collapse All Sections",
+      },
+    ],
+    [
+      handleCopyStyles,
+      handlePasteStyles,
+      toggleFocusMode,
+      collapsedSections,
+      expandAll,
+      collapseAll,
+    ]
+  );
 
-      // Cmd/Ctrl + Shift + V: Paste Styles
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "v") {
-        e.preventDefault();
-        handlePasteStyles();
-        return;
-      }
-
-      // Alt/Option + Shift + S: Focus Mode 토글
-      if ((e.altKey || e.metaKey) && e.shiftKey && e.key === "s") {
-        e.preventDefault();
-        toggleFocusMode();
-        return;
-      }
-
-      // Alt/Option + S: 전체 펼침/접기 토글
-      if ((e.altKey || e.metaKey) && e.key === "s" && !e.shiftKey) {
-        e.preventDefault();
-        // Check if all sections are collapsed
-        const allCollapsed = collapsedSections.size === 4;
-        if (allCollapsed) {
-          expandAll();
-        } else {
-          collapseAll();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
+  useKeyboardShortcutsRegistry(shortcuts, [
+    handleCopyStyles,
+    handlePasteStyles,
+    toggleFocusMode,
     collapsedSections,
     expandAll,
     collapseAll,
-    toggleFocusMode,
-    selectedElement,
   ]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)

@@ -40,7 +40,7 @@ export function getStyleSource(
 
   // Priority 2: Computed style (CSS 클래스에서)
   if (
-    !INLINE_ONLY_PROPERTIES.includes(property as any) &&
+    !(INLINE_ONLY_PROPERTIES as readonly string[]).includes(property as string) &&
     element.computedStyle &&
     element.computedStyle[property] !== undefined
   ) {

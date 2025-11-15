@@ -39,7 +39,7 @@ export function getStyleValue(
 
   // Priority 2: Computed style (skip for inline-only properties)
   if (
-    !INLINE_ONLY_PROPERTIES.includes(property as any) &&
+    !(INLINE_ONLY_PROPERTIES as readonly string[]).includes(property as string) &&
     element.computedStyle &&
     element.computedStyle[property] !== undefined
   ) {

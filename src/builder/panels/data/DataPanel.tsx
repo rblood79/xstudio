@@ -9,6 +9,8 @@ import type { PanelProps } from "../core/types";
 import { DataSourceSelector } from "./DataSourceSelector";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { Square } from "lucide-react";
+import { EmptyState } from "../common";
+
 export function DataPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
 
@@ -19,13 +21,7 @@ export function DataPanel({ isActive }: PanelProps) {
 
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
-    return (
-      <div className="inspector-container empty">
-        <div className="empty-state">
-          <p className="empty-message">요소를 선택하세요</p>
-        </div>
-      </div>
-    );
+    return <EmptyState message="요소를 선택하세요" />;
   }
 
   return (

@@ -5,11 +5,12 @@
  * React Stately 기반 이벤트 관리 로직을 직접 포함 (이전 EventSection 통합)
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
-import type { EventType, ActionType, EventHandler } from "../../events/types/eventTypes";
+import type { EventType, ActionType } from "@/types/events/events.types";
+import type { EventHandler } from "../../events/types/eventTypes";
 import type { ComponentElementProps } from "../../../types/builder/unified.types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventHandlerManager } from "../../events/components/EventHandlerManager";
@@ -24,6 +25,7 @@ import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
 import { PanelHeader } from "../common";
+import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
 import "../../panels/common/index.css";
 
 export function EventsPanel({ isActive }: PanelProps) {
@@ -95,81 +97,24 @@ function EventsPanelContent({
   // 등록된 이벤트 타입 목록 (중복 방지용)
   const registeredEventTypes: EventType[] = handlers.map((h) => h.event);
 
-  // Actions의 실제 내용 변경 추적
-  const actionsJsonRef = useRef<string>("");
-  const isInitialActionMount = useRef(true);
-  const lastSelectedHandlerIdRef = useRef<string | null>(null);
-
-  // selectedHandler가 변경될 때 초기화 플래그 리셋
-  useEffect(() => {
-    const currentHandlerId = selectedHandler?.id || null;
-    if (currentHandlerId !== lastSelectedHandlerIdRef.current) {
-      lastSelectedHandlerIdRef.current = currentHandlerId;
-      isInitialActionMount.current = true;
-      // 새 핸들러 선택 시 actions 초기 상태 저장
+  // Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
+  useInitialMountDetection({
+    data: actions,
+    onUpdate: (updatedActions) => {
       if (selectedHandler) {
-        actionsJsonRef.current = JSON.stringify(selectedHandler.actions || []);
-      }
-    }
-  }, [selectedHandler]);
-
-  // Actions 변경 시 Handler 업데이트 (내용 변경 시에만)
-  useEffect(() => {
-    if (selectedHandler) {
-      const currentJson = JSON.stringify(actions);
-
-      // 초기 마운트 시에는 updateHandler 호출하지 않음
-      if (isInitialActionMount.current) {
-        isInitialActionMount.current = false;
-        actionsJsonRef.current = currentJson;
-        return;
-      }
-
-      // 실제 내용이 변경되었을 때만 updateHandler 호출
-      if (currentJson !== actionsJsonRef.current) {
-        actionsJsonRef.current = currentJson;
-        // useListData의 update는 함수를 받지만, 우리는 직접 객체를 전달
-        // 함수를 전달하면 postMessage로 직렬화할 수 없어 에러 발생
-        const updatedHandler = { ...selectedHandler, actions };
+        const updatedHandler = { ...selectedHandler, actions: updatedActions };
         updateHandler(selectedHandler.id, updatedHandler);
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actions]);
+    },
+    resetKey: selectedHandler?.id,
+  });
 
-  // Handlers의 실제 내용 변경 추적 (참조가 아닌 내용 비교)
-  const handlersJsonRef = useRef<string>("");
-  const isInitialMount = useRef(true);
-  const lastElementIdRef = useRef<string | null>(null);
-
-  // selectedElement가 변경될 때 isInitialMount 리셋
-  useEffect(() => {
-    const currentElementId = selectedElement?.id || null;
-    if (currentElementId !== lastElementIdRef.current) {
-      lastElementIdRef.current = currentElementId;
-      isInitialMount.current = true;
-    }
-  }, [selectedElement?.id]);
-
-  // Handlers 변경 시 Inspector 동기화 (내용 변경 시에만)
-  useEffect(() => {
-    const currentJson = JSON.stringify(handlers);
-
-    // 초기 마운트 시에는 updateEvents 호출하지 않음 (데이터베이스에서 로드된 데이터 보존)
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      handlersJsonRef.current = currentJson;
-      return;
-    }
-
-    // 실제 내용이 변경되었을 때만 updateEvents 호출
-    if (currentJson !== handlersJsonRef.current) {
-      handlersJsonRef.current = currentJson;
-      updateEvents(handlers);
-    }
-    // handlers는 매 렌더링마다 새 참조이지만 내용을 비교하여 중복 호출 방지
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handlers]);
+  // Handlers 변경 시 Inspector 동기화 (초기 마운트 감지 적용)
+  useInitialMountDetection({
+    data: handlers,
+    onUpdate: updateEvents,
+    resetKey: selectedElement?.id,
+  });
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
@@ -199,7 +144,7 @@ function EventsPanelContent({
           actions={
             <EventTypePicker
               onSelect={handleAddEvent}
-              registeredTypes={registeredEventTypes as unknown as EventType[]}
+              registeredTypes={registeredEventTypes}
             />
           }
         />

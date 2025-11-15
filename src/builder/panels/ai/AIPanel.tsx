@@ -10,7 +10,7 @@
  * - ChatInput: 메시지 입력 필드
  */
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../common";
@@ -30,23 +30,6 @@ import type { Element } from "../../../types/core/store.types";
 import "../../components/styles/ChatContainer.css";
 import "../../components/styles/ChatMessage.css";
 import "../../components/styles/ChatInput.css";
-
-let groqService: ReturnType<typeof createGroqService> | null = null;
-
-// Initialize Groq service (lazy initialization)
-function getGroqService() {
-  if (!groqService) {
-    try {
-      groqService = createGroqService();
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("[AIPanel] Failed to initialize Groq service:", error);
-      }
-      return null;
-    }
-  }
-  return groqService;
-}
 
 /**
  * ChatMessage - 개별 메시지 표시
@@ -251,6 +234,18 @@ function AIPanelContent() {
   const updateElementProps = useStore((state) => state.updateElementProps);
   const removeElement = useStore((state) => state.removeElement);
 
+  // Initialize Groq service with useMemo (prevents recreation on every render)
+  const groqService = useMemo(() => {
+    try {
+      return createGroqService();
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("[AIPanel] Failed to initialize Groq service:", error);
+      }
+      return null;
+    }
+  }, []);
+
   /**
    * Update context whenever builder state changes
    */
@@ -411,9 +406,7 @@ function AIPanelContent() {
 
             if (!targetId) {
               if (import.meta.env.DEV) {
-                console.warn(
-                  "[AIPanel] No element selected for delete action"
-                );
+                console.warn("[AIPanel] No element selected for delete action");
               }
               return;
             }
@@ -470,9 +463,7 @@ function AIPanelContent() {
       addUserMessage(message);
 
       try {
-        const service = getGroqService();
-
-        if (service) {
+        if (groqService) {
           // Try AI service first (streaming)
           setStreamingStatus(true);
 
@@ -482,7 +473,7 @@ function AIPanelContent() {
           let fullResponse = "";
 
           try {
-            for await (const chunk of service.chatStream(
+            for await (const chunk of groqService.chatStream(
               message,
               currentContext
             )) {
@@ -493,7 +484,7 @@ function AIPanelContent() {
             setStreamingStatus(false);
 
             // Parse intent from full response
-            const intent = service.parseIntent(fullResponse);
+            const intent = groqService.parseIntent(fullResponse);
 
             if (intent) {
               if (import.meta.env.DEV) {
@@ -554,6 +545,7 @@ function AIPanelContent() {
       updateLastMessage,
       setStreamingStatus,
       executeIntent,
+      groqService,
     ]
   );
 
