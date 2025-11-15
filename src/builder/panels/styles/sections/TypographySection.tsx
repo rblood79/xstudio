@@ -33,10 +33,26 @@ interface TypographySectionProps {
 }
 
 export function TypographySection({ selectedElement }: TypographySectionProps) {
-  const { updateStyle } = useStyleActions();
+  const { updateStyle, resetStyles } = useStyleActions();
+
+  const handleReset = () => {
+    resetStyles([
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'fontStyle',
+      'lineHeight',
+      'letterSpacing',
+      'color',
+      'textAlign',
+      'textDecoration',
+      'textTransform',
+      'verticalAlign',
+    ]);
+  };
 
   return (
-    <PropertySection title="Text">
+    <PropertySection id="typography" title="Text" onReset={handleReset}>
       <PropertySelect
         icon={Type}
         label="Font Family"

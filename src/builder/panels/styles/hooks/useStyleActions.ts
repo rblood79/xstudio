@@ -148,10 +148,68 @@ export function useStyleActions() {
     [updateInlineStyles]
   );
 
+  /**
+   * Reset styles (inline style 제거)
+   */
+  const resetStyles = useCallback(
+    (properties: string[]) => {
+      const resetObj: Record<string, string> = {};
+      properties.forEach((prop) => (resetObj[prop] = ''));
+      updateInlineStyles(resetObj);
+    },
+    [updateInlineStyles]
+  );
+
+  /**
+   * Copy styles to clipboard
+   */
+  const copyStyles = useCallback(async (styles: Record<string, unknown>) => {
+    try {
+      const stylesJSON = JSON.stringify(styles, null, 2);
+      await navigator.clipboard.writeText(stylesJSON);
+      return true;
+    } catch (error) {
+      console.error('Failed to copy styles:', error);
+      return false;
+    }
+  }, []);
+
+  /**
+   * Paste styles from clipboard
+   */
+  const pasteStyles = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const styles = JSON.parse(text);
+
+      // Validate that it's an object
+      if (typeof styles !== 'object' || styles === null) {
+        throw new Error('Invalid styles format');
+      }
+
+      // Convert all values to strings
+      const stylesObj: Record<string, string> = {};
+      Object.entries(styles).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          stylesObj[key] = String(value);
+        }
+      });
+
+      updateInlineStyles(stylesObj);
+      return true;
+    } catch (error) {
+      console.error('Failed to paste styles:', error);
+      return false;
+    }
+  }, [updateInlineStyles]);
+
   return {
     // 기본 액션
     updateStyle,
     updateStyles,
+    resetStyles,
+    copyStyles,
+    pasteStyles,
 
     // 특수 핸들러
     handleVerticalAlignment,

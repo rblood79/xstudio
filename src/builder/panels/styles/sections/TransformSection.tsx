@@ -34,12 +34,17 @@ interface TransformSectionProps {
 export function TransformSection({ selectedElement }: TransformSectionProps) {
   const {
     updateStyle,
+    resetStyles,
     handleVerticalAlignment,
     handleHorizontalAlignment,
   } = useStyleActions();
 
+  const handleReset = () => {
+    resetStyles(['alignItems', 'justifyContent', 'width', 'height', 'top', 'left']);
+  };
+
   return (
-    <PropertySection title="Transform">
+    <PropertySection id="transform" title="Transform" onReset={handleReset}>
       <fieldset className="transform-alignment">
         <legend className="fieldset-legend">Alignment</legend>
         <div className="alignment-controls-horizontal">

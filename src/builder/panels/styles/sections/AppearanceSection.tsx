@@ -23,10 +23,14 @@ interface AppearanceSectionProps {
 }
 
 export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
-  const { updateStyle } = useStyleActions();
+  const { updateStyle, resetStyles } = useStyleActions();
+
+  const handleReset = () => {
+    resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle']);
+  };
 
   return (
-    <PropertySection title="Style">
+    <PropertySection id="appearance" title="Style" onReset={handleReset}>
       <div className="style-background">
         <PropertyColor
           icon={Square}

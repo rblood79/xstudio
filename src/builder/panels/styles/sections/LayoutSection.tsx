@@ -34,13 +34,18 @@ interface LayoutSectionProps {
 export function LayoutSection({ selectedElement }: LayoutSectionProps) {
   const {
     updateStyle,
+    resetStyles,
     handleFlexDirection,
     handleFlexAlignment,
     handleJustifyContentSpacing,
   } = useStyleActions();
 
+  const handleReset = () => {
+    resetStyles(['display', 'flexDirection', 'alignItems', 'justifyContent', 'gap', 'padding', 'margin']);
+  };
+
   return (
-    <PropertySection title="Layout">
+    <PropertySection id="layout" title="Layout" onReset={handleReset}>
       <fieldset className="layout-direction">
         <div className="direction-controls">
           <ToggleButtonGroup
