@@ -113,6 +113,29 @@ export interface SetDarkModeMessage extends PreviewMessage {
   isDark: boolean;
 }
 
+export interface ElementSelectedMessage extends PreviewMessage {
+  type: "ELEMENT_SELECTED";
+  elementId: string;
+  isMultiSelect?: boolean;
+  payload?: {
+    rect?: {
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    };
+    props?: Record<string, unknown>;
+    tag?: string;
+    style?: Record<string, unknown>;
+    computedStyle?: Record<string, string>;
+  };
+}
+
+export interface ElementsDragSelectedMessage extends PreviewMessage {
+  type: "ELEMENTS_DRAG_SELECTED";
+  elementIds: string[];
+}
+
 export type MessageType =
   | UpdateElementsMessage
   | UpdateElementPropsMessage
@@ -122,4 +145,6 @@ export type MessageType =
   | UpdateThemeTokensMessage
   | AddColumnElementsMessage
   | NavigateToPageMessage
-  | SetDarkModeMessage;
+  | SetDarkModeMessage
+  | ElementSelectedMessage
+  | ElementsDragSelectedMessage;

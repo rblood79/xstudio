@@ -77,3 +77,23 @@
   cursor: ew-resize;
   pointer-events: auto;
 }*/
+
+/* 다중 선택 스타일 */
+.overlay-element.multi-select {
+  outline: 2px solid var(--action-primary-bg);
+  outline-offset: -1px;
+}
+
+.multi-select-bg {
+  background-color: var(--action-primary-bg);
+  opacity: 0.1;
+}
+
+.overlay-element.multi-select .overlay-tag {
+  background-color: var(--action-primary-bg);
+  color: white;
+}
+
+.overlay-element.multi-select .overlay-tag-parent {
+  background: var(--action-primary-bg-hover);
+}

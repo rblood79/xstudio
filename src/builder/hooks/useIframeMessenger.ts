@@ -320,12 +320,35 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 return;
             }
 
-            setSelectedElement(
-                event.data.elementId,
-                event.data.payload?.props,
-                event.data.payload?.style,
-                event.data.payload?.computedStyle
-            );
+            // 다중 선택 모드 처리
+            if (event.data.isMultiSelect) {
+                const { addToSelection, setMultiSelectMode, selectedElementIds } = useStore.getState();
+
+                // 다중 선택 모드 활성화
+                setMultiSelectMode(true);
+
+                // 이미 선택된 요소를 다시 클릭하면 선택 해제
+                if (selectedElementIds.includes(event.data.elementId)) {
+                    const { removeFromSelection } = useStore.getState();
+                    removeFromSelection(event.data.elementId);
+                } else {
+                    // 선택에 추가
+                    addToSelection(event.data.elementId);
+                }
+
+                console.log('🔵 다중 선택:', selectedElementIds);
+            } else {
+                // 단일 선택 모드 (기존 로직)
+                const { setMultiSelectMode } = useStore.getState();
+                setMultiSelectMode(false);
+
+                setSelectedElement(
+                    event.data.elementId,
+                    event.data.payload?.props,
+                    event.data.payload?.style,
+                    event.data.payload?.computedStyle
+                );
+            }
         }
 
         // ELEMENT_UPDATED 메시지 처리는 제거 (무한 루프 방지)
@@ -383,6 +406,24 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "element-hover" && event.data.elementId) {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
+        }
+
+        // 드래그 선택 메시지 처리
+        if (event.data.type === "ELEMENTS_DRAG_SELECTED" && Array.isArray(event.data.elementIds)) {
+            const { setMultiSelectMode, clearSelection, addToSelection } = useStore.getState();
+
+            // 다중 선택 모드 활성화
+            setMultiSelectMode(true);
+
+            // 기존 선택 초기화
+            clearSelection();
+
+            // 드래그로 선택된 요소들 추가
+            event.data.elementIds.forEach((elementId: string) => {
+                addToSelection(elementId);
+            });
+
+            console.log('🔵 드래그 선택:', event.data.elementIds);
         }
     }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe]);
 

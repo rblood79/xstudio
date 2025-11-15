@@ -15,6 +15,12 @@ function Preview() {
   // Builder store를 참조하면 iframe 재로드 시 요소가 사라지는 문제 발생
   const [elements, setElements] = React.useState<PreviewElement[]>([]);
 
+  // 드래그 선택 상태
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
+  const [dragEnd, setDragEnd] = React.useState<{ x: number; y: number } | null>(null);
+  const [selectedInDrag, setSelectedInDrag] = React.useState<string[]>([]);
+
   // ❌ REMOVED: Builder store 동기화 (postMessage로만 업데이트)
 
   // Console error/warning suppression for development
@@ -282,6 +288,72 @@ function Preview() {
     };
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Space 키가 눌려있으면 드래그 선택 시작
+    if (e.shiftKey) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      setDragEnd({ x: e.clientX, y: e.clientY });
+      setSelectedInDrag([]);
+      return;
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragStart) return;
+
+    setDragEnd({ x: e.clientX, y: e.clientY });
+
+    // 드래그 영역 내의 요소들 찾기
+    const minX = Math.min(dragStart.x, e.clientX);
+    const maxX = Math.max(dragStart.x, e.clientX);
+    const minY = Math.min(dragStart.y, e.clientY);
+    const maxY = Math.max(dragStart.y, e.clientY);
+
+    const selectedIds: string[] = [];
+
+    elements.forEach((el) => {
+      const domElement = document.querySelector(`[data-element-id="${el.id}"]`);
+      if (!domElement) return;
+
+      const rect = domElement.getBoundingClientRect();
+
+      // 요소가 드래그 영역과 겹치는지 확인
+      if (
+        rect.left < maxX &&
+        rect.right > minX &&
+        rect.top < maxY &&
+        rect.bottom > minY
+      ) {
+        selectedIds.push(el.id);
+      }
+    });
+
+    setSelectedInDrag(selectedIds);
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    // 선택된 요소들을 Builder에 전송
+    if (selectedInDrag.length > 0) {
+      window.parent.postMessage(
+        {
+          type: "ELEMENTS_DRAG_SELECTED",
+          elementIds: selectedInDrag,
+        },
+        window.location.origin
+      );
+    }
+
+    setDragStart(null);
+    setDragEnd(null);
+    setSelectedInDrag([]);
+  };
+
   const handleGlobalClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const elementWithId = target.closest("[data-element-id]");
@@ -298,10 +370,15 @@ function Preview() {
     const computedStyle = collectComputedStyle(elementWithId);
 
     const rect = elementWithId.getBoundingClientRect();
+
+    // 다중 선택 모드 감지 (Cmd/Ctrl 키)
+    const isMultiSelect = e.metaKey || e.ctrlKey;
+
     window.parent.postMessage(
       {
         type: "ELEMENT_SELECTED",
         elementId: elementId,
+        isMultiSelect: isMultiSelect, // 다중 선택 플래그 추가
         payload: {
           rect: {
             top: rect.top,
@@ -323,13 +400,34 @@ function Preview() {
   const bodyElement = elements.find((el) => el.tag === "body");
   //const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
 
+  // 드래그 선택 박스 계산
+  const getDragSelectionBox = () => {
+    if (!dragStart || !dragEnd) return null;
+
+    const minX = Math.min(dragStart.x, dragEnd.x);
+    const maxX = Math.max(dragStart.x, dragEnd.x);
+    const minY = Math.min(dragStart.y, dragEnd.y);
+    const maxY = Math.max(dragStart.y, dragEnd.y);
+
+    return {
+      left: minX,
+      top: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  };
+
+  const dragBox = getDragSelectionBox();
+
   // 루트 컨테이너는 항상 div로 렌더링 (실제 body는 HTML 문서의 body)
   const containerProps = {
     className: styles.main,
     id: projectId || "preview-container",
     "data-element-id": bodyElement?.id,
-    onMouseUp: handleGlobalClick,
-    //onMouseDown: handleGlobalClick,
+    onMouseDown: handleMouseDown,
+    onMouseMove: handleMouseMove,
+    onMouseUp: handleMouseUp,
+    onClick: handleGlobalClick,
     // body 요소의 스타일만 적용 (다른 props는 제외)
     style: bodyElement?.props?.style || {},
     // body였다면 원래 태그 정보 기록
@@ -339,7 +437,23 @@ function Preview() {
   return React.createElement(
     "div",
     containerProps,
-    elements.length === 0 ? "No elements available" : renderElementsTree()
+    elements.length === 0 ? "No elements available" : renderElementsTree(),
+    // 드래그 선택 박스 렌더링
+    isDragging && dragBox
+      ? React.createElement("div", {
+          style: {
+            position: "fixed",
+            left: dragBox.left,
+            top: dragBox.top,
+            width: dragBox.width,
+            height: dragBox.height,
+            border: "2px solid #3b82f6",
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            pointerEvents: "none",
+            zIndex: 9999,
+          },
+        })
+      : null
   );
 }
 

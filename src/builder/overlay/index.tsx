@@ -14,10 +14,14 @@ interface Rect {
 
 export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
+  // 다중 선택 상태 추가
+  const selectedElementIds = useStore((state) => state.selectedElementIds);
+  const multiSelectMode = useStore((state) => state.multiSelectMode);
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
   const overlayOpacity = useStore((state) => state.overlayOpacity);
   const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
+  const [multiOverlayRects, setMultiOverlayRects] = useState<Array<Rect & { tag: string; id: string }>>([]);
   const [selectedTag, setSelectedTag] = useState<string>("");
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
@@ -38,8 +42,43 @@ export default function SelectionOverlay() {
       rafIdRef.current = null;
 
       const iframe = iframeRef.current;
-      if (!iframe?.contentDocument || !selectedElementId) {
+      if (!iframe?.contentDocument) {
         setOverlayRect(null);
+        setMultiOverlayRects([]);
+        return;
+      }
+
+      // 다중 선택 모드일 때
+      if (multiSelectMode && selectedElementIds.length > 0) {
+        const rects: Array<Rect & { tag: string; id: string }> = [];
+
+        selectedElementIds.forEach((elementId) => {
+          const element = iframe.contentDocument!.querySelector(
+            `[data-element-id="${elementId}"]`
+          ) as HTMLElement;
+
+          if (element) {
+            const elementRect = element.getBoundingClientRect();
+            rects.push({
+              id: elementId,
+              top: elementRect.top,
+              left: elementRect.left,
+              width: elementRect.width,
+              height: elementRect.height,
+              tag: element.tagName.toLowerCase(),
+            });
+          }
+        });
+
+        setMultiOverlayRects(rects);
+        setOverlayRect(null); // 단일 선택 오버레이 제거
+        return;
+      }
+
+      // 단일 선택 모드 (기존 로직)
+      if (!selectedElementId) {
+        setOverlayRect(null);
+        setMultiOverlayRects([]);
         return;
       }
 
@@ -50,16 +89,12 @@ export default function SelectionOverlay() {
       if (!element) {
         setOverlayRect(null);
         setSelectedTag("");
+        setMultiOverlayRects([]);
         return;
       }
 
-      // iframe의 위치 (부모 문서 기준)
-      //const iframeRect = iframe.getBoundingClientRect();
-      // 요소의 위치 (iframe 내부 기준)
       const elementRect = element.getBoundingClientRect();
 
-      // getBoundingClientRect()는 이미 viewport 기준 절대 좌표
-      // iframe offset 추가 필요
       const newRect = {
         top: elementRect.top,
         left: elementRect.left,
@@ -69,8 +104,9 @@ export default function SelectionOverlay() {
 
       setOverlayRect(newRect);
       setSelectedTag(element.tagName.toLowerCase());
+      setMultiOverlayRects([]); // 다중 선택 오버레이 제거
     });
-  }, [selectedElementId]);
+  }, [selectedElementId, multiSelectMode, selectedElementIds]);
 
   // 선택된 요소의 크기 변경 감지 (ResizeObserver만 사용)
   useEffect(() => {
@@ -158,6 +194,41 @@ export default function SelectionOverlay() {
     };
   }, [selectedElementId, updatePosition]);
 
+  // 다중 선택 모드일 때
+  if (multiSelectMode && multiOverlayRects.length > 0) {
+    return (
+      <div className="overlay">
+        {multiOverlayRects.map((rect) => (
+          <div
+            key={rect.id}
+            className="overlay-element multi-select"
+            style={{
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+              opacity: overlayOpacity / 100,
+            }}
+          >
+            <div className="overlay-info">
+              <div className="overlay-tag-parent">
+                <ChevronUp size={16} />
+              </div>
+              <div className="overlay-tag">{rect.tag}</div>
+            </div>
+
+            <div className="overlay-background multi-select-bg" />
+
+            <div className="overlay-pattern">
+              <div className="overlay-pattern-inner" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 단일 선택 모드 (기존 UI)
   if (!overlayRect) return null;
 
   return (
