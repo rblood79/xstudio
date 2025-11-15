@@ -13,7 +13,8 @@ import { useState, useMemo, useEffect } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
-import { Copy, ClipboardPaste } from "lucide-react";
+import { GridList, GridListItem, useDragAndDrop } from "react-aria-components";
+import { Copy, ClipboardPaste, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import {
   TransformSection,
@@ -25,10 +26,12 @@ import {
 import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
+import { useSectionOrder } from "./hooks/useSectionOrder";
 
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const [filter, setFilter] = useState<"all" | "modified">("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const {
     expandAll,
     collapseAll,
@@ -37,12 +40,49 @@ export function StylesPanel({ isActive }: PanelProps) {
     toggleFocusMode,
   } = useSectionCollapse();
   const { copyStyles, pasteStyles } = useStyleActions();
+  const { sectionOrder, setSectionOrder, resetOrder } = useSectionOrder();
 
   // Calculate modified properties count
   const modifiedCount = useMemo(() => {
     if (!selectedElement) return 0;
     return getModifiedProperties(selectedElement).length;
   }, [selectedElement]);
+
+  // Section components mapping
+  const sectionComponents = useMemo(() => ({
+    transform: <TransformSection key="transform" selectedElement={selectedElement} />,
+    layout: <LayoutSection key="layout" selectedElement={selectedElement} />,
+    appearance: <AppearanceSection key="appearance" selectedElement={selectedElement} />,
+    typography: <TypographySection key="typography" selectedElement={selectedElement} />,
+  }), [selectedElement]);
+
+  // Drag and drop handler
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) =>
+      [...keys].map((key) => ({ 'text/plain': key.toString() })),
+
+    onReorder(e) {
+      const newOrder = [...sectionOrder];
+      const items = [...e.keys].map(key => key.toString());
+
+      // Remove dragged items
+      items.forEach(item => {
+        const index = newOrder.indexOf(item);
+        if (index !== -1) newOrder.splice(index, 1);
+      });
+
+      // Insert at new position
+      let targetIndex: number;
+      if (e.target.dropPosition === 'before') {
+        targetIndex = newOrder.indexOf(e.target.key.toString());
+      } else {
+        targetIndex = newOrder.indexOf(e.target.key.toString()) + 1;
+      }
+
+      newOrder.splice(targetIndex, 0, ...items);
+      setSectionOrder(newOrder);
+    },
+  });
 
   // Copy/Paste handlers
   const handleCopyStyles = async () => {
@@ -172,6 +212,19 @@ export function StylesPanel({ isActive }: PanelProps) {
               strokeWidth={iconProps.stroke}
             />
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={resetOrder}
+            aria-label="Reset section order"
+            title="Reset section order"
+          >
+            <RotateCcw
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+          </Button>
         </div>
 
         {/* Focus Mode indicator */}
@@ -181,12 +234,18 @@ export function StylesPanel({ isActive }: PanelProps) {
       {/* Sections */}
       <div className="style-section">
         {filter === "all" ? (
-          <>
-            <TransformSection selectedElement={selectedElement} />
-            <LayoutSection selectedElement={selectedElement} />
-            <AppearanceSection selectedElement={selectedElement} />
-            <TypographySection selectedElement={selectedElement} />
-          </>
+          <GridList
+            aria-label="Style sections"
+            selectionMode="none"
+            dragAndDropHooks={dragAndDropHooks}
+            className="sections-list"
+          >
+            {sectionOrder.map((sectionId) => (
+              <GridListItem key={sectionId} textValue={sectionId} className="section-item">
+                {sectionComponents[sectionId as keyof typeof sectionComponents]}
+              </GridListItem>
+            ))}
+          </GridList>
         ) : (
           <ModifiedStylesSection selectedElement={selectedElement} />
         )}
