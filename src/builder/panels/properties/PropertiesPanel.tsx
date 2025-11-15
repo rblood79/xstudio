@@ -11,6 +11,7 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
+import { EmptyState } from "../common";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -41,30 +42,24 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       if (!isMounted) return;
 
       setLoading(true);
-      console.log(
-        "[PropertiesPanel] Loading editor for type:",
-        selectedElement.type
-      );
 
       getEditor(selectedElement.type)
         .then((editor) => {
           if (isMounted) {
-            console.log(
-              "[PropertiesPanel] Editor loaded:",
-              selectedElement.type,
-              !!editor
-            );
             setEditor(() => editor);
             setLoading(false);
           }
         })
         .catch((error) => {
           if (isMounted) {
-            console.error(
-              "[PropertiesPanel] Failed to load editor:",
-              selectedElement.type,
-              error
-            );
+            // Log error for debugging, but don't pollute console in production
+            if (import.meta.env.DEV) {
+              console.error(
+                "[PropertiesPanel] Failed to load editor:",
+                selectedElement.type,
+                error
+              );
+            }
             setEditor(null);
             setLoading(false);
           }
@@ -88,26 +83,19 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
-    return (
-      <div className="panel-empty-state">
-        <p className="empty-message">요소를 선택하세요</p>
-      </div>
-    );
+    return <EmptyState message="요소를 선택하세요" />;
   }
 
   if (loading) {
-    return (
-      <div className="properties-panel loading">
-        <p className="loading-message">에디터를 불러오는 중...</p>
-      </div>
-    );
+    return <EmptyState message="에디터를 불러오는 중..." />;
   }
 
   if (!Editor) {
     return (
-      <div className="properties-panel empty">
-        <p className="empty-message">사용 가능한 속성 에디터가 없습니다.</p>
-      </div>
+      <EmptyState
+        message="사용 가능한 속성 에디터가 없습니다"
+        description={`'${selectedElement.type}' 컴포넌트의 에디터를 찾을 수 없습니다.`}
+      />
     );
   }
 

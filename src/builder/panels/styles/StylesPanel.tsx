@@ -15,6 +15,7 @@ import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
+import { EmptyState } from "../common";
 import {
   TransformSection,
   LayoutSection,
@@ -48,17 +49,13 @@ export function StylesPanel({ isActive }: PanelProps) {
   // Copy/Paste handlers
   const handleCopyStyles = async () => {
     if (!selectedElement?.style) return;
-    const success = await copyStyles(
-      selectedElement.style as Record<string, unknown>
-    );
+    await copyStyles(selectedElement.style as Record<string, unknown>);
     // TODO: Show toast notification
-    console.log(success ? "✅ Styles copied" : "❌ Failed to copy styles");
   };
 
   const handlePasteStyles = async () => {
-    const success = await pasteStyles();
+    await pasteStyles();
     // TODO: Show toast notification
-    console.log(success ? "✅ Styles pasted" : "❌ Failed to paste styles");
   };
 
   // Keyboard shortcuts
@@ -115,13 +112,7 @@ export function StylesPanel({ isActive }: PanelProps) {
 
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
-    return (
-      <div className="inspector empty">
-        <div className="empty-state">
-          <p className="empty-message">요소를 선택하세요</p>
-        </div>
-      </div>
-    );
+    return <EmptyState message="요소를 선택하세요" />;
   }
 
   return (

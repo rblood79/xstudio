@@ -479,6 +479,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      align-self: self-start;
       width: var(--inspector-label-width);
       height: 25px;
       padding: var(--spacing-2xs) var(--spacing-2xs);
@@ -495,7 +496,8 @@
       height: var(--inspector-control-size);
     }
 
-    .react-aria-Input {
+    .react-aria-Input,
+    .react-aria-TextArea {
       background-color: transparent;
       border: 1px solid transparent;
       border-left-width: 0;
@@ -713,5 +715,4 @@
     margin-right: var(--spacing-sm);
     vertical-align: middle;
   }
-
 }
