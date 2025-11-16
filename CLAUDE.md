@@ -911,6 +911,207 @@ import { supabase } from '../../lib/supabase';
 import type { Element } from '../../types/core/store.types';
 ```
 
+### React & Zustand Performance (CRITICAL)
+
+**Updated: 2025-11-17** - Critical performance rules to avoid unnecessary re-renders
+
+#### Rule 1: Understand When Re-renders Are Necessary
+
+**⚠️ CRITICAL MISCONCEPTION:** Not all re-renders are bad!
+
+Many components **MUST re-render** to function correctly. Attempting to prevent necessary re-renders will break functionality.
+
+**Example: PropertiesPanel**
+
+```typescript
+// ❌ WRONG - Trying to prevent necessary re-renders
+export function PropertiesPanel() {
+  // Subscribing only to id/type to "optimize"
+  const selectedElementId = useInspectorState((state) => state.selectedElement?.id);
+  const selectedElementType = useInspectorState((state) => state.selectedElement?.type);
+
+  // Problem: When properties change, id/type don't change
+  // Result: Editor doesn't receive updated props → BROKEN! ❌
+}
+
+// ✅ CORRECT - Accept necessary re-renders
+export function PropertiesPanel() {
+  // Subscribe to full selectedElement (includes properties)
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+
+  // When properties change, component re-renders
+  // Editor receives new props → WORKS! ✅
+  return <Editor currentProps={selectedElement.properties} />;
+}
+```
+
+#### Rule 2: Optimize Child Components, Not Parents
+
+If a parent component re-renders frequently, optimize **children** instead:
+
+```typescript
+// ✅ CORRECT - Optimize children with React.memo
+const Editor = React.memo(function Editor({ elementId, currentProps, onUpdate }) {
+  // Only re-renders if props actually change
+  return <PropertyInputs />;
+}, (prevProps, nextProps) => {
+  // Custom comparison
+  return prevProps.elementId === nextProps.elementId &&
+         JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps);
+});
+
+// Parent can re-render freely
+export function PropertiesPanel() {
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+
+  // Re-renders on every property change (necessary!)
+  // But Editor only re-renders if props actually changed
+  return <Editor currentProps={selectedElement.properties} />;
+}
+```
+
+#### Rule 3: Use Selector Pattern Correctly
+
+**When to use selective subscriptions:**
+
+```typescript
+// ✅ GOOD - For truly independent state
+const currentPageId = useStore((state) => state.currentPageId);
+const multiSelectMode = useStore((state) => state.multiSelectMode);
+
+// ✅ GOOD - For primitive values that change independently
+const selectedElementId = useInspectorState((state) => state.selectedElement?.id);
+
+// ❌ BAD - When child properties need to trigger updates
+const selectedElement = useInspectorState((state) => state.selectedElement);
+// Problem: If you only subscribe to id, property changes won't trigger re-render
+```
+
+#### Rule 4: Understand Store Update Patterns
+
+**Zustand creates new objects on every update:**
+
+```typescript
+// In useInspectorState:
+updateProperties: (properties) => {
+  set((state) => ({
+    selectedElement: {
+      ...state.selectedElement,  // New object created!
+      properties: {
+        ...state.selectedElement.properties,
+        ...properties,  // Properties merged
+      },
+    },
+  }));
+}
+
+// Result: selectedElement reference changes every time
+// This is NORMAL and NECESSARY for React to detect changes
+```
+
+#### Rule 5: When Optimization Is Appropriate
+
+Only optimize when you have **actual performance problems**:
+
+**Appropriate optimizations:**
+
+```typescript
+// ✅ GOOD - useCallback for stable function references
+const handleUpdate = useCallback((props) => {
+  updateProperties(props);
+}, [updateProperties]);
+
+// ✅ GOOD - useMemo for expensive computations
+const sortedElements = useMemo(() => {
+  return elements.sort((a, b) => a.order_num - b.order_num);
+}, [elements]);
+
+// ✅ GOOD - React.memo for expensive child components
+const ExpensiveEditor = React.memo(PropertyEditor);
+
+// ❌ BAD - Premature optimization breaking functionality
+const selectedElement = useMemo(() => {
+  // Trying to cache when cache should update on every property change
+  return getState().selectedElement;
+}, [selectedElementId]); // Missing properties dependency!
+```
+
+#### Rule 6: Debug Re-renders Before Optimizing
+
+Add logging to understand re-render patterns:
+
+```typescript
+export function PropertiesPanel() {
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+
+  // Temporary debug logging
+  if (import.meta.env.DEV) {
+    console.log('🔄 PropertiesPanel render:', {
+      elementId: selectedElement?.id,
+      elementType: selectedElement?.type,
+      // Log what changed
+    });
+  }
+
+  // Now you can see:
+  // - How often it re-renders
+  // - What triggers re-renders
+  // - If re-renders are necessary
+}
+```
+
+#### Common Performance Anti-Patterns
+
+**❌ ANTI-PATTERN 1: Over-optimization**
+```typescript
+// Breaking functionality to avoid re-renders
+const id = useStore(state => state.selectedElement?.id);
+const type = useStore(state => state.selectedElement?.type);
+// Missing properties subscription → broken updates
+```
+
+**❌ ANTI-PATTERN 2: Premature Memoization**
+```typescript
+// Memoizing everything "just in case"
+const value1 = useMemo(() => simpleValue, [simpleValue]);
+const value2 = useMemo(() => anotherValue, [anotherValue]);
+// useMemo overhead > benefit for simple values
+```
+
+**❌ ANTI-PATTERN 3: Wrong Dependency Arrays**
+```typescript
+const cached = useMemo(() => {
+  return obj.property; // Uses obj.property
+}, [obj.id]); // Only depends on obj.id
+// Missing obj.property dependency → stale data
+```
+
+**✅ CORRECT PATTERN: Accept necessary re-renders**
+```typescript
+export function PropertiesPanel() {
+  // Subscribe to what you need
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+
+  // Re-renders when selectedElement changes (GOOD!)
+  // This is how React detects changes
+
+  // Optimize children if needed
+  return <Editor currentProps={selectedElement.properties} />;
+}
+```
+
+#### Performance Checklist
+
+Before optimizing re-renders:
+
+- [ ] Is the component actually slow? (Use React DevTools Profiler)
+- [ ] Are the re-renders necessary for correctness?
+- [ ] Have you tried optimizing children instead?
+- [ ] Are you breaking functionality with your optimization?
+- [ ] Is the optimization complexity worth the benefit?
+
+**Remember:** Premature optimization is the root of all evil. Functionality > Performance.
+
 ### React Aria Components
 
 - All UI components must use React Aria for accessibility
