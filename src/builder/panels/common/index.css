@@ -1155,4 +1155,267 @@
   .filter-actions .react-aria-Button {
     flex: 1;
   }
+
+  /* ========================================
+   * Smart Selection
+   * Phase 9: Advanced Features
+   * ======================================== */
+
+  .smart-selection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: var(--builder-inspector-surface);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing);
+  }
+
+  .smart-selection.empty {
+    padding: var(--spacing-lg);
+  }
+
+  .smart-selection-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid var(--builder-inspector-divider);
+  }
+
+  .smart-selection-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--builder-inspector-text);
+  }
+
+  .smart-selection-header .suggestion-count {
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    background: var(--builder-inspector-divider);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xs);
+  }
+
+  .suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 150ms;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .suggestion-item:hover {
+    background: var(--builder-inspector-divider);
+    border-color: var(--color-primary-500);
+  }
+
+  .suggestion-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2xs);
+    flex: 1;
+  }
+
+  .suggestion-description {
+    font-size: var(--text-sm);
+    color: var(--builder-inspector-text);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .suggestion-count-badge {
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+  }
+
+  .smart-selection-footer {
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--builder-inspector-divider);
+  }
+
+  .footer-hint {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    text-align: center;
+  }
+
+  .smart-selection .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing);
+    padding: var(--spacing-lg);
+  }
+
+  .smart-selection .empty-text {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--builder-inspector-text);
+  }
+
+  .smart-selection .empty-hint {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    text-align: center;
+    max-width: 300px;
+  }
+
+  /* ========================================
+   * Selection Memory
+   * Phase 9: Advanced Features
+   * ======================================== */
+
+  .selection-memory {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: var(--builder-inspector-surface);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing);
+  }
+
+  .selection-memory.empty {
+    padding: var(--spacing-lg);
+  }
+
+  .memory-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid var(--builder-inspector-divider);
+  }
+
+  .memory-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--builder-inspector-text);
+  }
+
+  .memory-header .history-count {
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    background: var(--builder-inspector-divider);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .memory-header .clear-all-btn {
+    padding: var(--spacing-2xs);
+    color: var(--color-danger-600);
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xs);
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    background: transparent;
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-sm);
+    transition: all 150ms;
+  }
+
+  .history-item:hover {
+    background: var(--builder-inspector-divider);
+    border-color: var(--color-primary-500);
+  }
+
+  .history-item-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    justify-content: flex-start;
+  }
+
+  .history-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2xs);
+    flex: 1;
+  }
+
+  .history-label {
+    font-size: var(--text-sm);
+    color: var(--builder-inspector-text);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .history-time {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+  }
+
+  .history-item .delete-btn {
+    padding: var(--spacing-sm);
+    color: var(--color-danger-600);
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+
+  .history-item:hover .delete-btn {
+    opacity: 1;
+  }
+
+  .memory-footer {
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--builder-inspector-divider);
+  }
+
+  .selection-memory .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing);
+    padding: var(--spacing-lg);
+  }
+
+  .selection-memory .empty-text {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--builder-inspector-text);
+  }
+
+  .selection-memory .empty-hint {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    text-align: center;
+    max-width: 300px;
+  }
 }

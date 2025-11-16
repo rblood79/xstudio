@@ -17,5 +17,7 @@ export { MultiSelectStatusIndicator } from './MultiSelectStatusIndicator';
 export { BatchPropertyEditor } from './BatchPropertyEditor';
 export { SelectionFilter } from './SelectionFilter';
 export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+export { SmartSelection } from './SmartSelection';
+export { SelectionMemory } from './SelectionMemory';
 
 

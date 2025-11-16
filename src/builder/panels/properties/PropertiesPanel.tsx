@@ -11,7 +11,7 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -19,6 +19,7 @@ import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRe
 import { useCopyPaste } from "../../hooks/useCopyPaste";
 import { useStore } from "../../stores";
 import { copyMultipleElements, pasteMultipleElements, serializeCopiedElements, deserializeCopiedElements } from "../../utils/multiElementCopy";
+import { selectionMemory } from "../../utils/selectionMemory";
 import { createGroupFromSelection, ungroupElement } from "../../stores/utils/elementGrouping";
 import { alignElements } from "../../stores/utils/elementAlignment";
 import type { AlignmentType } from "../../stores/utils/elementAlignment";
@@ -801,6 +802,37 @@ export function PropertiesPanel({ isActive }: PanelProps) {
           <SelectionFilter
             allElements={currentPageElements}
             onFilteredElements={handleFilteredElements}
+          />
+
+          {/* ⭐ Phase 9: Smart Selection for AI-powered suggestions */}
+          {selectedElement && (
+            <SmartSelection
+              referenceElement={selectedElement}
+              allElements={currentPageElements}
+              onSelect={(elementIds) => {
+                const store = useStore.getState();
+                const setSelectedElements = (store as any).setSelectedElements;
+                if (setSelectedElements) {
+                  setSelectedElements(elementIds);
+                  // Track in selection memory
+                  if (currentPageId) {
+                    selectionMemory.addSelection(elementIds, elements, currentPageId);
+                  }
+                }
+              }}
+            />
+          )}
+
+          {/* ⭐ Phase 9: Selection Memory for quick restore */}
+          <SelectionMemory
+            currentPageId={currentPageId}
+            onRestore={(elementIds) => {
+              const store = useStore.getState();
+              const setSelectedElements = (store as any).setSelectedElements;
+              if (setSelectedElements) {
+                setSelectedElements(elementIds);
+              }
+            }}
           />
         </>
       )}
