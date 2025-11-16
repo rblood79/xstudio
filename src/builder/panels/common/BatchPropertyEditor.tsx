@@ -119,7 +119,7 @@ export function BatchPropertyEditor({
       return (
         <PropertySwitch
           key={key}
-          label={labelElement as any}
+          label={labelElement as unknown as string}
           isSelected={currentValue as boolean}
           onChange={(checked) => handleUpdate(key, checked)}
         />
@@ -131,7 +131,7 @@ export function BatchPropertyEditor({
       return (
         <PropertyInput
           key={key}
-          label={labelElement as any}
+          label={labelElement as unknown as string}
           value={isMixed && !isPending ? "" : String(currentValue)}
           onChange={(newValue) => {
             if (newValue === "") {
@@ -156,7 +156,7 @@ export function BatchPropertyEditor({
       return (
         <PropertyInput
           key={key}
-          label={labelElement as any}
+          label={labelElement as unknown as string}
           value={isMixed && !isPending ? "" : String(currentValue)}
           onChange={(newValue) => handleUpdate(key, newValue)}
           placeholder={isMixed && !isPending ? "Mixed colors" : undefined}
@@ -170,7 +170,7 @@ export function BatchPropertyEditor({
       return (
         <PropertySelect
           key={key}
-          label={labelElement as any}
+          label={labelElement as unknown as string}
           value={String(currentValue)}
           onChange={(newValue) => handleUpdate(key, newValue)}
           options={[
@@ -184,7 +184,7 @@ export function BatchPropertyEditor({
     return (
       <PropertyInput
         key={key}
-        label={labelElement as any}
+        label={labelElement as unknown as string}
         value={isMixed && !isPending ? "" : String(currentValue)}
         onChange={(newValue) => handleUpdate(key, newValue)}
         placeholder={

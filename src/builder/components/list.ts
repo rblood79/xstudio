@@ -34,6 +34,7 @@ export * from "./ProgressBar";
 export * from "./Meter";
 export * from "./Toolbar";
 export * from "./Separator";
+export * from "./Group";
 export * from "./Breadcrumbs";
 export * from "./Breadcrumb";
 export * from "./Link";

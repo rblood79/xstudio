@@ -75,7 +75,7 @@ export function copyMultipleElements(
     const current = queue.shift()!;
 
     // Find children of current element
-    for (const [_, element] of elementsMap) {
+    for (const element of elementsMap.values()) {
       if (element.parent_id === current.id && !allElementsIncludingDescendants.has(element)) {
         allElementsIncludingDescendants.add(element);
         queue.push(element);
@@ -234,7 +234,7 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
       externalParents: new Map(parsed.externalParents || []),
       timestamp: parsed.timestamp || Date.now(),
     };
-  } catch (error) {
+  } catch {
     // Not valid JSON or not our format - silently ignore
     // This is expected when clipboard contains regular text
     return null;

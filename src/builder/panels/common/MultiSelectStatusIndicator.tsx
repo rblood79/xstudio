@@ -65,7 +65,6 @@ export interface MultiSelectStatusIndicatorProps {
  */
 export function MultiSelectStatusIndicator({
   count,
-  primaryElementId,
   primaryElementType,
   onCopyAll,
   onPasteAll,

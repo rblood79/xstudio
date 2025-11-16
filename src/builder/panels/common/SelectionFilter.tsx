@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from "react";
 import type { Element } from "../../../types/core/store.types";
-import { PropertyInput, PropertySelect, PropertySwitch } from "../common";
+import { PropertyInput, PropertySelect } from "../common";
 import { Filter, X } from "lucide-react";
 import { Button } from "../../components";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -38,26 +38,20 @@ export function SelectionFilter({
   className = "",
 }: SelectionFilterProps) {
   const [filterType, setFilterType] = useState<"all" | "type" | "tag" | "property">("all");
-  const [selectedType, setSelectedType] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [propertyKey, setPropertyKey] = useState<string>("");
   const [propertyValue, setPropertyValue] = useState<string>("");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
-  // Get unique types and tags
-  const { uniqueTypes, uniqueTags } = useMemo(() => {
-    const types = new Set<string>();
+  // Get unique tags
+  const uniqueTags = useMemo(() => {
     const tags = new Set<string>();
 
     allElements.forEach((el) => {
-      types.add(el.tag);
       tags.add(el.tag);
     });
 
-    return {
-      uniqueTypes: Array.from(types).sort(),
-      uniqueTags: Array.from(tags).sort(),
-    };
+    return Array.from(tags).sort();
   }, [allElements]);
 
   // Apply filter

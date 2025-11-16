@@ -40,6 +40,9 @@ export interface ElementsState {
   pages: Page[];
   currentPageId: string | null;
   historyOperationInProgress: boolean;
+  // ⭐ Multi-select state
+  selectedElementIds: string[];
+  multiSelectMode: boolean;
 
   // 내부 헬퍼: 인덱스 재구축
   _rebuildIndexes: () => void;
@@ -130,6 +133,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     pages: [],
     currentPageId: null,
     historyOperationInProgress: false,
+    // ⭐ Multi-select state
+    selectedElementIds: [],
+    multiSelectMode: false,
 
     _rebuildIndexes,
 

@@ -419,6 +419,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Group",
+    label: "Group",
+    category: "Layout",
+    icon: "📦",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "GroupEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Overlays
   {

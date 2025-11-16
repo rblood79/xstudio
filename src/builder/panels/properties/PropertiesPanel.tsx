@@ -26,23 +26,39 @@ import type { AlignmentType } from "../../stores/utils/elementAlignment";
 import { distributeElements } from "../../stores/utils/elementDistribution";
 import type { DistributionType } from "../../stores/utils/elementDistribution";
 import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, trackMultiDelete } from "../../stores/utils/historyHelpers";
+import { supabase } from "../../../env/supabase.client";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
+  // ⭐ 최적화: selectedElement 구독 (properties 변경 감지 필요)
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const updateProperties = useInspectorState((state) => state.updateProperties);
 
-  // ⭐ Multi-select state from store
-  const selectedElementIds = useStore((state) => (state as any).selectedElementIds || []);
-  const multiSelectMode = useStore((state) => (state as any).multiSelectMode || false);
-  const elementsMap = useStore((state) => state.elementsMap);
-  const elements = useStore((state) => state.elements);
+  // ⭐ Optimized: Only subscribe to necessary state (actions don't cause re-renders)
+  const selectedElementIds = useStore((state) => state.selectedElementIds || []);
+  const multiSelectMode = useStore((state) => state.multiSelectMode || false);
+
+  // 🔍 디버깅: 리렌더링 추적 (개발 환경에서만)
+  if (import.meta.env.DEV) {
+    console.log('🔄 PropertiesPanel 렌더링:', {
+      selectedElementId: selectedElement?.id,
+      selectedElementType: selectedElement?.type,
+      multiSelectCount: selectedElementIds.length,
+    });
+  }
   const currentPageId = useStore((state) => state.currentPageId);
-  const removeElement = useStore((state) => state.removeElement);
-  const setSelectedElement = useStore((state) => state.setSelectedElement);
-  const updateElementProps = useStore((state) => state.updateElementProps);
-  const addElement = useStore((state) => state.addElement);
-  const updateElement = useStore((state) => state.updateElement);
+
+  // ⭐ Optimized: Get actions without subscribing to state changes
+  const removeElement = useStore.getState().removeElement;
+  const setSelectedElement = useStore.getState().setSelectedElement;
+  const updateElementProps = useStore.getState().updateElementProps;
+  const addElement = useStore.getState().addElement;
+  const updateElement = useStore.getState().updateElement;
+  const setSelectedElements = useStore.getState().setSelectedElements;
+
+  // ⭐ Optimized: Only get elementsMap/elements when actually needed (not subscribed)
+  const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
+  const getElements = useCallback(() => useStore.getState().elements, []);
 
   const [Editor, setEditor] =
     useState<ComponentType<ComponentEditorProps> | null>(null);
@@ -96,7 +112,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return () => {
       isMounted = false;
     };
-  }, [selectedElement]);
+  }, [selectedElement?.type]);
 
   const handleUpdate = (updatedProps: Record<string, unknown>) => {
     // 한 번에 모든 속성 업데이트 (순차 업데이트로 인한 동기화 문제 방지)
@@ -132,6 +148,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     try {
       // Copy elements with relationship preservation
       console.log('[Copy] Calling copyMultipleElements...');
+      const elementsMap = getElementsMap();
       const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
       console.log('[Copy] Copied data:', {
         elementCount: copiedData.elements.length,
@@ -153,7 +170,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [Copy] Failed to copy elements:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, elementsMap]);
+  }, [selectedElementIds, getElementsMap]);
 
   const handlePasteAll = useCallback(async () => {
     console.log('[Paste] Starting paste operation...', { currentPageId });
@@ -222,6 +239,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.log(`[DeleteAll] Deleting ${selectedElementIds.length} elements`);
 
       // ⭐ Collect elements BEFORE deletion for history tracking
+      const elementsMap = getElementsMap();
       const elementsToDelete = selectedElementIds
         .map((id: string) => elementsMap.get(id))
         .filter((el): el is NonNullable<typeof el> => el !== undefined);
@@ -243,7 +261,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [DeleteAll] Failed to delete elements:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, elementsMap, removeElement]);
+  }, [selectedElementIds, getElementsMap, removeElement]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedElement(null);
@@ -254,6 +272,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   const handleBatchUpdate = useCallback(async (updates: Record<string, unknown>) => {
     try {
       // ⭐ Phase 7: Track in history BEFORE applying updates
+      const elementsMap = getElementsMap();
       trackBatchUpdate(selectedElementIds, updates, elementsMap);
 
       // Apply updates to all selected elements
@@ -266,33 +285,18 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('Failed to batch update properties:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, updateElementProps, elementsMap]);
+  }, [selectedElementIds, getElementsMap, updateElementProps]);
 
   // ⭐ Phase 3: Selection filter handler
   const handleFilteredElements = useCallback((filteredIds: string[]) => {
-    const store = useStore.getState();
-    const setSelectedElements = (store as any).setSelectedElements;
-
-    if (setSelectedElements && filteredIds.length > 0) {
+    if (filteredIds.length > 0) {
       setSelectedElements(filteredIds);
       console.log(`✅ [Filter] Applied filter, selected ${filteredIds.length} elements`);
     } else if (filteredIds.length === 0) {
       setSelectedElement(null);
       console.log('✅ [Filter] No elements match filter, cleared selection');
     }
-  }, [setSelectedElement]);
-
-  // ⭐ Get current page's elements for filter
-  const currentPageElements = useMemo(() => {
-    return elements.filter((el) => el.page_id === currentPageId);
-  }, [elements, currentPageId]);
-
-  // ⭐ Get selected elements from store
-  const selectedElements = useMemo(() => {
-    return selectedElementIds
-      .map((id: string) => elementsMap.get(id))
-      .filter((el): el is NonNullable<typeof el> => el !== undefined);
-  }, [selectedElementIds, elementsMap]);
+  }, [setSelectedElement, setSelectedElements]);
 
   // ⭐ Phase 6: Duplicate handler (Cmd+D)
   const handleDuplicate = useCallback(async () => {
@@ -305,6 +309,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.log(`[Duplicate] Duplicating ${selectedElementIds.length} elements`);
 
       // Copy current selection
+      const elementsMap = getElementsMap();
       const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
 
       // Paste with 10px offset (standard offset for duplicate)
@@ -323,23 +328,20 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
       // ⭐ Auto-select duplicated elements
       const newElementIds = newElements.map((el) => el.id);
-      const store = useStore.getState();
-      const setSelectedElements = (store as any).setSelectedElements;
-
-      if (setSelectedElements) {
-        setSelectedElements(newElementIds);
-        console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
-      }
+      setSelectedElements(newElementIds);
+      console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
 
       // TODO: Show toast notification
     } catch (error) {
       console.error('❌ [Duplicate] Failed to duplicate elements:', error);
       // TODO: Show error toast
     }
-  }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+  }, [multiSelectMode, selectedElementIds, currentPageId, getElementsMap, addElement, setSelectedElements]);
 
   // ⭐ Phase 3: Advanced Selection - Select All (Cmd+A)
   const handleSelectAll = useCallback(() => {
+    const elements = getElements();
+
     if (!currentPageId || elements.length === 0) {
       console.warn('[SelectAll] No elements to select');
       return;
@@ -356,14 +358,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     }
 
     // Use store's setSelectedElements
-    const store = useStore.getState();
-    const setSelectedElements = (store as any).setSelectedElements;
-
-    if (setSelectedElements) {
-      setSelectedElements(allElementIds);
-      console.log(`✅ [SelectAll] Selected ${allElementIds.length} elements`);
-    }
-  }, [currentPageId, elements]);
+    setSelectedElements(allElementIds);
+    console.log(`✅ [SelectAll] Selected ${allElementIds.length} elements`);
+  }, [currentPageId, getElements, setSelectedElements]);
 
   // ⭐ Phase 3: Advanced Selection - Clear Selection (Esc)
   const handleEscapeClearSelection = useCallback(() => {
@@ -389,13 +386,14 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     }
 
     const nextElementId = selectedElementIds[nextIndex];
+    const elementsMap = getElementsMap();
     const nextElement = elementsMap.get(nextElementId);
 
     if (nextElement) {
-      setSelectedElement(nextElementId, nextElement.props as any);
+      setSelectedElement(nextElementId, nextElement.props);
       console.log(`✅ [Tab] Navigated to element ${nextIndex + 1}/${selectedElementIds.length}:`, nextElement.tag);
     }
-  }, [multiSelectMode, selectedElementIds, selectedElement, elementsMap, setSelectedElement]);
+  }, [multiSelectMode, selectedElementIds, selectedElement, getElementsMap, setSelectedElement]);
 
   // ⭐ Phase 4: Group Selection (Cmd+G)
   const handleGroupSelection = useCallback(async () => {
@@ -407,6 +405,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     try {
       console.log('[Group] Grouping', selectedElementIds.length, 'elements');
 
+      const elementsMap = getElementsMap();
+
       // Create group from selection
       const { groupElement, updatedChildren } = createGroupFromSelection(
         selectedElementIds,
@@ -414,25 +414,44 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         currentPageId
       );
 
-      // Add group to store
+      // Add group to store (this saves to DB)
       await addElement(groupElement);
 
-      // Update children with new parent_id
+      // Update children with new parent_id - Save to DB directly
       await Promise.all(
-        updatedChildren.map((child) => updateElement(child.id, child))
+        updatedChildren.map(async (child) => {
+          // Update memory state
+          await updateElement(child.id, { parent_id: child.parent_id, order_num: child.order_num });
+
+          // Save to DB directly (Supabase)
+          const { error } = await supabase
+            .from('elements')
+            .update({
+              parent_id: child.parent_id,
+              order_num: child.order_num,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', child.id);
+
+          if (error) {
+            console.error(`❌ [Group] Failed to save child ${child.id} to DB:`, error);
+          } else {
+            console.log(`✅ [Group] Saved child ${child.id} to DB: parent_id=${child.parent_id}`);
+          }
+        })
       );
 
       // ⭐ Phase 7: Track in history AFTER group creation
       trackGroupCreation(groupElement, updatedChildren);
 
       // Select the new group
-      setSelectedElement(groupElement.id, groupElement.props as any);
+      setSelectedElement(groupElement.id, groupElement.props);
 
-      console.log(`✅ [Group] Created group ${groupElement.id}`);
+      console.log(`✅ [Group] Created group ${groupElement.id} with ${updatedChildren.length} children`);
     } catch (error) {
       console.error('❌ [Group] Failed to create group:', error);
     }
-  }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement, updateElement, setSelectedElement]);
+  }, [multiSelectMode, selectedElementIds, currentPageId, getElementsMap, addElement, updateElement, setSelectedElement]);
 
   // ⭐ Phase 4: Ungroup Selection (Cmd+Shift+G)
   const handleUngroupSelection = useCallback(async () => {
@@ -444,11 +463,13 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     try {
       console.log('[Ungroup] Ungrouping element', selectedElement.id);
 
+      const elementsMap = getElementsMap();
+
       // Store group element before deletion for history
       const groupElementForHistory = elementsMap.get(selectedElement.id);
 
       // Ungroup element
-      const { updatedChildren, groupIdToDelete } = ungroupElement(
+      const { updatedChildren, groupIdToDelete} = ungroupElement(
         selectedElement.id,
         elementsMap
       );
@@ -458,9 +479,28 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         trackUngroup(groupIdToDelete, updatedChildren, groupElementForHistory);
       }
 
-      // Update children with new parent_id
+      // Update children with new parent_id - Save to DB directly
       await Promise.all(
-        updatedChildren.map((child) => updateElement(child.id, child))
+        updatedChildren.map(async (child) => {
+          // Update memory state
+          await updateElement(child.id, { parent_id: child.parent_id, order_num: child.order_num });
+
+          // Save to DB directly (Supabase)
+          const { error } = await supabase
+            .from('elements')
+            .update({
+              parent_id: child.parent_id,
+              order_num: child.order_num,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', child.id);
+
+          if (error) {
+            console.error(`❌ [Ungroup] Failed to save child ${child.id} to DB:`, error);
+          } else {
+            console.log(`✅ [Ungroup] Saved child ${child.id} to DB: parent_id=${child.parent_id}`);
+          }
+        })
       );
 
       // Delete group element
@@ -468,7 +508,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
       // Select first child
       if (updatedChildren.length > 0) {
-        setSelectedElement(updatedChildren[0].id, updatedChildren[0].props as any);
+        setSelectedElement(updatedChildren[0].id, updatedChildren[0].props);
       } else {
         setSelectedElement(null);
       }
@@ -477,7 +517,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     } catch (error) {
       console.error('❌ [Ungroup] Failed to ungroup:', error);
     }
-  }, [selectedElement, elementsMap, updateElement, removeElement, setSelectedElement]);
+  }, [selectedElement, getElementsMap, updateElement, removeElement, setSelectedElement]);
 
   // ⭐ Phase 5.1: Element Alignment
   const handleAlign = useCallback(async (type: AlignmentType) => {
@@ -488,6 +528,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
     try {
       console.log(`[Alignment] Aligning ${selectedElementIds.length} elements to ${type}`);
+
+      const elementsMap = getElementsMap();
 
       // Calculate alignment updates
       const updates = alignElements(selectedElementIds, elementsMap, type);
@@ -525,7 +567,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     } catch (error) {
       console.error('❌ [Alignment] Failed to align:', error);
     }
-  }, [multiSelectMode, selectedElementIds, elementsMap, updateElementProps]);
+  }, [multiSelectMode, selectedElementIds, getElementsMap, updateElementProps]);
 
   // ⭐ Phase 5.2: Element Distribution
   const handleDistribute = useCallback(async (type: DistributionType) => {
@@ -536,6 +578,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
     try {
       console.log(`[Distribution] Distributing ${selectedElementIds.length} elements ${type}ly`);
+
+      const elementsMap = getElementsMap();
 
       // Calculate distribution updates
       const updates = distributeElements(selectedElementIds, elementsMap, type);
@@ -573,7 +617,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     } catch (error) {
       console.error('❌ [Distribution] Failed to distribute:', error);
     }
-  }, [multiSelectMode, selectedElementIds, elementsMap, updateElementProps]);
+  }, [multiSelectMode, selectedElementIds, getElementsMap, updateElementProps]);
 
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
@@ -810,14 +854,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
               referenceElement={selectedElement}
               allElements={currentPageElements}
               onSelect={(elementIds) => {
-                const store = useStore.getState();
-                const setSelectedElements = (store as any).setSelectedElements;
-                if (setSelectedElements) {
-                  setSelectedElements(elementIds);
-                  // Track in selection memory
-                  if (currentPageId) {
-                    selectionMemory.addSelection(elementIds, elements, currentPageId);
-                  }
+                setSelectedElements(elementIds);
+                // Track in selection memory
+                if (currentPageId) {
+                  selectionMemory.addSelection(elementIds, elements, currentPageId);
                 }
               }}
             />
@@ -827,11 +867,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
           <SelectionMemory
             currentPageId={currentPageId}
             onRestore={(elementIds) => {
-              const store = useStore.getState();
-              const setSelectedElements = (store as any).setSelectedElements;
-              if (setSelectedElements) {
-                setSelectedElements(elementIds);
-              }
+              setSelectedElements(elementIds);
             }}
           />
         </>

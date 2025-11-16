@@ -1,6 +1,9 @@
 /**
  * Group Component Styles
  * Phase 4: Grouping & Organization
+ * Based on React Aria Group component
+ *
+ * @see https://react-spectrum.adobe.com/react-aria/Group.html
  */
 
 @layer components {
@@ -9,13 +12,79 @@
     position: relative;
     display: block;
 
-    /* Default styling (can be overridden by user) */
+    /* Default styling */
     padding: 0;
     margin: 0;
 
-    /* Visual indication in builder mode (optional) */
-    &[data-group-label] {
-      /* Could add subtle border/background in builder mode */
+    /* Interactive states (React Aria data attributes) */
+    &[data-hovered] {
+      /* Hover state - can be styled by user */
+    }
+
+    &[data-focus-within] {
+      /* Focus within state - when any child is focused */
+    }
+
+    /* Disabled state */
+    &[data-disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Invalid state */
+    &.invalid {
+      /* Can be styled to show validation errors */
+    }
+
+    /* Read-only state */
+    &.read-only {
+      /* Can be styled to indicate read-only mode */
+    }
+
+    /* === Builder Mode Indicators === */
+
+    /* Visual indication in builder mode (when element has data-element-id) */
+    &[data-element-id] {
+      /* Subtle border to indicate grouping boundary in builder */
+      outline: 1px dashed var(--builder-inspector-border, rgba(100, 100, 100, 0.3));
+      outline-offset: 2px;
+
+      /* Hover state in builder */
+      &:hover {
+        outline-color: var(--action-primary-bg, rgba(59, 130, 246, 0.5));
+      }
+
+      /* Focus within in builder */
+      &[data-focus-within] {
+        outline-color: var(--action-primary-bg, rgba(59, 130, 246, 0.7));
+        outline-width: 2px;
+      }
+    }
+
+    /* Label indicator (only visible in builder) */
+    &[data-group-label][data-element-id]::before {
+      content: attr(data-group-label);
+      position: absolute;
+      top: -20px;
+      left: 0;
+      font-size: var(--text-2xs);
+      color: var(--builder-inspector-text-secondary, rgba(100, 100, 100, 0.7));
+      background: var(--builder-inspector-bg, white);
+      padding: 2px 6px;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--builder-inspector-border, rgba(100, 100, 100, 0.2));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Production mode: no visual indicators */
+    &:not([data-element-id]) {
+      outline: none;
+
+      &::before {
+        display: none;
+      }
     }
   }
 }

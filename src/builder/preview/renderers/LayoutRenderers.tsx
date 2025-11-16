@@ -15,6 +15,7 @@ import {
   Separator,
   Breadcrumbs,
   Breadcrumb,
+  Group,
 } from "../../components/list";
 import { PreviewElement, RenderContext } from "../types";
 import { createEventHandlerMap } from "../utils/eventHandlers";
@@ -403,6 +404,39 @@ export const renderSeparator = (
       style={element.props.style}
       className={element.props.className}
     />
+  );
+};
+
+/**
+ * Group 렌더링
+ */
+export const renderGroup = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement } = context;
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Group
+      key={element.id}
+      id={element.customId}
+      data-element-id={element.id}
+      label={element.props.label as string | undefined}
+      isDisabled={Boolean(element.props.isDisabled)}
+      isInvalid={Boolean(element.props.isInvalid)}
+      isReadOnly={Boolean(element.props.isReadOnly)}
+      role={(element.props.role as "group" | "region" | "presentation") || "group"}
+      aria-label={element.props["aria-label"] as string | undefined}
+      aria-labelledby={element.props["aria-labelledby"] as string | undefined}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </Group>
   );
 };
 

@@ -52,6 +52,7 @@ export const rendererMap: Record<
   ProgressBar: LayoutRenderers.renderProgressBar,
   Meter: LayoutRenderers.renderMeter,
   Separator: LayoutRenderers.renderSeparator,
+  Group: LayoutRenderers.renderGroup,
   Breadcrumbs: LayoutRenderers.renderBreadcrumbs,
   Breadcrumb: LayoutRenderers.renderBreadcrumb,
   Link: LayoutRenderers.renderLink,

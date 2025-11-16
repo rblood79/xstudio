@@ -19,7 +19,7 @@
  * ```
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Throttle value updates to requestAnimationFrame cycle
@@ -95,8 +95,8 @@ export function useRAFCallback(callback: () => void): () => void {
     };
   }, []);
 
-  // Return throttled callback
-  const throttledCallback = useRef(() => {
+  // Return memoized throttled callback
+  return useCallback(() => {
     // If RAF already scheduled, skip
     if (rafIdRef.current !== null) {
       return;
@@ -107,7 +107,5 @@ export function useRAFCallback(callback: () => void): () => void {
       callbackRef.current();
       rafIdRef.current = null;
     });
-  });
-
-  return throttledCallback.current;
+  }, []);
 }

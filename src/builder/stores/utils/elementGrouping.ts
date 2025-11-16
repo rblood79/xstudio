@@ -103,9 +103,24 @@ export function createGroupFromSelection(
         positions.length
       : 0;
 
+  // Generate customId for group (e.g., "group_1", "group_2")
+  const existingGroups = Array.from(elementsMap.values()).filter(
+    (el) => el.tag === "Group" && el.customId?.startsWith("group_")
+  );
+  const maxGroupNum = existingGroups.length > 0
+    ? Math.max(
+        ...existingGroups.map((el) => {
+          const match = el.customId?.match(/^group_(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+      )
+    : 0;
+  const groupCustomId = `group_${maxGroupNum + 1}`;
+
   // Create Group element
   const groupElement: Element = {
     id: ElementUtils.generateId(),
+    customId: groupCustomId,
     tag: "Group",
     props: {
       label: `Group (${selectedElements.length} elements)`,

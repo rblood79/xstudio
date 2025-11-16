@@ -22,8 +22,8 @@ interface OverlayData {
 export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
   // ⭐ Multi-select state
-  const selectedElementIds = useStore((state) => (state as any).selectedElementIds || []);
-  const multiSelectMode = useStore((state) => (state as any).multiSelectMode || false);
+  const selectedElementIds = useStore((state) => state.selectedElementIds || []);
+  const multiSelectMode = useStore((state) => state.multiSelectMode || false);
 
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
@@ -143,7 +143,10 @@ export default function SelectionOverlay() {
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
   useEffect(() => {
     if (multiSelectMode && selectedElementIds.length > 0) {
-      updateMultiOverlays();
+      // Call updateMultiOverlays via RAF to avoid triggering during render
+      requestAnimationFrame(() => {
+        updateMultiOverlays();
+      });
     }
   }, [multiSelectMode, selectedElementIds, updateMultiOverlays]);
 

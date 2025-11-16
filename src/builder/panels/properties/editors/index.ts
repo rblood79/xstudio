@@ -45,3 +45,4 @@ export { TimeFieldEditor } from './TimeFieldEditor';
 export { BreadcrumbsEditor } from './BreadcrumbsEditor';
 export { DateRangePickerEditor } from './DateRangePickerEditor';
 export { BreadcrumbEditor } from './BreadcrumbEditor';
+export { GroupEditor } from './GroupEditor';
