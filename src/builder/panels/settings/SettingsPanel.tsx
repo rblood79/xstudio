@@ -201,15 +201,17 @@ function SettingsContent() {
             icon={Save}
           />
 
-          <Button
-            onPress={handleSave}
-            isDisabled={isRealtimeMode || pendingCount === 0 || isSaving}
-            className="save-button"
-          >
-            {isSaving
-              ? "Saving..."
-              : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-          </Button>
+          {!isRealtimeMode && (
+            <Button
+              onPress={handleSave}
+              isDisabled={pendingCount === 0 || isSaving}
+              className="react-aria-Button primary"
+            >
+              {isSaving
+                ? "Saving..."
+                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+            </Button>
+          )}
         </PropertySection>
 
         {/* Preview & Overlay Section */}
