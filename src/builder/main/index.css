@@ -411,6 +411,7 @@
 
         .contents {
           height: fit-content;
+          display: none;
         }
       }
     }
