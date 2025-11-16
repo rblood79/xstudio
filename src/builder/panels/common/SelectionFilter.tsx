@@ -1,0 +1,217 @@
+/**
+ * SelectionFilter - 선택 필터 컴포넌트
+ *
+ * Phase 3: Advanced Selection - Selection Filters
+ * 타입, 태그, 속성으로 요소 필터링
+ */
+
+import { useState, useMemo } from "react";
+import type { Element } from "../../../types/core/store.types";
+import { PropertyInput, PropertySelect, PropertySwitch } from "../common";
+import { Filter, X } from "lucide-react";
+import { Button } from "../../components";
+import { iconProps } from "../../../utils/ui/uiConstants";
+
+export interface SelectionFilterProps {
+  /** 전체 요소 목록 */
+  allElements: Element[];
+  /** 필터링 결과 콜백 */
+  onFilteredElements: (elementIds: string[]) => void;
+  /** 추가 CSS 클래스 */
+  className?: string;
+}
+
+/**
+ * 선택 필터 컴포넌트
+ *
+ * @example
+ * ```tsx
+ * <SelectionFilter
+ *   allElements={elements}
+ *   onFilteredElements={(ids) => setSelectedElements(ids)}
+ * />
+ * ```
+ */
+export function SelectionFilter({
+  allElements,
+  onFilteredElements,
+  className = "",
+}: SelectionFilterProps) {
+  const [filterType, setFilterType] = useState<"all" | "type" | "tag" | "property">("all");
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [selectedTag, setSelectedTag] = useState<string>("");
+  const [propertyKey, setPropertyKey] = useState<string>("");
+  const [propertyValue, setPropertyValue] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
+  // Get unique types and tags
+  const { uniqueTypes, uniqueTags } = useMemo(() => {
+    const types = new Set<string>();
+    const tags = new Set<string>();
+
+    allElements.forEach((el) => {
+      types.add(el.tag);
+      tags.add(el.tag);
+    });
+
+    return {
+      uniqueTypes: Array.from(types).sort(),
+      uniqueTags: Array.from(tags).sort(),
+    };
+  }, [allElements]);
+
+  // Apply filter
+  const handleApplyFilter = () => {
+    let filtered: Element[] = [];
+
+    switch (filterType) {
+      case "all":
+        filtered = allElements;
+        break;
+
+      case "type":
+      case "tag":
+        if (selectedTag) {
+          filtered = allElements.filter((el) => el.tag === selectedTag);
+        }
+        break;
+
+      case "property":
+        if (propertyKey) {
+          filtered = allElements.filter((el) => {
+            const props = el.props || {};
+            if (!propertyKey in props) return false;
+
+            if (propertyValue) {
+              // Match property value
+              const value = String(props[propertyKey] || "");
+              return value.toLowerCase().includes(propertyValue.toLowerCase());
+            }
+
+            // Just check if property exists
+            return propertyKey in props;
+          });
+        }
+        break;
+    }
+
+    const filteredIds = filtered.map((el) => el.id);
+    onFilteredElements(filteredIds);
+
+    console.log(`✅ [Filter] Applied ${filterType} filter, found ${filteredIds.length} elements`);
+  };
+
+  // Clear filter
+  const handleClearFilter = () => {
+    setFilterType("all");
+    setSelectedType("");
+    setSelectedTag("");
+    setPropertyKey("");
+    setPropertyValue("");
+    onFilteredElements(allElements.map((el) => el.id));
+    console.log('✅ [Filter] Cleared filter');
+  };
+
+  if (!isExpanded) {
+    return (
+      <div className={`selection-filter collapsed ${className}`.trim()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => setIsExpanded(true)}
+          aria-label="Show filter options"
+        >
+          <Filter
+            color={iconProps.color}
+            size={iconProps.size}
+            strokeWidth={iconProps.stroke}
+          />
+          <span>필터</span>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`selection-filter ${className}`.trim()}>
+      <div className="filter-header">
+        <div className="filter-title">
+          <Filter size={16} />
+          <span>선택 필터</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={() => setIsExpanded(false)}
+          aria-label="Hide filter options"
+        >
+          <X size={16} />
+        </Button>
+      </div>
+
+      <div className="filter-content">
+        <PropertySelect
+          label="필터 타입"
+          value={filterType}
+          onChange={(value) => setFilterType(value as typeof filterType)}
+          options={[
+            { value: "all", label: "전체" },
+            { value: "type", label: "타입으로" },
+            { value: "tag", label: "태그로" },
+            { value: "property", label: "속성으로" },
+          ]}
+        />
+
+        {(filterType === "type" || filterType === "tag") && (
+          <PropertySelect
+            label="태그"
+            value={selectedTag}
+            onChange={setSelectedTag}
+            options={[
+              { value: "", label: "선택하세요" },
+              ...uniqueTags.map((tag) => ({ value: tag, label: tag })),
+            ]}
+          />
+        )}
+
+        {filterType === "property" && (
+          <>
+            <PropertyInput
+              label="속성 키"
+              value={propertyKey}
+              onChange={setPropertyKey}
+              placeholder="예: className, id, style"
+            />
+            <PropertyInput
+              label="속성 값 (선택)"
+              value={propertyValue}
+              onChange={setPropertyValue}
+              placeholder="값 검색 (비워두면 존재 여부만 확인)"
+            />
+          </>
+        )}
+
+        <div className="filter-actions">
+          <Button
+            variant="primary"
+            size="sm"
+            onPress={handleApplyFilter}
+            isDisabled={
+              (filterType === "type" || filterType === "tag") && !selectedTag ||
+              filterType === "property" && !propertyKey
+            }
+          >
+            필터 적용
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleClearFilter}
+          >
+            초기화
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

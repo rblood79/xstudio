@@ -51,6 +51,7 @@
 @import './ComponentSearch.css';
 @import './Content.css';
 @import './Field.css';
+@import './Group.css';
 
 /* Standalone Components (no imports) */
 @import './ChatContainer.css';

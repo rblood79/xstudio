@@ -1,0 +1,21 @@
+/**
+ * Group Component Styles
+ * Phase 4: Grouping & Organization
+ */
+
+@layer components {
+  .react-aria-Group {
+    /* Base container */
+    position: relative;
+    display: block;
+
+    /* Default styling (can be overridden by user) */
+    padding: 0;
+    margin: 0;
+
+    /* Visual indication in builder mode (optional) */
+    &[data-group-label] {
+      /* Could add subtle border/background in builder mode */
+    }
+  }
+}

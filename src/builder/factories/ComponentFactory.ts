@@ -21,6 +21,7 @@ import {
   createGridListDefinition,
 } from "./definitions/SelectionComponents";
 import {
+  createGroupDefinition,
   createToggleButtonGroupDefinition,
   createCheckboxGroupDefinition,
   createRadioGroupDefinition,
@@ -47,6 +48,7 @@ export class ComponentFactory {
    */
   private static creators: Record<string, ComponentCreator> = {
     TextField: ComponentFactory.createTextField,
+    Group: ComponentFactory.createGroup,
     ToggleButtonGroup: ComponentFactory.createToggleButtonGroup,
     CheckboxGroup: ComponentFactory.createCheckboxGroup,
     RadioGroup: ComponentFactory.createRadioGroup,
@@ -129,6 +131,12 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createTextFieldDefinition, context);
+  }
+
+  private static async createGroup(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createGroupDefinition, context);
   }
 
   private static async createToggleButtonGroup(

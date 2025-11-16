@@ -11,7 +11,7 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -19,6 +19,7 @@ import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRe
 import { useCopyPaste } from "../../hooks/useCopyPaste";
 import { useStore } from "../../stores";
 import { copyMultipleElements, pasteMultipleElements, serializeCopiedElements, deserializeCopiedElements } from "../../utils/multiElementCopy";
+import { createGroupFromSelection, ungroupElement } from "../../stores/utils/elementGrouping";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -35,6 +36,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const addElement = useStore((state) => state.addElement);
+  const updateElement = useStore((state) => state.updateElement);
 
   const [Editor, setEditor] =
     useState<ComponentType<ComponentEditorProps> | null>(null);
@@ -113,48 +115,89 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Multi-select quick actions
   const handleCopyAll = useCallback(async () => {
-    if (selectedElementIds.length === 0) return;
+    console.log('[Copy] Starting copy operation...', { selectedElementIds });
+
+    if (selectedElementIds.length === 0) {
+      console.warn('[Copy] No elements selected');
+      return;
+    }
 
     try {
       // Copy elements with relationship preservation
+      console.log('[Copy] Calling copyMultipleElements...');
       const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+      console.log('[Copy] Copied data:', {
+        elementCount: copiedData.elements.length,
+        rootIds: copiedData.rootIds,
+        externalParents: copiedData.externalParents.size,
+      });
 
       // Serialize and copy to clipboard
+      console.log('[Copy] Serializing to JSON...');
       const jsonData = serializeCopiedElements(copiedData);
+      console.log('[Copy] JSON length:', jsonData.length, 'bytes');
+
+      console.log('[Copy] Writing to clipboard...');
       await navigator.clipboard.writeText(jsonData);
 
-      console.log(`✅ Copied ${selectedElementIds.length} elements to clipboard`);
+      console.log(`✅ [Copy] Successfully copied ${selectedElementIds.length} elements to clipboard`);
       // TODO: Show toast notification
     } catch (error) {
-      console.error('Failed to copy elements:', error);
+      console.error('❌ [Copy] Failed to copy elements:', error);
       // TODO: Show error toast
     }
   }, [selectedElementIds, elementsMap]);
 
   const handlePasteAll = useCallback(async () => {
-    if (!currentPageId) return;
+    console.log('[Paste] Starting paste operation...', { currentPageId });
+
+    if (!currentPageId) {
+      console.warn('[Paste] No current page selected');
+      return;
+    }
 
     try {
       // Read from clipboard
+      console.log('[Paste] Reading from clipboard...');
       const clipboardText = await navigator.clipboard.readText();
+      console.log('[Paste] Clipboard text length:', clipboardText.length, 'bytes');
+      console.log('[Paste] First 100 chars:', clipboardText.substring(0, 100));
 
       // Deserialize
+      console.log('[Paste] Deserializing clipboard data...');
       const copiedData = deserializeCopiedElements(clipboardText);
       if (!copiedData) {
-        console.warn('Invalid clipboard data');
+        console.warn('[Paste] Clipboard does not contain valid XStudio element data');
         return;
       }
 
+      console.log('[Paste] Deserialized data:', {
+        elementCount: copiedData.elements.length,
+        rootIds: copiedData.rootIds,
+        externalParents: copiedData.externalParents.size,
+      });
+
       // Paste with offset
+      console.log('[Paste] Creating new elements with offset...');
       const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+      console.log('[Paste] New elements created:', newElements.length);
+
+      if (newElements.length === 0) {
+        console.warn('[Paste] No elements to paste');
+        return;
+      }
 
       // Add all new elements to store
-      await Promise.all(newElements.map((element) => addElement(element)));
+      console.log('[Paste] Adding elements to store...');
+      await Promise.all(newElements.map((element) => {
+        console.log('[Paste] Adding element:', element.id, element.tag);
+        return addElement(element);
+      }));
 
-      console.log(`✅ Pasted ${newElements.length} elements`);
+      console.log(`✅ [Paste] Successfully pasted ${newElements.length} elements`);
       // TODO: Show toast notification
     } catch (error) {
-      console.error('Failed to paste elements:', error);
+      console.error('❌ [Paste] Failed to paste elements:', error);
       // TODO: Show error toast
     }
   }, [currentPageId, addElement]);
@@ -196,6 +239,25 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     }
   }, [selectedElementIds, updateElementProps]);
 
+  // ⭐ Phase 3: Selection filter handler
+  const handleFilteredElements = useCallback((filteredIds: string[]) => {
+    const store = useStore.getState();
+    const setSelectedElements = (store as any).setSelectedElements;
+
+    if (setSelectedElements && filteredIds.length > 0) {
+      setSelectedElements(filteredIds);
+      console.log(`✅ [Filter] Applied filter, selected ${filteredIds.length} elements`);
+    } else if (filteredIds.length === 0) {
+      setSelectedElement(null);
+      console.log('✅ [Filter] No elements match filter, cleared selection');
+    }
+  }, [setSelectedElement]);
+
+  // ⭐ Get current page's elements for filter
+  const currentPageElements = useMemo(() => {
+    return elements.filter((el) => el.page_id === currentPageId);
+  }, [elements, currentPageId]);
+
   // ⭐ Get selected elements from store
   const selectedElements = useMemo(() => {
     return selectedElementIds
@@ -224,6 +286,136 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       // TODO: Show error toast
     }
   }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+
+  // ⭐ Phase 3: Advanced Selection - Select All (Cmd+A)
+  const handleSelectAll = useCallback(() => {
+    if (!currentPageId || elements.length === 0) {
+      console.warn('[SelectAll] No elements to select');
+      return;
+    }
+
+    // Get all element IDs from current page
+    const allElementIds = elements
+      .filter((el) => el.page_id === currentPageId)
+      .map((el) => el.id);
+
+    if (allElementIds.length === 0) {
+      console.warn('[SelectAll] No elements on current page');
+      return;
+    }
+
+    // Use store's setSelectedElements
+    const store = useStore.getState();
+    const setSelectedElements = (store as any).setSelectedElements;
+
+    if (setSelectedElements) {
+      setSelectedElements(allElementIds);
+      console.log(`✅ [SelectAll] Selected ${allElementIds.length} elements`);
+    }
+  }, [currentPageId, elements]);
+
+  // ⭐ Phase 3: Advanced Selection - Clear Selection (Esc)
+  const handleEscapeClearSelection = useCallback(() => {
+    setSelectedElement(null);
+    console.log('✅ [Esc] Selection cleared');
+  }, [setSelectedElement]);
+
+  // ⭐ Phase 3: Advanced Selection - Tab Navigation
+  const handleTabNavigation = useCallback((event: KeyboardEvent) => {
+    if (!multiSelectMode || selectedElementIds.length === 0) return;
+
+    event.preventDefault();
+
+    const currentIndex = selectedElementIds.indexOf(selectedElement?.id || '');
+    let nextIndex: number;
+
+    if (event.shiftKey) {
+      // Shift+Tab: Navigate backwards
+      nextIndex = currentIndex <= 0 ? selectedElementIds.length - 1 : currentIndex - 1;
+    } else {
+      // Tab: Navigate forwards
+      nextIndex = currentIndex >= selectedElementIds.length - 1 ? 0 : currentIndex + 1;
+    }
+
+    const nextElementId = selectedElementIds[nextIndex];
+    const nextElement = elementsMap.get(nextElementId);
+
+    if (nextElement) {
+      setSelectedElement(nextElementId, nextElement.props as any);
+      console.log(`✅ [Tab] Navigated to element ${nextIndex + 1}/${selectedElementIds.length}:`, nextElement.tag);
+    }
+  }, [multiSelectMode, selectedElementIds, selectedElement, elementsMap, setSelectedElement]);
+
+  // ⭐ Phase 4: Group Selection (Cmd+G)
+  const handleGroupSelection = useCallback(async () => {
+    if (!multiSelectMode || selectedElementIds.length < 2 || !currentPageId) {
+      console.warn('[Group] Need at least 2 elements selected');
+      return;
+    }
+
+    try {
+      console.log('[Group] Grouping', selectedElementIds.length, 'elements');
+
+      // Create group from selection
+      const { groupElement, updatedChildren } = createGroupFromSelection(
+        selectedElementIds,
+        elementsMap,
+        currentPageId
+      );
+
+      // Add group to store
+      await addElement(groupElement);
+
+      // Update children with new parent_id
+      await Promise.all(
+        updatedChildren.map((child) => updateElement(child.id, child))
+      );
+
+      // Select the new group
+      setSelectedElement(groupElement.id, groupElement.props as any);
+
+      console.log(`✅ [Group] Created group ${groupElement.id}`);
+    } catch (error) {
+      console.error('❌ [Group] Failed to create group:', error);
+    }
+  }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement, updateElement, setSelectedElement]);
+
+  // ⭐ Phase 4: Ungroup Selection (Cmd+Shift+G)
+  const handleUngroupSelection = useCallback(async () => {
+    if (!selectedElement || selectedElement.tag !== 'Group') {
+      console.warn('[Ungroup] Selected element is not a Group');
+      return;
+    }
+
+    try {
+      console.log('[Ungroup] Ungrouping element', selectedElement.id);
+
+      // Ungroup element
+      const { updatedChildren, groupIdToDelete } = ungroupElement(
+        selectedElement.id,
+        elementsMap
+      );
+
+      // Update children with new parent_id
+      await Promise.all(
+        updatedChildren.map((child) => updateElement(child.id, child))
+      );
+
+      // Delete group element
+      await removeElement(groupIdToDelete);
+
+      // Select first child
+      if (updatedChildren.length > 0) {
+        setSelectedElement(updatedChildren[0].id, updatedChildren[0].props as any);
+      } else {
+        setSelectedElement(null);
+      }
+
+      console.log(`✅ [Ungroup] Ungrouped ${updatedChildren.length} elements`);
+    } catch (error) {
+      console.error('❌ [Ungroup] Failed to ungroup:', error);
+    }
+  }, [selectedElement, elementsMap, updateElement, removeElement, setSelectedElement]);
 
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
@@ -259,11 +451,49 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         handler: handleDuplicate,
         description: 'Duplicate Selection',
       },
+      // ⭐ Phase 3: Advanced Selection shortcuts
+      {
+        key: 'a',
+        modifier: 'cmd' as const,
+        handler: handleSelectAll,
+        description: 'Select All',
+      },
+      {
+        key: 'Escape',
+        modifier: 'none' as const,
+        handler: handleEscapeClearSelection,
+        description: 'Clear Selection',
+      },
+      // ⭐ Phase 4: Grouping shortcuts
+      {
+        key: 'g',
+        modifier: 'cmd' as const,
+        handler: handleGroupSelection,
+        description: 'Group Selection',
+      },
+      {
+        key: 'g',
+        modifier: 'cmdShift' as const,
+        handler: handleUngroupSelection,
+        description: 'Ungroup Selection',
+      },
     ],
-    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate]
+    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection]
   );
 
-  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate]);
+  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection]);
+
+  // ⭐ Phase 3: Tab navigation (requires special handling)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Tab' && multiSelectMode && selectedElementIds.length > 0) {
+        handleTabNavigation(event);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [multiSelectMode, selectedElementIds, handleTabNavigation]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
@@ -340,12 +570,19 @@ export function PropertiesPanel({ isActive }: PanelProps) {
             onPasteAll={handlePasteAll}
             onDeleteAll={handleDeleteAll}
             onClearSelection={handleClearSelection}
+            onGroupSelection={handleGroupSelection}
           />
 
           {/* ⭐ Batch property editor for common properties */}
           <BatchPropertyEditor
             selectedElements={selectedElements}
             onBatchUpdate={handleBatchUpdate}
+          />
+
+          {/* ⭐ Phase 3: Selection filter for advanced filtering */}
+          <SelectionFilter
+            allElements={currentPageElements}
+            onFilteredElements={handleFilteredElements}
           />
         </>
       )}

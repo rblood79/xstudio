@@ -3,6 +3,36 @@ import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
 /**
+ * Group 컴포넌트 정의 (Element Grouping Container)
+ * Phase 4: Grouping & Organization
+ */
+export function createGroupDefinition(
+  context: ComponentCreationContext
+): ComponentDefinition {
+  const { parentElement, pageId, elements } = context;
+  const parentId = parentElement?.id || null;
+  const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  return {
+    tag: "Group",
+    parent: {
+      tag: "Group",
+      props: {
+        label: "Element Group",
+        style: {
+          display: "block",
+          position: "relative",
+        },
+      } as ComponentElementProps,
+      page_id: pageId,
+      parent_id: parentId,
+      order_num: orderNum,
+    },
+    children: [],
+  };
+}
+
+/**
  * ToggleButtonGroup 컴포넌트 정의
  */
 export function createToggleButtonGroupDefinition(

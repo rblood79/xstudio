@@ -954,4 +954,58 @@
     font-size: var(--text-2xs);
     color: var(--builder-inspector-text-secondary);
   }
+
+  /* ========================================
+   * Selection Filter
+   * Phase 3: Advanced Selection
+   * ======================================== */
+
+  .selection-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: var(--builder-inspector-surface);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing);
+  }
+
+  .selection-filter.collapsed {
+    padding: 0;
+  }
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid var(--builder-inspector-divider);
+  }
+
+  .filter-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--builder-inspector-text-primary);
+  }
+
+  .filter-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--builder-inspector-divider);
+  }
+
+  .filter-actions .react-aria-Button {
+    flex: 1;
+  }
 }

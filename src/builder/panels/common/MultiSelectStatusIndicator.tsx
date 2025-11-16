@@ -6,7 +6,7 @@
  */
 
 import { Button } from "../../components";
-import { Copy, Trash2, X, ClipboardPaste } from "lucide-react";
+import { Copy, Trash2, X, ClipboardPaste, Group as GroupIcon, Ungroup } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 
 export interface MultiSelectStatusIndicatorProps {
@@ -20,6 +20,8 @@ export interface MultiSelectStatusIndicatorProps {
   onDeleteAll?: () => void;
   /** Clear Selection 핸들러 */
   onClearSelection?: () => void;
+  /** Group Selection 핸들러 (Phase 4) */
+  onGroupSelection?: () => void;
   /** 추가 CSS 클래스 */
   className?: string;
 }
@@ -43,6 +45,7 @@ export function MultiSelectStatusIndicator({
   onPasteAll,
   onDeleteAll,
   onClearSelection,
+  onGroupSelection,
   className = "",
 }: MultiSelectStatusIndicatorProps) {
   return (
@@ -82,6 +85,21 @@ export function MultiSelectStatusIndicator({
             strokeWidth={iconProps.stroke}
           />
           <span>붙여넣기</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={onGroupSelection}
+          aria-label="Group selected elements"
+          isDisabled={count < 2}
+        >
+          <GroupIcon
+            color={iconProps.color}
+            size={iconProps.size}
+            strokeWidth={iconProps.stroke}
+          />
+          <span>그룹화</span>
         </Button>
 
         <Button

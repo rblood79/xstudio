@@ -2221,6 +2221,273 @@ const newElements = pasteMultipleElements(
 - Clipboard format validation
 - Toast notifications
 
+### 🔍 Advanced Selection (2025-11-16)
+
+**Status**: ✅ Phase 3 Complete
+
+**Major Updates**:
+- ✅ Select All (Cmd+A) - Select all elements on current page
+- ✅ Clear Selection (Esc) - Deselect all elements
+- ✅ Tab Navigation - Cycle through selected elements with Tab/Shift+Tab
+- ✅ Selection Filter - Filter elements by type, tag, or properties
+- ✅ Collapsible Filter UI - Expand/collapse filter panel
+
+**Components Created**: 1 new component
+- `SelectionFilter.tsx` - Filter UI for advanced element selection (218 lines)
+
+**Architecture**:
+1. **Select All** - Selects all elements on current page
+2. **Clear Selection** - Escape key handler for quick deselection
+3. **Tab Navigation** - Cyclic navigation through multi-selection
+4. **Filter System** - Type, tag, and property-based filtering
+5. **Keyboard Integration** - useKeyboardShortcutsRegistry for Cmd+A and Esc
+
+**Files Created/Modified**: 5 files
+- `src/builder/panels/common/SelectionFilter.tsx` (new)
+- `src/builder/panels/common/index.ts` (export)
+- `src/builder/panels/common/index.css` (styles)
+- `src/builder/panels/properties/PropertiesPanel.tsx` (handlers + integration)
+
+**Key Features**:
+- **Select All**: Cmd+A selects all elements on current page only
+- **Escape Key**: Clears selection immediately
+- **Tab Navigation**: Tab/Shift+Tab cycles through selected elements
+- **Filter Modes**: All, By Type, By Tag, By Property
+- **Property Search**: Search by property key + optional value matching
+- **Collapsible UI**: Minimize filter when not in use
+
+**SelectionFilter Features**:
+```typescript
+// Filter modes:
+- All: Show all elements (no filter)
+- Type: Filter by element type/tag
+- Tag: Filter by element tag
+- Property: Filter by property existence or value
+
+// Property filter:
+- Key only: Elements that have this property
+- Key + Value: Elements where property value contains search text
+- Case-insensitive value matching
+```
+
+**Keyboard Shortcuts**:
+- **Cmd+A**: Select all elements on current page
+- **Esc**: Clear selection
+- **Tab**: Navigate to next element in selection
+- **Shift+Tab**: Navigate to previous element in selection
+
+**User Experience**:
+- Cmd+A → All page elements selected instantly
+- Esc → Selection cleared, back to no selection
+- Tab in multi-select → Cycles through elements, Inspector shows current
+- Filter by type → Quick selection of all Buttons, all Inputs, etc.
+- Filter by property → Find elements with specific className, id, etc.
+
+**Technical Details**:
+```typescript
+// Select All implementation
+const handleSelectAll = useCallback(() => {
+  const allElementIds = elements
+    .filter((el) => el.page_id === currentPageId)
+    .map((el) => el.id);
+
+  setSelectedElements(allElementIds);
+}, [currentPageId, elements]);
+
+// Tab Navigation implementation
+const handleTabNavigation = useCallback((event: KeyboardEvent) => {
+  event.preventDefault();
+
+  const currentIndex = selectedElementIds.indexOf(selectedElement?.id);
+  const nextIndex = event.shiftKey
+    ? (currentIndex <= 0 ? selectedElementIds.length - 1 : currentIndex - 1)
+    : (currentIndex >= selectedElementIds.length - 1 ? 0 : currentIndex + 1);
+
+  const nextElement = elementsMap.get(selectedElementIds[nextIndex]);
+  setSelectedElement(nextElement);
+}, [multiSelectMode, selectedElementIds, selectedElement]);
+
+// Filter by property
+filtered = allElements.filter((el) => {
+  const props = el.props || {};
+  if (!propertyKey in props) return false;
+
+  if (propertyValue) {
+    const value = String(props[propertyKey] || "");
+    return value.toLowerCase().includes(propertyValue.toLowerCase());
+  }
+
+  return propertyKey in props;
+});
+```
+
+**Edge Cases Handled**:
+- ✅ Empty page → Select All does nothing
+- ✅ No current page → Select All warns and returns
+- ✅ Tab with single selection → No-op
+- ✅ Tab at end → Wraps to beginning (cyclic)
+- ✅ Invalid property key → Shows no results
+- ✅ Empty filter → Clears selection
+
+**Future Improvements**:
+- Multi-property filters (AND/OR logic)
+- Save/load filter presets
+- Filter by parent-child relationship
+- Filter by position/bounds
+- Visual filter results preview
+- Filter history
+
+### 📦 Grouping & Organization (2025-11-16)
+
+**Status**: ✅ Phase 4 Complete
+
+**Major Updates**:
+- ✅ Group component - Container for element grouping
+- ✅ Group Selection (Cmd+G) - Create group from multiple elements
+- ✅ Ungroup Selection (Cmd+Shift+G) - Break apart grouped elements
+- ✅ Relationship preservation - Maintains parent-child structure
+- ✅ Position calculation - Groups positioned at average of children
+
+**Components Created**: 3 new files
+- `Group.tsx` - Group container component (58 lines)
+- `elementGrouping.ts` - Group/ungroup utilities (241 lines)
+- `GroupComponents.ts` - Component factory definition (updated)
+
+**Architecture**:
+1. **Group Component** - Simple container with optional label
+2. **createGroupFromSelection** - Creates group from selected elements
+3. **ungroupElement** - Moves children back to group's parent
+4. **Position Calculation** - Average position of all selected elements
+5. **Order Management** - Automatic re-sequencing after group/ungroup
+
+**Files Created/Modified**: 7 files
+- `src/builder/components/Group.tsx` (new)
+- `src/builder/components/styles/Group.css` (new)
+- `src/builder/stores/utils/elementGrouping.ts` (new)
+- `src/builder/factories/definitions/GroupComponents.ts` (updated)
+- `src/builder/factories/ComponentFactory.ts` (updated)
+- `src/builder/panels/properties/PropertiesPanel.tsx` (handlers + shortcuts)
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` (group button)
+
+**Key Features**:
+- **Group Creation**: Select 2+ elements → Cmd+G → Creates Group container
+- **Parent Assignment**: All selected elements become children of Group
+- **Position Averaging**: Group positioned at center of selection
+- **Ungroup**: Select Group → Cmd+Shift+G → Children move to parent
+- **Order Preservation**: Children maintain relative order
+- **Multi-Parent Support**: Can group elements with different parents
+
+**Group Creation Algorithm**:
+```typescript
+// 1. Find common parent (if all elements have same parent)
+const allSameParent = selectedElements.every(
+  (el) => el.parent_id === firstParentId
+);
+
+// 2. Calculate average position for group
+const avgLeft = positions.reduce((sum, pos) => sum + pos.left, 0) / positions.length;
+const avgTop = positions.reduce((sum, pos) => sum + pos.top, 0) / positions.length;
+
+// 3. Create Group element
+const groupElement: Element = {
+  tag: "Group",
+  props: {
+    label: `Group (${count} elements)`,
+    style: { left: `${avgLeft}px`, top: `${avgTop}px` },
+  },
+  parent_id: groupParentId,
+};
+
+// 4. Update children's parent_id to group
+const updatedChildren = selectedElements.map((el, index) => ({
+  ...el,
+  parent_id: groupElement.id,
+  order_num: index,
+}));
+```
+
+**Ungroup Algorithm**:
+```typescript
+// 1. Get group's children
+const children = elementsMap.filter((el) => el.parent_id === groupId);
+
+// 2. Move children to group's parent
+const newParentId = groupElement.parent_id;
+
+// 3. Calculate next order_num for ungrouped children
+let nextOrderNum = getMaxOrderNum(newParentId) + 1;
+
+// 4. Update children
+const updatedChildren = children.map((child) => ({
+  ...child,
+  parent_id: newParentId,
+  order_num: nextOrderNum++,
+}));
+
+// 5. Delete group
+removeElement(groupId);
+```
+
+**Keyboard Shortcuts**:
+- **Cmd+G**: Group selected elements (requires 2+ elements)
+- **Cmd+Shift+G**: Ungroup selected Group element
+
+**User Experience**:
+- Select 3 elements → Cmd+G → Group created, elements become children
+- Select Group → Cmd+Shift+G → Children move to parent, Group deleted
+- Group button → Only enabled when 2+ elements selected
+- Position → Group appears at center of selected elements
+
+**Technical Details**:
+```typescript
+// Group creation example
+const { groupElement, updatedChildren } = createGroupFromSelection(
+  ['elem-1', 'elem-2', 'elem-3'],
+  elementsMap,
+  'page-1'
+);
+
+// Group structure:
+{
+  id: 'group-123',
+  tag: 'Group',
+  props: { label: 'Group (3 elements)' },
+  parent_id: null,
+  children: [
+    { id: 'elem-1', parent_id: 'group-123', order_num: 0 },
+    { id: 'elem-2', parent_id: 'group-123', order_num: 1 },
+    { id: 'elem-3', parent_id: 'group-123', order_num: 2 },
+  ]
+}
+
+// Ungroup result:
+const { updatedChildren, groupIdToDelete } = ungroupElement(
+  'group-123',
+  elementsMap
+);
+// Children moved to group's parent, group deleted
+```
+
+**Edge Cases Handled**:
+- ✅ Mixed parents → Group parent_id = null
+- ✅ Empty group → Just delete group
+- ✅ Single element → Cannot group (requires 2+)
+- ✅ Non-Group element → Ungroup shows warning
+- ✅ Position calculation → Handles elements without position
+
+**Integration**:
+- **MultiSelectStatusIndicator**: Group button (disabled if count < 2)
+- **PropertiesPanel**: Group/Ungroup handlers and keyboard shortcuts
+- **Component Factory**: Group component definition and creator
+- **Store**: Group elements stored like any other element
+
+**Future Improvements**:
+- Smart group naming (by element types)
+- Nested group support
+- Group templates (common layouts)
+- Visual group indicator in preview
+- Bulk group operations
+
 ---
 
 ## 🚧 Component Migration Status (Phase 0 - In Progress)

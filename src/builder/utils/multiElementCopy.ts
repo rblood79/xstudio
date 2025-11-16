@@ -180,11 +180,13 @@ export function pasteMultipleElements(
  * Serialize copied elements to clipboard-safe JSON
  *
  * @param copiedData - Data from copyMultipleElements
- * @returns JSON string
+ * @returns JSON string with magic prefix
  */
 export function serializeCopiedElements(copiedData: CopiedElementsData): string {
   // Convert Map to array for JSON serialization
   const serializable = {
+    __xstudio_elements__: true, // Magic marker for validation
+    version: 1,
     elements: copiedData.elements,
     rootIds: copiedData.rootIds,
     externalParents: Array.from(copiedData.externalParents.entries()),
@@ -201,11 +203,28 @@ export function serializeCopiedElements(copiedData: CopiedElementsData): string 
  * @returns CopiedElementsData or null if invalid
  */
 export function deserializeCopiedElements(json: string): CopiedElementsData | null {
+  // Quick check: does it look like JSON?
+  if (!json || typeof json !== 'string' || !json.trim().startsWith('{')) {
+    return null;
+  }
+
   try {
     const parsed = JSON.parse(json);
 
+    // Validate magic marker
+    if (!parsed.__xstudio_elements__) {
+      // Not our clipboard data - silently ignore
+      return null;
+    }
+
     // Validate structure
     if (!parsed.elements || !Array.isArray(parsed.elements)) {
+      console.warn('[Paste] Invalid clipboard data structure - missing elements array');
+      return null;
+    }
+
+    if (parsed.elements.length === 0) {
+      console.warn('[Paste] Clipboard data contains no elements');
       return null;
     }
 
@@ -216,7 +235,8 @@ export function deserializeCopiedElements(json: string): CopiedElementsData | nu
       timestamp: parsed.timestamp || Date.now(),
     };
   } catch (error) {
-    console.error('Failed to deserialize copied elements:', error);
+    // Not valid JSON or not our format - silently ignore
+    // This is expected when clipboard contains regular text
     return null;
   }
 }

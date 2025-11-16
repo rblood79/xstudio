@@ -24,3 +24,4 @@ export { Pagination } from './Pagination';
 export { Button } from './Button';
 export { ToggleButton } from './ToggleButton';
 export { ToggleButtonGroup } from './ToggleButtonGroup';
+export { Group } from './Group';
