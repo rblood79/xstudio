@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useStore } from "../stores";
 import { ChevronUp } from "lucide-react";
 import { MessageService } from "../../utils/messaging";
+import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
+import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
 
 import "./index.css";
 
@@ -119,6 +121,25 @@ export default function SelectionOverlay() {
     setMultiOverlays(newOverlays);
   }, [selectedElementIds]);
 
+  // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
+  const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {
+    return Array.from(multiOverlays.entries()).map(([elementId, overlayData]) => ({
+      id: elementId,
+      rect: {
+        left: overlayData.rect.left,
+        top: overlayData.rect.top,
+        right: overlayData.rect.left + overlayData.rect.width,
+        bottom: overlayData.rect.top + overlayData.rect.height,
+        width: overlayData.rect.width,
+        height: overlayData.rect.height,
+      },
+      isPrimary: elementId === selectedElementId,
+    }));
+  }, [multiOverlays, selectedElementId]);
+
+  // ⭐ Apply virtual scrolling to only render visible overlays
+  const visibleOverlays = useVisibleOverlays(overlaysForVirtualScrolling, iframeRef);
+
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
   useEffect(() => {
     if (multiSelectMode && selectedElementIds.length > 0) {
@@ -231,14 +252,20 @@ export default function SelectionOverlay() {
     };
   }, [selectedElementId, multiSelectMode, updatePosition, updateMultiOverlays]);
 
-  // ⭐ Multi-select mode: Render multiple overlays
+  // ⭐ Multi-select mode: Render multiple overlays (with virtual scrolling)
   if (multiSelectMode && multiOverlays.size > 0) {
+    const totalOverlays = overlaysForVirtualScrolling.length;
+    const visibleCount = visibleOverlays.length;
+
     return (
       <div className="overlay">
-        {Array.from(multiOverlays.entries()).map(([elementId, overlayData]) => {
-          const isPrimary = elementId === selectedElementId;
+        {/* Render only visible overlays */}
+        {visibleOverlays.map((overlayData) => {
+          const elementId = overlayData.id;
+          const isPrimary = overlayData.isPrimary;
           const element = elementsMap.get(elementId);
-          const tag = element?.tag || overlayData.tag || "";
+          const overlayInfo = multiOverlays.get(elementId);
+          const tag = element?.tag || overlayInfo?.tag || "";
 
           return (
             <div
@@ -267,6 +294,13 @@ export default function SelectionOverlay() {
             </div>
           );
         })}
+
+        {/* Virtual scrolling stats (show only if some overlays are hidden) */}
+        {visibleCount < totalOverlays && (
+          <div className="overlay-stats">
+            {visibleCount} / {totalOverlays} visible
+          </div>
+        )}
       </div>
     );
   }

@@ -109,3 +109,20 @@
   /* border: 2px dashed var(--action-primary-bg); */
   /* background: rgba(59, 130, 246, 0.1); */
 }
+
+/* ⭐ Virtual scrolling stats */
+.overlay-stats {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  background: var(--builder-surface-bg);
+  color: var(--builder-text);
+  border: 1px solid var(--builder-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing) var(--spacing-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: var(--shadow-md);
+}

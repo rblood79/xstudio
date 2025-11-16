@@ -10,8 +10,9 @@ import { commandDataStore } from './commandDataStore';
 
 export interface HistoryEntry {
     id: string;
-    type: 'add' | 'update' | 'remove' | 'move';
+    type: 'add' | 'update' | 'remove' | 'move' | 'batch' | 'group' | 'ungroup';
     elementId: string;
+    elementIds?: string[]; // For multi-element operations
     data: {
         element?: Element;
         prevElement?: Element;
@@ -22,6 +23,11 @@ export interface HistoryEntry {
         orderNum?: number;
         prevOrderNum?: number;
         childElements?: Element[];
+        // Phase 7: Multi-element operation data
+        elements?: Element[]; // Multiple elements for batch operations
+        prevElements?: Element[]; // Previous state of elements
+        batchUpdates?: Array<{ elementId: string; prevProps: ComponentElementProps; newProps: ComponentElementProps }>;
+        groupData?: { groupId: string; childIds: string[] }; // For group operations
     };
     timestamp: number;
 }
@@ -204,6 +210,9 @@ export class HistoryManager {
         removed?: Element;
         updated?: { prevProps: Record<string, unknown>; newProps: Record<string, unknown> };
         moved?: { prevParentId: string | null; newParentId: string | null; prevOrderNum: number; newOrderNum: number };
+        batch?: { updates: Array<{ elementId: string; prevProps: Record<string, unknown>; newProps: Record<string, unknown> }> };
+        group?: { groupId: string; childIds: string[]; elements: Element[] };
+        ungroup?: { groupId: string; childIds: string[]; prevElements: Element[] };
     } {
         switch (entry.type) {
             case 'add':
@@ -228,6 +237,32 @@ export class HistoryManager {
                         newParentId: entry.data.parentId || null,
                         prevOrderNum: entry.data.prevOrderNum || 0,
                         newOrderNum: entry.data.orderNum || 0
+                    }
+                };
+            case 'batch':
+                return {
+                    batch: {
+                        updates: (entry.data.batchUpdates || []).map(update => ({
+                            elementId: update.elementId,
+                            prevProps: update.prevProps as Record<string, unknown>,
+                            newProps: update.newProps as Record<string, unknown>
+                        }))
+                    }
+                };
+            case 'group':
+                return {
+                    group: {
+                        groupId: entry.data.groupData?.groupId || '',
+                        childIds: entry.data.groupData?.childIds || [],
+                        elements: entry.data.elements || []
+                    }
+                };
+            case 'ungroup':
+                return {
+                    ungroup: {
+                        groupId: entry.data.groupData?.groupId || '',
+                        childIds: entry.data.groupData?.childIds || [],
+                        prevElements: entry.data.prevElements || []
                     }
                 };
             default:

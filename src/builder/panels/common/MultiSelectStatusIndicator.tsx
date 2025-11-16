@@ -6,8 +6,24 @@
  */
 
 import { Button } from "../../components";
-import { Copy, Trash2, X, ClipboardPaste, Group as GroupIcon, Ungroup } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  X,
+  ClipboardPaste,
+  Group as GroupIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+} from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
+import type { AlignmentType } from "../../stores/utils/elementAlignment";
+import type { DistributionType } from "../../stores/utils/elementDistribution";
 
 export interface MultiSelectStatusIndicatorProps {
   /** 선택된 요소 개수 */
@@ -22,6 +38,10 @@ export interface MultiSelectStatusIndicatorProps {
   onClearSelection?: () => void;
   /** Group Selection 핸들러 (Phase 4) */
   onGroupSelection?: () => void;
+  /** Alignment 핸들러 (Phase 5.1) */
+  onAlign?: (type: AlignmentType) => void;
+  /** Distribution 핸들러 (Phase 5.2) */
+  onDistribute?: (type: DistributionType) => void;
   /** 추가 CSS 클래스 */
   className?: string;
 }
@@ -46,6 +66,8 @@ export function MultiSelectStatusIndicator({
   onDeleteAll,
   onClearSelection,
   onGroupSelection,
+  onAlign,
+  onDistribute,
   className = "",
 }: MultiSelectStatusIndicatorProps) {
   return (
@@ -101,6 +123,130 @@ export function MultiSelectStatusIndicator({
           />
           <span>그룹화</span>
         </Button>
+
+        {/* Phase 5: Alignment buttons */}
+        {onAlign && (
+          <>
+            <div className="action-divider" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("left")}
+              aria-label="Align left"
+              isDisabled={count < 2}
+            >
+              <AlignLeft
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("center")}
+              aria-label="Align horizontal center"
+              isDisabled={count < 2}
+            >
+              <AlignCenter
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("right")}
+              aria-label="Align right"
+              isDisabled={count < 2}
+            >
+              <AlignRight
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("top")}
+              aria-label="Align top"
+              isDisabled={count < 2}
+            >
+              <AlignVerticalJustifyStart
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("middle")}
+              aria-label="Align vertical middle"
+              isDisabled={count < 2}
+            >
+              <AlignVerticalJustifyCenter
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onAlign("bottom")}
+              aria-label="Align bottom"
+              isDisabled={count < 2}
+            >
+              <AlignVerticalJustifyEnd
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </>
+        )}
+
+        {/* Phase 5.2: Distribution buttons */}
+        {onDistribute && (
+          <>
+            <div className="action-divider" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onDistribute("horizontal")}
+              aria-label="Distribute horizontally"
+              isDisabled={count < 3}
+            >
+              <AlignHorizontalDistributeCenter
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => onDistribute("vertical")}
+              aria-label="Distribute vertically"
+              isDisabled={count < 3}
+            >
+              <AlignVerticalDistributeCenter
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          </>
+        )}
 
         <Button
           variant="ghost"

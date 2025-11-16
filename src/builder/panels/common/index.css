@@ -844,6 +844,12 @@
     gap: var(--spacing-sm);
   }
 
+  .status-actions .action-divider {
+    height: 1px;
+    background: var(--builder-inspector-divider);
+    margin: var(--spacing-sm) 0;
+  }
+
   .status-actions .react-aria-Button {
     width: 100%;
     justify-content: flex-start;

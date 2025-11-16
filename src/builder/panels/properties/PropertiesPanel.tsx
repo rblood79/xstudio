@@ -20,6 +20,11 @@ import { useCopyPaste } from "../../hooks/useCopyPaste";
 import { useStore } from "../../stores";
 import { copyMultipleElements, pasteMultipleElements, serializeCopiedElements, deserializeCopiedElements } from "../../utils/multiElementCopy";
 import { createGroupFromSelection, ungroupElement } from "../../stores/utils/elementGrouping";
+import { alignElements } from "../../stores/utils/elementAlignment";
+import type { AlignmentType } from "../../stores/utils/elementAlignment";
+import { distributeElements } from "../../stores/utils/elementDistribution";
+import type { DistributionType } from "../../stores/utils/elementDistribution";
+import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste } from "../../stores/utils/historyHelpers";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -194,6 +199,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         return addElement(element);
       }));
 
+      // ⭐ Phase 7: Track in history AFTER adding elements
+      trackMultiPaste(newElements);
+
       console.log(`✅ [Paste] Successfully pasted ${newElements.length} elements`);
       // TODO: Show toast notification
     } catch (error) {
@@ -227,6 +235,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ Batch property update handler
   const handleBatchUpdate = useCallback(async (updates: Record<string, unknown>) => {
     try {
+      // ⭐ Phase 7: Track in history BEFORE applying updates
+      trackBatchUpdate(selectedElementIds, updates, elementsMap);
+
       // Apply updates to all selected elements
       await Promise.all(
         selectedElementIds.map((id: string) => updateElementProps(id, updates))
@@ -237,7 +248,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('Failed to batch update properties:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, updateElementProps]);
+  }, [selectedElementIds, updateElementProps, elementsMap]);
 
   // ⭐ Phase 3: Selection filter handler
   const handleFilteredElements = useCallback((filteredIds: string[]) => {
@@ -371,6 +382,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         updatedChildren.map((child) => updateElement(child.id, child))
       );
 
+      // ⭐ Phase 7: Track in history AFTER group creation
+      trackGroupCreation(groupElement, updatedChildren);
+
       // Select the new group
       setSelectedElement(groupElement.id, groupElement.props as any);
 
@@ -390,11 +404,19 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     try {
       console.log('[Ungroup] Ungrouping element', selectedElement.id);
 
+      // Store group element before deletion for history
+      const groupElementForHistory = elementsMap.get(selectedElement.id);
+
       // Ungroup element
       const { updatedChildren, groupIdToDelete } = ungroupElement(
         selectedElement.id,
         elementsMap
       );
+
+      // ⭐ Phase 7: Track in history BEFORE making changes
+      if (groupElementForHistory) {
+        trackUngroup(groupIdToDelete, updatedChildren, groupElementForHistory);
+      }
 
       // Update children with new parent_id
       await Promise.all(
@@ -416,6 +438,102 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [Ungroup] Failed to ungroup:', error);
     }
   }, [selectedElement, elementsMap, updateElement, removeElement, setSelectedElement]);
+
+  // ⭐ Phase 5.1: Element Alignment
+  const handleAlign = useCallback(async (type: AlignmentType) => {
+    if (!multiSelectMode || selectedElementIds.length < 2) {
+      console.warn('[Alignment] Need at least 2 elements selected');
+      return;
+    }
+
+    try {
+      console.log(`[Alignment] Aligning ${selectedElementIds.length} elements to ${type}`);
+
+      // Calculate alignment updates
+      const updates = alignElements(selectedElementIds, elementsMap, type);
+
+      if (updates.length === 0) {
+        console.warn('[Alignment] No updates generated');
+        return;
+      }
+
+      // Collect style updates for history tracking
+      const styleUpdates: Record<string, Record<string, unknown>> = {};
+      updates.forEach((update) => {
+        styleUpdates[update.id] = update.style;
+      });
+
+      // ⭐ Track in history BEFORE applying updates
+      trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
+
+      // Apply updates to each element
+      await Promise.all(
+        updates.map((update) => {
+          const element = elementsMap.get(update.id);
+          if (element) {
+            const updatedStyle = {
+              ...(element.props.style as Record<string, unknown> || {}),
+              ...update.style,
+            };
+            return updateElementProps(update.id, { style: updatedStyle });
+          }
+          return Promise.resolve();
+        })
+      );
+
+      console.log(`✅ [Alignment] Aligned ${updates.length} elements to ${type}`);
+    } catch (error) {
+      console.error('❌ [Alignment] Failed to align:', error);
+    }
+  }, [multiSelectMode, selectedElementIds, elementsMap, updateElementProps]);
+
+  // ⭐ Phase 5.2: Element Distribution
+  const handleDistribute = useCallback(async (type: DistributionType) => {
+    if (!multiSelectMode || selectedElementIds.length < 3) {
+      console.warn('[Distribution] Need at least 3 elements selected');
+      return;
+    }
+
+    try {
+      console.log(`[Distribution] Distributing ${selectedElementIds.length} elements ${type}ly`);
+
+      // Calculate distribution updates
+      const updates = distributeElements(selectedElementIds, elementsMap, type);
+
+      if (updates.length === 0) {
+        console.warn('[Distribution] No updates generated');
+        return;
+      }
+
+      // Collect style updates for history tracking
+      const styleUpdates: Record<string, Record<string, unknown>> = {};
+      updates.forEach((update) => {
+        styleUpdates[update.id] = update.style;
+      });
+
+      // ⭐ Track in history BEFORE applying updates
+      trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
+
+      // Apply updates to each element
+      await Promise.all(
+        updates.map((update) => {
+          const element = elementsMap.get(update.id);
+          if (element) {
+            const updatedStyle = {
+              ...(element.props.style as Record<string, unknown> || {}),
+              ...update.style,
+            };
+            return updateElementProps(update.id, { style: updatedStyle });
+          }
+          return Promise.resolve();
+        })
+      );
+
+      console.log(`✅ [Distribution] Distributed ${updates.length} elements ${type}ly`);
+    } catch (error) {
+      console.error('❌ [Distribution] Failed to distribute:', error);
+    }
+  }, [multiSelectMode, selectedElementIds, elementsMap, updateElementProps]);
 
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
@@ -477,11 +595,61 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         handler: handleUngroupSelection,
         description: 'Ungroup Selection',
       },
+      // ⭐ Phase 5.1: Alignment shortcuts
+      {
+        key: 'l',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('left'),
+        description: 'Align Left',
+      },
+      {
+        key: 'h',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('center'),
+        description: 'Align Horizontal Center',
+      },
+      {
+        key: 'r',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('right'),
+        description: 'Align Right',
+      },
+      {
+        key: 't',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('top'),
+        description: 'Align Top',
+      },
+      {
+        key: 'm',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('middle'),
+        description: 'Align Vertical Middle',
+      },
+      {
+        key: 'b',
+        modifier: 'cmdShift' as const,
+        handler: () => handleAlign('bottom'),
+        description: 'Align Bottom',
+      },
+      // ⭐ Phase 5.2: Distribution shortcuts
+      {
+        key: 'd',
+        modifier: 'cmdShift' as const,
+        handler: () => handleDistribute('horizontal'),
+        description: 'Distribute Horizontally',
+      },
+      {
+        key: 'v',
+        modifier: 'cmdAltShift' as const,
+        handler: () => handleDistribute('vertical'),
+        description: 'Distribute Vertically',
+      },
     ],
-    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection]
+    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]
   );
 
-  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection]);
+  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]);
 
   // ⭐ Phase 3: Tab navigation (requires special handling)
   useEffect(() => {
@@ -571,6 +739,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
             onDeleteAll={handleDeleteAll}
             onClearSelection={handleClearSelection}
             onGroupSelection={handleGroupSelection}
+            onAlign={handleAlign}
+            onDistribute={handleDistribute}
           />
 
           {/* ⭐ Batch property editor for common properties */}
