@@ -16,5 +16,6 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { MultiSelectStatusIndicator } from './MultiSelectStatusIndicator';
 export { BatchPropertyEditor } from './BatchPropertyEditor';
 export { SelectionFilter } from './SelectionFilter';
+export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 
 

@@ -11,7 +11,7 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -24,7 +24,7 @@ import { alignElements } from "../../stores/utils/elementAlignment";
 import type { AlignmentType } from "../../stores/utils/elementAlignment";
 import { distributeElements } from "../../stores/utils/elementDistribution";
 import type { DistributionType } from "../../stores/utils/elementDistribution";
-import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste } from "../../stores/utils/historyHelpers";
+import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, trackMultiDelete } from "../../stores/utils/historyHelpers";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
@@ -46,6 +46,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   const [Editor, setEditor] =
     useState<ComponentType<ComponentEditorProps> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   // 요소 타입에 맞는 에디터 동적 로드
   useEffect(() => {
@@ -216,16 +217,32 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       return;
     }
 
-    // Delete all selected elements
     try {
+      console.log(`[DeleteAll] Deleting ${selectedElementIds.length} elements`);
+
+      // ⭐ Collect elements BEFORE deletion for history tracking
+      const elementsToDelete = selectedElementIds
+        .map((id: string) => elementsMap.get(id))
+        .filter((el): el is NonNullable<typeof el> => el !== undefined);
+
+      if (elementsToDelete.length === 0) {
+        console.warn('[DeleteAll] No elements to delete');
+        return;
+      }
+
+      // ⭐ Track in history BEFORE deleting
+      trackMultiDelete(elementsToDelete);
+
+      // Delete all selected elements
       await Promise.all(selectedElementIds.map((id: string) => removeElement(id)));
+
+      console.log(`✅ [DeleteAll] Deleted ${elementsToDelete.length} elements`);
       // TODO: Show toast notification
-      console.log('Deleted all selected elements');
     } catch (error) {
-      console.error('Failed to delete elements:', error);
+      console.error('❌ [DeleteAll] Failed to delete elements:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, removeElement]);
+  }, [selectedElementIds, elementsMap, removeElement]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedElement(null);
@@ -667,6 +684,13 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         handler: () => handleDistribute('vertical'),
         description: 'Distribute Vertically',
       },
+      // ⭐ Sprint 3: Keyboard Shortcuts Help
+      {
+        key: '?',
+        modifier: 'cmd' as const,
+        handler: () => setShowKeyboardHelp((prev) => !prev),
+        description: 'Toggle Keyboard Shortcuts Help',
+      },
     ],
     [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]
   );
@@ -785,6 +809,12 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         elementId={selectedElement.id}
         currentProps={selectedElement.properties}
         onUpdate={handleUpdate}
+      />
+
+      {/* ⭐ Sprint 3: Keyboard Shortcuts Help Panel */}
+      <KeyboardShortcutsHelp
+        isOpen={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
       />
     </div>
   );

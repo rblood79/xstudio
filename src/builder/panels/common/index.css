@@ -890,6 +890,7 @@
 
   .status-actions .react-aria-Button {
     width: 100%;
+    display: flex;
     justify-content: flex-start;
     gap: var(--spacing-sm);
     padding: var(--spacing) var(--spacing-sm);
