@@ -2055,6 +2055,172 @@ Copilot learns from code patterns. Tips:
 
 **Future Improvements**: See `docs/MULTI_SELECT_IMPROVEMENTS.md`
 
+### 🎨 Multi-Element Editing (2025-11-16)
+
+**Status**: ✅ Phase 2 Complete
+
+**Major Updates**:
+- ✅ Multi-Select Status Indicator with element count and quick actions
+- ✅ Batch Property Editor for editing common properties
+- ✅ Quick actions: Copy All, Delete All, Clear Selection
+- ✅ Mixed value detection for properties with different values
+- ✅ Category filtering (All, Layout, Style, Content)
+
+**Components Created**: 3 new components
+- `MultiSelectStatusIndicator.tsx` - Status display with quick actions
+- `BatchPropertyEditor.tsx` - Common property editor
+- `batchPropertyUtils.ts` - Utility functions for property analysis
+
+**Architecture**:
+1. **Status Indicator** - Shows count, element types, and quick actions
+2. **Property Analysis** - Finds common properties across selected elements
+3. **Mixed Value Detection** - Detects and displays properties with different values
+4. **Batch Updates** - Applies property changes to all selected elements at once
+5. **Category Filtering** - Filter properties by layout, style, or content
+
+**Files Created/Modified**: 6 files
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` (new)
+- `src/builder/panels/common/BatchPropertyEditor.tsx` (new)
+- `src/builder/panels/properties/utils/batchPropertyUtils.ts` (new)
+- `src/builder/panels/common/index.ts` (exports)
+- `src/builder/panels/common/index.css` (styles)
+- `src/builder/panels/properties/PropertiesPanel.tsx` (integration)
+
+**Key Features**:
+- **Common Properties**: Only shows properties that exist in all selected elements
+- **Mixed Values**: Shows "Mixed" placeholder when values differ
+- **Batch Editable**: Filters out non-editable properties (id, customId)
+- **Type-Aware Inputs**: Boolean → Switch, Number → Number input, String → Text input
+- **Real-time Updates**: Changes apply immediately to all selected elements
+
+**User Experience**:
+- Select multiple elements → Status indicator appears
+- View common properties → Only editable common properties shown
+- Edit property → Changes apply to all selected elements
+- Mixed values → Shows "Mixed (N values)" placeholder
+- Category filter → Focus on specific property types
+
+**Quick Actions**:
+- **Copy All**: Copy all selected elements (TODO: implement)
+- **Delete All**: Delete all selected elements with confirmation
+- **Clear Selection**: Deselect all elements
+
+**Future Improvements**:
+- Add toast notifications for actions
+- Add property type icons
+- Support for nested properties
+- Undo/redo integration
+
+### 📋 Multi-Element Copy/Paste (2025-11-16)
+
+**Status**: ✅ Phase 6 Complete
+
+**Major Updates**:
+- ✅ Copy All functionality with relationship preservation
+- ✅ Paste with automatic offset (10px) for visual separation
+- ✅ Duplicate selection (Cmd+D) with 20px offset
+- ✅ Keyboard shortcuts (Cmd+C, Cmd+V, Cmd+D)
+- ✅ Clipboard serialization/deserialization
+- ✅ Parent-child relationship preservation
+- ✅ Descendant element inclusion (recursive copy)
+
+**Components Created**: 1 utility module
+- `multiElementCopy.ts` - Copy/paste utilities with relationship preservation (231 lines)
+
+**Architecture**:
+1. **Copy with Relationships** - Preserves parent-child relationships
+2. **ID Remapping** - Generates new IDs for all copied elements
+3. **Descendant Inclusion** - Automatically includes all child elements (BFS traversal)
+4. **Offset Positioning** - Visual separation for pasted/duplicated elements
+5. **Clipboard Integration** - JSON serialization for clipboard storage
+
+**Files Created/Modified**: 3 files
+- `src/builder/utils/multiElementCopy.ts` (new)
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` (paste button)
+- `src/builder/panels/properties/PropertiesPanel.tsx` (handlers + shortcuts)
+
+**Key Features**:
+- **Relationship Preservation**: Parent-child relationships maintained
+- **Root Detection**: Identifies root elements (no parent or external parent)
+- **External Parents**: Tracks elements whose parents are NOT in selection
+- **ID Mapping**: Old ID → New ID mapping for all elements
+- **BFS Traversal**: Finds all descendants automatically
+- **Position Offset**: Paste at +10px, Duplicate at +20px
+- **Clipboard Safety**: JSON serialization with validation
+
+**Copy Algorithm**:
+```typescript
+1. Collect selected elements
+2. Find all descendants (BFS)
+3. Identify root elements
+4. Track external parents
+5. Serialize to JSON → clipboard
+```
+
+**Paste Algorithm**:
+```typescript
+1. Read clipboard → deserialize JSON
+2. Generate new IDs for all elements
+3. Remap parent_id references
+4. Apply offset to root elements
+5. Create elements in store
+```
+
+**Keyboard Shortcuts**:
+- **Cmd+C**: Copy all selected elements
+- **Cmd+V**: Paste copied elements
+- **Cmd+D**: Duplicate selection in place
+- **Cmd+Shift+C**: Copy properties (single element)
+- **Cmd+Shift+V**: Paste properties (single element)
+
+**User Experience**:
+- Copy → Elements serialized to clipboard with relationships
+- Paste → New elements appear offset by 10px
+- Duplicate → Instant duplication with 20px offset
+- Relationships → Parent-child structure preserved
+- Descendants → All child elements automatically included
+
+**Technical Details**:
+```typescript
+// Example: Copy 3 elements (parent + 2 children)
+// Result: All 3 copied + all their descendants
+const copiedData = copyMultipleElements(
+  ['parent-id', 'child1-id', 'child2-id'],
+  elementsMap
+);
+
+// Clipboard data structure:
+{
+  elements: [...],          // All elements + descendants
+  rootIds: ['parent-id'],   // Root elements
+  externalParents: Map(),   // External parent tracking
+  timestamp: 1700000000000
+}
+
+// Paste creates new elements:
+const newElements = pasteMultipleElements(
+  copiedData,
+  currentPageId,
+  { x: 10, y: 10 }  // Offset
+);
+```
+
+**Edge Cases Handled**:
+- ✅ Copy single element → Works as expected
+- ✅ Copy parent + children → All relationships preserved
+- ✅ Copy children only → External parent tracked
+- ✅ Mixed selection → Handles both cases
+- ✅ Nested elements → BFS finds all descendants
+- ✅ Invalid clipboard data → Graceful fallback
+
+**Future Improvements**:
+- Smarter offset calculation (avoid overlaps)
+- Visual paste preview
+- Paste at mouse position
+- Cross-page copy/paste
+- Clipboard format validation
+- Toast notifications
+
 ---
 
 ## 🚧 Component Migration Status (Phase 0 - In Progress)

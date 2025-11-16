@@ -1,0 +1,243 @@
+/**
+ * Multi-Element Copy/Paste Utilities
+ * Phase 6: Copy/Paste - Multi-Element Copy/Paste
+ *
+ * Utilities for copying and pasting multiple elements while preserving relationships
+ */
+
+import type { Element } from "../../types/core/store.types";
+import { ElementUtils } from "../../utils/element/elementUtils";
+
+/**
+ * Copied elements data structure
+ */
+export interface CopiedElementsData {
+  /** Elements to copy */
+  elements: Element[];
+  /** Root element IDs (elements without parents in the selection) */
+  rootIds: string[];
+  /** Original parent IDs (for elements whose parents are NOT selected) */
+  externalParents: Map<string, string>;
+  /** Timestamp of copy operation */
+  timestamp: number;
+}
+
+/**
+ * Copy multiple elements with relationship preservation
+ *
+ * @param elementIds - IDs of elements to copy
+ * @param elementsMap - Map of all elements
+ * @returns Serialized copy data
+ */
+export function copyMultipleElements(
+  elementIds: string[],
+  elementsMap: Map<string, Element>
+): CopiedElementsData {
+  // Get all elements to copy
+  const elementsToCopy = elementIds
+    .map((id) => elementsMap.get(id))
+    .filter((el): el is Element => el !== undefined);
+
+  if (elementsToCopy.length === 0) {
+    return {
+      elements: [],
+      rootIds: [],
+      externalParents: new Map(),
+      timestamp: Date.now(),
+    };
+  }
+
+  // Create a Set for quick lookup
+  const selectedIds = new Set(elementIds);
+
+  // Find root elements and external parents
+  const rootIds: string[] = [];
+  const externalParents = new Map<string, string>();
+
+  elementsToCopy.forEach((element) => {
+    if (!element.parent_id) {
+      // Top-level element (no parent)
+      rootIds.push(element.id);
+    } else if (!selectedIds.has(element.parent_id)) {
+      // Parent is NOT in selection → external parent
+      externalParents.set(element.id, element.parent_id);
+      rootIds.push(element.id);
+    }
+    // else: Parent IS in selection → will be handled by relationship preservation
+  });
+
+  // Also need to copy ALL descendants of selected elements
+  const allElementsIncludingDescendants = new Set<Element>(elementsToCopy);
+
+  // BFS to find all descendants
+  const queue = [...elementsToCopy];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+
+    // Find children of current element
+    for (const [_, element] of elementsMap) {
+      if (element.parent_id === current.id && !allElementsIncludingDescendants.has(element)) {
+        allElementsIncludingDescendants.add(element);
+        queue.push(element);
+      }
+    }
+  }
+
+  return {
+    elements: Array.from(allElementsIncludingDescendants),
+    rootIds,
+    externalParents,
+    timestamp: Date.now(),
+  };
+}
+
+/**
+ * Paste copied elements with new IDs and optional offset
+ *
+ * @param copiedData - Data from copyMultipleElements
+ * @param currentPageId - Current page ID
+ * @param offset - Optional offset for positioning (default: 10px)
+ * @returns New elements with updated IDs and relationships
+ */
+export function pasteMultipleElements(
+  copiedData: CopiedElementsData,
+  currentPageId: string,
+  offset: { x: number; y: number } = { x: 10, y: 10 }
+): Element[] {
+  if (copiedData.elements.length === 0) {
+    return [];
+  }
+
+  // Create ID mapping: old ID → new ID
+  const idMap = new Map<string, string>();
+  copiedData.elements.forEach((element) => {
+    idMap.set(element.id, ElementUtils.generateId());
+  });
+
+  // Create new elements with updated IDs and relationships
+  const newElements: Element[] = copiedData.elements.map((element) => {
+    const newId = idMap.get(element.id)!;
+
+    // Determine new parent_id
+    let newParentId: string | null = null;
+
+    if (element.parent_id) {
+      if (idMap.has(element.parent_id)) {
+        // Parent was also copied → use new parent ID
+        newParentId = idMap.get(element.parent_id)!;
+      } else {
+        // Parent was NOT copied → use original parent (external parent)
+        newParentId = element.parent_id;
+      }
+    }
+
+    // Apply offset to position/style if element is a root element
+    let updatedProps = { ...element.props };
+
+    if (copiedData.rootIds.includes(element.id)) {
+      // Apply offset to root elements
+      const currentStyle = (element.props.style || {}) as Record<string, unknown>;
+
+      // Parse and offset position values
+      const parsePixels = (value: unknown): number => {
+        if (typeof value === 'string') {
+          const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
+          if (match) return parseFloat(match[1]);
+        }
+        if (typeof value === 'number') return value;
+        return 0;
+      };
+
+      const left = parsePixels(currentStyle.left);
+      const top = parsePixels(currentStyle.top);
+
+      updatedProps = {
+        ...updatedProps,
+        style: {
+          ...currentStyle,
+          left: `${left + offset.x}px`,
+          top: `${top + offset.y}px`,
+        },
+      };
+    }
+
+    return {
+      ...element,
+      id: newId,
+      parent_id: newParentId,
+      page_id: currentPageId,
+      props: updatedProps,
+      // Reset timestamps
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  });
+
+  return newElements;
+}
+
+/**
+ * Serialize copied elements to clipboard-safe JSON
+ *
+ * @param copiedData - Data from copyMultipleElements
+ * @returns JSON string
+ */
+export function serializeCopiedElements(copiedData: CopiedElementsData): string {
+  // Convert Map to array for JSON serialization
+  const serializable = {
+    elements: copiedData.elements,
+    rootIds: copiedData.rootIds,
+    externalParents: Array.from(copiedData.externalParents.entries()),
+    timestamp: copiedData.timestamp,
+  };
+
+  return JSON.stringify(serializable);
+}
+
+/**
+ * Deserialize clipboard JSON to CopiedElementsData
+ *
+ * @param json - JSON string from clipboard
+ * @returns CopiedElementsData or null if invalid
+ */
+export function deserializeCopiedElements(json: string): CopiedElementsData | null {
+  try {
+    const parsed = JSON.parse(json);
+
+    // Validate structure
+    if (!parsed.elements || !Array.isArray(parsed.elements)) {
+      return null;
+    }
+
+    return {
+      elements: parsed.elements,
+      rootIds: parsed.rootIds || [],
+      externalParents: new Map(parsed.externalParents || []),
+      timestamp: parsed.timestamp || Date.now(),
+    };
+  } catch (error) {
+    console.error('Failed to deserialize copied elements:', error);
+    return null;
+  }
+}
+
+/**
+ * Calculate next available order_num for pasted elements
+ *
+ * @param parentId - Parent element ID
+ * @param elements - All elements in the page
+ * @returns Next order_num
+ */
+export function getNextOrderNum(
+  parentId: string | null,
+  elements: Element[]
+): number {
+  const siblings = elements.filter((el) => el.parent_id === parentId);
+
+  if (siblings.length === 0) {
+    return 0;
+  }
+
+  const maxOrder = Math.max(...siblings.map((el) => el.order_num || 0));
+  return maxOrder + 1;
+}

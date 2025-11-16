@@ -11,17 +11,30 @@ import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps } from "../../inspector/types";
-import { EmptyState, LoadingSpinner, PanelHeader } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 import { useCopyPaste } from "../../hooks/useCopyPaste";
+import { useStore } from "../../stores";
+import { copyMultipleElements, pasteMultipleElements, serializeCopiedElements, deserializeCopiedElements } from "../../utils/multiElementCopy";
 import "../../panels/common/index.css";
 
 export function PropertiesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const updateProperties = useInspectorState((state) => state.updateProperties);
+
+  // ⭐ Multi-select state from store
+  const selectedElementIds = useStore((state) => (state as any).selectedElementIds || []);
+  const multiSelectMode = useStore((state) => (state as any).multiSelectMode || false);
+  const elementsMap = useStore((state) => state.elementsMap);
+  const elements = useStore((state) => state.elements);
+  const currentPageId = useStore((state) => state.currentPageId);
+  const removeElement = useStore((state) => state.removeElement);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
+  const updateElementProps = useStore((state) => state.updateElementProps);
+  const addElement = useStore((state) => state.addElement);
 
   const [Editor, setEditor] =
     useState<ComponentType<ComponentEditorProps> | null>(null);
@@ -98,6 +111,120 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     // TODO: Show toast notification
   }, [pasteProperties]);
 
+  // ⭐ Multi-select quick actions
+  const handleCopyAll = useCallback(async () => {
+    if (selectedElementIds.length === 0) return;
+
+    try {
+      // Copy elements with relationship preservation
+      const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+
+      // Serialize and copy to clipboard
+      const jsonData = serializeCopiedElements(copiedData);
+      await navigator.clipboard.writeText(jsonData);
+
+      console.log(`✅ Copied ${selectedElementIds.length} elements to clipboard`);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to copy elements:', error);
+      // TODO: Show error toast
+    }
+  }, [selectedElementIds, elementsMap]);
+
+  const handlePasteAll = useCallback(async () => {
+    if (!currentPageId) return;
+
+    try {
+      // Read from clipboard
+      const clipboardText = await navigator.clipboard.readText();
+
+      // Deserialize
+      const copiedData = deserializeCopiedElements(clipboardText);
+      if (!copiedData) {
+        console.warn('Invalid clipboard data');
+        return;
+      }
+
+      // Paste with offset
+      const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+
+      // Add all new elements to store
+      await Promise.all(newElements.map((element) => addElement(element)));
+
+      console.log(`✅ Pasted ${newElements.length} elements`);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to paste elements:', error);
+      // TODO: Show error toast
+    }
+  }, [currentPageId, addElement]);
+
+  const handleDeleteAll = useCallback(async () => {
+    // Confirm deletion
+    if (!confirm(`${selectedElementIds.length}개 요소를 모두 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    // Delete all selected elements
+    try {
+      await Promise.all(selectedElementIds.map((id: string) => removeElement(id)));
+      // TODO: Show toast notification
+      console.log('Deleted all selected elements');
+    } catch (error) {
+      console.error('Failed to delete elements:', error);
+      // TODO: Show error toast
+    }
+  }, [selectedElementIds, removeElement]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedElement(null);
+    console.log('Selection cleared');
+  }, [setSelectedElement]);
+
+  // ⭐ Batch property update handler
+  const handleBatchUpdate = useCallback(async (updates: Record<string, unknown>) => {
+    try {
+      // Apply updates to all selected elements
+      await Promise.all(
+        selectedElementIds.map((id: string) => updateElementProps(id, updates))
+      );
+      console.log('Batch update applied to', selectedElementIds.length, 'elements');
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to batch update properties:', error);
+      // TODO: Show error toast
+    }
+  }, [selectedElementIds, updateElementProps]);
+
+  // ⭐ Get selected elements from store
+  const selectedElements = useMemo(() => {
+    return selectedElementIds
+      .map((id: string) => elementsMap.get(id))
+      .filter((el): el is NonNullable<typeof el> => el !== undefined);
+  }, [selectedElementIds, elementsMap]);
+
+  // ⭐ Duplicate handler (Cmd+D)
+  const handleDuplicate = useCallback(async () => {
+    if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) return;
+
+    try {
+      // Copy current selection
+      const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+
+      // Paste with offset
+      const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 20, y: 20 });
+
+      // Add all new elements to store
+      await Promise.all(newElements.map((element) => addElement(element)));
+
+      console.log(`✅ Duplicated ${newElements.length} elements`);
+      // TODO: Show toast notification
+    } catch (error) {
+      console.error('Failed to duplicate elements:', error);
+      // TODO: Show error toast
+    }
+  }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
     () => [
@@ -113,11 +240,30 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         handler: handlePasteProperties,
         description: 'Paste Properties',
       },
+      // ⭐ Multi-element shortcuts
+      {
+        key: 'c',
+        modifier: 'cmd' as const,
+        handler: handleCopyAll,
+        description: 'Copy All Elements',
+      },
+      {
+        key: 'v',
+        modifier: 'cmd' as const,
+        handler: handlePasteAll,
+        description: 'Paste Elements',
+      },
+      {
+        key: 'd',
+        modifier: 'cmd' as const,
+        handler: handleDuplicate,
+        description: 'Duplicate Selection',
+      },
     ],
-    [handleCopyProperties, handlePasteProperties]
+    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate]
   );
 
-  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties]);
+  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
@@ -150,7 +296,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   return (
     <div className="properties-panel">
       <PanelHeader
-        title={selectedElement.type}
+        title={multiSelectMode ? `${selectedElementIds.length}개 요소 선택됨` : selectedElement.type}
         actions={
           <div className="panel-actions">
             <Button
@@ -184,6 +330,26 @@ export function PropertiesPanel({ isActive }: PanelProps) {
           </div>
         }
       />
+
+      {/* ⭐ Multi-select status indicator */}
+      {multiSelectMode && selectedElementIds.length > 1 && (
+        <>
+          <MultiSelectStatusIndicator
+            count={selectedElementIds.length}
+            onCopyAll={handleCopyAll}
+            onPasteAll={handlePasteAll}
+            onDeleteAll={handleDeleteAll}
+            onClearSelection={handleClearSelection}
+          />
+
+          {/* ⭐ Batch property editor for common properties */}
+          <BatchPropertyEditor
+            selectedElements={selectedElements}
+            onBatchUpdate={handleBatchUpdate}
+          />
+        </>
+      )}
+
       <Editor
         elementId={selectedElement.id}
         currentProps={selectedElement.properties}

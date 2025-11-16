@@ -797,4 +797,161 @@
     color: var(--builder-inspector-text-secondary);
     text-align: center;
   }
+
+  /* ========================================
+   * Multi-Select Status Indicator
+   * Phase 2: Multi-Element Editing
+   * ======================================== */
+
+  .multi-select-status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: var(--builder-inspector-surface);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-md);
+  }
+
+  .status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid var(--builder-inspector-divider);
+  }
+
+  .status-count {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+  }
+
+  .count-number {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--action-primary-bg);
+  }
+
+  .count-label {
+    font-size: var(--text-sm);
+    color: var(--builder-inspector-text-secondary);
+  }
+
+  .status-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .status-actions .react-aria-Button {
+    width: 100%;
+    justify-content: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing) var(--spacing-sm);
+    background: var(--builder-inspector-control-bg);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-primary);
+    transition: all 200ms;
+
+    &:hover:not([aria-disabled="true"]) {
+      background: var(--builder-inspector-bg);
+      border-color: var(--builder-inspector-divider);
+    }
+
+    &[data-pressed]:not([aria-disabled="true"]) {
+      background: var(--builder-inspector-header-bg);
+    }
+
+    &[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .status-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing);
+    background: var(--builder-inspector-header-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .info-text {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-primary);
+  }
+
+  .info-hint {
+    margin: 0;
+    font-size: var(--text-2xs);
+    color: var(--builder-inspector-text-secondary);
+  }
+
+  /* ========================================
+   * Batch Property Editor
+   * Phase 2: Multi-Element Editing
+   * ======================================== */
+
+  .batch-property-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing);
+    background: var(--builder-inspector-surface);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing);
+  }
+
+  .batch-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding-bottom: var(--spacing);
+    border-bottom: 1px solid var(--builder-inspector-divider);
+  }
+
+  .batch-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .batch-count {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--builder-inspector-text-primary);
+  }
+
+  .batch-types {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+  }
+
+  .batch-empty {
+    margin: 0;
+    padding: var(--spacing);
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-secondary);
+    text-align: center;
+    font-style: italic;
+  }
+
+  .batch-footer {
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--builder-inspector-divider);
+  }
+
+  .batch-hint {
+    margin: 0;
+    font-size: var(--text-2xs);
+    color: var(--builder-inspector-text-secondary);
+  }
 }

@@ -80,20 +80,20 @@
 
 /* ⭐ Multi-select mode styles */
 .overlay-element.multi-select {
-  outline: 2px solid var(--action-primary-bg);
+  outline: 1px solid var(--action-primary-bg);
   outline-offset: 0;
   z-index: 2;
 }
 
 /* ⭐ Primary selection (first selected element, shown in Inspector) */
 .overlay-element.multi-select.primary {
-  outline: 2px solid var(--action-primary-bg);
+  outline: 1px solid var(--action-primary-bg);
   z-index: 3;
 }
 
 /* ⭐ Secondary selections (additional selected elements) */
 .overlay-element.multi-select.secondary {
-  outline: 2px dashed var(--action-primary-bg);
+  outline: 1px dashed var(--action-primary-bg);
   z-index: 2;
 }
 

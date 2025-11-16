@@ -13,5 +13,7 @@ export { PanelHeader } from './PanelHeader';
 export { SectionHeader } from './SectionHeader';
 export { EmptyState } from './EmptyState';
 export { LoadingSpinner } from './LoadingSpinner';
+export { MultiSelectStatusIndicator } from './MultiSelectStatusIndicator';
+export { BatchPropertyEditor } from './BatchPropertyEditor';
 
 
