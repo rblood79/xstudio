@@ -1,7 +1,7 @@
 # Multi-Element Selection: Future Improvements
 
 **Last Updated**: 2025-11-16
-**Current Status**: ✅ Phase 2 (Multi-Element Editing) + Phase 3 (Keyboard Shortcuts) + Phase 4 (Grouping & Organization) + Phase 5 (Alignment & Distribution) + Phase 6.2 (Duplicate Selection) + Phase 7 (History Integration) + Phase 8.2 (Performance Optimization) Complete
+**Current Status**: ✅ Phase 2 (Multi-Element Editing) + Phase 3 (Keyboard Shortcuts + Selection Filters) + Phase 4 (Grouping & Organization) + Phase 5 (Alignment & Distribution) + Phase 6 (Copy/Paste/Duplicate) + Phase 7 (History Integration) + Phase 8 (Performance Optimization) Complete
 
 This document outlines potential improvements and enhancements for the multi-element selection feature.
 
@@ -332,36 +332,181 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }) {
 
 ---
 
-### 4. Selection Filters
+### ✅ 4. Selection Filters (COMPLETED)
+
+**Status**: ✅ **Complete** (2025-11-16)
 
 **Goal**: Filter selection by element type, tag, or properties
 
 **UI Design**:
 ```
 ┌─────────────────────────────────────┐
-│ Filter Selection:                   │
+│ 🔍 선택 필터                  [X]    │
 │                                     │
-│ Type: [All ▼] Tag: [All ▼]        │
+│ 필터 타입: [타입으로 ▼]            │
 │                                     │
-│ ☑ Button (3)                        │
-│ ☑ Input (2)                         │
-│ ☐ Card (5)                          │
+│ 태그: [Button ▼]                   │
 │                                     │
-│ [Apply Filter]                      │
+│ [필터 적용]  [초기화]              │
 └─────────────────────────────────────┘
 ```
 
 **Features**:
-- Filter by component type (Button, Input, Card, etc.)
-- Filter by tag (div, span, section, etc.)
-- Filter by custom properties (className, data-* attributes)
-- Checkbox-based multi-filter
+- ✅ Filter by component type/tag (Button, Input, Card, etc.)
+- ✅ Filter by custom properties (className, style, data-* attributes)
+- ✅ Property value search (case-insensitive substring match)
+- ✅ Collapsible UI (collapsed by default)
+- ✅ Clear/Reset functionality
+- ✅ Unique type/tag extraction from current page elements
 
 **Implementation**:
-- Component: `src/builder/inspector/components/SelectionFilter.tsx`
-- Store action: `filterSelection(predicate)`
+```typescript
+// src/builder/panels/common/SelectionFilter.tsx
 
-**Complexity**: Medium (2-3 days)
+export function SelectionFilter({
+  allElements,
+  onFilteredElements,
+  className = "",
+}: SelectionFilterProps) {
+  const [filterType, setFilterType] = useState<"all" | "type" | "tag" | "property">("all");
+  const [selectedTag, setSelectedTag] = useState<string>("");
+  const [propertyKey, setPropertyKey] = useState<string>("");
+  const [propertyValue, setPropertyValue] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
+  // Get unique types and tags
+  const { uniqueTypes, uniqueTags } = useMemo(() => {
+    const types = new Set<string>();
+    const tags = new Set<string>();
+
+    allElements.forEach((el) => {
+      types.add(el.tag);
+      tags.add(el.tag);
+    });
+
+    return {
+      uniqueTypes: Array.from(types).sort(),
+      uniqueTags: Array.from(tags).sort(),
+    };
+  }, [allElements]);
+
+  // Apply filter
+  const handleApplyFilter = () => {
+    let filtered: Element[] = [];
+
+    switch (filterType) {
+      case "all":
+        filtered = allElements;
+        break;
+
+      case "type":
+      case "tag":
+        if (selectedTag) {
+          filtered = allElements.filter((el) => el.tag === selectedTag);
+        }
+        break;
+
+      case "property":
+        if (propertyKey) {
+          filtered = allElements.filter((el) => {
+            const props = el.props || {};
+            if (!(propertyKey in props)) return false;
+
+            if (propertyValue) {
+              // Match property value (case-insensitive substring)
+              const value = String(props[propertyKey] || "");
+              return value.toLowerCase().includes(propertyValue.toLowerCase());
+            }
+
+            // Just check if property exists
+            return propertyKey in props;
+          });
+        }
+        break;
+    }
+
+    const filteredIds = filtered.map((el) => el.id);
+    onFilteredElements(filteredIds);
+
+    console.log(`✅ [Filter] Applied ${filterType} filter, found ${filteredIds.length} elements`);
+  };
+
+  // Clear filter
+  const handleClearFilter = () => {
+    setFilterType("all");
+    setSelectedTag("");
+    setPropertyKey("");
+    setPropertyValue("");
+    onFilteredElements(allElements.map((el) => el.id));
+  };
+
+  return (
+    <div className="selection-filter">
+      {/* Collapsible UI */}
+      {/* Filter type selector */}
+      {/* Tag dropdown (for type/tag mode) */}
+      {/* Property key/value inputs (for property mode) */}
+      {/* Apply/Clear buttons */}
+    </div>
+  );
+}
+```
+
+**Files Created**:
+- `src/builder/panels/common/SelectionFilter.tsx` (218 lines)
+
+**Files Modified**:
+- `src/builder/panels/common/index.css` - Added selection filter styles (lines 1110-1160)
+- `src/builder/panels/common/index.ts` - Export SelectionFilter
+- `src/builder/panels/properties/PropertiesPanel.tsx` - Integration (line 801-804)
+
+**Features Implemented**:
+- ✅ Four filter modes: All, Type, Tag, Property
+- ✅ Unique type/tag extraction with useMemo optimization
+- ✅ Property value search with case-insensitive substring matching
+- ✅ Property existence check (empty value = check if key exists)
+- ✅ Collapsible UI (expanded/collapsed states)
+- ✅ Apply/Clear buttons with proper disable states
+- ✅ Callback-based filtered results (elementIds array)
+- ✅ Builder token styling (--builder-inspector-surface)
+
+**Filter Modes**:
+
+1. **All** - No filtering, select all elements
+2. **Type/Tag** - Filter by element tag (e.g., Button, Card, Input)
+3. **Property** - Filter by property key/value:
+   - Key only: Check if property exists
+   - Key + Value: Substring match (case-insensitive)
+
+**UI Components Used**:
+- `PropertySelect` - Filter type and tag selection
+- `PropertyInput` - Property key/value inputs
+- `Button` - Apply, Clear, Expand/Collapse
+
+**Edge Cases Handled**:
+- Empty allElements → No unique types/tags
+- Invalid property key → Early return false
+- Empty property value → Existence check only
+- No matching elements → Return empty array
+
+**User Flow**:
+1. Click "필터" button → Filter panel expands
+2. Select filter type (All/Type/Tag/Property)
+3. (Type/Tag mode) Select tag from dropdown
+4. (Property mode) Enter property key (and optional value)
+5. Click "필터 적용" → Elements filtered
+6. Click "초기화" → Filter reset, all elements selected
+
+**Integration**:
+```typescript
+// PropertiesPanel.tsx
+<SelectionFilter
+  allElements={currentPageElements}
+  onFilteredElements={handleFilteredElements}
+/>
+```
+
+**Complexity**: ✅ Medium (2-3 days) - **Already Implemented**
 
 ---
 
@@ -687,61 +832,232 @@ function distributeHorizontally(bounds: ElementBounds[]): DistributionUpdate[] {
 
 ## 🎯 Phase 6: Copy/Paste/Duplicate (Priority: High)
 
-### 9. Multi-Element Copy/Paste
+### ✅ 9. Multi-Element Copy/Paste (COMPLETED)
+
+**Status**: ✅ **Complete** (2025-11-16)
 
 **Goal**: Copy and paste multiple selected elements
 
 **Features**:
-- Copy all selected elements to clipboard
-- Maintain parent-child relationships
-- Preserve relative positions
-- Generate new IDs on paste
-- Paste at mouse position or offset
+- ✅ Copy all selected elements to clipboard
+- ✅ Maintain parent-child relationships
+- ✅ Preserve relative positions with external parent tracking
+- ✅ Generate new IDs on paste (ID mapping)
+- ✅ Paste at offset (default 10px)
+- ✅ BFS traversal for all descendants
+- ✅ Clipboard serialization with magic marker
+- ✅ History integration (trackMultiPaste)
+- ✅ Keyboard shortcuts (Cmd+C, Cmd+V)
 
 **Implementation**:
 ```typescript
-// Extend existing useCopyPaste hook
-export function useCopyPaste() {
-  const copyMultiple = useCallback(() => {
-    const elements = selectedElementIds.map(id => getElement(id));
+// src/builder/utils/multiElementCopy.ts
 
-    // Build tree structure
-    const tree = buildElementTree(elements);
+/**
+ * Copy multiple elements with relationship preservation
+ */
+export function copyMultipleElements(
+  elementIds: string[],
+  elementsMap: Map<string, Element>
+): CopiedElementsData {
+  const elementsToCopy = elementIds
+    .map((id) => elementsMap.get(id))
+    .filter((el): el is Element => el !== undefined);
 
-    // Serialize with relationships
-    const clipboard = {
-      type: 'multi-elements',
-      count: elements.length,
-      tree: tree,
-      timestamp: Date.now()
-    };
+  const selectedIds = new Set(elementIds);
+  const rootIds: string[] = [];
+  const externalParents = new Map<string, string>();
 
-    navigator.clipboard.writeText(JSON.stringify(clipboard));
-  }, [selectedElementIds]);
+  // Find root elements and external parents
+  elementsToCopy.forEach((element) => {
+    if (!element.parent_id) {
+      rootIds.push(element.id);
+    } else if (!selectedIds.has(element.parent_id)) {
+      // Parent is NOT in selection → external parent
+      externalParents.set(element.id, element.parent_id);
+      rootIds.push(element.id);
+    }
+  });
 
-  const pasteMultiple = useCallback((position?: { x: number; y: number }) => {
-    const data = await navigator.clipboard.readText();
-    const clipboard = JSON.parse(data);
+  // BFS to find all descendants
+  const allElementsIncludingDescendants = new Set<Element>(elementsToCopy);
+  const queue = [...elementsToCopy];
 
-    if (clipboard.type !== 'multi-elements') return;
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const [_, element] of elementsMap) {
+      if (element.parent_id === current.id && !allElementsIncludingDescendants.has(element)) {
+        allElementsIncludingDescendants.add(element);
+        queue.push(element);
+      }
+    }
+  }
 
-    // Regenerate IDs
-    const newElements = regenerateIds(clipboard.tree);
+  return {
+    elements: Array.from(allElementsIncludingDescendants),
+    rootIds,
+    externalParents,
+    timestamp: Date.now(),
+  };
+}
 
-    // Offset position
-    if (position) {
-      offsetElementPositions(newElements, position);
+/**
+ * Paste copied elements with new IDs and offset
+ */
+export function pasteMultipleElements(
+  copiedData: CopiedElementsData,
+  currentPageId: string,
+  offset: { x: number; y: number } = { x: 10, y: 10 }
+): Element[] {
+  // Create ID mapping: old ID → new ID
+  const idMap = new Map<string, string>();
+  copiedData.elements.forEach((element) => {
+    idMap.set(element.id, ElementUtils.generateId());
+  });
+
+  // Create new elements with updated IDs and relationships
+  const newElements: Element[] = copiedData.elements.map((element) => {
+    const newId = idMap.get(element.id)!;
+
+    // Determine new parent_id
+    let newParentId: string | null = null;
+    if (element.parent_id) {
+      if (idMap.has(element.parent_id)) {
+        // Parent was also copied → use new parent ID
+        newParentId = idMap.get(element.parent_id)!;
+      } else {
+        // Parent was NOT copied → use original parent (external parent)
+        newParentId = element.parent_id;
+      }
     }
 
-    // Add to store
-    addComplexElement(newElements);
-  }, []);
+    // Apply offset to root elements
+    let updatedProps = { ...element.props };
+    if (copiedData.rootIds.includes(element.id)) {
+      const currentStyle = (element.props.style || {}) as Record<string, unknown>;
+      const left = parsePixels(currentStyle.left);
+      const top = parsePixels(currentStyle.top);
 
-  return { copyMultiple, pasteMultiple };
+      updatedProps = {
+        ...updatedProps,
+        style: {
+          ...currentStyle,
+          left: `${left + offset.x}px`,
+          top: `${top + offset.y}px`,
+        },
+      };
+    }
+
+    return {
+      ...element,
+      id: newId,
+      parent_id: newParentId,
+      page_id: currentPageId,
+      props: updatedProps,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  });
+
+  return newElements;
+}
+
+/**
+ * Clipboard serialization with magic marker
+ */
+export function serializeCopiedElements(copiedData: CopiedElementsData): string {
+  const serializable = {
+    __xstudio_elements__: true, // Magic marker
+    version: 1,
+    elements: copiedData.elements,
+    rootIds: copiedData.rootIds,
+    externalParents: Array.from(copiedData.externalParents.entries()),
+    timestamp: copiedData.timestamp,
+  };
+
+  return JSON.stringify(serializable);
+}
+
+/**
+ * Clipboard deserialization with validation
+ */
+export function deserializeCopiedElements(json: string): CopiedElementsData | null {
+  try {
+    const parsed = JSON.parse(json);
+
+    // Validate magic marker
+    if (!parsed.__xstudio_elements__) {
+      return null; // Not our clipboard data
+    }
+
+    return {
+      elements: parsed.elements,
+      rootIds: parsed.rootIds || [],
+      externalParents: new Map(parsed.externalParents || []),
+      timestamp: parsed.timestamp || Date.now(),
+    };
+  } catch (error) {
+    return null; // Invalid JSON
+  }
 }
 ```
 
-**Complexity**: Medium-High (4-5 days)
+**Files Created**:
+- `src/builder/utils/multiElementCopy.ts` (264 lines)
+
+**Files Modified**:
+- `src/builder/panels/properties/PropertiesPanel.tsx` - handleCopyAll, handlePasteAll (lines 120-212)
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Copy/Paste buttons with shortcuts
+
+**Features Implemented**:
+- ✅ Keyboard shortcuts `Cmd+C` (Copy) and `Cmd+V` (Paste)
+- ✅ External parent tracking (elements whose parents are NOT selected)
+- ✅ Root element identification (top-level or external parent)
+- ✅ BFS traversal for all descendants (automatic child copying)
+- ✅ ID mapping with generateId() for unique IDs
+- ✅ Position offset for root elements (10px by default)
+- ✅ Clipboard serialization with `__xstudio_elements__` magic marker
+- ✅ Validation on deserialize (prevents pasting non-XStudio data)
+- ✅ History integration via trackMultiPaste
+- ✅ UI buttons in MultiSelectStatusIndicator (⌘⇧C, ⌘⇧V hints)
+
+**Key Algorithms**:
+
+1. **Relationship Preservation**:
+   - Root elements: No parent OR parent NOT in selection
+   - External parents: Track original parent_id for elements outside selection
+   - Internal relationships: Remap parent_id using ID map
+
+2. **BFS Descendant Collection**:
+   - Start with selected elements
+   - Queue-based traversal
+   - Find all children recursively
+   - Ensures complete tree copy
+
+3. **Position Offset**:
+   - Only apply to root elements (prevent double offset)
+   - Parse pixel values (e.g., "100px" → 100)
+   - Add offset and reformat (e.g., 100 + 10 → "110px")
+
+**Edge Cases Handled**:
+- Empty selection → Early return
+- No clipboard data → Warning (silent for non-XStudio clipboard)
+- Invalid JSON → Silent return (expected for regular text)
+- External parents → Preserved with original parent_id
+- Nested structures → All descendants copied automatically
+- Duplicate paste → Each paste gets new IDs
+
+**User Flow**:
+1. Select 1 or more elements (multi-select mode)
+2. Press `Cmd+C` or click "모두 복사" button
+3. Elements copied to clipboard with JSON serialization
+4. Press `Cmd+V` or click "붙여넣기" button
+5. Elements pasted with 10px offset
+6. All descendants automatically included
+7. New IDs generated, relationships preserved
+8. Undo reverses entire paste operation
+
+**Complexity**: ✅ Medium-High (4-5 days) - **Already Implemented**
 
 ---
 
@@ -1312,12 +1628,12 @@ const selectSiblings = (referenceId: string) => {
 | **2** | **Batch Property Editor** | 🔴 High | Medium | 3-5 | ✅ **Complete** |
 | **2** | **Multi-Select Status Indicator** | 🔴 High | Low | 1-2 | ✅ **Complete** |
 | **3** | **Keyboard Shortcuts** | 🟡 Medium | Low | 1-2 | ✅ **Complete** |
-| 3 | Selection Filters | 🟡 Medium | Medium | 2-3 | ⬜ Pending |
+| **3** | **Selection Filters** | 🟡 Medium | Medium | 2-3 | ✅ **Complete** |
 | **4** | **Group Selection** | 🟡 Medium | Med-High | 4-6 | ✅ **Complete** |
 | **4** | **Ungroup Selection** | 🟡 Medium | Low | 1-2 | ✅ **Complete** |
 | **5** | **Element Alignment** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
 | **5** | **Element Distribution** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
-| 6 | Multi-Element Copy/Paste | 🔴 High | Med-High | 4-5 | ⬜ Pending |
+| **6** | **Multi-Element Copy/Paste** | 🔴 High | Med-High | 4-5 | ✅ **Complete** |
 | **6** | **Duplicate Selection** | 🔴 High | Low | 1 | ✅ **Complete** |
 | **7** | **History Integration** | 🔴 High | Medium | 2-3 | ✅ **Complete** |
 | **8** | **Virtual Scrolling** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
@@ -1345,7 +1661,8 @@ const selectSiblings = (referenceId: string) => {
 - ✅ Virtual Scrolling (2-3 days) - Completed 2025-11-16
 - ✅ RAF-Based Throttling (1 day) - Completed 2025-11-16
 
-**Sprint 2 (Partial): Copy/Paste** ⏳ **IN PROGRESS**
+**Sprint 2: Copy/Paste/Duplicate** ✅ **COMPLETE**
+- ✅ Multi-Element Copy/Paste (4-5 days) - Completed 2025-11-16
 - ✅ Duplicate Selection (1 day) - Completed 2025-11-16
 
 **Sprint 3: Keyboard Shortcuts & History** ✅ **COMPLETE**
@@ -1357,12 +1674,6 @@ const selectSiblings = (referenceId: string) => {
 - ✅ Ungroup Selection (1-2 days) - Completed 2025-11-16
 
 ### 🔄 Remaining Sprints
-
-### Sprint 2 (4-5 days remaining): Copy/Paste
-3. Multi-Element Copy/Paste (4-5 days) - Already implemented, needs documentation update
-
-### Sprint 4 (2-3 days remaining): Selection Filters
-9. Selection Filters (2-3 days)
 
 ### Sprint 6 (1 week): Advanced Features
 10. Smart Selection (3-4 days)

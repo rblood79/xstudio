@@ -80,7 +80,7 @@ export function SelectionFilter({
         if (propertyKey) {
           filtered = allElements.filter((el) => {
             const props = el.props || {};
-            if (!propertyKey in props) return false;
+            if (!(propertyKey in props)) return false;
 
             if (propertyValue) {
               // Match property value
