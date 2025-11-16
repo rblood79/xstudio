@@ -147,3 +147,96 @@ export function isBatchEditable(key: string): boolean {
   const nonEditableProps = ["id", "customId", "key", "data-element-id"];
   return !nonEditableProps.includes(key);
 }
+
+/**
+ * Property type categories for better input rendering
+ */
+export type PropertyInputType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "color"
+  | "select"
+  | "dimension";
+
+/**
+ * Get property input type based on property key
+ *
+ * @param key - Property key
+ * @returns Property input type
+ */
+export function getPropertyType(key: string): PropertyInputType {
+  // Color properties
+  const colorProps = [
+    "color",
+    "backgroundColor",
+    "borderColor",
+    "fill",
+    "stroke",
+  ];
+  if (colorProps.some((prop) => key.toLowerCase().includes(prop.toLowerCase()))) {
+    return "color";
+  }
+
+  // Dimension properties (width, height, padding, margin, etc.)
+  const dimensionProps = [
+    "width",
+    "height",
+    "padding",
+    "margin",
+    "gap",
+    "top",
+    "left",
+    "right",
+    "bottom",
+    "borderRadius",
+    "borderWidth",
+  ];
+  if (dimensionProps.some((prop) => key.toLowerCase().includes(prop.toLowerCase()))) {
+    return "dimension";
+  }
+
+  // Boolean properties
+  const booleanProps = [
+    "disabled",
+    "isDisabled",
+    "readonly",
+    "isReadonly",
+    "required",
+    "isRequired",
+    "selected",
+    "isSelected",
+    "checked",
+    "isChecked",
+    "open",
+    "isOpen",
+  ];
+  if (booleanProps.includes(key)) {
+    return "boolean";
+  }
+
+  // Select properties (common enums)
+  const selectProps = [
+    "variant",
+    "size",
+    "display",
+    "flexDirection",
+    "justifyContent",
+    "alignItems",
+    "textAlign",
+    "fontWeight",
+    "position",
+  ];
+  if (selectProps.includes(key)) {
+    return "select";
+  }
+
+  // Number properties
+  const numberProps = ["opacity", "zIndex", "order", "tabIndex", "step"];
+  if (numberProps.includes(key)) {
+    return "number";
+  }
+
+  // Default to string
+  return "string";
+}

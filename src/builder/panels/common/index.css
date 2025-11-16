@@ -838,16 +838,54 @@
     color: var(--builder-inspector-text-secondary);
   }
 
+  .primary-element-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    background: var(--builder-inspector-control-bg);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-sm);
+  }
+
+  .badge-label {
+    font-size: var(--text-2xs);
+    color: var(--builder-inspector-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-type {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--action-primary-bg);
+  }
+
   .status-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+  }
+
+  .action-group {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
   }
 
-  .status-actions .action-divider {
-    height: 1px;
-    background: var(--builder-inspector-divider);
-    margin: var(--spacing-sm) 0;
+  .group-label {
+    font-size: var(--text-2xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--builder-inspector-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-left: var(--spacing-sm);
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+    gap: var(--spacing-xs);
   }
 
   .status-actions .react-aria-Button {
@@ -861,6 +899,7 @@
     font-size: var(--text-xs);
     color: var(--builder-inspector-text-primary);
     transition: all 200ms;
+    position: relative;
 
     &:hover:not([aria-disabled="true"]) {
       background: var(--builder-inspector-bg);
@@ -875,6 +914,24 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+  }
+
+  .button-row .react-aria-Button {
+    width: auto;
+    min-width: 32px;
+    justify-content: center;
+    padding: var(--spacing-sm);
+  }
+
+  .shortcut-hint {
+    margin-left: auto;
+    font-size: var(--text-2xs);
+    color: var(--builder-inspector-text-tertiary);
+    font-weight: var(--font-weight-medium);
+    padding: 2px var(--spacing-xs);
+    background: var(--builder-inspector-header-bg);
+    border-radius: var(--radius-xs);
+    font-family: var(--font-mono);
   }
 
   .status-info {
@@ -941,6 +998,79 @@
     color: var(--builder-inspector-text-secondary);
   }
 
+  .batch-mixed {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-warning-600);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .mixed-indicator {
+    font-weight: var(--font-weight-bold);
+  }
+
+  .batch-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .batch-property-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  .mixed-badge {
+    font-size: var(--text-2xs);
+    padding: 2px var(--spacing-xs);
+    background: var(--color-warning-100);
+    color: var(--color-warning-700);
+    border-radius: var(--radius-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .pending-badge {
+    font-size: var(--text-2xs);
+    padding: 2px var(--spacing-xs);
+    background: var(--action-primary-bg);
+    color: white;
+    border-radius: var(--radius-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .batch-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--builder-inspector-divider);
+  }
+
+  .batch-actions .react-aria-Button {
+    flex: 1;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing) var(--spacing-sm);
+    background: var(--builder-inspector-control-bg);
+    border: 1px solid var(--builder-inspector-divider);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--builder-inspector-text-primary);
+    transition: all 200ms;
+
+    &:hover {
+      background: var(--builder-inspector-bg);
+      border-color: var(--action-primary-bg);
+      color: var(--action-primary-bg);
+    }
+
+    &[data-pressed] {
+      background: var(--builder-inspector-header-bg);
+    }
+  }
+
   .batch-empty {
     margin: 0;
     padding: var(--spacing);
@@ -953,12 +1083,22 @@
   .batch-footer {
     padding-top: var(--spacing);
     border-top: 1px solid var(--builder-inspector-divider);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
   }
 
   .batch-hint {
     margin: 0;
     font-size: var(--text-2xs);
     color: var(--builder-inspector-text-secondary);
+  }
+
+  .batch-warning {
+    margin: 0;
+    font-size: var(--text-2xs);
+    color: var(--color-warning-600);
+    font-weight: var(--font-weight-medium);
   }
 
   /* ========================================

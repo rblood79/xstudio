@@ -1,7 +1,7 @@
 # Multi-Element Selection: Future Improvements
 
 **Last Updated**: 2025-11-16
-**Current Status**: ✅ All High Priority Phases Complete + Phase 5 (Alignment & Distribution) + Phase 8.2 (Performance Optimization)
+**Current Status**: ✅ Phase 2 (Multi-Element Editing) + Phase 5 (Alignment & Distribution) + Phase 6.2 (Duplicate Selection) + Phase 8.2 (Performance Optimization) Complete
 
 This document outlines potential improvements and enhancements for the multi-element selection feature.
 
@@ -9,65 +9,172 @@ This document outlines potential improvements and enhancements for the multi-ele
 
 ## 🎯 Phase 2: Multi-Element Editing (Priority: High)
 
-### 1. Batch Property Editor
+### ✅ 1. Batch Property Editor (COMPLETED)
+
+**Status**: ✅ **Complete** (2025-11-16)
 
 **Goal**: Allow editing common properties across multiple selected elements
 
-**UI Design**:
-```
-┌─────────────────────────────────────┐
-│ 🔹 3 Elements Selected              │
-├─────────────────────────────────────┤
-│ Common Properties:                  │
-│                                     │
-│ Width:     [Mixed Values ▼]        │
-│ Height:    [Mixed Values ▼]        │
-│ Background: #ffffff ████           │  ← Same value
-│ Color:     [Mixed Values ▼]        │
-│                                     │
-│ [Apply to All] [Reset]             │
-└─────────────────────────────────────┘
-```
-
-**Features**:
-- Show "Mixed Values" for properties with different values
-- Allow setting common value for all selected elements
-- Undo/redo support for batch changes
-- Smart property detection (only show applicable properties)
-
 **Implementation**:
-- File: `src/builder/inspector/properties/BatchPropertyEditor.tsx`
-- Store action: `updateMultipleElements(elementIds, props)`
-- History: Single undo entry for batch operation
+```tsx
+// src/builder/panels/common/BatchPropertyEditor.tsx
+export function BatchPropertyEditor({ selectedElements, onBatchUpdate }) {
+  const [pendingUpdates, setPendingUpdates] = useState({});
+  const [showMixedOnly, setShowMixedOnly] = useState(false);
 
-**Complexity**: Medium (3-5 days)
+  // Find common properties across all elements
+  const commonPropsData = findCommonProperties(selectedElements);
+
+  // Detect property type and render appropriate input
+  const renderPropertyInput = (prop) => {
+    const propType = getPropertyType(prop.key); // color, number, boolean, etc.
+    const isPending = prop.key in pendingUpdates;
+
+    return (
+      <PropertyInput
+        label={
+          <>
+            {prop.key}
+            {prop.isMixed && <span className="mixed-badge">Mixed</span>}
+            {isPending && <span className="pending-badge">Pending</span>}
+          </>
+        }
+        value={prop.isMixed && !isPending ? "" : String(currentValue)}
+        placeholder={prop.isMixed ? `Mixed (${prop.uniqueValues.length} values)` : undefined}
+      />
+    );
+  };
+
+  // Apply all pending changes
+  const handleApplyAll = () => {
+    onBatchUpdate(pendingUpdates);
+    setPendingUpdates({});
+  };
+}
+```
+
+**Files Created/Modified**:
+- `src/builder/panels/common/BatchPropertyEditor.tsx` - Main component (303 lines)
+- `src/builder/panels/properties/utils/batchPropertyUtils.ts` - Utility functions (243 lines)
+- `src/builder/panels/common/index.css` - Batch editor styles
+- `src/builder/panels/properties/PropertiesPanel.tsx` - Integration with handleBatchUpdate
+
+**Features Implemented**:
+- ✅ Common property detection (properties exist in ALL selected elements)
+- ✅ Mixed value detection (deep equality check with JSON.stringify)
+- ✅ Staged updates (pending changes until "Apply All")
+- ✅ Property type detection (color, dimension, boolean, select, number, string)
+- ✅ Category filtering (All, Layout, Style, Content)
+- ✅ Mixed-only filter toggle
+- ✅ Visual badges (Mixed = warning, Pending = primary)
+- ✅ History integration (trackBatchUpdate)
+- ✅ Apply All/Reset buttons
+
+**Property Type Detection**:
+- **Color**: backgroundColor, color, borderColor, fill, stroke
+- **Dimension**: width, height, padding, margin, gap, borderRadius, borderWidth
+- **Boolean**: isDisabled, isRequired, isSelected, isChecked, isOpen
+- **Select**: variant, size, display, flexDirection, justifyContent, alignItems
+- **Number**: opacity, zIndex, order, tabIndex, step
+
+**UI Features**:
+- Mixed badge (warning color) for inconsistent values
+- Pending badge (primary color) for uncommitted changes
+- Mixed count indicator in header (e.g., "⚠ 5개 속성이 다른 값을 가지고 있습니다")
+- "Mixed만 표시" toggle to filter
+- Category dropdown for organization
+- Apply All button (shows pending count)
+- Reset button to discard changes
+
+**User Flow**:
+1. Select 3+ elements with some common properties
+2. See common properties in Batch Editor (below Status Indicator)
+3. Edit properties → See "Pending" badge
+4. Review changes in footer warning
+5. Click "Apply All" → Batch update with single undo entry
+6. Or click "Reset" → Discard all pending changes
+
+**Edge Cases Handled**:
+- No common properties → Show empty state
+- All properties mixed → Show mixed-only filter option
+- Non-editable properties filtered (id, customId, key, data-element-id)
+- Deep equality for object/array values
 
 ---
 
-### 2. Multi-Select Status Indicator
+### ✅ 2. Multi-Select Status Indicator (COMPLETED)
+
+**Status**: ✅ **Complete** (2025-11-16)
 
 **Goal**: Show selection count and provide quick actions
 
-**UI Design**:
-```
-┌─────────────────────────────────────┐
-│ 🔹 5 elements selected              │
-│                                     │
-│ [Group] [Align] [Distribute] [✕]   │
-└─────────────────────────────────────┘
-```
-
-**Features**:
-- Display count of selected elements
-- Quick action buttons (Group, Align, Distribute, Clear)
-- Keyboard shortcut hints (Esc to deselect)
-
 **Implementation**:
-- Component: `src/builder/inspector/components/MultiSelectIndicator.tsx`
-- Position: Top of Inspector panel
-- Integration: Read from `selectedElementIds.length`
+```tsx
+// src/builder/panels/common/MultiSelectStatusIndicator.tsx
+<div className="multi-select-status">
+  {/* Header with count and primary badge */}
+  <div className="status-header">
+    <div className="status-count">
+      <span className="count-number">{count}</span>
+      <span className="count-label">개 요소 선택됨</span>
+    </div>
+    <div className="primary-element-badge">
+      <span className="badge-label">PRIMARY:</span>
+      <span className="badge-type">{primaryElementType}</span>
+    </div>
+  </div>
 
-**Complexity**: Low (1-2 days)
+  {/* Action groups with shortcuts */}
+  <div className="status-actions">
+    <div className="action-group">
+      <span className="group-label">편집</span>
+      <Button>
+        <Copy /> 모두 복사
+        <span className="shortcut-hint">⌘⇧C</span>
+      </Button>
+      <Button>
+        <ClipboardPaste /> 붙여넣기
+        <span className="shortcut-hint">⌘⇧V</span>
+      </Button>
+    </div>
+    {/* ... 5 more action groups */}
+  </div>
+</div>
+```
+
+**Files Created/Modified**:
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Enhanced component (310 lines)
+- `src/builder/panels/common/index.css` - Added badge, group, shortcut styles
+- `src/builder/panels/properties/PropertiesPanel.tsx` - Pass primary element props
+
+**Features Implemented**:
+- ✅ Selection count display (large, color-coded number)
+- ✅ Primary element badge (shows type of first selected element)
+- ✅ Action grouping (5 categories: Edit, Organize, Align, Distribute, Manage)
+- ✅ Keyboard shortcut hints (monospace badges on all buttons)
+- ✅ Icon-only buttons for alignment/distribution (grid layout)
+- ✅ Visual hierarchy (group labels, button rows, spacing)
+- ✅ Accessibility (aria-labels with shortcuts)
+
+**Action Groups**:
+1. **편집** (Edit): Copy All (⌘⇧C), Paste (⌘⇧V)
+2. **구성** (Organize): Group (⌘G)
+3. **정렬** (Align): Left/Center/Right/Top/Middle/Bottom (6 icon buttons)
+4. **분산** (Distribute): Horizontal/Vertical (2 icon buttons)
+5. **관리** (Manage): Delete All (⌦), Clear Selection (Esc)
+
+**CSS Additions** (5 new classes):
+- `.primary-element-badge` - Type badge in header
+- `.action-group` - Group container
+- `.group-label` - Category labels (uppercase)
+- `.button-row` - Grid for icon buttons
+- `.shortcut-hint` - Monospace shortcut badges
+
+**User Experience**:
+- Clearer organization → Find actions faster
+- Shortcut hints → Learn workflows quicker
+- Primary badge → Know which element drives Inspector
+- Visual grouping → Better scannability
 
 ---
 
@@ -425,39 +532,101 @@ export function useCopyPaste() {
 
 ---
 
-### 10. Duplicate Selection
+### ✅ 10. Duplicate Selection (COMPLETED)
+
+**Status**: ✅ **Complete** (2025-11-16)
 
 **Goal**: Quickly duplicate selected elements
 
-**Features**:
-- Shortcut: `Cmd+D`
-- Duplicate with offset (10px right, 10px down)
-- Maintain relationships
-- Auto-select duplicated elements
-
 **Implementation**:
 ```typescript
-const duplicateSelection = useCallback(() => {
-  const elements = selectedElementIds.map(id => getElement(id));
-  const duplicated = elements.map(el => ({
-    ...el,
-    id: generateId(),
-    props: {
-      ...el.props,
-      style: {
-        ...el.props.style,
-        left: (el.props.style.left || 0) + 10,
-        top: (el.props.style.top || 0) + 10,
-      }
-    }
-  }));
+// src/builder/panels/properties/PropertiesPanel.tsx
+const handleDuplicate = useCallback(async () => {
+  if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) {
+    console.warn('[Duplicate] No elements selected or no page active');
+    return;
+  }
 
-  addElements(duplicated);
-  setSelectedElements(duplicated.map(el => el.id));
-}, [selectedElementIds]);
+  try {
+    console.log(`[Duplicate] Duplicating ${selectedElementIds.length} elements`);
+
+    // Copy current selection with relationship preservation
+    const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+
+    // Paste with 10px offset (standard offset for duplicate)
+    const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+
+    if (newElements.length === 0) {
+      console.warn('[Duplicate] No elements to duplicate');
+      return;
+    }
+
+    // Add all new elements to store
+    await Promise.all(newElements.map((element) => addElement(element)));
+
+    // ⭐ Track in history AFTER adding elements
+    trackMultiPaste(newElements);
+
+    // ⭐ Auto-select duplicated elements
+    const newElementIds = newElements.map((el) => el.id);
+    const store = useStore.getState();
+    const setSelectedElements = (store as any).setSelectedElements;
+
+    if (setSelectedElements) {
+      setSelectedElements(newElementIds);
+      console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
+    }
+  } catch (error) {
+    console.error('❌ [Duplicate] Failed to duplicate elements:', error);
+  }
+}, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+
+// Keyboard shortcut registration
+const shortcuts = useMemo(() => [
+  {
+    key: 'd',
+    modifier: 'cmd' as const,
+    handler: handleDuplicate,
+    description: 'Duplicate Selection',
+  },
+  // ... other shortcuts
+], [handleDuplicate]);
 ```
 
-**Complexity**: Low (1 day)
+**Files Modified**:
+- `src/builder/panels/properties/PropertiesPanel.tsx` - Enhanced duplicate handler (lines 279-321)
+
+**Features Implemented**:
+- ✅ Keyboard shortcut `Cmd+D`
+- ✅ Duplicate with 10px offset (right and down)
+- ✅ Maintain parent-child relationships using existing infrastructure
+- ✅ Auto-select duplicated elements after creation
+- ✅ History integration (single undo entry via trackMultiPaste)
+- ✅ All descendants copied automatically (BFS traversal)
+- ✅ Proper error handling and console logging
+
+**Technical Details**:
+- Reuses `copyMultipleElements()` for relationship preservation
+- Reuses `pasteMultipleElements()` for ID regeneration and offset
+- Uses `trackMultiPaste()` for history tracking (same as Paste operation)
+- Auto-selects using `setSelectedElements()` from store
+- Works with any number of selected elements (1 to 100+)
+
+**User Flow**:
+1. Select 1 or more elements (multi-select mode)
+2. Press `Cmd+D` (or use duplicate button when added)
+3. Elements duplicated with 10px offset
+4. Duplicated elements automatically selected
+5. Undo reverses entire operation
+
+**Edge Cases Handled**:
+- No elements selected → Early return with warning
+- No current page → Early return with warning
+- Empty paste result → Early return with warning
+- Nested parent-child → All descendants copied automatically
+- External parents preserved → Elements keep their parent references
+
+**Complexity**: ✅ Low (1 day) - **Completed in < 1 hour**
 
 ---
 
@@ -706,8 +875,8 @@ const selectSiblings = (referenceId: string) => {
 
 | Phase | Feature | Priority | Complexity | Estimated Days | Status |
 |-------|---------|----------|------------|----------------|--------|
-| 2 | Batch Property Editor | 🔴 High | Medium | 3-5 | ⬜ Pending |
-| 2 | Multi-Select Status Indicator | 🔴 High | Low | 1-2 | ⬜ Pending |
+| **2** | **Batch Property Editor** | 🔴 High | Medium | 3-5 | ✅ **Complete** |
+| **2** | **Multi-Select Status Indicator** | 🔴 High | Low | 1-2 | ✅ **Complete** |
 | 3 | Keyboard Shortcuts | 🟡 Medium | Low | 1-2 | ⬜ Pending |
 | 3 | Selection Filters | 🟡 Medium | Medium | 2-3 | ⬜ Pending |
 | 4 | Group Selection | 🟡 Medium | Med-High | 4-6 | ⬜ Pending |
@@ -715,7 +884,7 @@ const selectSiblings = (referenceId: string) => {
 | **5** | **Element Alignment** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
 | **5** | **Element Distribution** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
 | 6 | Multi-Element Copy/Paste | 🔴 High | Med-High | 4-5 | ⬜ Pending |
-| 6 | Duplicate Selection | 🔴 High | Low | 1 | ⬜ Pending |
+| **6** | **Duplicate Selection** | 🔴 High | Low | 1 | ✅ **Complete** |
 | 7 | History Integration | 🔴 High | Medium | 2-3 | ⬜ Pending |
 | **8** | **Virtual Scrolling** | 🟢 Low | Medium | 2-3 | ✅ **Complete** |
 | **8** | **RAF-Based Throttling** | 🟢 Low | Low | 1 | ✅ **Complete** |
@@ -730,6 +899,10 @@ const selectSiblings = (referenceId: string) => {
 
 ### ✅ Completed Sprints
 
+**Sprint 1 (1 week): Essential Editing** ✅ **COMPLETE**
+- ✅ Multi-Select Status Indicator (1-2 days) - Completed 2025-11-16
+- ✅ Batch Property Editor (3-5 days) - Completed 2025-11-16
+
 **Sprint 5 (1 week): Alignment & Distribution** ✅ **COMPLETE**
 - ✅ Element Alignment (2-3 days) - Completed 2025-11-16
 - ✅ Element Distribution (2-3 days) - Completed 2025-11-16
@@ -738,15 +911,13 @@ const selectSiblings = (referenceId: string) => {
 - ✅ Virtual Scrolling (2-3 days) - Completed 2025-11-16
 - ✅ RAF-Based Throttling (1 day) - Completed 2025-11-16
 
+**Sprint 2 (Partial): Copy/Paste** ⏳ **IN PROGRESS**
+- ✅ Duplicate Selection (1 day) - Completed 2025-11-16
+
 ### 🔄 Remaining Sprints
 
-### Sprint 1 (1 week): Essential Editing
-1. Multi-Select Status Indicator (1-2 days)
-2. Batch Property Editor (3-5 days)
-
-### Sprint 2 (1 week): Copy/Paste
-3. Duplicate Selection (1 day)
-4. Multi-Element Copy/Paste (4-5 days)
+### Sprint 2 (4-5 days remaining): Copy/Paste
+3. Multi-Element Copy/Paste (4-5 days)
 
 ### Sprint 3 (1 week): History & Shortcuts
 5. History Integration (2-3 days)

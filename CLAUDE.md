@@ -2111,14 +2111,14 @@ Copilot learns from code patterns. Tips:
 - Support for nested properties
 - Undo/redo integration
 
-### 📋 Multi-Element Copy/Paste (2025-11-16)
+### 📋 Multi-Element Copy/Paste/Duplicate (2025-11-16)
 
-**Status**: ✅ Phase 6 Complete
+**Status**: ✅ Phase 6 (Duplicate) Complete | ⏳ Phase 6 (Copy/Paste) In Progress
 
 **Major Updates**:
 - ✅ Copy All functionality with relationship preservation
 - ✅ Paste with automatic offset (10px) for visual separation
-- ✅ Duplicate selection (Cmd+D) with 20px offset
+- ✅ Duplicate selection (Cmd+D) with 10px offset + auto-select + history tracking
 - ✅ Keyboard shortcuts (Cmd+C, Cmd+V, Cmd+D)
 - ✅ Clipboard serialization/deserialization
 - ✅ Parent-child relationship preservation
@@ -2169,14 +2169,14 @@ Copilot learns from code patterns. Tips:
 **Keyboard Shortcuts**:
 - **Cmd+C**: Copy all selected elements
 - **Cmd+V**: Paste copied elements
-- **Cmd+D**: Duplicate selection in place
+- **Cmd+D**: Duplicate selection (10px offset, auto-select, history tracking)
 - **Cmd+Shift+C**: Copy properties (single element)
 - **Cmd+Shift+V**: Paste properties (single element)
 
 **User Experience**:
 - Copy → Elements serialized to clipboard with relationships
 - Paste → New elements appear offset by 10px
-- Duplicate → Instant duplication with 20px offset
+- Duplicate → Instant duplication with 10px offset, duplicates auto-selected, single undo entry
 - Relationships → Parent-child structure preserved
 - Descendants → All child elements automatically included
 
@@ -2212,6 +2212,49 @@ const newElements = pasteMultipleElements(
 - ✅ Mixed selection → Handles both cases
 - ✅ Nested elements → BFS finds all descendants
 - ✅ Invalid clipboard data → Graceful fallback
+
+**Duplicate Selection Implementation** (✅ Complete 2025-11-16):
+```typescript
+// src/builder/panels/properties/PropertiesPanel.tsx:279-321
+const handleDuplicate = useCallback(async () => {
+  if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) {
+    console.warn('[Duplicate] No elements selected or no page active');
+    return;
+  }
+
+  try {
+    console.log(`[Duplicate] Duplicating ${selectedElementIds.length} elements`);
+
+    // Copy current selection with relationship preservation
+    const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+
+    // Paste with 10px offset (standard offset for duplicate)
+    const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+
+    // Add all new elements to store
+    await Promise.all(newElements.map((element) => addElement(element)));
+
+    // ⭐ Track in history AFTER adding elements
+    trackMultiPaste(newElements);
+
+    // ⭐ Auto-select duplicated elements
+    const newElementIds = newElements.map((el) => el.id);
+    setSelectedElements(newElementIds);
+
+    console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
+  } catch (error) {
+    console.error('❌ [Duplicate] Failed to duplicate elements:', error);
+  }
+}, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
+```
+
+**Duplicate Features**:
+- ✅ **Cmd+D shortcut** - Instant duplicate without clipboard
+- ✅ **10px offset** - Standard offset for visual separation
+- ✅ **Auto-select** - Duplicates automatically selected after creation
+- ✅ **History tracking** - Single undo entry via `trackMultiPaste()`
+- ✅ **Relationship preservation** - Reuses `copyMultipleElements()` infrastructure
+- ✅ **Works with any count** - 1 to 100+ elements supported
 
 **Future Improvements**:
 - Smarter offset calculation (avoid overlaps)
@@ -2933,6 +2976,212 @@ After horizontal distribution:
 - Distribute to canvas bounds (not just first/last)
 - Smart size-aware distribution (account for element sizes)
 - Visual distribution guides in Preview
+
+### 🎯 Multi-Select Status Indicator Enhancement (2025-11-16)
+
+**Status**: ✅ Phase 2.2 Complete
+
+**Major Updates**:
+- ✅ Primary element badge - Shows selected element type
+- ✅ Action grouping - Organized by category (편집, 구성, 정렬, 분산, 관리)
+- ✅ Keyboard shortcut hints - Visual shortcuts for all actions
+- ✅ Improved visual hierarchy - Group labels and button rows
+- ✅ Better UX - Clear organization and discoverability
+
+**Files Modified**: 2 files
+- `src/builder/panels/common/MultiSelectStatusIndicator.tsx` - Added primary badge, grouping, shortcuts
+- `src/builder/panels/common/index.css` - New styles for badge, groups, shortcuts
+- `src/builder/panels/properties/PropertiesPanel.tsx` - Pass primary element props
+
+**New Features**:
+
+1. **Primary Element Badge**:
+   - Shows type of first selected element (e.g., "Button", "Card")
+   - Small badge in header with "PRIMARY:" label
+   - Color-coded with action-primary-bg
+
+2. **Action Groups**:
+   - **편집** (Edit): Copy All (⌘⇧C), Paste (⌘⇧V)
+   - **구성** (Organize): Group (⌘G)
+   - **정렬** (Align): 6 alignment buttons (icon-only with tooltips)
+   - **분산** (Distribute): 2 distribution buttons (icon-only with tooltips)
+   - **관리** (Manage): Delete All (⌦), Clear Selection (Esc)
+
+3. **Keyboard Shortcut Hints**:
+   - Monospace font hints on right side of buttons
+   - Gray background badges for visual clarity
+   - Mac-style symbols (⌘, ⇧, ⌥, ⌦, Esc)
+
+4. **Visual Improvements**:
+   - Group labels with uppercase styling
+   - Button rows with grid layout for icon buttons
+   - Better spacing and visual separation
+   - Consistent padding and borders
+
+**CSS Additions**:
+```css
+.primary-element-badge {
+  /* Badge for showing primary element type */
+  padding: 2px 8px;
+  background: var(--builder-inspector-control-bg);
+  border-radius: var(--radius-sm);
+}
+
+.action-group {
+  /* Group container for related actions */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.group-label {
+  /* Category label (편집, 구성, etc.) */
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.button-row {
+  /* Grid layout for icon-only buttons */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.shortcut-hint {
+  /* Keyboard shortcut badge */
+  font-family: var(--font-mono);
+  padding: 2px var(--spacing-xs);
+  background: var(--builder-inspector-header-bg);
+  border-radius: var(--radius-xs);
+}
+```
+
+**User Experience**:
+- Clearer organization → Easier to find actions
+- Shortcut hints → Faster workflow learning
+- Primary badge → Know which element drives Inspector
+- Visual grouping → Better scannability
+
+**Technical Details**:
+- Props added: `primaryElementId`, `primaryElementType`
+- All aria-labels updated with shortcut hints
+- CSS uses Builder tokens for consistency
+- Grid layout for responsive icon button rows
+
+### 🎛️ Batch Property Editor (2025-11-16)
+
+**Status**: ✅ Phase 2.1 Complete
+
+**Major Updates**:
+- ✅ Smart property detection - Finds common properties across selected elements
+- ✅ Mixed value handling - Shows "Mixed" for different values
+- ✅ Staged updates - Changes pending until "Apply All"
+- ✅ Property type detection - Auto-selects appropriate input (color, number, boolean, etc.)
+- ✅ Category filtering - Layout, Style, Content categories
+- ✅ Mixed-only filter - Show only properties with different values
+
+**Files Created/Modified**: 3 files
+- `src/builder/panels/common/BatchPropertyEditor.tsx` - Enhanced component (303 lines)
+- `src/builder/panels/properties/utils/batchPropertyUtils.ts` - Added getPropertyType (243 lines)
+- `src/builder/panels/common/index.css` - Enhanced batch editor styles
+
+**Architecture**:
+
+1. **Property Analysis**:
+   - Find properties that exist in ALL selected elements
+   - Detect mixed values (deep equality check)
+   - Collect unique values for mixed properties
+   - Filter non-editable properties (id, customId, etc.)
+
+2. **Staged Updates**:
+   - Changes stored in `pendingUpdates` state
+   - Visual "Pending" badge on modified properties
+   - "Apply All" button to commit changes
+   - "Reset" button to discard changes
+
+3. **Property Type Detection**:
+   - Color: backgroundColor, color, borderColor, etc.
+   - Dimension: width, height, padding, margin, etc.
+   - Boolean: isDisabled, isRequired, isSelected, etc.
+   - Select: variant, size, display, flexDirection, etc.
+   - Number: opacity, zIndex, order, etc.
+
+4. **UI Features**:
+   - Mixed badge (warning color) for properties with different values
+   - Pending badge (primary color) for modified properties
+   - Mixed count indicator in header
+   - "Mixed만 표시" toggle to filter
+   - Category dropdown (All, Layout, Style, Content)
+
+**Implementation Example**:
+```tsx
+// 1. Find common properties
+const commonPropsData = findCommonProperties(selectedElements);
+// Returns: {
+//   commonProps: [
+//     { key: "width", value: "100px", isMixed: false },
+//     { key: "color", value: "#000", isMixed: true, uniqueValues: ["#000", "#fff"] }
+//   ],
+//   elementCount: 5,
+//   elementTypes: ["Button", "Card"]
+// }
+
+// 2. Render property inputs
+{editableProps.map((prop) => {
+  const propType = getPropertyType(prop.key); // "color", "dimension", etc.
+  const currentValue = getCurrentValue(prop.key, prop.value);
+  const isPending = key in pendingUpdates;
+
+  return (
+    <PropertyInput
+      label={
+        <>
+          {prop.key}
+          {prop.isMixed && <span className="mixed-badge">Mixed</span>}
+          {isPending && <span className="pending-badge">Pending</span>}
+        </>
+      }
+      value={prop.isMixed && !isPending ? "" : String(currentValue)}
+      placeholder={prop.isMixed ? `Mixed (${prop.uniqueValues.length} values)` : undefined}
+      onChange={(value) => setPendingUpdates({ ...pendingUpdates, [key]: value })}
+    />
+  );
+})}
+
+// 3. Apply all updates
+<Button onPress={handleApplyAll}>
+  모두 적용 ({Object.keys(pendingUpdates).length}개)
+</Button>
+```
+
+**User Experience**:
+- Edit properties → See "Pending" badge
+- Review changes → See count in footer
+- Apply All → Batch update with history tracking
+- Mixed properties → Clear visual indicator
+- Filter by category → Find relevant properties faster
+- Show Mixed only → Focus on inconsistencies
+
+**Technical Details**:
+- Deep equality check with JSON.stringify for mixed detection
+- Property type inference from key names
+- Staged updates prevent accidental batch changes
+- Category filtering based on common property patterns
+- History integration via trackBatchUpdate
+
+**Edge Cases Handled**:
+- ✅ No common properties → Show empty state
+- ✅ All mixed values → Show mixed-only filter
+- ✅ Pending changes on selection change → Confirm dialog (future)
+- ✅ Invalid property values → Validation (future)
+
+**Future Improvements**:
+- Property groups (position, sizing, colors)
+- Property search/filter
+- Preset values dropdown for select properties
+- Undo individual property changes (before apply)
+- Show element preview with pending changes
 
 ---
 

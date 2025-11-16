@@ -28,6 +28,10 @@ import type { DistributionType } from "../../stores/utils/elementDistribution";
 export interface MultiSelectStatusIndicatorProps {
   /** 선택된 요소 개수 */
   count: number;
+  /** Primary 요소 ID (첫 번째 선택) */
+  primaryElementId?: string;
+  /** Primary 요소 타입 (예: "Button", "Card") */
+  primaryElementType?: string;
   /** Copy All 핸들러 */
   onCopyAll?: () => void;
   /** Paste All 핸들러 */
@@ -61,6 +65,8 @@ export interface MultiSelectStatusIndicatorProps {
  */
 export function MultiSelectStatusIndicator({
   count,
+  primaryElementId,
+  primaryElementType,
   onCopyAll,
   onPasteAll,
   onDeleteAll,
@@ -77,206 +83,230 @@ export function MultiSelectStatusIndicator({
           <span className="count-number">{count}</span>
           <span className="count-label">개 요소 선택됨</span>
         </div>
+        {primaryElementType && (
+          <div className="primary-element-badge">
+            <span className="badge-label">Primary:</span>
+            <span className="badge-type">{primaryElementType}</span>
+          </div>
+        )}
       </div>
 
       <div className="status-actions">
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onCopyAll}
-          aria-label="Copy all selected elements"
-          isDisabled={count === 0}
-        >
-          <Copy
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.stroke}
-          />
-          <span>모두 복사</span>
-        </Button>
+        <div className="action-group">
+          <span className="group-label">편집</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onCopyAll}
+            aria-label="Copy all selected elements (Cmd+Shift+C)"
+            isDisabled={count === 0}
+          >
+            <Copy
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+            <span>모두 복사</span>
+            <span className="shortcut-hint">⌘⇧C</span>
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onPasteAll}
-          aria-label="Paste copied elements"
-        >
-          <ClipboardPaste
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.stroke}
-          />
-          <span>붙여넣기</span>
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onPasteAll}
+            aria-label="Paste copied elements (Cmd+Shift+V)"
+          >
+            <ClipboardPaste
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+            <span>붙여넣기</span>
+            <span className="shortcut-hint">⌘⇧V</span>
+          </Button>
+        </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onGroupSelection}
-          aria-label="Group selected elements"
-          isDisabled={count < 2}
-        >
-          <GroupIcon
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.stroke}
-          />
-          <span>그룹화</span>
-        </Button>
+        <div className="action-group">
+          <span className="group-label">구성</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onGroupSelection}
+            aria-label="Group selected elements (Cmd+G)"
+            isDisabled={count < 2}
+          >
+            <GroupIcon
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+            <span>그룹화</span>
+            <span className="shortcut-hint">⌘G</span>
+          </Button>
+        </div>
 
         {/* Phase 5: Alignment buttons */}
         {onAlign && (
-          <>
-            <div className="action-divider" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("left")}
-              aria-label="Align left"
-              isDisabled={count < 2}
-            >
-              <AlignLeft
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+          <div className="action-group">
+            <span className="group-label">정렬</span>
+            <div className="button-row">
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("left")}
+                aria-label="Align left (Cmd+Shift+L)"
+                isDisabled={count < 2}
+              >
+                <AlignLeft
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("center")}
-              aria-label="Align horizontal center"
-              isDisabled={count < 2}
-            >
-              <AlignCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("center")}
+                aria-label="Align horizontal center (Cmd+Shift+H)"
+                isDisabled={count < 2}
+              >
+                <AlignCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("right")}
-              aria-label="Align right"
-              isDisabled={count < 2}
-            >
-              <AlignRight
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("right")}
+                aria-label="Align right (Cmd+Shift+R)"
+                isDisabled={count < 2}
+              >
+                <AlignRight
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("top")}
-              aria-label="Align top"
-              isDisabled={count < 2}
-            >
-              <AlignVerticalJustifyStart
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("top")}
+                aria-label="Align top (Cmd+Shift+T)"
+                isDisabled={count < 2}
+              >
+                <AlignVerticalJustifyStart
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("middle")}
-              aria-label="Align vertical middle"
-              isDisabled={count < 2}
-            >
-              <AlignVerticalJustifyCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("middle")}
+                aria-label="Align vertical middle (Cmd+Shift+M)"
+                isDisabled={count < 2}
+              >
+                <AlignVerticalJustifyCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onAlign("bottom")}
-              aria-label="Align bottom"
-              isDisabled={count < 2}
-            >
-              <AlignVerticalJustifyEnd
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
-          </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onAlign("bottom")}
+                aria-label="Align bottom (Cmd+Shift+B)"
+                isDisabled={count < 2}
+              >
+                <AlignVerticalJustifyEnd
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Phase 5.2: Distribution buttons */}
         {onDistribute && (
-          <>
-            <div className="action-divider" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onDistribute("horizontal")}
-              aria-label="Distribute horizontally"
-              isDisabled={count < 3}
-            >
-              <AlignHorizontalDistributeCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
+          <div className="action-group">
+            <span className="group-label">분산</span>
+            <div className="button-row">
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onDistribute("horizontal")}
+                aria-label="Distribute horizontally (Cmd+Shift+D)"
+                isDisabled={count < 3}
+              >
+                <AlignHorizontalDistributeCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onDistribute("vertical")}
-              aria-label="Distribute vertically"
-              isDisabled={count < 3}
-            >
-              <AlignVerticalDistributeCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </Button>
-          </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => onDistribute("vertical")}
+                aria-label="Distribute vertically (Cmd+Alt+Shift+V)"
+                isDisabled={count < 3}
+              >
+                <AlignVerticalDistributeCenter
+                  color={iconProps.color}
+                  size={iconProps.size}
+                  strokeWidth={iconProps.stroke}
+                />
+              </Button>
+            </div>
+          </div>
         )}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onDeleteAll}
-          aria-label="Delete all selected elements"
-          isDisabled={count === 0}
-        >
-          <Trash2
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.stroke}
-          />
-          <span>모두 삭제</span>
-        </Button>
+        <div className="action-group">
+          <span className="group-label">관리</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onDeleteAll}
+            aria-label="Delete all selected elements (Delete)"
+            isDisabled={count === 0}
+          >
+            <Trash2
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+            <span>모두 삭제</span>
+            <span className="shortcut-hint">⌦</span>
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onClearSelection}
-          aria-label="Clear selection"
-          isDisabled={count === 0}
-        >
-          <X
-            color={iconProps.color}
-            size={iconProps.size}
-            strokeWidth={iconProps.stroke}
-          />
-          <span>선택 해제</span>
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onClearSelection}
+            aria-label="Clear selection (Esc)"
+            isDisabled={count === 0}
+          >
+            <X
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+            <span>선택 해제</span>
+            <span className="shortcut-hint">Esc</span>
+          </Button>
+        </div>
       </div>
 
       <div className="status-info">

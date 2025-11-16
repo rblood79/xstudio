@@ -276,24 +276,46 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       .filter((el): el is NonNullable<typeof el> => el !== undefined);
   }, [selectedElementIds, elementsMap]);
 
-  // ⭐ Duplicate handler (Cmd+D)
+  // ⭐ Phase 6: Duplicate handler (Cmd+D)
   const handleDuplicate = useCallback(async () => {
-    if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) return;
+    if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) {
+      console.warn('[Duplicate] No elements selected or no page active');
+      return;
+    }
 
     try {
+      console.log(`[Duplicate] Duplicating ${selectedElementIds.length} elements`);
+
       // Copy current selection
       const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
 
-      // Paste with offset
-      const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 20, y: 20 });
+      // Paste with 10px offset (standard offset for duplicate)
+      const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+
+      if (newElements.length === 0) {
+        console.warn('[Duplicate] No elements to duplicate');
+        return;
+      }
 
       // Add all new elements to store
       await Promise.all(newElements.map((element) => addElement(element)));
 
-      console.log(`✅ Duplicated ${newElements.length} elements`);
+      // ⭐ Track in history AFTER adding elements
+      trackMultiPaste(newElements);
+
+      // ⭐ Auto-select duplicated elements
+      const newElementIds = newElements.map((el) => el.id);
+      const store = useStore.getState();
+      const setSelectedElements = (store as any).setSelectedElements;
+
+      if (setSelectedElements) {
+        setSelectedElements(newElementIds);
+        console.log(`✅ [Duplicate] Duplicated and selected ${newElements.length} elements`);
+      }
+
       // TODO: Show toast notification
     } catch (error) {
-      console.error('Failed to duplicate elements:', error);
+      console.error('❌ [Duplicate] Failed to duplicate elements:', error);
       // TODO: Show error toast
     }
   }, [multiSelectMode, selectedElementIds, currentPageId, elementsMap, addElement]);
@@ -734,6 +756,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         <>
           <MultiSelectStatusIndicator
             count={selectedElementIds.length}
+            primaryElementId={selectedElementIds[0]}
+            primaryElementType={selectedElement?.type}
             onCopyAll={handleCopyAll}
             onPasteAll={handlePasteAll}
             onDeleteAll={handleDeleteAll}
