@@ -37,6 +37,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ Optimized: Only subscribe to necessary state (actions don't cause re-renders)
   const selectedElementIds = useStore((state) => state.selectedElementIds || []);
   const multiSelectMode = useStore((state) => state.multiSelectMode || false);
+  const currentPageId = useStore((state) => state.currentPageId);
+
+  // ⭐ Subscribe to elements for current page only
+  const elements = useStore((state) => state.elements);
 
   // 🔍 디버깅: 리렌더링 추적 (개발 환경에서만)
   if (import.meta.env.DEV) {
@@ -46,7 +50,6 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       multiSelectCount: selectedElementIds.length,
     });
   }
-  const currentPageId = useStore((state) => state.currentPageId);
 
   // ⭐ Optimized: Get actions without subscribing to state changes
   const removeElement = useStore.getState().removeElement;
@@ -59,6 +62,16 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ Optimized: Only get elementsMap/elements when actually needed (not subscribed)
   const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
   const getElements = useCallback(() => useStore.getState().elements, []);
+
+  // ⭐ Get current page elements
+  const currentPageElements = useMemo(() => {
+    return elements.filter((el) => el.page_id === currentPageId);
+  }, [currentPageId, elements]);
+
+  // ⭐ Get selected elements array for BatchPropertyEditor
+  const selectedElements = useMemo(() => {
+    return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
+  }, [selectedElementIds, currentPageElements]);
 
   const [Editor, setEditor] =
     useState<ComponentType<ComponentEditorProps> | null>(null);
