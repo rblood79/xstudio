@@ -1,0 +1,194 @@
+/**
+ * Performance Dashboard Styles
+ */
+
+.performance-dashboard {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+  background: var(--builder-inspector-bg, rgba(255, 255, 255, 0.98));
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: var(--text-sm, 14px);
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md, 12px);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  background: var(--builder-inspector-header-bg, #f9fafb);
+}
+
+.dashboard-header h3 {
+  margin: 0;
+  font-size: var(--text-base, 16px);
+  font-weight: 600;
+  color: var(--text-color, #111827);
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: var(--spacing-xs, 4px);
+}
+
+.action-btn {
+  padding: var(--spacing-xs, 4px) var(--spacing, 8px);
+  background: transparent;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  font-size: var(--text-base, 16px);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--builder-inspector-control-bg, #f3f4f6);
+}
+
+.action-btn.active {
+  background: var(--action-primary-bg, #3b82f6);
+  border-color: var(--action-primary-bg, #3b82f6);
+  color: white;
+}
+
+.dashboard-stats {
+  padding: var(--spacing-md, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 16px);
+}
+
+.stat-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing, 8px);
+}
+
+.stat-section h4 {
+  margin: 0;
+  font-size: var(--text-sm, 14px);
+  font-weight: 600;
+  color: var(--text-color-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing, 8px);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing, 8px);
+  background: var(--builder-inspector-control-bg, #f9fafb);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.stat-label {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-color-secondary, #6b7280);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: var(--text-lg, 18px);
+  font-weight: 600;
+  color: var(--text-color, #111827);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.highlight {
+  color: var(--action-primary-bg, #3b82f6);
+}
+
+.stat-value.success {
+  color: var(--color-success-600, #16a34a);
+}
+
+.stat-value.error {
+  color: var(--color-error-600, #dc2626);
+}
+
+.dashboard-footer {
+  padding: var(--spacing, 8px) var(--spacing-md, 12px);
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--builder-inspector-header-bg, #f9fafb);
+  text-align: center;
+}
+
+.elapsed-time {
+  font-size: var(--text-xs, 12px);
+  color: var(--text-color-secondary, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dark mode support */
+[data-builder-theme="dark"] .performance-dashboard {
+  background: rgba(17, 24, 39, 0.98);
+  border-color: #374151;
+}
+
+[data-builder-theme="dark"] .dashboard-header {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-builder-theme="dark"] .dashboard-header h3 {
+  color: #f9fafb;
+}
+
+[data-builder-theme="dark"] .action-btn {
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+[data-builder-theme="dark"] .action-btn:hover {
+  background: #374151;
+}
+
+[data-builder-theme="dark"] .stat-section h4 {
+  color: #9ca3af;
+}
+
+[data-builder-theme="dark"] .stat-item {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-builder-theme="dark"] .stat-label {
+  color: #9ca3af;
+}
+
+[data-builder-theme="dark"] .stat-value {
+  color: #f9fafb;
+}
+
+[data-builder-theme="dark"] .dashboard-footer {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+[data-builder-theme="dark"] .elapsed-time {
+  color: #9ca3af;
+}
+
+/* Compact mode (간략 모드) */
+.performance-dashboard.compact {
+  width: 300px;
+}
+
+.performance-dashboard.compact .stat-grid {
+  grid-template-columns: 1fr;
+}

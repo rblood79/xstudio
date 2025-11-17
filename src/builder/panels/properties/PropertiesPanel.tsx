@@ -29,6 +29,75 @@ import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, tr
 import { supabase } from "../../../env/supabase.client";
 import "../../panels/common/index.css";
 
+/**
+ * ⭐ Phase 4: useAsyncAction/useAsyncData 사용 가이드
+ *
+ * 비동기 작업이 필요한 경우 아래 훅들을 사용하세요:
+ *
+ * 1. useAsyncAction (React Query의 useMutation 스타일)
+ *    - 서버에 데이터 저장/수정/삭제
+ *    - 자동 재시도 (3회, Exponential backoff)
+ *    - 4xx 에러는 재시도 스킵
+ *
+ *    예시:
+ *    ```typescript
+ *    import { useAsyncAction } from '../../hooks/useAsyncAction';
+ *
+ *    const { execute: saveElement, isLoading, error } = useAsyncAction({
+ *      actionKey: 'save-element',
+ *      action: async (element: Element) => {
+ *        const { data, error } = await supabase
+ *          .from('elements')
+ *          .insert(element)
+ *          .select()
+ *          .single();
+ *        if (error) throw error;
+ *        return data;
+ *      },
+ *      onSuccess: (data) => {
+ *        console.log('Element saved:', data);
+ *        // TODO: Show toast notification
+ *      },
+ *      onError: (error) => {
+ *        console.error('Failed to save:', error);
+ *        // TODO: Show error toast
+ *      },
+ *      retry: 3,
+ *    });
+ *
+ *    // 사용
+ *    await saveElement(newElement);
+ *    ```
+ *
+ * 2. useAsyncData (React Query의 useQuery 스타일)
+ *    - 서버에서 데이터 fetch
+ *    - 자동 캐싱 (staleTime)
+ *    - 주기적 갱신 (refetchInterval)
+ *
+ *    예시:
+ *    ```typescript
+ *    import { useAsyncData } from '../../hooks/useAsyncData';
+ *
+ *    const { data: tokens, isLoading, error, refetch } = useAsyncData({
+ *      queryKey: 'design-tokens',
+ *      queryFn: async () => {
+ *        const { data, error } = await supabase
+ *          .from('design_tokens')
+ *          .select('*')
+ *          .eq('project_id', projectId);
+ *        if (error) throw error;
+ *        return data;
+ *      },
+ *      staleTime: 5 * 60 * 1000, // 5분 캐시
+ *      refetchInterval: 30000,    // 30초마다 갱신
+ *      onSuccess: (data) => console.log('Tokens loaded:', data.length),
+ *    });
+ *
+ *    if (isLoading) return <LoadingSpinner />;
+ *    if (error) return <ErrorMessage error={error} />;
+ *    ```
+ */
+
 export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ 최적화: selectedElement 구독 (properties 변경 감지 필요)
   const selectedElement = useInspectorState((state) => state.selectedElement);

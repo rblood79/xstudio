@@ -98,20 +98,20 @@ export const BuilderCore: React.FC = () => {
   const canRedo = historyInfo.canRedo;
 
   // 새로운 히스토리 시스템의 Undo/Redo 핸들러
-  const handleUndo = useCallback(() => {
+  const handleUndo = useCallback(async () => {
     const { undo } = useStore.getState();
-    undo();
+    await undo(); // ✅ async/await 추가 - 완료 대기
 
-    // 히스토리 정보 업데이트
+    // 히스토리 정보 업데이트 (undo 완료 후)
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
   }, [setHistoryInfo]);
 
-  const handleRedo = useCallback(() => {
+  const handleRedo = useCallback(async () => {
     const { redo } = useStore.getState();
-    redo();
+    await redo(); // ✅ async/await 추가 - 완료 대기
 
-    // 히스토리 정보 업데이트
+    // 히스토리 정보 업데이트 (redo 완료 후)
     const info = historyManager.getCurrentPageHistory();
     setHistoryInfo(info);
   }, [setHistoryInfo]);

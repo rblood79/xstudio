@@ -166,6 +166,35 @@ export const createUndoAction =
             }
             break;
           }
+
+          case "batch": {
+            // Batch update - 각 요소의 이전 props 저장
+            console.log("🔄 Undo: Batch update 데이터 준비");
+            break;
+          }
+
+          case "group": {
+            // Group 생성 - 그룹 삭제 + 자식들 원래 부모로 이동 준비
+            console.log("🔄 Undo: Group 생성 데이터 준비");
+            elementIdsToRemove = [entry.elementId]; // 그룹 요소 삭제
+            break;
+          }
+
+          case "ungroup": {
+            // Ungroup - 그룹 재생성 + 자식들 그룹 안으로 이동 준비
+            console.log("🔄 Undo: Ungroup 데이터 준비");
+            if (entry.data.element) {
+              try {
+                elementsToRestore.push(
+                  JSON.parse(JSON.stringify(entry.data.element))
+                );
+              } catch (proxyError) {
+                console.warn("⚠️ element proxy 오류, 원본 사용:", proxyError);
+                elementsToRestore.push(entry.data.element);
+              }
+            }
+            break;
+          }
         }
 
         console.log("✅ 히스토리 데이터 준비 완료, try 블록 끝");
@@ -266,6 +295,98 @@ export const createUndoAction =
               state.elements.push(...elementsToRestore);
               break;
             }
+
+            case "batch": {
+              // Batch update Undo - 각 요소의 이전 props 복원
+              if (entry.data.batchUpdates) {
+                console.log("🔄 Undo: Batch update 복원 중:", {
+                  updateCount: entry.data.batchUpdates.length,
+                });
+
+                entry.data.batchUpdates.forEach((update: {
+                  elementId: string;
+                  prevProps: ComponentElementProps;
+                }) => {
+                  const element = findElementById(state.elements, update.elementId);
+                  if (element) {
+                    console.log(`📥 복원 요소 props:`, {
+                      elementId: update.elementId,
+                      tag: element.tag,
+                    });
+                    element.props = update.prevProps;
+
+                    // 선택된 요소가 업데이트된 경우
+                    if (state.selectedElementId === update.elementId) {
+                      state.selectedElementProps = createCompleteProps(
+                        element,
+                        update.prevProps
+                      );
+                    }
+                  }
+                });
+              }
+              break;
+            }
+
+            case "group": {
+              // Group 생성 Undo - 그룹 삭제 + 자식들 원래 parent로 이동
+              console.log("🔄 Undo: Group 생성 취소 중");
+
+              // 1. 그룹 요소 삭제
+              state.elements = state.elements.filter(
+                (el) => !elementIdsToRemove.includes(el.id)
+              );
+
+              // 2. 자식 요소들을 원래 parent로 이동
+              if (entry.data.elements) {
+                entry.data.elements.forEach((prevChild: Element) => {
+                  const child = findElementById(state.elements, prevChild.id);
+                  if (child) {
+                    console.log(`📥 자식 요소 원래 parent로 이동:`, {
+                      childId: child.id,
+                      newParentId: prevChild.parent_id,
+                    });
+                    child.parent_id = prevChild.parent_id;
+                    child.order_num = prevChild.order_num;
+                  }
+                });
+              }
+
+              // 3. 선택 상태 업데이트
+              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
+                state.selectedElementId = null;
+                state.selectedElementProps = {};
+              }
+              break;
+            }
+
+            case "ungroup": {
+              // Ungroup Undo - 그룹 재생성 + 자식들 그룹 안으로 이동
+              console.log("🔄 Undo: Ungroup 취소 중");
+
+              // 1. 그룹 요소 복원
+              state.elements.push(...elementsToRestore);
+              console.log(`📥 그룹 요소 복원:`, {
+                groupId: elementsToRestore[0]?.id,
+                tag: elementsToRestore[0]?.tag,
+              });
+
+              // 2. 자식 요소들을 그룹 안으로 이동
+              if (entry.data.elements) {
+                entry.data.elements.forEach((prevChild: Element) => {
+                  const child = findElementById(state.elements, prevChild.id);
+                  if (child) {
+                    console.log(`📥 자식 요소 그룹 안으로 이동:`, {
+                      childId: child.id,
+                      groupId: entry.elementId,
+                    });
+                    child.parent_id = entry.elementId; // 그룹 ID로 설정
+                    child.order_num = prevChild.order_num;
+                  }
+                });
+              }
+              break;
+            }
           }
         })
       );
@@ -354,6 +475,84 @@ export const createUndoAction =
                 `✅ Undo: 데이터베이스에서 요소 복원 완료 (부모 1개 + 자식 ${
                   entry.data.childElements?.length || 0
                 }개)`
+              );
+            }
+            break;
+          }
+
+          case "batch": {
+            // Batch update - 각 요소의 prevProps를 데이터베이스에 업데이트
+            if (entry.data.batchUpdates) {
+              console.log(
+                `🔄 Undo: Batch update DB 동기화 시작 (${entry.data.batchUpdates.length}개)`
+              );
+
+              for (const update of entry.data.batchUpdates) {
+                await supabase
+                  .from("elements")
+                  .update({ props: update.prevProps })
+                  .eq("id", update.elementId);
+              }
+
+              console.log(
+                `✅ Undo: Batch update DB 동기화 완료 (${entry.data.batchUpdates.length}개)`
+              );
+            }
+            break;
+          }
+
+          case "group": {
+            // Group 생성 Undo - 그룹 삭제 + 자식들 원래 parent로 업데이트
+            console.log("🔄 Undo: Group 생성 취소 DB 동기화");
+
+            // 1. 그룹 요소 삭제
+            await supabase
+              .from("elements")
+              .delete()
+              .eq("id", entry.elementId);
+
+            // 2. 자식 요소들의 parent_id 업데이트
+            if (entry.data.elements) {
+              for (const prevChild of entry.data.elements) {
+                await supabase
+                  .from("elements")
+                  .update({
+                    parent_id: prevChild.parent_id,
+                    order_num: prevChild.order_num,
+                  })
+                  .eq("id", prevChild.id);
+              }
+              console.log(
+                `✅ Undo: Group 생성 취소 DB 동기화 완료 (자식 ${entry.data.elements.length}개)`
+              );
+            }
+            break;
+          }
+
+          case "ungroup": {
+            // Ungroup Undo - 그룹 복원 + 자식들 그룹 안으로 이동
+            console.log("🔄 Undo: Ungroup 취소 DB 동기화");
+
+            // 1. 그룹 요소 복원
+            if (entry.data.element) {
+              await supabase
+                .from("elements")
+                .insert(sanitizeElement(entry.data.element));
+            }
+
+            // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
+            if (entry.data.elements) {
+              for (const prevChild of entry.data.elements) {
+                await supabase
+                  .from("elements")
+                  .update({
+                    parent_id: entry.elementId, // 그룹 ID
+                    order_num: prevChild.order_num,
+                  })
+                  .eq("id", prevChild.id);
+              }
+              console.log(
+                `✅ Undo: Ungroup 취소 DB 동기화 완료 (자식 ${entry.data.elements.length}개)`
               );
             }
             break;
@@ -462,6 +661,30 @@ export const createRedoAction =
             }
             break;
           }
+
+          case "batch": {
+            // Batch update Redo - newProps 데이터 준비
+            console.log("🔄 Redo: Batch update 데이터 준비");
+            break;
+          }
+
+          case "group": {
+            // Group 생성 Redo - 그룹 요소 추가 준비
+            console.log("🔄 Redo: Group 생성 데이터 준비");
+            if (entry.data.element) {
+              elementsToAdd.push(
+                JSON.parse(JSON.stringify(entry.data.element))
+              );
+            }
+            break;
+          }
+
+          case "ungroup": {
+            // Ungroup Redo - 그룹 요소 삭제 준비
+            console.log("🔄 Redo: Ungroup 데이터 준비");
+            elementIdsToRemove = [entry.elementId];
+            break;
+          }
         }
       } catch (error) {
         console.warn("⚠️ 히스토리 데이터 준비 중 오류:", error);
@@ -493,6 +716,98 @@ export const createRedoAction =
               state.elements = state.elements.filter(
                 (el) => !elementIdsToRemove.includes(el.id)
               );
+              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
+                state.selectedElementId = null;
+                state.selectedElementProps = {};
+              }
+              break;
+            }
+
+            case "batch": {
+              // Batch update Redo - 각 요소의 newProps 적용
+              if (entry.data.batchUpdates) {
+                console.log("🔄 Redo: Batch update 적용 중:", {
+                  updateCount: entry.data.batchUpdates.length,
+                });
+
+                entry.data.batchUpdates.forEach((update: {
+                  elementId: string;
+                  newProps: ComponentElementProps;
+                }) => {
+                  const element = findElementById(state.elements, update.elementId);
+                  if (element) {
+                    console.log(`📥 적용 요소 props:`, {
+                      elementId: update.elementId,
+                      tag: element.tag,
+                    });
+                    element.props = { ...element.props, ...update.newProps };
+
+                    // 선택된 요소가 업데이트된 경우
+                    if (state.selectedElementId === update.elementId) {
+                      state.selectedElementProps = createCompleteProps(
+                        element,
+                        { ...element.props, ...update.newProps }
+                      );
+                    }
+                  }
+                });
+              }
+              break;
+            }
+
+            case "group": {
+              // Group 생성 Redo - 그룹 추가 + 자식들 그룹 안으로 이동
+              console.log("🔄 Redo: Group 생성 중");
+
+              // 1. 그룹 요소 추가
+              state.elements.push(...elementsToAdd);
+              console.log(`📥 그룹 요소 추가:`, {
+                groupId: elementsToAdd[0]?.id,
+                tag: elementsToAdd[0]?.tag,
+              });
+
+              // 2. 자식 요소들을 그룹 안으로 이동
+              if (entry.data.elements) {
+                entry.data.elements.forEach((prevChild: Element) => {
+                  const child = findElementById(state.elements, prevChild.id);
+                  if (child) {
+                    console.log(`📥 자식 요소 그룹 안으로 이동:`, {
+                      childId: child.id,
+                      groupId: entry.elementId,
+                    });
+                    child.parent_id = entry.elementId; // 그룹 ID로 설정
+                    child.order_num = prevChild.order_num;
+                  }
+                });
+              }
+              break;
+            }
+
+            case "ungroup": {
+              // Ungroup Redo - 그룹 삭제 + 자식들 원래 parent로 이동
+              console.log("🔄 Redo: Ungroup 실행 중");
+
+              // 1. 그룹 요소 삭제
+              state.elements = state.elements.filter(
+                (el) => !elementIdsToRemove.includes(el.id)
+              );
+
+              // 2. 자식 요소들을 원래 parent로 이동
+              if (entry.data.elements) {
+                entry.data.elements.forEach((prevChild: Element) => {
+                  const child = findElementById(state.elements, prevChild.id);
+                  if (child) {
+                    console.log(`📥 자식 요소 원래 parent로 이동:`, {
+                      childId: child.id,
+                      newParentId: prevChild.parent_id,
+                    });
+                    child.parent_id = prevChild.parent_id;
+                    child.order_num = prevChild.order_num;
+                  }
+                });
+              }
+
+              // 3. 선택 상태 업데이트
               if (elementIdsToRemove.includes(state.selectedElementId || "")) {
                 state.selectedElementId = null;
                 state.selectedElementProps = {};
@@ -588,6 +903,87 @@ export const createRedoAction =
                 entry.data.childElements?.length || 0
               }개)`
             );
+            break;
+          }
+
+          case "batch": {
+            // Batch update Redo - 각 요소의 newProps를 데이터베이스에 업데이트
+            if (entry.data.batchUpdates) {
+              console.log(
+                `🔄 Redo: Batch update DB 동기화 시작 (${entry.data.batchUpdates.length}개)`
+              );
+
+              for (const update of entry.data.batchUpdates) {
+                const element = getElementById(get().elementsMap, update.elementId);
+                if (element) {
+                  await supabase
+                    .from("elements")
+                    .update({ props: { ...element.props, ...update.newProps } })
+                    .eq("id", update.elementId);
+                }
+              }
+
+              console.log(
+                `✅ Redo: Batch update DB 동기화 완료 (${entry.data.batchUpdates.length}개)`
+              );
+            }
+            break;
+          }
+
+          case "group": {
+            // Group 생성 Redo - 그룹 추가 + 자식들 parent_id 업데이트
+            console.log("🔄 Redo: Group 생성 DB 동기화");
+
+            // 1. 그룹 요소 추가
+            if (entry.data.element) {
+              await supabase
+                .from("elements")
+                .insert(sanitizeElement(entry.data.element));
+            }
+
+            // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
+            if (entry.data.elements) {
+              for (const prevChild of entry.data.elements) {
+                await supabase
+                  .from("elements")
+                  .update({
+                    parent_id: entry.elementId, // 그룹 ID
+                    order_num: prevChild.order_num,
+                  })
+                  .eq("id", prevChild.id);
+              }
+              console.log(
+                `✅ Redo: Group 생성 DB 동기화 완료 (자식 ${entry.data.elements.length}개)`
+              );
+            }
+            break;
+          }
+
+          case "ungroup": {
+            // Ungroup Redo - 그룹 삭제 + 자식들 원래 parent로 업데이트
+            console.log("🔄 Redo: Ungroup DB 동기화");
+
+            // 1. 그룹 요소 삭제
+            await supabase
+              .from("elements")
+              .delete()
+              .eq("id", entry.elementId);
+
+            // 2. 자식 요소들의 parent_id를 원래 parent로 업데이트
+            if (entry.data.elements) {
+              for (const prevChild of entry.data.elements) {
+                await supabase
+                  .from("elements")
+                  .update({
+                    parent_id: prevChild.parent_id,
+                    order_num: prevChild.order_num,
+                  })
+                  .eq("id", prevChild.id);
+              }
+              console.log(
+                `✅ Redo: Ungroup DB 동기화 완료 (자식 ${entry.data.elements.length}개)`
+              );
+            }
             break;
           }
         }

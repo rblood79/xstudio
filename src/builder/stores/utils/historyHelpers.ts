@@ -136,23 +136,32 @@ export function trackMultiDelete(elements: Element[]): void {
 /**
  * Track multi-element copy/paste in history
  *
+ * ✅ 개선: 단일 batch entry로 추적 (여러 개별 entry 대신)
+ * - Undo 시 한 번에 모든 요소 삭제
+ * - Redo 시 한 번에 모든 요소 복원
+ * - 히스토리 메모리 사용량 감소
+ *
  * @param newElements - Newly pasted elements
  */
 export function trackMultiPaste(newElements: Element[]): void {
   if (newElements.length === 0) return;
 
-  // Track each pasted element as an add operation
-  newElements.forEach((element) => {
-    historyManager.addEntry({
-      type: 'add',
-      elementId: element.id,
-      data: {
-        element: element,
-      },
-    });
+  // 단일 히스토리 entry로 모든 요소 추적
+  // parent 요소와 나머지 요소들을 분리
+  const [firstElement, ...restElements] = newElements;
+
+  historyManager.addEntry({
+    type: 'add',
+    elementId: firstElement.id, // Primary element for reference
+    elementIds: newElements.map(el => el.id), // All pasted element IDs
+    data: {
+      element: firstElement, // 첫 번째 요소 (primary)
+      childElements: restElements, // 나머지 요소들 (모두 형제 관계일 수도 있음)
+      elements: newElements, // 전체 요소 목록 (참고용)
+    },
   });
 
-  console.log(`✅ [History] Tracked multi-paste for ${newElements.length} elements`);
+  console.log(`✅ [History] Tracked multi-paste: single batch entry for ${newElements.length} elements`);
 }
 
 /**

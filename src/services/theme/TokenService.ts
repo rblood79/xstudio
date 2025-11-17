@@ -285,11 +285,36 @@ export class TokenService {
 
   /**
    * 토큰 변경 구독
+   *
+   * ✅ Phase 3 최적화:
+   * - Event batching: 100ms 내 이벤트 일괄 처리
+   * - Event filtering: 중복 이벤트 제거
+   * - Monotonic timer: performance.now() 사용
    */
   static subscribeToTokenChanges(
     themeId: string,
     callback: (payload: Record<string, unknown>) => void
   ): () => void {
+    // ✅ RealtimeBatcher 통합 (배칭 + 필터링)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
+
+    const batcher = new RealtimeBatcher({
+      batchDelay: 100, // 100ms 배칭
+      onBatch: (events) => {
+        // 배치 처리: 마지막 이벤트만 전달 (최신 상태)
+        const lastEvent = events[events.length - 1];
+        callback(lastEvent.raw as Record<string, unknown>);
+
+        console.log(`✅ [TokenService] Batched ${events.length} token events → processed 1`);
+      },
+      filter: RealtimeFilters.combineFilters(
+        RealtimeFilters.tableFilter(['design_tokens']),
+        RealtimeFilters.hasIdFilter()
+      ),
+      deduplication: true, // 중복 제거 활성화
+    });
+
     const channel = supabase
       .channel(`tokens:theme:${themeId}`)
       .on(
@@ -300,22 +325,52 @@ export class TokenService {
           table: 'design_tokens',
           filter: `theme_id=eq.${themeId}`,
         },
-        callback
+        (payload) => {
+          // ✅ Batcher에 이벤트 추가 (즉시 처리 X)
+          batcher.addEvent(payload as Record<string, unknown>);
+        }
       )
       .subscribe();
 
+    // Unsubscribe 함수 반환 (batcher 정리 포함)
     return () => {
+      batcher.destroy(); // ✅ Batcher 정리
       supabase.removeChannel(channel);
     };
   }
 
   /**
    * 프로젝트 전체 토큰 변경 구독
+   *
+   * ✅ Phase 3 최적화:
+   * - Event batching: 100ms 내 이벤트 일괄 처리
+   * - Event filtering: 중복 이벤트 제거
    */
   static subscribeToProjectTokens(
     projectId: string,
     callback: (payload: Record<string, unknown>) => void
   ): () => void {
+    // ✅ RealtimeBatcher 통합
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
+
+    const batcher = new RealtimeBatcher({
+      batchDelay: 100,
+      onBatch: (events) => {
+        // 여러 토큰 변경 시 모든 이벤트 전달 (프로젝트 전체 변경)
+        events.forEach((event) => {
+          callback(event.raw as Record<string, unknown>);
+        });
+
+        console.log(`✅ [TokenService] Batched ${events.length} project token events`);
+      },
+      filter: RealtimeFilters.combineFilters(
+        RealtimeFilters.tableFilter(['design_tokens']),
+        RealtimeFilters.hasIdFilter()
+      ),
+      deduplication: true,
+    });
+
     const channel = supabase
       .channel(`tokens:project:${projectId}`)
       .on(
@@ -326,11 +381,14 @@ export class TokenService {
           table: 'design_tokens',
           filter: `project_id=eq.${projectId}`,
         },
-        callback
+        (payload) => {
+          batcher.addEvent(payload as Record<string, unknown>);
+        }
       )
       .subscribe();
 
     return () => {
+      batcher.destroy();
       supabase.removeChannel(channel);
     };
   }
