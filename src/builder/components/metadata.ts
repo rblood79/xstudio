@@ -431,6 +431,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "body",
+    label: "Body",
+    category: "Layout",
+    icon: "📄",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "BodyEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Overlays
   {

@@ -599,8 +599,11 @@ export default function Sidebar({ pages, pageList, handleAddPage, handleAddEleme
                                     <button className="iconButton" aria-label="Settings">
                                         <Settings2 color={iconEditProps.color} strokeWidth={iconEditProps.stroke} size={iconEditProps.size} />
                                     </button>
-                                    {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
-                                    {!(hasTag(item) && item.tag === 'body') && (
+                                    {/* body 요소 또는 루트 Home 페이지가 아닐 때만 삭제 버튼 표시 */}
+                                    {!(
+                                        (hasTag(item) && item.tag === 'body') ||
+                                        (item.order_num === 0 && item.parent_id === null)
+                                    ) && (
                                         <button
                                             className="iconButton"
                                             aria-label={`Delete ${getLabel(item)}`}
