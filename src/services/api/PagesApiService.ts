@@ -18,54 +18,86 @@ export interface CreatePageData {
 
 export class PagesApiService extends BaseApiService {
     /**
-     * 프로젝트 ID로 페이지들을 가져옵니다
+     * 프로젝트 ID로 페이지들을 가져옵니다 (캐싱 적용)
+     *
+     * ✅ 최적화:
+     * - 5분 캐싱
+     * - 중복 요청 자동 방지
+     * - 성능 모니터링
      */
     async getPagesByProjectId(projectId: string): Promise<Page[]> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'getPagesByProjectId');
 
-        return this.handleApiCall('getPagesByProjectId', async () => {
-            return await this.supabase
-                .from("pages")
-                .select("*")
-                .eq("project_id", projectId)
-                .order('order_num', { ascending: true });
-        });
+        const queryKey = `pages:project:${projectId}`;
+
+        return this.handleCachedApiCall<Page[]>(
+            queryKey,
+            'getPagesByProjectId',
+            async () => {
+                return await this.supabase
+                    .from("pages")
+                    .select("*")
+                    .eq("project_id", projectId)
+                    .order('order_num', { ascending: true });
+            },
+            { staleTime: 5 * 60 * 1000 } // 5분 캐싱
+        );
     }
 
     /**
-     * 새 페이지를 생성합니다
+     * 새 페이지를 생성합니다 (캐시 무효화)
      */
     async createPage(pageData: Partial<Page>): Promise<Page> {
         this.validateInput(pageData, (data) => typeof data === 'object' && data !== null, 'createPage');
 
-        return this.handleApiCall('createPage', async () => {
-            const result = await this.supabase
+        const result = await this.handleApiCall('createPage', async () => {
+            const res = await this.supabase
                 .from("pages")
                 .insert([pageData])
                 .select()
                 .single();
-            
-            return result;
+
+            return res;
         });
+
+        // ✅ 캐시 무효화 (해당 프로젝트의 pages 캐시 삭제)
+        if (pageData.project_id) {
+            this.invalidateCache(`pages:project:${pageData.project_id}`);
+        }
+
+        return result;
     }
 
+    /**
+     * 프로젝트의 페이지 목록 조회 (캐싱 적용)
+     */
     async fetchPages(projectId: string): Promise<Page[]> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'fetchPages');
 
-        return this.handleApiCall('fetchPages', async () => {
-            return await this.supabase
-                .from("pages")
-                .select("*")
-                .eq("project_id", projectId)
-                .order('created_at', { ascending: true });
-        });
+        const queryKey = `pages:project:${projectId}`;
+
+        return this.handleCachedApiCall<Page[]>(
+            queryKey,
+            'fetchPages',
+            async () => {
+                return await this.supabase
+                    .from("pages")
+                    .select("*")
+                    .eq("project_id", projectId)
+                    .order('created_at', { ascending: true });
+            },
+            { staleTime: 5 * 60 * 1000 }
+        );
     }
 
+    /**
+     * 페이지 업데이트 (캐시 무효화)
+     */
     async updatePage(pageId: string, updates: Partial<Page>): Promise<Page> {
         this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0, 'updatePage');
         this.validateInput(updates, (u) => u && typeof u === 'object', 'updatePage');
 
-        return this.handleApiCall('updatePage', async () => {
+        const result = await this.handleApiCall('updatePage', async () => {
             return await this.supabase
                 .from("pages")
                 .update(updates)
@@ -73,10 +105,27 @@ export class PagesApiService extends BaseApiService {
                 .select('*')
                 .single();
         });
+
+        // ✅ 캐시 무효화
+        if (result.project_id) {
+            this.invalidateCache(`pages:project:${result.project_id}`);
+        }
+
+        return result;
     }
 
+    /**
+     * 페이지 삭제 (캐시 무효화)
+     */
     async deletePage(pageId: string): Promise<void> {
         this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0, 'deletePage');
+
+        // 삭제 전에 project_id 조회 (캐시 무효화용)
+        const { data: page } = await this.supabase
+            .from("pages")
+            .select("project_id")
+            .eq("id", pageId)
+            .single();
 
         await this.handleDeleteCall('deletePage', async () => {
             return await this.supabase
@@ -84,6 +133,11 @@ export class PagesApiService extends BaseApiService {
                 .delete()
                 .eq("id", pageId);
         });
+
+        // ✅ 캐시 무효화
+        if (page?.project_id) {
+            this.invalidateCache(`pages:project:${page.project_id}`);
+        }
     }
 }
 

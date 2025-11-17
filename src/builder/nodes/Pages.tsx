@@ -1,7 +1,7 @@
 import { CirclePlus } from 'lucide-react';
 import { iconProps } from '../../utils/ui/uiConstants';
 import { Database } from '../../types/integrations/supabase.types';
-import { supabase } from '../../env/supabase.client';
+import { pagesApi } from '../../services/api/PagesApiService';
 import { useStore } from '../stores';
 
 type Page = Database['public']['Tables']['pages']['Row'];
@@ -29,9 +29,10 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
     });
 
     const handleDeletePage = async (page: Page) => {
-        // 1. DB에서 삭제
-        const { error } = await supabase.from("pages").delete().eq("id", page.id);
-        if (error) {
+        // 1. DB에서 삭제 (✅ 최적화된 API Service 사용 - 자동 캐시 무효화)
+        try {
+            await pagesApi.deletePage(page.id);
+        } catch (error) {
             console.error("페이지 삭제 에러:", error);
             return;
         }
