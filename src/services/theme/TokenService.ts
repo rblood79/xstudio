@@ -18,6 +18,7 @@ import type {
   TokenType,
   TokenValue,
 } from '../../types/theme';
+import { RealtimeBatcher, RealtimeFilters } from '../../utils/realtimeBatcher';
 
 export class TokenService extends BaseApiService {
   /**
@@ -389,9 +390,6 @@ export class TokenService extends BaseApiService {
     const instance = new TokenService();
 
     // ✅ RealtimeBatcher 통합 (배칭 + 필터링)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
-
     const batcher = new RealtimeBatcher({
       batchDelay: 100, // 100ms 배칭
       onBatch: (events) => {
@@ -446,9 +444,6 @@ export class TokenService extends BaseApiService {
     const instance = new TokenService();
 
     // ✅ RealtimeBatcher 통합
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
-
     const batcher = new RealtimeBatcher({
       batchDelay: 100,
       onBatch: (events) => {

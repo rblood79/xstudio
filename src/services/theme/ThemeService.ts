@@ -11,6 +11,7 @@
 
 import { BaseApiService } from '../api/BaseApiService';
 import type { DesignTheme } from '../../types/theme';
+import { RealtimeBatcher, RealtimeFilters } from '../../utils/realtimeBatcher';
 
 export interface CreateThemeInput {
   project_id: string;
@@ -100,7 +101,7 @@ export class ThemeService extends BaseApiService {
 
           return { data: response.data, error: response.error };
         },
-        { staleTime: 5 * 60 * 1000 }
+        { staleTime: 5 * 60 * 1000, allowNull: true } // 활성 테마가 없을 수 있음
       );
 
       // 활성 테마가 없으면 첫 번째 테마 반환
@@ -341,9 +342,6 @@ export class ThemeService extends BaseApiService {
     const instance = new ThemeService();
 
     // ✅ RealtimeBatcher 통합 (배칭 + 필터링)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
-
     const batcher = new RealtimeBatcher({
       batchDelay: 100, // 100ms 배칭
       onBatch: (events) => {
@@ -398,9 +396,6 @@ export class ThemeService extends BaseApiService {
     const instance = new ThemeService();
 
     // ✅ RealtimeBatcher 통합
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
-
     const batcher = new RealtimeBatcher({
       batchDelay: 100,
       onBatch: (events) => {

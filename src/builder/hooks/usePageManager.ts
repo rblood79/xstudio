@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
 import { pagesApi, type Page as ApiPage } from '../../services/api/PagesApiService';
@@ -35,7 +35,7 @@ export interface UsePageManagerProps {
  * usePageManager - React Stately useListData 기반 페이지 관리
  *
  * wrapper 함수 불필요: 모든 함수가 에러를 return으로 처리
- * useCallback 0개: 모두 일반 함수로 처리
+ * useCallback 사용: fetchElements, initializeProject는 메모이제이션됨 (무한 재렌더 방지)
  *
  * @param props - requestAutoSelectAfterUpdate 함수 (iframe messenger에서)
  * @example
@@ -68,10 +68,13 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
     /**
      * fetchElements - 페이지 요소 로드
-     *
+     * useCallback으로 래핑하여 불필요한 재생성 방지
+     * 
+     * NOTE: Zustand의 setCurrentPageId는 안정적인 함수 참조이므로 dependency에서 제외 가능
+     * 
      * @returns ApiResult (성공 시 data, 실패 시 error)
      */
-    const fetchElements = async (pageId: string): Promise<ApiResult<Element[]>> => {
+    const fetchElements = useCallback(async (pageId: string): Promise<ApiResult<Element[]>> => {
         if (!pageId) {
             return { success: false, error: new Error('pageId is required') };
         }
@@ -127,7 +130,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             console.error('요소 로드 에러:', error);
             return { success: false, error: error as Error };
         }
-    };
+    }, [requestAutoSelectAfterUpdate]);
 
     /**
      * addPage - 새 페이지 추가
@@ -212,10 +215,15 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
     /**
      * initializeProject - 프로젝트 초기화
+     * useCallback으로 래핑하여 불필요한 재생성 방지
+     * 
+     * NOTE: pageList는 useListData의 결과로 매 렌더마다 새 객체를 반환하므로 
+     *       dependency에 포함하면 무한 루프 발생. 함수 내에서 직접 접근.
+     *       Zustand 함수들(setPages, setCurrentPageId)은 안정적이므로 제외 가능.
      *
      * @returns ApiResult (성공 시 data, 실패 시 error)
      */
-    const initializeProject = async (projectId: string): Promise<ApiResult<ApiPage[]>> => {
+    const initializeProject = useCallback(async (projectId: string): Promise<ApiResult<ApiPage[]>> => {
         // 중복 호출 방지: 같은 프로젝트가 이미 초기화 중이면 스킵
         if (initializingRef.current === projectId) {
             console.warn('⚠️ 프로젝트가 이미 초기화 중입니다:', projectId);
@@ -270,7 +278,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             initializingRef.current = null;
             return { success: false, error: error as Error };
         }
-    };
+    }, [fetchElements]);
 
     return {
         pages: pageList.items,

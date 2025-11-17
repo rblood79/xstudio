@@ -123,34 +123,37 @@ export abstract class BaseApiService {
      * @param queryKey - 캐시 키 (예: "pages:project-123")
      * @param operation - 작업 이름 (로깅용)
      * @param apiCall - 실제 API 호출 함수
-     * @param options - 캐싱 옵션 { staleTime?: number }
+     * @param options - 캐싱 옵션 { staleTime?: number, allowNull?: boolean }
      * @returns API 응답 데이터
      */
     protected async handleCachedApiCall<T>(
         queryKey: string,
         operation: string,
         apiCall: () => Promise<{ data: T | null; error: unknown }>,
-        options: { staleTime?: number } = {}
+        options: { staleTime?: number; allowNull?: boolean } = {}
     ): Promise<T> {
-        await this.rateLimitCheck(operation);
-
-        // 1. 캐시 확인
+        // 1. 캐시 확인 (rate limit 전에 체크)
         const cached = globalQueryCache.get(queryKey);
         if (cached) {
             const age = Date.now() - cached.timestamp;
             const staleTime = options.staleTime ?? 5 * 60 * 1000; // 기본 5분
 
             if (age < staleTime) {
-                // ✅ Cache hit
+                // ✅ Cache hit - rate limit 체크 불필요
                 globalPerformanceMonitor.recordCacheHit(queryKey, 0);
                 console.log(`📦 [Cache HIT] ${operation} (${queryKey})`);
                 return cached.data as T;
             }
         }
 
-        // 2. Request Deduplication
+        // 2. Request Deduplication 체크 (rate limit 전에 체크)
         const wasDeduplicated = globalRequestDeduplicator.isPending(queryKey);
         const fetchStart = performance.now();
+        
+        // 3. Rate limit 체크 (실제 API 호출 전에만)
+        if (!wasDeduplicated) {
+            await this.rateLimitCheck(operation);
+        }
 
         try {
             const result = await globalRequestDeduplicator.deduplicate(queryKey, async () => {
@@ -162,7 +165,8 @@ export abstract class BaseApiService {
                     throw new Error(apiError.message);
                 }
 
-                if (!data) {
+                // allowNull 옵션이 false이고 data가 null이면 에러
+                if (!data && !options.allowNull) {
                     const apiError: ApiError = {
                         type: ApiErrorType.NOT_FOUND_ERROR,
                         message: `No data returned from ${operation}`,
@@ -173,7 +177,7 @@ export abstract class BaseApiService {
                     throw new Error(apiError.message);
                 }
 
-                return data;
+                return data as T; // allowNull=true면 null도 허용
             });
 
             const fetchTime = performance.now() - fetchStart;
