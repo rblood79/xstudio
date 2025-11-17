@@ -741,48 +741,146 @@ async getPagesByProjectId(id: string) {
 
 ## 🚀 다음 단계
 
-### 추가 최적화 가능한 파일들
+### ✅ 완료된 마이그레이션
 
-1. ✅ **ThemeService** (`src/services/theme/ThemeService.ts`) - **완료 (2025-11-17)**
-   - ✅ `getThemesByProject()` - 캐싱 적용
-   - ✅ `getThemeById()` - 캐싱 적용
-   - ✅ `getActiveTheme()` - 캐싱 적용
-   - ✅ `createTheme()` - 캐시 무효화
-   - ✅ `updateTheme()` - 캐시 무효화
-   - ✅ `deleteTheme()` - 다중 캐시 무효화
-   - ✅ `duplicateTheme()` - 캐시 무효화
-   - ✅ `activateTheme()` - 캐시 무효화
-   - ✅ `createSnapshot()` - 캐시 무효화
-   - ✅ `getThemeHierarchy()` - 캐시 재사용
+**모든 주요 서비스 최적화 완료 (2025-11-17):**
+1. ✅ BaseApiService (Core Infrastructure)
+2. ✅ ElementsApiService (4 메서드)
+3. ✅ PagesApiService (4 메서드)
+4. ✅ Pages.tsx Component (직접 Supabase 호출 제거)
+5. ✅ ThemeService (10 메서드)
+6. ✅ TokenService (10+ 메서드)
+7. ✅ ProjectsApiService (5 메서드)
 
-2. ✅ **TokenService** (`src/services/theme/TokenService.ts`) - **완료 (2025-11-17)**
-   - ✅ `getResolvedTokens()` - 캐싱 적용 (RPC)
-   - ✅ `searchTokens()` - 검색 쿼리별 캐싱
-   - ✅ `getTokenById()` - 캐싱 적용
-   - ✅ `getRawTokens()` - 캐싱 적용
-   - ✅ `getSemanticTokens()` - 캐싱 적용
-   - ✅ `getTokensByType()` - 타입별 캐싱
-   - ✅ `createToken()` - 다중 캐시 무효화
-   - ✅ `updateToken()` - 다중 캐시 무효화
-   - ✅ `deleteToken()` - 다중 캐시 무효화
-   - ✅ `bulkUpsertTokens()` - 대량 캐시 무효화
+### 📋 다음 단계 옵션
 
-3. ✅ **ProjectsApiService** (`src/services/api/ProjectsApiService.ts`) - **완료 (2025-11-17)**
-   - ✅ `fetchProjects()` - 캐싱 적용
-   - ✅ `getCurrentUser()` - 세션 캐싱
-   - ✅ `createProject()` - 캐시 무효화
-   - ✅ `updateProject()` - 캐시 무효화
-   - ✅ `deleteProject()` - 캐시 무효화
+React Query 스타일 최적화 시스템이 성공적으로 적용되었습니다. 이제 다음 단계를 선택할 수 있습니다:
 
-### 적용 체크리스트
+---
 
+#### **옵션 1: 성능 측정 및 검증** 📊
+
+**목표**: 실제 사용 환경에서 최적화 효과 측정 및 검증
+
+**작업 내용:**
+1. **Performance Dashboard 개선**
+   - 실시간 캐시 Hit Rate 그래프
+   - API 응답 시간 차트
+   - 중복 요청 방지율 통계
+   - 메모리 사용량 모니터링
+
+2. **A/B 테스트 설정**
+   - 최적화 전/후 성능 비교
+   - 실제 사용자 시나리오 테스트
+   - 네트워크 속도별 성능 측정
+
+3. **성능 리포트 자동화**
+   - 주간 성능 리포트 생성
+   - 캐시 효율성 분석
+   - 병목 지점 자동 탐지
+
+**예상 효과:**
+- 📈 실제 성능 개선 수치 확보
+- 🎯 추가 최적화 영역 발견
+- 📊 데이터 기반 의사결정
+
+**예상 소요 시간**: 2-3일
+
+---
+
+#### **옵션 2: 추가 최적화 적용** ⚡
+
+**목표**: Hook 및 Component 레벨 최적화 확장
+
+**작업 내용:**
+1. **Custom Hook 최적화**
+   - `usePageManager` - 페이지 관리 최적화
+   - `useElementCreator` - 엘리먼트 생성 최적화
+   - `useThemeManager` - 테마 관리 최적화
+
+2. **Component 최적화**
+   - `React.memo()` 적용 (불필요한 리렌더링 방지)
+   - `useMemo()` / `useCallback()` 최적화
+   - Virtual scrolling 적용 (긴 목록)
+
+3. **Lazy Loading**
+   - Code splitting (React.lazy)
+   - Dynamic imports
+   - Route-based splitting
+
+**예상 효과:**
+- 🚀 초기 로딩 속도 30% 개선
+- 💾 메모리 사용량 20% 감소
+- ⚡ 렌더링 성능 40% 개선
+
+**예상 소요 시간**: 3-5일
+
+---
+
+#### **옵션 3: 캐시 전략 고도화** 🎯
+
+**목표**: 더욱 정교한 캐싱 전략 구현
+
+**작업 내용:**
+1. **캐시 우선순위 시스템**
+   - 자주 사용하는 데이터 우선 캐싱
+   - LRU (Least Recently Used) 자동 제거
+   - 메모리 임계값 기반 캐시 정리
+
+2. **Optimistic Updates**
+   - Mutation 작업 시 UI 즉시 업데이트
+   - 실패 시 자동 롤백
+   - 낙관적 업데이트 로그
+
+3. **Background Refetching**
+   - Stale 데이터 백그라운드 갱신
+   - 사용자 활동 기반 prefetching
+   - 네트워크 상태 감지 후 자동 재시도
+
+4. **Persistent Cache**
+   - IndexedDB를 활용한 영구 캐싱
+   - 앱 재시작 후에도 캐시 유지
+   - 오프라인 지원
+
+**예상 효과:**
+- 🎨 사용자 경험 대폭 개선 (즉각적인 UI 반응)
+- 📶 오프라인 지원으로 안정성 향상
+- 💪 네트워크 장애 대응 능력 강화
+
+**예상 소요 시간**: 5-7일
+
+---
+
+### 🎯 권장 우선순위
+
+**단기 (1주 이내):**
+- ✅ **옵션 1** 먼저 실행 → 현재 최적화 효과 검증
+- 데이터 기반으로 다음 단계 결정
+
+**중기 (2-3주):**
+- ⚡ **옵션 2** 실행 → 전체 앱 성능 개선
+- 사용자 경험 대폭 향상
+
+**장기 (1개월+):**
+- 🎯 **옵션 3** 실행 → Enterprise급 캐싱 시스템
+- 오프라인 지원 및 고급 기능 추가
+
+---
+
+### 📝 적용 체크리스트
+
+**현재 완료된 항목:**
 - ✅ BaseApiService 상속 확인
 - ✅ GET 메서드에 `handleCachedApiCall` 적용
 - ✅ POST/PUT/DELETE 메서드에 캐시 무효화 추가
 - ✅ 쿼리 키 네이밍 컨벤션 준수
 - ✅ TypeScript 에러 체크 (`npx tsc --noEmit`) - **0 errors**
 - ✅ Console 로그 확인 (캐시 HIT/MISS)
-- ⏳ Performance Dashboard로 성능 확인 (다음 단계)
+
+**다음 체크리스트 (옵션 선택 후):**
+- ⏳ Performance Dashboard로 성능 확인
+- ⏳ A/B 테스트로 최적화 효과 검증
+- ⏳ 추가 최적화 영역 발굴
 
 ---
 
