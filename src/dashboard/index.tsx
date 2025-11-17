@@ -11,9 +11,9 @@ import {
   SquarePlus,
   Cloud,
   HardDrive,
-  AlertTriangle,
-  Download,
-  Upload,
+  // ⚠️ IndexedDB 전용 모드 - Sync/Download 아이콘 불필요
+  // Download,
+  // Upload,
   Settings,
 } from "lucide-react";
 import {
@@ -22,10 +22,11 @@ import {
   getAvailableActions,
   formatRelativeTime,
 } from '../utils/projectMerger';
-import {
-  syncProjectToCloud,
-  downloadProjectFromCloud,
-} from '../utils/projectSync';
+// ⚠️ IndexedDB 전용 모드 - projectSync 비활성화
+// import {
+//   syncProjectToCloud,
+//   downloadProjectFromCloud,
+// } from '../utils/projectSync';
 import { useSettingsStore } from '../stores/settingsStore';
 import { SettingsPanel } from './SettingsPanel';
 import type { ProjectListItem, ProjectFilter } from '../types/dashboard.types';
@@ -201,32 +202,30 @@ function Dashboard() {
     }
   );
 
-  // Sync project mutation (local → cloud)
-  const syncProjectMutation = useAsyncMutation<void, string>(
-    async (projectId) => {
-      await syncProjectToCloud(projectId);
-      console.log('[Dashboard] 프로젝트 동기화 완료:', projectId);
-    },
-    {
-      onSuccess: () => {
-        cloudProjectsQuery.reload(); // 목록 갱신
-      },
-    }
-  );
+  // ⚠️ IndexedDB 전용 모드 - Sync/Download 기능 비활성화
+  // const syncProjectMutation = useAsyncMutation<void, string>(
+  //   async (projectId) => {
+  //     await syncProjectToCloud(projectId);
+  //     console.log('[Dashboard] 프로젝트 동기화 완료:', projectId);
+  //   },
+  //   {
+  //     onSuccess: () => {
+  //       cloudProjectsQuery.reload();
+  //     },
+  //   }
+  // );
 
-  // Download project mutation (cloud → local)
-  const downloadProjectMutation = useAsyncMutation<void, string>(
-    async (projectId) => {
-      await downloadProjectFromCloud(projectId);
-      console.log('[Dashboard] 프로젝트 다운로드 완료:', projectId);
-    },
-    {
-      onSuccess: () => {
-        // 로컬 프로젝트가 추가되었으므로 목록 갱신
-        cloudProjectsQuery.reload();
-      },
-    }
-  );
+  // const downloadProjectMutation = useAsyncMutation<void, string>(
+  //   async (projectId) => {
+  //     await downloadProjectFromCloud(projectId);
+  //     console.log('[Dashboard] 프로젝트 다운로드 완료:', projectId);
+  //   },
+  //   {
+  //     onSuccess: () => {
+  //       cloudProjectsQuery.reload();
+  //     },
+  //   }
+  // );
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -262,8 +261,8 @@ function Dashboard() {
     return true; // 'all'
   });
 
-  const loading = cloudProjectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading || syncProjectMutation.isLoading || downloadProjectMutation.isLoading;
-  const error = cloudProjectsQuery.error || createProjectMutation.error || deleteProjectMutation.error || syncProjectMutation.error || downloadProjectMutation.error;
+  const loading = cloudProjectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading;
+  const error = cloudProjectsQuery.error || createProjectMutation.error || deleteProjectMutation.error;
 
   if (cloudProjectsQuery.isLoading && mergedProjects.length === 0) {
     return (
@@ -389,45 +388,10 @@ function Dashboard() {
                     />
                   )}
 
-                  {/* Sync 버튼 */}
-                  {actions.canSync && (
-                    <Button
-                      onPress={async () => {
-                        try {
-                          await syncProjectMutation.execute(project.id);
-                          alert('✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다.');
-                        } catch (err) {
-                          console.error('[Dashboard] Sync 에러:', err);
-                          alert('❌ 동기화 실패: ' + (err as Error).message);
-                        }
-                      }}
-                      isDisabled={loading}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <Upload size={14} /> {syncProjectMutation.isLoading ? 'Syncing...' : 'Sync'}
-                    </Button>
-                  )}
-
-                  {/* Download 버튼 */}
-                  {actions.canDownload && (
-                    <Button
-                      onPress={async () => {
-                        try {
-                          await downloadProjectMutation.execute(project.id);
-                          alert('✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다.');
-                        } catch (err) {
-                          console.error('[Dashboard] Download 에러:', err);
-                          alert('❌ 다운로드 실패: ' + (err as Error).message);
-                        }
-                      }}
-                      isDisabled={loading}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <Download size={14} /> {downloadProjectMutation.isLoading ? 'Downloading...' : 'Download'}
-                    </Button>
-                  )}
+                  {/* ⚠️ 동기화 기능 비활성화 (IndexedDB 전용 모드)
+                      Sync와 Download 버튼은 Supabase에 의존하므로 제거됨
+                      파일 내보내기/가져오기를 사용하여 백업 가능
+                  */}
 
                   {/* Theme 버튼 */}
                   <Button
