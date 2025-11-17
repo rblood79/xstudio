@@ -4,6 +4,7 @@ import { ChevronUp } from "lucide-react";
 import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
+import { useOverlayDebug } from "./OverlayDebug";
 
 import "./index.css";
 
@@ -24,6 +25,9 @@ export default function SelectionOverlay() {
   // ⭐ Multi-select state
   const selectedElementIds = useStore((state) => state.selectedElementIds || []);
   const multiSelectMode = useStore((state) => state.multiSelectMode || false);
+
+  // 🔍 Debug: Track rapid remounts (only in dev)
+  useOverlayDebug('SelectionOverlay', selectedElementId || 'none');
 
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
@@ -272,7 +276,7 @@ export default function SelectionOverlay() {
 
           return (
             <div
-              key={elementId}
+              key={`overlay-${elementId}-${isPrimary ? 'primary' : 'secondary'}`}
               className={`overlay-element multi-select ${isPrimary ? 'primary' : 'secondary'}`}
               style={{
                 top: overlayData.rect.top,
