@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
 import { pagesApi, type Page as ApiPage } from '../../services/api/PagesApiService';
-import { elementsApi } from '../../services/api/ElementsApiService';
+import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
@@ -77,7 +77,15 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         }
 
         try {
-            const elementsData = await elementsApi.getElementsByPageId(pageId);
+            // IndexedDB에서 페이지 요소 로드 (빠름! 10-50ms)
+            const db = await getDB();
+            const elementsData = await db.elements.getByPage(pageId);
+
+            console.log('✅ [IndexedDB] 페이지 요소 로드:', {
+                pageId,
+                elementCount: elementsData.length,
+            });
+
             const { setElements, setSelectedElement, isTracking } = useStore.getState() as unknown as {
                 setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
                 setSelectedElement: (elementId: string | null) => void;

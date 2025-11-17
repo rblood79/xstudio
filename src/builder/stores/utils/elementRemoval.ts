@@ -2,7 +2,7 @@ import { produce } from "immer";
 import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
-import { elementsApi } from "../../../services/api/ElementsApiService";
+import { getDB } from "../../../lib/db";
 import { getElementById } from "./elementHelpers";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
@@ -300,12 +300,13 @@ export const createRemoveElementAction =
     );
 
     try {
-      // 데이터베이스에서 모든 요소 삭제 (자식 요소들 포함)
-      await elementsApi.deleteMultipleElements(elementIdsToRemove);
-      console.log("데이터베이스에서 요소 삭제 완료:", elementIdsToRemove);
+      // IndexedDB에서 모든 요소 삭제 (빠름! 1-5ms × N)
+      const db = await getDB();
+      await db.elements.deleteMany(elementIdsToRemove);
+      console.log("✅ [IndexedDB] 요소 삭제 완료:", elementIdsToRemove);
     } catch (error) {
-      console.error("요소 삭제 중 오류:", error);
-      // 데이터베이스 삭제 실패해도 메모리에서는 삭제 진행
+      console.error("❌ [IndexedDB] 요소 삭제 중 오류:", error);
+      // IndexedDB 삭제 실패해도 메모리에서는 삭제 진행
     }
 
     set(
