@@ -1,3 +1,14 @@
+/**
+ * Projects API Service
+ * 프로젝트 CRUD 및 관리 로직
+ *
+ * ✅ Phase 6: BaseApiService 마이그레이션 (2025-11-17)
+ * - 캐싱 적용 (5분 TTL)
+ * - Request Deduplication
+ * - Performance Monitoring
+ * - Automatic Cache Invalidation
+ */
+
 import { BaseApiService } from './BaseApiService';
 
 export interface Project {
@@ -14,15 +25,33 @@ export interface CreateProjectData {
 }
 
 export class ProjectsApiService extends BaseApiService {
+    /**
+     * 전체 프로젝트 조회 (캐싱 적용)
+     *
+     * ✅ 최적화:
+     * - 5분 캐싱
+     * - 중복 요청 자동 방지
+     * - 성능 모니터링
+     */
     async fetchProjects(): Promise<Project[]> {
-        return this.handleApiCall('fetchProjects', async () => {
-            return await this.supabase
-                .from("projects")
-                .select("*")
-                .order('created_at', { ascending: false });
-        });
+        const queryKey = 'projects:all';
+
+        return this.handleCachedApiCall<Project[]>(
+            queryKey,
+            'fetchProjects',
+            async () => {
+                return await this.supabase
+                    .from("projects")
+                    .select("*")
+                    .order('created_at', { ascending: false });
+            },
+            { staleTime: 5 * 60 * 1000 }
+        );
     }
 
+    /**
+     * 프로젝트 생성 (캐시 무효화)
+     */
     async createProject(projectData: CreateProjectData): Promise<Project> {
         this.validateInput(projectData, (data) =>
             data &&
@@ -31,20 +60,28 @@ export class ProjectsApiService extends BaseApiService {
             typeof data.created_by === 'string'
             , 'createProject');
 
-        return this.handleApiCall('createProject', async () => {
+        const result = await this.handleApiCall('createProject', async () => {
             return await this.supabase
                 .from("projects")
                 .insert([projectData])
                 .select('*')
                 .single();
         });
+
+        // ✅ 캐시 무효화
+        this.invalidateCache('projects:all');
+
+        return result;
     }
 
+    /**
+     * 프로젝트 업데이트 (캐시 무효화)
+     */
     async updateProject(projectId: string, updates: Partial<Project>): Promise<Project> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'updateProject');
         this.validateInput(updates, (u) => u && typeof u === 'object', 'updateProject');
 
-        return this.handleApiCall('updateProject', async () => {
+        const result = await this.handleApiCall('updateProject', async () => {
             return await this.supabase
                 .from("projects")
                 .update(updates)
@@ -52,8 +89,17 @@ export class ProjectsApiService extends BaseApiService {
                 .select('*')
                 .single();
         });
+
+        // ✅ 캐시 무효화
+        this.invalidateCache('projects:all');
+        this.invalidateCache(`project:id:${projectId}`);
+
+        return result;
     }
 
+    /**
+     * 프로젝트 삭제 (캐시 무효화)
+     */
     async deleteProject(projectId: string): Promise<void> {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'deleteProject');
 
@@ -63,22 +109,40 @@ export class ProjectsApiService extends BaseApiService {
                 .delete()
                 .eq("id", projectId);
         });
+
+        // ✅ 캐시 무효화
+        this.invalidateCache('projects:all');
+        this.invalidateCache(`project:id:${projectId}`);
     }
 
+    /**
+     * 현재 사용자 조회 (캐싱 적용)
+     *
+     * ✅ 최적화:
+     * - 5분 캐싱 (세션은 자주 변하지 않음)
+     * - 중복 요청 방지
+     */
     async getCurrentUser(): Promise<{ id: string }> {
-        return this.handleApiCall('getCurrentUser', async () => {
-            const { data: { session }, error } = await this.supabase.auth.getSession();
+        const queryKey = 'user:current';
 
-            if (error) {
-                throw new Error(`Session error: ${error.message}`);
-            }
+        return this.handleCachedApiCall<{ id: string }>(
+            queryKey,
+            'getCurrentUser',
+            async () => {
+                const { data: { session }, error } = await this.supabase.auth.getSession();
 
-            if (!session?.user) {
-                throw new Error('No authenticated user found');
-            }
+                if (error) {
+                    throw new Error(`Session error: ${error.message}`);
+                }
 
-            return { data: { id: session.user.id }, error: null };
-        });
+                if (!session?.user) {
+                    throw new Error('No authenticated user found');
+                }
+
+                return { data: { id: session.user.id }, error: null };
+            },
+            { staleTime: 5 * 60 * 1000 }
+        );
     }
 }
 

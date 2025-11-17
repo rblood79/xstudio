@@ -1,9 +1,15 @@
 /**
  * Token Service
  * 토큰 CRUD 및 관리 로직
+ *
+ * ✅ Phase 6: BaseApiService 마이그레이션 (2025-11-17)
+ * - 캐싱 적용 (5분 TTL)
+ * - Request Deduplication
+ * - Performance Monitoring
+ * - Automatic Cache Invalidation
  */
 
-import { supabase } from '../../env/supabase.client';
+import { BaseApiService } from '../api/BaseApiService';
 import type {
   DesignToken,
   ResolvedToken,
@@ -13,141 +19,206 @@ import type {
   TokenValue,
 } from '../../types/theme';
 
-export class TokenService {
+export class TokenService extends BaseApiService {
   /**
-   * 테마의 모든 토큰 조회 (상속 해석 포함)
+   * 테마의 모든 토큰 조회 (상속 해석 포함, 캐싱 적용)
+   *
+   * ✅ 최적화:
+   * - 5분 캐싱
+   * - 중복 요청 자동 방지
+   * - 성능 모니터링
    */
   static async getResolvedTokens(themeId: string): Promise<ResolvedToken[]> {
-    const { data, error } = await supabase.rpc('resolve_theme_tokens', {
-      p_theme_id: themeId,
-    });
+    const instance = new TokenService();
+    const queryKey = `tokens:resolved:${themeId}`;
 
-    if (error) {
-      console.error('[TokenService] getResolvedTokens failed:', error);
-      throw new Error(`토큰 조회 실패: ${error.message}`);
-    }
+    return instance.handleCachedApiCall<ResolvedToken[]>(
+      queryKey,
+      'getResolvedTokens',
+      async () => {
+        const { data, error } = await instance.supabase.rpc('resolve_theme_tokens', {
+          p_theme_id: themeId,
+        });
 
-    return (data as ResolvedToken[]) || [];
+        if (error) {
+          throw new Error(`토큰 조회 실패: ${error.message}`);
+        }
+
+        return { data: (data as ResolvedToken[]) || [], error: null };
+      },
+      { staleTime: 5 * 60 * 1000 }
+    );
   }
 
   /**
-   * 토큰 검색 (이름, 타입, 값 기준)
+   * 토큰 검색 (이름, 타입, 값 기준, 캐싱 적용)
+   *
+   * ✅ 최적화:
+   * - 검색 쿼리별 캐싱 (5분)
+   * - 중복 검색 방지
    */
   static async searchTokens(
     themeId: string,
     query: string,
     includeInherited: boolean = true
   ): Promise<ResolvedToken[]> {
-    const { data, error } = await supabase.rpc('search_tokens', {
-      p_theme_id: themeId,
-      p_query: query,
-      p_include_inherited: includeInherited,
-    });
+    const instance = new TokenService();
+    const queryKey = `tokens:search:${themeId}:${query}:${includeInherited}`;
 
-    if (error) {
-      console.error('[TokenService] searchTokens failed:', error);
-      throw new Error(`토큰 검색 실패: ${error.message}`);
-    }
+    return instance.handleCachedApiCall<ResolvedToken[]>(
+      queryKey,
+      'searchTokens',
+      async () => {
+        const { data, error } = await instance.supabase.rpc('search_tokens', {
+          p_theme_id: themeId,
+          p_query: query,
+          p_include_inherited: includeInherited,
+        });
 
-    return (data as ResolvedToken[]) || [];
+        if (error) {
+          throw new Error(`토큰 검색 실패: ${error.message}`);
+        }
+
+        return { data: (data as ResolvedToken[]) || [], error: null };
+      },
+      { staleTime: 5 * 60 * 1000 }
+    );
   }
 
   /**
-   * 단일 토큰 조회
+   * 단일 토큰 조회 (캐싱 적용)
    */
   static async getTokenById(tokenId: string): Promise<DesignToken | null> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .eq('id', tokenId)
-      .single();
+    const instance = new TokenService();
+    const queryKey = `token:id:${tokenId}`;
 
-    if (error) {
+    try {
+      return await instance.handleCachedApiCall<DesignToken>(
+        queryKey,
+        'getTokenById',
+        async () => {
+          return await instance.supabase
+            .from('design_tokens')
+            .select('*')
+            .eq('id', tokenId)
+            .single();
+        },
+        { staleTime: 5 * 60 * 1000 }
+      );
+    } catch (error) {
       console.error('[TokenService] getTokenById failed:', error);
       return null;
     }
-
-    return data as DesignToken;
   }
 
   /**
-   * 토큰 생성
+   * 토큰 생성 (캐시 무효화)
    */
   static async createToken(input: CreateTokenInput): Promise<DesignToken> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .insert({
-        project_id: input.project_id,
-        theme_id: input.theme_id,
-        name: input.name,
-        type: input.type,
-        value: input.value,
-        scope: input.scope,
-        alias_of: input.alias_of || null,
-        css_variable: input.css_variable,
-      })
-      .select()
-      .single();
+    const instance = new TokenService();
 
-    if (error) {
-      console.error('[TokenService] createToken failed:', error);
-      throw new Error(`토큰 생성 실패: ${error.message}`);
-    }
+    const result = await instance.handleApiCall<DesignToken>('createToken', async () => {
+      return await instance.supabase
+        .from('design_tokens')
+        .insert({
+          project_id: input.project_id,
+          theme_id: input.theme_id,
+          name: input.name,
+          type: input.type,
+          value: input.value,
+          scope: input.scope,
+          alias_of: input.alias_of || null,
+          css_variable: input.css_variable,
+        })
+        .select()
+        .single();
+    });
 
-    console.log('[TokenService] Token created:', data);
-    return data as DesignToken;
+    // ✅ 캐시 무효화 (관련된 모든 토큰 캐시 제거)
+    instance.invalidateCache(`tokens:resolved:${input.theme_id}`);
+    instance.invalidateCache(`tokens:search:${input.theme_id}`);
+    instance.invalidateCache(`tokens:${input.scope}:${input.theme_id}`); // raw or semantic
+    instance.invalidateCache(`tokens:type:${input.theme_id}:${input.type}`);
+
+    console.log('[TokenService] Token created:', result);
+    return result;
   }
 
   /**
-   * 토큰 업데이트
+   * 토큰 업데이트 (캐시 무효화)
    */
   static async updateToken(
     tokenId: string,
     updates: UpdateTokenInput
   ): Promise<DesignToken> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', tokenId)
-      .select()
-      .single();
+    const instance = new TokenService();
 
-    if (error) {
-      console.error('[TokenService] updateToken failed:', error);
-      throw new Error(`토큰 업데이트 실패: ${error.message}`);
-    }
+    const result = await instance.handleApiCall<DesignToken>('updateToken', async () => {
+      return await instance.supabase
+        .from('design_tokens')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', tokenId)
+        .select()
+        .single();
+    });
 
-    console.log('[TokenService] Token updated:', data);
-    return data as DesignToken;
+    // ✅ 캐시 무효화 (모든 관련 캐시 제거)
+    instance.invalidateCache(`token:id:${tokenId}`);
+    instance.invalidateCache(`tokens:resolved:${result.theme_id}`);
+    instance.invalidateCache(`tokens:search:${result.theme_id}`);
+    instance.invalidateCache(`tokens:${result.scope}:${result.theme_id}`);
+    instance.invalidateCache(`tokens:type:${result.theme_id}:${result.type}`);
+
+    console.log('[TokenService] Token updated:', result);
+    return result;
   }
 
   /**
-   * 토큰 삭제
+   * 토큰 삭제 (캐시 무효화)
    */
   static async deleteToken(tokenId: string): Promise<void> {
-    const { error } = await supabase
-      .from('design_tokens')
-      .delete()
-      .eq('id', tokenId);
+    const instance = new TokenService();
 
-    if (error) {
-      console.error('[TokenService] deleteToken failed:', error);
-      throw new Error(`토큰 삭제 실패: ${error.message}`);
+    // 삭제 전에 토큰 정보 조회 (캐시 무효화용)
+    const token = await this.getTokenById(tokenId);
+    if (!token) {
+      throw new Error('토큰을 찾을 수 없습니다');
     }
+
+    await instance.handleDeleteCall('deleteToken', async () => {
+      return await instance.supabase
+        .from('design_tokens')
+        .delete()
+        .eq('id', tokenId);
+    });
+
+    // ✅ 캐시 무효화
+    instance.invalidateCache(`token:id:${tokenId}`);
+    instance.invalidateCache(`tokens:resolved:${token.theme_id}`);
+    instance.invalidateCache(`tokens:search:${token.theme_id}`);
+    instance.invalidateCache(`tokens:${token.scope}:${token.theme_id}`);
+    instance.invalidateCache(`tokens:type:${token.theme_id}:${token.type}`);
 
     console.log('[TokenService] Token deleted:', tokenId);
   }
 
   /**
-   * 토큰 일괄 업서트 (RPC)
+   * 토큰 일괄 업서트 (RPC, 캐시 무효화)
    */
   static async bulkUpsertTokens(
     tokens: Partial<DesignToken>[]
   ): Promise<number> {
-    const { data, error } = await supabase.rpc('bulk_upsert_tokens', {
+    const instance = new TokenService();
+
+    // 영향받는 theme_id 수집
+    const affectedThemeIds = new Set(
+      tokens.map((t) => t.theme_id).filter((id): id is string => !!id)
+    );
+
+    const { data, error } = await instance.supabase.rpc('bulk_upsert_tokens', {
       p_tokens: tokens,
     });
 
@@ -156,68 +227,86 @@ export class TokenService {
       throw new Error(`토큰 일괄 저장 실패: ${error.message}`);
     }
 
+    // ✅ 캐시 무효화 (영향받는 모든 테마의 캐시 제거)
+    for (const themeId of affectedThemeIds) {
+      instance.invalidateCache(`tokens:resolved:${themeId}`);
+      instance.invalidateCache(`tokens:search:${themeId}`);
+      instance.invalidateCache(`tokens:raw:${themeId}`);
+      instance.invalidateCache(`tokens:semantic:${themeId}`);
+      instance.invalidateCache(`tokens:type:${themeId}`); // 모든 타입 캐시 제거
+    }
+
     console.log('[TokenService] Bulk upsert completed:', data, 'tokens');
     return data as number;
   }
 
   /**
-   * 테마의 Raw 토큰만 조회
+   * 테마의 Raw 토큰만 조회 (캐싱 적용)
    */
   static async getRawTokens(themeId: string): Promise<DesignToken[]> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .eq('theme_id', themeId)
-      .eq('scope', 'raw')
-      .order('name', { ascending: true });
+    const instance = new TokenService();
+    const queryKey = `tokens:raw:${themeId}`;
 
-    if (error) {
-      console.error('[TokenService] getRawTokens failed:', error);
-      throw new Error(`Raw 토큰 조회 실패: ${error.message}`);
-    }
-
-    return (data as DesignToken[]) || [];
+    return instance.handleCachedApiCall<DesignToken[]>(
+      queryKey,
+      'getRawTokens',
+      async () => {
+        return await instance.supabase
+          .from('design_tokens')
+          .select('*')
+          .eq('theme_id', themeId)
+          .eq('scope', 'raw')
+          .order('name', { ascending: true });
+      },
+      { staleTime: 5 * 60 * 1000 }
+    );
   }
 
   /**
-   * 테마의 Semantic 토큰만 조회
+   * 테마의 Semantic 토큰만 조회 (캐싱 적용)
    */
   static async getSemanticTokens(themeId: string): Promise<DesignToken[]> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .eq('theme_id', themeId)
-      .eq('scope', 'semantic')
-      .order('name', { ascending: true });
+    const instance = new TokenService();
+    const queryKey = `tokens:semantic:${themeId}`;
 
-    if (error) {
-      console.error('[TokenService] getSemanticTokens failed:', error);
-      throw new Error(`Semantic 토큰 조회 실패: ${error.message}`);
-    }
-
-    return (data as DesignToken[]) || [];
+    return instance.handleCachedApiCall<DesignToken[]>(
+      queryKey,
+      'getSemanticTokens',
+      async () => {
+        return await instance.supabase
+          .from('design_tokens')
+          .select('*')
+          .eq('theme_id', themeId)
+          .eq('scope', 'semantic')
+          .order('name', { ascending: true });
+      },
+      { staleTime: 5 * 60 * 1000 }
+    );
   }
 
   /**
-   * 특정 타입의 토큰만 조회
+   * 특정 타입의 토큰만 조회 (캐싱 적용)
    */
   static async getTokensByType(
     themeId: string,
     type: string
   ): Promise<DesignToken[]> {
-    const { data, error } = await supabase
-      .from('design_tokens')
-      .select('*')
-      .eq('theme_id', themeId)
-      .eq('type', type)
-      .order('name', { ascending: true });
+    const instance = new TokenService();
+    const queryKey = `tokens:type:${themeId}:${type}`;
 
-    if (error) {
-      console.error('[TokenService] getTokensByType failed:', error);
-      throw new Error(`타입별 토큰 조회 실패: ${error.message}`);
-    }
-
-    return (data as DesignToken[]) || [];
+    return instance.handleCachedApiCall<DesignToken[]>(
+      queryKey,
+      'getTokensByType',
+      async () => {
+        return await instance.supabase
+          .from('design_tokens')
+          .select('*')
+          .eq('theme_id', themeId)
+          .eq('type', type)
+          .order('name', { ascending: true });
+      },
+      { staleTime: 5 * 60 * 1000 }
+    );
   }
 
   /**
@@ -263,7 +352,9 @@ export class TokenService {
     name: string,
     excludeId?: string
   ): Promise<boolean> {
-    let query = supabase
+    const instance = new TokenService();
+
+    let query = instance.supabase
       .from('design_tokens')
       .select('id')
       .eq('theme_id', themeId)
@@ -295,6 +386,8 @@ export class TokenService {
     themeId: string,
     callback: (payload: Record<string, unknown>) => void
   ): () => void {
+    const instance = new TokenService();
+
     // ✅ RealtimeBatcher 통합 (배칭 + 필터링)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
@@ -315,7 +408,7 @@ export class TokenService {
       deduplication: true, // 중복 제거 활성화
     });
 
-    const channel = supabase
+    const channel = instance.supabase
       .channel(`tokens:theme:${themeId}`)
       .on(
         'postgres_changes',
@@ -335,7 +428,7 @@ export class TokenService {
     // Unsubscribe 함수 반환 (batcher 정리 포함)
     return () => {
       batcher.destroy(); // ✅ Batcher 정리
-      supabase.removeChannel(channel);
+      instance.supabase.removeChannel(channel);
     };
   }
 
@@ -350,6 +443,8 @@ export class TokenService {
     projectId: string,
     callback: (payload: Record<string, unknown>) => void
   ): () => void {
+    const instance = new TokenService();
+
     // ✅ RealtimeBatcher 통합
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { RealtimeBatcher, RealtimeFilters } = require('../../utils/realtimeBatcher') as typeof import('../../utils/realtimeBatcher');
@@ -371,7 +466,7 @@ export class TokenService {
       deduplication: true,
     });
 
-    const channel = supabase
+    const channel = instance.supabase
       .channel(`tokens:project:${projectId}`)
       .on(
         'postgres_changes',
@@ -389,7 +484,7 @@ export class TokenService {
 
     return () => {
       batcher.destroy();
-      supabase.removeChannel(channel);
+      instance.supabase.removeChannel(channel);
     };
   }
 
