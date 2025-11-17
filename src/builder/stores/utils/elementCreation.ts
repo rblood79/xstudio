@@ -2,7 +2,7 @@ import { produce } from "immer";
 import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
-import { elementsApi } from "../../../services/api/ElementsApiService";
+import { getDB } from "../../../lib/db";
 import { sanitizeElement } from "./elementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
@@ -50,12 +50,13 @@ export const createAddElementAction =
     // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
-    // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
+    // 3. IndexedDB에 저장 (빠름! 1-5ms)
     try {
-      await elementsApi.createElement(sanitizeElement(element));
-      console.log("✅ 데이터베이스에 요소 저장 완료:", element.id);
+      const db = await getDB();
+      await db.elements.insert(sanitizeElement(element));
+      console.log("✅ [IndexedDB] 요소 저장 완료:", element.id);
     } catch (error) {
-      console.warn("⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):", error);
+      console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
     }
 
     // order_num 재정렬 (추가 후)
@@ -111,15 +112,16 @@ export const createAddComplexElementAction =
     // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
-    // 3. 데이터베이스 저장 (비동기, 실패해도 메모리는 유지)
+    // 3. IndexedDB에 배치 저장 (빠름! 1-5ms × N)
     try {
-      await elementsApi.createMultipleElements(
+      const db = await getDB();
+      await db.elements.insertMany(
         allElements.map((el) => sanitizeElement(el))
       );
       console.log(
-        `✅ 복합 컴포넌트 데이터베이스 저장 완료: ${parentElement.tag} + 자식 ${childElements.length}개`
+        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentElement.tag} + 자식 ${childElements.length}개`
       );
     } catch (error) {
-      console.warn("⚠️ 데이터베이스 저장 중 오류 (메모리는 정상):", error);
+      console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
     }
   };
