@@ -1,5 +1,6 @@
 import { getStoreState } from "../../builder/stores";
 import { supabase } from "../../env/supabase.client";
+import { getDB } from "../../lib/db";
 
 /**
  * 저장 옵션 인터페이스
@@ -162,13 +163,30 @@ export class SaveService {
   }
 
   /**
+   * IndexedDB에 데이터 저장 (로컬 우선 저장)
+   */
+  private async saveToIndexedDB(payload: SavePayload): Promise<void> {
+    const { table, id, data } = payload;
+
+    try {
+      const db = await getDB();
+      await db[table].update(id, data);
+      this.statusMessage = `✅ [IndexedDB] ${table} 저장 완료: ${id}`;
+    } catch (error) {
+      this.statusMessage = `❌ [IndexedDB] 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
+      console.warn(`⚠️ [IndexedDB] ${table} 저장 중 오류:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 속성 변경 저장 (실시간 모드 확인)
    * @param payload 저장할 데이터 정보
    * @param options 저장 옵션
    */
   async savePropertyChange(payload: SavePayload, options: SaveOptions = {}): Promise<void> {
     const startTime = performance.now();
-    
+
     // 프리뷰 상호작용 소스 확인
     if (options.source === 'preview' && !options.allowPreviewSaves) {
       this.metrics.skipCounts.preview++;
@@ -194,10 +212,10 @@ export class SaveService {
     const { isRealtimeMode, addPendingChange } = getStoreState();
 
     if (isRealtimeMode) {
-      // 실시간 모드: 즉시 Supabase에 저장
-      await this.saveToSupabase(payload);
+      // 실시간 모드: IndexedDB에 즉시 저장 (로컬 우선)
+      await this.saveToIndexedDB(payload);
     } else {
-      // 수동 모드: Zustand에만 저장
+      // 수동 모드: Zustand에만 저장 (나중에 수동 동기화)
       const changeKey = `${payload.table}:${payload.id}`;
       addPendingChange(changeKey, payload.data);
     }
@@ -205,13 +223,14 @@ export class SaveService {
     // 성능 메트릭 업데이트
     const endTime = performance.now();
     this.metrics.saveOperations++;
-    this.metrics.averageSaveTime = 
-      (this.metrics.averageSaveTime * (this.metrics.saveOperations - 1) + (endTime - startTime)) / 
+    this.metrics.averageSaveTime =
+      (this.metrics.averageSaveTime * (this.metrics.saveOperations - 1) + (endTime - startTime)) /
       this.metrics.saveOperations;
   }
 
   /**
-   * 보류 중인 모든 변경사항 저장
+   * 보류 중인 모든 변경사항을 클라우드에 동기화
+   * (수동 모드에서 사용자가 "Sync" 버튼을 누를 때 호출됨)
    */
   async saveAllPendingChanges(): Promise<void> {
     const { getPendingChanges, clearPendingChanges } = getStoreState();
@@ -222,7 +241,7 @@ export class SaveService {
       return;
     }
 
-    this.statusMessage = `💾 ${changes.size}개 변경사항 저장 시작...`;
+    this.statusMessage = `💾 ${changes.size}개 변경사항 클라우드 동기화 시작...`;
 
     const savePromises: Promise<void>[] = [];
 
@@ -234,7 +253,7 @@ export class SaveService {
       }
 
       savePromises.push(
-        this.saveToSupabase({
+        this.syncToCloud({
           table: table as SupabaseTable,
           id,
           data,
@@ -245,23 +264,24 @@ export class SaveService {
     try {
       await Promise.all(savePromises);
       clearPendingChanges();
-      this.statusMessage = `✅ ${changes.size}개 변경사항 저장 완료`;
+      this.statusMessage = `✅ ${changes.size}개 변경사항 클라우드 동기화 완료`;
     } catch (error) {
-      this.statusMessage = `❌ 저장 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
+      this.statusMessage = `❌ 클라우드 동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
       throw error;
     }
   }
 
   /**
-   * Supabase에 데이터 저장
+   * 클라우드(Supabase)에 데이터 동기화
+   * (수동 Sync 버튼에서만 사용됨, 실시간 저장은 IndexedDB 사용)
    */
-  private async saveToSupabase(payload: SavePayload): Promise<void> {
+  private async syncToCloud(payload: SavePayload): Promise<void> {
     const { table, id, data } = payload;
 
     const { error } = await supabase.from(table).update(data).eq("id", id);
 
     if (error) {
-      this.statusMessage = `❌ Supabase 저장 실패: ${error.message}`;
+      this.statusMessage = `❌ 클라우드 동기화 실패: ${error.message}`;
       throw error;
     }
   }
