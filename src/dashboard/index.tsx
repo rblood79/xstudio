@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Download,
   Upload,
+  Settings,
 } from "lucide-react";
 import {
   mergeProjects,
@@ -25,6 +26,8 @@ import {
   syncProjectToCloud,
   downloadProjectFromCloud,
 } from '../utils/projectSync';
+import { useSettingsStore } from '../stores/settingsStore';
+import { SettingsPanel } from './SettingsPanel';
 import type { ProjectListItem, ProjectFilter } from '../types/dashboard.types';
 import "./index.css";
 
@@ -37,6 +40,10 @@ function Dashboard() {
   const [newProjectName, setNewProjectName] = useState("");
   const [filter, setFilter] = useState<ProjectFilter>('all');
   const [mergedProjects, setMergedProjects] = useState<ProjectListItem[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // 설정 가져오기
+  const projectCreation = useSettingsStore((state) => state.projectCreation);
 
   // Fetch cloud projects with useAsyncQuery
   const cloudProjectsQuery = useAsyncQuery<Project>(
@@ -76,31 +83,53 @@ function Dashboard() {
   // Create project mutation
   const createProjectMutation = useAsyncMutation<Project, CreateProjectRequest>(
     async ({ name }) => {
-      // 현재 사용자 정보 가져오기
+      const db = await getDB();
       const user = await projectsApi.getCurrentUser();
 
-      // 프로젝트 생성 (IndexedDB + Supabase 모두)
-      const newProject = await projectsApi.createProject({
-        name: name.trim(),
-        created_by: user.id
-      });
+      // 프로젝트 생성 모드에 따라 처리
+      let newProject: Project;
 
-      // IndexedDB에도 저장
-      const db = await getDB();
-      await db.projects.insert(newProject);
+      if (projectCreation === 'local') {
+        // 1️⃣ 로컬(IndexedDB)에만 생성
+        newProject = {
+          id: ElementUtils.generateId(),
+          name: name.trim(),
+          created_by: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-      console.log('[Dashboard] 프로젝트 생성:', newProject.id);
+        await db.projects.insert(newProject);
+        console.log('[Dashboard] 로컬 프로젝트 생성:', newProject.id);
+      } else if (projectCreation === 'cloud') {
+        // 2️⃣ 클라우드(Supabase)에만 생성
+        newProject = await projectsApi.createProject({
+          name: name.trim(),
+          created_by: user.id
+        });
+        console.log('[Dashboard] 클라우드 프로젝트 생성:', newProject.id);
+      } else {
+        // 3️⃣ 양쪽 모두 생성 (both)
+        newProject = await projectsApi.createProject({
+          name: name.trim(),
+          created_by: user.id
+        });
+        await db.projects.insert(newProject);
+        console.log('[Dashboard] 로컬+클라우드 프로젝트 생성:', newProject.id);
+      }
 
       // 기본 페이지 생성
-      const homePage = await pagesApi.createPage({
+      const homePageId = ElementUtils.generateId();
+      const homePage = {
+        id: homePageId,
         project_id: newProject.id,
-        title: "Home",
+        name: "Home", // Store uses 'name'
         slug: "/",
-        order_num: 0
-      });
-
-      // IndexedDB에 페이지 저장
-      await db.pages.insert(homePage);
+        parent_id: null,
+        order_num: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
       // 기본 body 요소 생성
       const bodyElement = {
@@ -108,15 +137,40 @@ function Dashboard() {
         tag: 'body',
         props: {} as ElementProps,
         parent_id: null,
-        page_id: homePage.id,
+        page_id: homePageId,
         order_num: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      // IndexedDB에 요소 저장
-      await db.elements.insert(bodyElement);
-
-      // Supabase에도 저장 (기존 로직)
-      await elementsApi.createElement(bodyElement);
+      // 설정에 따라 저장
+      if (projectCreation === 'local') {
+        // 로컬에만 저장
+        await db.pages.insert(homePage);
+        await db.elements.insert(bodyElement);
+      } else if (projectCreation === 'cloud') {
+        // 클라우드에만 저장
+        await pagesApi.createPage({
+          id: homePageId,
+          project_id: newProject.id,
+          title: "Home", // API uses 'title'
+          slug: "/",
+          order_num: 0
+        });
+        await elementsApi.createElement(bodyElement);
+      } else {
+        // 양쪽 모두 저장
+        await db.pages.insert(homePage);
+        await db.elements.insert(bodyElement);
+        await pagesApi.createPage({
+          id: homePageId,
+          project_id: newProject.id,
+          title: "Home",
+          slug: "/",
+          order_num: 0
+        });
+        await elementsApi.createElement(bodyElement);
+      }
 
       return newProject;
     },
@@ -231,7 +285,7 @@ function Dashboard() {
       <header className="header">
         <h1>XStudio Dashboard</h1>
 
-        {/* 필터 버튼 */}
+        {/* 필터 버튼 + Settings */}
         <div className="filters">
           <Button
             variant={filter === 'all' ? 'primary' : 'default'}
@@ -253,6 +307,16 @@ function Dashboard() {
             onPress={() => setFilter('cloud')}
           >
             <Cloud size={14} /> Cloud ({counts.cloud})
+          </Button>
+
+          {/* Settings 버튼 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setShowSettings(true)}
+            aria-label="Open settings"
+          >
+            <Settings size={16} />
           </Button>
         </div>
       </header>
@@ -400,6 +464,9 @@ function Dashboard() {
       <footer className="footer">
         <p>XStudio - Local-first Web Builder</p>
       </footer>
+
+      {/* Settings Panel */}
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
