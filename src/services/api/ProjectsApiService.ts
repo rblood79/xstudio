@@ -50,6 +50,40 @@ export class ProjectsApiService extends BaseApiService {
     }
 
     /**
+     * 프로젝트 ID로 단일 프로젝트 조회 (캐싱 적용)
+     *
+     * ✅ 최적화:
+     * - 5분 캐싱
+     * - 중복 요청 자동 방지
+     */
+    async getProjectById(projectId: string): Promise<Project | null> {
+        this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'getProjectById');
+
+        const queryKey = `project:id:${projectId}`;
+
+        return this.handleCachedApiCall<Project | null>(
+            queryKey,
+            'getProjectById',
+            async () => {
+                const result = await this.supabase
+                    .from("projects")
+                    .select("*")
+                    .eq("id", projectId)
+                    .single();
+
+                // 프로젝트가 없으면 null 반환
+                if (result.error) {
+                    console.warn('[ProjectsApi] 프로젝트를 찾을 수 없음:', projectId);
+                    return { data: null, error: null };
+                }
+
+                return result;
+            },
+            { staleTime: 5 * 60 * 1000 }
+        );
+    }
+
+    /**
      * 프로젝트 생성 (캐시 무효화)
      */
     async createProject(projectData: CreateProjectData): Promise<Project> {
