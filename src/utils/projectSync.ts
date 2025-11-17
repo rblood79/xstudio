@@ -45,9 +45,10 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
       });
       console.log('[ProjectSync] 프로젝트 메타데이터 동기화 완료');
     } catch (updateError) {
-      // 프로젝트가 없으면 생성
+      // 프로젝트가 없으면 생성 (IndexedDB ID 보존)
       console.log('[ProjectSync] 프로젝트가 클라우드에 없음, 새로 생성');
       await projectsApi.createProject({
+        id: localProject.id, // ✅ IndexedDB ID 보존하여 FK 제약조건 충족
         name: localProject.name,
         created_by: localProject.created_by,
       });

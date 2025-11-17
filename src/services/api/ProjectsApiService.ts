@@ -20,6 +20,7 @@ export interface Project {
 }
 
 export interface CreateProjectData {
+    id?: string; // Optional: 동기화 시 IndexedDB ID 보존용
     name: string;
     created_by: string;
 }

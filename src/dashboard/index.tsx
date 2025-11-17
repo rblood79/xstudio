@@ -11,9 +11,8 @@ import {
   SquarePlus,
   Cloud,
   HardDrive,
-  // ⚠️ IndexedDB 전용 모드 - Sync/Download 아이콘 불필요
-  // Download,
-  // Upload,
+  Download,
+  Upload,
   Settings,
 } from "lucide-react";
 import {
@@ -22,11 +21,10 @@ import {
   getAvailableActions,
   formatRelativeTime,
 } from '../utils/projectMerger';
-// ⚠️ IndexedDB 전용 모드 - projectSync 비활성화
-// import {
-//   syncProjectToCloud,
-//   downloadProjectFromCloud,
-// } from '../utils/projectSync';
+import {
+  syncProjectToCloud,
+  downloadProjectFromCloud,
+} from '../utils/projectSync';
 import { useSettingsStore } from '../stores/settingsStore';
 import { SettingsPanel } from './SettingsPanel';
 import type { ProjectListItem, ProjectFilter } from '../types/dashboard.types';
@@ -187,13 +185,76 @@ function Dashboard() {
   // Delete project mutation
   const deleteProjectMutation = useAsyncMutation<void, string>(
     async (id) => {
-      await projectsApi.deleteProject(id);
+      // 필터에 따라 삭제 범위 결정
+      let deleteLocation: 'local' | 'cloud' | 'both';
 
-      // IndexedDB에서도 삭제
-      const db = await getDB();
-      await db.projects.delete(id);
+      if (filter === 'local') {
+        deleteLocation = 'local';
+        console.log('[Dashboard] 로컬 프로젝트만 삭제:', id);
+      } else if (filter === 'cloud') {
+        deleteLocation = 'cloud';
+        console.log('[Dashboard] 클라우드 프로젝트만 삭제:', id);
+      } else {
+        deleteLocation = 'both';
+        console.log('[Dashboard] 로컬 + 클라우드 프로젝트 삭제:', id);
+      }
 
-      console.log('[Dashboard] 프로젝트 삭제:', id);
+      // 로컬 삭제 (local 또는 both)
+      if (deleteLocation === 'local' || deleteLocation === 'both') {
+        const db = await getDB();
+
+        // 1. 프로젝트의 모든 페이지 찾기
+        const pages = await db.pages.getByProject(id);
+        console.log('[Dashboard] 삭제할 페이지:', pages.length);
+
+        // 2. 각 페이지의 요소들 삭제
+        for (const page of pages) {
+          const elements = await db.elements.getByPage(page.id);
+          console.log('[Dashboard] 페이지', page.name, '의 요소:', elements.length);
+
+          for (const element of elements) {
+            await db.elements.delete(element.id);
+          }
+        }
+
+        // 3. 페이지 삭제
+        for (const page of pages) {
+          await db.pages.delete(page.id);
+        }
+
+        // 4. 프로젝트의 테마 찾기 및 삭제
+        const themes = await db.themes.getByProject(id);
+        console.log('[Dashboard] 삭제할 테마:', themes.length);
+
+        for (const theme of themes) {
+          // 테마의 토큰들 삭제
+          const tokens = await db.designTokens.getByTheme(theme.id);
+          console.log('[Dashboard] 테마', theme.name, '의 토큰:', tokens.length);
+
+          for (const token of tokens) {
+            await db.designTokens.delete(token.id);
+          }
+
+          // 테마 삭제
+          await db.themes.delete(theme.id);
+        }
+
+        // 5. 프로젝트 삭제 (IndexedDB)
+        await db.projects.delete(id);
+        console.log('✅ [Dashboard] 로컬 프로젝트 삭제 완료');
+      }
+
+      // 클라우드 삭제 (cloud 또는 both)
+      if (deleteLocation === 'cloud' || deleteLocation === 'both') {
+        try {
+          await projectsApi.deleteProject(id);
+          console.log('✅ [Dashboard] 클라우드 프로젝트 삭제 완료');
+        } catch (error) {
+          console.warn('[Dashboard] Supabase 삭제 실패 (프로젝트가 클라우드에 없을 수 있음):', error);
+        }
+      }
+
+      console.log(`✅ [Dashboard] 프로젝트 삭제 완료 (${deleteLocation}):`, id);
     },
     {
       onSuccess: () => {
@@ -202,30 +263,32 @@ function Dashboard() {
     }
   );
 
-  // ⚠️ IndexedDB 전용 모드 - Sync/Download 기능 비활성화
-  // const syncProjectMutation = useAsyncMutation<void, string>(
-  //   async (projectId) => {
-  //     await syncProjectToCloud(projectId);
-  //     console.log('[Dashboard] 프로젝트 동기화 완료:', projectId);
-  //   },
-  //   {
-  //     onSuccess: () => {
-  //       cloudProjectsQuery.reload();
-  //     },
-  //   }
-  // );
+  // Sync project mutation (local → cloud)
+  const syncProjectMutation = useAsyncMutation<void, string>(
+    async (projectId) => {
+      await syncProjectToCloud(projectId);
+      console.log('[Dashboard] 프로젝트 동기화 완료:', projectId);
+    },
+    {
+      onSuccess: () => {
+        cloudProjectsQuery.reload(); // 목록 갱신
+      },
+    }
+  );
 
-  // const downloadProjectMutation = useAsyncMutation<void, string>(
-  //   async (projectId) => {
-  //     await downloadProjectFromCloud(projectId);
-  //     console.log('[Dashboard] 프로젝트 다운로드 완료:', projectId);
-  //   },
-  //   {
-  //     onSuccess: () => {
-  //       cloudProjectsQuery.reload();
-  //     },
-  //   }
-  // );
+  // Download project mutation (cloud → local)
+  const downloadProjectMutation = useAsyncMutation<void, string>(
+    async (projectId) => {
+      await downloadProjectFromCloud(projectId);
+      console.log('[Dashboard] 프로젝트 다운로드 완료:', projectId);
+    },
+    {
+      onSuccess: () => {
+        // 로컬 프로젝트가 추가되었으므로 목록 갱신
+        cloudProjectsQuery.reload();
+      },
+    }
+  );
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -261,8 +324,8 @@ function Dashboard() {
     return true; // 'all'
   });
 
-  const loading = cloudProjectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading;
-  const error = cloudProjectsQuery.error || createProjectMutation.error || deleteProjectMutation.error;
+  const loading = cloudProjectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading || syncProjectMutation.isLoading || downloadProjectMutation.isLoading;
+  const error = cloudProjectsQuery.error || createProjectMutation.error || deleteProjectMutation.error || syncProjectMutation.error || downloadProjectMutation.error;
 
   if (cloudProjectsQuery.isLoading && mergedProjects.length === 0) {
     return (
@@ -388,10 +451,45 @@ function Dashboard() {
                     />
                   )}
 
-                  {/* ⚠️ 동기화 기능 비활성화 (IndexedDB 전용 모드)
-                      Sync와 Download 버튼은 Supabase에 의존하므로 제거됨
-                      파일 내보내기/가져오기를 사용하여 백업 가능
-                  */}
+                  {/* Sync 버튼 */}
+                  {actions.canSync && (
+                    <Button
+                      onPress={async () => {
+                        try {
+                          await syncProjectMutation.execute(project.id);
+                          alert('✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다.');
+                        } catch (err) {
+                          console.error('[Dashboard] Sync 에러:', err);
+                          alert('❌ 동기화 실패: ' + (err as Error).message);
+                        }
+                      }}
+                      isDisabled={loading}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <Upload size={14} /> {syncProjectMutation.isLoading ? 'Syncing...' : 'Sync'}
+                    </Button>
+                  )}
+
+                  {/* Download 버튼 */}
+                  {actions.canDownload && (
+                    <Button
+                      onPress={async () => {
+                        try {
+                          await downloadProjectMutation.execute(project.id);
+                          alert('✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다.');
+                        } catch (err) {
+                          console.error('[Dashboard] Download 에러:', err);
+                          alert('❌ 다운로드 실패: ' + (err as Error).message);
+                        }
+                      }}
+                      isDisabled={loading}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <Download size={14} /> {downloadProjectMutation.isLoading ? 'Downloading...' : 'Download'}
+                    </Button>
+                  )}
 
                   {/* Theme 버튼 */}
                   <Button
