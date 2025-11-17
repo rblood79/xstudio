@@ -12,7 +12,7 @@ import {
 } from "../../components/list";
 import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
-import { elementsApi } from "../../../services/api";
+import { getDB } from "../../../lib/db";
 import { getVisibleColumns } from "../../../utils/element/columnTypeInference";
 import type { ColumnMapping } from "../../../types/builder/unified.types";
 
@@ -309,10 +309,11 @@ export const renderTagGroup = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await elementsApi.updateElementProps(element.id, updatedProps);
-          console.log("TagGroup selectedKeys updated successfully");
+          const db = await getDB();
+          await db.elements.update(element.id, { props: updatedProps });
+          console.log("✅ [IndexedDB] TagGroup selectedKeys updated successfully");
         } catch (err) {
-          console.error("Error updating TagGroup selectedKeys:", err);
+          console.error("❌ [IndexedDB] Error updating TagGroup selectedKeys:", err);
         }
 
         window.parent.postMessage(
@@ -356,10 +357,11 @@ export const renderTagGroup = (
           updateElementProps(element.id, updatedProps);
 
           try {
-            await elementsApi.updateElementProps(element.id, updatedProps);
-            console.log("TagGroup removedItemIds updated:", updatedRemovedIds);
+            const db = await getDB();
+            await db.elements.update(element.id, { props: updatedProps });
+            console.log("✅ [IndexedDB] TagGroup removedItemIds updated:", updatedRemovedIds);
           } catch (err) {
-            console.error("Error updating TagGroup removedItemIds:", err);
+            console.error("❌ [IndexedDB] Error updating TagGroup removedItemIds:", err);
           }
 
           window.parent.postMessage(
@@ -392,9 +394,10 @@ export const renderTagGroup = (
           }
 
           try {
-            await elementsApi.deleteElement(String(tagId));
+            const db = await getDB();
+            await db.elements.delete(String(tagId));
             deletedTagIds.push(String(tagId));
-            console.log(`Tag ${tagId} deleted successfully`);
+            console.log(`✅ [IndexedDB] Tag ${tagId} deleted successfully`);
           } catch (err) {
             console.error(`Error deleting tag ${tagId}:`, err);
           }
@@ -421,8 +424,9 @@ export const renderTagGroup = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await elementsApi.updateElementProps(element.id, updatedProps);
-          console.log("TagGroup selectedKeys updated after removal");
+          const db = await getDB();
+          await db.elements.update(element.id, { props: updatedProps });
+          console.log("✅ [IndexedDB] TagGroup selectedKeys updated after removal");
         } catch (err) {
           console.error(
             "Error updating TagGroup selectedKeys after removal:",

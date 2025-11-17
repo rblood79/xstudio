@@ -22,33 +22,30 @@ import { RealtimeBatcher, RealtimeFilters } from '../../utils/realtimeBatcher';
 
 export class TokenService extends BaseApiService {
   /**
-   * 테마의 모든 토큰 조회 (상속 해석 포함, 캐싱 적용)
-   *
-   * ✅ 최적화:
-   * - 5분 캐싱
-   * - 중복 요청 자동 방지
-   * - 성능 모니터링
+   * 테마의 모든 토큰 조회 (IndexedDB)
    */
   static async getResolvedTokens(themeId: string): Promise<ResolvedToken[]> {
-    const instance = new TokenService();
-    const queryKey = `tokens:resolved:${themeId}`;
+    try {
+      const { getDB } = await import('../../lib/db');
+      const db = await getDB();
 
-    return instance.handleCachedApiCall<ResolvedToken[]>(
-      queryKey,
-      'getResolvedTokens',
-      async () => {
-        const { data, error } = await instance.supabase.rpc('resolve_theme_tokens', {
-          p_theme_id: themeId,
-        });
+      // IndexedDB에서 해당 테마의 토큰들 조회
+      const tokens = await db.designTokens.getByTheme(themeId);
 
-        if (error) {
-          throw new Error(`토큰 조회 실패: ${error.message}`);
-        }
+      // ResolvedToken 형식으로 변환 (상속 해석은 나중에 필요시 구현)
+      const resolvedTokens: ResolvedToken[] = tokens.map(token => ({
+        ...token,
+        resolved_value: token.value,
+        source_theme_id: themeId,
+        is_inherited: false,
+      }));
 
-        return { data: (data as ResolvedToken[]) || [], error: null };
-      },
-      { staleTime: 5 * 60 * 1000 }
-    );
+      console.log('[TokenService] getResolvedTokens:', resolvedTokens.length, 'tokens');
+      return resolvedTokens;
+    } catch (error) {
+      console.error('[TokenService] getResolvedTokens failed:', error);
+      return [];
+    }
   }
 
   /**
@@ -207,38 +204,44 @@ export class TokenService extends BaseApiService {
   }
 
   /**
-   * 토큰 일괄 업서트 (RPC, 캐시 무효화)
+   * 토큰 일괄 업서트 (IndexedDB 전용)
    */
   static async bulkUpsertTokens(
     tokens: Partial<DesignToken>[]
   ): Promise<number> {
-    const instance = new TokenService();
+    const { getDB } = await import('../../lib/db');
+    const { ElementUtils } = await import('../../utils/element/elementUtils');
+    const db = await getDB();
 
-    // 영향받는 theme_id 수집
-    const affectedThemeIds = new Set(
-      tokens.map((t) => t.theme_id).filter((id): id is string => !!id)
-    );
+    let upsertedCount = 0;
 
-    const { data, error } = await instance.supabase.rpc('bulk_upsert_tokens', {
-      p_tokens: tokens,
-    });
+    for (const token of tokens) {
+      // ID가 없으면 생성
+      const tokenId = token.id || ElementUtils.generateId();
+      const fullToken: DesignToken = {
+        id: tokenId,
+        project_id: token.project_id!,
+        theme_id: token.theme_id!,
+        name: token.name!,
+        type: token.type!,
+        value: token.value!,
+        scope: token.scope || 'semantic',
+        created_at: token.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-    if (error) {
-      console.error('[TokenService] bulkUpsertTokens failed:', error);
-      throw new Error(`토큰 일괄 저장 실패: ${error.message}`);
+      // 기존 토큰 확인
+      const existing = await db.designTokens.getById(tokenId);
+      if (existing) {
+        await db.designTokens.update(tokenId, fullToken);
+      } else {
+        await db.designTokens.insert(fullToken);
+      }
+      upsertedCount++;
     }
 
-    // ✅ 캐시 무효화 (영향받는 모든 테마의 캐시 제거)
-    for (const themeId of affectedThemeIds) {
-      instance.invalidateCache(`tokens:resolved:${themeId}`);
-      instance.invalidateCache(`tokens:search:${themeId}`);
-      instance.invalidateCache(`tokens:raw:${themeId}`);
-      instance.invalidateCache(`tokens:semantic:${themeId}`);
-      instance.invalidateCache(`tokens:type:${themeId}`); // 모든 타입 캐시 제거
-    }
-
-    console.log('[TokenService] Bulk upsert completed:', data, 'tokens');
-    return data as number;
+    console.log(`✅ [IndexedDB] Bulk upsert completed: ${upsertedCount} tokens`);
+    return upsertedCount;
   }
 
   /**

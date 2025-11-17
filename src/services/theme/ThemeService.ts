@@ -12,6 +12,8 @@
 import { BaseApiService } from '../api/BaseApiService';
 import type { DesignTheme } from '../../types/theme';
 import { RealtimeBatcher, RealtimeFilters } from '../../utils/realtimeBatcher';
+import { getDB } from '../../lib/db';
+import { ElementUtils } from '../../utils/element/elementUtils';
 
 export interface CreateThemeInput {
   project_id: string;
@@ -27,51 +29,27 @@ export interface UpdateThemeInput {
 
 export class ThemeService extends BaseApiService {
   /**
-   * 프로젝트의 모든 테마 조회 (캐싱 적용)
-   *
-   * ✅ 최적화:
-   * - 5분 캐싱
-   * - 중복 요청 자동 방지
-   * - 성능 모니터링
+   * 프로젝트의 모든 테마 조회 (IndexedDB)
    */
   static async getThemesByProject(projectId: string): Promise<DesignTheme[]> {
-    const instance = new ThemeService();
-    const queryKey = `themes:project:${projectId}`;
-
-    return instance.handleCachedApiCall<DesignTheme[]>(
-      queryKey,
-      'getThemesByProject',
-      async () => {
-        return await instance.supabase
-          .from('design_themes')
-          .select('*')
-          .eq('project_id', projectId)
-          .order('created_at', { ascending: true });
-      },
-      { staleTime: 5 * 60 * 1000 }
-    );
+    try {
+      const db = await getDB();
+      const themes = await db.themes.getByProject(projectId);
+      console.log('[ThemeService] getThemesByProject:', themes.length, 'themes');
+      return themes;
+    } catch (error) {
+      console.error('[ThemeService] getThemesByProject failed:', error);
+      return [];
+    }
   }
 
   /**
-   * 테마 ID로 조회 (캐싱 적용)
+   * 테마 ID로 조회 (IndexedDB)
    */
   static async getThemeById(themeId: string): Promise<DesignTheme | null> {
-    const instance = new ThemeService();
-    const queryKey = `theme:id:${themeId}`;
-
     try {
-      return await instance.handleCachedApiCall<DesignTheme>(
-        queryKey,
-        'getThemeById',
-        async () => {
-          return await instance.supabase
-            .from('design_themes')
-            .select('*')
-            .eq('id', themeId)
-            .single();
-        },
-        { staleTime: 5 * 60 * 1000 }
-      );
+      const db = await getDB();
+      return await db.themes.getById(themeId);
     } catch (error) {
       console.error('[ThemeService] getThemeById failed:', error);
       return null;
@@ -79,38 +57,14 @@ export class ThemeService extends BaseApiService {
   }
 
   /**
-   * 활성 테마 조회 (캐싱 적용)
+   * 활성 테마 조회 (IndexedDB)
    */
   static async getActiveTheme(projectId: string): Promise<DesignTheme | null> {
-    const instance = new ThemeService();
-    const queryKey = `theme:active:${projectId}`;
-
     try {
-      const result = await instance.handleCachedApiCall<DesignTheme | null>(
-        queryKey,
-        'getActiveTheme',
-        async () => {
-          const response = await instance.supabase
-            .from('design_themes')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('status', 'active')
-            .order('created_at', { ascending: true })
-            .limit(1)
-            .maybeSingle();
-
-          return { data: response.data, error: response.error };
-        },
-        { staleTime: 5 * 60 * 1000, allowNull: true } // 활성 테마가 없을 수 있음
-      );
-
-      // 활성 테마가 없으면 첫 번째 테마 반환
-      if (!result) {
-        const themes = await this.getThemesByProject(projectId);
-        return themes[0] || null;
-      }
-
-      return result;
+      const db = await getDB();
+      const activeTheme = await db.themes.getActiveTheme(projectId);
+      console.log('[ThemeService] getActiveTheme:', activeTheme);
+      return activeTheme;
     } catch (error) {
       console.error('[ThemeService] getActiveTheme failed:', error);
       return null;
@@ -118,94 +72,83 @@ export class ThemeService extends BaseApiService {
   }
 
   /**
-   * 테마 생성 (캐시 무효화)
+   * 테마 생성 (IndexedDB 전용)
    */
   static async createTheme(input: CreateThemeInput): Promise<DesignTheme> {
-    const instance = new ThemeService();
+    const db = await getDB();
 
-    const result = await instance.handleApiCall<DesignTheme>('createTheme', async () => {
-      return await instance.supabase
-        .from('design_themes')
-        .insert({
-          project_id: input.project_id,
-          name: input.name,
-          parent_theme_id: input.parent_theme_id || null,
-          status: input.status || 'draft',
-          version: 1,
-        })
-        .select()
-        .single();
-    });
-
-    // ✅ 캐시 무효화
-    instance.invalidateCache(`themes:project:${input.project_id}`);
-    if (input.status === 'active') {
-      instance.invalidateCache(`theme:active:${input.project_id}`);
+    // 1. Project 존재 확인 (없으면 자동 생성)
+    let project = await db.projects.getById(input.project_id);
+    if (!project) {
+      console.warn('[ThemeService] Project not found, creating temp project:', input.project_id);
+      const tempProject = {
+        id: input.project_id,
+        name: 'Temp Project',
+        domain: 'localhost',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      project = await db.projects.insert(tempProject);
+      console.log('✅ [IndexedDB] Temp project created:', project);
     }
 
-    console.log('[ThemeService] Theme created:', result);
-    return result;
+    // 2. IndexedDB에 테마 생성
+    const newTheme: DesignTheme = {
+      id: ElementUtils.generateId(),
+      project_id: input.project_id,
+      name: input.name,
+      parent_theme_id: input.parent_theme_id || null,
+      status: input.status || 'draft',
+      version: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await db.themes.insert(newTheme);
+    console.log('✅ [IndexedDB] Theme created:', newTheme);
+
+    return newTheme;
   }
 
   /**
-   * 테마 업데이트 (캐시 무효화)
+   * 테마 업데이트 (IndexedDB)
    */
   static async updateTheme(themeId: string, updates: UpdateThemeInput): Promise<DesignTheme> {
-    const instance = new ThemeService();
-
-    const result = await instance.handleApiCall<DesignTheme>('updateTheme', async () => {
-      return await instance.supabase
-        .from('design_themes')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', themeId)
-        .select()
-        .single();
-    });
-
-    // ✅ 캐시 무효화
-    instance.invalidateCache(`theme:id:${themeId}`);
-    instance.invalidateCache(`themes:project:${result.project_id}`);
-    if (updates.status === 'active') {
-      instance.invalidateCache(`theme:active:${result.project_id}`);
+    try {
+      const db = await getDB();
+      const result = await db.themes.update(themeId, updates);
+      console.log('[ThemeService] Theme updated:', result);
+      return result;
+    } catch (error) {
+      console.error('[ThemeService] updateTheme failed:', error);
+      throw error;
     }
-
-    console.log('[ThemeService] Theme updated:', result);
-    return result;
   }
 
   /**
-   * 테마 삭제 (캐시 무효화)
+   * 테마 삭제 (IndexedDB)
    */
   static async deleteTheme(themeId: string): Promise<void> {
-    const instance = new ThemeService();
+    try {
+      const db = await getDB();
 
-    // 마지막 테마인지 확인
-    const theme = await this.getThemeById(themeId);
-    if (!theme) {
-      throw new Error('테마를 찾을 수 없습니다');
+      // 마지막 테마인지 확인
+      const theme = await this.getThemeById(themeId);
+      if (!theme) {
+        throw new Error('테마를 찾을 수 없습니다');
+      }
+
+      const allThemes = await this.getThemesByProject(theme.project_id);
+      if (allThemes.length === 1) {
+        throw new Error('마지막 테마는 삭제할 수 없습니다');
+      }
+
+      await db.themes.delete(themeId);
+      console.log('[ThemeService] Theme deleted:', themeId);
+    } catch (error) {
+      console.error('[ThemeService] deleteTheme failed:', error);
+      throw error;
     }
-
-    const allThemes = await this.getThemesByProject(theme.project_id);
-    if (allThemes.length === 1) {
-      throw new Error('마지막 테마는 삭제할 수 없습니다');
-    }
-
-    await instance.handleDeleteCall('deleteTheme', async () => {
-      return await instance.supabase
-        .from('design_themes')
-        .delete()
-        .eq('id', themeId);
-    });
-
-    // ✅ 캐시 무효화
-    instance.invalidateCache(`theme:id:${themeId}`);
-    instance.invalidateCache(`themes:project:${theme.project_id}`);
-    instance.invalidateCache(`theme:active:${theme.project_id}`);
-
-    console.log('[ThemeService] Theme deleted:', themeId);
   }
 
   /**
@@ -243,35 +186,32 @@ export class ThemeService extends BaseApiService {
   }
 
   /**
-   * 테마 활성화 (status를 active로 변경하고 다른 테마는 draft로, 캐시 무효화)
+   * 테마 활성화 (IndexedDB - status를 active로 변경하고 다른 테마는 draft로)
    */
   static async activateTheme(themeId: string): Promise<void> {
-    const instance = new ThemeService();
-    const theme = await this.getThemeById(themeId);
-    if (!theme) {
-      throw new Error('테마를 찾을 수 없습니다');
+    try {
+      const db = await getDB();
+      const theme = await this.getThemeById(themeId);
+      if (!theme) {
+        throw new Error('테마를 찾을 수 없습니다');
+      }
+
+      // 같은 프로젝트의 모든 테마를 draft로
+      const allThemes = await db.themes.getByProject(theme.project_id);
+      const activeThemes = allThemes.filter((t: any) => t.status === 'active');
+
+      for (const activeTheme of activeThemes) {
+        await db.themes.update(activeTheme.id, { status: 'draft' });
+      }
+
+      // 선택한 테마를 active로
+      await this.updateTheme(themeId, { status: 'active' });
+
+      console.log('[ThemeService] Theme activated:', themeId);
+    } catch (error) {
+      console.error('[ThemeService] activateTheme failed:', error);
+      throw error;
     }
-
-    // 같은 프로젝트의 모든 테마를 draft로
-    const { error: deactivateError } = await instance.supabase
-      .from('design_themes')
-      .update({ status: 'draft' })
-      .eq('project_id', theme.project_id)
-      .eq('status', 'active');
-
-    if (deactivateError) {
-      console.error('[ThemeService] deactivate failed:', deactivateError);
-      throw new Error(`테마 비활성화 실패: ${deactivateError.message}`);
-    }
-
-    // 선택한 테마를 active로
-    await this.updateTheme(themeId, { status: 'active' });
-
-    // ✅ 캐시 무효화 (active 테마 변경됨)
-    instance.invalidateCache(`theme:active:${theme.project_id}`);
-    instance.invalidateCache(`themes:project:${theme.project_id}`);
-
-    console.log('[ThemeService] Theme activated:', themeId);
   }
 
   /**

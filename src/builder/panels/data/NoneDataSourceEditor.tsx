@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "../../components/list";
 import { useStore } from "../../stores/elements";
-import { elementsApi } from "../../../services";
+import { getDB } from "../../../lib/db";
 import type { Element } from "../../../types/core/store.types";
 
 interface NoneDataSourceEditorProps {
@@ -48,13 +48,14 @@ export function NoneDataSourceEditor({ elementId, onApply }: NoneDataSourceEdito
       );
 
       if (columns.length > 0) {
-        // 3. DB에서 모든 Column Elements 삭제
+        // 3. IndexedDB에서 모든 Column Elements 삭제
         const columnIds = columns.map((col: Element) => col.id);
         console.log(`🗑️ ${columns.length}개의 Column Elements 삭제 중...`, columnIds);
 
-        await elementsApi.deleteMultipleElements(columnIds);
+        const db = await getDB();
+        await db.elements.deleteMany(columnIds);
 
-        console.log("✅ 모든 Column Elements가 삭제되었습니다.");
+        console.log("✅ [IndexedDB] 모든 Column Elements가 삭제되었습니다.");
       }
 
       // 4. onApply callback 호출 (DataSourceSelector에서 처리)

@@ -4,9 +4,8 @@ import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { supabase } from '../../../../env/supabase.client';
+import { getDB } from '../../../../lib/db';
 import { useStore } from '../../../stores';
-import { elementsApi } from '../../../../services/api';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
@@ -88,15 +87,8 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                             className='control-button delete'
                             onClick={async () => {
                                 try {
-                                    const { error } = await supabase
-                                        .from('elements')
-                                        .delete()
-                                        .eq('id', currentTag.id);
-
-                                    if (error) {
-                                        console.error('Tag 삭제 에러:', error);
-                                        return;
-                                    }
+                                    const db = await getDB();
+                                    await db.elements.delete(currentTag.id);
 
                                     const updatedElements = storeElements.filter(el => el.id !== currentTag.id);
                                     setElements(updatedElements);
@@ -379,10 +371,11 @@ export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEd
                                     order_num: (tagChildren.length || 0) + 1,
                                 };
 
-                                // Use elementsApi.createElement to handle customId conversion
-                                const data = await elementsApi.createElement(newTag);
-                                addElement(data);
-                                console.log('새 Tag 추가됨:', data);
+                                // IndexedDB에 저장
+                                const db = await getDB();
+                                const insertedTag = await db.elements.insert(newTag);
+                                addElement(insertedTag);
+                                console.log('✅ [IndexedDB] 새 Tag 추가됨:', insertedTag);
                             } catch (error) {
                                 console.error('Tag 추가 중 오류:', error);
                             }

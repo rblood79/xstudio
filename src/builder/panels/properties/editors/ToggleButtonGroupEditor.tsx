@@ -5,9 +5,8 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { elementsApi } from '../../../../services/api';
+import { getDB } from '../../../../lib/db';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
-import { supabase } from '../../../../env/supabase.client';
 import type { Element } from '../../../../types/core/store.types';
 
 interface SelectedButtonState {
@@ -90,8 +89,9 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                             className='control-button delete'
                             onClick={async () => {
                                 try {
-                                    // 실제 ToggleButton 컴포넌트를 데이터베이스에서 삭제
-                                    await elementsApi.deleteElement(currentButton.id);
+                                    // IndexedDB에서 ToggleButton 삭제
+                                    const db = await getDB();
+                                    await db.elements.delete(currentButton.id);
 
                                     // 스토어에서도 제거
                                     const updatedElements = storeElements.filter(el => el.id !== currentButton.id);
@@ -348,18 +348,13 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
                                     order_num: (toggleButtonChildren.length || 0) + 1,
                                 };
 
-                                const { data, error } = await supabase
-                                    .from('elements')
-                                    .insert(newToggleButton)
-                                    .select()
-                                    .single();
-
-                                if (error) throw error;
-                                if (!data) throw new Error('Failed to create ToggleButton element');
+                                // IndexedDB에 저장
+                                const db = await getDB();
+                                const insertedButton = await db.elements.insert(newToggleButton);
 
                                 // 스토어에 새 요소 추가
-                                addElement(data as Element);
-                                //console.log('새 ToggleButton 추가됨:', data);
+                                addElement(insertedButton);
+                                console.log('✅ [IndexedDB] 새 ToggleButton 추가됨:', insertedButton);
                             } catch (error) {
                                 console.error('ToggleButton 추가 중 오류:', error);
                             }

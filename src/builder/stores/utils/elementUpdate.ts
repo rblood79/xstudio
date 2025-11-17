@@ -4,6 +4,7 @@ import { ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { getElementById, findElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
+import { getDB } from "../../../lib/db";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -90,8 +91,18 @@ export const createUpdateElementPropsAction =
 
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
-    // 3. SaveService는 외부(Preview, PropertyPanel 등)에서 호출하도록 변경
-    // 이유: store slice 내부에서 동적 import 사용 시 store 인스턴스 불일치 발생
+    // 3. IndexedDB에 저장 (로컬 우선 저장)
+    try {
+      const db = await getDB();
+      await db.elements.update(elementId, { props });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log("✅ [IndexedDB] 요소 props 저장 완료:", elementId);
+      }
+    } catch (error) {
+      console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+      // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
+    }
   };
 
 /**
@@ -177,7 +188,16 @@ export const createUpdateElementAction =
     // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
     get()._rebuildIndexes();
 
-    // 2. SaveService를 통한 저장 (실시간/수동 모드 확인)
-    // useSyncWithBuilder에서 이미 saveService를 호출하므로 여기서는 중복 저장 방지
-    // 주석 처리: saveService가 useSyncWithBuilder에서 관리
+    // 2. IndexedDB에 저장 (로컬 우선 저장)
+    try {
+      const db = await getDB();
+      await db.elements.update(elementId, updates);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log("✅ [IndexedDB] 요소 전체 저장 완료:", elementId);
+      }
+    } catch (error) {
+      console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+      // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
+    }
   };

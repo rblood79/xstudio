@@ -4,7 +4,7 @@ import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , Prope
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { supabase } from '../../../../env/supabase.client';
+import { getDB } from '../../../../lib/db';
 import { useStore } from '../../../stores';
 import type { Element } from '../../../../types/core/store.types'; // 통합된 타입 사용
 import { ElementUtils } from '../../../../utils/element/elementUtils';
@@ -25,25 +25,22 @@ function usePageId() {
 
     const fetchCurrentPageId = useCallback(async (projectId: string) => {
         try {
-            const { data: pages, error } = await supabase
-                .from('pages')
-                .select('id, name')
-                .eq('project_id', projectId)
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-            if (error) {
-                console.error('Error fetching pages:', error);
-                return;
-            }
+            const db = await getDB();
+            const pages = await db.pages.getByProject(projectId);
 
             if (pages && pages.length > 0) {
-                const pageId = pages[0].id;
+                // Sort by created_at descending, get first
+                const sortedPages = pages.sort((a, b) => {
+                    const dateA = new Date(a.created_at || 0).getTime();
+                    const dateB = new Date(b.created_at || 0).getTime();
+                    return dateB - dateA;
+                });
+                const pageId = sortedPages[0].id;
                 setLocalPageId(pageId);
                 setCurrentPageId(pageId);
             }
         } catch (err) {
-            console.error('Failed to fetch current page ID:', err);
+            console.error('❌ [IndexedDB] Failed to fetch current page ID:', err);
         }
     }, [setCurrentPageId]);
 
@@ -71,15 +68,11 @@ function usePageId() {
 
     const validatePageId = async (pageId: string): Promise<boolean> => {
         try {
-            const { data, error } = await supabase
-                .from('pages')
-                .select('id')
-                .eq('id', pageId)
-                .single();
-
-            return !error && !!data;
+            const db = await getDB();
+            const page = await db.pages.getById(pageId);
+            return !!page;
         } catch (err) {
-            console.error('Page validation failed:', err);
+            console.error('❌ [IndexedDB] Page validation failed:', err);
             return false;
         }
     };
@@ -290,23 +283,11 @@ async function createNewTab(
     };
 
     try {
-        // Tab과 Panel을 함께 upsert (중복 방지)
-        // Convert customId to custom_id for database
-        const { customId: tabCustomId, ...tabRest } = newTabElement;
-        const { customId: panelCustomId, ...panelRest } = newPanelElement;
-        const tabForDB = { ...tabRest, custom_id: tabCustomId };
-        const panelForDB = { ...panelRest, custom_id: panelCustomId };
+        const db = await getDB();
 
-        const { data, error } = await supabase
-            .from('elements')
-            .upsert([tabForDB, panelForDB], {
-                onConflict: 'id'
-            })
-            .select();
-
-        if (error) {
-            throw new Error('Tab and Panel creation failed');
-        }
+        // Tab과 Panel을 IndexedDB에 저장
+        const insertedTab = await db.elements.insert(newTabElement);
+        const insertedPanel = await db.elements.insert(newPanelElement);
 
         // Tabs props 업데이트 (defaultSelectedKey만, children 제거)
         const updatedProps = {
@@ -314,36 +295,29 @@ async function createNewTab(
             defaultSelectedKey: tabChildren.length === 0 ? newTabElement.id : currentProps.defaultSelectedKey
         };
 
-        const { error: updateError } = await supabase
-            .from('elements')
-            .update({ props: updatedProps })
-            .eq('id', elementId);
-
-        if (updateError) {
-            // Tabs 업데이트 실패 시 생성된 요소들 삭제
-            await supabase.from('elements').delete().eq('id', newTabElement.id);
-            await supabase.from('elements').delete().eq('id', newPanelElement.id);
-            throw new Error('Tabs update failed');
-        }
+        // Tabs 요소 자체 업데이트
+        await db.elements.update(elementId, { props: updatedProps });
 
         // 성공 시 상태 업데이트
         onUpdate(updatedProps);
 
-        // 스토어에 새 요소들 추가 - 각각 개별적으로 추가
-        if (data && data.length >= 2) {
-            // Tab 요소 추가
-            addElement(data[0]);
-            // Panel 요소 추가
-            addElement(data[1]);
+        // 스토어에 새 요소들 추가
+        addElement(insertedTab);
+        addElement(insertedPanel);
 
-            console.log('새 Tab과 Panel이 스토어에 추가됨:', {
-                tab: data[0],
-                panel: data[1]
-            });
-        }
+        console.log('✅ [IndexedDB] Tab and Panel created successfully');
 
     } catch (err) {
-        console.error('createNewTab error:', err);
+        console.error('❌ [IndexedDB] createNewTab error:', err);
+        // Rollback: IndexedDB에서 생성된 요소들 삭제
+        try {
+            const db = await getDB();
+            await db.elements.delete(newTabElement.id);
+            await db.elements.delete(newPanelElement.id);
+            console.log('⚠️ [IndexedDB] Rollback completed');
+        } catch (rollbackErr) {
+            console.error('❌ [IndexedDB] Rollback failed:', rollbackErr);
+        }
         throw err;
     }
 }

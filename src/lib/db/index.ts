@@ -74,5 +74,26 @@ export function isDBInitialized(): boolean {
   return dbInstance !== null;
 }
 
+/**
+ * 캐시 통계 조회 (개발/디버깅용)
+ */
+export async function getCacheStats() {
+  const db = await getDB();
+  if ('cache' in db && db.cache && typeof db.cache.getStats === 'function') {
+    return db.cache.getStats();
+  }
+  return null;
+}
+
+/**
+ * 캐시 초기화 (개발/디버깅용)
+ */
+export async function clearCache() {
+  const db = await getDB();
+  if ('cache' in db && db.cache && typeof db.cache.clear === 'function') {
+    db.cache.clear();
+  }
+}
+
 // Re-export types
 export type * from './types';

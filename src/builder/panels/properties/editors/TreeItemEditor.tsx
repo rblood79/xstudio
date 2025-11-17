@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { elementsApi } from '../../../../services/api';
+import { getDB } from '../../../../lib/db';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
@@ -73,10 +73,11 @@ export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEd
                 order_num: newTreeItemIndex,
             };
 
-            const data = await elementsApi.createElement(newTreeItemElement);
-            addElement(data);
+            const db = await getDB();
+            const insertedTreeItem = await db.elements.insert(newTreeItemElement);
+            addElement(insertedTreeItem);
 
-            console.log('새 하위 TreeItem이 추가됨:', data);
+            console.log('✅ [IndexedDB] 새 하위 TreeItem이 추가됨:', insertedTreeItem);
         } catch (err) {
             console.error('Add Child TreeItem error:', err);
             alert('하위 TreeItem 추가 중 오류가 발생했습니다. 다시 시도해주세요.');

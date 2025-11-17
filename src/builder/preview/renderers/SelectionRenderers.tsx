@@ -12,7 +12,7 @@ import {
 } from "../../components/list";
 import { DataField } from "../../components/Field";
 import { PreviewElement, RenderContext } from "../types";
-import { elementsApi } from "../../../services/api";
+import { getDB } from "../../../lib/db";
 import { getVisibleColumns } from "../../../utils/element/columnTypeInference";
 import type { ColumnMapping } from "../../../types/builder/unified.types";
 
@@ -639,12 +639,13 @@ export const renderSelect = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await elementsApi.updateElementProps(element.id, updatedProps);
+          const db = await getDB();
+          await db.elements.update(element.id, { props: updatedProps });
           console.log(
-            "Element props updated successfully (placeholder preserved)"
+            "✅ [IndexedDB] Element props updated successfully (placeholder preserved)"
           );
         } catch (err) {
-          console.error("Error updating element props:", err);
+          console.error("❌ [IndexedDB] Error updating element props:", err);
         }
 
         // 전체 props 전송으로 placeholder 보존
@@ -888,10 +889,11 @@ export const renderComboBox = (
         updateElementProps(element.id, updatedProps);
 
         try {
-          await elementsApi.updateElementProps(element.id, updatedProps);
-          console.log("ComboBox element props updated successfully");
+          const db = await getDB();
+          await db.elements.update(element.id, { props: updatedProps });
+          console.log("✅ [IndexedDB] ComboBox element props updated successfully");
         } catch (err) {
-          console.error("Error updating ComboBox element props:", err);
+          console.error("❌ [IndexedDB] Error updating ComboBox element props:", err);
         }
 
         window.parent.postMessage(

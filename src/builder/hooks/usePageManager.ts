@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
-import { pagesApi, type Page as ApiPage } from '../../services/api/PagesApiService';
+import { type Page as ApiPage } from '../../services/api/PagesApiService';
 import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
@@ -162,28 +162,40 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 pageTitle: `Page ${nextOrderNum + 1}`
             });
 
-            const newPage = await pagesApi.createPage({
+            // IndexedDB에 새 페이지 저장
+            const db = await getDB();
+            const newPageData = {
+                id: ElementUtils.generateId(),
                 project_id: projectId,
-                title: `Page ${nextOrderNum + 1}`,
+                name: `Page ${nextOrderNum + 1}`,
                 slug: `page-${nextOrderNum + 1}`,
+                parent_id: null,
                 order_num: nextOrderNum,
-            });
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
 
-            // useListData에 추가
-            pageList.append(newPage);
+            const newPage = await db.pages.insert(newPageData);
+
+            console.log('✅ [IndexedDB] 새 페이지 생성:', newPage);
+
+            // useListData에 추가 (ApiPage 타입으로 변환)
+            const apiPage: ApiPage = {
+                id: newPage.id,
+                project_id: newPage.project_id,
+                title: newPage.name, // name → title
+                slug: newPage.slug,
+                parent_id: newPage.parent_id,
+                order_num: newPage.order_num,
+                created_at: newPage.created_at,
+                updated_at: newPage.updated_at
+            };
+            pageList.append(apiPage);
             setSelectedPageId(newPage.id);
             setCurrentPageId(newPage.id);
 
             // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            // ApiPage를 store의 Page 타입으로 변환 (title → name, parent_id 추가)
-            const storePage = {
-                id: newPage.id,
-                name: newPage.title,
-                slug: newPage.slug,
-                parent_id: null,
-                order_num: newPage.order_num
-            };
-            setPages([...currentPages, storePage]);
+            setPages([...currentPages, newPage]);
 
             // 새 페이지에 기본 body 요소 생성
             const bodyElement: Element = {
@@ -197,10 +209,11 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 updated_at: new Date().toISOString(),
             };
 
-            // DB에 직접 저장 (store 업데이트 건너뛰기)
+            // IndexedDB에 저장 (store 업데이트 건너뛰기)
             // store를 업데이트하면 이전 페이지의 모든 요소가 함께 Preview에 전송되므로
             // DB에만 저장하고 fetchElements로 새 페이지의 요소만 로드
-            await elementsApi.createElement(bodyElement);
+            await db.elements.insert(bodyElement);
+            console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
 
             // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
             await fetchElements(newPage.id);
@@ -234,31 +247,44 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             initializingRef.current = projectId;
             console.log('🔄 프로젝트 초기화 시작 (usePageManager):', projectId);
 
-            // 1. 프로젝트의 페이지들 로드
-            const projectPages = await pagesApi.getPagesByProjectId(projectId);
+            // 1. IndexedDB에서 프로젝트의 페이지들 로드
+            const db = await getDB();
+            const allPages = await db.pages.getAll();
+            const projectPages = allPages.filter(p => p.project_id === projectId);
+
+            console.log('✅ [IndexedDB] 페이지 로드:', {
+                projectId,
+                totalPages: allPages.length,
+                projectPages: projectPages.length
+            });
 
             // 2. 기존 페이지 제거 후 새로 추가
             const existingKeys = pageList.items.map((p) => p.id);
             if (existingKeys.length > 0) {
                 pageList.remove(...existingKeys);
             }
-            projectPages.forEach((page) => pageList.append(page));
+
+            // IndexedDB Page를 ApiPage로 변환 (name → title)
+            const apiPages: ApiPage[] = projectPages.map(p => ({
+                id: p.id,
+                project_id: p.project_id,
+                title: p.name, // name → title
+                slug: p.slug,
+                parent_id: p.parent_id,
+                order_num: p.order_num,
+                created_at: p.created_at || new Date().toISOString(),
+                updated_at: p.updated_at || new Date().toISOString()
+            }));
+
+            apiPages.forEach((page) => pageList.append(page));
 
             // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
-            // ApiPage[]를 store의 Page 타입으로 변환 (title → name, parent_id 추가)
-            const storePages = projectPages.map(p => ({
-                id: p.id,
-                name: p.title,
-                slug: p.slug,
-                parent_id: null,
-                order_num: p.order_num
-            }));
-            setPages(storePages);
+            setPages(projectPages);
 
             // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
-            if (projectPages.length > 0) {
-                const homePage = projectPages.find(p => p.order_num === 0);
-                const pageToSelect = homePage || projectPages[0];
+            if (apiPages.length > 0) {
+                const homePage = apiPages.find(p => p.order_num === 0);
+                const pageToSelect = homePage || apiPages[0];
 
                 setCurrentPageId(pageToSelect.id);
                 console.log('✅ 기본 페이지 선택:', pageToSelect.title, '(order_num:', pageToSelect.order_num, ')');
@@ -270,9 +296,9 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 }
             }
 
-            console.log('✅ 프로젝트 초기화 완료 (usePageManager):', projectPages.length, 'pages');
+            console.log('✅ 프로젝트 초기화 완료 (usePageManager):', apiPages.length, 'pages');
             initializingRef.current = null;
-            return { success: true, data: projectPages };
+            return { success: true, data: apiPages };
         } catch (error) {
             console.error('프로젝트 초기화 에러:', error);
             initializingRef.current = null;
