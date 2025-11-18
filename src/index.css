@@ -1,5 +1,20 @@
 @import "../node_modules/pretendard/dist/web/static/pretendard.css";
 @import "tailwindcss";
+
+/* Declare all CSS layers in priority order (later = higher priority)
+ * This ensures consistent cascade order across all modules
+ *
+ * Architecture:
+ * - dashboard: Lowest (dashboard pages)
+ * - base: Base reset styles
+ * - preview-system: Preview component tokens (user-controlled)
+ * - components: React Aria components (Preview area)
+ * - shared-tokens: Common tokens
+ * - builder-system: Builder UI tokens (HIGHEST - overrides everything)
+ * - utilities: Utility classes (absolute highest)
+ */
+@layer dashboard, base, preview-system, components, shared-tokens, builder-system, utilities;
+
 @import "./builder/components/index.css";
 
 /* @plugin "tailwindcss-react-aria-components"; */

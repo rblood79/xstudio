@@ -1,5 +1,20 @@
 /* Dashboard styles - scoped to avoid conflicts with Builder system */
 @layer dashboard {
+  .add-project-button {
+    background: var(--builder-button-bg );
+    color: var(--builder-button-text);
+    border-color: var(--builder-button-border);
+    &:hover {
+      background: var(--builder-button-hover-bg);
+      color: var(--builder-button-text);
+      border-color: var(--builder-button-border);
+    }
+    &:active {
+      background: var(--builder-button-active-bg);
+      color: var(--builder-button-text);
+      border-color: var(--builder-button-border);
+    }
+  }
   .projects {
     width: calc(240px * 3);
     display: flex;

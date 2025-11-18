@@ -10,7 +10,7 @@
 /* Auth Card */
 .auth-card {
     width: 100%;
-    max-width: var(--container-sm);
+    max-width: var(--container-xs);
     background: var(--color-white);
     border-radius: var(--radius-4xl);
     display: flex;
@@ -47,6 +47,21 @@
 
     .react-aria-TextField {
         width: 100%;
+    }
+    .primary {
+        background: var(--builder-button-bg);
+        color: var(--builder-button-text);
+        border-color: var(--builder-button-border);
+        &:hover {
+            background: var(--builder-button-hover-bg);
+            color: var(--builder-button-text);
+            border-color: var(--builder-button-border);
+        }
+        &:active {
+            background: var(--builder-button-active-bg);
+            color: var(--builder-button-text);
+            border-color: var(--builder-button-border);
+        }
     }
 }
 

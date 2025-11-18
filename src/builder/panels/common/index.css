@@ -378,6 +378,8 @@
           width: var(--text-xl);
           height: var(--text-xl);
           border-radius: var(--radius-sm);
+          /* Layer 우선순위로 builder-system.css 값 사용
+           * 수정 불필요 - ComboBox.css와 동일한 변수명 */
         }
       }
     }

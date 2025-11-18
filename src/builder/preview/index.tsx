@@ -95,6 +95,9 @@ function Preview() {
 
     window.addEventListener("message", messageHandler);
 
+    // Preview iframe임을 표시 (Builder CSS 분리를 위해)
+    document.body.setAttribute('data-preview', 'true');
+
     // 준비 신호 (한 번만 전송)
     try {
       window.parent.postMessage({ type: "PREVIEW_READY" }, "*");
@@ -106,6 +109,7 @@ function Preview() {
     return () => {
       console.log('🧹 [Preview] Unmounting - removing message listener');
       window.removeEventListener("message", messageHandler);
+      document.body.removeAttribute('data-preview');
     };
   }, [messageHandler]); // messageHandler는 변경되지 않으므로 한 번만 실행
 

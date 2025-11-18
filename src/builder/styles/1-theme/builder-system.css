@@ -146,6 +146,33 @@
     --builder-tree-item-hover: var(--builder-sidebar-hover-bg);
     --builder-tree-item-selected: var(--color-primary-100);
     --builder-tree-indent: var(--spacing-lg);
+
+  }
+
+  /* ==================== Builder UI Scope Override ==================== */
+  /* Builder 영역에만 적용되는 변수 (Preview와 완전 분리)
+   * Inspector, Sidebar, Header + Builder body에 portal된 Popover 포함
+   * Preview iframe은 body[data-preview="true"]로 제외됨 */
+  .inspector,
+  .sidebar,
+  .builder-header,
+  body:not([data-preview="true"]) .react-aria-Popover {
+    /* Highlight colors - Builder 전용 고정 색상 */
+    --focus-ring-color: var(--color-red-700);
+    --highlight-background: var(--color-red-700);
+    --highlight-background-pressed: var(--color-red-800);
+    --highlight-foreground: var(--color-white);
+    --highlight-foreground-pressed: var(--color-neutral-100);
+    --highlight-overlay: rgba(220, 38, 38, 0.15);
+
+    /* Action tokens - Builder 전용 */
+    --action-primary-bg: var(--color-red-700);
+    --action-primary-bg-hover: var(--color-red-800);
+    --action-primary-bg-pressed: var(--color-red-900);
+    --action-primary-text: var(--color-white);
+    --action-primary-border: var(--color-red-700);
+    --action-primary-border-hover: var(--color-red-800);
+    --action-primary-border-pressed: var(--color-red-900);
   }
 
   /* ==================== Builder Dark Mode ==================== */

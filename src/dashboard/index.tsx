@@ -55,7 +55,16 @@ function Dashboard() {
       try {
         // 1. IndexedDB에서 로컬 프로젝트 로드
         const db = await getDB();
-        const localProjects = await db.projects.getAll();
+        const localProjectsRaw = await db.projects.getAll();
+
+        // 타입 변환: src/lib/db/types.ts의 Project → src/services/api/ProjectsApiService.ts의 Project
+        const localProjects: Project[] = localProjectsRaw.map((p) => ({
+          id: p.id,
+          name: p.name,
+          created_by: p.created_by || '', // optional → required
+          created_at: p.created_at || new Date().toISOString(),
+          updated_at: p.updated_at || new Date().toISOString(),
+        }));
 
         console.log('[Dashboard] 로컬 프로젝트 로드:', localProjects.length);
 
@@ -122,7 +131,7 @@ function Dashboard() {
       const homePage = {
         id: homePageId,
         project_id: newProject.id,
-        name: "Home", // Store uses 'name'
+        title: "Home", // Page 타입은 'title' 사용
         slug: "/",
         parent_id: null,
         order_num: 0,
@@ -210,7 +219,7 @@ function Dashboard() {
         // 2. 각 페이지의 요소들 삭제
         for (const page of pages) {
           const elements = await db.elements.getByPage(page.id);
-          console.log('[Dashboard] 페이지', page.name, '의 요소:', elements.length);
+          console.log('[Dashboard] 페이지', page.title, '의 요소:', elements.length);
 
           for (const element of elements) {
             await db.elements.delete(element.id);
@@ -222,21 +231,13 @@ function Dashboard() {
           await db.pages.delete(page.id);
         }
 
-        // 4. 프로젝트의 테마 찾기 및 삭제
-        const themes = await db.themes.getByProject(id);
-        console.log('[Dashboard] 삭제할 테마:', themes.length);
+        // 4. 프로젝트의 디자인 토큰 삭제
+        // Note: DatabaseAdapter에는 themes 속성이 없으므로 designTokens만 삭제
+        const tokens = await db.designTokens.getByProject(id);
+        console.log('[Dashboard] 삭제할 디자인 토큰:', tokens.length);
 
-        for (const theme of themes) {
-          // 테마의 토큰들 삭제
-          const tokens = await db.designTokens.getByTheme(theme.id);
-          console.log('[Dashboard] 테마', theme.name, '의 토큰:', tokens.length);
-
-          for (const token of tokens) {
-            await db.designTokens.delete(token.id);
-          }
-
-          // 테마 삭제
-          await db.themes.delete(theme.id);
+        for (const token of tokens) {
+          await db.designTokens.delete(token.id);
         }
 
         // 5. 프로젝트 삭제 (IndexedDB)
@@ -400,8 +401,8 @@ function Dashboard() {
           />
           <Button
             type="submit"
-            variant="primary"
             size="sm"
+            className="add-project-button"
             isDisabled={loading || !newProjectName.trim()}
             children={createProjectMutation.isLoading ? 'Creating...' : 'Add Project'}
           />

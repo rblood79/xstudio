@@ -4,6 +4,7 @@ import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
 import { supabase } from '../env/supabase.client';
 import { TextField, Button } from '../builder/components/list';
 import './index.css';
+import '../builder/styles/1-theme/builder-system.css';
 
 interface AuthCredentials {
   email: string;
