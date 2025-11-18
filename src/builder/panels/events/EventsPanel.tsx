@@ -5,7 +5,7 @@
  * React Stately 기반 이벤트 관리 로직을 직접 포함 (이전 EventSection 통합)
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
@@ -88,8 +88,14 @@ function EventsPanelContent({
     ?.events;
 
   // React Stately로 이벤트 핸들러 관리 - props.events 사용
-  const { handlers, addHandler, updateHandler, removeHandler } =
+  const { handlers: rawHandlers, addHandler, updateHandler, removeHandler } =
     useEventHandlers((eventsFromProps || []) as unknown as EventHandler[]);
+
+  // ⭐ Memoize handlers to prevent infinite loop
+  // useListData의 list.items가 매 렌더마다 새 참조를 반환할 수 있으므로
+  // JSON 비교로 실제 내용이 변경되었을 때만 새 배열 생성
+  const handlersJson = React.useMemo(() => JSON.stringify(rawHandlers), [rawHandlers]);
+  const handlers = React.useMemo(() => rawHandlers, [handlersJson]);
 
   // 이벤트 선택 관리
   const { selectedHandler, selectHandler, selectAfterDelete } =

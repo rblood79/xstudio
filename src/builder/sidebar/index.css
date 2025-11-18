@@ -93,6 +93,7 @@
     & > div {
       min-width: 233px;
       width: 233px;
+      overflow: auto;
     }
   }
 

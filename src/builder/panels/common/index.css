@@ -4,7 +4,9 @@
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
   }
-
+  [data-focus-visible]{
+    outline-offset: -2px;
+  }
   .section {
     display: flex;
     flex-direction: column;

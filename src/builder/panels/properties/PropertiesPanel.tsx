@@ -194,7 +194,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return () => {
       isMounted = false;
     };
-  }, [selectedElement?.type]);
+  }, [selectedElement, selectedElement?.type]);
 
   const handleUpdate = (updatedProps: Record<string, unknown>) => {
     // 한 번에 모든 속성 업데이트 (순차 업데이트로 인한 동기화 문제 방지)
@@ -244,6 +244,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.log('[Copy] JSON length:', jsonData.length, 'bytes');
 
       console.log('[Copy] Writing to clipboard...');
+      // Note: useCopyPaste hook doesn't support complex element copying with relationships
+      // eslint-disable-next-line local/prefer-copy-paste-hook
       await navigator.clipboard.writeText(jsonData);
 
       console.log(`✅ [Copy] Successfully copied ${selectedElementIds.length} elements to clipboard`);
@@ -265,6 +267,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     try {
       // Read from clipboard
       console.log('[Paste] Reading from clipboard...');
+      // Note: useCopyPaste hook doesn't support complex element pasting with relationships
+      // eslint-disable-next-line local/prefer-copy-paste-hook
       const clipboardText = await navigator.clipboard.readText();
       console.log('[Paste] Clipboard text length:', clipboardText.length, 'bytes');
       console.log('[Paste] First 100 chars:', clipboardText.substring(0, 100));
@@ -537,7 +541,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Phase 4: Ungroup Selection (Cmd+Shift+G)
   const handleUngroupSelection = useCallback(async () => {
-    if (!selectedElement || selectedElement.tag !== 'Group') {
+    if (!selectedElement || selectedElement.type !== 'Group') {
       console.warn('[Ungroup] Selected element is not a Group');
       return;
     }
@@ -807,7 +811,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       },
       {
         key: 'v',
-        modifier: 'cmdAltShift' as const,
+        modifier: 'altShift' as const,
         handler: () => handleDistribute('vertical'),
         description: 'Distribute Vertically',
       },
@@ -825,6 +829,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]);
 
   // ⭐ Phase 3: Tab navigation (requires special handling)
+  // Note: Tab navigation requires special handling (Shift+Tab, preventDefault) that useKeyboardShortcutsRegistry doesn't support
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Tab' && multiSelectMode && selectedElementIds.length > 0) {
@@ -832,6 +837,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       }
     };
 
+    // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [multiSelectMode, selectedElementIds, handleTabNavigation]);
@@ -869,10 +875,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       <PanelHeader
         title={multiSelectMode ? `${selectedElementIds.length}개 요소 선택됨` : selectedElement.type}
         actions={
-          <div className="panel-actions">
+          <>
             <Button
               variant="ghost"
-              size="sm"
+              className="iconButton"
               onPress={handleCopyProperties}
               aria-label="Copy properties"
               isDisabled={
@@ -888,7 +894,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              className="iconButton"
               onPress={handlePasteProperties}
               aria-label="Paste properties"
             >
@@ -898,7 +904,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
                 strokeWidth={iconProps.stroke}
               />
             </Button>
-          </div>
+          </>
         }
       />
 
@@ -931,19 +937,25 @@ export function PropertiesPanel({ isActive }: PanelProps) {
           />
 
           {/* ⭐ Phase 9: Smart Selection for AI-powered suggestions */}
-          {selectedElement && (
-            <SmartSelection
-              referenceElement={selectedElement}
-              allElements={currentPageElements}
-              onSelect={(elementIds) => {
-                setSelectedElements(elementIds);
-                // Track in selection memory
-                if (currentPageId) {
-                  selectionMemory.addSelection(elementIds, elements, currentPageId);
-                }
-              }}
-            />
-          )}
+          {selectedElement && (() => {
+            // Get actual Element from store for SmartSelection
+            const actualElement = currentPageElements.find((el) => el.id === selectedElement.id);
+            if (!actualElement) return null;
+            
+            return (
+              <SmartSelection
+                referenceElement={actualElement}
+                allElements={currentPageElements}
+                onSelect={(elementIds) => {
+                  setSelectedElements(elementIds);
+                  // Track in selection memory
+                  if (currentPageId) {
+                    selectionMemory.addSelection(elementIds, elements, currentPageId);
+                  }
+                }}
+              />
+            );
+          })()}
 
           {/* ⭐ Phase 9: Selection Memory for quick restore */}
           <SelectionMemory

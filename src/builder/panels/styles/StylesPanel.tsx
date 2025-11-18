@@ -15,7 +15,7 @@ import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { EmptyState, PanelHeader } from "../common";
+import { EmptyState } from "../common";
 import {
   TransformSection,
   LayoutSection,
@@ -125,10 +125,8 @@ export function StylesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="styles-panel">
-      <PanelHeader
-        title="Styles"
-        actions={
-          <>
+        
+          <div className="panel-header">
             <ToggleButtonGroup
               aria-label="Style filter"
               selectionMode="single"
@@ -138,9 +136,9 @@ export function StylesPanel({ isActive }: PanelProps) {
                 setFilter(selectedFilter);
               }}
             >
-              <ToggleButton id="all">All</ToggleButton>
+              <ToggleButton id="all">Style</ToggleButton>
               <ToggleButton id="modified">
-                Modified {modifiedCount > 0 && `(${modifiedCount})`}
+              modify {modifiedCount > 0 && `(${modifiedCount})`}
               </ToggleButton>
             </ToggleButtonGroup>
 
@@ -148,7 +146,7 @@ export function StylesPanel({ isActive }: PanelProps) {
             <div className="panel-actions">
               <Button
                 variant="ghost"
-                size="sm"
+                className="iconButton"
                 onPress={handleCopyStyles}
                 aria-label="Copy styles"
                 isDisabled={
@@ -164,7 +162,7 @@ export function StylesPanel({ isActive }: PanelProps) {
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                className="iconButton"
                 onPress={handlePasteStyles}
                 aria-label="Paste styles"
               >
@@ -178,9 +176,8 @@ export function StylesPanel({ isActive }: PanelProps) {
 
             {/* Focus Mode indicator */}
             {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
-          </>
-        }
-      />
+          </div>
+      
 
       {/* Sections */}
       <div className="style-section">

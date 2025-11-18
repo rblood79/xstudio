@@ -5,19 +5,12 @@ import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { useStore } from "../../stores/elements";
 import { deleteTableColumns } from "./utils/deleteTableColumns";
-import { SupabaseCollectionEditor } from "./SupabaseCollectionEditor.tsx";
-import { SupabaseValueEditor } from "./SupabaseValueEditor.tsx";
-import { StateBindingEditor } from "./StateBindingEditor.tsx";
 import { StaticDataEditor } from "./StaticDataEditor.tsx";
 import { APICollectionEditor } from "./APICollectionEditor.tsx";
 import { APIValueEditor } from "./APIValueEditor.tsx";
 import { NoneDataSourceEditor } from "./NoneDataSourceEditor.tsx";
 import type {
   SelectedElement,
-  SupabaseCollectionConfig,
-  SupabaseValueConfig,
-  StateCollectionConfig,
-  StateValueConfig,
   StaticCollectionConfig,
   StaticValueConfig,
   APICollectionConfig,
@@ -124,8 +117,6 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
           options={[
             { value: "", label: "선택 안 함" },
             { value: "api", label: "REST API" },
-            { value: "supabase", label: "Supabase" },
-            { value: "state", label: "Zustand Store" },
             { value: "static", label: "Static Data" },
           ]}
           onChange={(key: string) => handleSourceChange(key)}
@@ -303,95 +294,6 @@ export function DataSourceSelector({ element }: DataSourceSelectorProps) {
                   updateDataBinding({
                     type: "value",
                     source: "api",
-                    config,
-                  });
-                });
-              }}
-            />
-          )}
-
-          {/* Supabase Collection Editor */}
-          {displaySource === "supabase" && bindingType === "collection" && (
-            <SupabaseCollectionEditor
-              config={
-                binding?.source === "supabase"
-                  ? (binding.config as SupabaseCollectionConfig)
-                  : { table: "", columns: [], filters: [] }
-              }
-              onChange={(config: SupabaseCollectionConfig) => {
-                handleDataBindingChange(() => {
-                  updateDataBinding({
-                    type: "collection",
-                    source: "supabase",
-                    config,
-                  });
-                });
-              }}
-              onTablePropsUpdate={(props) => {
-                // Table 컴포넌트인 경우 props 동기화
-                if (element.type === "Table") {
-                  console.log("🔄 SupabaseCollectionEditor - Table props 업데이트:", props);
-                  updateProperties(props);
-                }
-              }}
-            />
-          )}
-
-          {/* Supabase Value Editor */}
-          {displaySource === "supabase" && bindingType === "value" && (
-            <SupabaseValueEditor
-              config={
-                binding?.source === "supabase"
-                  ? (binding.config as SupabaseValueConfig)
-                  : { table: "", column: "", filter: undefined }
-              }
-              onChange={(config: SupabaseValueConfig) => {
-                handleDataBindingChange(() => {
-                  updateDataBinding({
-                    type: "value",
-                    source: "supabase",
-                    config,
-                  });
-                });
-              }}
-            />
-          )}
-
-          {/* State Collection Editor */}
-          {displaySource === "state" && bindingType === "collection" && (
-            <StateBindingEditor
-              bindingType="collection"
-              config={
-                binding?.source === "state"
-                  ? (binding.config as StateCollectionConfig)
-                  : { storePath: "", selector: "" }
-              }
-              onChange={(config: StateCollectionConfig) => {
-                handleDataBindingChange(() => {
-                  updateDataBinding({
-                    type: "collection",
-                    source: "state",
-                    config,
-                  });
-                });
-              }}
-            />
-          )}
-
-          {/* State Value Editor */}
-          {displaySource === "state" && bindingType === "value" && (
-            <StateBindingEditor
-              bindingType="value"
-              config={
-                binding?.source === "state"
-                  ? (binding.config as StateValueConfig)
-                  : { storePath: "", transform: "" }
-              }
-              onChange={(config: StateValueConfig) => {
-                handleDataBindingChange(() => {
-                  updateDataBinding({
-                    type: "value",
-                    source: "state",
                     config,
                   });
                 });

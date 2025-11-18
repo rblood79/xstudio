@@ -8,7 +8,7 @@
       overflow: hidden;
       display: grid;
 
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 48px calc(100% - 48px - 24px) 24px;
       grid-template-columns: auto 1fr auto;
       grid-template-areas:
         "header header header"
@@ -362,7 +362,8 @@
       aside {
         z-index: 2;
         background-color: var(--builder-indicator-text);
-
+        
+       
         &.sidebar {
           grid-area: sidebar;
           height: 100%;
@@ -386,11 +387,14 @@
             padding: var(--spacing-sm);
           }
 
+          
+
           .panel-title {
             padding-left: var(--spacing-sm);
             border-bottom: 0px;
           }
         }
+        
         .header-actions {
           display: flex;
           flex-direction: row;
