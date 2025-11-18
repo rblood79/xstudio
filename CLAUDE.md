@@ -4118,4 +4118,639 @@ src/builder/
 
 ---
 
+## 🗄️ Dataset Component Architecture (Planned)
+
+**Status**: 📋 Planning Phase
+
+### Overview
+
+Dataset component architecture enables centralized data management and reuse across multiple UI components. Inspired by modern builders like Webflow CMS Collections, Framer Data Sources, and Retool Resources, this pattern allows a single data source to be shared by multiple components without duplication.
+
+### Current Architecture vs Dataset Pattern
+
+#### Current Direct Binding
+```tsx
+// Each component fetches data independently
+<ListBox
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: {
+      baseUrl: "MOCK_DATA",
+      endpoint: "/users",
+      dataMapping: { resultPath: "data", idKey: "id" }
+    }
+  }}
+/>
+
+<Select
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: {
+      baseUrl: "MOCK_DATA",
+      endpoint: "/users",  // Duplicate fetch!
+      dataMapping: { resultPath: "data", idKey: "id" }
+    }
+  }}
+/>
+```
+
+**Problems**:
+- Same data fetched multiple times
+- All components need updates when data source changes
+- No data synchronization between components
+
+#### Proposed Dataset Pattern
+```tsx
+// Single Dataset manages data
+<Dataset
+  id="users-dataset"
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: {
+      baseUrl: "MOCK_DATA",
+      endpoint: "/users",
+      dataMapping: { resultPath: "data", idKey: "id" }
+    }
+  }}
+/>
+
+// Multiple components reference the same Dataset
+<ListBox datasetId="users-dataset" />
+<Select datasetId="users-dataset" />
+<ComboBox datasetId="users-dataset" />
+```
+
+**Benefits**:
+- ✅ Data fetched once (performance improvement)
+- ✅ Centralized data management
+- ✅ Easy data source changes (update Dataset only)
+- ✅ Real-time data synchronization across components
+
+---
+
+### Real-World Builder Examples
+
+**Webflow CMS Collections**
+```
+Collection (Users) → Multiple List/Grid components
+├─ Collection List 1 (Sidebar)
+├─ Collection List 2 (Main Grid)
+└─ Dynamic Dropdown (Filter)
+```
+
+**Framer Data Sources**
+```
+Data Source (API/CMS) → Multiple Components
+├─ List Component
+├─ Gallery Component
+└─ Form Select Options
+```
+
+**Retool Resources**
+```
+Resource (REST API/DB Query) → Multiple UI Components
+├─ Table
+├─ Select
+└─ Chart
+```
+
+---
+
+### Implementation Plan
+
+#### Phase 1: Core Infrastructure ⏳
+**Goal**: Build Dataset component and store system
+
+**1.1 Dataset Component**
+
+**Files to Create**:
+- `src/builder/components/Dataset.tsx` - Dataset component
+- `src/builder/components/styles/Dataset.css` - Dataset styles
+
+```typescript
+export interface DatasetProps {
+  id: string;  // Unique ID for component reference
+  dataBinding: DataBinding;
+  refreshInterval?: number;  // Auto-refresh (optional)
+  cache?: boolean;  // Enable caching
+}
+
+export function Dataset({ id, dataBinding, refreshInterval, cache }: DatasetProps) {
+  const [data, setData] = useState<unknown[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Fetch data and store in DatasetStore
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const result = await fetchDataFromBinding(dataBinding);
+        setData(result);
+
+        // Save to DatasetStore for component access
+        useDatasetStore.getState().setDataset(id, {
+          data: result,
+          loading: false,
+          error: null,
+          lastUpdated: Date.now()
+        });
+      } catch (err) {
+        setError(err);
+        useDatasetStore.getState().setDataset(id, {
+          data: [],
+          loading: false,
+          error: err,
+          lastUpdated: Date.now()
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+
+    // Auto-refresh
+    if (refreshInterval) {
+      const interval = setInterval(fetchData, refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [id, dataBinding, refreshInterval]);
+
+  // Dataset doesn't render UI (data management only)
+  return null;
+}
+```
+
+**1.2 Dataset Store**
+
+**Files to Create**:
+- `src/builder/stores/dataset.ts` - Dataset Zustand store
+
+```typescript
+interface DatasetState {
+  datasets: Map<string, {
+    data: unknown[];
+    loading: boolean;
+    error: Error | null;
+    lastUpdated: number;
+  }>;
+  setDataset: (id: string, state: DatasetState) => void;
+  getDataset: (id: string) => DatasetState | undefined;
+  removeDataset: (id: string) => void;
+}
+
+export const useDatasetStore = create<DatasetState>((set, get) => ({
+  datasets: new Map(),
+
+  setDataset: (id, state) => {
+    set((prev) => {
+      const newDatasets = new Map(prev.datasets);
+      newDatasets.set(id, state);
+      return { datasets: newDatasets };
+    });
+  },
+
+  getDataset: (id) => {
+    return get().datasets.get(id);
+  },
+
+  removeDataset: (id) => {
+    set((prev) => {
+      const newDatasets = new Map(prev.datasets);
+      newDatasets.delete(id);
+      return { datasets: newDatasets };
+    });
+  }
+}));
+```
+
+**1.3 Type Definitions**
+
+**Files to Create**:
+- `src/types/dataset.types.ts` - Dataset type definitions
+
+```typescript
+export interface DatasetConfig {
+  id: string;
+  name?: string;
+  dataBinding: DataBinding;
+  refreshInterval?: number;
+  cache?: boolean;
+  transform?: (data: unknown[]) => unknown[];
+}
+
+export interface DatasetState {
+  data: unknown[];
+  loading: boolean;
+  error: Error | null;
+  lastUpdated: number;
+  usedBy?: string[];  // Component IDs using this dataset
+}
+```
+
+---
+
+#### Phase 2: Component Integration ⏳
+**Goal**: Add datasetId support to collection components
+
+**2.1 Update Collection Components**
+
+**Files to Modify**:
+- `src/builder/components/ListBox.tsx`
+- `src/builder/components/GridList.tsx`
+- `src/builder/components/Select.tsx`
+- `src/builder/components/ComboBox.tsx`
+- `src/builder/components/Menu.tsx`
+- `src/builder/components/TagGroup.tsx`
+- `src/builder/components/Tree.tsx`
+- `src/builder/components/Table.tsx`
+
+```typescript
+// Example: ListBox.tsx
+export interface ListBoxProps extends AriaListBoxProps {
+  datasetId?: string;  // NEW: Dataset reference
+  dataBinding?: DataBinding;  // Existing direct binding
+  // ... other props
+}
+
+export function ListBox({ datasetId, dataBinding, ...props }: ListBoxProps) {
+  // Dataset reference mode
+  const datasetState = useDatasetStore((state) =>
+    datasetId ? state.getDataset(datasetId) : undefined
+  );
+
+  // Direct binding mode (backward compatibility)
+  const directData = useCollectionData(dataBinding);
+
+  // Use Dataset if available, otherwise use direct binding
+  const items = datasetId ? datasetState?.data : directData;
+  const loading = datasetId ? datasetState?.loading : false;
+
+  return (
+    <RACListBox {...props} items={items}>
+      {loading && <div>Loading...</div>}
+      {props.children}
+    </RACListBox>
+  );
+}
+```
+
+**2.2 Backward Compatibility**
+
+All components maintain dual-mode support:
+- **New way**: `datasetId` prop (recommended)
+- **Old way**: `dataBinding` prop (still works)
+
+Components check for `datasetId` first, fallback to `dataBinding` if not present.
+
+---
+
+#### Phase 3: Inspector UI ⏳
+**Goal**: Dataset selection and management in Inspector
+
+**3.1 Dataset Editor**
+
+**Files to Create**:
+- `src/builder/inspector/properties/editors/DatasetEditor.tsx`
+
+```typescript
+export function DatasetEditor({ elementId, currentProps, onUpdate }: EditorProps) {
+  return (
+    <fieldset className="properties-group">
+      <legend>Dataset Configuration</legend>
+
+      <PropertyInput
+        label="Dataset ID"
+        value={String(currentProps.id || "")}
+        onChange={(value) => onUpdate({ id: value })}
+        placeholder="users-dataset"
+        icon={Database}
+      />
+
+      <PropertyInput
+        label="Name (Optional)"
+        value={String(currentProps.name || "")}
+        onChange={(value) => onUpdate({ name: value })}
+        placeholder="Users Data Source"
+      />
+
+      <PropertyInput
+        label="Refresh Interval (ms)"
+        value={String(currentProps.refreshInterval || "")}
+        onChange={(value) => onUpdate({ refreshInterval: Number(value) })}
+        placeholder="30000"
+        icon={RefreshCw}
+      />
+
+      <PropertySwitch
+        label="Enable Cache"
+        isSelected={Boolean(currentProps.cache)}
+        onChange={(checked) => onUpdate({ cache: checked })}
+      />
+    </fieldset>
+  );
+}
+```
+
+**3.2 Component Dataset Selection**
+
+**Files to Modify**:
+- `src/builder/inspector/properties/editors/ListBoxEditor.tsx`
+- (All collection component editors)
+
+```typescript
+export function ListBoxEditor({ element, currentProps, onUpdate }: EditorProps) {
+  const datasets = useDatasetStore((state) => Array.from(state.datasets.keys()));
+
+  return (
+    <fieldset>
+      <PropertySelect
+        label="Dataset"
+        value={currentProps.datasetId || ""}
+        options={[
+          { value: "", label: "None (Direct Binding)" },
+          ...datasets.map(id => ({ value: id, label: id }))
+        ]}
+        onChange={(datasetId) => onUpdate({ datasetId })}
+        icon={Database}
+      />
+
+      {/* Show dataBinding editor only if no dataset selected */}
+      {!currentProps.datasetId && (
+        <DataSourceSelector element={element} />
+      )}
+    </fieldset>
+  );
+}
+```
+
+**3.3 Dataset Panel**
+
+**Files to Create**:
+- `src/builder/panels/datasets/DatasetsPanel.tsx`
+
+```typescript
+export function DatasetsPanel({ isActive }: PanelProps) {
+  const datasets = useDatasetStore((state) => state.datasets);
+
+  if (!isActive) return null;
+
+  return (
+    <div className="inspector datasets-panel">
+      <PanelHeader
+        title="Datasets"
+        actions={
+          <Button onPress={handleAddDataset}>
+            <Plus />
+          </Button>
+        }
+      />
+
+      <div className="datasets-list">
+        {Array.from(datasets.entries()).map(([id, state]) => (
+          <div key={id} className="dataset-item">
+            <div className="dataset-info">
+              <span className="dataset-id">{id}</span>
+              <span className="dataset-status">
+                {state.loading ? "Loading..." : `${state.data.length} items`}
+              </span>
+            </div>
+            <div className="dataset-usage">
+              Used by: {state.usedBy?.length || 0} components
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+#### Phase 4: Component Factory Integration ⏳
+**Goal**: Add Dataset to component palette
+
+**4.1 Component Definition**
+
+**Files to Modify**:
+- `src/builder/factories/definitions/DataComponents.ts`
+
+```typescript
+{
+  type: "Dataset",
+  category: "Data",
+  label: "Dataset",
+  description: "Reusable data source for multiple components",
+  icon: Database,
+  inspector: {
+    groups: ["general"],
+    dataBindingType: "collection",
+  },
+  defaultProps: {
+    id: "",
+    cache: true,
+    refreshInterval: undefined,
+  },
+}
+```
+
+**4.2 Component Metadata**
+
+**Files to Modify**:
+- `src/builder/components/metadata.ts`
+
+```typescript
+{
+  Dataset: {
+    displayName: "Dataset",
+    description: "Centralized data source",
+    category: "Data",
+    inspector: {
+      groups: ["general"],
+      dataBindingType: "collection",
+    },
+    hasChildren: false,
+  },
+}
+```
+
+---
+
+#### Phase 5: Preview Integration ⏳
+**Goal**: Dataset support in Preview iframe
+
+**5.1 Dataset Message Protocol**
+
+**Files to Modify**:
+- `src/builder/preview/types/index.ts`
+
+```typescript
+export interface DatasetUpdateMessage {
+  type: "DATASET_UPDATE";
+  datasetId: string;
+  data: unknown[];
+  loading: boolean;
+  error: Error | null;
+}
+```
+
+**5.2 Dataset Sync to Preview**
+
+**Files to Modify**:
+- `src/builder/hooks/useIframeMessenger.ts`
+
+```typescript
+// Watch dataset changes and sync to Preview
+const datasets = useDatasetStore((state) => state.datasets);
+
+useEffect(() => {
+  if (!iframe?.contentWindow) return;
+
+  datasets.forEach((state, datasetId) => {
+    iframe.contentWindow.postMessage(
+      {
+        type: "DATASET_UPDATE",
+        datasetId,
+        data: state.data,
+        loading: state.loading,
+        error: state.error,
+      } as DatasetUpdateMessage,
+      "*"
+    );
+  });
+}, [datasets, iframe]);
+```
+
+**5.3 Preview Dataset Handling**
+
+**Files to Modify**:
+- `src/builder/preview/messageHandlers.ts`
+
+```typescript
+case "DATASET_UPDATE": {
+  const { datasetId, data, loading } = message;
+
+  // Update local dataset cache in Preview
+  previewDatasetCache.set(datasetId, { data, loading });
+
+  // Trigger re-render of components using this dataset
+  triggerDatasetUpdate(datasetId);
+  break;
+}
+```
+
+---
+
+#### Phase 6: Advanced Features (Optional) ⏳
+**Goal**: Enhanced dataset capabilities
+
+**6.1 Dataset Transform**
+- JSONPath filtering
+- Data sorting
+- Data mapping
+- Computed fields
+
+**6.2 Dataset Dependencies**
+- Track which components use each dataset
+- Auto-cleanup unused datasets
+- Dependency graph visualization
+
+**6.3 Dataset Caching**
+- Local storage cache
+- Memory cache with TTL
+- Cache invalidation strategies
+
+**6.4 Dataset Polling**
+- Auto-refresh with configurable intervals
+- Manual refresh trigger
+- Background update without loading state
+
+---
+
+### Layer Tree Structure
+
+```
+Page
+├─ Dataset (users-api)           // Data source (not visible in Preview)
+├─ Dataset (products-api)        // Multiple datasets supported
+├─ ListBox → users-api           // References dataset
+├─ Select → users-api            // Shares same data
+└─ Table → products-api          // Different dataset
+```
+
+---
+
+### File Structure
+
+```
+src/builder/
+├── components/
+│   ├── Dataset.tsx
+│   └── styles/
+│       └── Dataset.css
+│
+├── stores/
+│   └── dataset.ts               // Dataset Zustand store
+│
+├── panels/
+│   └── datasets/
+│       └── DatasetsPanel.tsx    // Dataset management UI
+│
+├── inspector/
+│   └── properties/
+│       └── editors/
+│           └── DatasetEditor.tsx
+│
+├── factories/
+│   └── definitions/
+│       └── DataComponents.ts    // Dataset component definition
+│
+└── types/
+    └── dataset.types.ts         // Dataset type definitions
+```
+
+---
+
+### Technical Considerations
+
+**Advantages**:
+- Data reuse (fetch once → share with multiple components)
+- Centralized management (single source of truth)
+- Real-time sync (Dataset update → all components update)
+- Performance (reduced API calls)
+
+**Challenges**:
+- Additional abstraction layer (increased complexity)
+- Dataset lifecycle management (when to cleanup)
+- Preview iframe synchronization (postMessage overhead)
+- Backward compatibility (maintain existing Direct Binding)
+
+**Backward Compatibility**:
+- Existing `dataBinding` prop still works
+- Components check for `datasetId` first, fallback to `dataBinding`
+- Gradual migration path (no breaking changes)
+
+---
+
+### Priority
+
+- **High Priority**: Phase 1-2 (Core infrastructure + Component integration)
+- **Medium Priority**: Phase 3-4 (Inspector UI + Factory integration)
+- **Low Priority**: Phase 5-6 (Preview integration + Advanced features)
+
+---
+
+### Related Patterns
+
+- **Collection Components**: ListBox, GridList, Select, ComboBox, Menu, TagGroup, Tree, Table
+- **Data Binding**: Current Direct Binding pattern (still supported)
+- **useCollectionData Hook**: Existing data fetching hook (reused by Dataset)
+
+---
+
 **Remember:** This project prioritizes accessibility (React Aria), maintainability (CSS variables, semantic classes), and type safety (strict TypeScript). AI suggestions should align with these values.

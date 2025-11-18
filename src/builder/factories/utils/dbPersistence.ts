@@ -13,13 +13,19 @@ async function validateReferences(
 ): Promise<boolean> {
   try {
     // 1. Page 존재 여부 확인
+    // maybeSingle()은 결과가 0개 또는 1개일 때 사용 (에러 없이 null 반환)
     const { data: page, error: pageError } = await supabase
       .from('pages')
       .select('id')
       .eq('id', pageId)
-      .single();
+      .maybeSingle();
 
-    if (pageError || !page) {
+    if (pageError) {
+      console.warn(`[dbPersistence] Error checking page ${pageId}:`, pageError);
+      return false;
+    }
+
+    if (!page) {
       console.warn(`[dbPersistence] Page ${pageId} not found in DB - skipping save`);
       return false;
     }
@@ -30,9 +36,14 @@ async function validateReferences(
         .from('elements')
         .select('id')
         .eq('id', parentId)
-        .single();
+        .maybeSingle();
 
-      if (parentError || !parentElement) {
+      if (parentError) {
+        console.warn(`[dbPersistence] Error checking parent element ${parentId}:`, parentError);
+        return false;
+      }
+
+      if (!parentElement) {
         console.warn(`[dbPersistence] Parent element ${parentId} not found in DB - skipping save`);
         return false;
       }
