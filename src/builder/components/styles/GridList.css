@@ -1,149 +1,538 @@
+/**
+ * Material Design 3 GridList Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/lists
+ */
+
 @import './collections.css';
 
 @layer components {
+  /* ========== Base GridList Styles ========== */
   .react-aria-GridList {
-    
-    .react-aria-GridListItem {
-      min-height: var(--text-base);
-      padding: var(--spacing) var(--spacing) var(--spacing) var(--spacing-md);
-      border-radius: var(--border-radius);
-      transform: translateZ(0);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-xs);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--border-radius);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    outline: none;
+    max-height: 300px;
+    overflow: auto;
+    gap: var(--spacing-2xs);
 
-      &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
-        outline-offset: -2px;
-      }
-
-      &[data-pressed] {
-        background: var(--gray-100);
-      }
-
-      &[data-selected] {
-        --focus-ring-color: var(--highlight-foreground);
-
-        &[data-focus-visible] {
-          outline-color: var(--highlight-foreground);
-          outline-offset: -4px;
-        }
-
-        .react-aria-Button {
-          color: var(--highlight-foreground);
-          --highlight-hover: rgb(255 255 255 / 0.1);
-          --highlight-pressed: rgb(255 255 255 / 0.2);
-        }
-      }
-  
-      .react-aria-Button:not([slot]) {
-        margin-left: auto;
-      }
-  
-      .react-aria-Button {
-        background: transparent;
-        border: none;
-        font-size: var(--text-sm);
-        line-height: var(--text-sm--line-height);
-        padding: var(--spacing) var(--spacing-md);
-        transition: background 200ms;
-  
-        &[data-hovered] {
-          background: var(--highlight-hover-overlay);
-        }
-  
-        &[data-pressed] {
-          background: var(--highlight-pressed-overlay);
-          box-shadow: none;
-        }
-      }
+    &[data-focus-visible] {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
     }
-  
-    /* join selected items if :has selector is supported */
-    @supports selector(:has(.foo)) {
-      gap: 0;
-  
-      .react-aria-GridListItem[data-selected]:has(+ [data-selected]),
-      .react-aria-GridListItem[data-selected]:has(+ .react-aria-DropIndicator + [data-selected]) {
-        border-end-start-radius: 0;
-        border-end-end-radius: 0;
-      }
-  
-      .react-aria-GridListItem[data-selected] + [data-selected],
-      .react-aria-GridListItem[data-selected] + .react-aria-DropIndicator + [data-selected] {
-        border-start-start-radius: 0;
-        border-start-end-radius: 0;
-      }
-    }
-  
-    :where(.react-aria-GridListItem) .react-aria-Checkbox {
-      --selected-color: var(--highlight-foreground);
-      --selected-color-pressed: var(--highlight-foreground-pressed);
-      --checkmark-color: var(--highlight-background);
-      --background-color: var(--highlight-background);
-    }
-  }
-  
-  .react-aria-GridListItem[data-href] {
-    cursor: pointer;
-  }
-  
-  .react-aria-GridList {
+
     &[data-empty] {
       align-items: center;
       justify-content: center;
       font-style: italic;
+      color: var(--on-surface-variant);
     }
   }
-  
+
+  /* ========== GridListItem Styles ========== */
   .react-aria-GridListItem {
-    &[data-allows-dragging] {
-      padding-left: 4px;
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: var(--spacing) var(--spacing-md);
+    border-radius: var(--radius-xs);
+    color: var(--on-surface);
+    cursor: pointer;
+    outline: none;
+    transition: all 150ms ease;
+    transform: translateZ(0);
+    forced-color-adjust: none;
+
+    /* Hover State */
+    &[data-hovered] {
+      background: var(--surface-container-high);
     }
-  
+
+    /* Pressed State */
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container));
+    }
+
+    /* Focus Visible State */
+    &[data-focus-visible] {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+
+    /* Selected State */
+    &[data-selected] {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-weight: 500;
+
+      &[data-focus-visible] {
+        outline-color: var(--primary);
+        outline-offset: -4px;
+      }
+
+      .react-aria-Button {
+        color: var(--on-primary-container);
+      }
+    }
+
+    /* Disabled State */
+    &[data-disabled] {
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      cursor: not-allowed;
+      opacity: 0.38;
+    }
+
+    /* Link items */
+    &[data-href] {
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-touch-callout: none;
+    }
+
+    /* Dragging State */
     &[data-dragging] {
       opacity: 0.6;
     }
-  
+
+    /* Allows Dragging */
+    &[data-allows-dragging] {
+      padding-left: 4px;
+    }
+
+    /* Button Styles within GridListItem */
+    .react-aria-Button:not([slot]) {
+      margin-left: auto;
+    }
+
+    .react-aria-Button {
+      background: transparent;
+      border: none;
+      font-size: var(--text-sm);
+      line-height: var(--text-sm--line-height);
+      padding: var(--spacing) var(--spacing-md);
+      transition: background 200ms;
+      forced-color-adjust: none;
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        box-shadow: none;
+      }
+    }
+
+    /* Drag Handle */
     [slot=drag] {
       all: unset;
       width: 15px;
       text-align: center;
-  
+      color: var(--on-surface-variant);
+      cursor: grab;
+
       &[data-focus-visible] {
         border-radius: 4px;
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
+      }
+
+      &:active {
+        cursor: grabbing;
       }
     }
   }
-  
+
+  /* ========== Selection Joining (Adjacent Selected Items) ========== */
+  /* Join selected items if :has selector is supported */
+  @supports selector(:has(.foo)) {
+    .react-aria-GridList {
+      gap: 0;
+    }
+
+    .react-aria-GridListItem[data-selected]:has(+ [data-selected]),
+    .react-aria-GridListItem[data-selected]:has(+ .react-aria-DropIndicator + [data-selected]) {
+      border-end-start-radius: 0;
+      border-end-end-radius: 0;
+    }
+
+    .react-aria-GridListItem[data-selected] + [data-selected],
+    .react-aria-GridListItem[data-selected] + .react-aria-DropIndicator + [data-selected] {
+      border-start-start-radius: 0;
+      border-start-end-radius: 0;
+    }
+  }
+
+  /* ========== Checkbox Integration ========== */
+  :where(.react-aria-GridListItem) .react-aria-Checkbox {
+    --selected-color: var(--primary);
+    --selected-color-pressed: var(--primary);
+    --checkmark-color: var(--on-primary);
+    --background-color: var(--primary-container);
+  }
+
+  .react-aria-GridListItem[data-selected] .react-aria-Checkbox {
+    --selected-color: var(--on-primary-container);
+    --checkmark-color: var(--primary-container);
+  }
+
+  /* ========== Drag and Drop Styles ========== */
   .react-aria-DropIndicator {
     &[data-drop-target] {
-      outline: 1px solid var(--highlight-background);
+      outline: 1px solid var(--primary);
     }
-  
+
     @supports not selector(:has(.foo)) {
       /* Undo gap in browsers that don't support :has */
       margin-bottom: -2px;
     }
   }
-  
+
   .react-aria-GridList[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--primary);
     outline-offset: -1px;
-    background: var(--highlight-overlay);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
-  
+
   .react-aria-GridListItem[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
-    background:var(--highlight-overlay);
+    outline: 2px solid var(--primary);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
   }
-  
-  .react-aria-DropIndicator {
-    &[data-drop-target] {
-      outline: 1px solid var(--highlight-background);
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-GridList.primary {
+    border-color: var(--primary);
+
+    &[data-focus-visible] {
+      outline-color: var(--primary);
     }
-  
-    @supports not selector(:has(.foo)) {
-      /* Undo gap in browsers that don't support :has */
-      margin-bottom: -2px;
+
+    .react-aria-GridListItem {
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+      outline-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--primary);
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-GridList.secondary {
+    border-color: var(--secondary);
+
+    &[data-focus-visible] {
+      outline-color: var(--secondary);
+    }
+
+    .react-aria-GridListItem {
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
+      }
+
+      &[data-selected] {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+
+        &[data-focus-visible] {
+          outline-color: var(--secondary);
+        }
+
+        .react-aria-Checkbox {
+          --selected-color: var(--on-secondary-container);
+          --checkmark-color: var(--secondary-container);
+        }
+      }
+    }
+
+    :where(.react-aria-GridListItem) .react-aria-Checkbox {
+      --selected-color: var(--secondary);
+      --background-color: var(--secondary-container);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--secondary);
+      background: color-mix(in srgb, var(--secondary) 8%, transparent);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+      outline-color: var(--secondary);
+      background: color-mix(in srgb, var(--secondary) 12%, transparent);
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--secondary);
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-GridList.tertiary {
+    border-color: var(--tertiary);
+
+    &[data-focus-visible] {
+      outline-color: var(--tertiary);
+    }
+
+    .react-aria-GridListItem {
+      &[data-focus-visible] {
+        outline-color: var(--tertiary);
+      }
+
+      &[data-selected] {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+
+        &[data-focus-visible] {
+          outline-color: var(--tertiary);
+        }
+
+        .react-aria-Checkbox {
+          --selected-color: var(--on-tertiary-container);
+          --checkmark-color: var(--tertiary-container);
+        }
+      }
+    }
+
+    :where(.react-aria-GridListItem) .react-aria-Checkbox {
+      --selected-color: var(--tertiary);
+      --background-color: var(--tertiary-container);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--tertiary);
+      background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+      outline-color: var(--tertiary);
+      background: color-mix(in srgb, var(--tertiary) 12%, transparent);
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--tertiary);
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-GridList.error {
+    border-color: var(--error);
+
+    &[data-focus-visible] {
+      outline-color: var(--error);
+    }
+
+    .react-aria-GridListItem {
+      &[data-focus-visible] {
+        outline-color: var(--error);
+      }
+
+      &[data-selected] {
+        background: var(--error-container);
+        color: var(--on-error-container);
+
+        &[data-focus-visible] {
+          outline-color: var(--error);
+        }
+
+        .react-aria-Checkbox {
+          --selected-color: var(--on-error-container);
+          --checkmark-color: var(--error-container);
+        }
+      }
+    }
+
+    :where(.react-aria-GridListItem) .react-aria-Checkbox {
+      --selected-color: var(--error);
+      --background-color: var(--error-container);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--error);
+      background: color-mix(in srgb, var(--error) 8%, transparent);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+      outline-color: var(--error);
+      background: color-mix(in srgb, var(--error) 12%, transparent);
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--error);
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-GridList.filled {
+    background: var(--surface-container-highest);
+    border-color: transparent;
+
+    .react-aria-GridListItem {
+      &[data-hovered] {
+        background: var(--surface-container-high);
+      }
+
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-GridList.sm {
+    padding: var(--spacing-2xs);
+    gap: var(--spacing-3xs);
+
+    .react-aria-GridListItem {
+      padding: var(--spacing-sm) var(--spacing);
+      min-height: 32px;
+      font-size: var(--text-xs);
+
+      .react-aria-Button {
+        padding: var(--spacing-sm) var(--spacing);
+        font-size: var(--text-xs);
+      }
+
+      [slot=drag] {
+        width: 12px;
+      }
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-GridList.md {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-2xs);
+
+    .react-aria-GridListItem {
+      padding: var(--spacing) var(--spacing-md);
+      min-height: 40px;
+      font-size: var(--text-sm);
+
+      .react-aria-Button {
+        padding: var(--spacing) var(--spacing-md);
+        font-size: var(--text-sm);
+      }
+
+      [slot=drag] {
+        width: 15px;
+      }
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-GridList.lg {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+
+    .react-aria-GridListItem {
+      padding: var(--spacing-md) var(--spacing-lg);
+      min-height: 48px;
+      font-size: var(--text-base);
+
+      .react-aria-Button {
+        padding: var(--spacing-md) var(--spacing-lg);
+        font-size: var(--text-base);
+      }
+
+      [slot=drag] {
+        width: 18px;
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-GridListItem {
+      &[data-pressed] {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+
+      .react-aria-Button {
+        &[data-hovered] {
+          background: rgba(0, 0, 0, 0.08);
+        }
+
+        &[data-pressed] {
+          background: rgba(0, 0, 0, 0.12);
+        }
+      }
+    }
+
+    .react-aria-GridList[data-drop-target] {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .react-aria-GridListItem[data-drop-target] {
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    [data-theme="dark"] .react-aria-GridListItem {
+      &[data-pressed] {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      .react-aria-Button {
+        &[data-hovered] {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        &[data-pressed] {
+          background: rgba(255, 255, 255, 0.12);
+        }
+      }
+    }
+
+    [data-theme="dark"] .react-aria-GridList[data-drop-target] {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-theme="dark"] .react-aria-GridListItem[data-drop-target] {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-GridList {
+      forced-color-adjust: auto;
     }
   }
 }
