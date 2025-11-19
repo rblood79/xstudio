@@ -1,7 +1,16 @@
+/**
+ * Material Design 3 Badge Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, surface
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components
+ */
+
 @import './base.css';
 
 @layer components {
-  /* M3 Base Badge Styles */
+  /* ========== Base Badge Styles ========== */
   .react-aria-Badge {
     display: inline-flex;
     align-items: center;
@@ -16,58 +25,41 @@
     border: 1px solid transparent;
   }
 
-  /* ===== M3 Primary Badge ===== */
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
   .react-aria-Badge.primary {
     background: var(--primary);
     color: var(--on-primary);
   }
 
-  /* ===== M3 Secondary Badge ===== */
+  /* ===== Secondary Variant ===== */
   .react-aria-Badge.secondary {
     background: var(--secondary);
     color: var(--on-secondary);
   }
 
-  /* ===== M3 Tertiary Badge ===== */
+  /* ===== Tertiary Variant ===== */
   .react-aria-Badge.tertiary {
     background: var(--tertiary);
     color: var(--on-tertiary);
   }
 
-  /* ===== M3 Error Badge ===== */
+  /* ===== Error Variant ===== */
   .react-aria-Badge.error {
     background: var(--error);
     color: var(--on-error);
   }
 
-  /* ===== M3 Surface Badge ===== */
+  /* ===== Surface Variant ===== */
   .react-aria-Badge.surface {
     background: var(--surface-container-highest);
     color: var(--on-surface);
   }
 
-  /* ===== M3 Outline Badge ===== */
-  .react-aria-Badge.outline {
-    background: transparent;
-    border-color: var(--outline);
-    color: var(--on-surface);
-  }
+  /* ========== Size Variants ========== */
 
-  /* ===== M3 Ghost Badge ===== */
-  .react-aria-Badge.ghost {
-    background: var(--surface-container-low);
-    color: var(--on-surface);
-  }
-
-  /* Size: XS */
-  .react-aria-Badge.xs {
-    font-size: var(--text-xs);
-    padding: 2px var(--spacing-sm);
-    min-width: 16px;
-    height: 16px;
-  }
-
-  /* Size: SM (default) */
+  /* ===== Small Size (Default) ===== */
   .react-aria-Badge.sm {
     font-size: var(--text-sm);
     padding: 2px var(--spacing-md);
@@ -75,7 +67,7 @@
     height: 20px;
   }
 
-  /* Size: MD */
+  /* ===== Medium Size ===== */
   .react-aria-Badge.md {
     font-size: var(--text-base);
     padding: var(--spacing-sm) var(--spacing-md);
@@ -83,7 +75,7 @@
     height: 24px;
   }
 
-  /* Size: LG */
+  /* ===== Large Size ===== */
   .react-aria-Badge.lg {
     font-size: var(--text-lg);
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -91,43 +83,26 @@
     height: 28px;
   }
 
-  /* Size: XL */
-  .react-aria-Badge.xl {
-    font-size: var(--text-xl);
-    padding: var(--spacing) var(--spacing-lg);
-    min-width: 32px;
-    height: 32px;
-  }
-
-  /* Dot Badge (indicator only, no text) */
+  /* ========== Dot Badge (indicator only, no text) ========== */
   .react-aria-Badge.dot {
     padding: 0;
-    width: 8px;
-    height: 8px;
-    min-width: 8px;
 
     &.sm {
+      width: 8px;
+      height: 8px;
+      min-width: 8px;
+    }
+
+    &.md {
       width: 10px;
       height: 10px;
       min-width: 10px;
     }
 
-    &.md {
+    &.lg {
       width: 12px;
       height: 12px;
       min-width: 12px;
-    }
-
-    &.lg {
-      width: 14px;
-      height: 14px;
-      min-width: 14px;
-    }
-
-    &.xl {
-      width: 16px;
-      height: 16px;
-      min-width: 16px;
     }
   }
 
