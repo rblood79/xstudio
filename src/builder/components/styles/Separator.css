@@ -1,11 +1,16 @@
 /**
- * Separator Component Styles
+ * Material Design 3 Separator Styles
+ *
+ * M3 Variants: solid, dashed, dotted, primary, secondary, surface
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/divider
  */
 
 @layer components {
   .react-aria-Separator {
     border: none;
-    background-color: var(--border-color);
+    background-color: var(--outline-variant);
     flex-shrink: 0;
   }
 
@@ -72,25 +77,25 @@
   /* Dashed variant */
   .react-aria-Separator.dashed {
     background-color: transparent;
-    border-top: 1px dashed var(--border-color);
+    border-top: 1px dashed var(--outline-variant);
   }
 
   .react-aria-Separator.vertical.dashed,
   .react-aria-Separator[aria-orientation='vertical'].dashed {
     border-top: none;
-    border-left: 1px dashed var(--border-color);
+    border-left: 1px dashed var(--outline-variant);
   }
 
   /* Dotted variant */
   .react-aria-Separator.dotted {
     background-color: transparent;
-    border-top: 1px dotted var(--border-color);
+    border-top: 1px dotted var(--outline-variant);
   }
 
   .react-aria-Separator.vertical.dotted,
   .react-aria-Separator[aria-orientation='vertical'].dotted {
     border-top: none;
-    border-left: 1px dotted var(--border-color);
+    border-left: 1px dotted var(--outline-variant);
   }
 
   /* Large dashed/dotted thickness */

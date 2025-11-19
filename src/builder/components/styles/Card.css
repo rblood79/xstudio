@@ -15,7 +15,7 @@
     transition: all 150ms ease;
 
     &[data-focused] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
 
@@ -58,13 +58,13 @@
       border-color: var(--primary);
 
       &[data-hovered] {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
+        background: var(--action-primary-bg-hover);
+        border-color: var(--action-primary-bg-hover);
       }
 
       &[data-pressed] {
-        background: var(--primary-pressed);
-        border-color: var(--primary-pressed);
+        background: var(--action-primary-bg-pressed);
+        border-color: var(--action-primary-bg-pressed);
       }
     }
 
@@ -75,13 +75,13 @@
       border-color: var(--secondary);
 
       &[data-hovered] {
-        background: var(--secondary-hover);
-        border-color: var(--secondary-hover);
+        background: var(--action-secondary-bg-hover);
+        border-color: var(--action-secondary-bg-hover);
       }
 
       &[data-pressed] {
-        background: var(--secondary-pressed);
-        border-color: var(--secondary-pressed);
+        background: var(--action-secondary-bg-pressed);
+        border-color: var(--action-secondary-bg-pressed);
       }
     }
 
