@@ -1,11 +1,133 @@
+/**
+ * Material Design 3 Calendar Styles
+ *
+ * M3 Variants: primary, secondary, tertiary
+ * Sizes: sm, md, lg
+ *
+ * Common styles: CalendarCommon.css
+ * Reference: https://m3.material.io/components
+ */
+
 @layer components {
-  /* Calendar-specific styles (공통 스타일은 CalendarCommon.css) */
+  /* ========== Base Calendar Styles ========== */
   .react-aria-Calendar {
     .react-aria-CalendarCell {
       &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
         outline-offset: 2px;
       }
+    }
+  }
+
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-Calendar.primary {
+    .react-aria-CalendarCell {
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--primary);
+      }
+    }
+  }
+
+  /* ===== Secondary Variant ===== */
+  .react-aria-Calendar.secondary {
+    .react-aria-CalendarCell {
+      &[data-selected] {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
+      }
+    }
+  }
+
+  /* ===== Tertiary Variant ===== */
+  .react-aria-Calendar.tertiary {
+    .react-aria-CalendarCell {
+      &[data-selected] {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--tertiary);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Calendar.sm {
+    header .react-aria-Heading {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      width: var(--text-2xl);
+      height: var(--text-2xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: 1.5rem;
+      line-height: 1.5rem;
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Calendar.md {
+    header .react-aria-Heading {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      width: var(--text-3xl);
+      height: var(--text-3xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: 2rem;
+      line-height: 2rem;
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Calendar.lg {
+    header .react-aria-Heading {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      width: var(--text-4xl);
+      height: var(--text-4xl);
+    }
+
+    .react-aria-CalendarGridHeader th {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
+      width: 2.5rem;
+      line-height: 2.5rem;
+      font-size: var(--text-base);
     }
   }
 }
