@@ -1,3 +1,10 @@
+/**
+ * NumberField Component - Material Design 3
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ */
+
 import {
   Button,
   FieldError,
@@ -7,9 +14,11 @@ import {
   NumberField as AriaNumberField,
   NumberFieldProps as AriaNumberFieldProps,
   Text,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
-
+import { tv } from 'tailwind-variants';
+import type { NumberFieldVariant, ComponentSize } from '../types/componentVariants';
 import { Plus, Minus } from 'lucide-react';
 
 import './styles/NumberField.css';
@@ -59,7 +68,32 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
    * @default true
    */
   showGroupSeparator?: boolean;
+  // M3 props
+  variant?: NumberFieldVariant;
+  size?: ComponentSize;
 }
+
+const numberFieldStyles = tv({
+  base: 'react-aria-NumberField',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 export function NumberField({
   label,
@@ -71,6 +105,8 @@ export function NumberField({
   notation = 'standard',
   decimals,
   showGroupSeparator = true,
+  variant = 'primary',
+  size = 'md',
   ...props
 }: NumberFieldProps) {
   // NumberFormatter 옵션 생성
@@ -101,6 +137,17 @@ export function NumberField({
   return (
     <AriaNumberField
       {...props}
+      className={composeRenderProps(
+        props.className,
+        (className, renderProps) => {
+          return numberFieldStyles({
+            ...renderProps,
+            variant,
+            size,
+            className,
+          });
+        }
+      )}
       formatOptions={formatOptions}
     >
       {label && <Label>{label}</Label>}

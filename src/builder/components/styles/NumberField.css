@@ -1,22 +1,47 @@
+/**
+ * Material Design 3 NumberField Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/text-fields
+ */
+
 @layer components {
-  
+  /* ========== Base NumberField Styles ========== */
   .react-aria-NumberField {
-    color: var(--text-color);
-  
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    /* ===== Group Container ===== */
     .react-aria-Group {
       display: flex;
       width: fit-content;
       border-radius: var(--border-radius);
-  
+      transition: all 200ms ease;
+
+      /* Group Focus State */
       &[data-focus-within] {
-        outline: 1px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
+        outline-offset: -1px;
+
         .react-aria-Input,
         .react-aria-Button {
           outline: none;
         }
       }
     }
-  
+
+    /* ===== Increment/Decrement Buttons ===== */
     .react-aria-Button {
       font-size: var(--text-sm);
       width: var(--text-3xl);
@@ -24,66 +49,410 @@
       display: flex;
       align-items: center;
       justify-content: center;
-  
+      background: var(--surface-container-high);
+      border: 1px solid var(--outline-variant);
+      color: var(--on-surface);
+      cursor: pointer;
+      transition: all 200ms ease;
+
+      /* Decrement button (left) */
       &[slot=decrement] {
         border-start-end-radius: 0;
         border-end-end-radius: 0;
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
       }
-  
+
+      /* Increment button (right) */
       &[slot=increment] {
         border-start-start-radius: 0;
         border-end-start-radius: 0;
+        border-top-right-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
+      }
+
+      /* Hover State */
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--surface-container-highest);
+        border-color: var(--outline);
+      }
+
+      /* Pressed State */
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--surface-container-high) 88%, black);
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
       }
     }
-  
+
+    /* ===== Input Field ===== */
     .react-aria-Input {
-      background: var(--field-background);
-      border: 1px solid var(--border-color);
+      background: var(--surface-container);
+      border: 1px solid var(--outline-variant);
       border-radius: 0;
-      color: var(--field-text-color);
+      color: var(--on-surface);
       margin: 0 -1px;
       z-index: 1;
       font-size: var(--text-sm);
       padding: var(--spacing) var(--spacing-md);
       outline: none;
-      width: var(--text-9xl);
+      width: 120px;
       flex: 1;
+      text-align: center;
+      transition: all 200ms ease;
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
     }
-  
+
+    /* ===== Invalid State ===== */
     &[data-invalid] {
+      .react-aria-Group {
+        outline-color: var(--error);
+      }
+
       .react-aria-Input,
       .react-aria-Button {
-        border-color: var(--invalid-color);
+        border-color: var(--error);
       }
-  
+
       &:focus-within {
         .react-aria-Input,
         .react-aria-Button {
-          border-color: var(--focus-ring-color);
+          border-color: var(--error);
         }
       }
     }
-  
+
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+    }
+
+    /* ===== Field Error ===== */
     .react-aria-FieldError {
       font-size: var(--text-xs);
-      color: var(--invalid-color);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
     }
-  
-    [slot=description] {
-      font-size: var(--text-xs);
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-NumberField.primary {
+    .react-aria-Label {
+      color: var(--primary);
     }
-  
-    .react-aria-Button {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+
+    .react-aria-Group {
+      &[data-focus-within] {
+        outline-color: var(--primary);
       }
     }
-  
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+        color: var(--on-primary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--primary-container) 88%, black);
+      }
+    }
+
     .react-aria-Input {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+      border-color: var(--primary);
+
+      &[data-focus-within] {
+        background: var(--primary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-NumberField.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
+    }
+
+    .react-aria-Group {
+      &[data-focus-within] {
+        outline-color: var(--secondary);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+        color: var(--on-secondary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--secondary-container) 88%, black);
+      }
+    }
+
+    .react-aria-Input {
+      border-color: var(--secondary);
+
+      &[data-focus-within] {
+        background: var(--secondary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-NumberField.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
+    }
+
+    .react-aria-Group {
+      &[data-focus-within] {
+        outline-color: var(--tertiary);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+        color: var(--on-tertiary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--tertiary-container) 88%, black);
+      }
+    }
+
+    .react-aria-Input {
+      border-color: var(--tertiary);
+
+      &[data-focus-within] {
+        background: var(--tertiary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-NumberField.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-Group {
+      &[data-focus-within] {
+        outline-color: var(--error);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+        color: var(--on-error-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--error-container) 88%, black);
+      }
+    }
+
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focus-within] {
+        background: var(--error-container);
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-NumberField.filled {
+    .react-aria-Group {
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-focus-within] {
+        outline: none;
+      }
+    }
+
+    .react-aria-Button {
+      background: var(--surface-container-highest);
+      border: none;
+      border-bottom: 2px solid var(--outline-variant);
+
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+    }
+
+    .react-aria-Input {
+      background: var(--surface-container-highest);
+      border: none;
+      border-bottom: 2px solid var(--outline-variant);
+
+      &[data-focus-within] {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--primary);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-NumberField.sm {
+    .react-aria-Label {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      font-size: var(--text-xs);
+      width: 28px;
+      padding: var(--spacing-sm);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+      width: 80px;
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-NumberField.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      font-size: var(--text-sm);
+      width: 32px;
+      padding: var(--spacing);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+      width: 120px;
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-NumberField.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      font-size: var(--text-base);
+      width: 40px;
+      padding: var(--spacing-md);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+      width: 160px;
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-NumberField.primary[data-invalid],
+  .react-aria-NumberField.secondary[data-invalid],
+  .react-aria-NumberField.tertiary[data-invalid],
+  .react-aria-NumberField.filled[data-invalid] {
+    .react-aria-Group {
+      outline-color: var(--error);
+    }
+
+    .react-aria-Input,
+    .react-aria-Button {
+      border-color: var(--error);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-NumberField {
+      .react-aria-Button {
+        &[data-disabled] {
+          background: rgba(0, 0, 0, 0.04);
+          border-color: rgba(0, 0, 0, 0.12);
+          color: rgba(0, 0, 0, 0.38);
+        }
+
+        &[data-pressed]:not([data-disabled]) {
+          opacity: 0.88;
+        }
+      }
+
+      .react-aria-Input {
+        &[data-disabled] {
+          background: rgba(0, 0, 0, 0.04);
+          border-color: rgba(0, 0, 0, 0.12);
+          color: rgba(0, 0, 0, 0.38);
+        }
+      }
+    }
+
+    [data-theme="dark"] .react-aria-NumberField {
+      .react-aria-Button {
+        &[data-disabled] {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.12);
+          color: rgba(255, 255, 255, 0.38);
+        }
+      }
+
+      .react-aria-Input {
+        &[data-disabled] {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.12);
+          color: rgba(255, 255, 255, 0.38);
+        }
       }
     }
   }
