@@ -1,38 +1,44 @@
 /**
- * DatePicker 및 DateRangePicker 공통 스타일
+ * Material Design 3 DatePicker Common Styles
+ *
+ * Shared styles for DatePicker and DateRangePicker components
  * - Popup container layout
  * - Time section styles
  * - Time field styles
+ *
+ * Reference: https://m3.material.io/components
  */
 
 @layer components {
-  /* Popup container - 공통 레이아웃 */
+  /* ========== Popup Container Layout ========== */
   .date-picker-popup {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-4);
   }
 
-  /* Time section - 공통 구분선 및 패딩 */
+  /* ========== Time Section ========== */
   .date-picker-time-section {
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--outline-variant);
     padding-top: var(--spacing-4);
   }
 
-  /* Time field wrapper - 공통 레이아웃 */
+  /* ========== Time Field Wrapper ========== */
   .date-picker-time-field-wrapper {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
   }
 
-  /* Time field label - 공통 타이포그래피 */
+  /* ========== Time Field Label ========== */
   .date-picker-time-field-label {
     font-size: var(--text-sm);
     font-weight: 500;
+    color: var(--on-surface);
   }
 
-  /* Time fields container (DateRangePicker용 - start/end 나란히) */
+  /* ========== Time Fields Container (DateRangePicker) ========== */
+  /* Start/end time fields side by side */
   .date-picker-time-fields-container {
     display: flex;
     gap: var(--spacing-4);

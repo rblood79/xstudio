@@ -1,8 +1,17 @@
-/* Component imports removed - managed by index.css */
+/**
+ * Material Design 3 DatePicker Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Common styles: DatePickerCommon.css
+ * Reference: https://m3.material.io/components
+ */
 
 @layer components {
+  /* ========== Base DatePicker Styles ========== */
   .react-aria-DatePicker {
-    color: var(--text-color);
+    color: var(--on-surface);
 
     .react-aria-Group {
       display: flex;
@@ -10,38 +19,33 @@
       align-items: center;
     }
 
-    .react-aria-Button {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
-      forced-color-adjust: none;
-      border: none;
-      margin-left: calc(var(--text-2xl) * -1);
-      width: var(--text-xl);
-      height: var(--text-xl);
-      padding: 0;
-      cursor: default;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &[data-pressed] {
-        box-shadow: none;
-        background: var(--highlight-background);
-      }
-
-      &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
-        outline-offset: 2px;
-      }
-    }
-
     .react-aria-DateInput {
       padding: 4px 2.5rem 4px 8px;
       font-size: var(--text-sm);
     }
+
+    .react-aria-FieldError {
+      font-size: 12px;
+      color: var(--error);
+    }
+
+    [slot="description"] {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    &[data-invalid] {
+      .react-aria-DateInput:after {
+        content: "🚫" / "";
+        content: "🚫";
+        alt: " ";
+        flex: 1;
+        text-align: end;
+      }
+    }
   }
 
+  /* ========== Popover Styles ========== */
   .react-aria-Popover[data-trigger="DatePicker"] {
     max-width: unset;
     contain: layout style paint;
@@ -56,29 +60,240 @@
     }
   }
 
-  .react-aria-DatePicker {
-    &[data-invalid] {
-      .react-aria-DateInput:after {
-        content: "🚫" / "";
-        content: "🚫";
-        alt: " ";
-        flex: 1;
-        text-align: end;
+  /* ========== Time Field ========== */
+  .react-aria-DatePicker-time-field {
+    width: 100%;
+  }
+
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-DatePicker.primary {
+    .react-aria-Button {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      forced-color-adjust: none;
+      border: none;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      cursor: default;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: color-mix(in srgb, var(--primary) 12%, var(--primary-container));
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
       }
     }
+  }
 
-    .react-aria-FieldError {
-      font-size: 12px;
-      color: var(--invalid-color);
+  /* ===== Secondary Variant ===== */
+  .react-aria-DatePicker.secondary {
+    .react-aria-Button {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+      forced-color-adjust: none;
+      border: none;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      cursor: default;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: color-mix(in srgb, var(--secondary) 12%, var(--secondary-container));
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--secondary);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ===== Tertiary Variant ===== */
+  .react-aria-DatePicker.tertiary {
+    .react-aria-Button {
+      background: var(--tertiary-container);
+      color: var(--on-tertiary-container);
+      forced-color-adjust: none;
+      border: none;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      cursor: default;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: color-mix(in srgb, var(--tertiary) 12%, var(--tertiary-container));
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--tertiary);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ===== Error Variant ===== */
+  .react-aria-DatePicker.error {
+    .react-aria-Button {
+      background: var(--error-container);
+      color: var(--on-error-container);
+      forced-color-adjust: none;
+      border: none;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      cursor: default;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: color-mix(in srgb, var(--error) 12%, var(--error-container));
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--error);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ===== Filled Variant ===== */
+  .react-aria-DatePicker.filled {
+    .react-aria-Button {
+      background: var(--surface-container-highest);
+      color: var(--on-surface);
+      forced-color-adjust: none;
+      border: none;
+      margin-left: calc(var(--text-2xl) * -1);
+      width: var(--text-xl);
+      height: var(--text-xl);
+      padding: 0;
+      cursor: default;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &[data-pressed] {
+        box-shadow: none;
+        background: var(--surface-container-high);
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid var(--on-surface);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-DatePicker.sm {
+    .react-aria-DateInput {
+      padding: 2px 2rem 2px 6px;
+      font-size: var(--text-xs);
     }
 
+    .react-aria-Button {
+      width: var(--text-base);
+      height: var(--text-base);
+      margin-left: calc(var(--text-xl) * -1);
+    }
+
+    .react-aria-FieldError,
+    [slot="description"] {
+      font-size: var(--text-2xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-DatePicker.md {
+    .react-aria-DateInput {
+      padding: 4px 2.5rem 4px 8px;
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      width: var(--text-xl);
+      height: var(--text-xl);
+      margin-left: calc(var(--text-2xl) * -1);
+    }
+
+    .react-aria-FieldError,
     [slot="description"] {
       font-size: 12px;
     }
   }
 
-  /* Component-specific styles (공통 스타일은 DatePickerCommon.css에서 import) */
-  .react-aria-DatePicker-time-field {
-    width: 100%;
+  /* ===== Large Size ===== */
+  .react-aria-DatePicker.lg {
+    .react-aria-DateInput {
+      padding: 6px 3rem 6px 10px;
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      width: var(--text-2xl);
+      height: var(--text-2xl);
+      margin-left: calc(var(--text-3xl) * -1);
+    }
+
+    .react-aria-FieldError,
+    [slot="description"] {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-DatePicker .react-aria-Button[data-pressed] {
+      opacity: 0.88;
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-DatePicker {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-DatePicker .react-aria-Button {
+      &[data-focus-visible] {
+        outline-color: Highlight;
+      }
+    }
   }
 }

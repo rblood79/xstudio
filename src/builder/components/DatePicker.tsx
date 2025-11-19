@@ -17,19 +17,54 @@ import {
   Text,
   TimeField,
   ValidationResult,
+  composeRenderProps
 } from "react-aria-components";
 
+import { tv } from 'tailwind-variants';
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getLocalTimeZone,
   today
 } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
+import type { DatePickerVariant, ComponentSize } from '../types/componentVariants';
 
 import "./styles/DatePicker.css";
 
+const datePickerStyles = tv({
+  base: 'react-aria-DatePicker',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
+
 export interface DatePickerProps<T extends DateValue>
   extends AriaDatePickerProps<T> {
+  /**
+   * M3 variant
+   * @default 'primary'
+   */
+  variant?: DatePickerVariant;
+  /**
+   * Size variant
+   * @default 'md'
+   */
+  size?: ComponentSize;
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -68,7 +103,29 @@ export interface DatePickerProps<T extends DateValue>
   maxDate?: string | DateValue;
 }
 
+/**
+ * DatePicker Component with Material Design 3 support
+ *
+ * M3 Features:
+ * - 5 variants: primary, secondary, tertiary, error, filled
+ * - 3 sizes: sm, md, lg
+ * - M3 color tokens for consistent theming
+ *
+ * Features:
+ * - Date input with calendar popup
+ * - Optional time selection
+ * - Min/max date constraints
+ * - Timezone support
+ * - Default to today option
+ * - Error message display
+ *
+ * @example
+ * <DatePicker variant="primary" size="md" label="Select Date" />
+ * <DatePicker variant="error" includeTime timeFormat="12h" />
+ */
 export function DatePicker<T extends DateValue>({
+  variant = 'primary',
+  size = 'md',
   label,
   description,
   errorMessage,
@@ -111,10 +168,17 @@ export function DatePicker<T extends DateValue>({
     ? (today(effectiveTimezone) as T)
     : props.defaultValue;
 
+  const datePickerClassName = composeRenderProps(
+    props.className,
+    (className, renderProps) => {
+      return datePickerStyles({ ...renderProps, variant, size, className });
+    }
+  );
+
   return (
     <AriaDatePicker
       {...props}
-      className="react-aria-DatePicker"
+      className={datePickerClassName}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
