@@ -1,99 +1,552 @@
-/* Component imports removed - managed by index.css */
+/**
+ * Material Design 3 ComboBox Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/menus
+ */
 
 @layer components {
+  /* ========== Base ComboBox Styles ========== */
   .react-aria-ComboBox {
-    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    color: var(--on-surface);
 
-    > div:has(.react-aria-Input) {
-      display: flex;
-      align-items: center;
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
     }
 
-    .react-aria-Input {
-      margin: 0;
-      /*background: var(--field-background);
-      color: var(--field-text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      vertical-align: middle;
-      outline: none;
-      min-width: 0;
-      padding: 0.286rem 2rem 0.286rem 0.571rem;*/
+    /* ===== Container Styles ===== */
+    .combobox-container {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
 
+    /* ===== Input Styles ===== */
+    .react-aria-Input {
+      flex: 1;
+      padding: var(--spacing) var(--spacing-md);
+      padding-right: calc(var(--spacing-2xl) + var(--spacing));
+      margin: 0;
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--border-radius);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      font-size: var(--text-sm);
+      outline: none;
+      transition: all 200ms ease;
+      forced-color-adjust: none;
+
+      /* Placeholder */
+      &::placeholder {
+        color: var(--on-surface-variant);
+        opacity: 0.6;
+      }
+
+      /* Focus State */
       &[data-focused] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
         outline-offset: -1px;
+        border-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      /* Hover State */
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        border-color: var(--outline);
+        background: var(--surface-container-high);
+      }
+
+      /* Invalid State */
+      &[data-invalid]:not([data-focused]) {
+        border-color: var(--error);
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
       }
     }
 
+    /* ===== Chevron Button Styles ===== */
     .react-aria-Button {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
-      forced-color-adjust: none;
-      border: none;
-      margin-left: calc(var(--text-2xl) * -1);
-      width: var(--text-xl);
-      height: var(--text-xl);
-      padding: 0;
-      cursor: default;
-      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-left: calc(var(--spacing-2xl) * -1);
+      margin-right: var(--spacing);
+      border-radius: var(--radius-xs);
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 150ms ease;
+      forced-color-adjust: none;
 
-      &[data-pressed] {
-        box-shadow: none;
-        background: var(--highlight-background);
+      /* Hover State */
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--surface-container-highest);
       }
+
+      /* Pressed State */
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-surface) 12%, var(--surface-container-high));
+      }
+
+      /* Focus Visible State */
+      &[data-focus-visible] {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+      }
+    }
+
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+    }
+
+    /* ===== Field Error ===== */
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
     }
   }
 
+  /* ========== Popover Styles (for ComboBox dropdown) ========== */
   .react-aria-Popover[data-trigger="ComboBox"] {
     width: var(--trigger-width);
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--border-radius);
+    background: var(--surface-container);
+    box-shadow: var(--shadow-lg);
     contain: layout style paint;
 
+    /* ===== ListBox Styles ===== */
     .react-aria-ListBox {
+      padding: var(--spacing-xs);
+      outline: none;
       transform: translate3d(0, 0, 0);
       backface-visibility: hidden;
       min-height: 24px;
 
+      /* ===== ListBoxItem Styles ===== */
       .react-aria-ListBoxItem {
+        padding: var(--spacing) var(--spacing-md);
+        border-radius: var(--radius-xs);
+        color: var(--on-surface);
+        cursor: pointer;
+        outline: none;
+        transition: all 150ms ease;
         transform: translate3d(0, 0, 0);
+
+        /* Hover State */
+        &[data-hovered] {
+          background: var(--surface-container-high);
+        }
+
+        /* Focused State */
+        &[data-focused] {
+          background: var(--surface-container-high);
+        }
+
+        /* Selected State */
+        &[data-selected] {
+          background: var(--primary-container);
+          color: var(--on-primary-container);
+          font-weight: 500;
+        }
+
+        /* Disabled State */
+        &[data-disabled] {
+          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+          cursor: not-allowed;
+        }
+
+        /* Link items */
+        &[href] {
+          text-decoration: none;
+          cursor: pointer;
+        }
       }
     }
   }
 
-  .react-aria-ListBoxItem[href] {
-    text-decoration: none;
-    cursor: pointer;
-  }
+  /* ========== M3 Color Variants ========== */
 
-  .react-aria-ComboBox {
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-ComboBox.primary {
+    .react-aria-Label {
+      color: var(--primary);
+    }
+
     .react-aria-Input {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
+      border-color: var(--primary);
+
+      &[data-focused] {
+        outline-color: var(--primary);
+        border-color: var(--primary);
+        background: var(--primary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
       }
     }
 
     .react-aria-Button {
-      &[data-disabled] {
-        background: var(--border-color-disabled);
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+
+      &[data-hovered]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-primary) 12%, var(--primary-container));
       }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-primary) 16%, var(--primary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-ComboBox.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
     }
 
     .react-aria-Input {
-      &[data-invalid]:not([data-focused]) {
-        border-color: var(--invalid-color);
+      border-color: var(--secondary);
+
+      &[data-focused] {
+        outline-color: var(--secondary);
+        border-color: var(--secondary);
+        background: var(--secondary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
       }
     }
 
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-      color: var(--invalid-color);
+    .react-aria-Button {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+
+      &[data-hovered]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-secondary) 12%, var(--secondary-container));
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-secondary) 16%, var(--secondary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-ComboBox.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
     }
 
-    [slot="description"] {
+    .react-aria-Input {
+      border-color: var(--tertiary);
+
+      &[data-focused] {
+        outline-color: var(--tertiary);
+        border-color: var(--tertiary);
+        background: var(--tertiary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+    }
+
+    .react-aria-Button {
+      background: var(--tertiary-container);
+      color: var(--on-tertiary-container);
+
+      &[data-hovered]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-tertiary) 12%, var(--tertiary-container));
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-tertiary) 16%, var(--tertiary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-ComboBox.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+        border-color: var(--error);
+        background: var(--error-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+    }
+
+    .react-aria-Button {
+      background: var(--error-container);
+      color: var(--on-error-container);
+
+      &[data-hovered]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-error) 12%, var(--error-container));
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-error) 16%, var(--error-container));
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-ComboBox.filled {
+    .react-aria-Input {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+      border-bottom: 2px solid var(--outline-variant);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-focused] {
+        outline: none;
+        border-bottom-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-ComboBox.sm {
+    .react-aria-Label {
       font-size: var(--text-xs);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-sm) var(--spacing);
+      padding-right: calc(var(--spacing-lg) + var(--spacing));
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      width: 20px;
+      height: 20px;
+      margin-left: calc(var(--spacing-lg) * -1);
+      margin-right: var(--spacing-sm);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* Popover small size */
+  .react-aria-Popover[data-trigger="ComboBox"].sm {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-ComboBox.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing) var(--spacing-md);
+      padding-right: calc(var(--spacing-2xl) + var(--spacing));
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      width: 24px;
+      height: 24px;
+      margin-left: calc(var(--spacing-2xl) * -1);
+      margin-right: var(--spacing);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* Popover medium size */
+  .react-aria-Popover[data-trigger="ComboBox"].md {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-ComboBox.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-md) var(--spacing-lg);
+      padding-right: calc(var(--spacing-3xl) + var(--spacing));
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      width: 28px;
+      height: 28px;
+      margin-left: calc(var(--spacing-3xl) * -1);
+      margin-right: var(--spacing-md);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* Popover large size */
+  .react-aria-Popover[data-trigger="ComboBox"].lg {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-ComboBox[data-invalid] {
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  .react-aria-ComboBox.filled[data-invalid] {
+    .react-aria-Input {
+      border-bottom-color: var(--error);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-ComboBox .react-aria-Input {
+      &[data-disabled] {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    .react-aria-ComboBox .react-aria-Button {
+      &[data-pressed]:not([data-disabled]) {
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      &[data-disabled] {
+        background: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    .react-aria-Popover[data-trigger="ComboBox"] .react-aria-ListBox .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-ComboBox .react-aria-Input {
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-ComboBox .react-aria-Button {
+      &[data-pressed]:not([data-disabled]) {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-Popover[data-trigger="ComboBox"] .react-aria-ListBox .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-ComboBox {
+      .react-aria-Button {
+        &[data-disabled] {
+          background: transparent;
+        }
+      }
     }
   }
 }
