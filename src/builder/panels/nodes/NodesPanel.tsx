@@ -42,11 +42,11 @@ export function NodesPanel({ isActive }: PanelProps) {
   const unifiedPages: UnifiedPage[] = useMemo(() =>
     pages.map(p => ({
       id: p.id,
-      title: p.name, // Convert name → title
+      title: p.name || 'Untitled', // Convert name → title
       project_id: '', // Not used by Sidebar
-      slug: p.slug,
+      slug: p.slug || '',
       parent_id: p.parent_id,
-      order_num: p.order_num
+      order_num: p.order_num || 0
     })),
     [pages]
   );

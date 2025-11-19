@@ -1,20 +1,18 @@
 import { CirclePlus } from 'lucide-react';
 import { iconProps } from '../../utils/ui/uiConstants';
-import { Database } from '../../types/integrations/supabase.types';
 import { pagesApi } from '../../services/api/PagesApiService';
 import { useStore } from '../stores';
-
-type Page = Database['public']['Tables']['pages']['Row'];
+import type { Page as UnifiedPage } from '../../types/builder/unified.types';
 
 interface PagesProps {
-    pages: Page[];
+    pages: UnifiedPage[];
     pageList: { remove: (...keys: string[]) => void };
     handleAddPage: () => void;
     renderTree: (
-        items: Page[],
-        getLabel: (item: Page) => string,
-        onSelect: (item: Page) => void,
-        onDelete: (item: Page) => Promise<void>
+        items: UnifiedPage[],
+        getLabel: (item: UnifiedPage) => string,
+        onSelect: (item: UnifiedPage) => void,
+        onDelete: (item: UnifiedPage) => Promise<void>
     ) => React.ReactNode;
     fetchElements: (pageId: string) => Promise<void>;
 }
@@ -22,13 +20,7 @@ interface PagesProps {
 export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElements }: PagesProps) {
     const setPages = useStore((state) => state.setPages);
 
-    console.log('[Pages] Rendering:', {
-        pagesCount: pages.length,
-        pages: pages.map(p => ({ id: p.id, title: p.title })),
-        renderTree: typeof renderTree
-    });
-
-    const handleDeletePage = async (page: Page) => {
+    const handleDeletePage = async (page: UnifiedPage) => {
         // 1. DB에서 삭제 (✅ 최적화된 API Service 사용 - 자동 캐시 무효화)
         try {
             await pagesApi.deletePage(page.id);
@@ -44,10 +36,10 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
         const remainingPages = pages.filter(p => p.id !== page.id);
 
         // 4. Zustand store에서도 제거
-        // Database Page 타입을 store Page 타입으로 변환 (title → name)
+        // UnifiedPage 타입을 store Page 타입으로 변환 (title → name)
         const updatedPages = remainingPages.map(p => ({
             id: p.id,
-            name: p.title,
+            name: p.title, // UnifiedPage.title → store Page.name
             slug: p.slug,
             parent_id: p.parent_id,
             order_num: p.order_num

@@ -264,11 +264,12 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 pageList.remove(...existingKeys);
             }
 
-            // IndexedDB Page를 ApiPage로 변환 (name → title)
+            // IndexedDB Page를 ApiPage로 변환
+            // IndexedDB에 title 또는 name 필드가 있을 수 있음 (Supabase 동기화 이슈)
             const apiPages: ApiPage[] = projectPages.map(p => ({
                 id: p.id,
                 project_id: p.project_id,
-                title: p.name, // name → title
+                title: (p as any).title || p.name || 'Untitled', // title 또는 name 필드 지원
                 slug: p.slug,
                 parent_id: p.parent_id,
                 order_num: p.order_num,
@@ -279,7 +280,15 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             apiPages.forEach((page) => pageList.append(page));
 
             // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
-            setPages(projectPages);
+            // ApiPage → store Page 변환 (title → name)
+            const storePages = apiPages.map(p => ({
+                id: p.id,
+                name: p.title, // title → name
+                slug: p.slug,
+                parent_id: p.parent_id,
+                order_num: p.order_num
+            }));
+            setPages(storePages);
 
             // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
             if (apiPages.length > 0) {
