@@ -1,21 +1,32 @@
+/**
+ * Material Design 3 Tree Styles
+ *
+ * M3 Variants: primary, secondary, tertiary
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components
+ */
+
 @layer components {
+  /* ========== Base Tree Container ========== */
   .react-aria-Tree {
     display: flex;
     flex-direction: column;
-    gap: var(--gap);
+    gap: var(--spacing-2xs);
     overflow: auto;
     padding: var(--spacing);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--overlay-background);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--surface-container);
+    color: var(--on-surface);
     forced-color-adjust: none;
     outline: none;
-    width: var(--container-2xs);
+    width: 100%;
     max-height: 100%;
     box-sizing: border-box;
 
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: -1px;
     }
 
@@ -24,10 +35,12 @@
       align-items: center;
       justify-content: center;
       font-style: italic;
+      color: var(--on-surface-variant);
+      padding: var(--spacing-xl);
     }
 
     &[data-selection-mode=multiple] {
-      --checkbox-width: var(--text-base);
+      --checkbox-width: 20px;
     }
 
     &[data-allows-dragging] {
@@ -35,142 +48,125 @@
     }
 
     &[data-drop-target] {
-      outline: 2px solid var(--highlight-background);
+      outline: 2px solid var(--primary);
       outline-offset: -1px;
-      background: var(--highlight-overlay);
-    }
-
-    .react-aria-TreeItem {
-      display: flex;
-      align-items: center;
-      gap: var(--gap);
-      min-height: var(--text-base);
-      padding: 0.286rem 0.286rem 0.286rem 0.571rem;
-      --padding: var(--spacing);
-      border-radius: var(--border-radius);
-      outline: none;
-      cursor: default;
-      color: var(--text-color);
-      font-size: var(--text-sm);
-      position: relative;
-      transform: translateZ(0);
-  
-      .react-aria-Button[slot=chevron] {
-        all: unset;
-        display: flex;
-        visibility: hidden;
-        align-items: center;
-        justify-content: center;
-        width: 1.3rem;
-        height: 100%;
-        padding-left: calc((var(--tree-item-level) - 1) * var(--padding));
-  
-        svg {
-          rotate: 0deg;
-          transition: rotate 200ms;
-          width: 12px;
-          height: 12px;
-          fill: none;
-          stroke: currentColor;
-          stroke-width: 3px;
-        }
-      }
-  
-      &[data-has-child-items] .react-aria-Button[slot=chevron] {
-        visibility: visible;
-      }
-  
-      &[data-expanded] .react-aria-Button[slot=chevron] svg {
-        rotate: 90deg;
-      }
-  
-      &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
-        outline-offset: -2px;
-      }
-  
-      &[data-pressed] {
-        background: var(--gray-100);
-      }
-  
-      &[data-selected] {
-        background: var(--highlight-background);
-        color: var(--highlight-foreground);
-        --focus-ring-color: var(--highlight-foreground);
-  
-        &[data-focus-visible] {
-          outline-color: var(--highlight-foreground);
-          outline-offset: -4px;
-        }
-  
-        .react-aria-Button {
-          color: var(--highlight-foreground);
-          --highlight-hover: rgb(255 255 255 / 0.1);
-          --highlight-pressed: rgb(255 255 255 / 0.2);
-        }
-      }
-  
-      &[data-disabled] {
-        color: var(--text-color-disabled);
-      }
-  
-      .react-aria-Button:not([slot]) {
-        margin-left: auto;
-        background: transparent;
-        border: none;
-        font-size: 1.2rem;
-        line-height: 1.2em;
-        padding: 0.286rem 0.429rem;
-        transition: background 200ms;
-  
-        &[data-hovered] {
-          background: var(--highlight-hover-overlay);
-        }
-  
-        &[data-pressed] {
-          background: var(--highlight-pressed-overlay);
-          box-shadow: none;
-        }
-      }
-    }
-  
-    /* join selected items if :has selector is supported */
-    @supports selector(:has(.foo)) {
-      gap: 0;
-  
-      .react-aria-TreeItem[data-selected]:has(+ [data-selected]) {
-        border-end-start-radius: 0;
-        border-end-end-radius: 0;
-      }
-  
-      .react-aria-TreeItem[data-selected] + [data-selected] {
-        border-start-start-radius: 0;
-        border-start-end-radius: 0;
-      }
-    }
-  
-    :where(.react-aria-TreeItem) .react-aria-Checkbox {
-      --selected-color: var(--highlight-foreground);
-      --selected-color-pressed: var(--highlight-foreground-pressed);
-      --checkmark-color: var(--highlight-background);
-      --background-color: var(--highlight-background);
-    }
-
-    .react-aria-DropIndicator {
-      &[data-drop-target] {
-        outline: 1px solid var(--highlight-background);
-        margin-left: calc(8px + var(--checkbox-width, 0px) + var(--drag-button-width, 0px) + 26px + (var(--tree-item-level) - 1) * 16px);
-      }
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
     }
   }
 
+  /* ========== Base TreeItem ========== */
   .react-aria-TreeItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    min-height: 32px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    --padding: var(--spacing);
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+    color: var(--on-surface);
+    font-size: var(--text-sm);
+    position: relative;
+    transform: translateZ(0);
+    transition: background 200ms, color 200ms;
+
+    /* Chevron button */
+    .react-aria-Button[slot=chevron] {
+      all: unset;
+      display: flex;
+      visibility: hidden;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 100%;
+      padding-left: calc((var(--tree-item-level) - 1) * var(--padding));
+      cursor: pointer;
+
+      svg {
+        rotate: 0deg;
+        transition: rotate 200ms;
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2px;
+      }
+    }
+
+    &[data-has-child-items] .react-aria-Button[slot=chevron] {
+      visibility: visible;
+    }
+
+    &[data-expanded] .react-aria-Button[slot=chevron] svg {
+      rotate: 90deg;
+    }
+
+    /* Focus state */
+    &[data-focus-visible] {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+
+    /* Hover state */
+    &[data-hovered] {
+      background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+    }
+
+    /* Pressed state */
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+    }
+
+    /* Selected state */
+    &[data-selected] {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      --focus-ring-color: var(--on-primary-container);
+
+      &[data-focus-visible] {
+        outline-color: var(--on-primary-container);
+        outline-offset: -4px;
+      }
+
+      .react-aria-Button {
+        color: var(--on-primary-container);
+      }
+    }
+
+    /* Disabled state */
+    &[data-disabled] {
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Info button */
+    .react-aria-Button:not([slot]) {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      padding: var(--spacing-xs);
+      border-radius: var(--radius-xs);
+      transition: background 200ms;
+      cursor: pointer;
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      }
+    }
+
+    /* Drag handle */
     &[data-href] {
       cursor: pointer;
     }
 
     &[data-allows-dragging] {
-      padding-left: 4px;
+      padding-left: var(--spacing-2xs);
     }
 
     &[data-dragging] {
@@ -178,8 +174,8 @@
     }
 
     &[data-drop-target] {
-      outline: 2px solid var(--highlight-background);
-      background: var(--highlight-overlay);
+      outline: 2px solid var(--primary);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
     }
 
     [slot=drag] {
@@ -188,9 +184,269 @@
       text-align: center;
 
       &[data-focus-visible] {
-        border-radius: 4px;
-        outline: 2px solid var(--focus-ring-color);
+        border-radius: var(--radius-xs);
+        outline: 2px solid var(--primary);
       }
+    }
+  }
+
+  /* Join selected items if :has selector is supported */
+  @supports selector(:has(.foo)) {
+    .react-aria-Tree {
+      gap: 0;
+
+      .react-aria-TreeItem[data-selected]:has(+ [data-selected]) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+      }
+
+      .react-aria-TreeItem[data-selected] + [data-selected] {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+      }
+    }
+  }
+
+  /* Checkbox styling within Tree */
+  :where(.react-aria-TreeItem) .react-aria-Checkbox {
+    --selected-color: var(--on-primary-container);
+    --selected-color-pressed: var(--on-primary-container);
+    --checkmark-color: var(--primary-container);
+    --background-color: var(--primary-container);
+  }
+
+  /* Drop indicator */
+  .react-aria-Tree .react-aria-DropIndicator {
+    &[data-drop-target] {
+      outline: 1px solid var(--primary);
+      margin-left: calc(8px + var(--checkbox-width, 0px) + var(--drag-button-width, 0px) + 26px + (var(--tree-item-level) - 1) * 16px);
+    }
+  }
+
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-Tree.primary {
+    border-color: var(--outline-variant);
+
+    &[data-focus-visible] {
+      outline-color: var(--primary);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+
+    .react-aria-TreeItem {
+      &[data-focus-visible] {
+        outline-color: var(--primary);
+      }
+
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+
+      &[data-drop-target] {
+        outline-color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 8%, transparent);
+      }
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--primary);
+    }
+  }
+
+  /* ===== Secondary Variant ===== */
+  .react-aria-Tree.secondary {
+    border-color: var(--outline-variant);
+
+    &[data-focus-visible] {
+      outline-color: var(--secondary);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--secondary);
+      background: color-mix(in srgb, var(--secondary) 8%, transparent);
+    }
+
+    .react-aria-TreeItem {
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
+      }
+
+      &[data-selected] {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+
+      &[data-drop-target] {
+        outline-color: var(--secondary);
+        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+      }
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--secondary);
+    }
+  }
+
+  /* ===== Tertiary Variant ===== */
+  .react-aria-Tree.tertiary {
+    border-color: var(--outline-variant);
+
+    &[data-focus-visible] {
+      outline-color: var(--tertiary);
+    }
+
+    &[data-drop-target] {
+      outline-color: var(--tertiary);
+      background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+    }
+
+    .react-aria-TreeItem {
+      &[data-focus-visible] {
+        outline-color: var(--tertiary);
+      }
+
+      &[data-selected] {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+
+      &[data-drop-target] {
+        outline-color: var(--tertiary);
+        background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+      }
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+      outline-color: var(--tertiary);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Tree.sm {
+    padding: var(--spacing-sm);
+    gap: 1px;
+
+    .react-aria-TreeItem {
+      min-height: 28px;
+      padding: var(--spacing-2xs) var(--spacing-xs);
+      font-size: var(--text-xs);
+
+      .react-aria-Button[slot=chevron] {
+        width: 16px;
+
+        svg {
+          width: 12px;
+          height: 12px;
+        }
+      }
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Tree.md {
+    padding: var(--spacing);
+    gap: var(--spacing-2xs);
+
+    .react-aria-TreeItem {
+      min-height: 32px;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      font-size: var(--text-sm);
+
+      .react-aria-Button[slot=chevron] {
+        width: 20px;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Tree.lg {
+    padding: var(--spacing-md);
+    gap: var(--spacing-xs);
+
+    .react-aria-TreeItem {
+      min-height: 40px;
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-base);
+
+      .react-aria-Button[slot=chevron] {
+        width: 24px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-TreeItem {
+      &[data-hovered] {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      &[data-pressed] {
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      &[data-disabled] {
+        opacity: 0.38;
+      }
+    }
+
+    .react-aria-Tree[data-drop-target] {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme='dark'] .react-aria-TreeItem {
+      &[data-hovered] {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &[data-pressed] {
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    [data-theme='dark'] .react-aria-Tree[data-drop-target] {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Tree,
+    .react-aria-TreeItem {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-TreeItem[data-selected] {
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    .react-aria-TreeItem[data-focus-visible] {
+      outline-color: Highlight;
     }
   }
 }

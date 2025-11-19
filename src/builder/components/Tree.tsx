@@ -8,20 +8,80 @@ import {
   TreeItemProps as AriaTreeItemProps,
   TreeProps,
   Collection,
+  composeRenderProps,
 } from "react-aria-components";
+import { tv } from "tailwind-variants";
 import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
 import { MyCheckbox } from "./Checkbox";
 import type { DataBinding } from "../../types/builder/unified.types";
+import type { TreeVariant, ComponentSize } from "../types/componentVariants";
 import { useCollectionData } from "../hooks/useCollectionData";
 
 import "./styles/Tree.css";
 
 export interface MyTreeProps<T extends object> extends TreeProps<T> {
+  /**
+   * M3 variant
+   * @default 'primary'
+   */
+  variant?: TreeVariant;
+  /**
+   * Size variant
+   * @default 'md'
+   */
+  size?: ComponentSize;
+  /**
+   * Data binding configuration
+   */
   dataBinding?: DataBinding;
 }
 
+const treeStyles = tv({
+  base: 'react-aria-Tree',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
+
+/**
+ * Tree Component with Material Design 3 support
+ *
+ * M3 Features:
+ * - 3 variants: primary, secondary, tertiary
+ * - 3 sizes: sm, md, lg
+ * - M3 color tokens for consistent theming
+ *
+ * Features:
+ * - Hierarchical data display
+ * - Expandable/collapsible nodes
+ * - Selection support (single/multiple)
+ * - Drag and drop support
+ * - Keyboard navigation (Arrow keys, Home, End)
+ * - Data binding support (Static, API, Supabase)
+ *
+ * @example
+ * <Tree variant="primary" size="md">
+ *   <TreeItem title="Folder 1">
+ *     <TreeItem title="File 1.1" />
+ *     <TreeItem title="File 1.2" />
+ *   </TreeItem>
+ * </Tree>
+ */
 export function Tree<T extends object>(props: MyTreeProps<T>) {
-  const { dataBinding, children, ...restProps } = props;
+  const { variant = 'primary', size = 'md', dataBinding, children, ...restProps } = props;
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
@@ -33,6 +93,13 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     componentName: "Tree",
     fallbackData: [],
   });
+
+  const treeClassName = composeRenderProps(
+    restProps.className,
+    (className, renderProps) => {
+      return treeStyles({ ...renderProps, variant, size, className });
+    }
+  );
 
   // DataBinding이 있고 데이터가 로드된 경우
   if (dataBinding && treeData.length > 0) {
@@ -63,7 +130,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     };
 
     return (
-      <AriaTree {...restProps} className="react-aria-Tree">
+      <AriaTree {...restProps} className={treeClassName}>
         {loading ? (
           <TreeItem
             key="loading"
@@ -81,7 +148,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
 
   // Static children
   return (
-    <AriaTree {...restProps} className="react-aria-Tree">
+    <AriaTree {...restProps} className={treeClassName}>
       {children}
     </AriaTree>
   );

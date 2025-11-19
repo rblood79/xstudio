@@ -132,6 +132,18 @@ export type TabsVariant = 'primary' | 'secondary' | 'tertiary';
  */
 export type BreadcrumbsVariant = 'primary' | 'secondary';
 
+/**
+ * Tree Variants
+ * All M3 variants for hierarchical navigation
+ */
+export type TreeVariant = 'primary' | 'secondary' | 'tertiary';
+
+/**
+ * Disclosure Variants
+ * Primary and secondary for expandable content
+ */
+export type DisclosureVariant = 'primary' | 'secondary';
+
 // ========== Feedback Components (Phase 5) ==========
 
 /**
