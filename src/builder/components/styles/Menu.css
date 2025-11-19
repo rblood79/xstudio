@@ -1,19 +1,34 @@
+/**
+ * Material Design 3 Menu Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/menus
+ */
+
 @layer components {
+  /* ========== Base Menu Styles ========== */
   .react-aria-Menu {
     max-height: inherit;
     overflow: auto;
     padding: var(--spacing);
     min-width: 150px;
     outline: none;
+    background: var(--surface-container);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--outline-variant);
+    color: var(--on-surface);
   }
 
+  /* ========== MenuItem Styles ========== */
   .react-aria-MenuItem {
     margin: var(--spacing);
     padding: var(--spacing) var(--spacing-md);
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-xs);
     outline: none;
     cursor: default;
-    color: var(--text-color);
+    color: var(--on-surface);
     font-size: var(--text-sm);
     position: relative;
     display: grid;
@@ -23,13 +38,30 @@
     align-items: center;
     column-gap: var(--gap);
     forced-color-adjust: none;
+    transition: all 150ms ease;
 
+    /* Focused State */
     &[data-focused] {
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+
+    /* Disabled State */
+    &[data-disabled] {
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      cursor: not-allowed;
+      opacity: 0.38;
+    }
+
+    /* Link items */
+    &[href] {
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-touch-callout: none;
     }
   }
 
+  /* ========== Selection Mode Styles ========== */
   .react-aria-MenuItem {
     &[data-selection-mode] {
       padding-left: var(--spacing-xl);
@@ -38,15 +70,13 @@
         position: absolute;
         left: var(--spacing);
         font-weight: 600;
+        color: var(--primary);
       }
 
       &[data-selection-mode="multiple"][data-selected]::before {
         content: "✓";
         content: "✓" / "";
         alt: " ";
-        position: absolute;
-        left: var(--spacing);
-        font-weight: 600;
       }
 
       &[data-selection-mode="single"][data-selected]::before {
@@ -57,58 +87,73 @@
     }
   }
 
-  .react-aria-MenuItem[href] {
-    text-decoration: none;
-    cursor: pointer;
-  }
-
+  /* ========== Menu Sections ========== */
   .react-aria-Menu {
     .react-aria-MenuSection:not(:first-child) {
-      margin-top: 12px;
+      margin-top: var(--spacing-md);
     }
 
     .react-aria-Header {
       font-size: var(--text-sm);
-      font-weight: bold;
+      font-weight: 700;
+      color: var(--on-surface-variant);
       padding: 0 var(--spacing-sm);
+      margin-bottom: var(--spacing-xs);
     }
 
     .react-aria-Separator {
       height: 1px;
-      background: var(--border-color);
+      background: var(--outline-variant);
       margin: var(--spacing) var(--spacing-sm);
     }
   }
 
+  /* ========== MenuItem Slots ========== */
   .react-aria-MenuItem {
     [slot="label"] {
-      font-weight: bold;
+      font-weight: 600;
       grid-area: label;
+      color: var(--on-surface);
     }
 
     [slot="description"] {
-      font-size: small;
+      font-size: var(--text-xs);
       grid-area: desc;
+      color: var(--on-surface-variant);
     }
 
     kbd {
       grid-area: kbd;
-      font-family: monospace;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
       text-align: end;
+      color: var(--on-surface-variant);
+      padding: 2px 6px;
+      border-radius: var(--radius-xs);
+      background: color-mix(in srgb, var(--on-surface) 8%, transparent);
     }
 
-    &[data-disabled] {
-      color: var(--text-color-disabled);
+    &[data-focused] {
+      [slot="label"],
+      [slot="description"],
+      kbd {
+        color: inherit;
+      }
+
+      kbd {
+        background: color-mix(in srgb, var(--on-primary-container) 12%, transparent);
+      }
     }
   }
 
-  /* Dynamic Collection 스타일 */
+  /* ========== Dynamic Collection Styles ========== */
   .menu-item-content {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
     grid-area: label;
     width: 100%;
+    color: var(--on-surface);
   }
 
   .menu-item-icon {
@@ -122,22 +167,36 @@
 
   .menu-item-shortcut {
     grid-area: kbd;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: var(--text-xs);
     padding: 2px 6px;
-    border-radius: var(--radius-sm);
-    background: var(--control-track-bg);
-    color: var(--text-color-secondary);
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+    color: var(--on-surface-variant);
     margin-left: auto;
   }
 
   .menu-item-description {
     grid-area: desc;
     font-size: var(--text-xs);
-    color: var(--text-color-secondary);
+    color: var(--on-surface-variant);
   }
 
-  /* Submenu chevron 스타일 개선 */
+  .react-aria-MenuItem[data-focused] {
+    .menu-item-content,
+    .menu-item-icon,
+    .menu-item-label,
+    .menu-item-description {
+      color: inherit;
+    }
+
+    .menu-item-shortcut {
+      background: color-mix(in srgb, var(--on-primary-container) 12%, transparent);
+      color: inherit;
+    }
+  }
+
+  /* ========== Submenu Chevron Styles ========== */
   .react-aria-MenuItem .chevron {
     width: 16px;
     height: 16px;
@@ -147,9 +206,14 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     margin-left: var(--spacing-md);
+    color: var(--on-surface-variant);
   }
 
-  /* Submenu Popover 위치 조정 */
+  .react-aria-MenuItem[data-focused] .chevron {
+    color: inherit;
+  }
+
+  /* ========== Submenu Popover Positioning ========== */
   .react-aria-Popover[data-trigger="SubmenuTrigger"] {
     contain: layout style paint;
 
@@ -161,7 +225,7 @@
       margin-right: -5px;
     }
 
-    /* Submenu 내부 Menu 스타일 */
+    /* Submenu Menu Styles */
     .react-aria-Menu {
       min-width: 150px;
       transform: translate3d(0, 0, 0);
@@ -172,13 +236,13 @@
       }
     }
 
-    /* Submenu 내 SearchField */
+    /* Submenu SearchField */
     .react-aria-SearchField {
       margin: 4px 8px;
     }
   }
 
-  /* Main Menu Popover 최적화 */
+  /* ========== Main Menu Popover Optimization ========== */
   .react-aria-Popover[data-trigger="MenuTrigger"] {
     contain: layout style paint;
 
@@ -190,6 +254,269 @@
       .react-aria-MenuItem {
         transform: translate3d(0, 0, 0);
       }
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-Menu.primary {
+    border-color: var(--primary);
+
+    .react-aria-MenuItem {
+      &[data-focused] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+
+      &[data-selection-mode]::before {
+        color: var(--primary);
+      }
+    }
+
+    .react-aria-Separator {
+      background: var(--primary);
+      opacity: 0.12;
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-Menu.secondary {
+    border-color: var(--secondary);
+
+    .react-aria-MenuItem {
+      &[data-focused] {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+
+      &[data-selection-mode]::before {
+        color: var(--secondary);
+      }
+    }
+
+    .react-aria-Separator {
+      background: var(--secondary);
+      opacity: 0.12;
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Menu.tertiary {
+    border-color: var(--tertiary);
+
+    .react-aria-MenuItem {
+      &[data-focused] {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+
+      &[data-selection-mode]::before {
+        color: var(--tertiary);
+      }
+    }
+
+    .react-aria-Separator {
+      background: var(--tertiary);
+      opacity: 0.12;
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Menu.error {
+    border-color: var(--error);
+
+    .react-aria-MenuItem {
+      &[data-focused] {
+        background: var(--error-container);
+        color: var(--on-error-container);
+      }
+
+      &[data-selection-mode]::before {
+        color: var(--error);
+      }
+    }
+
+    .react-aria-Separator {
+      background: var(--error);
+      opacity: 0.12;
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-Menu.filled {
+    background: var(--surface-container-highest);
+    border-color: transparent;
+
+    .react-aria-MenuItem {
+      &[data-focused] {
+        background: var(--surface-container-high);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Menu.sm {
+    padding: var(--spacing-sm);
+    min-width: 120px;
+
+    .react-aria-MenuItem {
+      margin: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+
+      [slot="label"] {
+        font-size: var(--text-xs);
+      }
+
+      [slot="description"],
+      kbd,
+      .menu-item-shortcut,
+      .menu-item-description {
+        font-size: 10px;
+      }
+
+      .menu-item-icon {
+        font-size: var(--text-sm);
+      }
+
+      .chevron {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .react-aria-Header {
+      font-size: var(--text-xs);
+      padding: 0 var(--spacing-xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Menu.md {
+    padding: var(--spacing);
+    min-width: 150px;
+
+    .react-aria-MenuItem {
+      margin: var(--spacing);
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+
+      [slot="label"] {
+        font-size: var(--text-sm);
+      }
+
+      [slot="description"],
+      kbd,
+      .menu-item-shortcut,
+      .menu-item-description {
+        font-size: var(--text-xs);
+      }
+
+      .menu-item-icon {
+        font-size: var(--text-base);
+      }
+
+      .chevron {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .react-aria-Header {
+      font-size: var(--text-sm);
+      padding: 0 var(--spacing-sm);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Menu.lg {
+    padding: var(--spacing-md);
+    min-width: 180px;
+
+    .react-aria-MenuItem {
+      margin: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+
+      [slot="label"] {
+        font-size: var(--text-base);
+      }
+
+      [slot="description"],
+      kbd,
+      .menu-item-shortcut,
+      .menu-item-description {
+        font-size: var(--text-sm);
+      }
+
+      .menu-item-icon {
+        font-size: var(--text-lg);
+      }
+
+      .chevron {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .react-aria-Header {
+      font-size: var(--text-base);
+      padding: 0 var(--spacing-md);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-MenuItem {
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+
+      kbd,
+      .menu-item-shortcut {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      &[data-focused] {
+        kbd,
+        .menu-item-shortcut {
+          background: rgba(0, 0, 0, 0.12);
+        }
+      }
+    }
+
+    [data-theme="dark"] .react-aria-MenuItem {
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      kbd,
+      .menu-item-shortcut {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &[data-focused] {
+        kbd,
+        .menu-item-shortcut {
+          background: rgba(255, 255, 255, 0.12);
+        }
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Menu {
+      forced-color-adjust: auto;
     }
   }
 }
