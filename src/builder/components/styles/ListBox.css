@@ -1,79 +1,145 @@
+/**
+ * Material Design 3 ListBox Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/lists
+ */
+
 @import './collections.css';
 
 @layer components {
+  /* ========== Base ListBox Styles ========== */
   .react-aria-ListBox {
-    
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-xs);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--border-radius);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    outline: none;
+    max-height: 300px;
+    overflow: auto;
+    gap: var(--spacing-2xs);
+
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: -1px;
+    }
+
+    &[data-empty] {
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: var(--on-surface-variant);
     }
   }
 
+  /* ========== ListBoxItem Styles ========== */
   .react-aria-ListBoxItem {
-    border-radius: var(--border-radius);
+    display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: var(--text-lg);
+    padding: var(--spacing) var(--spacing-md);
+    border-radius: var(--radius-xs);
+    min-height: 40px;
+    color: var(--on-surface);
+    cursor: pointer;
+    outline: none;
+    transition: all 150ms ease;
+    forced-color-adjust: none;
 
+    /* Hover State */
+    &[data-hovered] {
+      background: var(--surface-container-high);
+    }
+
+    /* Focus Visible State */
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: -2px;
     }
 
+    /* Selected State */
     &[data-selected] {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-weight: 500;
+
       &[data-focus-visible] {
-        outline-color: var(--highlight-foreground);
+        outline-color: var(--primary);
         outline-offset: -4px;
       }
     }
+
+    /* Disabled State */
+    &[data-disabled] {
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      cursor: not-allowed;
+      opacity: 0.38;
+    }
+
+    /* Link items */
+    &[href] {
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-touch-callout: none;
+    }
+
+    /* Dragging State */
+    &[data-dragging] {
+      opacity: 0.6;
+    }
+
+    /* Label and Description Slots */
+    [slot="label"] {
+      font-weight: 600;
+      color: inherit;
+    }
+
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+      margin-top: var(--spacing-2xs);
+    }
   }
 
-  .react-aria-ListBoxItem[href] {
-    text-decoration: none;
-    cursor: pointer;
-    -webkit-touch-callout: none;
-  }
-
+  /* ========== ListBoxSection Styles ========== */
   .react-aria-ListBox {
     .react-aria-ListBoxSection:not(:first-child) {
-      margin-top: 12px;
+      margin-top: var(--spacing-md);
     }
 
     .react-aria-Header {
       font-size: var(--text-sm);
-      font-weight: bold;
-      padding: 0 0.714rem;
+      font-weight: 700;
+      color: var(--on-surface-variant);
+      padding: 0 var(--spacing-md);
+      margin-bottom: var(--spacing-xs);
     }
   }
 
-  .react-aria-ListBoxItem {
-    [slot="label"] {
-      font-weight: bold;
-    }
-
-    [slot="description"] {
-      font-size: small;
-    }
-  }
-
+  /* ========== Horizontal & Grid Layouts ========== */
   .react-aria-ListBox[data-orientation="horizontal"],
   .react-aria-ListBox[data-layout="grid"] {
     flex-direction: row;
     width: fit-content;
     max-width: 100%;
-    padding: 4px;
+    padding: var(--spacing-xs);
 
     .react-aria-ListBoxItem {
       position: relative;
       margin: 0;
-      padding: 4px;
+      padding: var(--spacing-xs);
 
       & img {
         object-fit: cover;
         aspect-ratio: 1/1;
         max-width: 150px;
-        margin-bottom: 4px;
-        border-radius: 4px;
+        margin-bottom: var(--spacing-xs);
+        border-radius: var(--radius-xs);
       }
 
       &[data-selected] {
@@ -87,35 +153,38 @@
           position: absolute;
           top: 8px;
           right: 8px;
-          background: var(--highlight-background);
-          border: 2px solid var(--highlight-foreground);
-          color: var(--highlight-foreground);
+          background: var(--primary);
+          border: 2px solid var(--primary);
+          color: var(--on-primary);
           width: 22px;
           height: 22px;
-          border-radius: 22px;
+          border-radius: 50%;
           box-sizing: border-box;
           font-size: 14px;
           line-height: 1em;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 8px rgb(0 0 0 / 0.5);
+          box-shadow: var(--shadow-md);
         }
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
         outline-offset: -2px;
       }
     }
   }
 
+  /* Grid Layout */
   .react-aria-ListBox[data-layout="grid"] {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--spacing-xs);
     scrollbar-gutter: stable;
   }
 
+  /* Horizontal Grid Layout */
   .react-aria-ListBox[data-layout="grid"][data-orientation="horizontal"] {
     width: 100%;
     max-width: none;
@@ -125,7 +194,7 @@
     grid-template-columns: none;
     grid-auto-columns: 250px;
     max-height: 200px;
-    gap: 8px;
+    gap: var(--spacing);
 
     .react-aria-ListBoxItem {
       display: grid;
@@ -136,7 +205,7 @@
         "image .";
       grid-template-columns: auto 1fr;
       grid-template-rows: 1fr auto auto 1fr;
-      column-gap: 8px;
+      column-gap: var(--spacing);
 
       & img {
         width: 50px;
@@ -155,46 +224,23 @@
     }
   }
 
-  .react-aria-ListBoxItem {
-    &[data-disabled] {
-      color: var(--text-color-disabled);
-    }
-  }
-
-  .react-aria-ListBox {
-    &[data-empty] {
-      align-items: center;
-      justify-content: center;
-      font-style: italic;
-    }
-  }
-
-  .react-aria-ListBoxItem {
-    &[data-dragging] {
-      opacity: 0.6;
-    }
-  }
-
+  /* ========== Drag and Drop Styles ========== */
   .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--highlight-background);
+    outline: 1px solid var(--primary);
   }
 
   .react-aria-ListBox[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--primary);
     outline-offset: -1px;
-    background: var(--highlight-overlay);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
 
   .react-aria-ListBoxItem[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
-    background: var(--highlight-overlay);
+    outline: 2px solid var(--primary);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
   }
 
-  .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--highlight-background);
-  }
-
-  /* Popover context (ComboBox, Select) */
+  /* ========== Popover Context (ComboBox, Select) ========== */
   .react-aria-Popover[data-trigger="ComboBox"],
   .react-aria-Popover[data-trigger="Select"] {
     .react-aria-ListBox {
@@ -203,24 +249,25 @@
       max-height: inherit;
       min-height: unset;
       border: none;
+      padding: var(--spacing-xs);
       content-visibility: auto;
 
       .react-aria-Header {
-        padding-left: 1.571rem;
+        padding-left: var(--spacing-lg);
       }
     }
 
     .react-aria-ListBoxItem {
-      padding: var(--spacing) var(--spacing) var(--spacing) var(--text-xl);
+      padding: var(--spacing) var(--spacing-md) var(--spacing) var(--spacing-xl);
 
       &[data-focus-visible] {
         outline: none;
       }
 
       &[data-selected] {
-        font-weight: var(--font-weight-semibold);
+        font-weight: 600;
         background: unset;
-        color: var(--text-color);
+        color: var(--on-surface);
 
         &::before {
           content: "✓";
@@ -229,14 +276,218 @@
           position: absolute;
           top: 4px;
           left: 4px;
+          color: var(--primary);
         }
       }
 
       &[data-focused],
       &[data-pressed] {
-        background: var(--highlight-background);
-        color: var(--highlight-foreground);
+        background: var(--surface-container-high);
       }
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-ListBox.primary {
+    border-color: var(--primary);
+
+    &[data-focus-visible] {
+      outline-color: var(--primary);
+    }
+
+    .react-aria-ListBoxItem {
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-ListBox.secondary {
+    border-color: var(--secondary);
+
+    &[data-focus-visible] {
+      outline-color: var(--secondary);
+    }
+
+    .react-aria-ListBoxItem {
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
+      }
+
+      &[data-selected] {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-ListBox.tertiary {
+    border-color: var(--tertiary);
+
+    &[data-focus-visible] {
+      outline-color: var(--tertiary);
+    }
+
+    .react-aria-ListBoxItem {
+      &[data-focus-visible] {
+        outline-color: var(--tertiary);
+      }
+
+      &[data-selected] {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-ListBox.error {
+    border-color: var(--error);
+
+    &[data-focus-visible] {
+      outline-color: var(--error);
+    }
+
+    .react-aria-ListBoxItem {
+      &[data-focus-visible] {
+        outline-color: var(--error);
+      }
+
+      &[data-selected] {
+        background: var(--error-container);
+        color: var(--on-error-container);
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-ListBox.filled {
+    background: var(--surface-container-highest);
+    border-color: transparent;
+
+    .react-aria-ListBoxItem {
+      &[data-hovered] {
+        background: var(--surface-container-high);
+      }
+
+      &[data-selected] {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-ListBox.sm {
+    padding: var(--spacing-2xs);
+    gap: var(--spacing-3xs);
+
+    .react-aria-Header {
+      font-size: var(--text-xs);
+      padding: 0 var(--spacing);
+    }
+
+    .react-aria-ListBoxItem {
+      padding: var(--spacing-sm) var(--spacing);
+      min-height: 32px;
+      font-size: var(--text-xs);
+
+      [slot="description"] {
+        font-size: 10px;
+      }
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-ListBox.md {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-2xs);
+
+    .react-aria-Header {
+      font-size: var(--text-sm);
+      padding: 0 var(--spacing-md);
+    }
+
+    .react-aria-ListBoxItem {
+      padding: var(--spacing) var(--spacing-md);
+      min-height: 40px;
+      font-size: var(--text-sm);
+
+      [slot="description"] {
+        font-size: var(--text-xs);
+      }
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-ListBox.lg {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+
+    .react-aria-Header {
+      font-size: var(--text-base);
+      padding: 0 var(--spacing-lg);
+    }
+
+    .react-aria-ListBoxItem {
+      padding: var(--spacing-md) var(--spacing-lg);
+      min-height: 48px;
+      font-size: var(--text-base);
+
+      [slot="description"] {
+        font-size: var(--text-sm);
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    .react-aria-ListBox[data-drop-target] {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .react-aria-ListBoxItem[data-drop-target] {
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    [data-theme="dark"] .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-ListBox[data-drop-target] {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-theme="dark"] .react-aria-ListBoxItem[data-drop-target] {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-ListBox {
+      forced-color-adjust: auto;
     }
   }
 }
