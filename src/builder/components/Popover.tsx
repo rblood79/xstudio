@@ -5,11 +5,24 @@ import {
   PopoverProps as AriaPopoverProps
 } from 'react-aria-components';
 import { FocusScope } from '@react-aria/focus';
+import { tv } from 'tailwind-variants';
+import { composeRenderProps } from 'react-aria-components';
+import type { PopoverVariant, ComponentSize } from '../types/componentVariants';
 
 import './styles/Popover.css';
 
 export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
   children: React.ReactNode;
+  /**
+   * M3 variant
+   * @default 'primary'
+   */
+  variant?: PopoverVariant;
+  /**
+   * Size variant
+   * @default 'md'
+   */
+  size?: ComponentSize;
   /**
    * 화살표 표시 여부
    * @default true
@@ -35,8 +48,35 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
   restoreFocus?: boolean;
 }
 
+const popoverStyles = tv({
+  base: 'react-aria-Popover',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
+
 /**
- * Popover Component with Focus Management
+ * Popover Component with Material Design 3 support
+ *
+ * M3 Features:
+ * - 5 variants: primary, secondary, tertiary, error, filled
+ * - 3 sizes: sm, md, lg
+ * - M3 color tokens for consistent theming
  *
  * Features:
  * - Automatic focus management
@@ -48,21 +88,35 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
  * @example
  * <DialogTrigger>
  *   <Button>Open Popover</Button>
- *   <Popover>
+ *   <Popover variant="primary" size="md">
  *     <p>Popover content</p>
  *   </Popover>
  * </DialogTrigger>
  */
 export function Popover({
   children,
+  variant = 'primary',
+  size = 'md',
   showArrow = true,
   containFocus = false,
   autoFocus = true,
   restoreFocus = true,
   ...props
 }: PopoverProps) {
+  const popoverClassName = composeRenderProps(
+    props.className,
+    (className, renderProps) => {
+      return popoverStyles({
+        ...renderProps,
+        variant,
+        size,
+        className,
+      });
+    }
+  );
+
   return (
-    <AriaPopover {...props} className="react-aria-Popover">
+    <AriaPopover {...props} className={popoverClassName}>
       {showArrow && (
         <OverlayArrow>
           <svg width={12} height={12} viewBox="0 0 12 12">
