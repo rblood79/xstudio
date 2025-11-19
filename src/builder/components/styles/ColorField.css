@@ -1,47 +1,188 @@
+/**
+ * Material Design 3 ColorField Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components
+ */
+
 @layer components {
-  
+  /* ========== Base ColorField Styles ========== */
   .react-aria-ColorField {
     display: flex;
     flex-direction: column;
-    color: var(--text-color);
-  
+    color: var(--on-surface);
+
     .react-aria-Input {
       padding: 0.286rem;
       margin: 0;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background: var(--field-background);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--radius-sm);
+      background: var(--surface-container);
       font-size: var(--text-sm);
-      color: var(--field-text-color);
+      color: var(--on-surface);
       width: 100%;
       max-width: 12ch;
       box-sizing: border-box;
-  
+    }
+
+    &[data-invalid] {
+      .react-aria-Input {
+        border-color: var(--error);
+      }
+    }
+
+    .react-aria-FieldError {
+      font-size: 12px;
+      color: var(--error);
+    }
+
+    [slot=description] {
+      font-size: 12px;
+      color: var(--on-surface-variant);
+    }
+
+    .react-aria-Input {
+      &[data-disabled] {
+        border-color: color-mix(in srgb, var(--outline-variant) 38%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-ColorField.primary {
+    .react-aria-Input {
       &[data-focused] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
+        outline-offset: -1px;
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  /* ===== Secondary Variant ===== */
+  .react-aria-ColorField.secondary {
+    .react-aria-Input {
+      &[data-focused] {
+        outline: 2px solid var(--secondary);
+        outline-offset: -1px;
+        border-color: var(--secondary);
+      }
+    }
+  }
+
+  /* ===== Tertiary Variant ===== */
+  .react-aria-ColorField.tertiary {
+    .react-aria-Input {
+      &[data-focused] {
+        outline: 2px solid var(--tertiary);
+        outline-offset: -1px;
+        border-color: var(--tertiary);
+      }
+    }
+  }
+
+  /* ===== Error Variant ===== */
+  .react-aria-ColorField.error {
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline: 2px solid var(--error);
         outline-offset: -1px;
       }
     }
-  
-    &[data-invalid] {
-      .react-aria-Input {
-        border-color: var(--invalid-color);
+
+    .react-aria-FieldError {
+      color: var(--error);
+    }
+  }
+
+  /* ===== Filled Variant ===== */
+  .react-aria-ColorField.filled {
+    .react-aria-Input {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+
+      &[data-focused] {
+        outline: 2px solid var(--on-surface);
+        outline-offset: -1px;
+        border-color: var(--on-surface);
       }
     }
-  
-    .react-aria-FieldError {
-      font-size: 12px;
-      color: var(--invalid-color);
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-ColorField.sm {
+    .react-aria-Input {
+      padding: 0.214rem;
+      font-size: var(--text-xs);
+      max-width: 10ch;
     }
-  
+
+    .react-aria-FieldError,
+    [slot=description] {
+      font-size: var(--text-2xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-ColorField.md {
+    .react-aria-Input {
+      padding: 0.286rem;
+      font-size: var(--text-sm);
+      max-width: 12ch;
+    }
+
+    .react-aria-FieldError,
     [slot=description] {
       font-size: 12px;
     }
-  
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-ColorField.lg {
     .react-aria-Input {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+      padding: 0.357rem;
+      font-size: var(--text-base);
+      max-width: 14ch;
+    }
+
+    .react-aria-FieldError,
+    [slot=description] {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-ColorField .react-aria-Input[data-disabled] {
+      opacity: 0.38;
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-ColorField {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-ColorField .react-aria-Input {
+      &[data-focused] {
+        outline-color: Highlight;
       }
     }
   }
