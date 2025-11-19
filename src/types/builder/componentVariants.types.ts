@@ -45,16 +45,20 @@ export type LegacySize = "small" | "medium" | "large";
  * Used by: Button component
  *
  * - default: Default style (base button styles)
- * - primary: Main call-to-action (uses --button-primary-* tokens)
- * - secondary: Secondary actions (uses --button-secondary-* tokens)
- * - surface: Surface-level actions (uses --button-surface-* tokens)
- * - outline: Outlined style (uses --button-outline-* tokens)
- * - ghost: Minimal style (uses --button-ghost-* tokens)
+ * - primary: Main call-to-action (uses M3 --primary token)
+ * - secondary: Secondary actions (uses M3 --secondary token)
+ * - tertiary: Tertiary actions (uses M3 --tertiary token)
+ * - error: Error/destructive actions (uses M3 --error token)
+ * - surface: Surface-level actions (uses M3 --surface-container-highest token)
+ * - outline: Outlined style (uses M3 --outline token)
+ * - ghost: Minimal style (transparent background)
  */
 export type ButtonVariant =
   | "default"
   | "primary"
   | "secondary"
+  | "tertiary"
+  | "error"
   | "surface"
   | "outline"
   | "ghost";

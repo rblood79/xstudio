@@ -7,15 +7,15 @@
   }
 
   .category-icon-small {
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
     flex-shrink: 0;
   }
 
   .category-count {
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     padding: var(--spacing-2xs);
-    background: var(--border-color);
+    background: var(--surface-container);
     border-radius: var(--radius-sm);
     box-shadow: var(--inset-shadow-sm);
     min-width: var(--text-2xl);
@@ -70,8 +70,8 @@
     top: 0;
     right: 0;
     translate: 33% -33%;
-    background-color: var(--color-red-400);
-    color: var(--color-white);
+    background-color: var(--error);
+    color: var(--on-error);
     border-radius: 48px;
     padding: 2px;
     font-size: var(--text-xs);
@@ -103,6 +103,6 @@
   .no-results-hint {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 }

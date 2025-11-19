@@ -11,9 +11,9 @@
   :root {
     --color-border: var(--border-color);
     --color-background: var(--background);
-    --highlight-background: var(--action-primary-bg);
-    --highlight-foreground: var(--action-primary-text);
-    --overlay-background: var(--surface-tertiary);
+    --highlight-background: var(--primary);
+    --highlight-foreground: var(--on-primary);
+    --overlay-background: var(--surface-container-low);
     [data-original-tag="body"] {
       height: 100%;
     }

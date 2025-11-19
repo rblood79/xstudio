@@ -17,6 +17,7 @@ import { TokenEditor } from './components/TokenEditor';
 import { ThemeExporter } from './components/ThemeExporter';
 import { DarkModeGenerator } from './components/DarkModeGenerator';
 import { FigmaPluginExporter } from './components/FigmaPluginExporter';
+import { M3ColorSystemGuide } from './components/M3ColorSystemGuide';
 
 const themeStudioStyles = tv({
   slots: {
@@ -297,12 +298,19 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
           )}
         </main>
 
-        {/* Right Panel - Token Preview */}
+        {/* Right Panel - M3 Color System Guide */}
         <aside className={styles.panel()}>
-          <h3>미리보기</h3>
-          <div className="token-preview">
-            <p>선택된 토큰의 미리보기가 여기 표시됩니다</p>
-          </div>
+          {activeTheme ? (
+            <M3ColorSystemGuide
+              themeId={activeTheme.id}
+              projectId={projectId}
+              isDarkMode={isPreviewDarkMode}
+            />
+          ) : (
+            <div className="token-preview">
+              <p>테마를 선택하면 M3 Color Roles이 표시됩니다</p>
+            </div>
+          )}
         </aside>
       </div>
     </div>

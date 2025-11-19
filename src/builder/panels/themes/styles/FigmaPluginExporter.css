@@ -51,16 +51,16 @@
     font-size: var(--text-base);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     color: var(--text-color);
     font-family: inherit;
   }
 
   .figma-plugin-form input:focus,
   .figma-plugin-form textarea:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
   }
 
   .figma-plugin-form textarea {
@@ -96,9 +96,9 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-4);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border-radius: var(--radius-md);
-    border: 1px solid var(--action-primary-bg-hover);
+    border: 1px solid var(--primary-container);
   }
 
   .info-label {
@@ -109,7 +109,7 @@
   .info-value {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-bold);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
   }
 
   /* Export Button */
@@ -117,8 +117,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--surface-primary);
-    background: var(--action-primary-bg-pressed);
+    color: var(--on-primary);
+    background: var(--primary);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -126,7 +126,7 @@
   }
 
   .export-btn:hover {
-    background: var(--action-primary-bg-pressed);
+    background: var(--primary-pressed);
   }
 
   .export-btn:active {
@@ -139,7 +139,7 @@
     flex-direction: column;
     gap: var(--spacing-4);
     padding: var(--spacing-6);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
   }
@@ -186,7 +186,7 @@
   }
 
   .download-all-btn {
-    color: var(--surface-primary);
+    color: var(--on-success);
     background: var(--status-success);
     border: none;
   }
@@ -197,12 +197,12 @@
 
   .reset-btn {
     color: var(--text-color);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border: 1px solid var(--border-color-hover);
   }
 
   .reset-btn:hover {
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-color: var(--text-color-placeholder);
   }
 
@@ -218,7 +218,7 @@
     flex-direction: column;
     gap: var(--spacing-1);
     padding: var(--spacing-3);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
   }
 
@@ -239,7 +239,7 @@
     display: flex;
     gap: var(--spacing-2);
     padding: var(--spacing-3);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
     overflow-x: auto;
   }
@@ -259,13 +259,13 @@
 
   .file-tab:hover {
     color: var(--text-color);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
   }
 
   .file-tab.active {
-    color: var(--action-primary-bg-pressed);
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    color: var(--on-primary-container);
+    background: var(--primary-container);
+    border-color: var(--primary);
   }
 
   /* File Content */
@@ -288,7 +288,7 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     font-family: var(--font-mono);
-    color: var(--surface-primary);
+    color: var(--surface-container);
   }
 
   .file-actions {
@@ -301,7 +301,7 @@
     padding: var(--spacing-1) var(--spacing-3);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
+    color: var(--surface-container);
     background: var(--text-color-secondary);
     border: none;
     border-radius: var(--radius-sm);
@@ -311,7 +311,7 @@
 
   .copy-btn:hover,
   .download-btn:hover {
-    background: var(--control-secondary-bg);
+    background: var(--on-surface-variant);
   }
 
   .code-block {
@@ -326,7 +326,7 @@
   .code-block code {
     font-size: var(--text-sm);
     font-family: var(--font-mono);
-    color: var(--surface-secondary);
+    color: var(--surface-container-high);
     white-space: pre;
     line-height: 1.6;
   }
@@ -334,8 +334,8 @@
   /* Installation Instructions */
   .instructions {
     padding: var(--spacing-5);
-    background: var(--action-primary-bg-hover);
-    border: 1px solid var(--action-primary-bg-hover);
+    background: var(--primary-container);
+    border: 1px solid var(--primary-container);
     border-radius: var(--radius-md);
   }
 
@@ -371,7 +371,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid var(--border-color);
-    border-top-color: var(--action-primary-bg);
+    border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -390,7 +390,7 @@
   /* Error */
   .figma-plugin-container .error-message {
     padding: var(--spacing-6);
-    background: var(--action-primary-bg-hover);
+    background: var(--error-container);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
@@ -412,7 +412,7 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
+    color: var(--on-error);
     background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);

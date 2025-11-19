@@ -22,22 +22,22 @@
   }
 
   .pagination-ellipsis {
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 
   /* Page button states */
   .react-aria-Pagination .react-aria-Button[data-current="true"] {
-    background-color: var(--action-primary-bg);
-    color: var(--surface-primary);
+    background-color: var(--primary);
+    color: var(--on-primary);
   }
 
   .react-aria-Pagination .react-aria-Button:not([data-current="true"]) {
-    background-color: var(--border-color);
-    color: var(--text-color);
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
   }
 
   .react-aria-Pagination .react-aria-Button:not([data-current="true"]):hover:not(:disabled) {
-    background-color: var(--border-color-hover);
+    background-color: color-mix(in srgb, var(--surface-container-high) 92%, black);
   }
 
   .react-aria-Pagination .react-aria-Button:disabled {

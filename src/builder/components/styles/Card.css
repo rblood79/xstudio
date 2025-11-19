@@ -2,12 +2,13 @@
 
 @layer components {
   .react-aria-Card {
-    /* Base styles */
+    /* M3 Default: Filled tonal card */
     display: block;
     width: 100%;
     box-sizing: border-box;
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     box-shadow: var(--shadow-sm);
@@ -20,7 +21,14 @@
 
     &[data-hovered] {
       box-shadow: var(--shadow-md);
-      border-color: var(--border-color-hover);
+      background: color-mix(in srgb, var(--surface-container) 92%, black);
+      border-color: var(--outline);
+    }
+
+    &[data-pressed] {
+      box-shadow: var(--inset-shadow-sm);
+      background: color-mix(in srgb, var(--surface-container) 88%, black);
+      border-color: var(--outline);
     }
 
     /* Variant styles */
@@ -39,55 +47,58 @@
 
       &[data-hovered] {
         box-shadow: none;
-        border-color: var(--action-primary-bg);
+        border-color: var(--primary);
       }
     }
 
+    /* ===== M3 Primary (Filled Card) ===== */
     &.primary {
-      background: var(--action-primary-bg);
-      color: var(--action-primary-text);
-      border-color: var(--action-primary-border);
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
 
       &[data-hovered] {
-        background: var(--action-primary-bg-hover);
-        border-color: var(--action-primary-border-hover);
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
       }
 
       &[data-pressed] {
-        background: var(--action-primary-bg-pressed);
-        border-color: var(--action-primary-border-pressed);
+        background: var(--primary-pressed);
+        border-color: var(--primary-pressed);
       }
     }
 
+    /* ===== M3 Secondary (Filled Card) ===== */
     &.secondary {
-      background: var(--action-secondary-bg);
-      color: var(--action-secondary-text);
-      border-color: var(--action-secondary-border);
+      background: var(--secondary);
+      color: var(--on-secondary);
+      border-color: var(--secondary);
 
       &[data-hovered] {
-        background: var(--action-secondary-bg-hover);
-        border-color: var(--action-secondary-border-hover);
+        background: var(--secondary-hover);
+        border-color: var(--secondary-hover);
       }
 
       &[data-pressed] {
-        background: var(--action-secondary-bg-pressed);
-        border-color: var(--action-secondary-border-pressed);
+        background: var(--secondary-pressed);
+        border-color: var(--secondary-pressed);
       }
     }
 
+    /* ===== M3 Surface (Filled Tonal Card) ===== */
     &.surface {
-      background: var(--action-surface-bg);
-      color: var(--action-surface-text);
-      border-color: var(--action-surface-border);
+      background: var(--surface-container-highest);
+      color: var(--on-surface);
+      border-color: var(--outline-variant);
 
       &[data-hovered] {
-        background: var(--action-surface-bg-hover);
-        border-color: var(--action-surface-border-hover);
+        background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
+        border-color: var(--outline);
       }
 
       &[data-pressed] {
-        background: var(--action-surface-bg-pressed);
-        border-color: var(--action-surface-border-pressed);
+        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        border-color: var(--outline);
       }
     }
 
@@ -109,8 +120,8 @@
 
     /* State variants */
     &.selected {
-      border-color: var(--action-primary-bg);
-      background: var(--action-primary-bg-hover);
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
     }
 
     &.quiet {
@@ -119,14 +130,16 @@
 
       &[data-hovered] {
         box-shadow: none;
-        background: var(--surface-secondary);
+        background: var(--surface-container-high);
       }
     }
 
     &[data-disabled] {
-      opacity: 0.5;
+      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      border-color: transparent;
+      opacity: 0.38;
       cursor: not-allowed;
-      color: var(--text-color-disabled);
     }
   }
 

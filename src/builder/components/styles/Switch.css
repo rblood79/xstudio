@@ -1,5 +1,5 @@
 /**
- * Switch Component Styles
+ * Switch Component Styles (M3)
  */
 
 @layer components {
@@ -10,7 +10,7 @@
     align-items: center;
     gap: var(--gap);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--on-surface);
     forced-color-adjust: none;
     padding: var(--spacing) 0;
 
@@ -18,8 +18,8 @@
       width: calc(var(--text-4xl) + 4px);
       height: calc(var(--text-xl) + 2px);
       border-radius: var(--text-xl);
-      border: 2px solid var(--border-color);
-      background: var(--background-color);
+      border: 2px solid var(--outline);
+      background: var(--surface-container-highest);
       transition: all 200ms;
 
       &:before {
@@ -29,34 +29,34 @@
         height: var(--text-lg);
         border-radius: var(--text-lg);
         margin: 0px;
-        background: var(--highlight-background);
+        background: var(--outline);
         transition: all 200ms;
       }
     }
 
     &[data-pressed] .indicator {
-      border-color: var(--border-color-pressed);
+      border-color: var(--outline);
 
       &:before {
-        background: var(--highlight-background-pressed);
+        background: var(--on-surface-variant);
       }
     }
 
     &[data-selected] {
       .indicator {
-        border-color: var(--highlight-background);
-        background: var(--highlight-background);
+        border-color: var(--primary);
+        background: var(--primary);
 
         &:before {
-          background: var(--field-background);
+          background: var(--on-primary);
           transform: translateX(100%);
         }
       }
 
       &[data-pressed] {
         .indicator {
-          border-color: var(--highlight-background-pressed);
-          background: var(--highlight-background-pressed);
+          border-color: var(--primary-pressed);
+          background: var(--primary-pressed);
         }
       }
     }
@@ -79,75 +79,97 @@
     }
   }
 
-  /* Primary variant */
+  /* ===== M3 Primary Variant ===== */
   .react-aria-Switch.primary {
-    .indicator {
-      &:before {
-        background-color: var(--action-primary-bg);
-      }
-    }
-
     &[data-selected] {
       .indicator {
-        border-color: var(--action-primary-bg);
-        background: var(--action-primary-bg);
+        border-color: var(--primary);
+        background: var(--primary);
 
         &:before {
-          background: var(--field-background);
+          background: var(--on-primary);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--action-primary-bg-pressed);
-        background: var(--action-primary-bg-pressed);
+        border-color: var(--primary-pressed);
+        background: var(--primary-pressed);
       }
     }
   }
 
-  /* Secondary variant */
+  /* ===== M3 Secondary Variant ===== */
   .react-aria-Switch.secondary {
-    .indicator {
-      &:before {
-        background-color: var(--action-secondary-bg);
-      }
-    }
     &[data-selected] {
       .indicator {
-        border-color: var(--action-secondary-bg);
-        background: var(--action-secondary-bg);
+        border-color: var(--secondary);
+        background: var(--secondary);
 
         &:before {
-          background: var(--field-background);
+          background: var(--on-secondary);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--action-secondary-bg-pressed);
-        background: var(--action-secondary-bg-pressed);
+        border-color: var(--secondary-pressed);
+        background: var(--secondary-pressed);
       }
     }
   }
 
-  /* Surface variant */
-  .react-aria-Switch.surface {
-    .indicator {
-      &:before {
-        background-color: var(--action-surface-bg);
-      }
-    }
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Switch.tertiary {
     &[data-selected] {
       .indicator {
-        border-color: var(--action-surface-bg);
-        background: var(--action-surface-bg);
+        border-color: var(--tertiary);
+        background: var(--tertiary);
 
         &:before {
-          background: var(--field-background);
+          background: var(--on-tertiary);
         }
       }
 
       &[data-pressed] .indicator {
-        border-color: var(--action-surface-bg-pressed);
-        background: var(--action-surface-bg-pressed);
+        border-color: var(--tertiary-pressed);
+        background: var(--tertiary-pressed);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Switch.error {
+    &[data-selected] {
+      .indicator {
+        border-color: var(--error);
+        background: var(--error);
+
+        &:before {
+          background: var(--on-error);
+        }
+      }
+
+      &[data-pressed] .indicator {
+        border-color: var(--error-pressed);
+        background: var(--error-pressed);
+      }
+    }
+  }
+
+  /* ===== M3 Surface Variant ===== */
+  .react-aria-Switch.surface {
+    &[data-selected] {
+      .indicator {
+        border-color: var(--surface-container-highest);
+        background: var(--surface-container-highest);
+
+        &:before {
+          background: var(--on-surface);
+        }
+      }
+
+      &[data-pressed] .indicator {
+        border-color: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
       }
     }
   }

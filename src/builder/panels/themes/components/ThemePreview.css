@@ -5,7 +5,7 @@
     flex-direction: column;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background-color: var(--surface-tertiary);
+    background-color: var(--surface-container-low);
     border-radius: var(--radius-lg);
   }
 
@@ -37,7 +37,7 @@
 
   /* Styled Button Text */
   .styled-button-text {
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
   }
 
   /* Tab Content */
@@ -78,14 +78,14 @@
 
   .preview-link {
     font-size: var(--text-sm);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
     font-family: var(--font-body);
     text-decoration: underline;
     cursor: pointer;
   }
 
   .preview-link:hover {
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
   }
 
   /* Badges */
@@ -93,11 +93,11 @@
     padding: var(--spacing-2xs) var(--spacing-sm);
     font-size: var(--text-xs);
     border-radius: var(--radius-full);
-    color: var(--surface-primary);
+    color: var(--on-primary);
   }
 
   .preview-badge-primary {
-    background-color: var(--action-primary-bg);
+    background-color: var(--primary);
   }
 
   .preview-badge-success {
@@ -123,12 +123,12 @@
     padding: var(--spacing);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
-    background-color: var(--surface-primary);
+    background-color: var(--surface-container);
   }
 
   .preview-card-featured {
-    background-color: var(--action-primary-bg);
-    border-color: var(--action-primary-bg-pressed);
+    background-color: var(--primary);
+    border-color: var(--primary);
   }
 
   .preview-card-title {
@@ -139,7 +139,7 @@
   }
 
   .preview-card-featured .preview-card-title {
-    color: var(--surface-primary);
+    color: var(--on-primary);
   }
 
   .preview-card-body {
@@ -180,7 +180,7 @@
 
   .preview-progress-bar {
     height: 100%;
-    background-color: var(--action-primary-bg);
+    background-color: var(--primary);
     border-radius: var(--radius-full);
     transition: width 300ms ease;
   }
@@ -205,7 +205,7 @@
   .preview-spacing-sm {
     width: var(--spacing-sm);
     height: var(--spacing-sm);
-    background-color: var(--action-primary-bg-hover);
+    background-color: var(--primary-container);
   }
 
   .preview-spacing-md {
@@ -222,6 +222,6 @@
 
   .preview-spacing-label {
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 }

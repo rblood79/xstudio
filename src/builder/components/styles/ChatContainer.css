@@ -8,7 +8,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: var(--surface-tertiary);
+    background-color: var(--surface-container-low);
   }
 
   /* Header styles are now inherited from global .panel-header */
@@ -29,7 +29,7 @@
   }
 
   .chat-content::-webkit-scrollbar-track {
-    background: var(--surface-secondary);
+    background: var(--surface-container);
   }
 
   .chat-content::-webkit-scrollbar-thumb {
@@ -38,7 +38,7 @@
   }
 
   .chat-content::-webkit-scrollbar-thumb:hover {
-    background: var(--control-secondary-bg);
+    background: var(--on-surface-variant);
   }
 
   .chat-content-empty {
@@ -47,7 +47,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     text-align: center;
     padding: var(--spacing-8);
   }
@@ -79,18 +79,18 @@
 
   .chat-content-suggestion {
     padding: var(--spacing-2) var(--spacing-3);
-    background-color: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface-container);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--on-surface);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .chat-content-suggestion:hover {
-    background-color: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
-    color: var(--action-primary-bg-pressed);
+    background-color: var(--primary-hover);
+    border-color: var(--primary);
+    color: var(--on-primary);
   }
 }

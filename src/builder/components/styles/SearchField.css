@@ -48,13 +48,13 @@
       line-height: var(--text-xs--line-height);
       vertical-align: middle;
       text-align: center;
-      background: var(--control-secondary-bg);
-      color: var(--control-secondary-text);
+      background: var(--surface-container);
+      color: var(--on-surface);
       border: none;
       padding: 0;
 
       &[data-pressed] {
-        background: var(--control-secondary-bg-hover);
+        background: var(--surface-container-high);
       }
     }
   

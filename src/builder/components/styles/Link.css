@@ -1,7 +1,7 @@
 @import './base.css';
 
 @layer components {
-  /* Base Link Styles */
+  /* M3 Base Link Styles */
   .react-aria-Link {
     position: relative;
     display: inline-flex;
@@ -13,7 +13,7 @@
     transition: all 200ms;
     border-radius: var(--radius-sm);
     outline: none;
-    color: var(--color-primary-600);
+    color: var(--primary);
 
     /* External icon spacing */
     & .link-external-icon {
@@ -25,7 +25,7 @@
 
     /* Hover state */
     &[data-hovered] {
-      color: var(--color-primary-700);
+      color: var(--primary-hover);
       text-decoration: underline;
       text-decoration-thickness: 2px;
       text-underline-offset: 4px;
@@ -33,19 +33,20 @@
 
     /* Pressed state */
     &[data-pressed] {
-      color: var(--color-primary-800);
+      color: var(--primary-pressed);
     }
 
     /* Disabled state */
     &[data-disabled] {
-      color: var(--color-gray-400);
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
       cursor: not-allowed;
       pointer-events: none;
+      opacity: 0.38;
     }
 
     /* Focus visible (keyboard only) */
     &.focus-visible {
-      outline: 2px solid var(--color-primary-600);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
 
@@ -57,76 +58,102 @@
     }
   }
 
-  /* Variant: Primary */
+  /* ===== M3 Primary Link ===== */
   .react-aria-Link.primary {
-    color: var(--action-primary-bg);
+    color: var(--primary);
 
     &[data-hovered] {
-      color: var(--action-primary-bg-hover);
+      color: var(--primary-hover);
     }
 
     &[data-pressed] {
-      color: var(--action-primary-bg-pressed);
+      color: var(--primary-pressed);
     }
   }
 
-  /* Variant: Secondary */
+  /* ===== M3 Secondary Link ===== */
   .react-aria-Link.secondary {
-    color: var(--action-secondary-bg);
+    color: var(--secondary);
 
     &[data-hovered] {
-      color: var(--action-secondary-bg-hover);
+      color: var(--secondary-hover);
     }
 
     &[data-pressed] {
-      color: var(--action-secondary-bg-pressed);
+      color: var(--secondary-pressed);
     }
   }
 
-  /* Variant: Surface */
+  /* ===== M3 Tertiary Link ===== */
+  .react-aria-Link.tertiary {
+    color: var(--tertiary);
+
+    &[data-hovered] {
+      color: var(--tertiary-hover);
+    }
+
+    &[data-pressed] {
+      color: var(--tertiary-pressed);
+    }
+  }
+
+  /* ===== M3 Error Link ===== */
+  .react-aria-Link.error {
+    color: var(--error);
+
+    &[data-hovered] {
+      color: var(--error-hover);
+    }
+
+    &[data-pressed] {
+      color: var(--error-pressed);
+    }
+  }
+
+  /* ===== M3 Surface Link ===== */
   .react-aria-Link.surface {
-    color: var(--action-surface-bg);
+    color: var(--on-surface);
 
     &[data-hovered] {
-      color: var(--action-surface-bg-hover);
+      color: var(--on-surface-variant);
     }
 
     &[data-pressed] {
-      color: var(--action-surface-bg-pressed);
+      color: color-mix(in srgb, var(--on-surface) 88%, black);
     }
   }
 
-  /* Variant: Outline */
+  /* ===== M3 Outline Link ===== */
   .react-aria-Link.outline {
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    color: var(--primary);
+    border: 1px solid var(--outline);
     padding: var(--spacing-sm) var(--spacing-md);
 
     &[data-hovered] {
-      border-color: var(--action-outline-border-hover);
-      background: var(--action-outline-bg-hover);
+      border-color: var(--outline);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
       text-decoration: none;
     }
 
     &[data-pressed] {
-      border-color: var(--action-outline-border-pressed);
-      background: var(--action-outline-bg-pressed);
+      border-color: var(--outline);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
     }
   }
 
-  /* Variant: Ghost */
+  /* ===== M3 Ghost Link ===== */
   .react-aria-Link.ghost {
-    color: var(--text-color);
+    color: var(--primary);
     padding: var(--spacing-sm) var(--spacing-md);
 
     &[data-hovered] {
-      background: var(--action-ghost-bg-hover);
-      color: var(--action-ghost-text-hover);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+      color: var(--primary);
       text-decoration: none;
     }
 
     &[data-pressed] {
-      background: var(--action-ghost-bg-pressed);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
     }
   }
 

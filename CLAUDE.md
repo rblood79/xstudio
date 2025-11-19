@@ -3665,6 +3665,159 @@ src/builder/styles/
 
 ---
 
+## 🎨 M3 Color System Guide (2025-11-19)
+
+**Status**: ✅ Complete
+
+### Overview
+
+Dynamic Material Design 3 Color Roles visualization in Theme Studio with real-time theme color display.
+
+### Major Features
+
+**1. Real-time M3 Diagram Generation** ✅
+- Displays selected theme's actual colors in M3 role structure
+- 20 M3 Color Roles across 5 categories (Primary, Secondary, Tertiary, Error, Surface)
+- Light/Dark Mode automatic switching via Preview Dark Mode toggle
+- Replaces static image with dynamic, theme-aware visualization
+
+**2. Technical Implementation** ✅
+
+**IndexedDB Token Loading:**
+```typescript
+// Use same pattern as TokenService
+const { getDB } = await import('../../../../lib/db');
+const db = await getDB();
+const allTokens = await db.designTokens.getByTheme(themeId);
+```
+
+**HSL → Hex Conversion:**
+```typescript
+function hslToHex(h: number, s: number, l: number): string {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+```
+
+**Raw Scope Token Handling:**
+```typescript
+// All tokens have scope: 'raw' (brand palette)
+// Parse token name: "color.primary.600" → "primary-600"
+let tokenName = token.name.replace('color.', '').replace(/\./g, '-');
+
+// Extract hex value from object format
+if (valueObj.hex) {
+  colorValue = valueObj.hex;
+} else if (valueObj.h !== undefined) {
+  colorValue = hslToHex(valueObj.h, valueObj.s, valueObj.l);
+}
+```
+
+**M3 Mapping Rules:**
+```typescript
+const shadeName = isDarkMode ? role.darkShade : role.lightShade;
+// Light: primary-600, container-100, on-white/900
+// Dark: primary-400, container-800, on-900/100
+```
+
+**3. UI Components** ✅
+
+**Color Role Cards:**
+- Role name (Primary, Secondary Container, On Primary)
+- Shade name (primary-600, surface-100) in monospace font
+- Hex color value (#6750A4, #EADDFF)
+- Automatic text contrast (Luminance-based black/white)
+- Hover animation (translateY + box-shadow)
+
+**Responsive Grid Layout:**
+```css
+.m3-role-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-2);
+}
+
+@media (max-width: 768px) {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+```
+
+**4. Integration** ✅
+
+**Theme Studio Right Panel:**
+```tsx
+<aside className={styles.panel()}>
+  {activeTheme ? (
+    <M3ColorSystemGuide
+      themeId={activeTheme.id}
+      projectId={projectId}
+      isDarkMode={isPreviewDarkMode}
+    />
+  ) : (
+    <div>테마를 선택하면 M3 Color Roles이 표시됩니다</div>
+  )}
+</aside>
+```
+
+**Automatic Updates:**
+- Theme selection → Color cards update instantly
+- Dark Mode toggle → Switch to 400/800 shades
+- AI theme generation → M3 roles mapped automatically
+- Figma import → Brand palette → M3 visualization
+
+### Files Created
+
+- `src/builder/panels/themes/components/M3ColorSystemGuide.tsx` (214 lines)
+- `src/builder/panels/themes/components/M3ColorSystemGuide.css` (283 lines)
+
+### Files Modified
+
+- `src/builder/panels/themes/ThemeStudio.tsx` - Component integration
+- `docs/M3_PALETTE_MAPPING.md` - Documentation update
+
+### Key Benefits
+
+1. **Visual Validation**: Instantly see how brand palette maps to M3 roles
+2. **Theme Comparison**: Switch themes to compare M3 role colors
+3. **Dark Mode Verification**: Toggle to verify proper contrast ratios
+4. **Educational**: Shows M3 system structure and shade mappings
+5. **No Static Images**: Always reflects actual theme data
+
+### User Experience
+
+1. Open Theme Studio → M3 diagram appears in right panel
+2. Select different theme → Colors update in real-time
+3. Toggle Dark Mode → Diagram switches to lighter shades
+4. Generate new theme (AI/Figma) → M3 roles populate automatically
+5. Hover over color card → See details with smooth animation
+
+### Technical Challenges Solved
+
+**Problem 1**: Supabase returned empty array
+**Solution**: Use IndexedDB like TokenService (local-first pattern)
+
+**Problem 2**: Token scope filtering (expected 'light'/'dark', got 'raw')
+**Solution**: Process all 'raw' tokens (brand palette), apply M3 mapping logic
+
+**Problem 3**: Value as object `{ h, s, l }` not hex string
+**Solution**: HSL → Hex conversion function, handle both formats
+
+**Problem 4**: Token name format `"color.primary.600"`
+**Solution**: Parse and normalize to `"primary-600"`
+
+### Documentation
+
+- **M3 Mapping Guide**: [docs/M3_PALETTE_MAPPING.md](docs/M3_PALETTE_MAPPING.md)
+- **M3 Official Docs**: https://m3.material.io/styles/color/roles
+
+---
+
 ## 🎯 Panel System Standardization (2025-11-13)
 
 **Status**: ✅ Complete

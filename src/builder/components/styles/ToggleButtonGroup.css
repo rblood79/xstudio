@@ -18,7 +18,7 @@
 
     &[data-indicator="true"] {
       position: relative;
-      background: var(--control-bg);
+      background: var(--surface-container);
       width: fit-content;
       padding: 0px;
       border-radius: var(--border-radius);
@@ -42,7 +42,7 @@
         transform: translateX(var(--indicator-left))
           translateY(var(--indicator-top));
         border-radius: var(--border-radius);
-        background: var(--highlight-background);
+        background: var(--primary);
         box-shadow: var(--shadow-sm);
         opacity: var(--indicator-opacity);
         transition: transform 200ms ease-out, width 200ms ease-out,
@@ -56,17 +56,27 @@
 
       /* Primary variant indicator */
       &[data-togglebutton-variant="primary"]::before {
-        background: var(--action-primary-bg);
+        background: var(--primary);
       }
 
       /* Secondary variant indicator */
       &[data-togglebutton-variant="secondary"]::before {
-        background: var(--action-secondary-bg);
+        background: var(--secondary);
+      }
+
+      /* Tertiary variant indicator */
+      &[data-togglebutton-variant="tertiary"]::before {
+        background: var(--tertiary);
+      }
+
+      /* Error variant indicator */
+      &[data-togglebutton-variant="error"]::before {
+        background: var(--error);
       }
 
       /* Surface variant indicator */
       &[data-togglebutton-variant="surface"]::before {
-        background: var(--action-surface-bg);
+        background: var(--surface-container-highest);
       }
 
       .react-aria-ToggleButton {
@@ -82,7 +92,7 @@
         &[data-selected] {
           background: transparent;
           border-color: transparent;
-          color: var(--highlight-foreground);
+          color: var(--on-primary);
 
           &[data-pressed] {
             background: transparent;
@@ -90,6 +100,31 @@
             color: var(--text-color);
           }
         }
+      }
+
+      /* Primary variant - selected button text */
+      &[data-togglebutton-variant="primary"] .react-aria-ToggleButton[data-selected] {
+        color: var(--on-primary);
+      }
+
+      /* Secondary variant - selected button text */
+      &[data-togglebutton-variant="secondary"] .react-aria-ToggleButton[data-selected] {
+        color: var(--on-secondary);
+      }
+
+      /* Tertiary variant - selected button text */
+      &[data-togglebutton-variant="tertiary"] .react-aria-ToggleButton[data-selected] {
+        color: var(--on-tertiary);
+      }
+
+      /* Error variant - selected button text */
+      &[data-togglebutton-variant="error"] .react-aria-ToggleButton[data-selected] {
+        color: var(--on-error);
+      }
+
+      /* Surface variant - selected button text */
+      &[data-togglebutton-variant="surface"] .react-aria-ToggleButton[data-selected] {
+        color: var(--on-surface);
       }
     }
   }

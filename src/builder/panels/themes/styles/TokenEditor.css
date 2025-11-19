@@ -14,7 +14,7 @@
     width: 320px;
     display: flex;
     flex-direction: column;
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-lg);
     padding: var(--spacing-4);
   }
@@ -37,17 +37,17 @@
     padding: var(--spacing-1) var(--spacing-3);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
     background: transparent;
-    border: 1px solid var(--action-primary-bg);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .create-token-btn:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    background: var(--primary-container);
+    border-color: var(--primary);
   }
 
   /* Search Box */
@@ -61,13 +61,13 @@
     font-size: var(--text-sm);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
   }
 
   .search-box input:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
   }
 
   /* Filters */
@@ -98,12 +98,12 @@
     font-size: var(--text-sm);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     cursor: pointer;
   }
 
   .filter-group select:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
   }
 
@@ -122,7 +122,7 @@
     flex-direction: column;
     align-items: center;
     padding: var(--spacing-2);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-radius: var(--radius-md);
   }
 
@@ -156,12 +156,12 @@
 
   .token-item:hover {
     border-color: var(--border-color-hover);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
   }
 
   .token-item.active {
-    border-color: var(--action-primary-bg);
-    background: var(--action-primary-bg-hover);
+    border-color: var(--primary);
+    background: var(--primary-container);
   }
 
   .token-item-header {
@@ -186,13 +186,13 @@
   }
 
   .token-scope.raw {
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     color: var(--status-info);
   }
 
   .token-scope.semantic {
-    background: var(--action-secondary-bg-hover);
-    color: var(--action-secondary-bg-pressed);
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
   }
 
   .token-item-body {
@@ -227,13 +227,13 @@
 
   .empty-state p {
     font-size: var(--text-sm);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 
   /* Main - Token Detail Editor */
   .token-editor-main {
     flex: 1;
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-lg);
     padding: var(--spacing-6);
     overflow-y: auto;
@@ -270,8 +270,8 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
-    background: var(--action-primary-bg-pressed);
+    color: var(--surface-container);
+    background: var(--primary);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -279,14 +279,14 @@
   }
 
   .generate-dark-btn:hover {
-    background: var(--action-primary-bg-pressed);
+    background: var(--primary);
   }
 
   .delete-btn {
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
+    color: var(--surface-container);
     background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);
@@ -324,15 +324,15 @@
     font-size: var(--text-base);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
   }
 
   .detail-body input:focus,
   .detail-body textarea:focus,
   .detail-body select:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
   }
 
   .detail-body textarea {
@@ -366,7 +366,7 @@
 
   .empty-selection p {
     font-size: var(--text-lg);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 
   /* Token Preview Section (inside token-detail) */
@@ -419,7 +419,7 @@
 
   .preview-content pre {
     padding: var(--spacing-3);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-family: var(--font-mono);
@@ -440,7 +440,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid var(--border-color);
-    border-top-color: var(--action-primary-bg);
+    border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }

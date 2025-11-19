@@ -1,5 +1,5 @@
 /**
- * Meter Component Styles
+ * Meter Component Styles (M3)
  */
 
 @layer components {
@@ -11,11 +11,12 @@
     grid-template-columns: 1fr auto;
     gap: var(--spacing-xs);
     width: 250px;
-    color: var(--text-color);
+    color: var(--on-surface);
 
     .value {
       grid-area: value;
       font-size: var(--text-sm);
+      color: var(--on-surface-variant);
     }
 
     .bar {
@@ -25,29 +26,39 @@
       height: 10px;
       border-radius: var(--radius-sm);
       overflow: hidden;
-      background: var(--control-track-bg);
+      background: var(--surface-container-highest);
     }
 
     .fill {
-      background: forestgreen;
+      background: var(--primary);
       height: 100%;
       transition: width 200ms ease-out;
     }
   }
 
-  /* Primary variant */
+  /* ===== M3 Primary Variant ===== */
   .react-aria-Meter.primary .fill {
-    background: var(--action-primary-bg);
+    background: var(--primary);
   }
 
-  /* Secondary variant */
+  /* ===== M3 Secondary Variant ===== */
   .react-aria-Meter.secondary .fill {
-    background: var(--action-secondary-bg);
+    background: var(--secondary);
   }
 
-  /* Surface variant */
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Meter.tertiary .fill {
+    background: var(--tertiary);
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Meter.error .fill {
+    background: var(--error);
+  }
+
+  /* ===== M3 Surface Variant ===== */
   .react-aria-Meter.surface .fill {
-    background: var(--action-surface-bg);
+    background: var(--on-surface-variant);
   }
 
   /* Small size */

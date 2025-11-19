@@ -1,8 +1,8 @@
 @layer components {
   .react-aria-ToggleButton {
-    color: var(--text-color);
-    background: var(--control-bg);
-    border: 1px solid var(--border-color);
+    color: var(--on-surface);
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
     forced-color-adjust: none;
     border-radius: var(--border-radius);
     appearance: none;
@@ -15,74 +15,105 @@
 
     &[data-pressed] {
       box-shadow: var(--inset-shadow-sm);
-      background: var(--button-background-pressed);
-      border-color: var(--border-color-pressed);
+      background: color-mix(in srgb, var(--surface-container-high) 92%, black);
+      border-color: var(--outline);
     }
 
     &[data-selected] {
-      background: var(--highlight-background);
-      border-color: var(--highlight-background);
-      color: var(--highlight-foreground);
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--on-primary);
 
       &[data-pressed] {
-        background: var(--highlight-background-pressed);
-        border-color: var(--highlight-background-pressed);
+        background: var(--primary-pressed);
+        border-color: var(--primary-pressed);
       }
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
 
     &[data-disabled] {
-      border-color: var(--border-color-disabled);
-      background: var(--control-bg);
-      color: var(--text-color-disabled);
+      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      border-color: transparent;
+      opacity: 0.38;
     }
   }
 
-  /* Primary variant - controlled by ToggleButtonGroup */
+  /* ===== M3 Primary - Controlled by ToggleButtonGroup ===== */
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"]
     .react-aria-ToggleButton {
     &[data-selected] {
-      background: var(--action-primary-bg);
-      border-color: var(--action-primary-bg);
-      color: var(--action-primary-text);
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--on-primary);
 
       &[data-pressed] {
-        background: var(--action-primary-bg-pressed);
-        border-color: var(--action-primary-bg-pressed);
+        background: var(--primary-pressed);
+        border-color: var(--primary-pressed);
       }
     }
   }
 
-  /* Secondary variant - controlled by ToggleButtonGroup */
+  /* ===== M3 Secondary - Controlled by ToggleButtonGroup ===== */
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"]
     .react-aria-ToggleButton {
     &[data-selected] {
-      background: var(--action-secondary-bg);
-      border-color: var(--action-secondary-bg);
-      color: var(--action-secondary-text);
+      background: var(--secondary);
+      border-color: var(--secondary);
+      color: var(--on-secondary);
 
       &[data-pressed] {
-        background: var(--action-secondary-bg-pressed);
-        border-color: var(--action-secondary-bg-pressed);
+        background: var(--secondary-pressed);
+        border-color: var(--secondary-pressed);
       }
     }
   }
 
-  /* Surface variant - controlled by ToggleButtonGroup */
+  /* ===== M3 Tertiary - Controlled by ToggleButtonGroup ===== */
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="tertiary"]
+    .react-aria-ToggleButton {
+    &[data-selected] {
+      background: var(--tertiary);
+      border-color: var(--tertiary);
+      color: var(--on-tertiary);
+
+      &[data-pressed] {
+        background: var(--tertiary-pressed);
+        border-color: var(--tertiary-pressed);
+      }
+    }
+  }
+
+  /* ===== M3 Error - Controlled by ToggleButtonGroup ===== */
+  .react-aria-ToggleButtonGroup[data-togglebutton-variant="error"]
+    .react-aria-ToggleButton {
+    &[data-selected] {
+      background: var(--error);
+      border-color: var(--error);
+      color: var(--on-error);
+
+      &[data-pressed] {
+        background: var(--error-pressed);
+        border-color: var(--error-pressed);
+      }
+    }
+  }
+
+  /* ===== M3 Surface - Controlled by ToggleButtonGroup ===== */
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"]
     .react-aria-ToggleButton {
     &[data-selected] {
-      background: var(--action-surface-bg);
-      border-color: var(--action-surface-bg);
-      color: var(--action-surface-text);
+      background: var(--surface-container-highest);
+      border-color: var(--outline-variant);
+      color: var(--on-surface);
 
       &[data-pressed] {
-        background: var(--action-surface-bg-pressed);
-        border-color: var(--action-surface-bg-pressed);
+        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        border-color: var(--outline);
       }
     }
   }
@@ -108,42 +139,74 @@
     padding: var(--spacing-md) var(--spacing-2xl);
   }
 
-  /* Standalone ToggleButton variants (not in a group) */
+  /* ===== Standalone ToggleButton variants (not in a group) ===== */
+
+  /* M3 Primary Standalone */
   .react-aria-ToggleButton.primary {
     &[data-selected] {
-      background: var(--action-primary-bg);
-      border-color: var(--action-primary-bg);
-      color: var(--action-primary-text);
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--on-primary);
 
       &[data-pressed] {
-        background: var(--action-primary-bg-pressed);
-        border-color: var(--action-primary-bg-pressed);
+        background: var(--primary-pressed);
+        border-color: var(--primary-pressed);
       }
     }
   }
 
+  /* M3 Secondary Standalone */
   .react-aria-ToggleButton.secondary {
     &[data-selected] {
-      background: var(--action-secondary-bg);
-      border-color: var(--action-secondary-bg);
-      color: var(--action-secondary-text);
+      background: var(--secondary);
+      border-color: var(--secondary);
+      color: var(--on-secondary);
 
       &[data-pressed] {
-        background: var(--action-secondary-bg-pressed);
-        border-color: var(--action-secondary-bg-pressed);
+        background: var(--secondary-pressed);
+        border-color: var(--secondary-pressed);
       }
     }
   }
 
-  .react-aria-ToggleButton.surface {
+  /* M3 Tertiary Standalone */
+  .react-aria-ToggleButton.tertiary {
     &[data-selected] {
-      background: var(--action-surface-bg);
-      border-color: var(--action-surface-bg);
-      color: var(--action-surface-text);
+      background: var(--tertiary);
+      border-color: var(--tertiary);
+      color: var(--on-tertiary);
 
       &[data-pressed] {
-        background: var(--action-surface-bg-pressed);
-        border-color: var(--action-surface-bg-pressed);
+        background: var(--tertiary-pressed);
+        border-color: var(--tertiary-pressed);
+      }
+    }
+  }
+
+  /* M3 Error Standalone */
+  .react-aria-ToggleButton.error {
+    &[data-selected] {
+      background: var(--error);
+      border-color: var(--error);
+      color: var(--on-error);
+
+      &[data-pressed] {
+        background: var(--error-pressed);
+        border-color: var(--error-pressed);
+      }
+    }
+  }
+
+  /* M3 Surface Standalone */
+  .react-aria-ToggleButton.surface {
+    &[data-selected] {
+      background: var(--surface-container-highest);
+      border-color: var(--outline-variant);
+      color: var(--on-surface);
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+        border-color: var(--outline);
       }
     }
   }

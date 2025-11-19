@@ -1,12 +1,12 @@
 /**
- * Checkbox Component Styles
+ * Checkbox Component Styles (M3)
  */
 
 @layer components {
   .react-aria-Checkbox {
-    --selected-color: var(--highlight-background);
-    --selected-color-pressed: var(--highlight-background-pressed);
-    --checkmark-color: var(--highlight-foreground);
+    --selected-color: var(--primary);
+    --selected-color-pressed: var(--primary-pressed);
+    --checkmark-color: var(--on-primary);
 
     display: flex;
     /* This is needed so the HiddenInput is positioned correctly */
@@ -74,22 +74,22 @@
 
     &[data-invalid] {
       .checkbox {
-        --checkmark-color: var(--gray-50);
-        border-color: var(--invalid-color);
+        --checkmark-color: var(--on-error);
+        border-color: var(--error);
       }
 
       &[data-pressed] .checkbox {
-        border-color: var(--invalid-color-pressed);
+        border-color: var(--error-pressed);
       }
 
       &[data-selected],
       &[data-indeterminate] {
         .checkbox {
-          background: var(--invalid-color);
+          background: var(--error);
         }
 
         &[data-pressed] .checkbox {
-          background: var(--invalid-color-pressed);
+          background: var(--error-pressed);
         }
       }
     }
@@ -103,22 +103,69 @@
     }
   }
 
-  /* Primary variant */
+  /* ===== M3 Primary Variant ===== */
   .react-aria-Checkbox.primary {
-    --selected-color: var(--action-primary-bg);
-    --selected-color-pressed: var(--action-primary-bg-pressed);
+    --selected-color: var(--primary);
+    --selected-color-pressed: var(--primary-pressed);
+    --checkmark-color: var(--on-primary);
   }
 
-  /* Secondary variant */
+  /* ===== M3 Secondary Variant ===== */
   .react-aria-Checkbox.secondary {
-    --selected-color: var(--action-secondary-bg);
-    --selected-color-pressed: var(--action-secondary-bg-pressed);
+    --selected-color: var(--secondary);
+    --selected-color-pressed: var(--secondary-pressed);
+    --checkmark-color: var(--on-secondary);
   }
 
-  /* Surface variant */
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Checkbox.tertiary {
+    --selected-color: var(--tertiary);
+    --selected-color-pressed: var(--tertiary-pressed);
+    --checkmark-color: var(--on-tertiary);
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Checkbox.error {
+    --selected-color: var(--error);
+    --selected-color-pressed: var(--error-pressed);
+    --checkmark-color: var(--on-error);
+  }
+
+  /* ===== M3 Surface Variant ===== */
   .react-aria-Checkbox.surface {
-    --selected-color: var(--action-surface-bg);
-    --selected-color-pressed: var(--action-surface-bg-pressed);
+    --selected-color: var(--surface-container-highest);
+    --selected-color-pressed: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+    --checkmark-color: var(--on-surface);
+  }
+
+  /* ===== Invalid+Variant Combination ===== */
+  /* Invalid state overrides all variants with error color */
+  .react-aria-Checkbox.primary[data-invalid],
+  .react-aria-Checkbox.secondary[data-invalid],
+  .react-aria-Checkbox.tertiary[data-invalid],
+  .react-aria-Checkbox.error[data-invalid],
+  .react-aria-Checkbox.surface[data-invalid] {
+    .checkbox {
+      --selected-color: var(--error);
+      --selected-color-pressed: var(--error-pressed);
+      --checkmark-color: var(--on-error);
+      border-color: var(--error);
+    }
+
+    &[data-pressed] .checkbox {
+      border-color: var(--error-pressed);
+    }
+
+    &[data-selected],
+    &[data-indeterminate] {
+      .checkbox {
+        background: var(--error);
+      }
+
+      &[data-pressed] .checkbox {
+        background: var(--error-pressed);
+      }
+    }
   }
 
   /* Small size */
@@ -168,25 +215,44 @@
 
   /* Parent CheckboxGroup controls child Checkbox variant */
 
-  /* Primary variant - controlled by CheckboxGroup */
+  /* ===== M3 Primary - Controlled by CheckboxGroup ===== */
   .react-aria-CheckboxGroup[data-checkbox-variant="primary"]
     .react-aria-Checkbox {
-    --selected-color: var(--action-primary-bg);
-    --selected-color-pressed: var(--action-primary-bg-pressed);
+    --selected-color: var(--primary);
+    --selected-color-pressed: var(--primary-pressed);
+    --checkmark-color: var(--on-primary);
   }
 
-  /* Secondary variant - controlled by CheckboxGroup */
+  /* ===== M3 Secondary - Controlled by CheckboxGroup ===== */
   .react-aria-CheckboxGroup[data-checkbox-variant="secondary"]
     .react-aria-Checkbox {
-    --selected-color: var(--action-secondary-bg);
-    --selected-color-pressed: var(--action-secondary-bg-pressed);
+    --selected-color: var(--secondary);
+    --selected-color-pressed: var(--secondary-pressed);
+    --checkmark-color: var(--on-secondary);
   }
 
-  /* Surface variant - controlled by CheckboxGroup */
+  /* ===== M3 Tertiary - Controlled by CheckboxGroup ===== */
+  .react-aria-CheckboxGroup[data-checkbox-variant="tertiary"]
+    .react-aria-Checkbox {
+    --selected-color: var(--tertiary);
+    --selected-color-pressed: var(--tertiary-pressed);
+    --checkmark-color: var(--on-tertiary);
+  }
+
+  /* ===== M3 Error - Controlled by CheckboxGroup ===== */
+  .react-aria-CheckboxGroup[data-checkbox-variant="error"]
+    .react-aria-Checkbox {
+    --selected-color: var(--error);
+    --selected-color-pressed: var(--error-pressed);
+    --checkmark-color: var(--on-error);
+  }
+
+  /* ===== M3 Surface - Controlled by CheckboxGroup ===== */
   .react-aria-CheckboxGroup[data-checkbox-variant="surface"]
     .react-aria-Checkbox {
-    --selected-color: var(--action-surface-bg);
-    --selected-color-pressed: var(--action-surface-bg-pressed);
+    --selected-color: var(--surface-container-highest);
+    --selected-color-pressed: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+    --checkmark-color: var(--on-surface);
   }
 
   /* Small size - controlled by CheckboxGroup */

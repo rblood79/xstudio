@@ -1,7 +1,7 @@
 @import './base.css';
 
 @layer components {
-  /* Base Badge Styles */
+  /* M3 Base Badge Styles */
   .react-aria-Badge {
     display: inline-flex;
     align-items: center;
@@ -11,40 +11,52 @@
     white-space: nowrap;
     border-radius: var(--radius-full);
     transition: all 200ms;
-    background: var(--color-gray-200);
-    color: var(--color-gray-700);
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
     border: 1px solid transparent;
   }
 
-  /* Variant: Primary */
+  /* ===== M3 Primary Badge ===== */
   .react-aria-Badge.primary {
-    background: var(--action-primary-bg);
-    color: white;
+    background: var(--primary);
+    color: var(--on-primary);
   }
 
-  /* Variant: Secondary */
+  /* ===== M3 Secondary Badge ===== */
   .react-aria-Badge.secondary {
-    background: var(--action-secondary-bg);
-    color: white;
+    background: var(--secondary);
+    color: var(--on-secondary);
   }
 
-  /* Variant: Surface */
+  /* ===== M3 Tertiary Badge ===== */
+  .react-aria-Badge.tertiary {
+    background: var(--tertiary);
+    color: var(--on-tertiary);
+  }
+
+  /* ===== M3 Error Badge ===== */
+  .react-aria-Badge.error {
+    background: var(--error);
+    color: var(--on-error);
+  }
+
+  /* ===== M3 Surface Badge ===== */
   .react-aria-Badge.surface {
-    background: var(--action-surface-bg);
-    color: white;
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
   }
 
-  /* Variant: Outline */
+  /* ===== M3 Outline Badge ===== */
   .react-aria-Badge.outline {
     background: transparent;
-    border-color: var(--border-color);
-    color: var(--text-color);
+    border-color: var(--outline);
+    color: var(--on-surface);
   }
 
-  /* Variant: Ghost */
+  /* ===== M3 Ghost Badge ===== */
   .react-aria-Badge.ghost {
-    background: var(--color-gray-100);
-    color: var(--text-color);
+    background: var(--surface-container-low);
+    color: var(--on-surface);
   }
 
   /* Size: XS */

@@ -24,6 +24,8 @@ const button = tv({
       default: "",
       primary: "primary",
       secondary: "secondary",
+      tertiary: "tertiary",
+      error: "error",
       surface: "surface",
       outline: "outline",
       ghost: "ghost",

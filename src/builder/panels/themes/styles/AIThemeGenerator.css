@@ -50,16 +50,16 @@
     font-size: var(--text-base);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     color: var(--text-color);
   }
 
   .form-group input:focus,
   .form-group textarea:focus,
   .form-group select:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
   }
 
   .form-group textarea {
@@ -68,7 +68,7 @@
 
   .field-hint {
     font-size: var(--text-sm);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     margin: 0;
   }
 
@@ -96,8 +96,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--surface-primary);
-    background: var(--action-primary-bg-pressed);
+    color: var(--surface-container);
+    background: var(--primary);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -105,7 +105,7 @@
   }
 
   .generate-btn:hover {
-    background: var(--action-primary-bg-pressed);
+    background: var(--primary);
   }
 
   .generate-btn:active {
@@ -115,7 +115,7 @@
   /* Progress */
   .progress-container {
     padding: var(--spacing-6);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-radius: var(--radius-lg);
   }
 
@@ -136,7 +136,7 @@
   .progress-percentage {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
   }
 
   .progress-bar {
@@ -149,7 +149,7 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--action-primary-bg), var(--action-primary-bg-pressed));
+    background: linear-gradient(90deg, var(--primary), var(--primary));
     transition: width 300ms ease-out;
   }
 
@@ -187,12 +187,12 @@
     height: 32px;
     border: 2px solid var(--border-color-hover);
     border-radius: 50%;
-    background: var(--surface-primary);
+    background: var(--surface-container);
   }
 
   .stage-indicator.active .stage-icon {
-    border-color: var(--action-primary-bg);
-    background: var(--action-primary-bg-hover);
+    border-color: var(--primary);
+    background: var(--primary-container);
     animation: pulse 2s infinite;
   }
 
@@ -219,7 +219,7 @@
   /* Results */
   .generation-results {
     padding: var(--spacing-6);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border: 1px solid var(--status-success);
     border-radius: var(--radius-lg);
   }
@@ -242,17 +242,17 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--action-primary-bg-pressed);
-    background: var(--surface-primary);
-    border: 1px solid var(--action-primary-bg);
+    color: var(--primary);
+    background: var(--surface-container);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .new-theme-btn:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    background: var(--primary-container);
+    border-color: var(--primary);
   }
 
   /* Result Stats */
@@ -268,7 +268,7 @@
     flex-direction: column;
     gap: var(--spacing-1);
     padding: var(--spacing-4);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
   }
 
@@ -287,7 +287,7 @@
   /* Palette Preview */
   .palette-preview {
     padding: var(--spacing-4);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
   }
 
@@ -339,7 +339,7 @@
   /* Error */
   .error-message {
     padding: var(--spacing-6);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
@@ -361,7 +361,7 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
+    color: var(--surface-container);
     background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);

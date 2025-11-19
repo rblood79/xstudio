@@ -41,8 +41,8 @@
 
     .react-aria-TableHeader {
       font-size: var(--text-sm);
-      color: var(--action-primary-bg-pressed);
-      background: var(--border-color);
+      color: var(--primary-pressed);
+      background: var(--surface-container);
 
       /*  &:after {
             content: '';
@@ -51,12 +51,12 @@
         }*/
 
       & tr:last-child .react-aria-Column {
-        border-bottom: 1px solid var(--border-color-hover);
+        border-bottom: 1px solid var(--outline);
         cursor: default;
       }
 
       .react-aria-Column {
-        border-right: 1px solid var(--border-color-hover);
+        border-right: 1px solid var(--outline);
 
         &:last-child {
           border-right: none;
@@ -83,7 +83,7 @@
         top: 10%;
         bottom: 10%;
         width: var(--spacing-2xs);
-        background-color: var(--status-info);
+        background-color: var(--primary);
         height: 80%;
         flex: 0 0 auto;
         touch-action: none;
@@ -126,13 +126,13 @@
       }
 
       &[data-pressed] {
-        background: var(--surface-secondary);
+        background: var(--surface-container-high);
       }
 
       &[data-selected] {
-        background: var(--highlight-background);
-        color: var(--highlight-foreground);
-        --focus-ring-color: var(--highlight-foreground);
+        background: var(--primary);
+        color: var(--on-primary);
+        --focus-ring-color: var(--on-primary);
 
         &[data-focus-visible],
         .react-aria-Cell[data-focus-visible] {
@@ -197,10 +197,10 @@
   }
 
   :where(.react-aria-Row) .react-aria-Checkbox {
-    --selected-color: var(--highlight-foreground);
-    --selected-color-pressed: var(--highlight-foreground-pressed);
-    --checkmark-color: var(--highlight-background);
-    --background-color: var(--highlight-background);
+    --selected-color: var(--on-primary);
+    --selected-color-pressed: var(--on-primary);
+    --checkmark-color: var(--primary);
+    --background-color: var(--primary);
   }
 
   .react-aria-Row[data-href] {
@@ -255,23 +255,23 @@
   }
 
   .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--highlight-background);
+    outline: 1px solid var(--primary);
     transform: translateZ(0);
   }
 
   .react-aria-Table[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
+    outline: 2px solid var(--primary);
     outline-offset: -1px;
-    background: var(--highlight-overlay);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
 
   .react-aria-Row[data-drop-target] {
-    outline: 2px solid var(--highlight-background);
-    background: var(--highlight-overlay);
+    outline: 2px solid var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
   }
 
   .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid var(--highlight-background);
+    outline: 1px solid var(--primary);
     transform: translateZ(0);
   }
 
@@ -383,7 +383,7 @@
   }
 
   .react-aria-PageButton:hover:not(:disabled) {
-    background-color: var(--action-primary-bg);
+    background-color: var(--primary-hover);
   }
 
   .react-aria-PageButton:disabled {
@@ -392,12 +392,12 @@
   }
 
   .react-aria-PageButton.active {
-    background-color: var(--action-primary-bg-pressed);
-    color: var(--surface-primary);
+    background-color: var(--primary);
+    color: var(--on-primary);
   }
 
   .react-aria-PageButton.active:hover {
-    background-color: var(--action-primary-bg-pressed);
+    background-color: var(--primary-hover);
   }
 
   .react-aria-GoToPage {
@@ -417,12 +417,12 @@
 
   .react-aria-GoToPageInput:focus {
     outline: none;
-    border-color: var(--action-primary-bg-pressed);
+    border-color: var(--primary);
     box-shadow: var(--drop-shadow-md);
   }
 
   .react-aria-GoToPageButton:hover:not(:disabled) {
-    background-color: var(--action-primary-bg-pressed);
+    background-color: var(--primary-hover);
   }
 
   .react-aria-GoToPageButton:disabled {

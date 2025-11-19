@@ -35,17 +35,17 @@
       width: var(--text-lg);
       height: var(--text-lg);
       border-radius: 50%;
-      background: var(--highlight-background);
-      border: 2px solid var(--background-color);
+      background: var(--primary);
+      border: 2px solid var(--surface);
       forced-color-adjust: none;
 
       &[data-dragging] {
-        background: var(--highlight-background-pressed);
-        outline: 2px solid var(--focus-ring-color);
+        background: var(--primary-pressed);
+        outline: 2px solid var(--primary);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
       }
     }
 
@@ -191,35 +191,77 @@
     }
   }
 
-  /* Primary variant */
+  /* ===== M3 Primary Variant ===== */
   .react-aria-Slider.primary {
     .react-aria-SliderThumb {
-      background: var(--action-primary-bg);
+      background: var(--primary);
 
       &[data-dragging] {
-        background: var(--action-primary-bg-pressed);
+        background: var(--primary-pressed);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--primary);
       }
     }
   }
 
-  /* Secondary variant */
+  /* ===== M3 Secondary Variant ===== */
   .react-aria-Slider.secondary {
     .react-aria-SliderThumb {
-      background: var(--action-secondary-bg);
+      background: var(--secondary);
 
       &[data-dragging] {
-        background: var(--action-secondary-bg-pressed);
+        background: var(--secondary-pressed);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
       }
     }
   }
 
-  /* Surface variant */
-  .react-aria-Slider.surface {
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Slider.tertiary {
     .react-aria-SliderThumb {
-      background: var(--action-surface-bg);
+      background: var(--tertiary);
 
       &[data-dragging] {
-        background: var(--action-surface-bg-pressed);
+        background: var(--tertiary-pressed);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--tertiary);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Slider.error {
+    .react-aria-SliderThumb {
+      background: var(--error);
+
+      &[data-dragging] {
+        background: var(--error-pressed);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  /* ===== M3 Surface Variant ===== */
+  .react-aria-Slider.surface {
+    .react-aria-SliderThumb {
+      background: var(--surface-container-highest);
+
+      &[data-dragging] {
+        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--on-surface);
       }
     }
   }

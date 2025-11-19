@@ -27,15 +27,15 @@
     align-items: center;
     gap: var(--spacing-3);
     padding: var(--spacing-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     transition: all 200ms;
     width: 100%;
   }
 
   .action-card:hover {
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
@@ -45,8 +45,8 @@
   }
 
   .action-card.editing {
-    border-color: var(--action-primary-bg);
-    box-shadow: 0 0 0 3px var(--action-primary-bg-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   }
 
   /* Drag Handle */
@@ -109,7 +109,7 @@
 
   .action-index {
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     font-weight: 500;
   }
 
@@ -132,7 +132,7 @@
   .action-control-button {
     padding: var(--spacing-1) var(--spacing-2);
     background: transparent;
-    border: 1px solid var(--border-color-hover);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
     cursor: pointer;
@@ -141,13 +141,13 @@
   }
 
   .action-control-button:hover {
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
     border-color: var(--text-color-placeholder);
   }
 
   .action-delete-button:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--status-error);
+    background: var(--error-container);
+    border-color: var(--error);
   }
 
   /* Inline Action Editor */
@@ -156,8 +156,8 @@
     flex-direction: column;
     gap: var(--spacing-3);
     padding: var(--spacing-4);
-    background: var(--surface-tertiary);
-    border: 1px solid var(--action-primary-bg);
+    background: var(--surface-container-low);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     width: 100%;
   }
@@ -167,7 +167,7 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: var(--spacing-2);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--outline-variant);
   }
 
   .editor-title {
@@ -206,7 +206,7 @@
   }
 
   .required-indicator {
-    color: var(--status-error);
+    color: var(--error);
     margin-left: 2px;
   }
 
@@ -218,19 +218,19 @@
   .editor-field .react-aria-TextField textarea {
     width: 100%;
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--on-surface);
     transition: all 200ms;
   }
 
   .editor-field .react-aria-TextField input:focus,
   .editor-field .react-aria-TextField textarea:focus {
     outline: none;
-    border-color: var(--action-primary-bg);
-    box-shadow: 0 0 0 3px var(--action-primary-bg-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   }
 
   .editor-field .react-aria-TextField textarea {
@@ -241,26 +241,26 @@
   .field-select {
     width: 100%;
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
-    color: var(--text-color);
+    color: var(--on-surface);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .field-select:focus {
     outline: none;
-    border-color: var(--action-primary-bg);
-    box-shadow: 0 0 0 3px var(--action-primary-bg-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   }
 
   .no-config-message {
     padding: var(--spacing-4);
     text-align: center;
     font-size: var(--text-sm);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 
   /* Editor Actions */
@@ -274,36 +274,36 @@
 
   .editor-cancel-button {
     padding: var(--spacing-2) var(--spacing-4);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color-hover);
+    background: var(--surface-container);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--on-surface);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .editor-cancel-button:hover {
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
     border-color: var(--text-color-placeholder);
   }
 
   .editor-save-button {
     padding: var(--spacing-2) var(--spacing-4);
-    background: var(--action-primary-bg);
-    border: 1px solid var(--action-primary-bg-pressed);
+    background: var(--primary);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--surface-primary);
+    color: var(--on-primary);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .editor-save-button:hover {
-    background: var(--action-primary-bg-pressed);
-    border-color: var(--action-primary-bg-pressed);
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
   }
 
   /* Empty State */
@@ -315,8 +315,8 @@
     gap: var(--spacing-3);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--surface-tertiary);
-    border: 1px dashed var(--border-color);
+    background: var(--surface-container-low);
+    border: 1px dashed var(--outline-variant);
     border-radius: var(--radius-md);
   }
 
@@ -335,19 +335,19 @@
   .add-action-button {
     width: 100%;
     padding: var(--spacing-3);
-    background: var(--action-primary-bg-hover);
-    border: 1px dashed var(--action-primary-bg);
+    background: var(--primary-container);
+    border: 1px dashed var(--primary);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--action-primary-bg-pressed);
+    color: var(--on-primary-container);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .add-action-button:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    background: color-mix(in srgb, var(--primary-container) 92%, black);
+    border-color: var(--primary);
     border-style: solid;
   }
 

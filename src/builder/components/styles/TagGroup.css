@@ -15,9 +15,9 @@
   }
   
   .react-aria-Tag {
-    color: var(--text-color);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    color: var(--on-surface);
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
     forced-color-adjust: none;
     border-radius: var(--radius-sm);
     padding: var(--spacing-2xs) var(--spacing-sm);
@@ -29,69 +29,104 @@
     transition: all 200ms;
 
     &[data-hovered] {
-      border-color: var(--border-color-hover);
+      border-color: var(--outline);
+      background: color-mix(in srgb, var(--surface-container-high) 92%, black);
     }
 
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
 
     &[data-selected] {
-      border-color: var(--highlight-background);
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--on-primary);
     }
   }
 
-  /* Primary variant - controlled by TagGroup */
+  /* ===== M3 Primary - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="primary"] .react-aria-Tag {
-    background: var(--action-primary-bg);
-    color: var(--action-primary-text);
-    border-color: var(--action-primary-border);
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
 
     &[data-hovered] {
-      background: var(--action-primary-bg-hover);
-      border-color: var(--action-primary-border-hover);
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
     }
 
     &[data-pressed] {
-      background: var(--action-primary-bg-pressed);
-      border-color: var(--action-primary-border-pressed);
+      background: var(--primary-pressed);
+      border-color: var(--primary-pressed);
     }
   }
 
-  /* Secondary variant - controlled by TagGroup */
+  /* ===== M3 Secondary - Controlled by TagGroup ===== */
   .react-aria-TagGroup[data-tag-variant="secondary"] .react-aria-Tag {
-    background: var(--action-secondary-bg);
-    color: var(--action-secondary-text);
-    border-color: var(--action-secondary-border);
+    background: var(--secondary);
+    color: var(--on-secondary);
+    border-color: var(--secondary);
 
     &[data-hovered] {
-      background: var(--action-secondary-bg-hover);
-      border-color: var(--action-secondary-border-hover);
+      background: var(--secondary-hover);
+      border-color: var(--secondary-hover);
     }
 
     &[data-pressed] {
-      background: var(--action-secondary-bg-pressed);
-      border-color: var(--action-secondary-border-pressed);
+      background: var(--secondary-pressed);
+      border-color: var(--secondary-pressed);
     }
   }
 
-  /* Surface variant - controlled by TagGroup */
-  .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
-    background: var(--action-surface-bg);
-    color: var(--action-surface-text);
-    border-color: var(--action-surface-border);
+  /* ===== M3 Tertiary - Controlled by TagGroup ===== */
+  .react-aria-TagGroup[data-tag-variant="tertiary"] .react-aria-Tag {
+    background: var(--tertiary);
+    color: var(--on-tertiary);
+    border-color: var(--tertiary);
 
     &[data-hovered] {
-      background: var(--action-surface-bg-hover);
-      border-color: var(--action-surface-border-hover);
+      background: var(--tertiary-hover);
+      border-color: var(--tertiary-hover);
     }
 
     &[data-pressed] {
-      background: var(--action-surface-bg-pressed);
-      border-color: var(--action-surface-border-pressed);
+      background: var(--tertiary-pressed);
+      border-color: var(--tertiary-pressed);
+    }
+  }
+
+  /* ===== M3 Error - Controlled by TagGroup ===== */
+  .react-aria-TagGroup[data-tag-variant="error"] .react-aria-Tag {
+    background: var(--error);
+    color: var(--on-error);
+    border-color: var(--error);
+
+    &[data-hovered] {
+      background: var(--error-hover);
+      border-color: var(--error-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--error-pressed);
+      border-color: var(--error-pressed);
+    }
+  }
+
+  /* ===== M3 Surface - Controlled by TagGroup ===== */
+  .react-aria-TagGroup[data-tag-variant="surface"] .react-aria-Tag {
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    border-color: var(--outline-variant);
+
+    &[data-hovered] {
+      background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
+      border-color: var(--outline);
+    }
+
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+      border-color: var(--outline);
     }
   }
 

@@ -50,20 +50,20 @@
     font-size: var(--text-base);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     color: var(--text-color);
   }
 
   .figma-import-form input:focus,
   .figma-import-form select:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 0;
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
   }
 
   .figma-import-form .field-hint {
     font-size: var(--text-sm);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     margin: 0;
   }
 
@@ -99,8 +99,8 @@
     padding: var(--spacing-3) var(--spacing-6);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--surface-primary);
-    background: var(--action-primary-bg-pressed);
+    color: var(--surface-container);
+    background: var(--primary);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -108,7 +108,7 @@
   }
 
   .import-btn:hover:not(:disabled) {
-    background: var(--action-primary-bg-pressed);
+    background: var(--primary);
   }
 
   .import-btn:disabled {
@@ -130,7 +130,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid var(--border-color);
-    border-top-color: var(--action-primary-bg);
+    border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -149,8 +149,8 @@
   /* Results */
   .import-results {
     padding: var(--spacing-6);
-    background: var(--action-primary-bg-hover);
-    border: 1px solid var(--action-primary-bg-hover);
+    background: var(--primary-container);
+    border: 1px solid var(--primary-container);
     border-radius: var(--radius-lg);
   }
 
@@ -164,7 +164,7 @@
   .result-header h3 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
     margin: 0;
   }
 
@@ -172,17 +172,17 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--action-primary-bg-pressed);
-    background: var(--surface-primary);
-    border: 1px solid var(--action-primary-bg);
+    color: var(--primary);
+    background: var(--surface-container);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .reset-btn:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    background: var(--primary-container);
+    border-color: var(--primary);
   }
 
   /* Import Stats */
@@ -199,12 +199,12 @@
     align-items: center;
     gap: var(--spacing-1);
     padding: var(--spacing-4);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
   }
 
   .stat-card.total {
-    background: var(--action-primary-bg-pressed);
+    background: var(--primary);
   }
 
   .stat-number {
@@ -214,7 +214,7 @@
   }
 
   .stat-card.total .stat-number {
-    color: var(--surface-primary);
+    color: var(--surface-container);
   }
 
   .stat-label {
@@ -224,13 +224,13 @@
   }
 
   .stat-card.total .stat-label {
-    color: var(--surface-primary);
+    color: var(--surface-container);
   }
 
   /* Skipped Notice */
   .skipped-notice {
     padding: var(--spacing-3) var(--spacing-4);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border: 1px solid var(--status-warning);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-4);
@@ -244,7 +244,7 @@
   /* Error List */
   .error-list {
     padding: var(--spacing-4);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-4);
@@ -267,7 +267,7 @@
     font-size: var(--text-sm);
     color: var(--status-error);
     padding: var(--spacing-2) 0;
-    border-bottom: 1px solid var(--action-primary-bg-hover);
+    border-bottom: 1px solid var(--primary-container);
   }
 
   .error-list li:last-child {
@@ -282,7 +282,7 @@
   /* Token List Preview */
   .token-list-preview {
     padding: var(--spacing-4);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-md);
   }
 
@@ -304,7 +304,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-2);
-    border-bottom: 1px solid var(--surface-secondary);
+    border-bottom: 1px solid var(--surface-container-high);
   }
 
   .token-list-preview li:last-child {
@@ -313,7 +313,7 @@
 
   .token-list-preview li.more {
     justify-content: center;
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     font-size: var(--text-sm);
   }
 
@@ -327,7 +327,7 @@
   .token-type {
     font-size: var(--text-xs);
     padding: var(--spacing-1) var(--spacing-2);
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
     color: var(--text-color-secondary);
     border-radius: var(--radius-sm);
     text-transform: uppercase;
@@ -336,7 +336,7 @@
   /* Error Message */
   .figma-importer-container .error-message {
     padding: var(--spacing-6);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
     border: 1px solid var(--status-error);
     border-radius: var(--radius-lg);
   }
@@ -358,7 +358,7 @@
     padding: var(--spacing-2) var(--spacing-4);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--surface-primary);
+    color: var(--surface-container);
     background: var(--status-error);
     border: none;
     border-radius: var(--radius-md);

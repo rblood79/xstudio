@@ -9,7 +9,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
   }
 
   /* Dark Mode Container */
@@ -22,7 +22,7 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-4);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-bottom: 1px solid var(--border-color);
   }
 
@@ -46,7 +46,7 @@
   }
 
   [data-theme='dark'] .studio-title {
-    color: var(--surface-secondary);
+    color: var(--surface-container-high);
   }
 
   /* Active Theme Selector */
@@ -67,13 +67,13 @@
     font-size: var(--text-sm);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     color: var(--text-color);
     cursor: pointer;
   }
 
   .active-theme-selector select:focus {
-    outline: 2px solid var(--action-primary-bg);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
 
@@ -86,7 +86,7 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     color: var(--text-color);
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border: 1px solid var(--border-color-hover);
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -94,7 +94,7 @@
   }
 
   .preview-dark-mode-toggle:hover {
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-color: var(--text-color-placeholder);
   }
 
@@ -106,7 +106,7 @@
 
   [data-theme='dark'] .preview-dark-mode-toggle:hover {
     background: var(--text-color);
-    border-color: var(--control-secondary-bg);
+    border-color: var(--on-surface-variant);
   }
 
   /* View Tabs */
@@ -130,12 +130,12 @@
 
   .view-tabs button:hover {
     color: var(--text-color);
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
   }
 
   .view-tabs button.active {
-    color: var(--action-primary-bg-pressed);
-    background: var(--action-primary-bg-hover);
+    color: var(--primary);
+    background: var(--primary-container);
   }
 
   /* Body Layout */
@@ -148,7 +148,7 @@
   /* Sidebar */
   .theme-studio-sidebar {
     width: 260px;
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -178,17 +178,17 @@
     padding: var(--spacing-1) var(--spacing-2);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--action-primary-bg-pressed);
+    color: var(--primary);
     background: transparent;
-    border: 1px solid var(--action-primary-bg);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .create-theme-btn:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--action-primary-bg);
+    background: var(--primary-container);
+    border-color: var(--primary);
   }
 
   /* Theme List */
@@ -210,12 +210,12 @@
   }
 
   .theme-item:hover {
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
   }
 
   .theme-item.active {
-    background: var(--action-primary-bg-hover);
-    border: 1px solid var(--action-primary-bg-hover);
+    background: var(--primary-container);
+    border: 1px solid var(--primary-container);
   }
 
   .theme-info {
@@ -239,11 +239,11 @@
   }
 
   [data-theme='dark'] .theme-name {
-    color: var(--surface-secondary);
+    color: var(--surface-container-high);
   }
 
   .dark-mode-indicator {
-    color: var(--action-primary-bg);
+    color: var(--primary);
     flex-shrink: 0;
   }
 
@@ -251,14 +251,14 @@
     font-size: var(--text-xs);
     padding: var(--spacing-1) var(--spacing-2);
     border-radius: var(--radius-sm);
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
     color: var(--text-color-secondary);
     text-transform: uppercase;
   }
 
   .theme-item.active .theme-status {
-    background: var(--action-primary-bg-hover);
-    color: var(--action-primary-bg-pressed);
+    background: var(--primary-container);
+    color: var(--primary);
   }
 
   .delete-theme-btn {
@@ -285,7 +285,7 @@
 
   .delete-theme-btn:hover {
     color: var(--status-error);
-    background: var(--action-primary-bg-hover);
+    background: var(--primary-container);
   }
 
   /* Main Content */
@@ -305,7 +305,7 @@
   /* Right Panel */
   .theme-studio-panel {
     width: 320px;
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-left: 1px solid var(--border-color);
     padding: var(--spacing-4);
     overflow-y: auto;
@@ -332,7 +332,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid var(--border-color);
-    border-top-color: var(--action-primary-bg);
+    border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -355,7 +355,7 @@
   .dark-mode-view,
   .figma-plugin-view,
   .settings-view {
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-lg);
     padding: var(--spacing-6);
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
@@ -364,7 +364,7 @@
   /* Token Preview */
   .token-preview {
     padding: var(--spacing-4);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-radius: var(--radius-md);
   }
 
@@ -376,7 +376,7 @@
 
   /* Theme Settings Section */
   .theme-settings-section {
-    background: var(--surface-primary);
+    background: var(--surface-container);
     border-radius: var(--radius-lg);
     padding: var(--spacing-6);
     margin-bottom: var(--spacing-6);
@@ -395,7 +395,7 @@
   }
 
   [data-theme='dark'] .theme-settings-section h3 {
-    color: var(--surface-secondary);
+    color: var(--surface-container-high);
   }
 
   .setting-item {
@@ -403,7 +403,7 @@
     flex-direction: column;
     gap: var(--spacing-2);
     padding: var(--spacing-4);
-    background: var(--surface-tertiary);
+    background: var(--surface-container-low);
     border-radius: var(--radius-md);
   }
 
@@ -422,7 +422,7 @@
   }
 
   [data-theme='dark'] .setting-item label {
-    color: var(--surface-secondary);
+    color: var(--surface-container-high);
   }
 
   .setting-item input[type='checkbox'] {

@@ -24,25 +24,25 @@
 
   .add-event-button-header {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--action-primary-bg);
-    border: 1px solid var(--action-primary-bg-pressed);
+    background: var(--primary);
+    border: 1px solid var(--primary);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--surface-primary);
+    color: var(--on-primary);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .add-event-button-header:hover {
-    background: var(--action-primary-bg-pressed);
-    border-color: var(--action-primary-bg-pressed);
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
   }
 
   /* Add Event Container */
   .add-event-container {
-    background: var(--surface-tertiary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     padding: var(--spacing-4);
   }
@@ -56,8 +56,8 @@
     gap: var(--spacing-2);
     padding: var(--spacing-8) var(--spacing-4);
     text-align: center;
-    background: var(--surface-tertiary);
-    border: 2px dashed var(--border-color);
+    background: var(--surface-container-low);
+    border: 2px dashed var(--outline-variant);
     border-radius: var(--radius-md);
   }
 
@@ -75,7 +75,7 @@
 
   .event-section .empty-hint {
     font-size: var(--text-sm);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     margin: 0;
   }
 
@@ -92,15 +92,15 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .handler-item:hover {
-    border-color: var(--action-primary-bg);
+    border-color: var(--primary);
     transform: translateX(0px);
   }
 
@@ -117,7 +117,7 @@
 
   .handler-action-count {
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
   }
 
   .handler-arrow {
@@ -128,7 +128,7 @@
 
   .handler-item:hover .handler-arrow {
     transform: translateX(4px);
-    color: var(--action-primary-bg);
+    color: var(--primary);
   }
 
   /* Selected Handler Container */
@@ -143,8 +143,8 @@
     align-items: center;
     gap: var(--gap);
     padding: var(--spacing);
-    background: var(--surface-tertiary);
-    border: 1px solid var(--border-color);
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
 
     .react-aria-Button {
@@ -154,18 +154,18 @@
 
   .back-button {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--border-color-hover);
+    background: var(--surface-container);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-color);
+    color: var(--on-surface);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .back-button:hover {
-    background: var(--surface-secondary);
+    background: var(--surface-container-high);
     border-color: var(--text-color-placeholder);
   }
 
@@ -177,19 +177,19 @@
 
   .remove-handler-button {
     padding: var(--spacing-2) var(--spacing-3);
-    background: var(--surface-primary);
-    border: 1px solid var(--status-error);
+    background: var(--surface-container);
+    border: 1px solid var(--error);
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--status-error);
+    color: var(--error);
     cursor: pointer;
     transition: all 200ms;
   }
 
   .remove-handler-button:hover {
-    background: var(--action-primary-bg-hover);
-    border-color: var(--status-error);
+    background: var(--error-container);
+    border-color: var(--error);
   }
 
   /* Responsive adjustments */

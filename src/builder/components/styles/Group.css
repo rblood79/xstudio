@@ -52,12 +52,12 @@
 
       /* Hover state in builder */
       &:hover {
-        outline-color: var(--action-primary-bg, rgba(59, 130, 246, 0.5));
+        outline-color: var(--primary, rgba(59, 130, 246, 0.5));
       }
 
       /* Focus within in builder */
       &[data-focus-within] {
-        outline-color: var(--action-primary-bg, rgba(59, 130, 246, 0.7));
+        outline-color: var(--primary, rgba(59, 130, 246, 0.7));
         outline-width: 2px;
       }
     }

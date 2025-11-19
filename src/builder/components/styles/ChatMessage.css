@@ -12,7 +12,7 @@
 
   .chat-message[data-role="user"] {
     flex-direction: row-reverse;
-    background-color: var(--surface-tertiary);
+    background-color: var(--surface-container-low);
   }
 
   .chat-message[data-role="assistant"] {
@@ -32,13 +32,13 @@
   }
 
   .chat-message[data-role="user"] .avatar {
-    background-color: var(--action-primary-bg-pressed);
-    color: var(--surface-primary);
+    background-color: var(--primary);
+    color: var(--on-primary);
   }
 
   .chat-message[data-role="assistant"] .avatar {
-    background-color: var(--action-secondary-bg-pressed);
-    color: var(--surface-primary);
+    background-color: var(--secondary);
+    color: var(--on-secondary);
   }
 
   .chat-message .content {
@@ -55,21 +55,21 @@
   }
 
   .chat-message[data-role="user"] .bubble {
-    background-color: var(--action-primary-bg-pressed);
-    color: var(--surface-primary);
+    background-color: var(--primary);
+    color: var(--on-primary);
     margin-left: auto;
     max-width: 80%;
   }
 
   .chat-message[data-role="assistant"] .bubble {
-    background-color: var(--surface-primary);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--surface-container);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
   }
 
   .chat-message .timestamp {
     font-size: var(--text-xs);
-    color: var(--control-secondary-bg);
+    color: var(--on-surface-variant);
     margin-top: var(--spacing);
     padding: 0 var(--spacing-2);
   }

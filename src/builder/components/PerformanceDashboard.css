@@ -54,8 +54,8 @@
 }
 
 .action-btn.active {
-  background: var(--action-primary-bg, #3b82f6);
-  border-color: var(--action-primary-bg, #3b82f6);
+  background: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
   color: white;
 }
 
@@ -110,7 +110,7 @@
 }
 
 .stat-value.highlight {
-  color: var(--action-primary-bg, #3b82f6);
+  color: var(--primary, #3b82f6);
 }
 
 .stat-value.success {

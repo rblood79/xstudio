@@ -581,7 +581,7 @@
     .slider-thumb {
       width: 16px;
       height: 16px;
-      background: var(--action-primary-bg);
+      background: var(--primary);
       border: 2px solid var(--builder-inspector-bg);
       border-radius: var(--radius-full);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -590,7 +590,7 @@
 
       &[data-focused],
       &[data-dragging] {
-        background: var(--action-primary-bg-pressed);
+        background: var(--primary-pressed);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
     }
@@ -666,7 +666,7 @@
 
   /* Inline style - User set (Blue) */
   .source-dot.inline {
-    background: var(--action-primary-bg);
+    background: var(--primary);
   }
 
   /* Computed style - CSS class (Green) */
@@ -715,7 +715,7 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--action-primary-bg);
+    background: var(--primary);
     margin-right: var(--spacing-sm);
     vertical-align: middle;
   }
@@ -759,7 +759,7 @@
   }
 
   .spinner-circle {
-    stroke: var(--action-primary-bg);
+    stroke: var(--primary);
     stroke-linecap: round;
     stroke-dasharray: 90, 150;
     stroke-dashoffset: 0;
@@ -834,7 +834,7 @@
   .count-number {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-bold);
-    color: var(--action-primary-bg);
+    color: var(--primary);
   }
 
   .count-label {
@@ -862,7 +862,7 @@
   .badge-type {
     font-size: var(--text-xs);
     font-weight: var(--font-weight-semibold);
-    color: var(--action-primary-bg);
+    color: var(--primary);
   }
 
   .status-actions {
@@ -1040,7 +1040,7 @@
   .pending-badge {
     font-size: var(--text-2xs);
     padding: 2px var(--spacing-xs);
-    background: var(--action-primary-bg);
+    background: var(--primary);
     color: white;
     border-radius: var(--radius-xs);
     font-weight: var(--font-weight-medium);
@@ -1067,8 +1067,8 @@
 
     &:hover {
       background: var(--builder-inspector-bg);
-      border-color: var(--action-primary-bg);
-      color: var(--action-primary-bg);
+      border-color: var(--primary);
+      color: var(--primary);
     }
 
     &[data-pressed] {
