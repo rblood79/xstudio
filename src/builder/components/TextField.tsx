@@ -1,4 +1,9 @@
-// TextField 컴포넌트에서 placeholder 올바르게 전달
+/**
+ * TextField Component - Material Design 3
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ */
 
 import {
   FieldError,
@@ -7,8 +12,11 @@ import {
   Text,
   TextField as AriaTextField,
   TextFieldProps as AriaTextFieldProps,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+import type { TextFieldVariant, ComponentSize } from '../types/componentVariants';
 
 import './styles/TextField.css';
 
@@ -18,13 +26,37 @@ export interface TextFieldProps extends AriaTextFieldProps {
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
   type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
-  value?: string; // value만 유지
-  // defaultValue 제거
+  value?: string;
   onChange?: (value: string) => void;
   isRequired?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  // M3 props
+  variant?: TextFieldVariant;
+  size?: ComponentSize;
 }
+
+const textFieldStyles = tv({
+  base: 'react-aria-TextField',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 export function TextField({
   label,
@@ -32,25 +64,30 @@ export function TextField({
   errorMessage,
   placeholder = "Enter text...",
   type = 'text',
-  value, // value만 사용
-  // defaultValue 제거
+  value,
   onChange,
   isRequired,
   isDisabled,
   isReadOnly,
+  variant = 'primary',
+  size = 'md',
   ...props
 }: TextFieldProps) {
-  // 개발 환경에서 placeholder 값 로깅
-  /*if (process.env.NODE_ENV === 'development') {
-    console.log('TextField placeholder:', placeholder);
-  }*/
-
   return (
     <AriaTextField
       {...props}
-      className='react-aria-TextField'
-      value={value} // value만 전달
-      // defaultValue 제거
+      className={composeRenderProps(
+        props.className,
+        (className, renderProps) => {
+          return textFieldStyles({
+            ...renderProps,
+            variant,
+            size,
+            className,
+          });
+        }
+      )}
+      value={value}
       onChange={onChange}
       isRequired={isRequired}
       isDisabled={isDisabled}
@@ -59,7 +96,7 @@ export function TextField({
       {label && <Label>{label}</Label>}
       <Input
         type={type}
-        placeholder={placeholder} // placeholder를 Input에 직접 전달
+        placeholder={placeholder}
       />
       {description && <Text slot="description">{description}</Text>}
       <FieldError>{errorMessage}</FieldError>

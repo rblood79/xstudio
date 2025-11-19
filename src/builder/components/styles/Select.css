@@ -1,107 +1,489 @@
-@layer components {
-  .react-aria-Select {
-    color: var(--text-color);
+/**
+ * Material Design 3 Select Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/menus
+ */
 
-    .react-aria-Button {
-      border-radius: var(--border-radius);
+@layer components {
+  /* ========== Base Select Styles ========== */
+  .react-aria-Select {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    color: var(--on-surface);
+
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
       font-size: var(--text-sm);
-      padding: var(--spacing);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    /* ===== Button (Trigger) Styles ===== */
+    .react-aria-Button {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing) var(--spacing-md);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--border-radius);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all 200ms ease;
+      forced-color-adjust: none;
 
-      &[data-focus-visible],
-      &[data-pressed] {
-        outline: 2px solid var(--focus-ring-color);
+      /* Hover State */
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        border-color: var(--outline);
+        background: var(--surface-container-high);
+      }
+
+      /* Pressed State */
+      &[data-pressed]:not([data-disabled]) {
+        background: var(--surface-container-highest);
+        border-color: var(--primary);
+      }
+
+      /* Focus Visible State */
+      &[data-focus-visible] {
+        outline: 2px solid var(--primary);
         outline-offset: -1px;
       }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
+
+        .select-chevron {
+          background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        }
+      }
     }
 
+    /* ===== SelectValue Styles ===== */
     .react-aria-SelectValue {
       font-size: var(--text-sm);
+      color: var(--on-surface);
+      flex: 1;
+
       &[data-placeholder] {
         font-style: italic;
-        color: var(--text-color-placeholder);
+        color: var(--on-surface-variant);
+        opacity: 0.6;
       }
-    }
 
-    span[aria-hidden] {
-      width: var(--text-xl);
-      height: var(--text-xl);
-      line-height: var(--text-xl);
-      margin-left: var(--spacing);
-      background: var(--highlight-background);
-      color: var(--highlight-foreground);
-      forced-color-adjust: none;
-      border-radius: var(--border-radius);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-
-  .react-aria-Popover[data-trigger="Select"] {
-    min-width: var(--trigger-width);
-    contain: layout style paint;
-
-    .react-aria-ListBox {
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-      min-height: 24px;
-
-      .react-aria-ListBoxItem {
-        transform: translate3d(0, 0, 0);
-      }
-    }
-  }
-
-  .react-aria-ListBoxItem[href] {
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .react-aria-Select {
-    .react-aria-SelectValue {
       [slot="description"] {
         display: none;
       }
     }
 
-    .react-aria-Button {
-      &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
-        span[aria-hidden] {
-          background: var(--border-color-disabled);
-          color: var(--text-color-disabled);
+    /* ===== Chevron Icon Styles ===== */
+    .select-chevron {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-left: var(--spacing);
+      border-radius: var(--radius-xs);
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      transition: all 150ms ease;
+      forced-color-adjust: none;
+    }
+
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+    }
+
+    /* ===== Field Error ===== */
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
+    }
+  }
+
+  /* ========== Popover Styles (for Select dropdown) ========== */
+  .react-aria-Popover[data-trigger="Select"] {
+    min-width: var(--trigger-width);
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--border-radius);
+    background: var(--surface-container);
+    box-shadow: var(--shadow-lg);
+    contain: layout style paint;
+
+    /* ===== ListBox Styles ===== */
+    .react-aria-ListBox {
+      padding: var(--spacing-xs);
+      outline: none;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      min-height: 24px;
+
+      /* ===== ListBoxItem Styles ===== */
+      .react-aria-ListBoxItem {
+        padding: var(--spacing) var(--spacing-md);
+        border-radius: var(--radius-xs);
+        color: var(--on-surface);
+        cursor: pointer;
+        outline: none;
+        transition: all 150ms ease;
+        transform: translate3d(0, 0, 0);
+
+        /* Hover State */
+        &[data-hovered] {
+          background: var(--surface-container-high);
         }
 
-        .react-aria-SelectValue {
-          &[data-placeholder] {
-            color: var(--text-color-disabled);
-          }
+        /* Focused State */
+        &[data-focused] {
+          background: var(--surface-container-high);
+        }
+
+        /* Selected State */
+        &[data-selected] {
+          background: var(--primary-container);
+          color: var(--on-primary-container);
+          font-weight: 500;
+        }
+
+        /* Disabled State */
+        &[data-disabled] {
+          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+          cursor: not-allowed;
+        }
+
+        /* Link items */
+        &[href] {
+          text-decoration: none;
+          cursor: pointer;
         }
       }
     }
   }
 
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-Select.primary {
+    .react-aria-Label {
+      color: var(--primary);
+    }
+
+    .react-aria-Button {
+      border-color: var(--primary);
+
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+      }
+
+      .select-chevron {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-Select.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
+    }
+
+    .react-aria-Button {
+      border-color: var(--secondary);
+
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+      }
+
+      .select-chevron {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Select.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
+    }
+
+    .react-aria-Button {
+      border-color: var(--tertiary);
+
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+
+      .select-chevron {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Select.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-Button {
+      border-color: var(--error);
+
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+
+      .select-chevron {
+        background: var(--error-container);
+        color: var(--on-error-container);
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-Select.filled {
+    .react-aria-Button {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+      border-bottom: 2px solid var(--outline-variant);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        border-bottom-color: var(--primary);
+      }
+
+      &[data-focus-visible] {
+        outline: none;
+        border-bottom-color: var(--primary);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Select.sm {
+    .react-aria-Label {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-SelectValue {
+      font-size: var(--text-xs);
+    }
+
+    .select-chevron {
+      width: 20px;
+      height: 20px;
+      margin-left: var(--spacing-sm);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* Popover small size */
+  .react-aria-Popover[data-trigger="Select"].sm {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Select.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-SelectValue {
+      font-size: var(--text-sm);
+    }
+
+    .select-chevron {
+      width: 24px;
+      height: 24px;
+      margin-left: var(--spacing);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* Popover medium size */
+  .react-aria-Popover[data-trigger="Select"].md {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Select.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+    }
+
+    .react-aria-SelectValue {
+      font-size: var(--text-base);
+    }
+
+    .select-chevron {
+      width: 28px;
+      height: 28px;
+      margin-left: var(--spacing-md);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* Popover large size */
+  .react-aria-Popover[data-trigger="Select"].lg {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-Select[data-invalid] {
+    .react-aria-Button {
+      border-color: var(--error);
+    }
+  }
+
+  .react-aria-Select.filled[data-invalid] {
+    .react-aria-Button {
+      border-bottom-color: var(--error);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-Select .react-aria-Button {
+      &[data-disabled] {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+
+        .select-chevron {
+          background: rgba(0, 0, 0, 0.12);
+          color: rgba(0, 0, 0, 0.38);
+        }
+      }
+    }
+
+    .react-aria-Popover[data-trigger="Select"] .react-aria-ListBox .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-Select .react-aria-Button {
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
+
+        .select-chevron {
+          background: rgba(255, 255, 255, 0.12);
+          color: rgba(255, 255, 255, 0.38);
+        }
+      }
+    }
+
+    [data-theme="dark"] .react-aria-Popover[data-trigger="Select"] .react-aria-ListBox .react-aria-ListBoxItem {
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
   @media (forced-colors: active) {
     .react-aria-Select {
       .react-aria-Button {
-        &[data-disabled] span[aria-hidden] {
-          background: 0 0;
+        &[data-disabled] .select-chevron {
+          background: transparent;
         }
       }
-    }
-  }
-
-  .react-aria-Select {
-    .react-aria-FieldError {
-      font-size: 12px;
-      color: var(--invalid-color);
-    }
-
-    [slot="description"] {
-      font-size: 12px;
     }
   }
 }

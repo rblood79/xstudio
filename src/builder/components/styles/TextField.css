@@ -1,38 +1,327 @@
+/**
+ * Material Design 3 TextField Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/text-fields
+ */
+
 @layer components {
+  /* ========== Base TextField Styles ========== */
   .react-aria-TextField {
     display: flex;
     flex-direction: column;
     width: fit-content;
-    color: var(--text-color);
+    gap: var(--spacing-xs);
 
-    .react-aria-Input,
-    .react-aria-TextArea {
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    /* ===== Input Base Styles ===== */
+    .react-aria-Input {
+      width: 100%;
+      margin: 0;
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--border-radius);
+      padding: var(--spacing) var(--spacing-md);
+      background: var(--surface-container);
+      font-size: var(--text-sm);
+      color: var(--on-surface);
+      line-height: var(--text-sm--line-height);
+      transition: all 200ms ease;
+
+      /* Placeholder */
+      &::placeholder {
+        color: var(--on-surface-variant);
+        opacity: 0.6;
+      }
+
+      /* ===== Focus State ===== */
       &[data-focused] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
         outline-offset: -1px;
+        border-color: var(--primary);
+        background: var(--surface-container-high);
       }
-    }
 
-    .react-aria-Input,
-    .react-aria-TextArea {
+      /* ===== Hover State ===== */
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        border-color: var(--outline);
+        background: var(--surface-container-high);
+      }
+
+      /* ===== Invalid State ===== */
       &[data-invalid] {
-        border-color: var(--invalid-color);
+        border-color: var(--error);
+
+        &[data-focused] {
+          outline-color: var(--error);
+        }
+      }
+
+      /* ===== Disabled State ===== */
+      &[data-disabled] {
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
+
+      /* ===== Read Only State ===== */
+      &[data-readonly] {
+        background: var(--surface-container-low);
+        border-color: var(--outline-variant);
+        cursor: default;
       }
     }
 
-    .react-aria-FieldError {
-      color: var(--invalid-color);
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
     }
 
-    [slot="description"] {
+    /* ===== Field Error ===== */
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-TextField.primary {
+    .react-aria-Label {
+      color: var(--primary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--primary);
+
+      &[data-focused] {
+        outline-color: var(--primary);
+        border-color: var(--primary);
+        background: var(--primary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+      }
+
+      &::placeholder {
+        color: var(--on-primary-container);
+        opacity: 0.6;
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-TextField.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--secondary);
+
+      &[data-focused] {
+        outline-color: var(--secondary);
+        border-color: var(--secondary);
+        background: var(--secondary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+      }
+
+      &::placeholder {
+        color: var(--on-secondary-container);
+        opacity: 0.6;
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-TextField.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--tertiary);
+
+      &[data-focused] {
+        outline-color: var(--tertiary);
+        border-color: var(--tertiary);
+        background: var(--tertiary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+
+      &::placeholder {
+        color: var(--on-tertiary-container);
+        opacity: 0.6;
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-TextField.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+        border-color: var(--error);
+        background: var(--error-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+
+      &::placeholder {
+        color: var(--on-error-container);
+        opacity: 0.6;
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  /* Filled style with subtle surface background */
+  .react-aria-TextField.filled {
+    .react-aria-Input {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+      border-bottom: 2px solid var(--outline-variant);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-focused] {
+        outline: none;
+        border-bottom-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+
+      &[data-invalid] {
+        border-bottom-color: var(--error);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-TextField.sm {
+    .react-aria-Label {
       font-size: var(--text-xs);
     }
 
-    .react-aria-Input,
-    .react-aria-TextArea {
+    .react-aria-Input {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-TextField.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-TextField.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-TextField.primary[data-invalid],
+  .react-aria-TextField.secondary[data-invalid],
+  .react-aria-TextField.tertiary[data-invalid],
+  .react-aria-TextField.filled[data-invalid] {
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-TextField .react-aria-Input {
       &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+        /* Fallback: Use semi-transparent background */
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-TextField .react-aria-Input {
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
       }
     }
   }

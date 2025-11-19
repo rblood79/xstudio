@@ -1,33 +1,270 @@
+/**
+ * Material Design 3 Disclosure Styles
+ *
+ * M3 Variants: primary, secondary
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components
+ */
+
 @layer components {
-  
+  /* ========== Base Disclosure Container ========== */
   .react-aria-Disclosure {
+    width: 100%;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    padding: var(--spacing-sm);
+
+    /* Trigger button */
     .react-aria-Button[slot=trigger] {
-      background: none;
-      border: none;
-      box-shadow: none;
-      font-weight: bold;
-      font-size: 16px;
+      all: unset;
       display: flex;
       align-items: center;
-      gap: 8px;
-  
+      gap: var(--spacing-sm);
+      width: 100%;
+      padding: var(--spacing-sm);
+      font-weight: 500;
+      font-size: var(--text-base);
+      color: var(--on-surface);
+      background: transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 200ms, color 200ms;
+      outline: none;
+
+      /* Chevron icon */
       svg {
         rotate: 0deg;
         transition: rotate 200ms;
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
         fill: none;
         stroke: currentColor;
-        stroke-width: 3px;
+        stroke-width: 2px;
+      }
+
+      /* Hover state */
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+      }
+
+      /* Pressed state */
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      }
+
+      /* Focus visible state */
+      &[data-focus-visible] {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Disabled state */
+      &[data-disabled] {
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        pointer-events: none;
       }
     }
-  
+
+    /* Rotate chevron when expanded */
     &[data-expanded] .react-aria-Button[slot=trigger] svg {
       rotate: 90deg;
     }
   }
-  
+
+  /* ========== Disclosure Panel ========== */
   .react-aria-DisclosurePanel {
-    margin-left: 32px;
+    margin-left: calc(16px + var(--spacing-sm) + var(--spacing-sm));
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing);
+    color: var(--on-surface-variant);
+
+    p {
+      margin: 0;
+      line-height: 1.6;
+    }
+  }
+
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-Disclosure.primary {
+    border-color: var(--primary);
+
+    .react-aria-Button[slot=trigger] {
+      color: var(--primary);
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--primary) 8%, transparent);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--primary) 12%, transparent);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--primary);
+      }
+    }
+
+    &[data-expanded] {
+      background: color-mix(in srgb, var(--primary) 4%, transparent);
+    }
+  }
+
+  /* ===== Secondary Variant ===== */
+  .react-aria-Disclosure.secondary {
+    border-color: var(--secondary);
+
+    .react-aria-Button[slot=trigger] {
+      color: var(--secondary);
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+      }
+
+      &[data-pressed] {
+        background: color-mix(in srgb, var(--secondary) 12%, transparent);
+      }
+
+      &[data-focus-visible] {
+        outline-color: var(--secondary);
+      }
+    }
+
+    &[data-expanded] {
+      background: color-mix(in srgb, var(--secondary) 4%, transparent);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Disclosure.sm {
+    padding: var(--spacing-xs);
+
+    .react-aria-Button[slot=trigger] {
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs);
+      font-size: var(--text-sm);
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+
+    .react-aria-DisclosurePanel {
+      margin-left: calc(12px + var(--spacing-xs) + var(--spacing-xs));
+      margin-top: var(--spacing-xs);
+      padding: var(--spacing-sm);
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Disclosure.md {
+    padding: var(--spacing-sm);
+
+    .react-aria-Button[slot=trigger] {
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm);
+      font-size: var(--text-base);
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .react-aria-DisclosurePanel {
+      margin-left: calc(16px + var(--spacing-sm) + var(--spacing-sm));
+      margin-top: var(--spacing-sm);
+      padding: var(--spacing);
+      font-size: var(--text-base);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Disclosure.lg {
+    padding: var(--spacing);
+
+    .react-aria-Button[slot=trigger] {
+      gap: var(--spacing);
+      padding: var(--spacing);
+      font-size: var(--text-lg);
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .react-aria-DisclosurePanel {
+      margin-left: calc(20px + var(--spacing) + var(--spacing));
+      margin-top: var(--spacing);
+      padding: var(--spacing-md);
+      font-size: var(--text-lg);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-Button[slot=trigger] {
+      &[data-hovered] {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      &[data-pressed] {
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      &[data-disabled] {
+        opacity: 0.38;
+      }
+    }
+
+    .react-aria-Disclosure.primary[data-expanded] {
+      background: rgba(0, 0, 255, 0.04);
+    }
+
+    .react-aria-Disclosure.secondary[data-expanded] {
+      background: rgba(128, 0, 128, 0.04);
+    }
+
+    [data-theme='dark'] .react-aria-Button[slot=trigger] {
+      &[data-hovered] {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &[data-pressed] {
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Disclosure {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-Button[slot=trigger] {
+      forced-color-adjust: auto;
+
+      &[data-focus-visible] {
+        outline-color: Highlight;
+      }
+    }
   }
 }

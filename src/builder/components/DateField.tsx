@@ -1,3 +1,10 @@
+/**
+ * DateField Component - Material Design 3
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ */
+
 import {
   DateField as AriaDateField,
   DateFieldProps as AriaDateFieldProps,
@@ -7,8 +14,11 @@ import {
   FieldError,
   Label,
   Text,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+import type { DateFieldVariant, ComponentSize } from '../types/componentVariants';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
 
@@ -39,7 +49,32 @@ export interface DateFieldProps<T extends DateValue>
    * @example "2024-12-31"
    */
   maxDate?: string | DateValue;
+  // M3 props
+  variant?: DateFieldVariant;
+  size?: ComponentSize;
 }
+
+const dateFieldStyles = tv({
+  base: 'react-aria-DateField',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 export function DateField<T extends DateValue>({
   label,
@@ -49,6 +84,8 @@ export function DateField<T extends DateValue>({
   defaultToday = false,
   minDate,
   maxDate,
+  variant = 'primary',
+  size = 'md',
   ...props
 }: DateFieldProps<T>) {
   // 타임존 설정
@@ -71,7 +108,17 @@ export function DateField<T extends DateValue>({
   return (
     <AriaDateField
       {...props}
-      className="react-aria-DateField"
+      className={composeRenderProps(
+        props.className,
+        (className, renderProps) => {
+          return dateFieldStyles({
+            ...renderProps,
+            variant,
+            size,
+            className,
+          });
+        }
+      )}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}

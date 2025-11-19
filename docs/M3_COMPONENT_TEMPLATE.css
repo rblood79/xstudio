@@ -1,0 +1,298 @@
+/**
+ * Material Design 3 Component Template
+ *
+ * Use this template when migrating components to M3 Color System.
+ * Copy this file and replace "Component" with your actual component name.
+ *
+ * Reference: https://m3.material.io/styles/color/roles
+ */
+
+@layer components {
+  /* ========== Base Component Styles ========== */
+  .react-aria-Component {
+    /* M3 Default: Filled tonal style */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+
+    /* M3 Color Roles - Surface Container */
+    color: var(--on-surface);
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--border-radius);
+    padding: var(--spacing) var(--spacing-md);
+    font-size: var(--text-sm);
+
+    /* Transition for smooth interactions */
+    transition: all 200ms ease;
+
+    /* ===== Hover State ===== */
+    &[data-hovered] {
+      background: color-mix(in srgb, var(--surface-container-high) 92%, black);
+      border-color: var(--outline);
+    }
+
+    /* ===== Pressed State ===== */
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--surface-container-high) 88%, black);
+      border-color: var(--outline);
+      box-shadow: var(--inset-shadow-sm);
+    }
+
+    /* ===== Focus State ===== */
+    &[data-focus-visible] {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* ===== Disabled State ===== */
+    &[data-disabled] {
+      background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      border-color: transparent;
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    /* ===== Invalid State ===== */
+    &[data-invalid] {
+      border-color: var(--error);
+
+      &[data-focus-visible] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  /* Use: Key actions, FAB, prominent buttons */
+  .react-aria-Component.primary {
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
+
+    &[data-hovered] {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--primary-pressed);
+      border-color: var(--primary-pressed);
+    }
+
+    &[data-focus-visible] {
+      outline-color: var(--primary);
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  /* Use: Less prominent actions, secondary buttons */
+  .react-aria-Component.secondary {
+    background: var(--secondary);
+    color: var(--on-secondary);
+    border-color: var(--secondary);
+
+    &[data-hovered] {
+      background: var(--secondary-hover);
+      border-color: var(--secondary-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--secondary-pressed);
+      border-color: var(--secondary-pressed);
+    }
+
+    &[data-focus-visible] {
+      outline-color: var(--secondary);
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  /* Use: Contrasting accent, tabs, badges */
+  .react-aria-Component.tertiary {
+    background: var(--tertiary);
+    color: var(--on-tertiary);
+    border-color: var(--tertiary);
+
+    &[data-hovered] {
+      background: var(--tertiary-hover);
+      border-color: var(--tertiary-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--tertiary-pressed);
+      border-color: var(--tertiary-pressed);
+    }
+
+    &[data-focus-visible] {
+      outline-color: var(--tertiary);
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  /* Use: Error states, destructive actions */
+  .react-aria-Component.error {
+    background: var(--error);
+    color: var(--on-error);
+    border-color: var(--error);
+
+    &[data-hovered] {
+      background: var(--error-hover);
+      border-color: var(--error-hover);
+    }
+
+    &[data-pressed] {
+      background: var(--error-pressed);
+      border-color: var(--error-pressed);
+    }
+
+    &[data-focus-visible] {
+      outline-color: var(--error);
+    }
+  }
+
+  /* ===== M3 Surface Variant ===== */
+  /* Use: Filled tonal buttons, subtle emphasis */
+  .react-aria-Component.surface {
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    border-color: var(--outline-variant);
+
+    &[data-hovered] {
+      background: color-mix(in srgb, var(--surface-container-highest) 92%, black);
+      border-color: var(--outline);
+    }
+
+    &[data-pressed] {
+      background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
+      border-color: var(--outline);
+    }
+
+    &[data-focus-visible] {
+      outline-color: var(--on-surface);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Component.sm {
+    padding: var(--spacing-sm) var(--spacing);
+    font-size: var(--text-sm);
+    gap: var(--spacing-xs);
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Component.md {
+    padding: var(--spacing) var(--spacing-md);
+    font-size: var(--text-base);
+    gap: var(--spacing);
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Component.lg {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--text-lg);
+    gap: var(--spacing-md);
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-Component.primary[data-invalid],
+  .react-aria-Component.secondary[data-invalid],
+  .react-aria-Component.tertiary[data-invalid],
+  .react-aria-Component.surface[data-invalid] {
+    border-color: var(--error);
+
+    &[data-focus-visible] {
+      outline-color: var(--error);
+    }
+
+    &[data-hovered] {
+      border-color: var(--error-hover);
+    }
+
+    &[data-pressed] {
+      border-color: var(--error-pressed);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically:
+   *
+   * Light Mode:
+   * - --primary: #6750A4 (darker shade)
+   * - --on-primary: #FFFFFF (white text)
+   *
+   * Dark Mode:
+   * - --primary: #D0BCFF (lighter shade)
+   * - --on-primary: #381E72 (dark text)
+   *
+   * color-mix() automatically uses white in dark mode:
+   * - Light: color-mix(in srgb, var(--primary) 92%, black)
+   * - Dark: color-mix(in srgb, var(--primary) 92%, white)
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-Component[data-hovered] {
+      /* Fallback: Use pre-calculated hover colors */
+      background: var(--surface-container-high);
+      opacity: 0.92;
+    }
+
+    .react-aria-Component.primary[data-hovered] {
+      /* Fallback: Use darker shade from palette */
+      background: var(--color-primary-700, #5443a3);
+    }
+
+    .react-aria-Component.secondary[data-hovered] {
+      background: var(--color-secondary-700, #544f62);
+    }
+
+    /* Add more fallbacks as needed */
+  }
+}
+
+/* ========== Parent-Controlled Pattern (Optional) ========== */
+/* Use this pattern for components like Checkbox/CheckboxGroup,
+ * Radio/RadioGroup where parent controls child styling */
+
+/*
+.react-aria-ComponentGroup {
+  // Group container styles
+}
+
+.react-aria-ComponentGroup[data-component-variant="primary"] .react-aria-Component {
+  // Parent controls child variant via data attribute
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+
+  &[data-hovered] {
+    background: var(--primary-hover);
+  }
+
+  &[data-pressed] {
+    background: var(--primary-pressed);
+  }
+}
+
+// Repeat for secondary, tertiary, error, surface...
+*/
+
+/* ========== Usage Notes ========== */
+/*
+1. Replace "Component" with actual component name (e.g., Button, TextField)
+2. Adjust padding, sizing based on component needs
+3. Remove unused variants if component doesn't need all 5
+4. Add component-specific states (e.g., [data-selected], [data-checked])
+5. Test in both light and dark modes
+6. Verify color contrast meets WCAG AA (4.5:1) or better
+7. Add to Storybook with all variants showcased
+*/

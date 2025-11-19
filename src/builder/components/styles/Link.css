@@ -84,104 +84,21 @@
     }
   }
 
-  /* ===== M3 Tertiary Link ===== */
-  .react-aria-Link.tertiary {
-    color: var(--tertiary);
+  /* ========== Size Variants ========== */
 
-    &[data-hovered] {
-      color: var(--tertiary-hover);
-    }
-
-    &[data-pressed] {
-      color: var(--tertiary-pressed);
-    }
-  }
-
-  /* ===== M3 Error Link ===== */
-  .react-aria-Link.error {
-    color: var(--error);
-
-    &[data-hovered] {
-      color: var(--error-hover);
-    }
-
-    &[data-pressed] {
-      color: var(--error-pressed);
-    }
-  }
-
-  /* ===== M3 Surface Link ===== */
-  .react-aria-Link.surface {
-    color: var(--on-surface);
-
-    &[data-hovered] {
-      color: var(--on-surface-variant);
-    }
-
-    &[data-pressed] {
-      color: color-mix(in srgb, var(--on-surface) 88%, black);
-    }
-  }
-
-  /* ===== M3 Outline Link ===== */
-  .react-aria-Link.outline {
-    color: var(--primary);
-    border: 1px solid var(--outline);
-    padding: var(--spacing-sm) var(--spacing-md);
-
-    &[data-hovered] {
-      border-color: var(--outline);
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
-      text-decoration: none;
-    }
-
-    &[data-pressed] {
-      border-color: var(--outline);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
-    }
-  }
-
-  /* ===== M3 Ghost Link ===== */
-  .react-aria-Link.ghost {
-    color: var(--primary);
-    padding: var(--spacing-sm) var(--spacing-md);
-
-    &[data-hovered] {
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
-      color: var(--primary);
-      text-decoration: none;
-    }
-
-    &[data-pressed] {
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
-    }
-  }
-
-  /* Size: XS */
-  .react-aria-Link.xs {
-    font-size: var(--text-xs);
-    gap: var(--spacing-sm);
-  }
-
-  /* Size: SM */
+  /* ===== Small Size ===== */
   .react-aria-Link.sm {
     font-size: var(--text-sm);
   }
 
-  /* Size: MD (default) */
+  /* ===== Medium Size (Default) ===== */
   .react-aria-Link.md {
     font-size: var(--text-base);
   }
 
-  /* Size: LG */
+  /* ===== Large Size ===== */
   .react-aria-Link.lg {
     font-size: var(--text-lg);
-  }
-
-  /* Size: XL */
-  .react-aria-Link.xl {
-    font-size: var(--text-xl);
-    gap: var(--spacing-md);
   }
 
   /* High contrast mode support */

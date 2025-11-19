@@ -1,3 +1,10 @@
+/**
+ * ComboBox Component - Material Design 3
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ */
+
 import React from 'react';
 import {
   Button,
@@ -11,9 +18,12 @@ import {
   ListBoxItemProps,
   Popover,
   Text,
-  ValidationResult
+  ValidationResult,
+  composeRenderProps
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
 import { ChevronDown } from 'lucide-react';
+import type { ComboBoxVariant, ComponentSize } from '../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import { useCollectionData } from '../hooks/useCollectionData';
 import './styles/ComboBox.css';
@@ -30,7 +40,32 @@ export interface ComboBoxProps<T extends object>
   dataBinding?: DataBinding;
   columnMapping?: ColumnMapping;
   popoverClassName?: string;
+  // M3 props
+  variant?: ComboBoxVariant;
+  size?: ComponentSize;
 }
+
+const comboBoxStyles = tv({
+  base: 'react-aria-ComboBox',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 export function ComboBox<T extends object>({
   label,
@@ -43,6 +78,8 @@ export function ComboBox<T extends object>({
   dataBinding,
   columnMapping,
   popoverClassName,
+  variant = 'primary',
+  size = 'md',
   ...props
 }: ComboBoxProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -68,6 +105,20 @@ export function ComboBox<T extends object>({
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   const hasDataBinding = dataBinding?.type === 'collection';
 
+  // ComboBox className generator (reused across all conditional renders)
+  const getComboBoxClassName = (baseClassName?: string) =>
+    composeRenderProps(
+      baseClassName,
+      (className, renderProps) => {
+        return comboBoxStyles({
+          ...renderProps,
+          variant,
+          size,
+          className,
+        });
+      }
+    );
+
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 ComboBoxItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
@@ -82,7 +133,7 @@ export function ComboBox<T extends object>({
       return (
         <AriaComboBox
           {...props}
-          className='react-aria-ComboBox'
+          className={getComboBoxClassName(props.className)}
           aria-label={ariaLabel}
           isDisabled
         >
@@ -110,7 +161,7 @@ export function ComboBox<T extends object>({
       return (
         <AriaComboBox
           {...props}
-          className='react-aria-ComboBox'
+          className={getComboBoxClassName(props.className)}
           aria-label={ariaLabel}
           isDisabled
         >
@@ -147,7 +198,7 @@ export function ComboBox<T extends object>({
           {...props}
           inputValue={inputValue}
           onInputChange={onInputChange}
-          className='react-aria-ComboBox'
+          className={getComboBoxClassName(props.className)}
           aria-label={ariaLabel}
         >
           {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -174,7 +225,7 @@ export function ComboBox<T extends object>({
         {...props}
         inputValue={inputValue}
         onInputChange={onInputChange}
-        className='react-aria-ComboBox'
+        className={getComboBoxClassName(props.className)}
         aria-label={ariaLabel}
       >
         {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -228,7 +279,7 @@ export function ComboBox<T extends object>({
         {...props}
         inputValue={inputValue}
         onInputChange={onInputChange}
-        className='react-aria-ComboBox'
+        className={getComboBoxClassName(props.className)}
         aria-label={ariaLabel}
       >
         {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -262,7 +313,7 @@ export function ComboBox<T extends object>({
     return (
       <AriaComboBox
         {...props}
-        className='react-aria-ComboBox'
+        className={getComboBoxClassName(props.className)}
         aria-label={ariaLabel}
         isDisabled
       >
@@ -283,7 +334,7 @@ export function ComboBox<T extends object>({
     return (
       <AriaComboBox
         {...props}
-        className='react-aria-ComboBox'
+        className={getComboBoxClassName(props.className)}
         aria-label={ariaLabel}
         isDisabled
       >
@@ -305,7 +356,7 @@ export function ComboBox<T extends object>({
       {...props}
       inputValue={inputValue}
       onInputChange={onInputChange}
-      className='react-aria-ComboBox'
+      className={getComboBoxClassName(props.className)}
       aria-label={ariaLabel}
     >
       {hasVisibleLabel && <Label>{String(label)}</Label>}

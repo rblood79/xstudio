@@ -1,13 +1,18 @@
 import React from "react";
 import { tv } from "tailwind-variants";
-import type {
-  ButtonVariant,
-  ComponentSize,
-} from "../../types/builder/componentVariants.types";
+import type { BadgeVariant, ComponentSize } from "../../types/componentVariants";
 import "./styles/Badge.css";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: ButtonVariant;
+  /**
+   * M3 variant
+   * @default 'primary'
+   */
+  variant?: BadgeVariant;
+  /**
+   * Size variant
+   * @default 'sm'
+   */
   size?: ComponentSize;
   /**
    * Badge content (text or number)
@@ -15,10 +20,12 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children?: React.ReactNode;
   /**
    * Whether badge is a dot indicator (no content)
+   * @default false
    */
   isDot?: boolean;
   /**
    * Whether badge should pulse (for notifications)
+   * @default false
    */
   isPulsing?: boolean;
 }
@@ -27,19 +34,16 @@ const badge = tv({
   base: "react-aria-Badge",
   variants: {
     variant: {
-      default: "",
       primary: "primary",
       secondary: "secondary",
+      tertiary: "tertiary",
+      error: "error",
       surface: "surface",
-      outline: "outline",
-      ghost: "ghost",
     },
     size: {
-      xs: "xs",
       sm: "sm",
       md: "md",
       lg: "lg",
-      xl: "xl",
     },
     isDot: {
       true: "dot",
@@ -51,15 +55,34 @@ const badge = tv({
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "primary",
     size: "sm",
     isDot: false,
     isPulsing: false,
   },
 });
 
+/**
+ * Badge Component with Material Design 3 support
+ *
+ * M3 Features:
+ * - 5 variants: primary, secondary, tertiary, error, surface
+ * - 3 sizes: sm, md, lg
+ * - M3 color tokens for consistent theming
+ *
+ * Features:
+ * - Status indicators and labels
+ * - Dot mode for minimal indicators
+ * - Pulsing animation for notifications
+ * - Compact and legible design
+ *
+ * @example
+ * <Badge variant="primary" size="sm">New</Badge>
+ * <Badge variant="error" size="md">5</Badge>
+ * <Badge variant="secondary" isDot isPulsing />
+ */
 export function Badge({
-  variant = "default",
+  variant = "primary",
   size = "sm",
   isDot = false,
   isPulsing = false,

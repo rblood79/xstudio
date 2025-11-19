@@ -1,5 +1,14 @@
+/**
+ * Material Design 3 Breadcrumbs Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/breadcrumb
+ */
+
 @layer components {
-  
+  /* ========== Base Breadcrumbs Styles ========== */
   .react-aria-Breadcrumbs {
     display: flex;
     align-items: center;
@@ -7,48 +16,190 @@
     margin: 0;
     padding: 0;
     font-size: var(--text-sm);
-    color: var(--text-color);
-  
+    color: var(--on-surface);
+
     .react-aria-Breadcrumb:not(:last-child)::after {
       content: '›';
       content: '›' / '';
       alt: ' ';
       padding: 0 var(--spacing);
+      color: var(--on-surface-variant);
     }
-  
+
     .react-aria-Link {
-      color: var(--link-color-secondary);
+      color: var(--on-surface-variant);
       outline: none;
       position: relative;
       text-decoration: none;
       cursor: pointer;
-  
+      transition: color 150ms;
+
       &[data-hovered] {
         text-decoration: underline;
+        color: var(--on-surface);
       }
-  
+
       &[data-current] {
-        color: var(--text-color);
-        font-weight: bold;
+        color: var(--on-surface);
+        font-weight: 500;
       }
-  
+
       &[data-focus-visible]:after {
         content: '';
         position: absolute;
         inset: -2px -4px;
-        border-radius: 6px;
-        border: 2px solid var(--focus-ring-color);
+        border-radius: var(--radius-xs);
+        border: 2px solid var(--primary);
       }
-    }
-  
-    .react-aria-Link {
+
       &[data-disabled] {
         cursor: default;
-  
+
         &:not([data-current]) {
-          color: var(--text-color-disabled);
+          color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+          opacity: 0.38;
         }
       }
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-Breadcrumbs.primary {
+    .react-aria-Link {
+      &[data-focus-visible]:after {
+        border-color: var(--primary);
+      }
+
+      &[data-current] {
+        color: var(--primary);
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-Breadcrumbs.secondary {
+    .react-aria-Link {
+      &[data-focus-visible]:after {
+        border-color: var(--secondary);
+      }
+
+      &[data-current] {
+        color: var(--secondary);
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Breadcrumbs.tertiary {
+    .react-aria-Link {
+      &[data-focus-visible]:after {
+        border-color: var(--tertiary);
+      }
+
+      &[data-current] {
+        color: var(--tertiary);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Breadcrumbs.error {
+    .react-aria-Link {
+      &[data-focus-visible]:after {
+        border-color: var(--error);
+      }
+
+      &[data-current] {
+        color: var(--error);
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-Breadcrumbs.filled {
+    background: var(--surface-container);
+    padding: var(--spacing-xs) var(--spacing);
+    border-radius: var(--radius-md);
+
+    .react-aria-Link {
+      color: var(--on-surface);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Breadcrumbs.sm {
+    font-size: var(--text-xs);
+
+    .react-aria-Breadcrumb:not(:last-child)::after {
+      padding: 0 var(--spacing-xs);
+    }
+
+    &.filled {
+      padding: var(--spacing-2xs) var(--spacing-xs);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Breadcrumbs.md {
+    font-size: var(--text-sm);
+
+    .react-aria-Breadcrumb:not(:last-child)::after {
+      padding: 0 var(--spacing);
+    }
+
+    &.filled {
+      padding: var(--spacing-xs) var(--spacing);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Breadcrumbs.lg {
+    font-size: var(--text-base);
+
+    .react-aria-Breadcrumb:not(:last-child)::after {
+      padding: 0 var(--spacing-sm);
+    }
+
+    &.filled {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-Breadcrumbs {
+      .react-aria-Link {
+        &[data-disabled]:not([data-current]) {
+          color: rgba(0, 0, 0, 0.38);
+          opacity: 0.38;
+        }
+      }
+    }
+
+    [data-theme='dark'] .react-aria-Breadcrumbs {
+      .react-aria-Link {
+        &[data-disabled]:not([data-current]) {
+          color: rgba(255, 255, 255, 0.38);
+          opacity: 0.38;
+        }
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Breadcrumbs {
+      forced-color-adjust: auto;
     }
   }
 }

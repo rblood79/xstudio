@@ -1,5 +1,14 @@
+/**
+ * Material Design 3 SearchField Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/search
+ */
+
 @layer components {
-  
+  /* ========== Base SearchField Styles ========== */
   .react-aria-SearchField {
     display: grid;
     grid-template-areas: "label label"
@@ -8,81 +17,436 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     width: fit-content;
-    color: var(--text-color);
-  
+    gap: var(--spacing-xs);
+
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
+      grid-area: label;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    /* ===== Input Styles ===== */
     .react-aria-Input {
       grid-area: input;
       width: 100%;
-      padding: var(--spacing) var(--spacing-xl) var(--spacing) var(--spacing);
+      padding: var(--spacing) var(--spacing-xl) var(--spacing) var(--spacing-md);
       margin: 0;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--outline-variant);
       border-radius: var(--border-radius);
-      background: var(--field-background);
+      background: var(--surface-container);
       font-size: var(--text-sm);
-      color: var(--field-text-color);
+      color: var(--on-surface);
       outline: none;
-  
+      transition: all 200ms ease;
+      forced-color-adjust: none;
+
+      /* Remove default browser search decorations */
       &::-webkit-search-cancel-button,
       &::-webkit-search-decoration {
         -webkit-appearance: none;
       }
-  
+
+      /* Placeholder */
       &::placeholder {
-        color: var(--text-color-placeholder);
-        opacity: 1;
+        color: var(--on-surface-variant);
+        opacity: 0.6;
       }
-  
+
+      /* Focus State */
       &[data-focused] {
-        outline: 2px solid var(--focus-ring-color);
+        outline: 2px solid var(--primary);
         outline-offset: -1px;
+        border-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      /* Hover State */
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        border-color: var(--outline);
+        background: var(--surface-container-high);
+      }
+
+      /* Invalid State */
+      &[data-invalid] {
+        border-color: var(--error);
+
+        &[data-focused] {
+          outline-color: var(--error);
+        }
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
       }
     }
-  
+
+    /* ===== Clear Button Styles ===== */
     .react-aria-Button {
       grid-area: button;
-      width: var(--text-lg);
-      height: var(--text-lg);
-      border-radius: var(--text-lg);
-      margin-left: -1.429rem;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-left: -32px;
+      margin-right: var(--spacing);
       font-size: var(--text-xs);
-      line-height: var(--text-xs--line-height);
+      line-height: 1;
       vertical-align: middle;
       text-align: center;
-      background: var(--surface-container);
+      background: var(--surface-container-high);
       color: var(--on-surface);
       border: none;
       padding: 0;
+      cursor: pointer;
+      transition: all 150ms ease;
+      forced-color-adjust: none;
 
-      &[data-pressed] {
-        background: var(--surface-container-high);
+      /* Hover State */
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--surface-container-highest);
+      }
+
+      /* Pressed State */
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-surface) 12%, var(--surface-container-high));
+      }
+
+      /* Focus Visible State */
+      &[data-focus-visible] {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
       }
     }
-  
-    &[data-empty] button {
+
+    /* Hide clear button when input is empty */
+    &[data-empty] .react-aria-Button {
       display: none;
     }
-  
-    .react-aria-Input{
-      &[data-invalid] {
-        border-color: var(--invalid-color);
-      }
+
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      grid-area: help;
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
     }
-  
+
+    /* ===== Field Error ===== */
     .react-aria-FieldError {
       grid-area: help;
       font-size: var(--text-xs);
-      color: var(--invalid-color);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
     }
-  
-    [slot=description] {
-      grid-area: help;
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-SearchField.primary {
+    .react-aria-Label {
+      color: var(--primary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--primary);
+
+      &[data-focused] {
+        outline-color: var(--primary);
+        border-color: var(--primary);
+        background: var(--primary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-primary) 12%, var(--primary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-SearchField.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--secondary);
+
+      &[data-focused] {
+        outline-color: var(--secondary);
+        border-color: var(--secondary);
+        background: var(--secondary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-secondary) 12%, var(--secondary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-SearchField.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
+    }
+
+    .react-aria-Input {
+      border-color: var(--tertiary);
+
+      &[data-focused] {
+        outline-color: var(--tertiary);
+        border-color: var(--tertiary);
+        background: var(--tertiary-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-tertiary) 12%, var(--tertiary-container));
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-SearchField.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+        border-color: var(--error);
+        background: var(--error-container);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+    }
+
+    .react-aria-Button {
+      &[data-hovered]:not([data-disabled]) {
+        background: var(--error-container);
+        color: var(--on-error-container);
+      }
+
+      &[data-pressed]:not([data-disabled]) {
+        background: color-mix(in srgb, var(--on-error) 12%, var(--error-container));
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-SearchField.filled {
+    .react-aria-Input {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+      border-bottom: 2px solid var(--outline-variant);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-focused] {
+        outline: none;
+        border-bottom-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      &[data-hovered]:not([data-focused]):not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+    }
+
+    &[data-invalid] .react-aria-Input {
+      border-bottom-color: var(--error);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-SearchField.sm {
+    .react-aria-Label {
       font-size: var(--text-xs);
     }
-  
+
     .react-aria-Input {
+      padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-Button {
+      width: 20px;
+      height: 20px;
+      margin-left: -28px;
+      margin-right: var(--spacing-sm);
+      font-size: 10px;
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-SearchField.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing) var(--spacing-xl) var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-Button {
+      width: 24px;
+      height: 24px;
+      margin-left: -32px;
+      margin-right: var(--spacing);
+      font-size: var(--text-xs);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-SearchField.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Input {
+      padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+    }
+
+    .react-aria-Button {
+      width: 28px;
+      height: 28px;
+      margin-left: -36px;
+      margin-right: var(--spacing-md);
+      font-size: var(--text-sm);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-SearchField.primary[data-invalid],
+  .react-aria-SearchField.secondary[data-invalid],
+  .react-aria-SearchField.tertiary[data-invalid],
+  .react-aria-SearchField.filled[data-invalid] {
+    .react-aria-Input {
+      border-color: var(--error);
+
+      &[data-focused] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-SearchField .react-aria-Input {
       &[data-disabled] {
-        border-color: var(--border-color-disabled);
-        color: var(--text-color-disabled);
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    .react-aria-SearchField .react-aria-Button {
+      &[data-pressed]:not([data-disabled]) {
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      &[data-disabled] {
+        background: rgba(0, 0, 0, 0.04);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-SearchField .react-aria-Input {
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-SearchField .react-aria-Button {
+      &[data-pressed]:not([data-disabled]) {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.38);
       }
     }
   }

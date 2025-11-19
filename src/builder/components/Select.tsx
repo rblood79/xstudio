@@ -1,3 +1,10 @@
+/**
+ * Select Component - Material Design 3
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ */
+
 import React from "react";
 import {
   Button,
@@ -12,8 +19,11 @@ import {
   SelectValue,
   Text,
   ValidationResult,
+  composeRenderProps
 } from "react-aria-components";
+import { tv } from 'tailwind-variants';
 import { ChevronDown } from "lucide-react";
+import type { SelectVariant, ComponentSize } from '../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
 import { useCollectionData } from "../hooks/useCollectionData";
 import "./styles/Select.css";
@@ -29,7 +39,32 @@ export interface SelectProps<T extends object>
   itemKey?: keyof T | ((item: T) => React.Key);
   dataBinding?: DataBinding;
   columnMapping?: ColumnMapping;
+  // M3 props
+  variant?: SelectVariant;
+  size?: ComponentSize;
 }
+
+const selectStyles = tv({
+  base: 'react-aria-Select',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 export function Select<T extends object>({
   label,
@@ -40,6 +75,8 @@ export function Select<T extends object>({
   placeholder,
   dataBinding,
   columnMapping,
+  variant = 'primary',
+  size = 'md',
   ...props
 }: SelectProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -159,7 +196,17 @@ export function Select<T extends object>({
   return (
     <AriaSelect
       {...props}
-      className="react-aria-Select"
+      className={composeRenderProps(
+        props.className,
+        (className, renderProps) => {
+          return selectStyles({
+            ...renderProps,
+            variant,
+            size,
+            className,
+          });
+        }
+      )}
       aria-label={ariaLabel}
       placeholder={placeholder}
       isDisabled={hasDataBinding && (loading || !!error)}

@@ -1,15 +1,118 @@
+/**
+ * Material Design 3 Dialog Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/dialogs
+ */
+
 @layer components {
-  
+  /* ========== Base Dialog Styles ========== */
   .react-aria-Dialog {
     outline: none;
     padding: var(--spacing-lg);
     max-height: inherit;
     box-sizing: border-box;
     overflow: auto;
-  
-    .react-aria-Heading[slot=title] {
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    border-radius: var(--radius-xl);
+
+    .react-aria-Heading[slot='title'] {
       line-height: 1em;
       margin-top: 0;
+      color: var(--on-surface);
+      font-size: var(--text-xl);
+      font-weight: 500;
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-Dialog.primary {
+    border: 1px solid var(--primary);
+
+    .react-aria-Heading[slot='title'] {
+      color: var(--primary);
+    }
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-Dialog.secondary {
+    border: 1px solid var(--secondary);
+
+    .react-aria-Heading[slot='title'] {
+      color: var(--secondary);
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Dialog.tertiary {
+    border: 1px solid var(--tertiary);
+
+    .react-aria-Heading[slot='title'] {
+      color: var(--tertiary);
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Dialog.error {
+    border: 1px solid var(--error);
+
+    .react-aria-Heading[slot='title'] {
+      color: var(--error);
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-Dialog.filled {
+    background: var(--surface-container-highest);
+    border: none;
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Dialog.sm {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+
+    .react-aria-Heading[slot='title'] {
+      font-size: var(--text-lg);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Dialog.md {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-xl);
+
+    .react-aria-Heading[slot='title'] {
+      font-size: var(--text-xl);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Dialog.lg {
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-2xl);
+
+    .react-aria-Heading[slot='title'] {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Dialog {
+      forced-color-adjust: auto;
     }
   }
 }

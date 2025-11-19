@@ -1,90 +1,317 @@
+/**
+ * Material Design 3 Tabs Styles
+ *
+ * M3 Variants: primary, secondary, tertiary
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/tabs
+ */
+
 @layer components {
+  /* ========== Base Tabs Container ========== */
   .react-aria-Tabs {
     width: 100%;
     display: flex;
-    color: var(--text-color);
-    font-size: var(--text-sm);
+    color: var(--on-surface);
+
     &[data-orientation="horizontal"] {
       flex-direction: column;
     }
+
+    &[data-orientation="vertical"] {
+      flex-direction: row;
+    }
   }
 
+  /* ========== Base TabList ========== */
   .react-aria-TabList {
     display: flex;
+    position: relative;
 
     &[data-orientation="horizontal"] {
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--outline-variant);
+    }
 
-      .react-aria-Tab {
-        border-bottom: 3px solid var(--border-color);
-      }
+    &[data-orientation="vertical"] {
+      flex-direction: column;
+      border-inline-end: 1px solid var(--outline-variant);
     }
   }
 
+  /* ========== Base Tab ========== */
   .react-aria-Tab {
-    font-size: var(--text-sm);
-    padding: var(--spacing) var(--spacing-sm);
-    cursor: default;
-    outline: none;
     position: relative;
-    color: var(--text-color-base);
-    transition: color 200ms;
-    --border-color: transparent;
+    padding: var(--spacing) var(--spacing-lg);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    color: var(--on-surface-variant);
+    background: transparent;
+    border: none;
+    transition: color 200ms, background 200ms;
     forced-color-adjust: none;
 
-    &[data-hovered],
+    /* Hover state */
+    &[data-hovered] {
+      color: var(--on-surface);
+      background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+    }
+
+    /* Focus state */
     &[data-focused] {
-      color: var(--text-color-hover);
+      color: var(--on-surface);
     }
 
+    /* Selected state */
     &[data-selected] {
-      --border-color: var(--highlight-background);
-      color: var(--text-color);
+      color: var(--on-surface);
     }
 
+    /* Disabled state */
     &[data-disabled] {
-      color: var(--text-color-disabled);
-      &[data-selected] {
-        --border-color: var(--border-color-disabled);
-      }
+      color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+      cursor: not-allowed;
+      pointer-events: none;
     }
 
-    &[data-focus-visible]:after {
+    /* Focus visible (keyboard only) */
+    &[data-focus-visible]::after {
       content: "";
       position: absolute;
       inset: 4px;
-      border-radius: 4px;
-      border: 2px solid var(--focus-ring-color);
+      border-radius: var(--radius-sm);
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
+    /* Active indicator (horizontal) */
+    &[data-orientation="horizontal"]::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 200ms;
+    }
+
+    &[data-orientation="horizontal"][data-selected]::before {
+      background: var(--primary);
+    }
+
+    /* Active indicator (vertical) */
+    &[data-orientation="vertical"]::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 3px;
+      background: transparent;
+      transition: background 200ms;
+    }
+
+    &[data-orientation="vertical"][data-selected]::before {
+      background: var(--primary);
+    }
+
+    /* Link style (if tab has href) */
     &[href] {
       text-decoration: none;
       cursor: pointer;
     }
   }
 
+  /* ========== Base TabPanel ========== */
   .react-aria-TabPanel {
-    border-radius: 4px;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-sm);
     outline: none;
+    color: var(--on-surface);
 
     &[data-focus-visible] {
-      outline: 2px solid var(--focus-ring-color);
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
   }
 
-  .react-aria-Tabs {
-    &[data-orientation="vertical"] {
-      flex-direction: row;
+  /* ========== M3 Variant Colors ========== */
+
+  /* ===== Primary Variant ===== */
+  .react-aria-Tabs.primary,
+  .react-aria-TabList.primary {
+    .react-aria-Tab {
+      &[data-selected] {
+        color: var(--primary);
+      }
+
+      &[data-orientation="horizontal"][data-selected]::before,
+      &[data-orientation="vertical"][data-selected]::before {
+        background: var(--primary);
+      }
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--primary) 8%, transparent);
+      }
+
+      &[data-focus-visible]::after {
+        outline-color: var(--primary);
+      }
     }
   }
 
-  .react-aria-TabList {
-    &[data-orientation="vertical"] {
-      flex-direction: column;
-      border-inline-end: 1px solid gray;
+  /* ===== Secondary Variant ===== */
+  .react-aria-Tabs.secondary,
+  .react-aria-TabList.secondary {
+    .react-aria-Tab {
+      &[data-selected] {
+        color: var(--secondary);
+      }
 
-      .react-aria-Tab {
-        border-inline-end: 3px solid var(--border-color, transparent);
+      &[data-orientation="horizontal"][data-selected]::before,
+      &[data-orientation="vertical"][data-selected]::before {
+        background: var(--secondary);
+      }
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--secondary) 8%, transparent);
+      }
+
+      &[data-focus-visible]::after {
+        outline-color: var(--secondary);
+      }
+    }
+  }
+
+  /* ===== Tertiary Variant ===== */
+  .react-aria-Tabs.tertiary,
+  .react-aria-TabList.tertiary {
+    .react-aria-Tab {
+      &[data-selected] {
+        color: var(--tertiary);
+      }
+
+      &[data-orientation="horizontal"][data-selected]::before,
+      &[data-orientation="vertical"][data-selected]::before {
+        background: var(--tertiary);
+      }
+
+      &[data-hovered] {
+        background: color-mix(in srgb, var(--tertiary) 8%, transparent);
+      }
+
+      &[data-focus-visible]::after {
+        outline-color: var(--tertiary);
+      }
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Tabs.sm,
+  .react-aria-TabList.sm {
+    .react-aria-Tab {
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--text-xs);
+
+      &[data-orientation="horizontal"]::before,
+      &[data-orientation="vertical"]::before {
+        width: 2px;
+        height: 2px;
+      }
+    }
+
+    .react-aria-TabPanel {
+      padding: var(--spacing-md);
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Tabs.md,
+  .react-aria-TabList.md {
+    .react-aria-Tab {
+      padding: var(--spacing) var(--spacing-lg);
+      font-size: var(--text-sm);
+
+      &[data-orientation="horizontal"]::before {
+        height: 3px;
+      }
+
+      &[data-orientation="vertical"]::before {
+        width: 3px;
+      }
+    }
+
+    .react-aria-TabPanel {
+      padding: var(--spacing-lg);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Tabs.lg,
+  .react-aria-TabList.lg {
+    .react-aria-Tab {
+      padding: var(--spacing-md) var(--spacing-xl);
+      font-size: var(--text-base);
+
+      &[data-orientation="horizontal"]::before {
+        height: 4px;
+      }
+
+      &[data-orientation="vertical"]::before {
+        width: 4px;
+      }
+    }
+
+    .react-aria-TabPanel {
+      padding: var(--spacing-xl);
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-Tab {
+      &[data-hovered] {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      &[data-disabled] {
+        opacity: 0.38;
+      }
+    }
+
+    [data-theme='dark'] .react-aria-Tab {
+      &[data-hovered] {
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Tabs,
+    .react-aria-TabList,
+    .react-aria-Tab,
+    .react-aria-TabPanel {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-Tab {
+      &[data-selected]::before {
+        background: Highlight;
+      }
+
+      &[data-focus-visible]::after {
+        outline-color: Highlight;
       }
     }
   }

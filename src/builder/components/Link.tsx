@@ -6,14 +6,19 @@ import {
 import { tv } from "tailwind-variants";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
-import type {
-  ButtonVariant,
-  ComponentSize,
-} from "../../types/builder/componentVariants.types";
+import type { LinkVariant, ComponentSize } from "../../types/componentVariants";
 import "./styles/Link.css";
 
 export interface LinkProps extends RACLinkProps {
-  variant?: ButtonVariant;
+  /**
+   * M3 variant
+   * @default 'primary'
+   */
+  variant?: LinkVariant;
+  /**
+   * Size variant
+   * @default 'md'
+   */
   size?: ComponentSize;
   /**
    * Whether the link is external (opens in new tab)
@@ -22,6 +27,7 @@ export interface LinkProps extends RACLinkProps {
   isExternal?: boolean;
   /**
    * Whether to show external link icon
+   * @default true (when isExternal is true)
    */
   showExternalIcon?: boolean;
 }
@@ -30,19 +36,13 @@ const link = tv({
   base: "react-aria-Link",
   variants: {
     variant: {
-      default: "",
       primary: "primary",
       secondary: "secondary",
-      surface: "surface",
-      outline: "outline",
-      ghost: "ghost",
     },
     size: {
-      xs: "xs",
       sm: "sm",
       md: "md",
       lg: "lg",
-      xl: "xl",
     },
     isFocusVisible: {
       true: "focus-visible",
@@ -54,11 +54,29 @@ const link = tv({
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "primary",
     size: "md",
   },
 });
 
+/**
+ * Link Component with Material Design 3 support
+ *
+ * M3 Features:
+ * - 2 variants: primary, secondary
+ * - 3 sizes: sm, md, lg
+ * - M3 color tokens for consistent theming
+ *
+ * Features:
+ * - External link support with security (rel="noopener noreferrer")
+ * - Optional external icon indicator
+ * - Keyboard accessible with focus ring
+ * - Hover and pressed states
+ *
+ * @example
+ * <Link variant="primary" size="md" href="/about">About</Link>
+ * <Link variant="secondary" isExternal href="https://example.com">External Link</Link>
+ */
 export function Link(props: LinkProps) {
   const { focusProps, isFocusVisible } = useFocusRing();
   const { isExternal, showExternalIcon = true, ...restProps } = props;

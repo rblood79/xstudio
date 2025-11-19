@@ -1,21 +1,25 @@
 /**
- * Calendar 및 RangeCalendar 공통 스타일
+ * Material Design 3 Calendar Common Styles
+ *
+ * Shared styles for Calendar and RangeCalendar components
  * - Container base styles
  * - Header layout
  * - CalendarCell base styles
  * - CalendarCell state styles
+ *
+ * Reference: https://m3.material.io/components
  */
 
 @layer components {
-  /* Container base styles - 공통 */
+  /* ========== Container Base Styles ========== */
   .react-aria-Calendar,
   .react-aria-RangeCalendar {
     width: fit-content;
     max-width: 100%;
-    color: var(--text-color);
+    color: var(--on-surface);
   }
 
-  /* Header layout - 공통 */
+  /* ========== Header Layout ========== */
   .react-aria-Calendar header,
   .react-aria-RangeCalendar header {
     display: flex;
@@ -29,13 +33,14 @@
     margin: 0;
     text-align: center;
     font-size: var(--text-sm);
+    color: var(--on-surface);
   }
 
   .react-aria-Calendar .react-aria-Button,
   .react-aria-RangeCalendar .react-aria-Button {
     width: var(--text-3xl);
     height: var(--text-3xl);
-    border-radius: var(--border-radius);
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -44,14 +49,14 @@
 
   .react-aria-CalendarGridHeader th {
     border: 0;
-    background-color: var(--overlay-background);
-    color: var(--text-color-base);
+    background-color: var(--surface-container);
+    color: var(--on-surface-variant);
     text-align: center;
     font-size: var(--text-sm);
   }
 
   .react-aria-CalendarGridBody td {
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--outline-variant);
     .react-aria-CalendarCell {
       width: 2rem;
       line-height: 2rem;
@@ -60,7 +65,7 @@
     }
   }
 
-  /* CalendarCell base styles - 공통 */
+  /* ========== CalendarCell Base Styles ========== */
   .react-aria-Calendar .react-aria-CalendarCell,
   .react-aria-RangeCalendar .react-aria-CalendarCell {
     text-align: center;
@@ -68,46 +73,79 @@
     cursor: default;
     outline: none;
     forced-color-adjust: none;
+    color: var(--on-surface);
   }
 
-  /* CalendarCell state styles - 공통 */
+  /* ========== CalendarCell State Styles ========== */
+
+  /* Outside month cells hidden */
   .react-aria-Calendar .react-aria-CalendarCell[data-outside-month],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-outside-month] {
     display: none;
   }
 
+  /* Pressed state */
   .react-aria-Calendar .react-aria-CalendarCell[data-pressed],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-pressed] {
-    background: var(--gray-100);
+    background: var(--surface-container);
   }
 
-  .react-aria-Calendar .react-aria-CalendarCell[data-selected],
-  .react-aria-RangeCalendar .react-aria-CalendarCell[data-selected] {
-    background: var(--highlight-background);
-    color: var(--highlight-foreground);
-  }
-
+  /* Disabled state */
   .react-aria-Calendar .react-aria-CalendarCell[data-disabled],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-disabled] {
-    color: var(--text-color-disabled);
+    color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+    cursor: not-allowed;
   }
 
+  /* Unavailable state */
   .react-aria-Calendar .react-aria-CalendarCell[data-unavailable],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-unavailable] {
     text-decoration: line-through;
-    color: var(--invalid-color);
+    color: var(--error);
   }
 
+  /* Invalid state */
   .react-aria-Calendar .react-aria-CalendarCell[data-invalid],
   .react-aria-RangeCalendar .react-aria-CalendarCell[data-invalid] {
-    background: var(--invalid-color);
-    color: var(--highlight-foreground);
+    background: var(--error);
+    color: var(--on-error);
   }
 
-  /* Error message - 공통 */
+  /* ========== Error Message ========== */
   .react-aria-Calendar [slot="errorMessage"],
   .react-aria-RangeCalendar [slot="errorMessage"] {
     font-size: var(--text-xs);
-    color: var(--invalid-color);
+    color: var(--error);
+    margin-top: var(--spacing-sm);
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-CalendarCell[data-disabled] {
+      opacity: 0.38;
+    }
+  }
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Calendar,
+    .react-aria-RangeCalendar {
+      forced-color-adjust: auto;
+    }
+
+    .react-aria-CalendarCell[data-selected] {
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    .react-aria-CalendarCell[data-focus-visible] {
+      outline-color: Highlight;
+    }
   }
 }

@@ -1,69 +1,398 @@
+/**
+ * Material Design 3 DateField Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/text-fields
+ */
+
 @layer components {
+  /* ========== Base DateField Styles ========== */
   .react-aria-DateField {
-    color: var(--text-color);
     display: flex;
     flex-direction: column;
-  }
+    gap: var(--spacing-xs);
 
-  .react-aria-DateInput {
-    display: inline;
-    padding: 4px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--field-background);
-    width: fit-content;
-    min-width: 150px;
-    white-space: nowrap;
-    forced-color-adjust: none;
-    font-size: var(--text-sm);
-
-    &[data-focus-within] {
-      outline: 2px solid var(--focus-ring-color);
-      outline-offset: -1px;
-    }
-  }
-
-  .react-aria-DateSegment {
-    padding: 0 2px;
-    font-variant-numeric: tabular-nums;
-    text-align: end;
-    color: var(--text-color);
-
-    &[data-type="literal"] {
-      padding: 0;
+    /* ===== Label Styles ===== */
+    .react-aria-Label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--on-surface);
+      margin-bottom: var(--spacing-xs);
     }
 
-    &[data-placeholder] {
-      color: var(--text-color-placeholder);
-      font-style: italic;
+    /* ===== DateInput Container ===== */
+    .react-aria-DateInput {
+      display: inline-flex;
+      padding: var(--spacing) var(--spacing-md);
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--border-radius);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      width: fit-content;
+      min-width: 150px;
+      white-space: nowrap;
+      forced-color-adjust: none;
+      font-size: var(--text-sm);
+      transition: all 200ms ease;
+
+      /* Focus State */
+      &[data-focus-within] {
+        outline: 2px solid var(--primary);
+        outline-offset: -1px;
+        border-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      /* Hover State */
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        border-color: var(--outline);
+        background: var(--surface-container-high);
+      }
+
+      /* Disabled State */
+      &[data-disabled] {
+        background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+        border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
     }
 
-    &:focus {
-      color: var(--highlight-foreground);
-      background: var(--highlight-background);
-      outline: none;
-      border-radius: 4px;
-      caret-color: transparent;
-    }
+    /* ===== Date Segments ===== */
+    .react-aria-DateSegment {
+      padding: 0 2px;
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+      color: var(--on-surface);
+      border-radius: var(--radius-xs);
+      transition: all 150ms ease;
 
-    &[data-invalid] {
-      color: var(--invalid-color);
+      /* Literal separators (/, -, etc.) */
+      &[data-type="literal"] {
+        padding: 0;
+      }
 
+      /* Placeholder state */
+      &[data-placeholder] {
+        color: var(--on-surface-variant);
+        font-style: italic;
+        opacity: 0.6;
+      }
+
+      /* Focus state (individual segment) */
       &:focus {
-        background: var(--highlight-background-invalid);
-        color: var(--highlight-foreground);
+        color: var(--on-primary-container);
+        background: var(--primary-container);
+        outline: none;
+        border-radius: var(--radius-xs);
+        caret-color: transparent;
+      }
+
+      /* Invalid state */
+      &[data-invalid] {
+        color: var(--error);
+
+        &:focus {
+          background: var(--error-container);
+          color: var(--on-error-container);
+        }
+      }
+
+      /* Disabled state */
+      &[data-disabled] {
+        color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+        cursor: not-allowed;
+      }
+    }
+
+    /* ===== Invalid State (Container) ===== */
+    &[data-invalid] {
+      .react-aria-DateInput {
+        border-color: var(--error);
+
+        &[data-focus-within] {
+          outline-color: var(--error);
+        }
+      }
+    }
+
+    /* ===== Description Text ===== */
+    [slot="description"] {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+    }
+
+    /* ===== Field Error ===== */
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+      color: var(--error);
+      margin-top: var(--spacing-xs);
+    }
+  }
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-DateField.primary {
+    .react-aria-Label {
+      color: var(--primary);
+    }
+
+    .react-aria-DateInput {
+      border-color: var(--primary);
+
+      &[data-focus-within] {
+        outline-color: var(--primary);
+        border-color: var(--primary);
+        background: var(--primary-container);
+      }
+
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        background: var(--primary-container);
+        border-color: var(--primary);
+      }
+    }
+
+    .react-aria-DateSegment {
+      &:focus {
+        background: var(--primary-container);
+        color: var(--on-primary-container);
       }
     }
   }
 
-  .react-aria-DateField {
-    .react-aria-FieldError {
-      font-size: 12px;
-      color: var(--invalid-color);
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-DateField.secondary {
+    .react-aria-Label {
+      color: var(--secondary);
     }
 
-    [slot="description"] {
-      font-size: 12px;
+    .react-aria-DateInput {
+      border-color: var(--secondary);
+
+      &[data-focus-within] {
+        outline-color: var(--secondary);
+        border-color: var(--secondary);
+        background: var(--secondary-container);
+      }
+
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        background: var(--secondary-container);
+        border-color: var(--secondary);
+      }
+    }
+
+    .react-aria-DateSegment {
+      &:focus {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-DateField.tertiary {
+    .react-aria-Label {
+      color: var(--tertiary);
+    }
+
+    .react-aria-DateInput {
+      border-color: var(--tertiary);
+
+      &[data-focus-within] {
+        outline-color: var(--tertiary);
+        border-color: var(--tertiary);
+        background: var(--tertiary-container);
+      }
+
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        background: var(--tertiary-container);
+        border-color: var(--tertiary);
+      }
+    }
+
+    .react-aria-DateSegment {
+      &:focus {
+        background: var(--tertiary-container);
+        color: var(--on-tertiary-container);
+      }
+    }
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-DateField.error {
+    .react-aria-Label {
+      color: var(--error);
+    }
+
+    .react-aria-DateInput {
+      border-color: var(--error);
+
+      &[data-focus-within] {
+        outline-color: var(--error);
+        border-color: var(--error);
+        background: var(--error-container);
+      }
+
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        background: var(--error-container);
+        border-color: var(--error);
+      }
+    }
+
+    .react-aria-DateSegment {
+      &:focus {
+        background: var(--error-container);
+        color: var(--on-error-container);
+      }
+    }
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-DateField.filled {
+    .react-aria-DateInput {
+      background: var(--surface-container-highest);
+      border-color: transparent;
+      border-bottom: 2px solid var(--outline-variant);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+      &[data-focus-within] {
+        outline: none;
+        border-bottom-color: var(--primary);
+        background: var(--surface-container-high);
+      }
+
+      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
+        background: var(--surface-container-high);
+        border-bottom-color: var(--outline);
+      }
+    }
+
+    &[data-invalid] .react-aria-DateInput {
+      border-bottom-color: var(--error);
+    }
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-DateField.sm {
+    .react-aria-Label {
+      font-size: var(--text-xs);
+    }
+
+    .react-aria-DateInput {
+      padding: var(--spacing-sm) var(--spacing);
+      font-size: var(--text-xs);
+      min-width: 120px;
+    }
+
+    .react-aria-DateSegment {
+      font-size: var(--text-xs);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: 10px;
+    }
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-DateField.md {
+    .react-aria-Label {
+      font-size: var(--text-sm);
+    }
+
+    .react-aria-DateInput {
+      padding: var(--spacing) var(--spacing-md);
+      font-size: var(--text-sm);
+      min-width: 150px;
+    }
+
+    .react-aria-DateSegment {
+      font-size: var(--text-sm);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-DateField.lg {
+    .react-aria-Label {
+      font-size: var(--text-base);
+    }
+
+    .react-aria-DateInput {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--text-base);
+      min-width: 180px;
+    }
+
+    .react-aria-DateSegment {
+      font-size: var(--text-base);
+    }
+
+    [slot="description"],
+    .react-aria-FieldError {
+      font-size: var(--text-sm);
+    }
+  }
+
+  /* ========== Invalid State Override ========== */
+  /* Invalid state overrides all color variants */
+  .react-aria-DateField.primary[data-invalid],
+  .react-aria-DateField.secondary[data-invalid],
+  .react-aria-DateField.tertiary[data-invalid],
+  .react-aria-DateField.filled[data-invalid] {
+    .react-aria-DateInput {
+      border-color: var(--error);
+
+      &[data-focus-within] {
+        outline-color: var(--error);
+      }
+    }
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-DateField .react-aria-DateInput {
+      &[data-disabled] {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.12);
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    .react-aria-DateField .react-aria-DateSegment {
+      &[data-disabled] {
+        color: rgba(0, 0, 0, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-DateField .react-aria-DateInput {
+      &[data-disabled] {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.38);
+      }
+    }
+
+    [data-theme="dark"] .react-aria-DateField .react-aria-DateSegment {
+      &[data-disabled] {
+        color: rgba(255, 255, 255, 0.38);
+      }
     }
   }
 }
