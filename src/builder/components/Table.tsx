@@ -12,6 +12,8 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
+import { tv } from 'tailwind-variants';
+import type { TableVariant, ComponentSize } from '../types/componentVariants';
 import './styles/Table.css';
 import {
   ChevronDown,
@@ -60,6 +62,10 @@ export interface TableProps<T extends { id: string | number }> {
   "data-element-id"?: string;
   tableHeaderElementId?: string; // TableHeader Element ID for selection
 
+  // M3 props
+  variant?: TableVariant;
+  size?: ComponentSize;
+
   // 데이터 소스: 정적 or 비동기
   data?: T[]; // 정적 데이터면 API 호출 안 함
   apiUrlKey?: string; // apiConfig 키 (예: "demo")
@@ -95,12 +101,37 @@ export interface TableProps<T extends { id: string | number }> {
   onItemsPerPageChange?: (itemsPerPage: number) => void; // 페이지당 항목 수 변경 콜백
 }
 
+const tableStyles = tv({
+  base: 'react-aria-Table',
+  variants: {
+    variant: {
+      primary: 'primary',
+      secondary: 'secondary',
+      tertiary: 'tertiary',
+      error: 'error',
+      filled: 'filled',
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
+
 export default React.memo(function Table<T extends { id: string | number }>(
   props: TableProps<T>
 ) {
   const {
     className,
     tableHeaderElementId,
+
+    variant = 'primary',
+    size = 'md',
 
     data: staticData,
     apiUrlKey,
@@ -996,7 +1027,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     <>
       <div
         data-element-id={props["data-element-id"]}
-        className={["react-aria-Table", className].filter(Boolean).join(" ")}
+        className={tableStyles({ variant, size, className })}
         role="grid"
         aria-rowcount={rows.length}
         aria-colcount={table.getAllLeafColumns().length}
