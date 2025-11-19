@@ -1,83 +1,174 @@
+/**
+ * Material Design 3 Modal Styles
+ *
+ * M3 Variants: primary, secondary, tertiary, error, filled
+ * Sizes: sm, md, lg
+ *
+ * Reference: https://m3.material.io/components/dialogs
+ */
+
 @layer components {
-  
+  /* ========== Animations ========== */
+  @keyframes modal-fade {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes modal-zoom {
+    from {
+      transform: scale(0.8);
+    }
+
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes mymodal-blur {
+    from {
+      background: rgba(45 0 0 / 0);
+      backdrop-filter: blur(0);
+    }
+
+    to {
+      background: rgba(45 0 0 / 0.3);
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  @keyframes mymodal-slide {
+    from {
+      transform: translateX(100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* ========== Modal Overlay ========== */
   .react-aria-ModalOverlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: var(--overlay-backdrop);
+    background: color-mix(in srgb, var(--on-surface) 32%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
-  
+
     &[data-entering] {
       animation: modal-fade 200ms;
     }
-  
+
     &[data-exiting] {
       animation: modal-fade 150ms reverse ease-in;
     }
   }
-  
+
+  /* ========== Base Modal Styles ========== */
   .react-aria-Modal {
-    box-shadow: var(--shadow-lg);
-    border-radius: var(--radius-sm);
-    background: var(--overlay-background);
-    color: var(--text-color);
-    border: 1px solid var(--gray-400);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--on-surface) 15%, transparent);
+    border-radius: var(--radius-xl);
+    background: var(--surface-container-high);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
     outline: none;
     max-width: 300px;
-  
+
     &[data-entering] {
       animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-  
+
     .react-aria-TextField {
-      margin-bottom: 8px;
+      margin-bottom: var(--spacing);
     }
   }
-  
-  @keyframes modal-fade {
-    from {
-      opacity: 0;
+
+  /* ========== M3 Color Variants ========== */
+
+  /* ===== M3 Primary Variant ===== */
+  .react-aria-Modal.primary {
+    border-color: var(--primary);
+  }
+
+  /* ===== M3 Secondary Variant ===== */
+  .react-aria-Modal.secondary {
+    border-color: var(--secondary);
+  }
+
+  /* ===== M3 Tertiary Variant ===== */
+  .react-aria-Modal.tertiary {
+    border-color: var(--tertiary);
+  }
+
+  /* ===== M3 Error Variant ===== */
+  .react-aria-Modal.error {
+    border-color: var(--error);
+  }
+
+  /* ===== M3 Filled Variant ===== */
+  .react-aria-Modal.filled {
+    background: var(--surface-container-highest);
+    border: none;
+  }
+
+  /* ========== Size Variants ========== */
+
+  /* ===== Small Size ===== */
+  .react-aria-Modal.sm {
+    max-width: 240px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* ===== Medium Size (Default) ===== */
+  .react-aria-Modal.md {
+    max-width: 300px;
+    border-radius: var(--radius-xl);
+  }
+
+  /* ===== Large Size ===== */
+  .react-aria-Modal.lg {
+    max-width: 400px;
+    border-radius: var(--radius-2xl);
+  }
+
+  /* ========== Dark Mode Compatibility ========== */
+  /* M3 tokens automatically handle dark mode via [data-theme="dark"]
+   * No additional CSS needed - tokens adapt automatically
+   */
+
+  /* ========== Browser Fallbacks ========== */
+  /* For browsers that don't support color-mix() (Safari < 16.2) */
+  @supports not (color: color-mix(in srgb, red 50%, blue)) {
+    .react-aria-ModalOverlay {
+      background: rgba(0, 0, 0, 0.32);
     }
-  
-    to {
-      opacity: 1;
+
+    .react-aria-Modal {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme='dark'] .react-aria-ModalOverlay {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    [data-theme='dark'] .react-aria-Modal {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
   }
-  
-  @keyframes modal-zoom {
-    from {
-      transform: scale(0.8);
-    }
-  
-    to {
-      transform: scale(1);
-    }
-  }
-  
-  @keyframes mymodal-blur {
-    from {
-      background: rgba(45 0 0 / 0);
-      backdrop-filter: blur(0);
-    }
-  
-    to {
-      background: rgba(45 0 0 / .3);
-      backdrop-filter: blur(10px);
-    }
-  }
-  
-  @keyframes mymodal-slide {
-    from {
-      transform: translateX(100%);
-    }
-  
-    to {
-      transform: translateX(0);
+
+  /* ========== Forced Colors Mode (High Contrast) ========== */
+  @media (forced-colors: active) {
+    .react-aria-Modal {
+      forced-color-adjust: auto;
     }
   }
 }
