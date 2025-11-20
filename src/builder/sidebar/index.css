@@ -58,12 +58,12 @@
 
   /* Panel Slot */
   .panel-slot {
-    position: relative;  /* 🔧 absolute 패널의 기준점 */
+    position: relative; /* 🔧 absolute 패널의 기준점 */
     display: flex;
     flex-direction: row;
     height: 100%;
     width: 100%;
-    overflow: hidden;    /* 🔧 화면 밖 패널 잘라내기 */
+    overflow: hidden; /* 🔧 화면 밖 패널 잘라내기 */
   }
 
   /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
@@ -82,23 +82,23 @@
     /* - 상태 보존 (스크롤, 입력값) */
     /* - 부드러운 애니메이션 */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* ♿ 접근성: 모션 감소 설정 사용자 지원 */
   @media (prefers-reduced-motion: reduce) {
     .panel-container {
-      transition: none;  /* 애니메이션 비활성화 */
+      transition: none; /* 애니메이션 비활성화 */
     }
   }
 
   /* 🔧 Left 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
   .panel-container[data-side="left"][data-show="false"] {
-    position: absolute;     /* 레이아웃 flow에서 제거 */
+    position: absolute; /* 레이아웃 flow에서 제거 */
     left: 0;
     top: 0;
     height: 100%;
-    z-index: -1;            /* 다른 요소 뒤로 */
+    z-index: -1; /* 다른 요소 뒤로 */
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
@@ -106,11 +106,11 @@
 
   /* 🔧 Right 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
   .panel-container[data-side="right"][data-show="false"] {
-    position: absolute;     /* 레이아웃 flow에서 제거 */
+    position: absolute; /* 레이아웃 flow에서 제거 */
     right: 0;
     top: 0;
     height: 100%;
-    z-index: -1;            /* 다른 요소 뒤로 */
+    z-index: -1; /* 다른 요소 뒤로 */
     transform: translateX(100%);
     opacity: 0;
     pointer-events: none;
@@ -118,7 +118,7 @@
 
   /* 표시 상태 - relative로 flexbox에 참여 */
   .panel-container[data-show="true"] {
-    position: relative;     /* 또는 static, flexbox에 참여 */
+    position: relative; /* 또는 static, flexbox에 참여 */
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
@@ -138,11 +138,75 @@
 
   /* Panel Content */
   .panel-content {
-    & > div {
-      min-width: 233px;
-      width: 233px;
-      overflow: auto;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Panel Wrapper - 모든 패널을 항상 렌더링하되 CSS로 표시/숨김 제어 */
+  .panel-wrapper {
+    /* ✅ 동적 넓이: CSS 변수로 패널마다 다른 넓이 지원 */
+    width: var(--panel-width, 233px);
+    min-width: var(--panel-width, 233px);
+    height: 100%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* 기본적으로 overflow hidden */
+
+    /* ✅ 성능 최적화: transform으로 위치 이동 (GPU 가속) */
+    /* 사라질 때도 애니메이션이 보이도록 transition 설정 */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
+
+    /* 비활성 패널: 레이아웃 공간은 제거하되 넓이는 유지, transform으로 슬라이드 */
+    /* ✅ position: relative 유지하여 애니메이션이 보이도록 함 */
+    &[data-active="false"] {
+      position: relative;
+      transform: translateX(-100%);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: -1;
+      /* ✅ 동적 넓이: CSS 변수를 사용하여 패널 넓이만큼 margin-left 설정 */
+      margin-left: calc(0px - var(--panel-width, 233px));
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
     }
+
+    /* 활성 패널: 레이아웃에 참여하여 나란히 표시 */
+    &[data-active="true"] {
+      position: relative;
+      transform: translateX(0);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 1;
+      margin-left: 0; /* 레이아웃 공간 정상 사용 */
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
+    }
+
+    /* 패널 컴포넌트가 전체 높이를 차지하도록 */
+    & > * {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+
+  /* Right 사이드: 오른쪽으로 숨김 */
+  .panel-container[data-side="right"] .panel-wrapper[data-active="false"] {
+    transform: translateX(100%);
   }
 
   .sidebar {
@@ -150,7 +214,7 @@
       border-right: 1px solid var(--builder-sidebar-border);
     }
     .panel-content {
-      & > div {
+      .panel-wrapper[data-active="true"] {
         border-right: 1px solid var(--builder-sidebar-border);
       }
     }
@@ -161,7 +225,7 @@
       border-left: 1px solid var(--builder-sidebar-border);
     }
     .panel-content {
-      & > div {
+      .panel-wrapper[data-active="true"] {
         border-left: 1px solid var(--builder-sidebar-border);
       }
     }

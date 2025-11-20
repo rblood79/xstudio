@@ -68,7 +68,8 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
             onClose={handleClose}
           />
           <PanelContainer 
-            side={side} 
+            side={side}
+            panelIds={panelState.panelIds}
             activePanels={panelState.activePanels} 
             show={panelState.show} 
           />
@@ -76,7 +77,8 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
       ) : (
         <>
           <PanelContainer 
-            side={side} 
+            side={side}
+            panelIds={panelState.panelIds}
             activePanels={panelState.activePanels} 
             show={panelState.show} 
           />

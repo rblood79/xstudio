@@ -20,6 +20,20 @@ export default defineConfig(({ command }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    optimizeDeps: {
+      // 주요 의존성의 사전 번들링 강제 (의존성 스캔 오류 방지)
+      include: [
+        "react",
+        "react-dom",
+        "react-router",
+        "react-router-dom",
+        "@supabase/supabase-js",
+        "react-aria-components",
+        "zustand",
+      ],
+      // 문제가 있는 의존성을 사전 번들링에서 제외 (필요시 추가)
+      exclude: [],
+    },
     server: {
       // Note: Supabase client connects directly using VITE_SUPABASE_URL
       // No proxy needed for development environment

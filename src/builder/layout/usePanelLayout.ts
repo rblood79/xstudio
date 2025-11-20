@@ -5,10 +5,14 @@
  * Zustand store와 연동
  */
 
-import { useCallback } from 'react';
-import { useStore } from '../stores';
-import type { PanelId, PanelSide, PanelLayoutState } from '../panels/core/types';
-import type { UsePanelLayoutReturn } from './types';
+import { useCallback } from "react";
+import { useStore } from "../stores";
+import type {
+  PanelId,
+  PanelSide,
+  PanelLayoutState,
+} from "../panels/core/types";
+import type { UsePanelLayoutReturn } from "./types";
 
 /**
  * 패널 레이아웃 관리 훅
@@ -27,16 +31,19 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     (panelId: PanelId, from: PanelSide, to: PanelSide) => {
       if (from === to) return;
 
-      const fromKey = from === 'left' ? 'leftPanels' : 'rightPanels';
-      const toKey = to === 'left' ? 'leftPanels' : 'rightPanels';
-      const fromActiveKey = from === 'left' ? 'activeLeftPanels' : 'activeRightPanels';
+      const fromKey = from === "left" ? "leftPanels" : "rightPanels";
+      const toKey = to === "left" ? "leftPanels" : "rightPanels";
+      const fromActiveKey =
+        from === "left" ? "activeLeftPanels" : "activeRightPanels";
 
       const fromPanels = layout[fromKey];
       const toPanels = layout[toKey];
 
       // 패널이 from에 없으면 무시
       if (!fromPanels.includes(panelId)) {
-        console.warn(`[usePanelLayout] Panel "${panelId}" not found in ${from} side`);
+        console.warn(
+          `[usePanelLayout] Panel "${panelId}" not found in ${from} side`
+        );
         return;
       }
 
@@ -56,15 +63,24 @@ export function usePanelLayout(): UsePanelLayoutReturn {
 
   /**
    * 패널 토글 (활성화/비활성화) - Multi toggle 지원
+   *
+   * ✅ 성능 최적화: 패널을 DOM에서 제거하지 않고 CSS transform으로만 숨김
+   * - 패널을 열면 사이드바도 자동으로 열림 (showLeft/showRight = true)
+   * - 패널을 닫아도 사이드바는 열려있음 (다른 패널이 열려있을 수 있으므로)
+   * - 패널은 activePanels 배열에서 제거되지만 DOM에는 유지됨
    */
   const togglePanel = useCallback(
     (side: PanelSide, panelId: PanelId) => {
-      const panelsKey = side === 'left' ? 'leftPanels' : 'rightPanels';
-      const activeKey = side === 'left' ? 'activeLeftPanels' : 'activeRightPanels';
+      const panelsKey = side === "left" ? "leftPanels" : "rightPanels";
+      const activeKey =
+        side === "left" ? "activeLeftPanels" : "activeRightPanels";
+      const showKey = side === "left" ? "showLeft" : "showRight";
 
       // 패널이 해당 사이드에 없으면 무시
       if (!layout[panelsKey].includes(panelId)) {
-        console.warn(`[usePanelLayout] Panel "${panelId}" not available on ${side} side`);
+        console.warn(
+          `[usePanelLayout] Panel "${panelId}" not available on ${side} side`
+        );
         return;
       }
 
@@ -76,9 +92,25 @@ export function usePanelLayout(): UsePanelLayoutReturn {
         ? currentActive.filter((id) => id !== panelId)
         : [...currentActive, panelId];
 
+      // 패널을 열 때는 사이드바도 자동으로 열림
+      // 패널을 닫을 때는 사이드바 상태 유지 (다른 패널이 열려있을 수 있으므로)
+      const newShow = isActive ? layout[showKey] : true;
+
+      // 🔍 디버깅: toggle 동작 로그
+      if (import.meta.env.DEV) {
+        console.log(`[togglePanel ${side}]`, {
+          panelId,
+          isActive,
+          before: currentActive,
+          after: newActive,
+          show: newShow,
+        });
+      }
+
       setPanelLayout({
         ...layout,
         [activeKey]: newActive,
+        [showKey]: newShow,
       });
     },
     [layout, setPanelLayout]
@@ -89,7 +121,7 @@ export function usePanelLayout(): UsePanelLayoutReturn {
    */
   const toggleSide = useCallback(
     (side: PanelSide) => {
-      const showKey = side === 'left' ? 'showLeft' : 'showRight';
+      const showKey = side === "left" ? "showLeft" : "showRight";
       setPanelLayout({
         ...layout,
         [showKey]: !layout[showKey],

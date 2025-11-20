@@ -73,8 +73,8 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     component: ThemesPanel,
     category: "tool",
     defaultPosition: "left",
-    minWidth: 233,
-    maxWidth: 400,
+    minWidth: 466,
+    maxWidth: 932,
     description: "디자인 토큰 및 테마",
   },
   {
