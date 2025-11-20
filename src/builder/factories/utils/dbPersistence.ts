@@ -3,21 +3,22 @@ import { elementsApi } from "../../../services/api/ElementsApiService";
 import { HierarchyManager } from "../../utils/HierarchyManager";
 import { updateElementId } from "./elementCreation";
 import { supabase } from "../../../env/supabase.client";
+import { getDB } from "../../../lib/db";
 
 /**
- * 참조 무결성 검증: page_id와 parent_id가 DB에 존재하는지 확인
+ * 참조 무결성 검증: page_id와 parent_id가 Supabase DB에 존재하는지 확인
+ * ⭐ Supabase 저장 전용 검증 (IndexedDB는 별도 처리)
  */
 async function validateReferences(
   pageId: string,
   parentId: string | null
 ): Promise<boolean> {
   try {
-    // 1. Page 존재 여부 확인
-    // maybeSingle()은 결과가 0개 또는 1개일 때 사용 (에러 없이 null 반환)
+    // 1. Page 존재 여부 확인 (Supabase DB만 확인)
     const { data: page, error: pageError } = await supabase
-      .from('pages')
-      .select('id')
-      .eq('id', pageId)
+      .from("pages")
+      .select("id")
+      .eq("id", pageId)
       .maybeSingle();
 
     if (pageError) {
@@ -26,38 +27,65 @@ async function validateReferences(
     }
 
     if (!page) {
-      console.warn(`[dbPersistence] Page ${pageId} not found in DB - skipping save`);
+      // Supabase에 페이지가 없으면 로컬 개발 환경으로 간주하고 스킵
+      console.log(
+        `[dbPersistence] ⏭️ Page ${pageId} not in Supabase - skipping cloud save (local-only mode)`
+      );
       return false;
     }
 
     // 2. Parent 존재 여부 확인 (parentId가 있는 경우만)
     if (parentId) {
       const { data: parentElement, error: parentError } = await supabase
-        .from('elements')
-        .select('id')
-        .eq('id', parentId)
+        .from("elements")
+        .select("id")
+        .eq("id", parentId)
         .maybeSingle();
 
       if (parentError) {
-        console.warn(`[dbPersistence] Error checking parent element ${parentId}:`, parentError);
-        return false;
+        console.warn(
+          `[dbPersistence] Error checking parent element ${parentId}:`,
+          parentError
+        );
+        // 에러가 있어도 IndexedDB 확인 계속 진행
       }
 
+      // Supabase DB에 없으면 IndexedDB 확인
       if (!parentElement) {
-        console.warn(`[dbPersistence] Parent element ${parentId} not found in DB - skipping save`);
-        return false;
+        try {
+          const db = await getDB();
+          const indexedDbParent = await db.elements.getById(parentId);
+          if (indexedDbParent) {
+            console.log(
+              `[dbPersistence] Parent element ${parentId} found in IndexedDB (not in Supabase yet) - allowing save`
+            );
+            // IndexedDB에 있으면 저장 허용
+          } else {
+            console.warn(
+              `[dbPersistence] Parent element ${parentId} not found in DB or IndexedDB - skipping save`
+            );
+            return false;
+          }
+        } catch (indexedDbError) {
+          console.warn(
+            `[dbPersistence] Error checking IndexedDB for parent element ${parentId}:`,
+            indexedDbError
+          );
+          return false;
+        }
       }
     }
 
     return true;
   } catch (error) {
-    console.error('[dbPersistence] Reference validation failed:', error);
+    console.error("[dbPersistence] Reference validation failed:", error);
     return false;
   }
 }
 
 /**
- * 부모 및 자식 요소들을 DB에 저장
+ * 부모 및 자식 요소들을 Supabase DB에 저장
+ * ⚠️ 로컬 전용 모드(IndexedDB만)에서는 자동으로 스킵됨
  */
 export async function saveElementsToDb(
   parent: Element,
@@ -66,10 +94,13 @@ export async function saveElementsToDb(
   pageId: string
 ): Promise<void> {
   try {
-    // ⭐ 참조 무결성 검증 (외래 키 위반 방지)
+    // ⭐ Supabase 참조 무결성 검증 (외래 키 위반 방지)
     const isValid = await validateReferences(pageId, parentId);
     if (!isValid) {
-      console.warn('[dbPersistence] References not found in DB - aborting save');
+      // 로컬 전용 모드: Supabase 저장 스킵 (IndexedDB에는 이미 저장됨)
+      console.log(
+        "[dbPersistence] ⏭️ Skipping Supabase save (local-only mode) - element saved in IndexedDB only"
+      );
       return;
     }
 
@@ -100,7 +131,9 @@ export async function saveElementsToDb(
       updateElementId(children[i].id, savedChild.id);
     }
 
-    console.log(`[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children`);
+    console.log(
+      `[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children`
+    );
   } catch (error) {
     console.error("Background save failed:", error);
   }

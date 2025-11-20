@@ -210,4 +210,4 @@ export const SearchFieldEditor = memo(function SearchFieldEditor({ elementId, cu
             </PropertySection>
         </>
     );
-}
+});

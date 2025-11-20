@@ -112,4 +112,4 @@ export const GroupEditor = memo(function GroupEditor({ elementId, currentProps, 
       </PropertySection>
     </>
   );
-}
+});

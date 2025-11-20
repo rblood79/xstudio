@@ -388,4 +388,4 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
             </PropertySection>
         </>
     );
-}
+});

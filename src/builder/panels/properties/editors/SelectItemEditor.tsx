@@ -142,4 +142,4 @@ export const SelectItemEditor = memo(function SelectItemEditor({ elementId, curr
             </PropertySection>
         </>
     );
-}
+});

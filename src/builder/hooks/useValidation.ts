@@ -21,16 +21,27 @@ export const useValidation = (): UseValidationReturn => {
             // order_num으로 정렬
             const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-            sorted.forEach((child, index) => {
-                // order_num은 0부터 시작 (0-based indexing)
-                const expectedOrder = index;
-                const actualOrder = child.order_num || 0;
-                const isValid = actualOrder === expectedOrder;
+            // ✅ 중복이나 순서 역전만 확인 (0부터 시작할 필요는 없음)
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const current = sorted[i];
+                const next = sorted[i + 1];
+                const currentOrder = current.order_num || 0;
+                const nextOrder = next.order_num || 0;
 
-                if (!isValid) {
-                    console.warn(`Order mismatch detected for ${child.tag} (${child.id.slice(0, 8)}...): order_num=${actualOrder}, expected=${expectedOrder}`);
+                // 중복 order_num 확인
+                if (currentOrder === nextOrder) {
+                    console.warn(
+                        `❌ Duplicate order_num detected: ${current.tag} (${current.id.slice(0, 8)}...) and ${next.tag} (${next.id.slice(0, 8)}...) both have order_num=${currentOrder}`
+                    );
                 }
-            });
+
+                // 순서 역전 확인 (정렬 후에는 발생하지 않지만, 데이터 무결성 확인)
+                if (currentOrder > nextOrder) {
+                    console.warn(
+                        `❌ Order reversal detected: ${current.tag} (${current.id.slice(0, 8)}..., order_num=${currentOrder}) > ${next.tag} (${next.id.slice(0, 8)}..., order_num=${nextOrder})`
+                    );
+                }
+            }
         });
     }, []);
 

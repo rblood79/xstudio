@@ -128,4 +128,4 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
             </PropertySection>
         </div>
     );
-}
+});

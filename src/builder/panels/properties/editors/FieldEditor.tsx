@@ -1,11 +1,11 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo } from "react";
 import {
   PropertyInput,
   PropertySelect,
   PropertySwitch,
   PropertyCustomId,
-  PropertySection
-} from '../../common';
+  PropertySection,
+} from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { Tag, Type, Eye, EyeOff, Hash } from "lucide-react";
@@ -30,7 +30,7 @@ export const FieldEditor = memo(function FieldEditor({
   const element = elements.find((el) => el.id === elementId);
 
   // Get customId from element in store
-  const customId = element?.customId || '';
+  const customId = element?.customId || "";
 
   if (!element || !element.id) {
     return (
@@ -47,30 +47,20 @@ export const FieldEditor = memo(function FieldEditor({
     onUpdate(merged);
   };
 
-  const updateCustomId = (newCustomId: string) => {
-    // Update customId in store (not in props)
-    const updateElement = useStore.getState().updateElement;
-    if (updateElement && elementId) {
-      updateElement(elementId, { customId: newCustomId });
-    }
-  };
-
   return (
-        <>
+    <>
       {/* Basic */}
       <PropertySection title="Basic">
-      <PropertyCustomId
-        label="ID"
-        value={customId}
-        elementId={elementId}
-        onChange={updateCustomId}
-        placeholder="field_1"
-      />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="field_1"
+        />
       </PropertySection>
 
       {/* Content Section */}
       <PropertySection title="Content">
-
         <PropertyInput
           label={PROPERTY_LABELS.DATA_KEY}
           value={fieldProps?.key || ""}
@@ -91,7 +81,6 @@ export const FieldEditor = memo(function FieldEditor({
 
       {/* Behavior Section */}
       <PropertySection title="Behavior">
-
         <PropertySwitch
           label={PROPERTY_LABELS.VISIBLE}
           isSelected={fieldProps?.visible !== false}
@@ -102,7 +91,6 @@ export const FieldEditor = memo(function FieldEditor({
 
       {/* Design Section */}
       <PropertySection title="Design">
-
         <PropertySelect
           label={PROPERTY_LABELS.TYPE}
           value={fieldProps?.type || "string"}
@@ -124,31 +112,36 @@ export const FieldEditor = memo(function FieldEditor({
 
       {/* Accessibility Section */}
       <PropertySection title="Accessibility">
-
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps['aria-label'] || '')}
-          onChange={(value) => updateProps({ 'aria-label': value || undefined })}
+          value={String(currentProps["aria-label"] || "")}
+          onChange={(value) =>
+            updateProps({ "aria-label": value || undefined })
+          }
           icon={Type}
           placeholder="Field label for screen readers"
         />
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps['aria-labelledby'] || '')}
-          onChange={(value) => updateProps({ 'aria-labelledby': value || undefined })}
+          value={String(currentProps["aria-labelledby"] || "")}
+          onChange={(value) =>
+            updateProps({ "aria-labelledby": value || undefined })
+          }
           icon={Hash}
           placeholder="label-element-id"
         />
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-          value={String(currentProps['aria-describedby'] || '')}
-          onChange={(value) => updateProps({ 'aria-describedby': value || undefined })}
+          value={String(currentProps["aria-describedby"] || "")}
+          onChange={(value) =>
+            updateProps({ "aria-describedby": value || undefined })
+          }
           icon={Hash}
           placeholder="description-element-id"
         />
       </PropertySection>
     </>
-    );
-}
+  );
+});

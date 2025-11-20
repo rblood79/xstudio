@@ -137,4 +137,4 @@ export const BreadcrumbEditor = memo(function BreadcrumbEditor({ elementId, curr
             </PropertySection>
         </>
     );
-}
+});

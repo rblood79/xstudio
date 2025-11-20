@@ -8,17 +8,61 @@ import { componentMetadata } from "../../components/metadata";
 const editorCache = new Map<string, ComponentType<ComponentEditorProps>>();
 
 /**
+ * Vite의 import.meta.glob을 사용하여 모든 에디터를 사전 로드
+ * 이 방식은 빌드 타임에 모든 가능한 import를 정적으로 분석할 수 있게 함
+ */
+const editorModules = import.meta.glob<{
+  default: ComponentType<ComponentEditorProps>;
+}>("../../panels/properties/editors/*.tsx");
+
+// 디버깅: 등록된 모든 에디터 경로 출력
+console.log('[Registry] Available editor paths:', Object.keys(editorModules));
+
+/**
  * 에디터 모듈 동적 import
  */
 async function importEditor(
   editorName: string
 ): Promise<ComponentType<ComponentEditorProps> | null> {
   try {
-    // panels/properties/editors 경로에서 import (패널 시스템)
-    const module = await import(`../../panels/properties/editors/${editorName}.tsx`);
-    return module.default || module[editorName];
+    // editorName에 해당하는 모듈 경로 생성
+    const modulePath = `../../panels/properties/editors/${editorName}.tsx`;
+
+    console.log('[importEditor] Looking for:', {
+      editorName,
+      modulePath,
+      hasLoader: !!editorModules[modulePath],
+    });
+
+    // import.meta.glob 결과에서 해당 경로의 모듈 찾기
+    const moduleLoader = editorModules[modulePath];
+
+    if (!moduleLoader) {
+      console.warn(`[importEditor] Editor not found in glob: ${editorName}`, {
+        requestedPath: modulePath,
+        availablePaths: Object.keys(editorModules).slice(0, 5), // 처음 5개만 출력
+        totalCount: Object.keys(editorModules).length,
+      });
+      return null;
+    }
+
+    // 모듈 로드
+    console.log('[importEditor] Loading module:', modulePath);
+    const module = await moduleLoader();
+
+    // default export 우선, 없으면 named export (editorName) 시도
+    const editor = module.default || (module as any)[editorName];
+
+    console.log('[importEditor] Module loaded:', {
+      editorName,
+      hasDefault: !!module.default,
+      hasNamedExport: !!(module as any)[editorName],
+      resolved: !!editor,
+    });
+
+    return editor || null;
   } catch (error) {
-    console.warn(`Editor not found: ${editorName}`, error);
+    console.warn(`[importEditor] Failed to load editor: ${editorName}`, error);
     return null;
   }
 }

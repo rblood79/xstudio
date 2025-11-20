@@ -6,12 +6,13 @@ import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
 export const ToggleButtonEditor = memo(function ToggleButtonEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
-  const customId = useMemo(() => {
-    const element = useStore.getState().elementsMap.get(elementId);
-    return element?.customId || "";
-  }, [elementId]);
+    // Get element from store
+    const element = useStore((state) => state.elementsMap.get(elementId));
+
+    // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+    const customId = useMemo(() => {
+        return element?.customId || "";
+    }, [element?.customId]);
 
     // Check if this ToggleButton is a child of ToggleButtonGroup
     const parentElement = useStore((state) =>
@@ -183,4 +184,4 @@ export const ToggleButtonEditor = memo(function ToggleButtonEditor({ elementId, 
             </PropertySection>
         </>
     );
-}
+});

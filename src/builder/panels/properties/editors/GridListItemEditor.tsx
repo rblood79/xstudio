@@ -113,4 +113,4 @@ export const GridListItemEditor = memo(function GridListItemEditor({ elementId, 
             </PropertySection>
         </>
     );
-}
+});

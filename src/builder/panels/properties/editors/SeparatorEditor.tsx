@@ -94,6 +94,4 @@ export const SeparatorEditor = memo(function SeparatorEditor({ elementId, curren
             </PropertySection>
         </>
     );
-}
-
-export default SeparatorEditor;
+});

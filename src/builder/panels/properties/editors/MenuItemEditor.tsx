@@ -114,4 +114,4 @@ export const MenuItemEditor = memo(function MenuItemEditor({ elementId, currentP
             </PropertySection>
         </>
     );
-}
+});

@@ -142,4 +142,4 @@ export const ComboBoxItemEditor = memo(function ComboBoxItemEditor({ elementId, 
             </PropertySection>
         </>
     );
-}
+});

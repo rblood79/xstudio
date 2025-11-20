@@ -1,137 +1,147 @@
-import { memo, useCallback, useMemo } from "react";
-import { Type, Layout, ToggleLeft, X, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
-import { useStore } from '../../../stores';
+import { memo, useMemo } from "react";
+import { Type, Layout, ToggleLeft, X, Hash } from "lucide-react";
+import {
+  PropertyInput,
+  PropertySelect,
+  PropertySwitch,
+  PropertyCustomId,
+  PropertySection,
+} from "../../common";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
 
-export const PanelEditor = memo(function PanelEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+export const PanelEditor = memo(function PanelEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
+  // Get customId from element in store
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || "";
   }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...currentProps,
-            [key]: value
-        };
-        onUpdate(updatedProps);
+  const updateProp = (key: string, value: unknown) => {
+    const updatedProps = {
+      ...currentProps,
+      [key]: value,
     };
+    onUpdate(updatedProps);
+  };
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
+  // Panel 컴포넌트가 Tabs의 자식인 경우 (tabIndex가 있는 경우) 특별한 처리
+  const isTabPanel = currentProps.tabIndex !== undefined;
 
-    // Panel 컴포넌트가 Tabs의 자식인 경우 (tabIndex가 있는 경우) 특별한 처리
-    const isTabPanel = currentProps.tabIndex !== undefined;
-
-    return (
-        <>
+  return (
+    <>
       {/* Basic */}
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="panel_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="panel_1"
+        />
       </PropertySection>
 
       {/* Content Section */}
-            <PropertySection title="Content">
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.TITLE}
+          value={String(currentProps.title || "")}
+          onChange={(value) => updateProp("title", value)}
+          icon={Type}
+        />
+      </PropertySection>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.TITLE}
-                    value={String(currentProps.title || '')}
-                    onChange={(value) => updateProp('title', value)}
-                    icon={Type}
-                />
-            </PropertySection>
+      {/* Design Section */}
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.STYLE}
+          value={String(currentProps.variant || "card")}
+          onChange={(value) =>
+            updateProp(
+              "variant",
+              value as "tab" | "card" | "bordered" | "shadow"
+            )
+          }
+          options={[
+            { value: "tab", label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
+            { value: "card", label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
+            {
+              value: "bordered",
+              label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED,
+            },
+            { value: "shadow", label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW },
+          ]}
+          icon={Layout}
+        />
+      </PropertySection>
 
-            {/* Design Section */}
-            <PropertySection title="Design">
+      {/* State Section (Tab Panel이 아닌 경우만) */}
+      {!isTabPanel && (
+        <PropertySection title="State">
+          <PropertySwitch
+            label={PROPERTY_LABELS.IS_OPEN}
+            isSelected={Boolean(currentProps.isOpen)}
+            onChange={(checked) => updateProp("isOpen", checked)}
+            icon={ToggleLeft}
+          />
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.STYLE}
-                    value={String(currentProps.variant || 'card')}
-                    onChange={(value) => updateProp('variant', value as 'tab' | 'card' | 'bordered' | 'shadow')}
-                    options={[
-                        { value: 'tab', label: PROPERTY_LABELS.PANEL_VARIANT_TAB },
-                        { value: 'card', label: PROPERTY_LABELS.PANEL_VARIANT_CARD },
-                        { value: 'bordered', label: PROPERTY_LABELS.PANEL_VARIANT_BORDERED },
-                        { value: 'shadow', label: PROPERTY_LABELS.PANEL_VARIANT_SHADOW }
-                    ]}
-                    icon={Layout}
-                />
-            </PropertySection>
+          <PropertySwitch
+            label={PROPERTY_LABELS.IS_DISMISSABLE}
+            isSelected={Boolean(currentProps.isDismissable)}
+            onChange={(checked) => updateProp("isDismissable", checked)}
+            icon={X}
+          />
+        </PropertySection>
+      )}
 
-            {/* State Section (Tab Panel이 아닌 경우만) */}
-            {!isTabPanel && (
-                <PropertySection title="State">
+      {/* Accessibility Section */}
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps["aria-label"] || "")}
+          onChange={(value) => updateProp("aria-label", value || undefined)}
+          icon={Type}
+          placeholder="Panel label for screen readers"
+        />
 
-                    <PropertySwitch
-                        label={PROPERTY_LABELS.IS_OPEN}
-                        isSelected={Boolean(currentProps.isOpen)}
-                        onChange={(checked) => updateProp('isOpen', checked)}
-                        icon={ToggleLeft}
-                    />
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps["aria-labelledby"] || "")}
+          onChange={(value) =>
+            updateProp("aria-labelledby", value || undefined)
+          }
+          icon={Hash}
+          placeholder="label-element-id"
+        />
 
-                    <PropertySwitch
-                        label={PROPERTY_LABELS.IS_DISMISSABLE}
-                        isSelected={Boolean(currentProps.isDismissable)}
-                        onChange={(checked) => updateProp('isDismissable', checked)}
-                        icon={X}
-                    />
-                </PropertySection>
-            )}
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+          value={String(currentProps["aria-describedby"] || "")}
+          onChange={(value) =>
+            updateProp("aria-describedby", value || undefined)
+          }
+          icon={Hash}
+          placeholder="description-element-id"
+        />
+      </PropertySection>
 
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Panel label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
-
-            {/* Tab 패널인 경우 tabIndex 정보 표시 */}
-            {isTabPanel && (
-                <div className="tab-panel-info">
-                    <p className="tab-panel-note">
-                        This panel is part of a tab component. (Index: {String(currentProps.tabIndex)})
-                    </p>
-                    <p className="tab-panel-help">
-                        💡 You can edit tab properties from the tab component.
-                    </p>
-                </div>
-            )}
-        </>
-    );
-}
+      {/* Tab 패널인 경우 tabIndex 정보 표시 */}
+      {isTabPanel && (
+        <div className="tab-panel-info">
+          <p className="tab-panel-note">
+            This panel is part of a tab component. (Index:{" "}
+            {String(currentProps.tabIndex)})
+          </p>
+          <p className="tab-panel-help">
+            💡 You can edit tab properties from the tab component.
+          </p>
+        </div>
+      )}
+    </>
+  );
+});

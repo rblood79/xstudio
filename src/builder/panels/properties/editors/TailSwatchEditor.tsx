@@ -117,4 +117,4 @@ export const TailSwatchEditor = memo(function TailSwatchEditor({ elementId, curr
             </PropertySection>
         </>
     );
-}
+});

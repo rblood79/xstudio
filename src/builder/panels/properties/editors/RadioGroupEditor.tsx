@@ -101,6 +101,13 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
     }
   }, [elementId]);
 
+  // ⭐ 최적화: Radio 자식 요소들을 먼저 계산 (콜백들이 이것을 사용하므로)
+  const radioChildren = useMemo(() => {
+    return storeElements
+      .filter((child) => child.parent_id === elementId && child.tag === 'Radio')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [storeElements, elementId]);
+
   // ⭐ 최적화: 라디오 편집 핸들러들
   const handleRadioChildrenChange = useCallback((radioId: string, value: string) => {
     const radio = radioChildren.find(r => r.id === radioId);
@@ -151,13 +158,6 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
       console.error('Radio 삭제 중 오류:', error);
     }
   }, [storeElements, setElements]);
-
-  // 실제 Radio 자식 요소들을 찾기 (useMemo로 최적화)
-  const radioChildren = useMemo(() => {
-    return storeElements
-      .filter((child) => child.parent_id === elementId && child.tag === 'Radio')
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, elementId]);
 
   // 선택된 라디오 버튼이 있고, 현재 RadioGroup 컴포넌트의 라디오인 경우 개별 라디오 편집 UI 표시
   if (selectedRadio && selectedRadio.parentId === elementId) {

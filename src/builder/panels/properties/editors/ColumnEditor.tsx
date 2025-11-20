@@ -136,4 +136,4 @@ export const ColumnEditor = memo(function ColumnEditor({ elementId, currentProps
             </PropertySection>
         </div>
     );
-}
+});

@@ -240,4 +240,4 @@ export const SliderEditor = memo(function SliderEditor({ elementId, currentProps
             </PropertySection>
         </>
     );
-}
+});

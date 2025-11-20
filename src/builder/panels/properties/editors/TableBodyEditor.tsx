@@ -135,4 +135,4 @@ export const TableBodyEditor = memo(function TableBodyEditor({ elementId, curren
             </PropertySection>
         </div>
     );
-}
+});

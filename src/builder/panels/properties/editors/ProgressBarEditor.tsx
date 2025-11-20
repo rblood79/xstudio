@@ -183,4 +183,4 @@ export const ProgressBarEditor = memo(function ProgressBarEditor({ elementId, cu
             </PropertySection>
         </>
     );
-}
+});

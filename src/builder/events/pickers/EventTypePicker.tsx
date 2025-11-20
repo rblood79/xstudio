@@ -44,6 +44,7 @@ export function EventTypePicker({
   return (
     <Select
       placeholder="이벤트 추가"
+      aria-label="이벤트 타입 선택"
       onSelectionChange={(key) => {
         if (key) {
           onSelect(key as EventType);
@@ -52,7 +53,7 @@ export function EventTypePicker({
       isDisabled={isDisabled || availableEventTypes.length === 0}
       className="event-type-picker"
     >
-      <Button className="iconButton" aria-label="Add Event">
+      <Button className="iconButton" aria-label="이벤트 추가">
         <CirclePlus
           color={iconProps.color}
           strokeWidth={iconProps.stroke}

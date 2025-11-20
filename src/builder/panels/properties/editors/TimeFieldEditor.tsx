@@ -239,4 +239,4 @@ export const TimeFieldEditor = memo(function TimeFieldEditor({ elementId, curren
             </PropertySection>
         </>
     );
-}
+});

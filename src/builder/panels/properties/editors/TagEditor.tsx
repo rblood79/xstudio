@@ -105,4 +105,4 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
             </p>
         </>
     );
-}
+});

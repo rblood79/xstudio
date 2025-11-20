@@ -177,4 +177,4 @@ export const MeterEditor = memo(function MeterEditor({ elementId, currentProps, 
             </PropertySection>
         </>
     );
-}
+});

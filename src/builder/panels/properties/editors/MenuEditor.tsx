@@ -145,4 +145,4 @@ export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, on
             </PropertySection>
         </>
     );
-}
+});

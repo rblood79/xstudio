@@ -86,4 +86,4 @@ export const ToolbarEditor = memo(function ToolbarEditor({ elementId, currentPro
       </PropertySection>
     </>
     );
-}
+});

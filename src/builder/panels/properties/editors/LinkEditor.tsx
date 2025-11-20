@@ -148,6 +148,4 @@ export const LinkEditor = memo(function LinkEditor({ elementId, currentProps, on
             </PropertySection>
         </>
     );
-}
-
-export default LinkEditor;
+});

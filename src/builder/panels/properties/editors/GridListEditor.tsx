@@ -366,4 +366,4 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
             </PropertySection>
         </>
     );
-}
+});

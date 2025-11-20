@@ -201,4 +201,4 @@ export const CalendarEditor = memo(function CalendarEditor({ elementId, currentP
             </PropertySection>
         </>
     );
-}
+});

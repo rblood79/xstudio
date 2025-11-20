@@ -81,4 +81,4 @@ export const TooltipEditor = memo(function TooltipEditor({ elementId, currentPro
       </PropertySection>
     </>
     );
-}
+});

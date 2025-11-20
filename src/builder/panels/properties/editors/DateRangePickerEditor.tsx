@@ -199,6 +199,4 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({ eleme
             </PropertySection>
         </>
     );
-}
-
-export default DateRangePickerEditor;
+});

@@ -370,4 +370,4 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
             </PropertySection>
         </>
     );
-}
+});

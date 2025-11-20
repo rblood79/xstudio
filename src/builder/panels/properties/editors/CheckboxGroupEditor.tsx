@@ -424,4 +424,4 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
             </PropertySection>
         </>
     );
-}
+});

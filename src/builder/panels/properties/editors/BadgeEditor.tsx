@@ -97,6 +97,4 @@ export const BadgeEditor = memo(function BadgeEditor({ elementId, currentProps, 
             </PropertySection>
         </>
     );
-}
-
-export default BadgeEditor;
+});

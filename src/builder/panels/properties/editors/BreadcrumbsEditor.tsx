@@ -215,4 +215,4 @@ export const BreadcrumbsEditor = memo(function BreadcrumbsEditor({ elementId, cu
             </PropertySection>
         </>
     );
-}
+});

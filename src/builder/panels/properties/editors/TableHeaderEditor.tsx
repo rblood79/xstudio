@@ -318,5 +318,5 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
             </PropertySection>
         </div>
     );
-}
+});
 

@@ -297,4 +297,4 @@ export const DatePickerEditor = memo(function DatePickerEditor({ elementId, curr
             </PropertySection>
         </>
     );
-}
+});

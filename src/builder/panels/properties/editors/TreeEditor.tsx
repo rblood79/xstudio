@@ -262,4 +262,4 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
             </PropertySection>
         </>
     );
-}
+});
