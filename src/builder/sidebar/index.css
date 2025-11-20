@@ -58,10 +58,12 @@
 
   /* Panel Slot */
   .panel-slot {
+    position: relative;  /* 🔧 absolute 패널의 기준점 */
     display: flex;
     flex-direction: row;
     height: 100%;
     width: 100%;
+    overflow: hidden;    /* 🔧 화면 밖 패널 잘라내기 */
   }
 
   /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
@@ -83,22 +85,33 @@
                 opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Left 패널 숨김 상태 */
+  /* 🔧 Left 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
   .panel-container[data-side="left"][data-show="false"] {
+    position: absolute;     /* 레이아웃 flow에서 제거 */
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: -1;            /* 다른 요소 뒤로 */
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
   }
 
-  /* Right 패널 숨김 상태 */
+  /* 🔧 Right 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
   .panel-container[data-side="right"][data-show="false"] {
+    position: absolute;     /* 레이아웃 flow에서 제거 */
+    right: 0;
+    top: 0;
+    height: 100%;
+    z-index: -1;            /* 다른 요소 뒤로 */
     transform: translateX(100%);
     opacity: 0;
     pointer-events: none;
   }
 
-  /* 표시 상태 */
+  /* 표시 상태 - relative로 flexbox에 참여 */
   .panel-container[data-show="true"] {
+    position: relative;     /* 또는 static, flexbox에 참여 */
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
