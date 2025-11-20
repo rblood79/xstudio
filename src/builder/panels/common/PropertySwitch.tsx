@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 import { Switch as AriaSwitch } from 'react-aria-components';
 import { PropertyFieldset } from './PropertyFieldset';
@@ -15,7 +15,7 @@ interface PropertySwitchProps {
   className?: string;
 }
 
-export function PropertySwitch({
+export const PropertySwitch = memo(function PropertySwitch({
   label,
   isSelected,
   onChange,
@@ -34,4 +34,13 @@ export function PropertySwitch({
       </AriaSwitch>
     </PropertyFieldset>
   );
-}
+}, (prevProps, nextProps) => {
+  // ⭐ 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+  // onChange는 매번 새로 생성될 수 있지만, isSelected가 같으면 리렌더링 스킵
+  return (
+    prevProps.label === nextProps.label &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.icon === nextProps.icon &&
+    prevProps.className === nextProps.className
+  );
+});

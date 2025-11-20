@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { Hash } from "lucide-react";
 import { PropertyFieldset } from "./PropertyFieldset";
 import { useStore } from "../../stores";
@@ -13,7 +13,7 @@ interface PropertyCustomIdProps {
   className?: string;
 }
 
-export function PropertyCustomId({
+export const PropertyCustomId = memo(function PropertyCustomId({
   label = "ID",
   value,
   elementId,
@@ -24,9 +24,8 @@ export function PropertyCustomId({
   const [inputValue, setInputValue] = useState<string>(value || "");
   const [error, setError] = useState<string | undefined>(undefined);
 
-  // Get all elements from store for validation
-  // 성능 최적화: Map 사용 (validation에서 customId 중복 체크)
-  const elementsMap = useStore((state) => state.elementsMap);
+  // ⭐ 최적화: validation 시에만 elementsMap 가져오기 (구독 방지)
+  // getState()로 현재 시점의 값만 가져옴
 
   // Use Inspector state to update customId (triggers useSyncWithBuilder)
   const updateCustomIdInInspector = useInspectorState((state) => state.updateCustomId);
@@ -53,7 +52,8 @@ export function PropertyCustomId({
 
   const handleBlur = () => {
     // Validate before saving
-    // 성능 최적화: Map을 배열로 변환 (validation에서만 필요)
+    // ⭐ 최적화: validation 시에만 elementsMap 가져오기 (구독 방지)
+    const elementsMap = useStore.getState().elementsMap;
     const elementsArray = Array.from(elementsMap.values());
     const validation = validateCustomId(inputValue, elementId, elementsArray);
 
@@ -80,6 +80,8 @@ export function PropertyCustomId({
       e.preventDefault();
 
       // Validate before saving
+      // ⭐ 최적화: validation 시에만 elementsMap 가져오기 (구독 방지)
+      const elementsMap = useStore.getState().elementsMap;
       const validation = validateCustomId(inputValue, elementId, Array.from(elementsMap.values()));
 
       if (!validation.isValid) {
@@ -136,4 +138,4 @@ export function PropertyCustomId({
       )}
     </>
   );
-}
+});

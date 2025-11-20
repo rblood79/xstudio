@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import {
   Type,
   PointerOff,
@@ -19,27 +20,124 @@ import {
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
-export function ButtonEditor({
+export const ButtonEditor = memo(function ButtonEditor({
   elementId,
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  // Get customId from element in store
-  const element = useStore((state) =>
-    state.elements.find((el) => el.id === elementId)
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  // useMemo로 캐싱하되, elementId가 변경될 때만 재계산
+  // PropertyCustomId는 React.memo로 감싸져 있어서 customId가 실제로 변경될 때만 리렌더링됨
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
+
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  // PropertyEditorWrapper가 이미 깊은 비교를 수행하므로
+  // currentProps가 실제로 변경될 때만 ButtonEditor가 리렌더링됨
+  // 각 자식 컴포넌트(PropertySwitch, PropertyInput 등)는 React.memo로
+  // 실제 value/isSelected가 변경될 때만 리렌더링됨
+  const handleChildrenChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, children: value });
+  }, [currentProps, onUpdate]);
+
+  const handleVariantChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, variant: value });
+  }, [currentProps, onUpdate]);
+
+  const handleSizeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, size: value });
+  }, [currentProps, onUpdate]);
+
+  const handleTypeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, type: value });
+  }, [currentProps, onUpdate]);
+
+  const handleAutoFocusChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, autoFocus: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsPendingChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isPending: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsDisabledChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isDisabled: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleHrefChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, href: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleTargetChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, target: value });
+  }, [currentProps, onUpdate]);
+
+  const handleRelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, rel: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleFormChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, form: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, name: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleValueChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, value: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleFormActionChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, formAction: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleFormMethodChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, formMethod: value });
+  }, [currentProps, onUpdate]);
+
+  const handleFormNoValidateChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, formNoValidate: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleFormTargetChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, formTarget: value });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaDescribedbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱
+  const showLinkSection = useMemo(
+    () => typeof currentProps.href === "string" && currentProps.href,
+    [currentProps.href]
   );
-  const customId = element?.customId || "";
 
-  const updateProp = (key: string, value: unknown) => {
-    const updatedProps = {
-      ...currentProps,
-      [key]: value,
-    };
-    onUpdate(updatedProps);
-  };
+  const showFormSection = useMemo(
+    () => currentProps.type === "submit" || currentProps.type === "reset",
+    [currentProps.type]
+  );
 
-  return (
-    <>
+  const showSubmitFields = useMemo(
+    () => currentProps.type === "submit",
+    [currentProps.type]
+  );
+
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  // variant를 변경해도 Behavior Section의 JSX는 재생성되지 않음!
+  const basicSection = useMemo(
+    () => (
       <PropertySection title="Basic">
         <PropertyCustomId
           label="ID"
@@ -48,22 +146,31 @@ export function ButtonEditor({
           placeholder="button_1"
         />
       </PropertySection>
-      {/* Content Section */}
+    ),
+    [customId, elementId]
+  );
+
+  const contentSection = useMemo(
+    () => (
       <PropertySection title="Content">
         <PropertyInput
           label={PROPERTY_LABELS.TEXT}
           value={String(currentProps.children || "")}
-          onChange={(value) => updateProp("children", value)}
+          onChange={handleChildrenChange}
           icon={Type}
         />
       </PropertySection>
+    ),
+    [currentProps.children, handleChildrenChange]
+  );
 
-      {/* Design Section */}
+  const designSection = useMemo(
+    () => (
       <PropertySection title="Design">
         <PropertySelect
           label={PROPERTY_LABELS.VARIANT}
           value={String(currentProps.variant || "default")}
-          onChange={(value) => updateProp("variant", value)}
+          onChange={handleVariantChange}
           options={[
             { value: "default", label: PROPERTY_LABELS.VARIANT_DEFAULT },
             { value: "primary", label: PROPERTY_LABELS.VARIANT_PRIMARY },
@@ -78,7 +185,7 @@ export function ButtonEditor({
         <PropertySelect
           label={PROPERTY_LABELS.SIZE}
           value={String(currentProps.size || "sm")}
-          onChange={(value) => updateProp("size", value)}
+          onChange={handleSizeChange}
           options={[
             { value: "xs", label: PROPERTY_LABELS.SIZE_XS },
             { value: "sm", label: PROPERTY_LABELS.SIZE_SM },
@@ -89,13 +196,17 @@ export function ButtonEditor({
           icon={Parentheses}
         />
       </PropertySection>
+    ),
+    [currentProps.variant, currentProps.size, handleVariantChange, handleSizeChange]
+  );
 
-      {/* Behavior Section */}
+  const behaviorSection = useMemo(
+    () => (
       <PropertySection title="Behavior">
         <PropertySelect
           label={PROPERTY_LABELS.TYPE}
           value={String(currentProps.type || "button")}
-          onChange={(value) => updateProp("type", value)}
+          onChange={handleTypeChange}
           options={[
             { value: "button", label: PROPERTY_LABELS.BUTTON },
             { value: "submit", label: PROPERTY_LABELS.SUBMIT },
@@ -107,41 +218,54 @@ export function ButtonEditor({
         <PropertySwitch
           label={PROPERTY_LABELS.AUTO_FOCUS}
           isSelected={Boolean(currentProps.autoFocus)}
-          onChange={(checked) => updateProp("autoFocus", checked)}
+          onChange={handleAutoFocusChange}
           icon={Focus}
         />
 
         <PropertySwitch
           label={PROPERTY_LABELS.IS_PENDING}
           isSelected={Boolean(currentProps.isPending)}
-          onChange={(checked) => updateProp("isPending", checked)}
+          onChange={handleIsPendingChange}
           icon={PointerOff}
         />
 
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
-          onChange={(checked) => updateProp("isDisabled", checked)}
+          onChange={handleIsDisabledChange}
           icon={PointerOff}
         />
       </PropertySection>
+    ),
+    [
+      currentProps.type,
+      currentProps.autoFocus,
+      currentProps.isPending,
+      currentProps.isDisabled,
+      handleTypeChange,
+      handleAutoFocusChange,
+      handleIsPendingChange,
+      handleIsDisabledChange,
+    ]
+  );
 
-      {/* Link Section (when button acts as link) */}
+  const linkSection = useMemo(
+    () => (
       <PropertySection title="Link">
         <PropertyInput
           label={PROPERTY_LABELS.HREF}
           value={String(currentProps.href || "")}
-          onChange={(value) => updateProp("href", value || undefined)}
+          onChange={handleHrefChange}
           icon={Link}
           placeholder="https://example.com"
         />
 
-        {typeof currentProps.href === "string" && currentProps.href && (
+        {showLinkSection && (
           <>
             <PropertySelect
               label={PROPERTY_LABELS.TARGET}
               value={String(currentProps.target || "_self")}
-              onChange={(value) => updateProp("target", value)}
+              onChange={handleTargetChange}
               options={[
                 { value: "_self", label: PROPERTY_LABELS.TARGET_SELF },
                 { value: "_blank", label: PROPERTY_LABELS.TARGET_BLANK },
@@ -154,21 +278,33 @@ export function ButtonEditor({
             <PropertyInput
               label={PROPERTY_LABELS.REL}
               value={String(currentProps.rel || "")}
-              onChange={(value) => updateProp("rel", value || undefined)}
+              onChange={handleRelChange}
               icon={FileText}
               placeholder="noopener noreferrer"
             />
           </>
         )}
       </PropertySection>
+    ),
+    [
+      currentProps.href,
+      currentProps.target,
+      currentProps.rel,
+      showLinkSection,
+      handleHrefChange,
+      handleTargetChange,
+      handleRelChange,
+    ]
+  );
 
-      {/* Form Section (for submit/reset buttons) */}
-      {(currentProps.type === "submit" || currentProps.type === "reset") && (
+  const formSection = useMemo(
+    () =>
+      showFormSection ? (
         <PropertySection title="Form">
           <PropertyInput
             label={PROPERTY_LABELS.FORM}
             value={String(currentProps.form || "")}
-            onChange={(value) => updateProp("form", value || undefined)}
+            onChange={handleFormChange}
             icon={FileText}
             placeholder="form-id"
           />
@@ -176,7 +312,7 @@ export function ButtonEditor({
           <PropertyInput
             label={PROPERTY_LABELS.NAME}
             value={String(currentProps.name || "")}
-            onChange={(value) => updateProp("name", value || undefined)}
+            onChange={handleNameChange}
             icon={Tag}
             placeholder="button-name"
           />
@@ -184,19 +320,17 @@ export function ButtonEditor({
           <PropertyInput
             label={PROPERTY_LABELS.VALUE}
             value={String(currentProps.value || "")}
-            onChange={(value) => updateProp("value", value || undefined)}
+            onChange={handleValueChange}
             icon={Hash}
             placeholder="button-value"
           />
 
-          {currentProps.type === "submit" && (
+          {showSubmitFields && (
             <>
               <PropertyInput
                 label={PROPERTY_LABELS.FORM_ACTION}
                 value={String(currentProps.formAction || "")}
-                onChange={(value) =>
-                  updateProp("formAction", value || undefined)
-                }
+                onChange={handleFormActionChange}
                 icon={Link}
                 placeholder="/api/submit"
               />
@@ -204,7 +338,7 @@ export function ButtonEditor({
               <PropertySelect
                 label={PROPERTY_LABELS.FORM_METHOD}
                 value={String(currentProps.formMethod || "get")}
-                onChange={(value) => updateProp("formMethod", value)}
+                onChange={handleFormMethodChange}
                 options={[
                   { value: "get", label: PROPERTY_LABELS.FORM_METHOD_GET },
                   { value: "post", label: PROPERTY_LABELS.FORM_METHOD_POST },
@@ -219,14 +353,14 @@ export function ButtonEditor({
               <PropertySwitch
                 label={PROPERTY_LABELS.FORM_NO_VALIDATE}
                 isSelected={Boolean(currentProps.formNoValidate)}
-                onChange={(checked) => updateProp("formNoValidate", checked)}
+                onChange={handleFormNoValidateChange}
                 icon={PointerOff}
               />
 
               <PropertySelect
                 label={PROPERTY_LABELS.FORM_TARGET}
                 value={String(currentProps.formTarget || "_self")}
-                onChange={(value) => updateProp("formTarget", value)}
+                onChange={handleFormTargetChange}
                 options={[
                   { value: "_self", label: PROPERTY_LABELS.TARGET_SELF },
                   { value: "_blank", label: PROPERTY_LABELS.TARGET_BLANK },
@@ -238,14 +372,34 @@ export function ButtonEditor({
             </>
           )}
         </PropertySection>
-      )}
+      ) : null,
+    [
+      showFormSection,
+      showSubmitFields,
+      currentProps.form,
+      currentProps.name,
+      currentProps.value,
+      currentProps.formAction,
+      currentProps.formMethod,
+      currentProps.formNoValidate,
+      currentProps.formTarget,
+      handleFormChange,
+      handleNameChange,
+      handleValueChange,
+      handleFormActionChange,
+      handleFormMethodChange,
+      handleFormNoValidateChange,
+      handleFormTargetChange,
+    ]
+  );
 
-      {/* Accessibility Section */}
+  const accessibilitySection = useMemo(
+    () => (
       <PropertySection title="Accessibility">
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
           value={String(currentProps["aria-label"] || "")}
-          onChange={(value) => updateProp("aria-label", value || undefined)}
+          onChange={handleAriaLabelChange}
           icon={Type}
           placeholder="Button label for screen readers"
         />
@@ -253,9 +407,7 @@ export function ButtonEditor({
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABELLEDBY}
           value={String(currentProps["aria-labelledby"] || "")}
-          onChange={(value) =>
-            updateProp("aria-labelledby", value || undefined)
-          }
+          onChange={handleAriaLabelledbyChange}
           icon={Hash}
           placeholder="label-element-id"
         />
@@ -263,13 +415,32 @@ export function ButtonEditor({
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
           value={String(currentProps["aria-describedby"] || "")}
-          onChange={(value) =>
-            updateProp("aria-describedby", value || undefined)
-          }
+          onChange={handleAriaDescribedbyChange}
           icon={Hash}
           placeholder="description-element-id"
         />
       </PropertySection>
+    ),
+    [
+      currentProps["aria-label"],
+      currentProps["aria-labelledby"],
+      currentProps["aria-describedby"],
+      handleAriaLabelChange,
+      handleAriaLabelledbyChange,
+      handleAriaDescribedbyChange,
+    ]
+  );
+
+  return (
+    <>
+      {basicSection}
+      {contentSection}
+      {designSection}
+      {behaviorSection}
+      {linkSection}
+      {formSection}
+      {accessibilitySection}
     </>
   );
-}
+});
+// ⭐ memo의 기본 shallow 비교 사용 (PropertyEditorWrapper가 깊은 비교 수행)

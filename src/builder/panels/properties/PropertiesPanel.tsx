@@ -3,14 +3,16 @@
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
  * 요소별 속성 에디터를 동적으로 로드하여 표시
+ * 
+ * ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import type { ComponentType } from "react";
 import type { PanelProps } from "../core/types";
 import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
-import type { ComponentEditorProps } from "../../inspector/types";
+import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
@@ -28,6 +30,104 @@ import type { DistributionType } from "../../stores/utils/elementDistribution";
 import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, trackMultiDelete } from "../../stores/utils/historyHelpers";
 import { supabase } from "../../../env/supabase.client";
 import "../../panels/common/index.css";
+
+/**
+ * PropertyEditorWrapper - Editor 컴포넌트를 분리하여 불필요한 리렌더링 방지
+ * 
+ * PropertiesPanel이 리렌더링되어도 실제 props가 변경되지 않으면 Editor는 리렌더링되지 않음
+ */
+const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
+  selectedElement,
+}: {
+  selectedElement: SelectedElement;
+}) {
+  const [Editor, setEditor] = useState<ComponentType<ComponentEditorProps> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 요소 타입에 맞는 에디터 동적 로드
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!selectedElement) {
+      Promise.resolve().then(() => {
+        if (isMounted) {
+          setEditor(null);
+          setLoading(false);
+        }
+      });
+      return;
+    }
+
+    Promise.resolve().then(() => {
+      if (!isMounted) return;
+
+      setLoading(true);
+
+      getEditor(selectedElement.type)
+        .then((editor) => {
+          if (isMounted) {
+            setEditor(() => editor);
+            setLoading(false);
+          }
+        })
+        .catch((error) => {
+          if (isMounted) {
+            if (import.meta.env.DEV) {
+              console.error(
+                "[PropertyEditorWrapper] Failed to load editor:",
+                selectedElement.type,
+                error
+              );
+            }
+            setEditor(null);
+            setLoading(false);
+          }
+        });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedElement.type]);
+
+  // handleUpdate는 항상 안정적인 함수 (getState 사용)
+  const handleUpdate = useCallback((updatedProps: Record<string, unknown>) => {
+    useInspectorState.getState().updateProperties(updatedProps);
+  }, []);
+
+  if (loading) {
+    return (
+      <LoadingSpinner
+        message="에디터를 불러오는 중..."
+        description={`${selectedElement.type} 속성 에디터 로드`}
+      />
+    );
+  }
+
+  if (!Editor) {
+    return (
+      <EmptyState
+        message="사용 가능한 속성 에디터가 없습니다"
+        description={`'${selectedElement.type}' 컴포넌트의 에디터를 찾을 수 없습니다.`}
+      />
+    );
+  }
+
+  return (
+    <Editor
+      elementId={selectedElement.id}
+      currentProps={selectedElement.properties}
+      onUpdate={handleUpdate}
+    />
+  );
+}, (prevProps, nextProps) => {
+  // ⭐ 깊은 비교: selectedElement의 실제 내용이 변경되었는지 확인
+  return (
+    prevProps.selectedElement.id === nextProps.selectedElement.id &&
+    prevProps.selectedElement.type === nextProps.selectedElement.type &&
+    JSON.stringify(prevProps.selectedElement.properties) === JSON.stringify(nextProps.selectedElement.properties)
+  );
+});
 
 /**
  * ⭐ Phase 4: useAsyncAction/useAsyncData 사용 가이드
@@ -101,7 +201,6 @@ import "../../panels/common/index.css";
 export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ 최적화: selectedElement 구독 (properties 변경 감지 필요)
   const selectedElement = useInspectorState((state) => state.selectedElement);
-  const updateProperties = useInspectorState((state) => state.updateProperties);
 
   // ⭐ Optimized: Only subscribe to necessary state (actions don't cause re-renders)
   const selectedElementIds = useStore((state) => state.selectedElementIds || []);
@@ -110,15 +209,6 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Subscribe to elements for current page only
   const elements = useStore((state) => state.elements);
-
-  // 🔍 디버깅: 리렌더링 추적 (개발 환경에서만)
-  if (import.meta.env.DEV) {
-    console.log('🔄 PropertiesPanel 렌더링:', {
-      selectedElementId: selectedElement?.id,
-      selectedElementType: selectedElement?.type,
-      multiSelectCount: selectedElementIds.length,
-    });
-  }
 
   // ⭐ Optimized: Get actions without subscribing to state changes
   const removeElement = useStore.getState().removeElement;
@@ -142,68 +232,13 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
   }, [selectedElementIds, currentPageElements]);
 
-  const [Editor, setEditor] =
-    useState<ComponentType<ComponentEditorProps> | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-
-  // 요소 타입에 맞는 에디터 동적 로드
-  useEffect(() => {
-    let isMounted = true;
-
-    if (!selectedElement) {
-      // 비동기 상태 업데이트로 변경
-      Promise.resolve().then(() => {
-        if (isMounted) {
-          setEditor(null);
-          setLoading(false);
-        }
-      });
-      return;
-    }
-
-    // 비동기로 처리하여 effect 내에서 직접 setState 호출 방지
-    Promise.resolve().then(() => {
-      if (!isMounted) return;
-
-      setLoading(true);
-
-      getEditor(selectedElement.type)
-        .then((editor) => {
-          if (isMounted) {
-            setEditor(() => editor);
-            setLoading(false);
-          }
-        })
-        .catch((error) => {
-          if (isMounted) {
-            // Log error for debugging, but don't pollute console in production
-            if (import.meta.env.DEV) {
-              console.error(
-                "[PropertiesPanel] Failed to load editor:",
-                selectedElement.type,
-                error
-              );
-            }
-            setEditor(null);
-            setLoading(false);
-          }
-        });
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedElement, selectedElement?.type]);
-
-  const handleUpdate = (updatedProps: Record<string, unknown>) => {
-    // 한 번에 모든 속성 업데이트 (순차 업데이트로 인한 동기화 문제 방지)
-    updateProperties(updatedProps);
-  };
 
   // 🔥 최적화: useCopyPaste hook 사용
   const { copy: copyProperties, paste: pasteProperties } = useCopyPaste({
-    onPaste: updateProperties,
+    onPaste: (data) => {
+      useInspectorState.getState().updateProperties(data);
+    },
     name: 'properties',
   });
 
@@ -852,24 +887,6 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return <EmptyState message="요소를 선택하세요" />;
   }
 
-  if (loading) {
-    return (
-      <LoadingSpinner
-        message="에디터를 불러오는 중..."
-        description={`${selectedElement.type} 속성 에디터 로드`}
-      />
-    );
-  }
-
-  if (!Editor) {
-    return (
-      <EmptyState
-        message="사용 가능한 속성 에디터가 없습니다"
-        description={`'${selectedElement.type}' 컴포넌트의 에디터를 찾을 수 없습니다.`}
-      />
-    );
-  }
-
   return (
     <div className="properties-panel">
       <PanelHeader
@@ -967,11 +984,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         </>
       )}
 
-      <Editor
-        elementId={selectedElement.id}
-        currentProps={selectedElement.properties}
-        onUpdate={handleUpdate}
-      />
+      {/* ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리 */}
+      <PropertyEditorWrapper selectedElement={selectedElement} />
 
       {/* ⭐ Sprint 3: Keyboard Shortcuts Help Panel */}
       <KeyboardShortcutsHelp

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { PropertyFieldset } from './PropertyFieldset';
 
 
@@ -20,7 +20,7 @@ interface PropertyInputProps {
     disabled?: boolean; // Disable input (read-only)
 }
 
-export function PropertyInput({
+export const PropertyInput = memo(function PropertyInput({
     label,
     value,
     onChange,
@@ -35,16 +35,23 @@ export function PropertyInput({
 }: PropertyInputProps) {
     // Local state for input value (debounced save)
     const [inputValue, setInputValue] = useState<string>(String(value || ''));
+    
+    // ⭐ useRef로 변경: 즉시 반영되는 플래그 (useState는 비동기!)
+    const justSavedViaEnterRef = useRef(false);
 
     // Sync local state with prop value when it changes externally
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setInputValue(String(value || ''));
+        // Reset the flag when value changes from parent
+        justSavedViaEnterRef.current = false;
     }, [value]);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         // Select all text on focus for easier editing
         e.target.select();
+        // Reset flag on focus (new editing session)
+        justSavedViaEnterRef.current = false;
     };
 
     const handleChange = (newValue: string) => {
@@ -53,6 +60,12 @@ export function PropertyInput({
     };
 
     const handleBlur = () => {
+        // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
+        if (justSavedViaEnterRef.current) {
+            justSavedViaEnterRef.current = false;
+            return;
+        }
+        
         // Save to parent only on blur (reduces DB calls)
         if (inputValue !== String(value || '')) {
             onChange(inputValue);
@@ -65,6 +78,8 @@ export function PropertyInput({
             e.preventDefault();
             if (inputValue !== String(value || '')) {
                 onChange(inputValue);
+                // ⭐ useRef로 즉시 플래그 설정 (setState와 달리 동기적!)
+                justSavedViaEnterRef.current = true;
             }
             // Blur the input to confirm the change
             (e.target as HTMLInputElement | HTMLTextAreaElement).blur();
@@ -102,6 +117,20 @@ export function PropertyInput({
             )}
         </PropertyFieldset>
     );
-}
+}, (prevProps, nextProps) => {
+    // ⭐ 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+    return (
+        prevProps.label === nextProps.label &&
+        prevProps.value === nextProps.value &&
+        prevProps.type === nextProps.type &&
+        prevProps.placeholder === nextProps.placeholder &&
+        prevProps.className === nextProps.className &&
+        prevProps.multiline === nextProps.multiline &&
+        prevProps.min === nextProps.min &&
+        prevProps.max === nextProps.max &&
+        prevProps.disabled === nextProps.disabled &&
+        prevProps.icon === nextProps.icon
+    );
+});
 
 

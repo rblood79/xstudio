@@ -6,9 +6,11 @@
  *
  * Phase 8a: Integrated with useSectionCollapse for persistent state
  * Phase 4: Added Reset button
+ * 
+ * ⭐ 최적화: React.memo로 불필요한 리렌더링 방지
  */
 
-import React from "react";
+import React, { memo } from "react";
 import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
@@ -21,7 +23,7 @@ interface PropertySectionProps {
   onReset?: () => void; // Reset button handler
 }
 
-export function PropertySection({
+export const PropertySection = memo(function PropertySection({
   title,
   children,
   id,
@@ -91,4 +93,13 @@ export function PropertySection({
       )}
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // ⭐ 커스텀 비교: onReset 함수 참조는 무시하고 실제 값만 비교
+  // children은 React 요소이므로 참조 비교만 수행
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.id === nextProps.id &&
+    prevProps.defaultExpanded === nextProps.defaultExpanded &&
+    prevProps.children === nextProps.children  // React 요소는 참조 비교
+  );
+});
