@@ -74,6 +74,34 @@
     display: flex;
     flex-direction: row;
     width: auto;
+
+    /* ✅ 최적화: CSS transform으로 표시/숨김 제어 */
+    /* - React remount 비용 제거 */
+    /* - 상태 보존 (스크롤, 입력값) */
+    /* - 부드러운 애니메이션 */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Left 패널 숨김 상태 */
+  .panel-container[data-side="left"][data-show="false"] {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Right 패널 숨김 상태 */
+  .panel-container[data-side="right"][data-show="false"] {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 표시 상태 */
+  .panel-container[data-show="true"] {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .sidebar-content {
