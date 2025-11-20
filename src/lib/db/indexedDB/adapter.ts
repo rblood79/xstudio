@@ -805,7 +805,13 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       };
     },
 
-    import: async (data) => {
+    import: async (data: {
+      project?: Project;
+      pages?: Page[];
+      elements?: Element[];
+      designTokens?: DesignToken[];
+      metadata?: SyncMetadata;
+    }): Promise<void> => {
       if (data.project) {
         await this.projects.insert(data.project);
       }
@@ -833,9 +839,9 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       });
     },
 
-    clear: async () => {
+    clear: async (): Promise<void> => {
       const db = this.ensureDB();
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         const tx = db.transaction(
           ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata'],
           'readwrite'

@@ -50,7 +50,7 @@ export class PagesApiService extends BaseApiService {
     async createPage(pageData: Partial<Page>): Promise<Page> {
         this.validateInput(pageData, (data) => typeof data === 'object' && data !== null, 'createPage');
 
-        const result = await this.handleApiCall('createPage', async () => {
+        const result = await this.handleApiCall<Page>('createPage', async () => {
             const res = await this.supabase
                 .from("pages")
                 .insert([pageData])
@@ -97,7 +97,7 @@ export class PagesApiService extends BaseApiService {
         this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0, 'updatePage');
         this.validateInput(updates, (u) => u && typeof u === 'object', 'updatePage');
 
-        const result = await this.handleApiCall('updatePage', async () => {
+        const result = await this.handleApiCall<Page>('updatePage', async () => {
             return await this.supabase
                 .from("pages")
                 .update(updates)

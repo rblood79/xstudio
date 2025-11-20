@@ -79,8 +79,8 @@ export function isDBInitialized(): boolean {
  */
 export async function getCacheStats() {
   const db = await getDB();
-  if ('cache' in db && db.cache && typeof db.cache.getStats === 'function') {
-    return db.cache.getStats();
+  if ('cache' in db && db.cache && typeof (db.cache as { getStats?: () => unknown }).getStats === 'function') {
+    return (db.cache as { getStats: () => unknown }).getStats();
   }
   return null;
 }
@@ -90,8 +90,8 @@ export async function getCacheStats() {
  */
 export async function clearCache() {
   const db = await getDB();
-  if ('cache' in db && db.cache && typeof db.cache.clear === 'function') {
-    db.cache.clear();
+  if ('cache' in db && db.cache && typeof (db.cache as { clear?: () => void }).clear === 'function') {
+    (db.cache as { clear: () => void }).clear();
   }
 }
 

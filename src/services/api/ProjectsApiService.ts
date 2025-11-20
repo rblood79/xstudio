@@ -95,7 +95,7 @@ export class ProjectsApiService extends BaseApiService {
             typeof data.created_by === 'string'
             , 'createProject');
 
-        const result = await this.handleApiCall('createProject', async () => {
+        const result = await this.handleApiCall<Project>('createProject', async () => {
             return await this.supabase
                 .from("projects")
                 .insert([projectData])
@@ -116,7 +116,7 @@ export class ProjectsApiService extends BaseApiService {
         this.validateInput(projectId, (id) => typeof id === 'string' && id.length > 0, 'updateProject');
         this.validateInput(updates, (u) => u && typeof u === 'object', 'updateProject');
 
-        const result = await this.handleApiCall('updateProject', async () => {
+        const result = await this.handleApiCall<Project>('updateProject', async () => {
             return await this.supabase
                 .from("projects")
                 .update(updates)

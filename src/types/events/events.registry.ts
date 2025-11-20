@@ -22,19 +22,19 @@
  */
 export const IMPLEMENTED_EVENT_TYPES = [
   // Mouse Events (구현됨)
-  'onClick',
-  'onMouseEnter',
-  'onMouseLeave',
+  "onClick",
+  "onMouseEnter",
+  "onMouseLeave",
 
   // Form Events (구현됨)
-  'onChange',
-  'onSubmit',
-  'onFocus',
-  'onBlur',
+  "onChange",
+  "onSubmit",
+  "onFocus",
+  "onBlur",
 
   // Keyboard Events (구현됨)
-  'onKeyDown',
-  'onKeyUp',
+  "onKeyDown",
+  "onKeyUp",
 
   // 향후 구현 예정:
   // 'onPress',          // React Aria 전용
@@ -64,47 +64,47 @@ export type EventType = (typeof IMPLEMENTED_EVENT_TYPES)[number];
  */
 export const IMPLEMENTED_ACTION_TYPES = [
   // Navigation (구현됨)
-  'navigate',
-  'scroll_to',
-  'scrollTo',        // alias for scroll_to
+  "navigate",
+  "scroll_to",
+  "scrollTo", // alias for scroll_to
 
   // UI State (구현됨)
-  'toggle_visibility',
-  'toggleVisibility', // alias for toggle_visibility
-  'show_modal',
-  'showModal',        // alias for show_modal
-  'hide_modal',
-  'hideModal',        // alias for hide_modal
-  'showToast',
+  "toggle_visibility",
+  "toggleVisibility", // alias for toggle_visibility
+  "show_modal",
+  "showModal", // alias for show_modal
+  "hide_modal",
+  "hideModal", // alias for hide_modal
+  "showToast",
 
   // Data Management (구현됨)
-  'update_state',
-  'updateState',      // alias for update_state
-  'setState',         // alias for update_state
-  'copy_to_clipboard',
-  'copyToClipboard',  // alias for copy_to_clipboard
+  "update_state",
+  "updateState", // alias for update_state
+  "setState", // alias for update_state
+  "copy_to_clipboard",
+  "copyToClipboard", // alias for copy_to_clipboard
 
   // Form Operations (구현됨)
-  'validate_form',
-  'validateForm',     // alias for validate_form
-  'reset_form',
-  'resetForm',        // alias for reset_form
-  'submitForm',
-  'updateFormField',
+  "validate_form",
+  "validateForm", // alias for validate_form
+  "reset_form",
+  "resetForm", // alias for reset_form
+  "submitForm",
+  "updateFormField",
 
   // Custom (구현됨)
-  'custom_function',
-  'customFunction',   // alias for custom_function
-  'apiCall',
+  "custom_function",
+  "customFunction", // alias for custom_function
+  "apiCall",
 
   // Component Interaction (구현됨)
-  'setComponentState',
-  'triggerComponentAction',
+  "setComponentState",
+  "triggerComponentAction",
 
   // Collection Interaction (구현됨)
-  'filterCollection',
-  'selectItem',
-  'clearSelection',
+  "filterCollection",
+  "selectItem",
+  "clearSelection",
 
   // 향후 구현 예정:
   // 'update_props',        // 요소 props 업데이트
@@ -124,14 +124,18 @@ export type ActionType = (typeof IMPLEMENTED_ACTION_TYPES)[number];
 /**
  * 이벤트 타입이 구현되어 있는지 확인
  */
-export function isImplementedEventType(eventType: string): eventType is EventType {
+export function isImplementedEventType(
+  eventType: string
+): eventType is EventType {
   return (IMPLEMENTED_EVENT_TYPES as readonly string[]).includes(eventType);
 }
 
 /**
  * 액션 타입이 구현되어 있는지 확인
  */
-export function isImplementedActionType(actionType: string): actionType is ActionType {
+export function isImplementedActionType(
+  actionType: string
+): actionType is ActionType {
   return (IMPLEMENTED_ACTION_TYPES as readonly string[]).includes(actionType);
 }
 
@@ -139,16 +143,16 @@ export function isImplementedActionType(actionType: string): actionType is Actio
 
 export const EVENT_CATEGORIES = {
   mouse: {
-    label: 'Mouse Events',
-    events: ['onClick', 'onMouseEnter', 'onMouseLeave'] as const,
+    label: "Mouse Events",
+    events: ["onClick", "onMouseEnter", "onMouseLeave"] as const,
   },
   form: {
-    label: 'Form Events',
-    events: ['onChange', 'onSubmit', 'onFocus', 'onBlur'] as const,
+    label: "Form Events",
+    events: ["onChange", "onSubmit", "onFocus", "onBlur"] as const,
   },
   keyboard: {
-    label: 'Keyboard Events',
-    events: ['onKeyDown', 'onKeyUp'] as const,
+    label: "Keyboard Events",
+    events: ["onKeyDown", "onKeyUp"] as const,
   },
 } as const;
 
@@ -156,32 +160,42 @@ export const EVENT_CATEGORIES = {
 
 export const ACTION_CATEGORIES = {
   navigation: {
-    label: 'Navigation',
-    actions: ['navigate', 'scrollTo'] as const,
+    label: "Navigation",
+    actions: ["navigate", "scrollTo"] as const,
   },
   ui: {
-    label: 'UI Control',
-    actions: ['toggleVisibility', 'showModal', 'hideModal', 'showToast'] as const,
+    label: "UI Control",
+    actions: [
+      "toggleVisibility",
+      "showModal",
+      "hideModal",
+      "showToast",
+    ] as const,
   },
   data: {
-    label: 'Data Management',
-    actions: ['setState', 'updateState', 'copyToClipboard'] as const,
+    label: "Data Management",
+    actions: ["setState", "updateState", "copyToClipboard"] as const,
   },
   form: {
-    label: 'Form Operations',
-    actions: ['validateForm', 'resetForm', 'submitForm', 'updateFormField'] as const,
+    label: "Form Operations",
+    actions: [
+      "validateForm",
+      "resetForm",
+      "submitForm",
+      "updateFormField",
+    ] as const,
   },
   component: {
-    label: 'Component Interaction',
-    actions: ['setComponentState', 'triggerComponentAction'] as const,
+    label: "Component Interaction",
+    actions: ["setComponentState", "triggerComponentAction"] as const,
   },
   collection: {
-    label: 'Collection Operations',
-    actions: ['filterCollection', 'selectItem', 'clearSelection'] as const,
+    label: "Collection Operations",
+    actions: ["filterCollection", "selectItem", "clearSelection"] as const,
   },
   custom: {
-    label: 'Custom',
-    actions: ['customFunction', 'apiCall'] as const,
+    label: "Custom",
+    actions: ["customFunction", "apiCall"] as const,
   },
 } as const;
 
@@ -206,7 +220,9 @@ export function getImplementationStats() {
 /**
  * 개발 모드에서 통계 출력
  */
+/*
 if (import.meta.env.DEV) {
   const stats = getImplementationStats();
   console.log('[Event Registry] Implementation Stats:', stats);
 }
+*/
