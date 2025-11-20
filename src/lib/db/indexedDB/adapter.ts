@@ -682,16 +682,16 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
   themes = {
     getAll: async () => {
-      return this.getAllFromStore<any>('design_themes');
+      return this.getAllFromStore<Record<string, unknown>>('design_themes');
     },
 
     getById: async (id: string) => {
-      return this.getFromStore<any>('design_themes', id);
+      return this.getFromStore<Record<string, unknown>>('design_themes', id);
     },
 
     getByProject: async (projectId: string) => {
       const db = this.ensureDB();
-      return new Promise<any[]>((resolve, reject) => {
+      return new Promise<Array<Record<string, unknown>>>((resolve, reject) => {
         const tx = db.transaction('design_themes', 'readonly');
         const store = tx.objectStore('design_themes');
         const index = store.index('project_id');
@@ -704,16 +704,16 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
     getActiveTheme: async (projectId: string) => {
       const themes = await this.themes.getByProject(projectId);
-      const activeTheme = themes.find((t: any) => t.status === 'active');
+      const activeTheme = themes.find((t) => (t as { status?: string }).status === 'active');
       return activeTheme || themes[0] || null;
     },
 
-    insert: async (theme: any) => {
+    insert: async (theme: Record<string, unknown>) => {
       await this.putToStore('design_themes', theme);
       return theme;
     },
 
-    update: async (id: string, updates: any) => {
+    update: async (id: string, updates: Record<string, unknown>) => {
       const existing = await this.themes.getById(id);
       if (!existing) {
         throw new Error(`Theme ${id} not found`);

@@ -79,8 +79,8 @@ export function useAsyncAction<TData, TVariables = void>({
    * 에러가 4xx 클라이언트 에러인지 확인
    */
   const is4xxError = (error: Error): boolean => {
-    if ('status' in error && typeof (error as any).status === 'number') {
-      const status = (error as any).status;
+    if ('status' in error && typeof (error as unknown as { status: unknown }).status === 'number') {
+      const status = (error as unknown as { status: number }).status;
       return status >= 400 && status < 500;
     }
     return false;

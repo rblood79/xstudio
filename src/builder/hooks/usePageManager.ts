@@ -271,7 +271,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const apiPages: ApiPage[] = projectPages.map(p => ({
                 id: p.id,
                 project_id: p.project_id,
-                title: (p as any).title || p.name || 'Untitled', // title 또는 name 필드 지원
+                title: (p as unknown as { title?: string }).title || p.name || 'Untitled', // title 또는 name 필드 지원
                 slug: p.slug,
                 parent_id: p.parent_id,
                 order_num: p.order_num,

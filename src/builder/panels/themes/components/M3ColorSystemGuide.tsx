@@ -114,10 +114,10 @@ export function M3ColorSystemGuide({ themeId, projectId, isDarkMode = false }: M
             colorValue = token.value;
           } else if (token.value && typeof token.value === 'object') {
             // Handle object format: { h: 250, s: 50, l: 60 } or { hex: "#6750A4" }
-            const valueObj = token.value as any;
-            if (valueObj.hex) {
+            const valueObj = token.value as Record<string, unknown>;
+            if (typeof valueObj.hex === 'string') {
               colorValue = valueObj.hex;
-            } else if (valueObj.h !== undefined && valueObj.s !== undefined && valueObj.l !== undefined) {
+            } else if (typeof valueObj.h === 'number' && typeof valueObj.s === 'number' && typeof valueObj.l === 'number') {
               // Convert HSL to hex
               colorValue = hslToHex(valueObj.h, valueObj.s, valueObj.l);
             } else {

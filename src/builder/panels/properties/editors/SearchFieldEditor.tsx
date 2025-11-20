@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
     Tag, Search, CheckSquare, AlertTriangle, PointerOff, PenOff, FileText,
     SpellCheck2, Focus, Hash, Type, Keyboard, Shield

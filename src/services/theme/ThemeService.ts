@@ -198,7 +198,7 @@ export class ThemeService extends BaseApiService {
 
       // 같은 프로젝트의 모든 테마를 draft로
       const allThemes = await db.themes.getByProject(theme.project_id);
-      const activeThemes = allThemes.filter((t: any) => t.status === 'active');
+      const activeThemes = allThemes.filter((t) => (t as { status?: string }).status === 'active');
 
       for (const activeTheme of activeThemes) {
         await db.themes.update(activeTheme.id, { status: 'draft' });

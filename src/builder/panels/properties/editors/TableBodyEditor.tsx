@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo } from "react";
 import { useStore } from '../../../stores';
 import { PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';

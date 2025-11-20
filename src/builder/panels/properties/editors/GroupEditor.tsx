@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 /**
  * GroupEditor - Group 컴포넌트 속성 편집기
  *

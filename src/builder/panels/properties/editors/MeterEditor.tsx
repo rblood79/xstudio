@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Tag, Gauge, Layout, PencilRuler, ArrowDown, ArrowUp, Type, Hash, Globe, DollarSign } from 'lucide-react';
 import { PropertySwitch , PropertySection} from '../../common';
 import { PropertyInput, PropertyCustomId, PropertySelect } from '../../common';

@@ -51,12 +51,12 @@ async function importEditor(
     const module = await moduleLoader();
 
     // default export 우선, 없으면 named export (editorName) 시도
-    const editor = module.default || (module as any)[editorName];
+    const editor = module.default || (module as unknown as Record<string, ComponentType<ComponentEditorProps>>)[editorName];
 
     console.log('[importEditor] Module loaded:', {
       editorName,
       hasDefault: !!module.default,
-      hasNamedExport: !!(module as any)[editorName],
+      hasNamedExport: !!(module as unknown as Record<string, ComponentType<ComponentEditorProps>>)[editorName],
       resolved: !!editor,
     });
 

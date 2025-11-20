@@ -66,7 +66,7 @@ interface UseAsyncDataResult<TData> {
 
 // ✅ SmartCache로 교체 (LRU + TTL 지원)
 // max: 100개 쿼리, ttl: 기본 5분 (useAsyncData의 staleTime으로 오버라이드 가능)
-const dataCache = new SmartCache<string, { data: any; timestamp: number }>({
+const dataCache = new SmartCache<string, { data: unknown; timestamp: number }>({
   max: 100,
   ttl: 5 * 60 * 1000, // 5분 기본값
 });

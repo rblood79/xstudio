@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo } from "react";
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
 import type { ColumnElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
