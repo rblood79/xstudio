@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 /**
  * BodyEditor - Body 컴포넌트 속성 편집기
  *
@@ -11,22 +12,29 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 
-export function BodyEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-  // Get customId from element in store
-  const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-  const customId = element?.customId || "";
+export const BodyEditor = memo(function BodyEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
-  const updateProp = (key: string, value: unknown) => {
-    const updatedProps = {
-      ...currentProps,
-      [key]: value,
-    };
-    onUpdate(updatedProps);
-  };
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  const handleClassNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, className: value || undefined });
+  }, [currentProps, onUpdate]);
 
-  return (
-    <>
-      {/* Basic */}
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  const basicSection = useMemo(
+    () => (
       <PropertySection title="Basic">
         <PropertyCustomId
           label="ID"
@@ -35,36 +43,68 @@ export function BodyEditor({ elementId, currentProps, onUpdate }: PropertyEditor
           placeholder="body"
         />
       </PropertySection>
+    ),
+    [customId, elementId]
+  );
 
-      {/* Layout */}
+  const layoutSection = useMemo(
+    () => (
       <PropertySection title="Layout">
         <PropertyInput
           label="Class Name"
           value={String(currentProps.className || "")}
-          onChange={(value) => updateProp("className", value || undefined)}
+          onChange={handleClassNameChange}
           placeholder="page-container"
           icon={Layout}
         />
       </PropertySection>
+    ),
+    [currentProps.className, handleClassNameChange]
+  );
 
-      {/* Accessibility */}
+  // ⭐ 최적화: 복잡한 표현식을 별도 변수로 추출
+  const ariaLabel = useMemo(() => currentProps["aria-label"] as string | undefined, [currentProps]);
+  const ariaLabelledby = useMemo(() => currentProps["aria-labelledby"] as string | undefined, [currentProps]);
+
+  const accessibilitySection = useMemo(
+    () => (
       <PropertySection title="Accessibility">
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
-          value={String(currentProps["aria-label"] || "")}
-          onChange={(value) => updateProp("aria-label", value || undefined)}
+          value={String(ariaLabel || "")}
+          onChange={handleAriaLabelChange}
           icon={Type}
           placeholder="Main page content"
         />
 
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-          value={String(currentProps["aria-labelledby"] || "")}
-          onChange={(value) => updateProp("aria-labelledby", value || undefined)}
+          value={String(ariaLabelledby || "")}
+          onChange={handleAriaLabelledbyChange}
           icon={Hash}
           placeholder="ID of labeling element"
         />
       </PropertySection>
+    ),
+    [
+      ariaLabel,
+      ariaLabelledby,
+      handleAriaLabelChange,
+      handleAriaLabelledbyChange,
+    ]
+  );
+
+  return (
+    <>
+      {basicSection}
+      {layoutSection}
+      {accessibilitySection}
     </>
   );
-}
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, memo } from "react";
 import { AppWindow, Plus, Ratio, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -80,152 +80,216 @@ function usePageId() {
     return { localPageId, storePageId, validatePageId };
 }
 
-export function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const { addElement, elements: storeElements } = useStore();
-    const { localPageId, storePageId } = usePageId();
+export const TabsEditor = memo(function TabsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  const { addElement, elements: storeElements } = useStore();
+  const { localPageId, storePageId } = usePageId();
 
-    // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...currentProps,
-            [key]: value
-        };
-        onUpdate(updatedProps);
-    };
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  const handleDefaultSelectedKeyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, defaultSelectedKey: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleIsDisabledChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isDisabled: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleOrientationChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, orientation: value });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaDescribedbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
 
 
-    // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
-    const tabChildren = useMemo(() => {
-        return storeElements
-            .filter((child) => child.parent_id === elementId && child.tag === 'Tab')
-            .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    }, [storeElements, elementId]);
+  // 실제 Tab 자식 요소들을 찾기 (useMemo로 최적화)
+  const tabChildren = useMemo(() => {
+    return storeElements
+      .filter((child) => child.parent_id === elementId && child.tag === 'Tab')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [storeElements, elementId]);
 
-    // 새 탭 추가 함수 정의
-    const addNewTab = async () => {
-        try {
-            const pageIdToUse = localPageId || storePageId;
-            if (!pageIdToUse) {
-                alert('페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-                return;
-            }
+  // ⭐ 최적화: defaultSelectedKey 옵션 생성
+  const defaultTabOptions = useMemo(() => {
+    return tabChildren.map(tab => ({
+      id: tab.id,
+      value: tab.id,
+      label: ('title' in tab.props ? tab.props.title : 'Untitled Tab') as string
+    }));
+  }, [tabChildren]);
 
-            await createNewTab(tabChildren, currentProps, elementId, pageIdToUse, onUpdate, addElement);
-        } catch (err) {
-            console.error('Add tab error:', err);
-            alert('탭 추가 중 오류가 발생했습니다. 다시 시도해주세요.');
-        }
-    };
+  // 새 탭 추가 함수 정의
+  const addNewTab = useCallback(async () => {
+    try {
+      const pageIdToUse = localPageId || storePageId;
+      if (!pageIdToUse) {
+        alert('페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
 
-    // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
-    return (
-        <>
-      {/* Basic */}
+      await createNewTab(tabChildren, currentProps, elementId, pageIdToUse, onUpdate, addElement);
+    } catch (err) {
+      console.error('Add tab error:', err);
+      alert('탭 추가 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  }, [localPageId, storePageId, tabChildren, currentProps, elementId, onUpdate, addElement]);
+
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  const basicSection = useMemo(
+    () => (
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                placeholder="tabs_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="tabs_1"
+        />
       </PropertySection>
+    ),
+    [customId, elementId]
+  );
 
-      {/* State Section */}
-            <PropertySection title="State">
+  const stateSection = useMemo(
+    () => (
+      <PropertySection title="State">
+        <PropertySelect
+          label={PROPERTY_LABELS.DEFAULT_TAB}
+          value={String(currentProps.defaultSelectedKey || '')}
+          onChange={handleDefaultSelectedKeyChange}
+          options={defaultTabOptions}
+          icon={AppWindow}
+        />
+      </PropertySection>
+    ),
+    [currentProps.defaultSelectedKey, defaultTabOptions, handleDefaultSelectedKeyChange]
+  );
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.DEFAULT_TAB}
-                    value={String(currentProps.defaultSelectedKey || '')}
-                    onChange={(value) => updateProp('defaultSelectedKey', value || undefined)}
-                    options={tabChildren.map(tab => ({
-                        id: tab.id,
-                        value: tab.id,
-                        label: ('title' in tab.props ? tab.props.title : 'Untitled Tab') as string
-                    }))}
-                    icon={AppWindow}
-                />
-            </PropertySection>
+  const behaviorSection = useMemo(
+    () => (
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={handleIsDisabledChange}
+          icon={PointerOff}
+        />
+      </PropertySection>
+    ),
+    [currentProps.isDisabled, handleIsDisabledChange]
+  );
 
-            {/* Behavior Section */}
-            <PropertySection title="Behavior">
+  const designSection = useMemo(
+    () => (
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.ORIENTATION}
+          value={String(currentProps.orientation || 'horizontal')}
+          onChange={handleOrientationChange}
+          options={ORIENTATIONS}
+          icon={Ratio}
+        />
+      </PropertySection>
+    ),
+    [currentProps.orientation, handleOrientationChange]
+  );
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-            </PropertySection>
+  const accessibilitySection = useMemo(
+    () => (
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps['aria-label'] || '')}
+          onChange={handleAriaLabelChange}
+          icon={Type}
+          placeholder="Tabs label for screen readers"
+        />
 
-            {/* Design Section */}
-            <PropertySection title="Design">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps['aria-labelledby'] || '')}
+          onChange={handleAriaLabelledbyChange}
+          icon={Hash}
+          placeholder="label-element-id"
+        />
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.ORIENTATION}
-                    value={String(currentProps.orientation || 'horizontal')}
-                    onChange={(value) => updateProp('orientation', value)}
-                    options={ORIENTATIONS}
-                    icon={Ratio}
-                />
-            </PropertySection>
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+          value={String(currentProps['aria-describedby'] || '')}
+          onChange={handleAriaDescribedbyChange}
+          icon={Hash}
+          placeholder="description-element-id"
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps['aria-label'],
+      currentProps['aria-labelledby'],
+      currentProps['aria-describedby'],
+      handleAriaLabelChange,
+      handleAriaLabelledbyChange,
+      handleAriaDescribedbyChange,
+    ]
+  );
 
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
+  const tabManagementSection = useMemo(
+    () => (
+      <PropertySection title="{PROPERTY_LABELS.TAB_MANAGEMENT}">
+        <div className='tab-overview'>
+          <p className='tab-overview-text'>
+            Total tabs: {tabChildren.length || 0}
+          </p>
+          <p className='tab-overview-help'>
+            💡 Select individual tabs from layer tree to edit their properties
+          </p>
+        </div>
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Tabs label for screen readers"
-                />
+        <div className='tab-actions'>
+          <button
+            className='control-button add'
+            onClick={addNewTab}
+            disabled={!localPageId && !storePageId}
+          >
+            <Plus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+            {PROPERTY_LABELS.ADD_TAB}
+          </button>
+        </div>
+      </PropertySection>
+    ),
+    [tabChildren.length, addNewTab, localPageId, storePageId]
+  );
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
-
-            {/* Tab Management Section */}
-            <PropertySection title="{PROPERTY_LABELS.TAB_MANAGEMENT}">
-
-                <div className='tab-overview'>
-                    <p className='tab-overview-text'>
-                        Total tabs: {tabChildren.length || 0}
-                    </p>
-                    <p className='tab-overview-help'>
-                        💡 Select individual tabs from layer tree to edit their properties
-                    </p>
-                </div>
-
-                <div className='tab-actions'>
-                    <button
-                        className='control-button add'
-                        onClick={addNewTab}
-                        disabled={!localPageId && !storePageId}
-                    >
-                        <Plus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                        {PROPERTY_LABELS.ADD_TAB}
-                    </button>
-                </div>
-            </PropertySection>
-        </>
-    );
-}
+  // Tabs 컴포넌트 자체의 속성 편집 UI만 표시
+  return (
+    <>
+      {basicSection}
+      {stateSection}
+      {behaviorSection}
+      {designSection}
+      {accessibilitySection}
+      {tabManagementSection}
+    </>
+  );
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});
 
 // 유틸리티 함수들
 async function createNewTab(

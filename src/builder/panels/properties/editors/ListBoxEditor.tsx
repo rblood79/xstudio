@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, memo, useCallback, useMemo } from "react";
 import {
   Tag,
   SquarePlus,
@@ -22,7 +22,7 @@ import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useCollectionItemManager } from "../../../hooks/useCollectionItemManager";
 
-export function ListBoxEditor({
+export const ListBoxEditor = memo(function ListBoxEditor({
   elementId,
   currentProps,
   onUpdate,
@@ -45,31 +45,107 @@ export function ListBoxEditor({
     }),
   });
 
-  // Get customId from element in store
-  const storeElements = useStore((state) => state.elements);
-  const element = storeElements.find((el) => el.id === elementId);
-  const customId = element?.customId || '';
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || '';
+  }, [elementId]);
 
   useEffect(() => {
     // 아이템 선택 상태 초기화
     deselectItem();
   }, [elementId, deselectItem]);
 
-  const updateProp = (key: string, value: unknown) => {
-    const updatedProps = {
-      ...currentProps,
-      [key]: value,
-    };
-    onUpdate(updatedProps);
-  };
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  const handleLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, label: value || undefined });
+  }, [currentProps, onUpdate]);
 
-  const updateCustomId = (newCustomId: string) => {
-    // Update customId in store (not in props)
+  const handleDescriptionChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, description: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleErrorMessageChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, errorMessage: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleSelectionModeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, selectionMode: value });
+  }, [currentProps, onUpdate]);
+
+  const handleDisallowEmptySelectionChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, disallowEmptySelection: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsRequiredChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isRequired: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsDisabledChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isDisabled: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleAutoFocusChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, autoFocus: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, name: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleValidationBehaviorChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, validationBehavior: value });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaDescribedbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
       updateElement(elementId, { customId: newCustomId });
     }
-  };
+  }, [elementId]);
+
+  // ⭐ 최적화: 아이템 편집 핸들러들
+  const handleItemLabelChange = useCallback((itemId: string, value: string) => {
+    const currentItem = children.find(item => item.id === itemId);
+    if (!currentItem) return;
+    const updatedProps = {
+      ...currentItem.props,
+      label: value,
+    };
+    updateItem(itemId, updatedProps);
+  }, [children, updateItem]);
+
+  const handleItemValueChange = useCallback((itemId: string, value: string) => {
+    const currentItem = children.find(item => item.id === itemId);
+    if (!currentItem) return;
+    const updatedProps = {
+      ...currentItem.props,
+      value: value,
+    };
+    updateItem(itemId, updatedProps);
+  }, [children, updateItem]);
+
+  const handleItemDisabledChange = useCallback((itemId: string, checked: boolean) => {
+    const currentItem = children.find(item => item.id === itemId);
+    if (!currentItem) return;
+    const updatedProps = {
+      ...currentItem.props,
+      isDisabled: checked,
+    };
+    updateItem(itemId, updatedProps);
+  }, [children, updateItem]);
 
   // 선택된 아이템이 있는 경우 개별 아이템 편집 UI 표시
   if (selectedItemIndex !== null) {
@@ -77,60 +153,35 @@ export function ListBoxEditor({
     if (!currentItem) return null;
 
     return (
-        <>
+      <>
         <div className="properties-aria">
-          {/* 아이템 라벨 편집 */}
           <PropertyInput
             label={PROPERTY_LABELS.LABEL}
             value={String(
               (currentItem.props as Record<string, unknown>).label || ""
             )}
-            onChange={(value) => {
-              // 실제 ListBoxItem 컴포넌트의 props 업데이트
-              const updatedProps = {
-                ...currentItem.props,
-                label: value,
-              };
-              updateItem(currentItem.id, updatedProps);
-            }}
+            onChange={(value) => handleItemLabelChange(currentItem.id, value)}
             icon={Tag}
           />
 
-          {/* 아이템 값 편집 */}
           <PropertyInput
             label={PROPERTY_LABELS.VALUE}
             value={String(
               (currentItem.props as Record<string, unknown>).value || ""
             )}
-            onChange={(value) => {
-              // 실제 ListBoxItem 컴포넌트의 props 업데이트
-              const updatedProps = {
-                ...currentItem.props,
-                value: value,
-              };
-              updateItem(currentItem.id, updatedProps);
-            }}
+            onChange={(value) => handleItemValueChange(currentItem.id, value)}
             icon={Binary}
           />
 
-          {/* 아이템 비활성화 상태 편집 */}
           <PropertySwitch
             label={PROPERTY_LABELS.DISABLED}
             isSelected={Boolean(
               (currentItem.props as Record<string, unknown>).isDisabled
             )}
-            onChange={(checked) => {
-              // 실제 ListBoxItem 컴포넌트의 props 업데이트
-              const updatedProps = {
-                ...currentItem.props,
-                isDisabled: checked,
-              };
-              updateItem(currentItem.id, updatedProps);
-            }}
+            onChange={(checked) => handleItemDisabledChange(currentItem.id, checked)}
             icon={PointerOff}
           />
 
-          {/* 아이템 삭제 버튼 */}
           <div className="tab-actions">
             <button
               className="control-button delete"
@@ -146,7 +197,6 @@ export function ListBoxEditor({
           </div>
         </div>
 
-        {/* 아이템 편집 모드 종료 버튼 */}
         <div className="tab-actions">
           <button
             className="control-button secondary"
@@ -159,52 +209,64 @@ export function ListBoxEditor({
     );
   }
 
-  // ListBox 컴포넌트 전체 설정 UI
-  return (
-        <>
-      {/* Basic */}
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  const basicSection = useMemo(
+    () => (
       <PropertySection title="Basic">
-      <PropertyCustomId
-        label="ID"
-        value={customId}
-        elementId={elementId}
-        onChange={updateCustomId}
-        placeholder="listbox_1"
-      />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="listbox_1"
+        />
       </PropertySection>
+    ),
+    [customId, elementId, updateCustomId]
+  );
 
-      {/* Content Section */}
+  const contentSection = useMemo(
+    () => (
       <PropertySection title="Content">
-
         <PropertyInput
           label={PROPERTY_LABELS.LABEL}
           value={String(currentProps.label || "")}
-          onChange={(value) => updateProp("label", value || undefined)}
+          onChange={handleLabelChange}
           icon={Tag}
         />
 
         <PropertyInput
           label={PROPERTY_LABELS.DESCRIPTION}
           value={String(currentProps.description || "")}
-          onChange={(value) => updateProp("description", value || undefined)}
+          onChange={handleDescriptionChange}
           icon={FileText}
         />
 
         <PropertyInput
           label={PROPERTY_LABELS.ERROR_MESSAGE}
           value={String(currentProps.errorMessage || "")}
-          onChange={(value) => updateProp("errorMessage", value || undefined)}
+          onChange={handleErrorMessageChange}
           icon={AlertTriangle}
         />
       </PropertySection>
+    ),
+    [
+      currentProps.label,
+      currentProps.description,
+      currentProps.errorMessage,
+      handleLabelChange,
+      handleDescriptionChange,
+      handleErrorMessageChange,
+    ]
+  );
 
-      {/* State Section */}
+  const stateSection = useMemo(
+    () => (
       <PropertySection title="State">
-
         <PropertySelect
           label={PROPERTY_LABELS.SELECTION_MODE}
           value={String(currentProps.selectionMode || "single")}
-          onChange={(value) => updateProp("selectionMode", value)}
+          onChange={handleSelectionModeChange}
           options={[
             { value: "single", label: PROPERTY_LABELS.SELECTION_MODE_SINGLE },
             {
@@ -218,43 +280,61 @@ export function ListBoxEditor({
         <PropertySwitch
           label={PROPERTY_LABELS.DISALLOW_EMPTY_SELECTION}
           isSelected={Boolean(currentProps.disallowEmptySelection)}
-          onChange={(checked) => updateProp("disallowEmptySelection", checked)}
+          onChange={handleDisallowEmptySelectionChange}
           icon={SquareX}
         />
 
         <PropertySwitch
           label={PROPERTY_LABELS.REQUIRED}
           isSelected={Boolean(currentProps.isRequired)}
-          onChange={(checked) => updateProp("isRequired", checked)}
+          onChange={handleIsRequiredChange}
           icon={CheckSquare}
         />
       </PropertySection>
+    ),
+    [
+      currentProps.selectionMode,
+      currentProps.disallowEmptySelection,
+      currentProps.isRequired,
+      handleSelectionModeChange,
+      handleDisallowEmptySelectionChange,
+      handleIsRequiredChange,
+    ]
+  );
 
-      {/* Behavior Section */}
+  const behaviorSection = useMemo(
+    () => (
       <PropertySection title="Behavior">
-
         <PropertySwitch
           label={PROPERTY_LABELS.DISABLED}
           isSelected={Boolean(currentProps.isDisabled)}
-          onChange={(checked) => updateProp("isDisabled", checked)}
+          onChange={handleIsDisabledChange}
           icon={PointerOff}
         />
 
         <PropertySwitch
           label={PROPERTY_LABELS.AUTO_FOCUS}
           isSelected={Boolean(currentProps.autoFocus)}
-          onChange={(checked) => updateProp("autoFocus", checked)}
+          onChange={handleAutoFocusChange}
           icon={Focus}
         />
       </PropertySection>
+    ),
+    [
+      currentProps.isDisabled,
+      currentProps.autoFocus,
+      handleIsDisabledChange,
+      handleAutoFocusChange,
+    ]
+  );
 
-      {/* Form Integration Section */}
+  const formIntegrationSection = useMemo(
+    () => (
       <PropertySection title="Form Integration">
-
         <PropertyInput
           label={PROPERTY_LABELS.NAME}
           value={String(currentProps.name || "")}
-          onChange={(value) => updateProp("name", value || undefined)}
+          onChange={handleNameChange}
           icon={FormInput}
           placeholder="listbox-name"
         />
@@ -262,21 +342,29 @@ export function ListBoxEditor({
         <PropertySelect
           label={PROPERTY_LABELS.VALIDATION_BEHAVIOR}
           value={String(currentProps.validationBehavior || "native")}
-          onChange={(value) => updateProp("validationBehavior", value)}
+          onChange={handleValidationBehaviorChange}
           options={[
             { value: "native", label: "Native" },
             { value: "aria", label: "ARIA" },
           ]}
         />
       </PropertySection>
+    ),
+    [
+      currentProps.name,
+      currentProps.validationBehavior,
+      handleNameChange,
+      handleValidationBehaviorChange,
+    ]
+  );
 
-      {/* Accessibility Section */}
+  const accessibilitySection = useMemo(
+    () => (
       <PropertySection title="Accessibility">
-
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABEL}
           value={String(currentProps["aria-label"] || "")}
-          onChange={(value) => updateProp("aria-label", value || undefined)}
+          onChange={handleAriaLabelChange}
           icon={Type}
           placeholder="ListBox label for screen readers"
         />
@@ -284,7 +372,7 @@ export function ListBoxEditor({
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_LABELLEDBY}
           value={String(currentProps["aria-labelledby"] || "")}
-          onChange={(value) => updateProp("aria-labelledby", value || undefined)}
+          onChange={handleAriaLabelledbyChange}
           icon={Hash}
           placeholder="label-element-id"
         />
@@ -292,15 +380,25 @@ export function ListBoxEditor({
         <PropertyInput
           label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
           value={String(currentProps["aria-describedby"] || "")}
-          onChange={(value) => updateProp("aria-describedby", value || undefined)}
+          onChange={handleAriaDescribedbyChange}
           icon={Hash}
           placeholder="description-element-id"
         />
       </PropertySection>
+    ),
+    [
+      currentProps["aria-label"],
+      currentProps["aria-labelledby"],
+      currentProps["aria-describedby"],
+      handleAriaLabelChange,
+      handleAriaLabelledbyChange,
+      handleAriaDescribedbyChange,
+    ]
+  );
 
-      {/* Item Management Section */}
+  const itemManagementSection = useMemo(
+    () => (
       <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
-
         <div className="tab-overview">
           <p className="tab-overview-text">
             Total items: {children.length || 0}
@@ -345,6 +443,26 @@ export function ListBoxEditor({
           </button>
         </div>
       </PropertySection>
+    ),
+    [children, selectItem, addItem]
+  );
+
+  // ListBox 컴포넌트 전체 설정 UI
+  return (
+    <>
+      {basicSection}
+      {contentSection}
+      {stateSection}
+      {behaviorSection}
+      {formIntegrationSection}
+      {accessibilitySection}
+      {itemManagementSection}
     </>
-    );
-}
+  );
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});

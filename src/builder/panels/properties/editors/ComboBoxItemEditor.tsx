@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
 import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
 import { PropertyInput } from '../../common/PropertyInput';
 import { PropertySwitch } from '../../common/PropertySwitch';
@@ -7,10 +7,13 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
-export function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const ComboBoxItemEditor = memo(function ComboBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
     // 로컬 상태로 프로퍼티 관리
     const [localProps, setLocalProps] = useState<Record<string, unknown>>({});
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);

@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { useStore } from '../../../stores';
 import { PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -14,7 +15,7 @@ interface TableBodyElementProps {
 //     // onChange: (updates: Partial<Element>) => void;
 // }
 
-export function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TableBodyEditor = memo(function TableBodyEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
 
     // elementId를 사용하여 현재 Element를 찾음

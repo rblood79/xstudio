@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, memo, useCallback } from "react";
 import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -21,13 +21,16 @@ const SELECTION_BEHAVIORS: Array<{ value: string; label: string }> = [
     { value: 'toggle', label: PROPERTY_LABELS.TOGGLE }
 ];
 
-export function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {

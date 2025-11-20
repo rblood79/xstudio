@@ -394,6 +394,15 @@
             border-bottom: 0px;
           }
         }
+
+        .component-search {
+          .component-search-field {
+            .react-aria-Input {
+              border-width: 0px;
+              border-radius: 0px;
+            }
+          }
+        }
         
         .header-actions {
           display: flex;

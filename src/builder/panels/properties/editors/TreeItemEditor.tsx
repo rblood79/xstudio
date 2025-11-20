@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { Plus, Tag, Binary, PointerOff, FileText, Link2, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -9,7 +9,7 @@ import { getDB } from '../../../../lib/db';
 import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
-export function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TreeItemEditor = memo(function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, elements: storeElements } = useStore();
     const [localPageId, setLocalPageId] = useState<string>('');
 

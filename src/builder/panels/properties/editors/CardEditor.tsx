@@ -1,237 +1,416 @@
+import { memo, useCallback, useMemo } from "react";
 import { Type, FileText, Layout, EyeOff, PointerOff, PencilRuler, Image, Link as LinkIcon, ArrowUpDown, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
-export function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+export const CardEditor = memo(function CardEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...currentProps,
-            [key]: value
-        };
-        onUpdate(updatedProps);
-    };
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  const handleHeadingChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, heading: value });
+  }, [currentProps, onUpdate]);
 
-    return (
-        <>
-            {/* Basic */}
-            <PropertySection title="Basic">
-                <PropertyCustomId
-                    label="ID"
-                    value={customId}
-                    elementId={elementId}
-                    placeholder="card_1"
-                />
-            </PropertySection>
+  const handleSubheadingChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, subheading: value });
+  }, [currentProps, onUpdate]);
 
-            {/* Content - Headings */}
-            <PropertySection title="Content">
+  const handleTitleChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, title: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label="Heading"
-                    value={String(currentProps.heading || '')}
-                    onChange={(value) => updateProp('heading', value)}
-                    icon={Type}
-                    placeholder="Main heading"
-                />
+  const handleDescriptionChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, description: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label="Subheading"
-                    value={String(currentProps.subheading || '')}
-                    onChange={(value) => updateProp('subheading', value)}
-                    icon={FileText}
-                    placeholder="Subheading text"
-                />
+  const handleFooterChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, footer: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.TITLE}
-                    value={String(currentProps.title || '')}
-                    onChange={(value) => updateProp('title', value)}
-                    icon={Type}
-                    placeholder="Card title"
-                />
+  const handleVariantChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, variant: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.DESCRIPTION}
-                    value={String(currentProps.description || '')}
-                    onChange={(value) => updateProp('description', value)}
-                    icon={FileText}
-                    placeholder="Description text"
-                    multiline
-                />
+  const handleSizeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, size: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label="Footer"
-                    value={String(currentProps.footer || '')}
-                    onChange={(value) => updateProp('footer', value)}
-                    icon={FileText}
-                    placeholder="Footer text"
-                />
-            </PropertySection>
+  const handleOrientationChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, orientation: value });
+  }, [currentProps, onUpdate]);
 
-            {/* Design - Variant & Size */}
-            <PropertySection title="Design">
+  const handleAssetChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, asset: value || undefined });
+  }, [currentProps, onUpdate]);
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.VARIANT}
-                    value={String(currentProps.variant || 'default')}
-                    onChange={(value) => updateProp('variant', value)}
-                    options={[
-                        { value: 'default', label: 'Default' },
-                        { value: 'primary', label: 'Primary' },
-                        { value: 'secondary', label: 'Secondary' },
-                        { value: 'surface', label: 'Surface' },
-                        { value: 'elevated', label: 'Elevated' },
-                        { value: 'outlined', label: 'Outlined' },
-                        { value: 'gallery', label: 'Gallery' },
-                        { value: 'quiet', label: 'Quiet' }
-                    ]}
-                    icon={Layout}
-                />
+  const handleAssetSrcChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, assetSrc: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.SIZE}
-                    value={String(currentProps.size || 'md')}
-                    onChange={(value) => updateProp('size', value)}
-                    options={[
-                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
-                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
-                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
-                    ]}
-                    icon={PencilRuler}
-                />
+  const handlePreviewChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, preview: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertySelect
-                    label="Orientation"
-                    value={String(currentProps.orientation || 'vertical')}
-                    onChange={(value) => updateProp('orientation', value)}
-                    options={[
-                        { value: 'vertical', label: 'Vertical' },
-                        { value: 'horizontal', label: 'Horizontal' }
-                    ]}
-                    icon={ArrowUpDown}
-                />
-            </PropertySection>
+  const handleHrefChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, href: value });
+  }, [currentProps, onUpdate]);
 
-            {/* Asset & Preview */}
-            <PropertySection title="Asset & Media">
+  const handleTargetChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, target: value });
+  }, [currentProps, onUpdate]);
 
-                <PropertySelect
-                    label="Asset Type"
-                    value={String(currentProps.asset || '')}
-                    onChange={(value) => updateProp('asset', value || undefined)}
-                    options={[
-                        { value: '', label: 'None' },
-                        { value: 'file', label: 'File' },
-                        { value: 'folder', label: 'Folder' },
-                        { value: 'image', label: 'Image' },
-                        { value: 'video', label: 'Video' },
-                        { value: 'audio', label: 'Audio' }
-                    ]}
-                    icon={Image}
-                />
+  const handleIsSelectableChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isSelectable: checked });
+  }, [currentProps, onUpdate]);
 
-                {Boolean(currentProps.asset) && (
-                    <PropertyInput
-                        label="Asset Source URL"
-                        value={String(currentProps.assetSrc || '')}
-                        onChange={(value) => updateProp('assetSrc', value)}
-                        icon={Image}
-                        placeholder="https://example.com/image.jpg"
-                    />
-                )}
+  const handleIsSelectedChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isSelected: checked });
+  }, [currentProps, onUpdate]);
 
-                {currentProps.variant === 'gallery' && (
-                    <PropertyInput
-                        label="Preview Image URL"
-                        value={String(currentProps.preview || '')}
-                        onChange={(value) => updateProp('preview', value)}
-                        icon={Image}
-                        placeholder="https://example.com/preview.jpg"
-                    />
-                )}
-            </PropertySection>
+  const handleIsQuietChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isQuiet: checked });
+  }, [currentProps, onUpdate]);
 
-            {/* Interactions */}
-            <PropertySection title="Interactions">
+  const handleIsDisabledChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isDisabled: checked });
+  }, [currentProps, onUpdate]);
 
-                <PropertyInput
-                    label="Link (href)"
-                    value={String(currentProps.href || '')}
-                    onChange={(value) => updateProp('href', value)}
-                    icon={LinkIcon}
-                    placeholder="https://example.com"
-                />
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
 
-                {Boolean(currentProps.href) && (
-                    <PropertySelect
-                        label="Link Target"
-                        value={String(currentProps.target || '_self')}
-                        onChange={(value) => updateProp('target', value)}
-                        options={[
-                            { value: '_self', label: 'Same Tab' },
-                            { value: '_blank', label: 'New Tab' }
-                        ]}
-                        icon={LinkIcon}
-                    />
-                )}
+  const handleAriaDescribedbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
 
-                <PropertySwitch
-                    label="Selectable"
-                    isSelected={Boolean(currentProps.isSelectable)}
-                    onChange={(checked) => updateProp('isSelectable', checked)}
-                    icon={CheckSquare}
-                />
+  // ⭐ 최적화: 조건부 렌더링을 위한 값들을 useMemo로 캐싱
+  const showAssetSrc = useMemo(
+    () => Boolean(currentProps.asset),
+    [currentProps.asset]
+  );
 
-                {Boolean(currentProps.isSelectable) && (
-                    <PropertySwitch
-                        label="Selected"
-                        isSelected={Boolean(currentProps.isSelected)}
-                        onChange={(checked) => updateProp('isSelected', checked)}
-                        icon={CheckSquare}
-                    />
-                )}
-            </PropertySection>
+  const showPreview = useMemo(
+    () => currentProps.variant === 'gallery',
+    [currentProps.variant]
+  );
 
-            {/* States */}
-            <PropertySection title="States">
+  const showTarget = useMemo(
+    () => Boolean(currentProps.href),
+    [currentProps.href]
+  );
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.IS_QUIET}
-                    isSelected={Boolean(currentProps.isQuiet)}
-                    onChange={(checked) => updateProp('isQuiet', checked)}
-                    icon={EyeOff}
-                />
+  const showIsSelected = useMemo(
+    () => Boolean(currentProps.isSelectable),
+    [currentProps.isSelectable]
+  );
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
-            </PropertySection>
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  const basicSection = useMemo(
+    () => (
+      <PropertySection title="Basic">
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="card_1"
+        />
+      </PropertySection>
+    ),
+    [customId, elementId]
+  );
 
-            {/* Accessibility */}
-            <PropertySection title="Accessibility">
-                <PropertyInput
-                    label="ARIA Label"
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value)}
-                    placeholder="Describe the card"
-                />
+  const contentSection = useMemo(
+    () => (
+      <PropertySection title="Content">
+        <PropertyInput
+          label="Heading"
+          value={String(currentProps.heading || '')}
+          onChange={handleHeadingChange}
+          icon={Type}
+          placeholder="Main heading"
+        />
 
-                <PropertyInput
-                    label="ARIA Described By"
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value)}
-                    placeholder="description-id"
-                />
-            </PropertySection>
-        </>
-    );
-}
+        <PropertyInput
+          label="Subheading"
+          value={String(currentProps.subheading || '')}
+          onChange={handleSubheadingChange}
+          icon={FileText}
+          placeholder="Subheading text"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.TITLE}
+          value={String(currentProps.title || '')}
+          onChange={handleTitleChange}
+          icon={Type}
+          placeholder="Card title"
+        />
+
+        <PropertyInput
+          label={PROPERTY_LABELS.DESCRIPTION}
+          value={String(currentProps.description || '')}
+          onChange={handleDescriptionChange}
+          icon={FileText}
+          placeholder="Description text"
+          multiline
+        />
+
+        <PropertyInput
+          label="Footer"
+          value={String(currentProps.footer || '')}
+          onChange={handleFooterChange}
+          icon={FileText}
+          placeholder="Footer text"
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.heading,
+      currentProps.subheading,
+      currentProps.title,
+      currentProps.description,
+      currentProps.footer,
+      handleHeadingChange,
+      handleSubheadingChange,
+      handleTitleChange,
+      handleDescriptionChange,
+      handleFooterChange,
+    ]
+  );
+
+  const designSection = useMemo(
+    () => (
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.VARIANT}
+          value={String(currentProps.variant || 'default')}
+          onChange={handleVariantChange}
+          options={[
+            { value: 'default', label: 'Default' },
+            { value: 'primary', label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+            { value: 'surface', label: 'Surface' },
+            { value: 'elevated', label: 'Elevated' },
+            { value: 'outlined', label: 'Outlined' },
+            { value: 'gallery', label: 'Gallery' },
+            { value: 'quiet', label: 'Quiet' }
+          ]}
+          icon={Layout}
+        />
+
+        <PropertySelect
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || 'md')}
+          onChange={handleSizeChange}
+          options={[
+            { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+            { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+            { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+          ]}
+          icon={PencilRuler}
+        />
+
+        <PropertySelect
+          label="Orientation"
+          value={String(currentProps.orientation || 'vertical')}
+          onChange={handleOrientationChange}
+          options={[
+            { value: 'vertical', label: 'Vertical' },
+            { value: 'horizontal', label: 'Horizontal' }
+          ]}
+          icon={ArrowUpDown}
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.variant,
+      currentProps.size,
+      currentProps.orientation,
+      handleVariantChange,
+      handleSizeChange,
+      handleOrientationChange,
+    ]
+  );
+
+  const assetSection = useMemo(
+    () => (
+      <PropertySection title="Asset & Media">
+        <PropertySelect
+          label="Asset Type"
+          value={String(currentProps.asset || '')}
+          onChange={handleAssetChange}
+          options={[
+            { value: '', label: 'None' },
+            { value: 'file', label: 'File' },
+            { value: 'folder', label: 'Folder' },
+            { value: 'image', label: 'Image' },
+            { value: 'video', label: 'Video' },
+            { value: 'audio', label: 'Audio' }
+          ]}
+          icon={Image}
+        />
+
+        {showAssetSrc && (
+          <PropertyInput
+            label="Asset Source URL"
+            value={String(currentProps.assetSrc || '')}
+            onChange={handleAssetSrcChange}
+            icon={Image}
+            placeholder="https://example.com/image.jpg"
+          />
+        )}
+
+        {showPreview && (
+          <PropertyInput
+            label="Preview Image URL"
+            value={String(currentProps.preview || '')}
+            onChange={handlePreviewChange}
+            icon={Image}
+            placeholder="https://example.com/preview.jpg"
+          />
+        )}
+      </PropertySection>
+    ),
+    [
+      currentProps.asset,
+      currentProps.assetSrc,
+      currentProps.preview,
+      showAssetSrc,
+      showPreview,
+      handleAssetChange,
+      handleAssetSrcChange,
+      handlePreviewChange,
+    ]
+  );
+
+  const interactionsSection = useMemo(
+    () => (
+      <PropertySection title="Interactions">
+        <PropertyInput
+          label="Link (href)"
+          value={String(currentProps.href || '')}
+          onChange={handleHrefChange}
+          icon={LinkIcon}
+          placeholder="https://example.com"
+        />
+
+        {showTarget && (
+          <PropertySelect
+            label="Link Target"
+            value={String(currentProps.target || '_self')}
+            onChange={handleTargetChange}
+            options={[
+              { value: '_self', label: 'Same Tab' },
+              { value: '_blank', label: 'New Tab' }
+            ]}
+            icon={LinkIcon}
+          />
+        )}
+
+        <PropertySwitch
+          label="Selectable"
+          isSelected={Boolean(currentProps.isSelectable)}
+          onChange={handleIsSelectableChange}
+          icon={CheckSquare}
+        />
+
+        {showIsSelected && (
+          <PropertySwitch
+            label="Selected"
+            isSelected={Boolean(currentProps.isSelected)}
+            onChange={handleIsSelectedChange}
+            icon={CheckSquare}
+          />
+        )}
+      </PropertySection>
+    ),
+    [
+      currentProps.href,
+      currentProps.target,
+      currentProps.isSelectable,
+      currentProps.isSelected,
+      showTarget,
+      showIsSelected,
+      handleHrefChange,
+      handleTargetChange,
+      handleIsSelectableChange,
+      handleIsSelectedChange,
+    ]
+  );
+
+  const statesSection = useMemo(
+    () => (
+      <PropertySection title="States">
+        <PropertySwitch
+          label={PROPERTY_LABELS.IS_QUIET}
+          isSelected={Boolean(currentProps.isQuiet)}
+          onChange={handleIsQuietChange}
+          icon={EyeOff}
+        />
+
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={handleIsDisabledChange}
+          icon={PointerOff}
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.isQuiet,
+      currentProps.isDisabled,
+      handleIsQuietChange,
+      handleIsDisabledChange,
+    ]
+  );
+
+  const accessibilitySection = useMemo(
+    () => (
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label="ARIA Label"
+          value={String(currentProps['aria-label'] || '')}
+          onChange={handleAriaLabelChange}
+          placeholder="Describe the card"
+        />
+
+        <PropertyInput
+          label="ARIA Described By"
+          value={String(currentProps['aria-describedby'] || '')}
+          onChange={handleAriaDescribedbyChange}
+          placeholder="description-id"
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps['aria-label'],
+      currentProps['aria-describedby'],
+      handleAriaLabelChange,
+      handleAriaDescribedbyChange,
+    ]
+  );
+
+  return (
+    <>
+      {basicSection}
+      {contentSection}
+      {designSection}
+      {assetSection}
+      {interactionsSection}
+      {statesSection}
+      {accessibilitySection}
+    </>
+  );
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo, useCallback } from "react";
 import { Tag, Binary, PointerOff, SquarePlus, Database, FileText, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -9,7 +9,7 @@ import { iconProps } from '../../../../utils/ui/uiConstants';
 import { supabase } from '../../../../env/supabase.client';
 import type { Element } from '../../../../types/core/store.types';
 
-export function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const ListBoxItemEditor = memo(function ListBoxItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const { addElement, currentPageId, setSelectedElement } = useStore();
     const storeElements = useStore((state) => state.elements);
 

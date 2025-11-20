@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo, useCallback, useMemo } from "react";
 import { ColumnElementProps, Element } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
 import { PropertySelect, PropertyInput, PropertyCustomId, PropertySection } from '../../common';
@@ -20,7 +20,7 @@ interface TableHeaderElementProps {
 //     // onChange: (updates: Partial<Element>) => void;
 // }
 
-export function TableHeaderEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
     const { addElement, removeElement } = useStore();
     const [isAddingColumn, setIsAddingColumn] = useState(false);

@@ -73,8 +73,14 @@
     background-color: var(--error);
     color: var(--on-error);
     border-radius: 48px;
-    padding: 2px;
-    font-size: var(--text-xs);
+    font-size: 8px;
+    aspect-ratio: 1;
+    width: 16px;
+    font-family: monospace;
+    -webkit-font-smoothing: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .component-list button:hover {

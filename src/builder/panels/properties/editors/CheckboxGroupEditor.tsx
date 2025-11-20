@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { Type, Tag, Ratio, SquarePlus, Trash, CheckSquare, PointerOff, FileText, AlertTriangle, PenOff, Layout, Ruler, Hash, FormInput } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -13,13 +13,16 @@ interface SelectedCheckboxState {
     checkboxIndex: number;
 }
 
-export function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedCheckbox, setSelectedCheckbox] = useState<SelectedCheckboxState | null>(null);
     const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
     useEffect(() => {
         // 체크박스 선택 상태 초기화

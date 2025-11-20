@@ -1,188 +1,308 @@
+import { memo, useCallback, useMemo } from "react";
 import { ToggleLeft, Eye, PointerOff, PenOff, CheckSquare, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText, Tag } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
-export function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+export const SwitchEditor = memo(function SwitchEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
-    const updateProp = (key: string, value: unknown) => {
-        const updatedProps = {
-            ...currentProps,
-            [key]: value
-        };
-        onUpdate(updatedProps);
-    };
+  // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
+  const handleChildrenChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, children: value });
+  }, [currentProps, onUpdate]);
 
-    const updateCustomId = (newCustomId: string) => {
-        // Update customId in store (not in props)
-        const updateElement = useStore.getState().updateElement;
-        if (updateElement && elementId) {
-            updateElement(elementId, { customId: newCustomId });
-        }
-    };
+  const handleVariantChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, variant: value });
+  }, [currentProps, onUpdate]);
 
-    return (
-        <>
-      {/* Basic */}
+  const handleSizeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, size: value });
+  }, [currentProps, onUpdate]);
+
+  const handleIsSelectedChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isSelected: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsRequiredChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isRequired: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsInvalidChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isInvalid: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleAutoFocusChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, autoFocus: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsDisabledChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isDisabled: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleIsReadOnlyChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, isReadOnly: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, name: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleValueChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, value: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleFormChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, form: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaDescribedbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const updateCustomId = useCallback((newCustomId: string) => {
+    const updateElement = useStore.getState().updateElement;
+    if (updateElement && elementId) {
+      updateElement(elementId, { customId: newCustomId });
+    }
+  }, [elementId]);
+
+  // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
+  const basicSection = useMemo(
+    () => (
       <PropertySection title="Basic">
-            <PropertyCustomId
-                label="ID"
-                value={customId}
-                elementId={elementId}
-                onChange={updateCustomId}
-                placeholder="switch_1"
-            />
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          onChange={updateCustomId}
+          placeholder="switch_1"
+        />
       </PropertySection>
+    ),
+    [customId, elementId, updateCustomId]
+  );
 
-      {/* Content Section */}
-            <PropertySection title="Content">
+  const contentSection = useMemo(
+    () => (
+      <PropertySection title="Content">
+        <PropertyInput
+          label={PROPERTY_LABELS.LABEL}
+          value={String(currentProps.children || '')}
+          onChange={handleChildrenChange}
+          icon={ToggleLeft}
+        />
+      </PropertySection>
+    ),
+    [currentProps.children, handleChildrenChange]
+  );
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.LABEL}
-                    value={String(currentProps.children || '')}
-                    onChange={(value) => updateProp('children', value)}
-                    icon={ToggleLeft}
-                />
-            </PropertySection>
+  const designSection = useMemo(
+    () => (
+      <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.VARIANT}
+          value={String(currentProps.variant || 'default')}
+          onChange={handleVariantChange}
+          options={[
+            { value: 'default', label: PROPERTY_LABELS.SWITCH_VARIANT_DEFAULT },
+            { value: 'primary', label: PROPERTY_LABELS.SWITCH_VARIANT_PRIMARY },
+            { value: 'secondary', label: PROPERTY_LABELS.SWITCH_VARIANT_SECONDARY },
+            { value: 'surface', label: PROPERTY_LABELS.SWITCH_VARIANT_SURFACE }
+          ]}
+          icon={Layout}
+        />
 
-            {/* Design Section */}
-            <PropertySection title="Design">
+        <PropertySelect
+          label={PROPERTY_LABELS.SIZE}
+          value={String(currentProps.size || 'md')}
+          onChange={handleSizeChange}
+          options={[
+            { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
+            { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
+            { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
+          ]}
+          icon={PencilRuler}
+        />
+      </PropertySection>
+    ),
+    [currentProps.variant, currentProps.size, handleVariantChange, handleSizeChange]
+  );
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.VARIANT}
-                    value={String(currentProps.variant || 'default')}
-                    onChange={(value) => updateProp('variant', value)}
-                    options={[
-                        { value: 'default', label: PROPERTY_LABELS.SWITCH_VARIANT_DEFAULT },
-                        { value: 'primary', label: PROPERTY_LABELS.SWITCH_VARIANT_PRIMARY },
-                        { value: 'secondary', label: PROPERTY_LABELS.SWITCH_VARIANT_SECONDARY },
-                        { value: 'surface', label: PROPERTY_LABELS.SWITCH_VARIANT_SURFACE }
-                    ]}
-                    icon={Layout}
-                />
+  const stateSection = useMemo(
+    () => (
+      <PropertySection title="State">
+        <PropertySwitch
+          label={PROPERTY_LABELS.SELECTED}
+          isSelected={Boolean(currentProps.isSelected)}
+          onChange={handleIsSelectedChange}
+          icon={Eye}
+        />
 
-                <PropertySelect
-                    label={PROPERTY_LABELS.SIZE}
-                    value={String(currentProps.size || 'md')}
-                    onChange={(value) => updateProp('size', value)}
-                    options={[
-                        { value: 'sm', label: PROPERTY_LABELS.SIZE_SM },
-                        { value: 'md', label: PROPERTY_LABELS.SIZE_MD },
-                        { value: 'lg', label: PROPERTY_LABELS.SIZE_LG }
-                    ]}
-                    icon={PencilRuler}
-                />
-            </PropertySection>
+        <PropertySwitch
+          label={PROPERTY_LABELS.REQUIRED}
+          isSelected={Boolean(currentProps.isRequired)}
+          onChange={handleIsRequiredChange}
+          icon={CheckSquare}
+        />
 
-            {/* State Section */}
-            <PropertySection title="State">
+        <PropertySwitch
+          label={PROPERTY_LABELS.INVALID}
+          isSelected={Boolean(currentProps.isInvalid)}
+          onChange={handleIsInvalidChange}
+          icon={AlertCircle}
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.isSelected,
+      currentProps.isRequired,
+      currentProps.isInvalid,
+      handleIsSelectedChange,
+      handleIsRequiredChange,
+      handleIsInvalidChange,
+    ]
+  );
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.SELECTED}
-                    isSelected={Boolean(currentProps.isSelected)}
-                    onChange={(checked) => updateProp('isSelected', checked)}
-                    icon={Eye}
-                />
+  const behaviorSection = useMemo(
+    () => (
+      <PropertySection title="Behavior">
+        <PropertySwitch
+          label={PROPERTY_LABELS.AUTO_FOCUS}
+          isSelected={Boolean(currentProps.autoFocus)}
+          onChange={handleAutoFocusChange}
+          icon={Focus}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.REQUIRED}
-                    isSelected={Boolean(currentProps.isRequired)}
-                    onChange={(checked) => updateProp('isRequired', checked)}
-                    icon={CheckSquare}
-                />
+        <PropertySwitch
+          label={PROPERTY_LABELS.DISABLED}
+          isSelected={Boolean(currentProps.isDisabled)}
+          onChange={handleIsDisabledChange}
+          icon={PointerOff}
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.INVALID}
-                    isSelected={Boolean(currentProps.isInvalid)}
-                    onChange={(checked) => updateProp('isInvalid', checked)}
-                    icon={AlertCircle}
-                />
-            </PropertySection>
+        <PropertySwitch
+          label={PROPERTY_LABELS.READONLY}
+          isSelected={Boolean(currentProps.isReadOnly)}
+          onChange={handleIsReadOnlyChange}
+          icon={PenOff}
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.autoFocus,
+      currentProps.isDisabled,
+      currentProps.isReadOnly,
+      handleAutoFocusChange,
+      handleIsDisabledChange,
+      handleIsReadOnlyChange,
+    ]
+  );
 
-            {/* Behavior Section */}
-            <PropertySection title="Behavior">
+  const formIntegrationSection = useMemo(
+    () => (
+      <PropertySection title="Form Integration">
+        <PropertyInput
+          label={PROPERTY_LABELS.NAME}
+          value={String(currentProps.name || '')}
+          onChange={handleNameChange}
+          icon={Tag}
+          placeholder="switch-name"
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.AUTO_FOCUS}
-                    isSelected={Boolean(currentProps.autoFocus)}
-                    onChange={(checked) => updateProp('autoFocus', checked)}
-                    icon={Focus}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.VALUE}
+          value={String(currentProps.value || '')}
+          onChange={handleValueChange}
+          icon={Hash}
+          placeholder="switch-value"
+        />
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.DISABLED}
-                    isSelected={Boolean(currentProps.isDisabled)}
-                    onChange={(checked) => updateProp('isDisabled', checked)}
-                    icon={PointerOff}
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.FORM}
+          value={String(currentProps.form || '')}
+          onChange={handleFormChange}
+          icon={FileText}
+          placeholder="form-id"
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps.name,
+      currentProps.value,
+      currentProps.form,
+      handleNameChange,
+      handleValueChange,
+      handleFormChange,
+    ]
+  );
 
-                <PropertySwitch
-                    label={PROPERTY_LABELS.READONLY}
-                    isSelected={Boolean(currentProps.isReadOnly)}
-                    onChange={(checked) => updateProp('isReadOnly', checked)}
-                    icon={PenOff}
-                />
-            </PropertySection>
+  const accessibilitySection = useMemo(
+    () => (
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps['aria-label'] || '')}
+          onChange={handleAriaLabelChange}
+          icon={Type}
+          placeholder="Switch label for screen readers"
+        />
 
-            {/* Form Integration Section */}
-            <PropertySection title="Form Integration">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps['aria-labelledby'] || '')}
+          onChange={handleAriaLabelledbyChange}
+          icon={Hash}
+          placeholder="label-element-id"
+        />
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.NAME}
-                    value={String(currentProps.name || '')}
-                    onChange={(value) => updateProp('name', value || undefined)}
-                    icon={Tag}
-                    placeholder="switch-name"
-                />
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
+          value={String(currentProps['aria-describedby'] || '')}
+          onChange={handleAriaDescribedbyChange}
+          icon={Hash}
+          placeholder="description-element-id"
+        />
+      </PropertySection>
+    ),
+    [
+      currentProps['aria-label'],
+      currentProps['aria-labelledby'],
+      currentProps['aria-describedby'],
+      handleAriaLabelChange,
+      handleAriaLabelledbyChange,
+      handleAriaDescribedbyChange,
+    ]
+  );
 
-                <PropertyInput
-                    label={PROPERTY_LABELS.VALUE}
-                    value={String(currentProps.value || '')}
-                    onChange={(value) => updateProp('value', value || undefined)}
-                    icon={Hash}
-                    placeholder="switch-value"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.FORM}
-                    value={String(currentProps.form || '')}
-                    onChange={(value) => updateProp('form', value || undefined)}
-                    icon={FileText}
-                    placeholder="form-id"
-                />
-            </PropertySection>
-
-            {/* Accessibility Section */}
-            <PropertySection title="Accessibility">
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABEL}
-                    value={String(currentProps['aria-label'] || '')}
-                    onChange={(value) => updateProp('aria-label', value || undefined)}
-                    icon={Type}
-                    placeholder="Switch label for screen readers"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_LABELLEDBY}
-                    value={String(currentProps['aria-labelledby'] || '')}
-                    onChange={(value) => updateProp('aria-labelledby', value || undefined)}
-                    icon={Hash}
-                    placeholder="label-element-id"
-                />
-
-                <PropertyInput
-                    label={PROPERTY_LABELS.ARIA_DESCRIBEDBY}
-                    value={String(currentProps['aria-describedby'] || '')}
-                    onChange={(value) => updateProp('aria-describedby', value || undefined)}
-                    icon={Hash}
-                    placeholder="description-element-id"
-                />
-            </PropertySection>
-        </>
-    );
-}
+  return (
+    <>
+      {basicSection}
+      {contentSection}
+      {designSection}
+      {stateSection}
+      {behaviorSection}
+      {formIntegrationSection}
+      {accessibilitySection}
+    </>
+  );
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});

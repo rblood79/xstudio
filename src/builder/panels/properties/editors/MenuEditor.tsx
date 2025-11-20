@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { Tag, PointerOff, Focus, SquareX, Menu, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -11,10 +12,13 @@ const SELECTION_MODES = [
     { value: 'multiple', label: PROPERTY_LABELS.SELECTION_MODE_MULTIPLE }
 ];
 
-export function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {
             ...currentProps,

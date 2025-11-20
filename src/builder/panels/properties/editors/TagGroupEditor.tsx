@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -14,7 +14,7 @@ interface SelectedTagState {
     tagIndex: number;
 }
 
-export function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedTag, setSelectedTag] = useState<SelectedTagState | null>(null);
     const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
 

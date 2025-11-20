@@ -1,13 +1,17 @@
+import { memo, useCallback, useMemo } from "react";
 import { Type, PointerOff, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 
-export function TagEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
     const updateProp = (key: string, value: unknown) => {
         const updatedProps = {

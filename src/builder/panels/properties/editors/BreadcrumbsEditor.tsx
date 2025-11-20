@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo, useCallback } from "react";
 import { SquarePlus, PointerOff, Tag, Type, Hash } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -14,7 +14,7 @@ interface SelectedBreadcrumbState {
     breadcrumbIndex: number;
 }
 
-export function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const BreadcrumbsEditor = memo(function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedBreadcrumb, setSelectedBreadcrumb] = useState<SelectedBreadcrumbState | null>(null);
     const { addElement, elements, currentPageId } = useStore();
 

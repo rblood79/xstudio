@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo, useCallback, useMemo } from "react";
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary, Type, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -7,7 +7,7 @@ import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
 
-export function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const GridListEditor = memo(function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Collection Item 관리 훅
     const {
         children,

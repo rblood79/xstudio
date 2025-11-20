@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 
 import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
 import type { CellElementProps } from '../../../../types/core/store.types';
@@ -11,7 +12,7 @@ import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 //     // onChange: (updates: Partial<Element>) => void;
 // }
 
-export function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const CellEditor = memo(function CellEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
 
     // elementId를 사용하여 현재 Element를 찾음

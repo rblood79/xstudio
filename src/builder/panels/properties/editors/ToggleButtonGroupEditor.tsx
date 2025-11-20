@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from "react";
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, ToggleLeft, Focus, Binary, FileText, Target, Layout, Ruler, Type, Hash, FormInput, CheckSquare } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
@@ -14,7 +14,7 @@ interface SelectedButtonState {
     buttonIndex: number;
 }
 
-export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedButton, setSelectedButton] = useState<SelectedButtonState | null>(null);
     const { addElement, currentPageId, updateElementProps, setElements } = useStore();
 
@@ -22,8 +22,11 @@ export function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: P
     const storeElements = useStore(state => state.elements);
 
     // Get customId from element in store
-    const element = useStore((state) => state.elements.find((el) => el.id === elementId));
-    const customId = element?.customId || '';
+      // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || "";
+  }, [elementId]);
 
     useEffect(() => {
         // 버튼 선택 상태 초기화

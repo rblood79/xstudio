@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import {
   PropertyInput,
   PropertySelect,
@@ -18,7 +19,7 @@ interface FieldElementProps {
   [key: string]: unknown;
 }
 
-export function FieldEditor({
+export const FieldEditor = memo(function FieldEditor({
   elementId,
   currentProps,
   onUpdate,

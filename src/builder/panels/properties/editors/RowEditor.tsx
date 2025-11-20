@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { CellElementProps } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
 import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
@@ -16,7 +17,7 @@ interface RowElementProps {
 //     // onChange: (updates: Partial<Element>) => void;
 // }
 
-export function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const elements = useStore(state => state.elements);
 
     // elementId를 사용하여 현재 Element를 찾음

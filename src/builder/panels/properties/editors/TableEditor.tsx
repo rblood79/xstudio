@@ -20,7 +20,7 @@ import { useStore } from "../../../stores";
 import { Element } from "../../../../types/core/store.types";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { TableElementProps } from "../../../../types/builder/unified.types";
-import { useCallback } from "react";
+import { useCallback, memo, useMemo } from "react";
 import { generateCustomId } from '../../../utils/idGeneration';
 import './styles/TableEditor.css';
 
@@ -29,7 +29,7 @@ import './styles/TableEditor.css';
 //     // onChange: (updates: Partial<Element>) => void;
 // }
 
-export function TableEditor({
+export const TableEditor = memo(function TableEditor({
   elementId,
   currentProps,
   onUpdate,
@@ -37,11 +37,16 @@ export function TableEditor({
   const elements = useStore((state) => state.elements);
   const setElements = useStore((state) => state.setElements);
 
-  // elementId를 사용하여 현재 Element를 찾음
-  const element = elements.find((el) => el.id === elementId);
+  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const customId = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return element?.customId || '';
+  }, [elementId]);
 
-  // Get customId from element in store
-  const customId = element?.customId || '';
+  // elementId를 사용하여 현재 Element를 찾음
+  const element = useMemo(() => {
+    return elements.find((el) => el.id === elementId);
+  }, [elements, elementId]);
 
   // Table 속성 업데이트 함수들
   const updateTableProps = useCallback(
@@ -785,4 +790,10 @@ export function TableEditor({
       </PropertySection>
     </>
   );
-}
+}, (prevProps, nextProps) => {
+  // ⭐ 기본 비교: id와 properties만 비교
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});
