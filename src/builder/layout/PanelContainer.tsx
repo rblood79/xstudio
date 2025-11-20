@@ -36,6 +36,7 @@ export function PanelContainer({
         className="panel-container"
         data-show={show}
         data-side={side}
+        aria-hidden={!show}  // ♿ 접근성: 숨김 패널 스크린 리더 제외
       >
         <div className="panel-empty-state">
           <p className="empty-message">패널을 선택하세요</p>
@@ -50,6 +51,7 @@ export function PanelContainer({
       className="panel-container"
       data-show={show}
       data-side={side}
+      aria-hidden={!show}  // ♿ 접근성: 숨김 패널 스크린 리더 제외
     >
       <div className="panel-content">
         {
