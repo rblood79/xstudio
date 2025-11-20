@@ -35,8 +35,6 @@ export async function getDB(): Promise<DatabaseAdapter> {
 
   // 새로 초기화
   initPromise = (async () => {
-    console.log('[DB] Initializing database...');
-
     // 향후 Electron 지원 시:
     // const adapter = import.meta.env.ELECTRON
     //   ? new PGliteAdapter()
@@ -48,7 +46,6 @@ export async function getDB(): Promise<DatabaseAdapter> {
     dbInstance = adapter;
     initPromise = null;
 
-    console.log('[DB] Database initialized successfully');
     return adapter;
   })();
 

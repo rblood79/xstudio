@@ -185,8 +185,6 @@ export class PerformanceMonitor {
 
     // 평균 응답 시간 계산
     this.cacheMetrics.avgResponseTime = this.cacheMetrics.totalResponseTime / this.cacheMetrics.totalRequests;
-
-    console.log(`📊 [Monitor] Cache HIT: ${queryKey} (${responseTime.toFixed(2)}ms) - Hit Rate: ${this.cacheMetrics.hitRate.toFixed(1)}%`);
   }
 
   /**
@@ -205,8 +203,6 @@ export class PerformanceMonitor {
 
     // 평균 응답 시간 계산
     this.cacheMetrics.avgResponseTime = this.cacheMetrics.totalResponseTime / this.cacheMetrics.totalRequests;
-
-    console.log(`📊 [Monitor] Cache MISS: ${queryKey} (${responseTime.toFixed(2)}ms) - Hit Rate: ${this.cacheMetrics.hitRate.toFixed(1)}%`);
   }
 
   /**
@@ -269,13 +265,10 @@ export class PerformanceMonitor {
    * @param state - 새로운 상태
    */
   recordQueryState(queryKey: string, state: 'idle' | 'loading' | 'success' | 'error'): void {
-    const prevState = this.queryStates.get(queryKey);
     this.queryStates.set(queryKey, state);
 
     // 상태별 카운트 업데이트
     this.updateQueryCounts();
-
-    console.log(`📊 [Monitor] Query ${queryKey}: ${prevState || 'none'} → ${state}`);
   }
 
   /**
@@ -298,8 +291,6 @@ export class PerformanceMonitor {
     } else {
       this.recordQueryState(queryKey, 'error');
     }
-
-    console.log(`📊 [Monitor] Fetch ${queryKey}: ${fetchTime.toFixed(2)}ms (${isSuccess ? 'SUCCESS' : 'ERROR'})`);
   }
 
   /**

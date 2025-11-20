@@ -40,7 +40,6 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('[IndexedDB] Database initialized');
         resolve();
       };
 

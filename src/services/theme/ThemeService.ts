@@ -35,7 +35,6 @@ export class ThemeService extends BaseApiService {
     try {
       const db = await getDB();
       const themes = await db.themes.getByProject(projectId);
-      console.log('[ThemeService] getThemesByProject:', themes.length, 'themes');
       return themes;
     } catch (error) {
       console.error('[ThemeService] getThemesByProject failed:', error);
@@ -63,7 +62,6 @@ export class ThemeService extends BaseApiService {
     try {
       const db = await getDB();
       const activeTheme = await db.themes.getActiveTheme(projectId);
-      console.log('[ThemeService] getActiveTheme:', activeTheme);
       return activeTheme;
     } catch (error) {
       console.error('[ThemeService] getActiveTheme failed:', error);

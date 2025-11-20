@@ -189,9 +189,6 @@ export abstract class BaseApiService {
 
                 // 캐시에 저장
                 globalQueryCache.set(queryKey, { data: result, timestamp: Date.now() });
-                console.log(`💾 [Cache MISS → SAVE] ${operation} (${queryKey}) - ${fetchTime.toFixed(2)}ms`);
-            } else {
-                console.log(`🔄 [Deduplicated] ${operation} (${queryKey})`);
             }
 
             globalPerformanceMonitor.recordDeduplication(queryKey, wasDeduplicated);
@@ -258,7 +255,7 @@ export class ElementsApiService extends BaseApiService {
     async createElement(element: Partial<Element>): Promise<Element> {
         this.validateInput(element, (el) => el && typeof el === 'object', 'createElement');
 
-        const result = await this.handleApiCall('createElement', async () => {
+        const result = await this.handleApiCall<Element>('createElement', async () => {
             return await this.supabase
                 .from("elements")
                 .insert([element])
@@ -281,7 +278,7 @@ export class ElementsApiService extends BaseApiService {
         this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0, 'updateElementProps');
         this.validateInput(props, (p) => p && typeof p === 'object', 'updateElementProps');
 
-        const result = await this.handleApiCall('updateElementProps', async () => {
+        const result = await this.handleApiCall<Element>('updateElementProps', async () => {
             return await this.supabase
                 .from("elements")
                 .update({ props })

@@ -84,21 +84,13 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const db = await getDB();
             const elementsData = await db.elements.getByPage(pageId);
 
-            console.log('✅ [IndexedDB] 페이지 요소 로드:', {
-                pageId,
-                elementCount: elementsData.length,
-            });
 
-            const { setElements, setSelectedElement, isTracking } = useStore.getState() as unknown as {
+            const { setElements, setSelectedElement } = useStore.getState() as unknown as {
                 setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
                 setSelectedElement: (elementId: string | null) => void;
-                isTracking: boolean;
             };
 
             // 히스토리 추적이 일시정지된 경우에도 페이지 로드는 허용
-            if (!isTracking) {
-                console.log('⚠️ 히스토리 추적 일시정지됨 - 페이지 요소 로드 계속 진행');
-            }
 
             // 페이지 선택 시 order_num이 0인 요소(body) 찾기
             const bodyElement = elementsData.find(el => el.order_num === 0);
@@ -119,11 +111,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             if (bodyElement) {
                 setSelectedElement(bodyElement.id);
             }
-
-            console.log('📄 페이지 요소 로드 완료:', {
-                pageId,
-                elementCount: elementsData.length,
-            });
 
             return { success: true, data: elementsData };
         } catch (error) {
@@ -146,23 +133,11 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             // Zustand store의 pages를 사용하여 최대 order_num을 찾기
             const currentPages = useStore.getState().pages;
 
-            console.log('🔍 현재 페이지들:', {
-                pageListItems: pageList.items.length,
-                storePages: currentPages.length,
-                storePagesData: currentPages.map(p => ({ id: p.id, name: p.name, order_num: p.order_num }))
-            });
-
             // 현재 페이지들의 최대 order_num을 찾아서 +1
             const maxOrderNum = currentPages.reduce((max, page) =>
                 Math.max(max, page.order_num || 0), -1
             );
             const nextOrderNum = maxOrderNum + 1;
-
-            console.log('📊 order_num 계산:', {
-                maxOrderNum,
-                nextOrderNum,
-                pageTitle: `Page ${nextOrderNum + 1}`
-            });
 
             // IndexedDB에 새 페이지 저장
             const db = await getDB();
@@ -178,8 +153,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             };
 
             const newPage = await db.pages.insert(newPageData);
-
-            console.log('✅ [IndexedDB] 새 페이지 생성:', newPage);
 
             // useListData에 추가 (ApiPage 타입으로 변환)
             const apiPage: ApiPage = {
@@ -241,24 +214,16 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     const initializeProject = useCallback(async (projectId: string): Promise<ApiResult<ApiPage[]>> => {
         // 중복 호출 방지: 같은 프로젝트가 이미 초기화 중이면 스킵
         if (initializingRef.current === projectId) {
-            console.warn('⚠️ 프로젝트가 이미 초기화 중입니다:', projectId);
             return { success: false, error: new Error('프로젝트가 이미 초기화 중입니다') };
         }
 
         try {
             initializingRef.current = projectId;
-            console.log('🔄 프로젝트 초기화 시작 (usePageManager):', projectId);
 
             // 1. IndexedDB에서 프로젝트의 페이지들 로드
             const db = await getDB();
             const allPages = await db.pages.getAll();
             const projectPages = allPages.filter(p => p.project_id === projectId);
-
-            console.log('✅ [IndexedDB] 페이지 로드:', {
-                projectId,
-                totalPages: allPages.length,
-                projectPages: projectPages.length
-            });
 
             // 2. 기존 페이지 제거 후 새로 추가
             const existingKeys = pageList.items.map((p) => p.id);
@@ -298,7 +263,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 const pageToSelect = homePage || apiPages[0];
 
                 setCurrentPageId(pageToSelect.id);
-                console.log('✅ 기본 페이지 선택:', pageToSelect.title, '(order_num:', pageToSelect.order_num, ')');
 
                 const result = await fetchElements(pageToSelect.id);
                 if (!result.success) {
@@ -307,7 +271,6 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 }
             }
 
-            console.log('✅ 프로젝트 초기화 완료 (usePageManager):', apiPages.length, 'pages');
             initializingRef.current = null;
             return { success: true, data: apiPages };
         } catch (error) {

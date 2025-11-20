@@ -36,16 +36,6 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
     layout.showRight,
   ]);
 
-  // 🔍 디버깅: PanelSlot 리렌더링 추적
-  if (import.meta.env.DEV) {
-    console.log(`[PanelSlot ${side}]`, {
-      panelIds: panelState.panelIds,
-      activePanels: panelState.activePanels,
-      show: panelState.show,
-      isArray: Array.isArray(panelState.activePanels),
-    });
-  }
-
   // ⭐ 최적화: 핸들러 함수 메모이제이션
   const handlePanelClick = useCallback((panelId: typeof panelState.panelIds[number]) => {
     togglePanel(side, panelId);

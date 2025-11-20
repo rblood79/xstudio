@@ -54,17 +54,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 🔧 FIX: Ref를 사용하여 최신 상태 확인 (비동기 state 업데이트 회피)
         const currentReadyState = iframeReadyStateRef.current;
 
-        console.log('📤 [Builder] sendElementsToIframe called:', {
-            elementCount: elementsToSend.length,
-            iframeReadyState: currentReadyState,
-            hasIframe: !!iframe,
-            hasContentWindow: !!iframe?.contentWindow,
-            targetOrigin: window.location.origin
-        });
-
         // iframe이 준비되지 않았으면 큐에 넣기
         if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
-            console.log('⏸️ [Builder] Queue elements update, iframe not ready:', currentReadyState);
             messageQueueRef.current.push({
                 type: "UPDATE_ELEMENTS",
                 payload: elementsToSend
@@ -74,11 +65,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
         iframe.contentWindow.postMessage(message, window.location.origin);
-
-        console.log(`✅ [Builder] Sent ${elementsToSend.length} elements to iframe`, {
-            messageType: message.type,
-            targetOrigin: window.location.origin
-        });
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
     // 요소 선택 시 iframe에 메시지 전송
@@ -144,15 +130,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
     const handleIframeLoad = useCallback(() => {
-        console.log('🖼️ [Builder] iframe onLoad event triggered');
-
         // 🔧 FIX: Ref도 업데이트
         iframeReadyStateRef.current = 'loading';
         setIframeReadyState('loading');
 
         // 🔧 FIX: 요소 전송은 PREVIEW_READY 핸들러에서 처리
         // (여기서는 DOM 로드만 확인하고, Preview의 React 앱 마운트를 기다림)
-        console.log('⏳ [Builder] Waiting for PREVIEW_READY from Preview iframe...');
     }, []);
 
     const handleMessage = useCallback((event: MessageEvent) => {
@@ -163,8 +146,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 🔧 FIX: Preview가 준비되었다는 신호 처리
         if (event.data.type === "PREVIEW_READY") {
-            console.log('✅ [Builder] Received PREVIEW_READY from Preview iframe');
-
             // 🔧 FIX: Ref를 먼저 업데이트 (동기적 상태 변경)
             iframeReadyStateRef.current = 'ready';
             // State도 업데이트 (UI 반영)
@@ -176,11 +157,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // 현재 요소들을 전송 (초기 로드 시에도 전송)
             const currentElements = useStore.getState().elements;
             if (currentElements.length > 0) {
-                console.log('🚀 [Builder] PREVIEW_READY 후 요소 전송:', {
-                    elementCount: currentElements.length,
-                    elementIds: currentElements.map(el => el.id)
-                });
-
                 // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
                 lastSentElementsRef.current = currentElements;
 
@@ -192,11 +168,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // ✅ ACK: Preview가 요소를 받았다는 확인
         if (event.data.type === "ELEMENTS_UPDATED_ACK") {
-            console.log('✅ [Builder] Received ELEMENTS_UPDATED_ACK from Preview:', {
-                elementCount: event.data.elementCount,
-                timestamp: event.data.timestamp
-            });
-
             // ACK 시점 기록
             lastAckTimestampRef.current = event.data.timestamp || Date.now();
 

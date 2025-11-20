@@ -38,18 +38,14 @@ export class RequestDeduplicator {
   async deduplicate<T>(key: string, fn: () => Promise<T>): Promise<T> {
     // 이미 진행 중인 요청이 있으면 그 Promise 반환
     if (this.pendingRequests.has(key)) {
-      console.log(`🔄 [Dedup] Reusing pending request: ${key}`);
       return this.pendingRequests.get(key)!;
     }
 
     // 새 요청 생성
-    console.log(`🚀 [Dedup] Starting new request: ${key}`);
-
     const promise = fn()
       .then((result) => {
         // 성공 시 Map에서 제거
         this.pendingRequests.delete(key);
-        console.log(`✅ [Dedup] Request completed: ${key}`);
         return result;
       })
       .catch((error) => {

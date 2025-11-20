@@ -1226,20 +1226,6 @@ const generateCmsMockData = (
 
     hydrateManagers(departments, organizations, users);
 
-    // ✅ 개선: 성능 모니터링 - 결과 출력
-    console.timeEnd("⏱️ Mock 데이터 생성");
-    console.log(`📊 생성된 데이터 통계:
-  - Organizations: ${organizations.length}
-  - Departments: ${departments.length}
-  - Projects: ${projects.length}
-  - Users: ${users.length}
-  - Project Memberships: ${projectMemberships.length}
-  - Audit Logs: ${auditLogs.length}
-  - Invitations: ${invitations.length}
-  - Engines: ${engines.length}
-  - Components: ${components.length}
-`);
-
     return {
       permissions,
       roles,

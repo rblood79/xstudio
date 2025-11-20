@@ -202,7 +202,6 @@ export const BuilderCore: React.FC = () => {
       }
 
       isInitializing.current = true;
-      console.log('🚀 프로젝트 초기화 시작:', projectId);
 
       setIsLoading(true);
       const result = await initializeProject(projectId);
@@ -224,8 +223,6 @@ export const BuilderCore: React.FC = () => {
 
       initializedProjectId.current = projectId;
       isInitializing.current = false;
-
-      console.log('✅ 프로젝트 초기화 완료:', projectId);
 
       // 메모리 모니터링 시작 (개발 모드에서만)
       if (import.meta.env.DEV) {

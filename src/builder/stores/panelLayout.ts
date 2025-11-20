@@ -78,7 +78,6 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         saveLayoutToStorage(result);
       }
 
-      console.log('[PanelLayout] Loaded from localStorage:', result);
       return result;
     }
   } catch (error) {

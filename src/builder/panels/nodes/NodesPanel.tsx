@@ -33,7 +33,6 @@ export function NodesPanel({ isActive }: PanelProps) {
   // 프로젝트 초기화 - pages가 비어있으면 초기화
   useEffect(() => {
     if (projectId && pages.length === 0 && isActive) {
-      console.log('🔄 NodesPanel: 프로젝트 초기화 시작', projectId);
       initializeProject(projectId);
     }
   }, [projectId, pages.length, isActive, initializeProject]);
