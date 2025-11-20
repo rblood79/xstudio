@@ -283,7 +283,7 @@ export function useSyncWithBuilder(): void {
     // - getState()로 가져오므로 구독하지 않음 (불필요한 재실행 방지)
     // - selectedElement 변경 시에만 동기화 실행
     // - useStore.getState()는 항상 최신 상태를 반환하므로 안전함
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [
     selectedElement,
     // syncVersion 제거 (getState()로 가져옴)

@@ -8,9 +8,6 @@ import { getDB } from '../lib/db';
 import { projectsApi } from '../services/api/ProjectsApiService';
 import { pagesApi } from '../services/api/PagesApiService';
 import { elementsApi } from '../services/api/ElementsApiService';
-import type { Project } from '../services/api/ProjectsApiService';
-import type { Page } from '../services/api/PagesApiService';
-import type { Element } from '../types/core/store.types';
 
 /**
  * 로컬 프로젝트를 클라우드에 동기화
@@ -44,7 +41,8 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
         updated_at: new Date().toISOString(),
       });
       console.log('[ProjectSync] 프로젝트 메타데이터 동기화 완료');
-    } catch (updateError) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_updateError) {
       // 프로젝트가 없으면 생성 (IndexedDB ID 보존)
       console.log('[ProjectSync] 프로젝트가 클라우드에 없음, 새로 생성');
       await projectsApi.createProject({
@@ -74,7 +72,8 @@ export async function syncProjectToCloud(projectId: string): Promise<void> {
 
       try {
         await pagesApi.updatePage(page.id, apiPage);
-      } catch (updateError) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_updateError) {
         // 페이지가 없으면 생성
         await pagesApi.createPage(apiPage);
       }

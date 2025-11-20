@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { MessageSquare, Move, MapPin } from "lucide-react";
 import { PropertyInput, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";

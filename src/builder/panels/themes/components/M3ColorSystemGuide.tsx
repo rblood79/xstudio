@@ -12,13 +12,14 @@ interface M3ColorSystemGuideProps {
   isDarkMode?: boolean;
 }
 
-interface DesignToken {
-  id: string;
-  name: string;
-  value: string;
-  type: string;
-  scope: 'light' | 'dark' | 'global';
-}
+// Unused interface - may be needed in the future
+// interface DesignToken {
+//   id: string;
+//   name: string;
+//   value: string;
+//   type: string;
+//   scope: 'light' | 'dark' | 'global';
+// }
 
 interface M3ColorRole {
   role: string;

@@ -25,7 +25,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
 
   useEffect(() => {
     // 라디오 선택 상태 초기화
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedRadio(null);
   }, [elementId]);
 

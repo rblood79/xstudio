@@ -70,9 +70,9 @@ export const useAsyncState = create<AsyncState>((set) => ({
    */
   reset: (key: string) =>
     set((state) => {
-      const { [key]: removedLoading, ...restLoading } = state.loading;
-      const { [key]: removedError, ...restErrors } = state.errors;
-      const { [key]: removedProgress, ...restProgress } = state.progress;
+      const { [key]: _removedLoading, ...restLoading } = state.loading;
+      const { [key]: _removedError, ...restErrors } = state.errors;
+      const { [key]: _removedProgress, ...restProgress } = state.progress;
 
       return {
         loading: restLoading,

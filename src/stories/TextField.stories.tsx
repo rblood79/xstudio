@@ -296,7 +296,7 @@ export const VariantSizeMatrix: Story = {
 
 /* ========== Form Validation Example ========== */
 export const FormValidation: Story = {
-  render: (args) => (
+  render: () => (
     <Form className="flex flex-col gap-2 items-start p-4 border rounded-md shadow-sm bg-white">
       <TextField
         label="Email (Required)"

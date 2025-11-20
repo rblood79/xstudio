@@ -6,7 +6,7 @@
  */
 
 import type { Project } from '../services/api/ProjectsApiService';
-import type { ProjectListItem, SyncStatus, StorageBadge, ProjectActions } from '../types/dashboard.types';
+import type { ProjectListItem, StorageBadge, ProjectActions } from '../types/dashboard.types';
 
 /**
  * 로컬과 클라우드 프로젝트를 병합

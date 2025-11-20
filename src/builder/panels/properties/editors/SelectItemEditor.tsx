@@ -20,7 +20,7 @@ export const SelectItemEditor = memo(function SelectItemEditor({ elementId, curr
 
     // 초기 로컬 상태 설정
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setLocalProps({ ...currentProps });
     }, [currentProps]);
 

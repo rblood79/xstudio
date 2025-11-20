@@ -26,7 +26,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
 
     useEffect(() => {
         // 체크박스 선택 상태 초기화
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setSelectedCheckbox(null);
     }, [elementId]);
 

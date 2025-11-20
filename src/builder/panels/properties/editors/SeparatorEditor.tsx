@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Minus, PencilRuler, Layout, Type } from 'lucide-react';
 import { PropertySelect, PropertyCustomId, PropertyInput , PropertySection} from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
