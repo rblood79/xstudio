@@ -322,4 +322,4 @@ export const NumberFieldEditor = memo(function NumberFieldEditor({ elementId, cu
             </PropertySection>
         </>
     );
-}
+});

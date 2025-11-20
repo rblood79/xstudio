@@ -1,11 +1,11 @@
 import { memo, useMemo } from "react";
+import { MessageSquare } from "lucide-react";
 import { PropertyInput, PropertyCustomId, PropertySection } from '../../common';
-import { PropertyEditorProps } from '../types/editorTypes';
-import { useStore } from '../../../stores';
-import { Type } from 'lucide-react';
-import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
 
-export const ColumnGroupEditor = memo(function ColumnGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
+export const ModalEditor = memo(function ModalEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
   // Get customId from element in store
   const customId = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
@@ -37,18 +37,20 @@ export const ColumnGroupEditor = memo(function ColumnGroupEditor({ elementId, cu
           value={customId}
           elementId={elementId}
           onChange={updateCustomId}
-          placeholder="column_group_1"
+          placeholder="modal_1"
         />
+      </PropertySection>
 
-        {/* Group Title */}
+      {/* Content Section */}
+      <PropertySection title="Content">
         <PropertyInput
-          label={PROPERTY_LABELS.COLUMN_TITLE}
+          label={PROPERTY_LABELS.TEXT}
           value={String(currentProps.children || "")}
           onChange={(value) => updateProp("children", value)}
-          placeholder="Group title"
-          icon={Type}
+          icon={MessageSquare}
         />
       </PropertySection>
     </>
   );
 });
+
