@@ -85,6 +85,13 @@
                 opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* ♿ 접근성: 모션 감소 설정 사용자 지원 */
+  @media (prefers-reduced-motion: reduce) {
+    .panel-container {
+      transition: none;  /* 애니메이션 비활성화 */
+    }
+  }
+
   /* 🔧 Left 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
   .panel-container[data-side="left"][data-show="false"] {
     position: absolute;     /* 레이아웃 flow에서 제거 */
