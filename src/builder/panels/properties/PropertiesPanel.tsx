@@ -199,16 +199,9 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
  */
 
 export function PropertiesPanel({ isActive }: PanelProps) {
-  // ⭐ 최적화: selectedElement 구독 (properties 변경 감지 필요)
+  // ⭐ CRITICAL: Only subscribe to selectedElement (like StylesPanel)
+  // Any other useStore subscription causes unnecessary re-renders!
   const selectedElement = useInspectorState((state) => state.selectedElement);
-
-  // ⭐ Optimized: Only subscribe to necessary state (actions don't cause re-renders)
-  const selectedElementIds = useStore((state) => state.selectedElementIds || []);
-  const multiSelectMode = useStore((state) => state.multiSelectMode || false);
-  const currentPageId = useStore((state) => state.currentPageId);
-
-  // ⭐ Subscribe to elements for current page only
-  const elements = useStore((state) => state.elements);
 
   // ⭐ Optimized: Get actions without subscribing to state changes
   const removeElement = useStore.getState().removeElement;
@@ -218,19 +211,33 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   const updateElement = useStore.getState().updateElement;
   const setSelectedElements = useStore.getState().setSelectedElements;
 
-  // ⭐ Optimized: Only get elementsMap/elements when actually needed (not subscribed)
+  // ⭐ Optimized: Get state without subscribing (prevents re-renders)
   const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
   const getElements = useCallback(() => useStore.getState().elements, []);
+  const getCurrentPageId = useCallback(() => useStore.getState().currentPageId, []);
+  const getSelectedElementIds = useCallback(() => useStore.getState().selectedElementIds || [], []);
+  const getMultiSelectMode = useCallback(() => useStore.getState().multiSelectMode || false, []);
 
-  // ⭐ Get current page elements
+  // ⭐ Get current page elements (only recalculate when selectedElement changes)
   const currentPageElements = useMemo(() => {
+    if (!selectedElement) return [];
+    const elements = useStore.getState().elements;
+    const currentPageId = useStore.getState().currentPageId;
     return elements.filter((el) => el.page_id === currentPageId);
-  }, [currentPageId, elements]);
+  }, [selectedElement]);
 
   // ⭐ Get selected elements array for BatchPropertyEditor
   const selectedElements = useMemo(() => {
+    if (!selectedElement) return [];
+    const selectedElementIds = useStore.getState().selectedElementIds || [];
     return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
-  }, [selectedElementIds, currentPageElements]);
+  }, [selectedElement, currentPageElements]);
+
+  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX (only recalculate when selectedElement changes)
+  const multiSelectMode = useMemo(() => useStore.getState().multiSelectMode || false, [selectedElement]);
+  const selectedElementIds = useMemo(() => useStore.getState().selectedElementIds || [], [selectedElement]);
+  const currentPageId = useMemo(() => useStore.getState().currentPageId, [selectedElement]);
+  const elements = useMemo(() => useStore.getState().elements, [selectedElement]);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
@@ -255,6 +262,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Multi-select quick actions
   const handleCopyAll = useCallback(async () => {
+    const selectedElementIds = getSelectedElementIds();
     console.log('[Copy] Starting copy operation...', { selectedElementIds });
 
     if (selectedElementIds.length === 0) {
@@ -289,9 +297,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [Copy] Failed to copy elements:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, getElementsMap]);
+  }, [getSelectedElementIds, getElementsMap]);
 
   const handlePasteAll = useCallback(async () => {
+    const currentPageId = getCurrentPageId();
     console.log('[Paste] Starting paste operation...', { currentPageId });
 
     if (!currentPageId) {
@@ -348,9 +357,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [Paste] Failed to paste elements:', error);
       // TODO: Show error toast
     }
-  }, [currentPageId, addElement]);
+  }, [getCurrentPageId, addElement]);
 
   const handleDeleteAll = useCallback(async () => {
+    const selectedElementIds = getSelectedElementIds();
     // Confirm deletion
     if (!confirm(`${selectedElementIds.length}개 요소를 모두 삭제하시겠습니까?`)) {
       return;
@@ -382,7 +392,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [DeleteAll] Failed to delete elements:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, getElementsMap, removeElement]);
+  }, [getSelectedElementIds, getElementsMap, removeElement]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedElement(null);
@@ -392,6 +402,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ Batch property update handler
   const handleBatchUpdate = useCallback(async (updates: Record<string, unknown>) => {
     try {
+      const selectedElementIds = getSelectedElementIds();
       // ⭐ Phase 7: Track in history BEFORE applying updates
       const elementsMap = getElementsMap();
       trackBatchUpdate(selectedElementIds, updates, elementsMap);
@@ -406,7 +417,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('Failed to batch update properties:', error);
       // TODO: Show error toast
     }
-  }, [selectedElementIds, getElementsMap, updateElementProps]);
+  }, [getSelectedElementIds, getElementsMap, updateElementProps]);
 
   // ⭐ Phase 3: Selection filter handler
   const handleFilteredElements = useCallback((filteredIds: string[]) => {
@@ -421,6 +432,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Phase 6: Duplicate handler (Cmd+D)
   const handleDuplicate = useCallback(async () => {
+    const multiSelectMode = getMultiSelectMode();
+    const selectedElementIds = getSelectedElementIds();
+    const currentPageId = getCurrentPageId();
+
     if (!multiSelectMode || selectedElementIds.length === 0 || !currentPageId) {
       console.warn('[Duplicate] No elements selected or no page active');
       return;
@@ -457,11 +472,12 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       console.error('❌ [Duplicate] Failed to duplicate elements:', error);
       // TODO: Show error toast
     }
-  }, [multiSelectMode, selectedElementIds, currentPageId, getElementsMap, addElement, setSelectedElements]);
+  }, [getMultiSelectMode, getSelectedElementIds, getCurrentPageId, getElementsMap, addElement, setSelectedElements]);
 
   // ⭐ Phase 3: Advanced Selection - Select All (Cmd+A)
   const handleSelectAll = useCallback(() => {
     const elements = getElements();
+    const currentPageId = getCurrentPageId();
 
     if (!currentPageId || elements.length === 0) {
       console.warn('[SelectAll] No elements to select');
@@ -481,7 +497,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     // Use store's setSelectedElements
     setSelectedElements(allElementIds);
     console.log(`✅ [SelectAll] Selected ${allElementIds.length} elements`);
-  }, [currentPageId, getElements, setSelectedElements]);
+  }, [getCurrentPageId, getElements, setSelectedElements]);
 
   // ⭐ Phase 3: Advanced Selection - Clear Selection (Esc)
   const handleEscapeClearSelection = useCallback(() => {
@@ -491,6 +507,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Phase 3: Advanced Selection - Tab Navigation
   const handleTabNavigation = useCallback((event: KeyboardEvent) => {
+    const multiSelectMode = getMultiSelectMode();
+    const selectedElementIds = getSelectedElementIds();
+
     if (!multiSelectMode || selectedElementIds.length === 0) return;
 
     event.preventDefault();
@@ -514,7 +533,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
       setSelectedElement(nextElementId, nextElement.props);
       console.log(`✅ [Tab] Navigated to element ${nextIndex + 1}/${selectedElementIds.length}:`, nextElement.tag);
     }
-  }, [multiSelectMode, selectedElementIds, selectedElement, getElementsMap, setSelectedElement]);
+  }, [getMultiSelectMode, getSelectedElementIds, selectedElement, getElementsMap, setSelectedElement]);
 
   // ⭐ Phase 4: Group Selection (Cmd+G)
   const handleGroupSelection = useCallback(async () => {
@@ -867,6 +886,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // Note: Tab navigation requires special handling (Shift+Tab, preventDefault) that useKeyboardShortcutsRegistry doesn't support
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const multiSelectMode = useStore.getState().multiSelectMode || false;
+      const selectedElementIds = useStore.getState().selectedElementIds || [];
+
       if (event.key === 'Tab' && multiSelectMode && selectedElementIds.length > 0) {
         handleTabNavigation(event);
       }
@@ -875,7 +897,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [multiSelectMode, selectedElementIds, handleTabNavigation]);
+  }, [handleTabNavigation]); // multiSelectMode, selectedElementIds 제거 (함수 내부에서 가져옴)
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {

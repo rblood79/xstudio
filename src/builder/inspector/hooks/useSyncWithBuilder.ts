@@ -10,11 +10,10 @@ import { elementsApi } from "../../../services/api";
  */
 export function useSyncWithBuilder(): void {
   const selectedElement = useInspectorState((state) => state.selectedElement);
-  const syncVersion = useInspectorState((state) => state.syncVersion);
-  const confirmSync = useInspectorState((state) => state.confirmSync);
+  // ⭐ 최적화: syncVersion, confirmSync는 getState()로 가져옴 (구독하지 않음)
   const updateElement = useStore((state) => state.updateElement);
   const setElements = useStore((state) => state.setElements);
-  const elements = useStore((state) => state.elements);
+  // ⭐ 최적화: elements는 getState()로 가져옴 (구독하지 않음)
   const historyOperationInProgress = useStore(
     (state) => state.historyOperationInProgress
   );
@@ -37,6 +36,9 @@ export function useSyncWithBuilder(): void {
       }
       return;
     }
+
+    // ⭐ getState()로 elements 가져오기 (구독하지 않음)
+    const elements = useStore.getState().elements;
 
     // Builder store에서 현재 요소 찾기
     const currentElementInStore = elements.find(
@@ -94,9 +96,8 @@ export function useSyncWithBuilder(): void {
       clearTimeout(pendingTimeoutRef.current);
     }
 
-    // 현재 동기화 버전을 캡처 (클로저)
-    const currentSyncVersion = syncVersion;
-    console.log("🔄 동기화 시작 (v" + currentSyncVersion + ")");
+    // ⭐ getState()로 syncVersion 가져오기 (구독하지 않음)
+    const currentSyncVersion = useInspectorState.getState().syncVersion;
 
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
@@ -258,15 +259,16 @@ export function useSyncWithBuilder(): void {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
         // 저장 실패 시 lastSyncedElementRef 초기화하여 다음번에 다시 시도 가능하도록 함
         lastSyncedElementRef.current = null;
+        // ⭐ getState()로 confirmSync 가져오기 (구독하지 않음)
         // 저장 실패해도 동기화 완료로 처리 (새로운 시도 허용)
-        confirmSync(currentSyncVersion);
+        useInspectorState.getState().confirmSync(currentSyncVersion);
       } finally {
         pendingTimeoutRef.current = null;
         // 🎯 동기화 완료 확인 (버전 기반)
         // - currentSyncVersion이 현재 버전과 같으면 플래그 해제
         // - 다르면 새로운 변경사항이 있으므로 플래그 유지
-        console.log("✅ 동기화 완료 확인 (v" + currentSyncVersion + ")");
-        confirmSync(currentSyncVersion);
+        // ⭐ getState()로 confirmSync 가져오기 (구독하지 않음)
+        useInspectorState.getState().confirmSync(currentSyncVersion);
       }
     }, 100);
 
@@ -277,17 +279,18 @@ export function useSyncWithBuilder(): void {
       // 새 컴포넌트 선택 시 추적 ref만 초기화 (다음 동기화가 이전 데이터 참조 방지)
       lastSyncedElementRef.current = null;
     };
-    // Note: elements를 의존성 배열에 포함하지 않음
-    // - useStore는 항상 최신 상태를 반환하므로 useEffect 내에서 최신 elements 참조 가능
-    // - elements 변경으로 인한 불필요한 재실행 방지 (무한 루프 방지)
-    // - selectedElement/syncVersion 변경 시에만 동기화 필요
+    // ⭐ 최적화: elements, syncVersion, confirmSync를 의존성에서 제거
+    // - getState()로 가져오므로 구독하지 않음 (불필요한 재실행 방지)
+    // - selectedElement 변경 시에만 동기화 실행
+    // - useStore.getState()는 항상 최신 상태를 반환하므로 안전함
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedElement,
-    syncVersion,
+    // syncVersion 제거 (getState()로 가져옴)
     updateElement,
     setElements,
-    confirmSync,
+    // confirmSync 제거 (getState()로 가져옴)
+    // elements 제거 (getState()로 가져옴)
     historyOperationInProgress,
   ]);
 }
