@@ -95,6 +95,7 @@ function EventsPanelContent({
   // useListData의 list.items가 매 렌더마다 새 참조를 반환할 수 있으므로
   // JSON 비교로 실제 내용이 변경되었을 때만 새 배열 생성
   const handlersJson = React.useMemo(() => JSON.stringify(rawHandlers), [rawHandlers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handlers = React.useMemo(() => rawHandlers, [handlersJson]);
 
   // 이벤트 선택 관리

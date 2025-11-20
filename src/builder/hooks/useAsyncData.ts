@@ -192,6 +192,8 @@ export function useAsyncData<TData>({
         onError(error);
       }
     }
+    // setData, setError, setLoading are stable functions from useState
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey, queryFn, enabled, staleTime, onSuccess, onError]);
 
   /**

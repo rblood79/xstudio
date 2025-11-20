@@ -152,6 +152,8 @@ export function useAsyncAction<TData, TVariables = void>({
       // 이 코드에는 도달하지 않음 (TypeScript 타입 체크용)
       return null;
     },
+    // setError and setLoading are stable functions from useState
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [actionKey, action, onSuccess, onError, retry, retryDelay, skipRetryOn4xx]
   );
 

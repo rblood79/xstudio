@@ -422,9 +422,7 @@ export const ButtonEditor = memo(function ButtonEditor({
       </PropertySection>
     ),
     [
-      currentProps["aria-label"],
-      currentProps["aria-labelledby"],
-      currentProps["aria-describedby"],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,

@@ -279,9 +279,7 @@ export const SwitchEditor = memo(function SwitchEditor({ elementId, currentProps
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-labelledby'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,

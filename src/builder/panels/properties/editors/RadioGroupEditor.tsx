@@ -159,58 +159,6 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
     }
   }, [storeElements, setElements]);
 
-  // 선택된 라디오 버튼이 있고, 현재 RadioGroup 컴포넌트의 라디오인 경우 개별 라디오 편집 UI 표시
-  if (selectedRadio && selectedRadio.parentId === elementId) {
-    const currentRadio = radioChildren[selectedRadio.radioIndex];
-    if (!currentRadio) return null;
-
-    return (
-      <>
-        <div className="properties-aria">
-          <PropertyInput
-            label={PROPERTY_LABELS.LABEL}
-            value={String((currentRadio.props as Record<string, unknown>).children || '')}
-            onChange={(value) => handleRadioChildrenChange(currentRadio.id, value)}
-            icon={Tag}
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.VALUE}
-            value={String((currentRadio.props as Record<string, unknown>).value || '')}
-            onChange={(value) => handleRadioValueChange(currentRadio.id, value)}
-            icon={Binary}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.DISABLED}
-            isSelected={Boolean((currentRadio.props as Record<string, unknown>).isDisabled)}
-            onChange={(checked) => handleRadioDisabledChange(currentRadio.id, checked)}
-            icon={PointerOff}
-          />
-
-          <div className='tab-actions'>
-            <button
-              className='control-button delete'
-              onClick={() => handleDeleteRadio(currentRadio.id)}
-            >
-              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-              {PROPERTY_LABELS.DELETE_THIS_RADIO}
-            </button>
-          </div>
-        </div>
-
-        <div className='tab-actions'>
-          <button
-            className='control-button secondary'
-            onClick={() => setSelectedRadio(null)}
-          >
-            {PROPERTY_LABELS.BACK_TO_RADIO_GROUP_SETTINGS}
-          </button>
-        </div>
-      </>
-    );
-  }
-
   // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
   const basicSection = useMemo(
     () => (
@@ -426,9 +374,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-labelledby'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,
@@ -518,6 +464,58 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
     ),
     [radioChildren, currentProps.value, elementId, handleAddRadio]
   );
+
+  // 선택된 라디오 버튼이 있고, 현재 RadioGroup 컴포넌트의 라디오인 경우 개별 라디오 편집 UI 표시
+  if (selectedRadio && selectedRadio.parentId === elementId) {
+    const currentRadio = radioChildren[selectedRadio.radioIndex];
+    if (!currentRadio) return null;
+
+    return (
+      <>
+        <div className="properties-aria">
+          <PropertyInput
+            label={PROPERTY_LABELS.LABEL}
+            value={String((currentRadio.props as Record<string, unknown>).children || '')}
+            onChange={(value) => handleRadioChildrenChange(currentRadio.id, value)}
+            icon={Tag}
+          />
+
+          <PropertyInput
+            label={PROPERTY_LABELS.VALUE}
+            value={String((currentRadio.props as Record<string, unknown>).value || '')}
+            onChange={(value) => handleRadioValueChange(currentRadio.id, value)}
+            icon={Binary}
+          />
+
+          <PropertySwitch
+            label={PROPERTY_LABELS.DISABLED}
+            isSelected={Boolean((currentRadio.props as Record<string, unknown>).isDisabled)}
+            onChange={(checked) => handleRadioDisabledChange(currentRadio.id, checked)}
+            icon={PointerOff}
+          />
+
+          <div className='tab-actions'>
+            <button
+              className='control-button delete'
+              onClick={() => handleDeleteRadio(currentRadio.id)}
+            >
+              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+              {PROPERTY_LABELS.DELETE_THIS_RADIO}
+            </button>
+          </div>
+        </div>
+
+        <div className='tab-actions'>
+          <button
+            className='control-button secondary'
+            onClick={() => setSelectedRadio(null)}
+          >
+            {PROPERTY_LABELS.BACK_TO_RADIO_GROUP_SETTINGS}
+          </button>
+        </div>
+      </>
+    );
+  }
 
   // RadioGroup 컴포넌트 전체 설정 UI
   return (

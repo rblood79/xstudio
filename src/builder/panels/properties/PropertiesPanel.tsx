@@ -88,6 +88,7 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedElement.type]);
 
   // handleUpdate는 항상 안정적인 함수 (getState 사용)
@@ -234,10 +235,10 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   }, [selectedElement, currentPageElements]);
 
   // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX (only recalculate when selectedElement changes)
-  const multiSelectMode = useMemo(() => useStore.getState().multiSelectMode || false, [selectedElement]);
-  const selectedElementIds = useMemo(() => useStore.getState().selectedElementIds || [], [selectedElement]);
-  const currentPageId = useMemo(() => useStore.getState().currentPageId, [selectedElement]);
-  const elements = useMemo(() => useStore.getState().elements, [selectedElement]);
+  const multiSelectMode = useMemo(() => useStore.getState().multiSelectMode || false, []);
+  const selectedElementIds = useMemo(() => useStore.getState().selectedElementIds || [], []);
+  const currentPageId = useMemo(() => useStore.getState().currentPageId, []);
+  const elements = useMemo(() => useStore.getState().elements, []);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 

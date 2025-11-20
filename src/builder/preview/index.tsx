@@ -410,6 +410,7 @@ function Preview() {
       // 일반 클릭 처리
       handleGlobalClick(e);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lassoBox, elements, rectanglesIntersect]);
 
   // body 요소 확인

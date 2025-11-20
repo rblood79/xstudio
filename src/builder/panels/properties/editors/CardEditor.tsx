@@ -389,8 +389,7 @@ export const CardEditor = memo(function CardEditor({ elementId, currentProps, on
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaDescribedbyChange,
     ]

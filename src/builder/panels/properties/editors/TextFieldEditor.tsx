@@ -395,9 +395,7 @@ export const TextFieldEditor = memo(function TextFieldEditor({ elementId, curren
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-labelledby'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,

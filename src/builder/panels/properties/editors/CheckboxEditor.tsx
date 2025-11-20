@@ -306,9 +306,7 @@ export const CheckboxEditor = memo(function CheckboxEditor({ elementId, currentP
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-labelledby'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,

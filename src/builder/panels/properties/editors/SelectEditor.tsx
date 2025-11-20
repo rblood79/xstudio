@@ -156,58 +156,6 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
     }
   }, [deleteItem]);
 
-  // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
-  if (selectedItemIndex !== null) {
-    const currentOption = children[selectedItemIndex];
-    if (!currentOption) return null;
-
-    return (
-      <>
-        <div className="properties-aria">
-          <PropertyInput
-            label={PROPERTY_LABELS.LABEL}
-            value={String((currentOption.props as Record<string, unknown>).label || '')}
-            onChange={(value) => handleOptionLabelChange(currentOption.id, value)}
-            icon={Tag}
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.VALUE}
-            value={String((currentOption.props as Record<string, unknown>).value || '')}
-            onChange={(value) => handleOptionValueChange(currentOption.id, value)}
-            icon={Binary}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.DISABLED}
-            isSelected={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
-            onChange={(checked) => handleOptionDisabledChange(currentOption.id, checked)}
-            icon={PointerOff}
-          />
-
-          <div className='tab-actions'>
-            <button
-              className='control-button delete'
-              onClick={() => handleDeleteOption(currentOption.id)}
-            >
-              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-              Delete This Item
-            </button>
-          </div>
-        </div>
-
-        <div className='tab-actions'>
-          <button
-            className='control-button secondary'
-            onClick={deselectItem}
-          >
-            {PROPERTY_LABELS.CLOSE}
-          </button>
-        </div>
-      </>
-    );
-  }
-
   // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
   const basicSection = useMemo(
     () => (
@@ -418,9 +366,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
       </PropertySection>
     ),
     [
-      currentProps['aria-label'],
-      currentProps['aria-labelledby'],
-      currentProps['aria-describedby'],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,
@@ -471,6 +417,58 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
     ),
     [children, currentProps.selectedValue, selectItem, addItem]
   );
+
+  // 선택된 옵션이 있는 경우 개별 옵션 편집 UI 표시
+  if (selectedItemIndex !== null) {
+    const currentOption = children[selectedItemIndex];
+    if (!currentOption) return null;
+
+    return (
+      <>
+        <div className="properties-aria">
+          <PropertyInput
+            label={PROPERTY_LABELS.LABEL}
+            value={String((currentOption.props as Record<string, unknown>).label || '')}
+            onChange={(value) => handleOptionLabelChange(currentOption.id, value)}
+            icon={Tag}
+          />
+
+          <PropertyInput
+            label={PROPERTY_LABELS.VALUE}
+            value={String((currentOption.props as Record<string, unknown>).value || '')}
+            onChange={(value) => handleOptionValueChange(currentOption.id, value)}
+            icon={Binary}
+          />
+
+          <PropertySwitch
+            label={PROPERTY_LABELS.DISABLED}
+            isSelected={Boolean((currentOption.props as Record<string, unknown>).isDisabled)}
+            onChange={(checked) => handleOptionDisabledChange(currentOption.id, checked)}
+            icon={PointerOff}
+          />
+
+          <div className='tab-actions'>
+            <button
+              className='control-button delete'
+              onClick={() => handleDeleteOption(currentOption.id)}
+            >
+              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+              Delete This Item
+            </button>
+          </div>
+        </div>
+
+        <div className='tab-actions'>
+          <button
+            className='control-button secondary'
+            onClick={deselectItem}
+          >
+            {PROPERTY_LABELS.CLOSE}
+          </button>
+        </div>
+      </>
+    );
+  }
 
   // Select 컴포넌트 전체 설정 UI
   return (

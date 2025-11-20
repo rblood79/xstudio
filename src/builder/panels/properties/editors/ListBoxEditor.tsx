@@ -147,68 +147,6 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     updateItem(itemId, updatedProps);
   }, [children, updateItem]);
 
-  // 선택된 아이템이 있는 경우 개별 아이템 편집 UI 표시
-  if (selectedItemIndex !== null) {
-    const currentItem = children[selectedItemIndex];
-    if (!currentItem) return null;
-
-    return (
-      <>
-        <div className="properties-aria">
-          <PropertyInput
-            label={PROPERTY_LABELS.LABEL}
-            value={String(
-              (currentItem.props as Record<string, unknown>).label || ""
-            )}
-            onChange={(value) => handleItemLabelChange(currentItem.id, value)}
-            icon={Tag}
-          />
-
-          <PropertyInput
-            label={PROPERTY_LABELS.VALUE}
-            value={String(
-              (currentItem.props as Record<string, unknown>).value || ""
-            )}
-            onChange={(value) => handleItemValueChange(currentItem.id, value)}
-            icon={Binary}
-          />
-
-          <PropertySwitch
-            label={PROPERTY_LABELS.DISABLED}
-            isSelected={Boolean(
-              (currentItem.props as Record<string, unknown>).isDisabled
-            )}
-            onChange={(checked) => handleItemDisabledChange(currentItem.id, checked)}
-            icon={PointerOff}
-          />
-
-          <div className="tab-actions">
-            <button
-              className="control-button delete"
-              onClick={() => deleteItem(currentItem.id)}
-            >
-              <Trash
-                color={iconProps.color}
-                strokeWidth={iconProps.stroke}
-                size={iconProps.size}
-              />
-              Delete This Item
-            </button>
-          </div>
-        </div>
-
-        <div className="tab-actions">
-          <button
-            className="control-button secondary"
-            onClick={deselectItem}
-          >
-            Back to ListBox Settings
-          </button>
-        </div>
-      </>
-    );
-  }
-
   // ⭐ 최적화: 각 섹션을 useMemo로 감싸서 불필요한 JSX 재생성 방지
   const basicSection = useMemo(
     () => (
@@ -387,9 +325,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       </PropertySection>
     ),
     [
-      currentProps["aria-label"],
-      currentProps["aria-labelledby"],
-      currentProps["aria-describedby"],
+      currentProps,
       handleAriaLabelChange,
       handleAriaLabelledbyChange,
       handleAriaDescribedbyChange,
@@ -446,6 +382,68 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     ),
     [children, selectItem, addItem]
   );
+
+  // 선택된 아이템이 있는 경우 개별 아이템 편집 UI 표시
+  if (selectedItemIndex !== null) {
+    const currentItem = children[selectedItemIndex];
+    if (!currentItem) return null;
+
+    return (
+      <>
+        <div className="properties-aria">
+          <PropertyInput
+            label={PROPERTY_LABELS.LABEL}
+            value={String(
+              (currentItem.props as Record<string, unknown>).label || ""
+            )}
+            onChange={(value) => handleItemLabelChange(currentItem.id, value)}
+            icon={Tag}
+          />
+
+          <PropertyInput
+            label={PROPERTY_LABELS.VALUE}
+            value={String(
+              (currentItem.props as Record<string, unknown>).value || ""
+            )}
+            onChange={(value) => handleItemValueChange(currentItem.id, value)}
+            icon={Binary}
+          />
+
+          <PropertySwitch
+            label={PROPERTY_LABELS.DISABLED}
+            isSelected={Boolean(
+              (currentItem.props as Record<string, unknown>).isDisabled
+            )}
+            onChange={(checked) => handleItemDisabledChange(currentItem.id, checked)}
+            icon={PointerOff}
+          />
+
+          <div className="tab-actions">
+            <button
+              className="control-button delete"
+              onClick={() => deleteItem(currentItem.id)}
+            >
+              <Trash
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+              Delete This Item
+            </button>
+          </div>
+        </div>
+
+        <div className="tab-actions">
+          <button
+            className="control-button secondary"
+            onClick={deselectItem}
+          >
+            Back to ListBox Settings
+          </button>
+        </div>
+      </>
+    );
+  }
 
   // ListBox 컴포넌트 전체 설정 UI
   return (

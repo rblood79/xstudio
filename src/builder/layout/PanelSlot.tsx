@@ -49,6 +49,7 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
   // ⭐ 최적화: 핸들러 함수 메모이제이션
   const handlePanelClick = useCallback((panelId: typeof panelState.panelIds[number]) => {
     togglePanel(side, panelId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side, togglePanel]);
 
   const handleClose = useCallback(() => {
