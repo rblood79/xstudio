@@ -12,8 +12,12 @@ import {
   Cloud,
   HardDrive,
   Download,
-  Upload,
+  SwatchBook,
   Settings,
+  Plus,
+  Package,
+  CloudAlert,
+  CloudUpload,
 } from "lucide-react";
 import {
   mergeProjects,
@@ -404,7 +408,7 @@ function Dashboard() {
             size="sm"
             className="add-project-button"
             isDisabled={loading || !newProjectName.trim()}
-            children={createProjectMutation.isLoading ? 'Creating...' : 'Add Project'}
+            children={createProjectMutation.isLoading ? 'Creating...' : <Plus size={16} />}
           />
         </form>
 
@@ -446,7 +450,7 @@ function Dashboard() {
                     <Button
                       onPress={() => navigate(`/builder/${project.id}`)}
                       isDisabled={loading}
-                      children="Open"
+                      children={<Package size={16} />}
                       variant="primary"
                       size="sm"
                     />
@@ -465,11 +469,8 @@ function Dashboard() {
                         }
                       }}
                       isDisabled={loading}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <Upload size={14} /> {syncProjectMutation.isLoading ? 'Syncing...' : 'Sync'}
-                    </Button>
+                      children={syncProjectMutation.isLoading ? <CloudAlert size={16} /> : <CloudUpload size={16} />}
+                    />
                   )}
 
                   {/* Download 버튼 */}
@@ -496,7 +497,7 @@ function Dashboard() {
                   <Button
                     onPress={() => navigate(`/theme/${project.id}`)}
                     isDisabled={loading}
-                    children="Theme"
+                    children={<SwatchBook size={16} />}
                     variant="default"
                     size="sm"
                   />

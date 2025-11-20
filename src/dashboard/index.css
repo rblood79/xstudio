@@ -4,6 +4,15 @@
     background: var(--builder-button-bg );
     color: var(--builder-button-text);
     border-color: var(--builder-button-border);
+    padding: var(--spacing-2xs);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -26px;
+    margin-top: 4px;
+
     &:hover {
       background: var(--builder-button-hover-bg);
       color: var(--builder-button-text);
@@ -155,6 +164,7 @@
     .main {
       width: 100%;
       display: flex;
+      align-items: center;
       flex-direction: column;
       max-width: var(--container-6xl);
       min-width: var(--container-3xl);
@@ -163,12 +173,10 @@
 
       .add-project-form {
         width: var(--container-xs);
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        gap: var(--spacing);
+        display: grid;
+        grid-template-columns: 1fr auto;
         .react-aria-TextField {
-          flex: 1;
+          width: inherit;
         }
       }
 
@@ -278,7 +286,7 @@
             flex-shrink: 0;
 
             button {
-              padding: var(--spacing-2xs) var(--spacing-sm);
+              padding: var(--spacing-xs) var(--spacing-sm);
               font-size: var(--text-2xs);
               line-height: var(--text-2xs--line-height);
             }
