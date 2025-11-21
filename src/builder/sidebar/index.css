@@ -90,6 +90,10 @@
     .panel-container {
       transition: none; /* 애니메이션 비활성화 */
     }
+
+    .panel-wrapper {
+      transition: none; /* panel-wrapper 애니메이션도 비활성화 */
+    }
   }
 
   /* 🔧 Left 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
@@ -160,23 +164,23 @@
     /* ✅ 성능 최적화: transform으로 위치 이동 (GPU 가속) */
     /* 사라질 때도 애니메이션이 보이도록 transition 설정 */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
 
-    /* 비활성 패널: 레이아웃 공간은 제거하되 넓이는 유지, transform으로 슬라이드 */
-    /* ✅ position: relative 유지하여 애니메이션이 보이도록 함 */
+    /* 비활성 패널: transform으로 위치와 공간 제거를 동시에 처리 */
+    /* ✅ translateX에서 -100% (자신의 너비) - var(--panel-width) (레이아웃 공간) */
     &[data-active="false"] {
       position: relative;
-      transform: translateX(-100%);
+      /* 🚀 최적화: margin-left 제거, transform 하나로 통합 */
+      transform: translateX(calc(-100% - var(--panel-width, 233px)));
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
       z-index: -1;
-      /* ✅ 동적 넓이: CSS 변수를 사용하여 패널 넓이만큼 margin-left 설정 */
-      margin-left: calc(0px - var(--panel-width, 233px));
       overflow: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
+        visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
     }
 
     /* 활성 패널: 레이아웃에 참여하여 나란히 표시 */
@@ -189,10 +193,9 @@
       overflow-y: auto;
       overflow-x: hidden;
       z-index: 1;
-      margin-left: 0; /* 레이아웃 공간 정상 사용 */
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
+        visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
     }
 
     /* 패널 컴포넌트가 전체 높이를 차지하도록 */
@@ -205,8 +208,9 @@
   }
 
   /* Right 사이드: 오른쪽으로 숨김 */
+  /* 🚀 최적화: +100% (자신의 너비) + var(--panel-width) (레이아웃 공간) */
   .panel-container[data-side="right"] .panel-wrapper[data-active="false"] {
-    transform: translateX(100%);
+    transform: translateX(calc(100% + var(--panel-width, 233px)));
   }
 
   .sidebar {
