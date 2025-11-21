@@ -29,12 +29,12 @@
     --builder-header-badge-bg: var(--color-gray-500);
 
     /* ==================== Builder Sidebar ==================== */
-    --builder-sidebar-bg: #fff;
+    --builder-sidebar-bg: var(--color-white);
     --builder-sidebar-border: var(--color-gray-300);
-    --builder-sidebar-hover-bg: #f5f5f5;
+    --builder-sidebar-hover-bg: var(--color-gray-100);
     --builder-sidebar-active-bg: var(--color-slate-600);
     --builder-sidebar-active-text: var(--color-gray-200);
-    --builder-sidebar-nav-bg: #fff;
+    --builder-sidebar-nav-bg: var(--color-white);
     --builder-sidebar-icon: var(--color-gray-500);
 
     /* ==================== Builder Inspector ==================== */
@@ -52,9 +52,9 @@
     --builder-inspector-divider: var(--color-gray-200);
 
     /* Inspector Warning States */
-    --builder-inspector-warning-bg: var(--color-warning-background, #fef3c7);
-    --builder-inspector-warning-border: var(--color-warning-border, #fcd34d);
-    --builder-inspector-warning-text: var(--color-warning-foreground, #92400e);
+    --builder-inspector-warning-bg: var(--color-warning-100);
+    --builder-inspector-warning-border: var(--color-warning-300);
+    --builder-inspector-warning-text: var(--color-warning-800);
 
     /* Inspector Success States */
     --builder-inspector-success-bg: var(--color-success-50);
@@ -88,9 +88,10 @@
     --builder-inspector-button-primary-hover: var(--color-primary-900);
 
     /* ==================== Builder Canvas/Workspace ==================== */
-    --builder-canvas-bg: #ffffff;
+    --builder-canvas-bg: var(--color-white);
     --builder-canvas-border: var(--color-gray-200);
     --builder-workspace-bg: var(--color-neutral-100);
+    --builder-grid-line-color: rgba(0, 0, 0, 0.05);
     --builder-indicator-bg: var(--color-sky-500);
     --builder-indicator-text: var(--color-white);
     --builder-indicator-hover-bg: var(--color-sky-200);
@@ -105,19 +106,19 @@
     --builder-status-pending: var(--color-purple-500);
 
     /* ==================== Builder Error States ==================== */
-    --builder-error-bg: #fee2e2;
-    --builder-error-border: #fecaca;
-    --builder-error-text: #dc2626;
+    --builder-error-bg: var(--color-error-100);
+    --builder-error-border: var(--color-error-200);
+    --builder-error-text: var(--color-error-600);
     --builder-error-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
     /* ==================== Builder Overlay/Modal ==================== */
     --builder-overlay-bg: rgba(0, 0, 0, 0.5);
-    --builder-modal-bg: white;
+    --builder-modal-bg: var(--color-white);
     --builder-modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 
     /* ==================== Builder Loading Spinner ==================== */
-    --builder-spinner-track: #f3f3f3;
-    --builder-spinner-fill: #3498db;
+    --builder-spinner-track: var(--color-gray-200);
+    --builder-spinner-fill: var(--color-blue-500);
 
     /* ==================== Builder Button/Controls ==================== */
     --builder-button-bg: var(--color-gray-100);
@@ -168,8 +169,8 @@
   }
 
   /* ==================== Builder Dark Mode ==================== */
-  /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] */
-  [data-builder-theme="dark"] {
+  /* Independent of Preview dark mode - toggled via [data-theme="dark"] on :root */
+  [data-theme="dark"] {
     /* Header */
     --builder-header-bg: var(--color-gray-900);
     --builder-header-text: var(--color-neutral-50);
@@ -203,7 +204,7 @@
     --builder-inspector-divider: var(--color-gray-700);
     --builder-inspector-warning-bg: rgba(254, 243, 199, 0.1);
     --builder-inspector-warning-border: rgba(252, 211, 77, 0.3);
-    --builder-inspector-warning-text: #fde68a;
+    --builder-inspector-warning-text: var(--color-warning-300);
 
     /* Success States */
     --builder-inspector-success-bg: rgba(16, 185, 129, 0.1);
@@ -240,11 +241,12 @@
     --builder-canvas-bg: var(--color-gray-800);
     --builder-canvas-border: var(--color-gray-700);
     --builder-workspace-bg: var(--color-gray-950);
+    --builder-grid-line-color: rgba(255, 255, 255, 0.08);
 
     /* Error States (maintain visibility in dark mode) */
     --builder-error-bg: rgba(254, 226, 226, 0.1);
     --builder-error-border: rgba(254, 202, 202, 0.3);
-    --builder-error-text: #fca5a5;
+    --builder-error-text: var(--color-error-300);
 
     /* Modal */
     --builder-modal-bg: var(--color-gray-800);

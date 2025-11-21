@@ -1,5 +1,6 @@
 /**
  * Performance Dashboard Styles
+ * Uses builder-system CSS variables for consistent light/dark theme support
  */
 
 .performance-dashboard {
@@ -9,11 +10,11 @@
   width: 400px;
   max-height: 600px;
   overflow-y: auto;
-  background: var(--builder-inspector-bg, rgba(255, 255, 255, 0.98));
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: var(--radius-md, 8px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-size: var(--text-sm, 14px);
+  background: var(--builder-inspector-bg);
+  border: 1px solid var(--builder-inspector-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--builder-modal-shadow);
+  font-size: var(--text-sm);
   z-index: 9999;
   backdrop-filter: blur(10px);
 }
@@ -22,61 +23,62 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md, 12px);
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  background: var(--builder-inspector-header-bg, #f9fafb);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--builder-inspector-divider);
+  background: var(--builder-inspector-header-bg);
 }
 
 .dashboard-header h3 {
   margin: 0;
-  font-size: var(--text-base, 16px);
+  font-size: var(--text-base);
   font-weight: 600;
-  color: var(--text-color, #111827);
+  color: var(--builder-inspector-text-primary);
 }
 
 .dashboard-actions {
   display: flex;
-  gap: var(--spacing-xs, 4px);
+  gap: var(--spacing-xs);
 }
 
 .action-btn {
-  padding: var(--spacing-xs, 4px) var(--spacing, 8px);
+  padding: var(--spacing-xs) var(--spacing);
   background: transparent;
-  border: 1px solid var(--border-color, #d1d5db);
-  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--builder-button-border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: var(--text-base, 16px);
+  font-size: var(--text-base);
+  color: var(--builder-inspector-text-primary);
   transition: all 0.2s;
 }
 
 .action-btn:hover {
-  background: var(--builder-inspector-control-bg, #f3f4f6);
+  background: var(--builder-inspector-hover-bg);
 }
 
 .action-btn.active {
-  background: var(--primary, #3b82f6);
-  border-color: var(--primary, #3b82f6);
-  color: white;
+  background: var(--builder-button-primary-bg);
+  border-color: var(--builder-button-primary-bg);
+  color: var(--builder-button-primary-text);
 }
 
 .dashboard-stats {
-  padding: var(--spacing-md, 12px);
+  padding: var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg, 16px);
+  gap: var(--spacing-lg);
 }
 
 .stat-section {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing, 8px);
+  gap: var(--spacing);
 }
 
 .stat-section h4 {
   margin: 0;
-  font-size: var(--text-sm, 14px);
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-color-secondary, #6b7280);
+  color: var(--builder-inspector-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -84,104 +86,54 @@
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing, 8px);
+  gap: var(--spacing);
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
-  padding: var(--spacing, 8px);
-  background: var(--builder-inspector-control-bg, #f9fafb);
-  border-radius: var(--radius-sm, 4px);
-  border: 1px solid var(--border-color, #e5e7eb);
+  padding: var(--spacing);
+  background: var(--builder-inspector-control-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--builder-inspector-border);
 }
 
 .stat-label {
-  font-size: var(--text-xs, 12px);
-  color: var(--text-color-secondary, #6b7280);
+  font-size: var(--text-xs);
+  color: var(--builder-inspector-text-secondary);
   margin-bottom: 2px;
 }
 
 .stat-value {
-  font-size: var(--text-lg, 18px);
+  font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--text-color, #111827);
+  color: var(--builder-inspector-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .stat-value.highlight {
-  color: var(--primary, #3b82f6);
+  color: var(--builder-status-info);
 }
 
 .stat-value.success {
-  color: var(--color-success-600, #16a34a);
+  color: var(--builder-status-success);
 }
 
 .stat-value.error {
-  color: var(--color-error-600, #dc2626);
+  color: var(--builder-status-error);
 }
 
 .dashboard-footer {
-  padding: var(--spacing, 8px) var(--spacing-md, 12px);
-  border-top: 1px solid var(--border-color, #e5e7eb);
-  background: var(--builder-inspector-header-bg, #f9fafb);
+  padding: var(--spacing) var(--spacing-md);
+  border-top: 1px solid var(--builder-inspector-divider);
+  background: var(--builder-inspector-header-bg);
   text-align: center;
 }
 
 .elapsed-time {
-  font-size: var(--text-xs, 12px);
-  color: var(--text-color-secondary, #6b7280);
+  font-size: var(--text-xs);
+  color: var(--builder-inspector-text-secondary);
   font-variant-numeric: tabular-nums;
-}
-
-/* Dark mode support */
-[data-builder-theme="dark"] .performance-dashboard {
-  background: rgba(17, 24, 39, 0.98);
-  border-color: #374151;
-}
-
-[data-builder-theme="dark"] .dashboard-header {
-  background: #1f2937;
-  border-color: #374151;
-}
-
-[data-builder-theme="dark"] .dashboard-header h3 {
-  color: #f9fafb;
-}
-
-[data-builder-theme="dark"] .action-btn {
-  border-color: #4b5563;
-  color: #d1d5db;
-}
-
-[data-builder-theme="dark"] .action-btn:hover {
-  background: #374151;
-}
-
-[data-builder-theme="dark"] .stat-section h4 {
-  color: #9ca3af;
-}
-
-[data-builder-theme="dark"] .stat-item {
-  background: #1f2937;
-  border-color: #374151;
-}
-
-[data-builder-theme="dark"] .stat-label {
-  color: #9ca3af;
-}
-
-[data-builder-theme="dark"] .stat-value {
-  color: #f9fafb;
-}
-
-[data-builder-theme="dark"] .dashboard-footer {
-  background: #1f2937;
-  border-color: #374151;
-}
-
-[data-builder-theme="dark"] .elapsed-time {
-  color: #9ca3af;
 }
 
 /* Compact mode (간략 모드) */
