@@ -38,6 +38,9 @@ interface InspectorState {
   addEvent: (event: EventHandler) => void;
   updateEvent: (id: string, event: EventHandler) => void;
   removeEvent: (id: string) => void;
+
+  // ⭐ Computed Style 업데이트 (Option C: 지연 도착 처리)
+  updateSelectedElementComputedStyle: (computedStyle: Record<string, string>) => void;
 }
 
 export const useInspectorState = create<InspectorState>((set, get) => ({
@@ -325,6 +328,20 @@ export const useInspectorState = create<InspectorState>((set, get) => ({
         selectedElement: {
           ...state.selectedElement,
           events: currentEvents.filter((e) => e.id !== id),
+        },
+      };
+    });
+  },
+
+  // ⭐ Option C: computedStyle 지연 업데이트 (syncVersion 증가 없음)
+  // 오버레이 표시 후 Preview에서 비동기로 도착하는 computedStyle 처리
+  updateSelectedElementComputedStyle: (computedStyle) => {
+    set((state) => {
+      if (!state.selectedElement) return state;
+      return {
+        selectedElement: {
+          ...state.selectedElement,
+          computedStyle,
         },
       };
     });

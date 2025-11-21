@@ -49,15 +49,10 @@ export default function SelectionOverlay() {
     return element?.tag || selectedTag || "";
   }, [elementsMap, selectedElementId, selectedTag]);
 
-  const updatePosition = useCallback(() => {
-    // 이미 대기 중인 업데이트가 있으면 취소
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-
-    rafIdRef.current = requestAnimationFrame(() => {
-      rafIdRef.current = null;
-
+  // immediate: true면 RAF 없이 즉시 실행 (초기 선택 시 사용)
+  // immediate: false면 기존 RAF 사용 (ResizeObserver, 스크롤 등)
+  const updatePosition = useCallback((immediate = false) => {
+    const calculatePosition = () => {
       const iframe = iframeRef.current;
       if (!iframe?.contentDocument || !selectedElementId) {
         setOverlayRect(null);
@@ -74,13 +69,7 @@ export default function SelectionOverlay() {
         return;
       }
 
-      // iframe의 위치 (부모 문서 기준)
-      //const iframeRect = iframe.getBoundingClientRect();
-      // 요소의 위치 (iframe 내부 기준)
       const elementRect = element.getBoundingClientRect();
-
-      // getBoundingClientRect()는 이미 viewport 기준 절대 좌표
-      // iframe offset 추가 필요
       const newRect = {
         top: elementRect.top,
         left: elementRect.left,
@@ -90,7 +79,25 @@ export default function SelectionOverlay() {
 
       setOverlayRect(newRect);
       setSelectedTag(element.tagName.toLowerCase());
-    });
+    };
+
+    if (immediate) {
+      // 초기 선택: RAF 스킵하여 즉시 오버레이 표시
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      calculatePosition();
+    } else {
+      // ResizeObserver, 스크롤 등: 기존 RAF 배치 처리
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        calculatePosition();
+      });
+    }
   }, [selectedElementId]);
 
   // ⭐ Update multi-select overlay positions
@@ -188,11 +195,15 @@ export default function SelectionOverlay() {
       if (event.origin !== window.location.origin) return;
 
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
-        // Preview에서 보내는 좌표를 직접 사용 (iframe offset 추가 제거)
-        // getBoundingClientRect()가 iframe 내부에서 호출되므로 이미 정확한 위치 반환
+        // ⭐ 초기 선택: postMessage의 rect를 즉시 사용하여 오버레이 표시 (RAF 스킵)
         const { top, left, width, height } = event.data.payload.rect;
         setOverlayRect({ top, left, width, height });
         setSelectedTag(event.data.payload.tag || "");
+        // RAF를 통한 추가 업데이트 취소 (postMessage rect가 최신 상태)
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
       } else if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
         // ⭐ Multi-select: Update all overlay positions
         updateMultiOverlays();

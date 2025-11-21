@@ -327,15 +327,13 @@ function Preview() {
     // ⭐ Cmd/Ctrl 키 감지 (다중 선택 모드)
     const isMultiSelect = e.metaKey || e.ctrlKey;
 
-    // Collect computed styles
-    const computedStyle = collectComputedStyle(elementWithId);
-
+    // ⭐ Option C: rect 먼저 전송 (오버레이 즉시 표시)
     const rect = elementWithId.getBoundingClientRect();
     window.parent.postMessage(
       {
         type: "ELEMENT_SELECTED",
         elementId: elementId,
-        isMultiSelect, // ⭐ 다중 선택 플래그 추가
+        isMultiSelect,
         payload: {
           rect: {
             top: rect.top,
@@ -343,14 +341,29 @@ function Preview() {
             width: rect.width,
             height: rect.height,
           },
-          props: element.props,
           tag: element.tag,
+          // props와 style도 포함 (Inspector 기본 표시용)
+          props: element.props,
           style: element.props?.style || {},
-          computedStyle,
         },
       },
       window.location.origin
     );
+
+    // ⭐ Option C: computedStyle은 RAF로 지연 전송 (Inspector 스타일 탭용)
+    requestAnimationFrame(() => {
+      const computedStyle = collectComputedStyle(elementWithId);
+      window.parent.postMessage(
+        {
+          type: "ELEMENT_COMPUTED_STYLE",
+          elementId: elementId,
+          payload: {
+            computedStyle,
+          },
+        },
+        window.location.origin
+      );
+    });
   };
 
   // ⭐ Lasso Selection: Mouse Down (드래그 시작)

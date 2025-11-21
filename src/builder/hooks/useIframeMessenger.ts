@@ -320,13 +320,25 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 const store = useStore.getState();
                 store.toggleElementInSelection(event.data.elementId);
             } else {
-                // 일반 클릭: 단일 선택
+                // 일반 클릭: 단일 선택 (computedStyle 없이 즉시 선택 - Option B+C)
+                // computedStyle은 별도 메시지(ELEMENT_COMPUTED_STYLE)로 나중에 도착
                 setSelectedElement(
                     event.data.elementId,
                     event.data.payload?.props,
                     event.data.payload?.style,
-                    event.data.payload?.computedStyle
+                    undefined // computedStyle은 나중에 업데이트
                 );
+            }
+        }
+
+        // ⭐ Option C: computedStyle 별도 메시지 처리 (오버레이 표시 후 지연 도착)
+        if (event.data.type === "ELEMENT_COMPUTED_STYLE" && event.data.elementId) {
+            const { updateSelectedElementComputedStyle } = useInspectorState.getState();
+            const currentSelectedId = useStore.getState().selectedElementId;
+
+            // 현재 선택된 요소의 computedStyle만 업데이트
+            if (currentSelectedId === event.data.elementId && event.data.payload?.computedStyle) {
+                updateSelectedElementComputedStyle(event.data.payload.computedStyle);
             }
         }
 
