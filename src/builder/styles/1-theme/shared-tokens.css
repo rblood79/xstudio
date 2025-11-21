@@ -175,32 +175,182 @@
     --status-info: var(--color-info-600);
 
     /* ==================== OpenAI/ChatGPT Style Colors ==================== */
-    /* Light Mode Base */
-    --oai-bg-primary: #ffffff;
-    --oai-bg-secondary: #f7f7f8;
-    --oai-bg-tertiary: #ececf1;
-    --oai-text-primary: #0d0d0d;
-    --oai-text-secondary: #6e6e80;
-    --oai-text-tertiary: #8e8ea0;
-    --oai-border: #e5e5e5;
-    --oai-border-light: #ebebeb;
-    --oai-border-hover: #c5c5d2;
+    /* Base Colors - Reference Tailwind colors */
+    --white: var(--color-white);
+    --black: var(--color-black);
 
-    /* Dark Mode Base */
-    --oai-dark-bg-primary: #212121;
-    --oai-dark-bg-secondary: #2f2f2f;
-    --oai-dark-bg-tertiary: #424242;
-    --oai-dark-text-primary: #ececec;
-    --oai-dark-text-secondary: #9b9b9b;
-    --oai-dark-text-tertiary: #8e8ea0;
-    --oai-dark-border: #4d4d4d;
-    --oai-dark-border-light: #3d3d3d;
-    --oai-dark-border-hover: #5d5d5d;
+    /* Gray Scale - Reference Tailwind neutral colors
+     * Maps OpenAI-style gray scale to Tailwind neutral scale
+     * Standard values use direct references, in-between values use closest match
+     */
+    --gray-0: var(--color-white);
+    --gray-25: var(--color-neutral-50);
+    --gray-50: var(--color-neutral-50);
+    --gray-75: var(--color-neutral-100);
+    --gray-100: var(--color-neutral-100);
+    --gray-150: var(--color-neutral-200);
+    --gray-200: var(--color-neutral-200);
+    --gray-250: var(--color-neutral-300);
+    --gray-300: var(--color-neutral-300);
+    --gray-350: var(--color-neutral-400);
+    --gray-400: var(--color-neutral-400);
+    --gray-450: var(--color-neutral-500);
+    --gray-500: var(--color-neutral-500);
+    --gray-550: var(--color-neutral-600);
+    --gray-600: var(--color-neutral-600);
+    --gray-650: var(--color-neutral-700);
+    --gray-700: var(--color-neutral-700);
+    --gray-750: var(--color-neutral-800);
+    --gray-800: var(--color-neutral-800);
+    --gray-850: var(--color-neutral-900);
+    --gray-900: var(--color-neutral-900);
+    --gray-925: var(--color-neutral-950);
+    --gray-950: var(--color-neutral-950);
+    --gray-975: var(--color-black);
+    --gray-1000: var(--color-black);
 
-    /* ChatGPT Accent (Green) */
-    --oai-accent: #10a37f;
-    --oai-accent-hover: #0d8a6b;
-    --oai-accent-light: #d1fae5;
+    /* Semantic Colors - Light Mode */
+    --color-text: var(--gray-750);
+    --color-text-secondary: var(--gray-500);
+    --color-text-tertiary: var(--gray-400);
+    --color-text-emphasis: var(--gray-1000);
+    --color-text-inverse: var(--gray-0);
+    --color-text-disabled: var(--gray-400);
+
+    /* Surface Colors - Light Mode */
+    --color-surface: var(--gray-0);
+    --color-surface-secondary: var(--gray-50);
+    --color-surface-tertiary: var(--gray-75);
+    --color-surface-elevated: var(--gray-0);
+    --color-surface-elevated-secondary: var(--gray-50);
+
+    /* Border Colors - Light Mode */
+    --color-border-subtle: rgba(13, 13, 13, 0.05);
+    --color-border: rgba(13, 13, 13, 0.10);
+    --color-border-strong: rgba(13, 13, 13, 0.15);
+
+    /* Light Mode Base (mapped to gray scale) */
+    --oai-bg-primary: var(--gray-0);
+    --oai-bg-secondary: var(--gray-50);
+    --oai-bg-tertiary: var(--gray-100);
+    --oai-text-primary: var(--gray-1000);
+    --oai-text-secondary: var(--gray-500);
+    --oai-text-tertiary: var(--gray-400);
+    --oai-border: var(--gray-100);
+    --oai-border-light: var(--gray-75);
+    --oai-border-hover: var(--gray-200);
+
+    /* Dark Mode Base (inverted gray scale) */
+    --oai-dark-bg-primary: var(--gray-800);
+    --oai-dark-bg-secondary: var(--gray-700);
+    --oai-dark-bg-tertiary: var(--gray-600);
+    --oai-dark-text-primary: var(--gray-100);
+    --oai-dark-text-secondary: var(--gray-300);
+    --oai-dark-text-tertiary: var(--gray-400);
+    --oai-dark-border: var(--gray-600);
+    --oai-dark-border-light: var(--gray-650);
+    --oai-dark-border-hover: var(--gray-500);
+
+    /* Green Scale - Reference Tailwind green colors */
+    --green-25: var(--color-green-50);
+    --green-50: var(--color-green-50);
+    --green-75: var(--color-green-100);
+    --green-100: var(--color-green-100);
+    --green-200: var(--color-green-200);
+    --green-300: var(--color-green-300);
+    --green-400: var(--color-green-400);
+    --green-500: var(--color-green-500);
+    --green-600: var(--color-green-600);
+    --green-700: var(--color-green-700);
+    --green-800: var(--color-green-800);
+    --green-900: var(--color-green-900);
+
+    /* Blue Scale - Reference Tailwind blue colors */
+    --blue-25: var(--color-blue-50);
+    --blue-50: var(--color-blue-50);
+    --blue-75: var(--color-blue-100);
+    --blue-100: var(--color-blue-100);
+    --blue-200: var(--color-blue-200);
+    --blue-300: var(--color-blue-300);
+    --blue-400: var(--color-blue-400);
+    --blue-500: var(--color-blue-500);
+    --blue-600: var(--color-blue-600);
+    --blue-700: var(--color-blue-700);
+    --blue-800: var(--color-blue-800);
+    --blue-900: var(--color-blue-900);
+
+    /* Red Scale - Reference Tailwind red colors */
+    --red-25: var(--color-red-50);
+    --red-50: var(--color-red-50);
+    --red-75: var(--color-red-100);
+    --red-100: var(--color-red-100);
+    --red-200: var(--color-red-200);
+    --red-300: var(--color-red-300);
+    --red-400: var(--color-red-400);
+    --red-500: var(--color-red-500);
+    --red-600: var(--color-red-600);
+    --red-700: var(--color-red-700);
+    --red-800: var(--color-red-800);
+    --red-900: var(--color-red-900);
+
+    /* Orange Scale - Reference Tailwind orange colors */
+    --orange-25: var(--color-orange-50);
+    --orange-50: var(--color-orange-50);
+    --orange-75: var(--color-orange-100);
+    --orange-100: var(--color-orange-100);
+    --orange-200: var(--color-orange-200);
+    --orange-300: var(--color-orange-300);
+    --orange-400: var(--color-orange-400);
+    --orange-500: var(--color-orange-500);
+    --orange-600: var(--color-orange-600);
+    --orange-700: var(--color-orange-700);
+    --orange-800: var(--color-orange-800);
+    --orange-900: var(--color-orange-900);
+
+    /* Yellow Scale - Reference Tailwind yellow colors */
+    --yellow-25: var(--color-yellow-50);
+    --yellow-50: var(--color-yellow-50);
+    --yellow-75: var(--color-yellow-100);
+    --yellow-100: var(--color-yellow-100);
+    --yellow-200: var(--color-yellow-200);
+    --yellow-300: var(--color-yellow-300);
+    --yellow-400: var(--color-yellow-400);
+    --yellow-500: var(--color-yellow-500);
+    --yellow-600: var(--color-yellow-600);
+    --yellow-700: var(--color-yellow-700);
+    --yellow-800: var(--color-yellow-800);
+    --yellow-900: var(--color-yellow-900);
+
+    /* Purple Scale - Reference Tailwind purple colors */
+    --purple-25: var(--color-purple-50);
+    --purple-50: var(--color-purple-50);
+    --purple-75: var(--color-purple-100);
+    --purple-100: var(--color-purple-100);
+    --purple-200: var(--color-purple-200);
+    --purple-300: var(--color-purple-300);
+    --purple-400: var(--color-purple-400);
+    --purple-500: var(--color-purple-500);
+    --purple-600: var(--color-purple-600);
+    --purple-700: var(--color-purple-700);
+    --purple-800: var(--color-purple-800);
+    --purple-900: var(--color-purple-900);
+
+    /* ChatGPT Accent (Green - using new scale) */
+    --oai-accent: var(--green-400);
+    --oai-accent-hover: var(--green-500);
+    --oai-accent-light: var(--green-50);
+
+    /* Ring Colors */
+    --color-ring: var(--blue-400);
+    --color-ring-danger: var(--red-200);
+
+    /* Shadow Variables */
+    --shadow-hairline-width: 1px;
+    --shadow-hairline-color: rgba(0, 0, 0, 0.08);
+    --shadow-100: 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+    --shadow-200: 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+    --shadow-300: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+    --shadow-400: 0 8px 16px -4px rgba(0, 0, 0, 0.12);
 
     /* Legacy base styles (from original theme.css) */
     --border-radius: var(--radius-sm);

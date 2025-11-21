@@ -15,138 +15,138 @@
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
 
-    /* ==================== Builder Header ==================== */
-    --builder-header-bg: var(--color-gray-950);
-    --builder-header-text: var(--color-neutral-100);
-    --builder-header-border: var(--color-gray-800);
+    /* ==================== Builder Header (Light Mode) ==================== */
+    --builder-header-bg: var(--gray-950);
+    --builder-header-text: var(--gray-100);
+    --builder-header-border: var(--gray-800);
     --builder-header-button-bg: transparent;
     --builder-header-button-hover: rgba(255, 255, 255, 0.1);
     --builder-header-button-pressed: rgba(255, 255, 255, 0.15);
-    --builder-header-text-secondary: var(--color-neutral-400);
-    --builder-header-input-bg: var(--color-gray-800);
-    --builder-header-input-border: var(--color-gray-700);
-    --builder-header-input-focus-border: var(--color-primary-500);
-    --builder-header-badge-bg: var(--color-gray-500);
+    --builder-header-text-secondary: var(--gray-400);
+    --builder-header-input-bg: var(--gray-800);
+    --builder-header-input-border: var(--gray-700);
+    --builder-header-input-focus-border: var(--blue-400);
+    --builder-header-badge-bg: var(--gray-600);
 
-    /* ==================== Builder Sidebar (OpenAI Style) ==================== */
-    --builder-sidebar-bg: var(--oai-bg-primary);
-    --builder-sidebar-border: var(--oai-border);
-    --builder-sidebar-hover-bg: var(--oai-bg-secondary);
-    --builder-sidebar-active-bg: var(--oai-text-primary);
-    --builder-sidebar-active-text: var(--oai-bg-primary);
-    --builder-sidebar-nav-bg: var(--oai-bg-primary);
-    --builder-sidebar-icon: var(--oai-text-secondary);
+    /* ==================== Builder Sidebar (Light Mode) ==================== */
+    --builder-sidebar-bg: var(--gray-0);
+    --builder-sidebar-border: var(--gray-100);
+    --builder-sidebar-hover-bg: var(--gray-50);
+    --builder-sidebar-active-bg: var(--gray-1000);
+    --builder-sidebar-active-text: var(--gray-0);
+    --builder-sidebar-nav-bg: var(--gray-0);
+    --builder-sidebar-icon: var(--gray-500);
 
-    /* ==================== Builder Inspector (OpenAI Style) ==================== */
-    --builder-inspector-bg: var(--oai-bg-primary);
-    --builder-inspector-border: var(--oai-border);
-    --builder-inspector-header-bg: var(--oai-bg-secondary);
-    --builder-inspector-control-bg: var(--oai-bg-secondary);
-    --builder-inspector-control-border: var(--oai-border-light);
-    --builder-inspector-surface: var(--oai-bg-primary);
-    --builder-inspector-text-primary: var(--oai-text-primary);
-    --builder-inspector-text-secondary: var(--oai-text-secondary);
-    --builder-inspector-hover-bg: var(--oai-bg-tertiary);
-    --builder-inspector-focus-ring: var(--oai-accent);
-    --builder-inspector-tab-active: var(--oai-text-primary);
-    --builder-inspector-divider: var(--oai-border-light);
+    /* ==================== Builder Inspector (Light Mode) ==================== */
+    --builder-inspector-bg: var(--gray-0);
+    --builder-inspector-border: var(--gray-100);
+    --builder-inspector-header-bg: var(--gray-50);
+    --builder-inspector-control-bg: var(--gray-50);
+    --builder-inspector-control-border: var(--gray-100);
+    --builder-inspector-surface: var(--gray-0);
+    --builder-inspector-text-primary: var(--gray-1000);
+    --builder-inspector-text-secondary: var(--gray-500);
+    --builder-inspector-hover-bg: var(--gray-75);
+    --builder-inspector-focus-ring: var(--blue-400);
+    --builder-inspector-tab-active: var(--gray-1000);
+    --builder-inspector-divider: var(--gray-100);
 
-    /* Inspector Warning States */
-    --builder-inspector-warning-bg: var(--color-warning-100);
-    --builder-inspector-warning-border: var(--color-warning-300);
-    --builder-inspector-warning-text: var(--color-warning-800);
+    /* Inspector Warning States (Light) */
+    --builder-inspector-warning-bg: var(--orange-50);
+    --builder-inspector-warning-border: var(--orange-200);
+    --builder-inspector-warning-text: var(--orange-700);
 
-    /* Inspector Success States */
-    --builder-inspector-success-bg: var(--color-success-50);
-    --builder-inspector-success-border: var(--color-success-200);
-    --builder-inspector-success-text: var(--color-success-700);
+    /* Inspector Success States (Light) */
+    --builder-inspector-success-bg: var(--green-50);
+    --builder-inspector-success-border: var(--green-200);
+    --builder-inspector-success-text: var(--green-700);
 
-    /* Inspector Error States */
-    --builder-inspector-error-bg: var(--color-error-50);
-    --builder-inspector-error-text: var(--color-error-700);
+    /* Inspector Error States (Light) */
+    --builder-inspector-error-bg: var(--red-50);
+    --builder-inspector-error-text: var(--red-700);
 
-    /* Inspector Danger States */
-    --builder-inspector-danger-bg: var(--color-error-600);
-    --builder-inspector-danger-text: var(--color-white);
-    --builder-inspector-danger-hover: var(--color-error-700);
+    /* Inspector Danger States (Light) */
+    --builder-inspector-danger-bg: var(--red-600);
+    --builder-inspector-danger-text: var(--white);
+    --builder-inspector-danger-hover: var(--red-700);
 
-    /* Inspector Info/Pending States (for data editors) */
-    --builder-inspector-info-bg: var(--color-blue-50);
-    --builder-inspector-info-border: var(--color-blue-200);
-    --builder-inspector-info-text: var(--color-blue-700);
+    /* Inspector Info/Pending States (Light) */
+    --builder-inspector-info-bg: var(--blue-50);
+    --builder-inspector-info-border: var(--blue-200);
+    --builder-inspector-info-text: var(--blue-700);
 
-    /* Inspector Button States (OpenAI Style) */
-    --builder-inspector-button-secondary-bg: var(--oai-bg-secondary);
-    --builder-inspector-button-secondary-text: var(--oai-text-primary);
-    --builder-inspector-button-secondary-hover-bg: var(--oai-bg-tertiary);
-    --builder-inspector-button-secondary-hover-border: var(--oai-border-hover);
-    --builder-inspector-button-disabled-bg: var(--oai-bg-tertiary);
-    --builder-inspector-button-disabled-text: var(--oai-text-tertiary);
+    /* Inspector Button States (Light) */
+    --builder-inspector-button-secondary-bg: var(--gray-50);
+    --builder-inspector-button-secondary-text: var(--gray-1000);
+    --builder-inspector-button-secondary-hover-bg: var(--gray-100);
+    --builder-inspector-button-secondary-hover-border: var(--gray-200);
+    --builder-inspector-button-disabled-bg: var(--gray-75);
+    --builder-inspector-button-disabled-text: var(--gray-400);
 
-    /* Inspector Primary Button Variants (OpenAI Style - Black/White) */
-    --builder-inspector-button-primary-bg: var(--oai-text-primary);
-    --builder-inspector-button-primary-hover: #000000;
+    /* Inspector Primary Button Variants (Light - Dark text on light bg) */
+    --builder-inspector-button-primary-bg: var(--gray-900);
+    --builder-inspector-button-primary-hover: var(--gray-1000);
 
-    /* ==================== Builder Canvas/Workspace (OpenAI Style) ==================== */
-    --builder-canvas-bg: var(--oai-bg-primary);
-    --builder-canvas-border: var(--oai-border-light);
-    --builder-workspace-bg: var(--oai-bg-secondary);
+    /* ==================== Builder Canvas/Workspace (Light Mode) ==================== */
+    --builder-canvas-bg: var(--gray-0);
+    --builder-canvas-border: var(--gray-100);
+    --builder-workspace-bg: var(--gray-50);
     --builder-grid-line-color: rgba(0, 0, 0, 0.04);
-    --builder-indicator-bg: var(--oai-accent);
-    --builder-indicator-text: var(--oai-bg-primary);
-    --builder-indicator-hover-bg: var(--oai-accent-light);
+    --builder-indicator-bg: var(--blue-400);
+    --builder-indicator-text: var(--white);
+    --builder-indicator-hover-bg: var(--blue-500);
 
-    /* Builder Status Indicators (OpenAI Style - using accent green) */
-    --builder-status-info: var(--oai-accent);
-    --builder-status-info-hover: var(--oai-accent-hover);
-    --builder-status-info-pressed: #0b7a5e;
-    --builder-status-success: var(--oai-accent);
-    --builder-status-warning: #f59e0b;
-    --builder-status-error: #ef4444;
-    --builder-status-pending: var(--oai-text-tertiary);
+    /* Builder Status Indicators (Light - using semantic colors) */
+    --builder-status-info: var(--blue-500);
+    --builder-status-info-hover: var(--blue-600);
+    --builder-status-info-pressed: var(--blue-700);
+    --builder-status-success: var(--green-500);
+    --builder-status-warning: var(--orange-500);
+    --builder-status-error: var(--red-500);
+    --builder-status-pending: var(--gray-400);
 
-    /* ==================== Builder Error States (OpenAI Style) ==================== */
-    --builder-error-bg: #fef2f2;
-    --builder-error-border: #fecaca;
-    --builder-error-text: #dc2626;
-    --builder-error-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    /* ==================== Builder Error States (Light) ==================== */
+    --builder-error-bg: var(--red-50);
+    --builder-error-border: var(--red-200);
+    --builder-error-text: var(--red-700);
+    --builder-error-shadow: var(--shadow-200);
 
-    /* ==================== Builder Overlay/Modal (OpenAI Style) ==================== */
+    /* ==================== Builder Overlay/Modal (Light) ==================== */
     --builder-overlay-bg: rgba(0, 0, 0, 0.4);
-    --builder-modal-bg: var(--oai-bg-primary);
+    --builder-modal-bg: var(--gray-0);
     --builder-modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --builder-modal-border: var(--oai-border);
+    --builder-modal-border: var(--gray-100);
 
-    /* ==================== Builder Loading Spinner (OpenAI Style) ==================== */
-    --builder-spinner-track: var(--oai-bg-tertiary);
-    --builder-spinner-fill: var(--oai-accent);
+    /* ==================== Builder Loading Spinner (Light) ==================== */
+    --builder-spinner-track: var(--gray-100);
+    --builder-spinner-fill: var(--blue-400);
 
-    /* ==================== Builder Button/Controls (OpenAI Style) ==================== */
-    --builder-button-bg: var(--oai-bg-primary);
-    --builder-button-text: var(--oai-text-primary);
-    --builder-button-border: var(--oai-border);
-    --builder-button-hover-bg: var(--oai-bg-secondary);
-    --builder-button-active-bg: var(--oai-bg-tertiary);
-    --builder-button-pressed-bg: var(--oai-bg-tertiary);
+    /* ==================== Builder Button/Controls (Light) ==================== */
+    --builder-button-bg: var(--gray-0);
+    --builder-button-text: var(--gray-1000);
+    --builder-button-border: var(--gray-150);
+    --builder-button-hover-bg: var(--gray-50);
+    --builder-button-active-bg: var(--gray-100);
+    --builder-button-pressed-bg: var(--gray-100);
 
-    /* Builder Primary Action (OpenAI Style - Black/White) */
-    --builder-button-primary-bg: var(--oai-text-primary);
-    --builder-button-primary-text: var(--oai-bg-primary);
-    --builder-button-primary-hover: #000000;
-    --builder-button-primary-disabled: var(--oai-text-tertiary);
+    /* Builder Primary Action (Light - Dark button) */
+    --builder-button-primary-bg: var(--gray-900);
+    --builder-button-primary-text: var(--gray-0);
+    --builder-button-primary-hover: var(--gray-1000);
+    --builder-button-primary-disabled: var(--gray-400);
 
-    /* Builder Save Button (OpenAI accent green) */
-    --builder-save-pending-bg: var(--oai-accent);
+    /* Builder Save Button (using primary blue) */
+    --builder-save-pending-bg: var(--blue-500);
     --builder-save-pending-pulse: pulse 2s infinite;
 
-    /* ==================== Builder Focus/Selection (OpenAI Style) ==================== */
-    --builder-focus-ring: var(--oai-accent);
-    --builder-selection-bg: var(--oai-accent-light);
-    --builder-selection-border: var(--oai-accent);
+    /* ==================== Builder Focus/Selection (Light) ==================== */
+    --builder-focus-ring: var(--blue-400);
+    --builder-selection-bg: var(--blue-50);
+    --builder-selection-border: var(--blue-400);
 
-    /* ==================== Builder Tree/Layer View (OpenAI Style) ==================== */
-    --builder-tree-item-hover: var(--oai-bg-secondary);
-    --builder-tree-item-selected: var(--oai-bg-tertiary);
+    /* ==================== Builder Tree/Layer View (Light) ==================== */
+    --builder-tree-item-hover: var(--gray-50);
+    --builder-tree-item-selected: var(--gray-100);
     --builder-tree-indent: var(--spacing-lg);
 
   }
@@ -164,205 +164,222 @@
   .footer,
   body:not([data-preview="true"]) .react-aria-Popover,
   body:not([data-preview="true"]) .react-aria-Modal {
-    /* ===== Core Semantic Colors (OpenAI Light Mode) ===== */
-    --background-color: var(--oai-bg-primary);
-    --text-color: var(--oai-text-primary);
-    --text-color-base: var(--oai-text-primary);
-    --text-color-hover: #000000;
-    --text-color-disabled: var(--oai-text-tertiary);
-    --text-color-placeholder: var(--oai-text-secondary);
-    --border-color: var(--oai-border);
-    --border-color-hover: var(--oai-border-hover);
-    --border-color-pressed: #b3b3b3;
-    --border-color-disabled: var(--oai-border-light);
+    /* ===== Core Semantic Colors (Light Mode) ===== */
+    --background-color: var(--gray-0);
+    --text-color: var(--gray-750);
+    --text-color-base: var(--gray-750);
+    --text-color-hover: var(--gray-1000);
+    --text-color-disabled: var(--gray-400);
+    --text-color-placeholder: var(--gray-500);
+    --border-color: var(--gray-100);
+    --border-color-hover: var(--gray-200);
+    --border-color-pressed: var(--gray-250);
+    --border-color-disabled: var(--gray-75);
 
-    /* ===== Button & Field Colors (OpenAI Style) ===== */
-    --button-background: var(--oai-bg-secondary);
-    --button-background-pressed: var(--oai-bg-tertiary);
-    --field-background: var(--oai-bg-primary);
-    --field-text-color: var(--oai-text-primary);
-    --overlay-background: var(--oai-bg-primary);
+    /* ===== Button & Field Colors ===== */
+    --button-background: var(--gray-50);
+    --button-background-hover: var(--gray-75);
+    --button-background-pressed: var(--gray-100);
+    --field-background: var(--gray-0);
+    --field-text-color: var(--gray-1000);
+    --overlay-background: var(--gray-0);
 
-    /* ===== Highlight Colors (OpenAI Accent Green) ===== */
-    --focus-ring-color: var(--oai-accent);
-    --highlight-background: var(--oai-text-primary);
-    --highlight-background-pressed: #000000;
-    --highlight-background-invalid: #ef4444;
-    --highlight-foreground: var(--oai-bg-primary);
-    --highlight-foreground-pressed: var(--oai-bg-secondary);
-    --highlight-overlay: rgba(16, 163, 127, 0.15);
+    /* ===== Highlight Colors (Primary Blue) ===== */
+    --focus-ring-color: var(--blue-400);
+    --highlight-background: var(--gray-900);
+    --highlight-background-hover: var(--gray-700);
+    --highlight-background-pressed: var(--gray-600);
+    --highlight-background-invalid: var(--red-500);
+    --highlight-foreground: var(--gray-0);
+    --highlight-foreground-pressed: var(--gray-50);
+    --highlight-overlay: rgba(2, 133, 255, 0.15);
 
-    /* ===== M3 Primary Role (OpenAI Accent Green) ===== */
-    --primary: var(--oai-accent);
-    --primary-hover: var(--oai-accent-hover);
-    --primary-pressed: #0b7a5e;
-    --on-primary: var(--oai-bg-primary);
-    --primary-container: var(--oai-accent-light);
-    --on-primary-container: #064e3b;
+    /* ===== M3 Primary Role (Blue) ===== */
+    --primary: var(--blue-400);
+    --primary-hover: var(--blue-500);
+    --primary-pressed: var(--blue-600);
+    --on-primary: var(--white);
+    --primary-container: var(--blue-50);
+    --on-primary-container: var(--blue-700);
 
-    /* ===== M3 Secondary Role (OpenAI Black/White) ===== */
-    --secondary: var(--oai-text-secondary);
-    --secondary-hover: var(--oai-text-primary);
-    --secondary-pressed: #000000;
-    --on-secondary: var(--oai-bg-primary);
-    --secondary-container: var(--oai-bg-secondary);
-    --on-secondary-container: var(--oai-text-primary);
+    /* ===== M3 Secondary Role ===== */
+    --secondary: var(--gray-500);
+    --secondary-hover: var(--gray-600);
+    --secondary-pressed: var(--gray-700);
+    --on-secondary: var(--white);
+    --secondary-container: var(--gray-100);
+    --on-secondary-container: var(--gray-900);
 
     /* ===== M3 Error Role ===== */
-    --error: #ef4444;
-    --on-error: var(--oai-bg-primary);
-    --error-container: #fef2f2;
-    --on-error-container: #7f1d1d;
+    --error: var(--red-500);
+    --on-error: var(--white);
+    --error-container: var(--red-50);
+    --on-error-container: var(--red-700);
 
-    /* ===== M3 Surface Role (OpenAI Style) ===== */
-    --surface: var(--oai-bg-primary);
-    --on-surface: var(--oai-text-primary);
-    --surface-variant: var(--oai-bg-secondary);
-    --on-surface-variant: var(--oai-text-secondary);
-    --surface-container-lowest: var(--oai-bg-primary);
-    --surface-container-low: var(--oai-bg-secondary);
-    --surface-container: var(--oai-bg-secondary);
-    --surface-container-high: var(--oai-bg-tertiary);
-    --surface-container-highest: #d9d9e3;
+    /* ===== M3 Surface Role ===== */
+    --surface: var(--gray-0);
+    --on-surface: var(--gray-1000);
+    --surface-variant: var(--gray-50);
+    --on-surface-variant: var(--gray-500);
+    --surface-container-lowest: var(--gray-0);
+    --surface-container-low: var(--gray-25);
+    --surface-container: var(--gray-50);
+    --surface-container-high: var(--gray-75);
+    --surface-container-highest: var(--gray-100);
 
-    /* ===== M3 Outline Role (OpenAI Border) ===== */
-    --outline: var(--oai-text-tertiary);
-    --outline-variant: var(--oai-border);
+    /* ===== M3 Outline Role ===== */
+    --outline: var(--gray-400);
+    --outline-variant: var(--gray-150);
 
     /* ===== Invalid/Error States ===== */
-    --invalid-color: #ef4444;
-    --invalid-color-pressed: #dc2626;
+    --invalid-color: var(--red-500);
+    --invalid-color-pressed: var(--red-600);
+
+    /* ===== Info States (Blue) ===== */
+    --info: var(--blue-500);
+    --info-container: var(--blue-50);
+    --on-info-container: var(--blue-700);
+
+    /* ===== Warning States (Orange) ===== */
+    --warning: var(--orange-500);
+    --warning-container: var(--orange-50);
+    --on-warning-container: var(--orange-700);
+
+    /* ===== Success States (Green) ===== */
+    --success: var(--green-500);
+    --success-container: var(--green-50);
+    --on-success-container: var(--green-700);
   }
 
-  /* ==================== Builder Dark Mode (OpenAI Style) ==================== */
+  /* ==================== Builder Dark Mode ==================== */
   /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] on :root */
   [data-builder-theme="dark"] {
-    /* Header (OpenAI Dark) */
-    --builder-header-bg: var(--oai-dark-bg-primary);
-    --builder-header-text: var(--oai-dark-text-primary);
-    --builder-header-border: var(--oai-dark-border-light);
-    --builder-header-text-secondary: var(--oai-dark-text-secondary);
-    --builder-header-input-bg: var(--oai-dark-bg-secondary);
-    --builder-header-input-border: var(--oai-dark-border);
-    --builder-header-input-focus-border: var(--oai-accent);
-    --builder-header-badge-bg: var(--oai-dark-bg-tertiary);
+    /* Header (Dark) - using inverted gray scale */
+    --builder-header-bg: var(--gray-900);
+    --builder-header-text: var(--gray-100);
+    --builder-header-border: var(--gray-700);
+    --builder-header-text-secondary: var(--gray-400);
+    --builder-header-input-bg: var(--gray-800);
+    --builder-header-input-border: var(--gray-700);
+    --builder-header-input-focus-border: var(--blue-400);
+    --builder-header-badge-bg: var(--gray-700);
 
-    /* Sidebar (OpenAI Dark) */
-    --builder-sidebar-bg: var(--oai-dark-bg-primary);
-    --builder-sidebar-border: var(--oai-dark-border-light);
-    --builder-sidebar-hover-bg: var(--oai-dark-bg-secondary);
-    --builder-sidebar-active-bg: var(--oai-dark-text-primary);
-    --builder-sidebar-active-text: var(--oai-dark-bg-primary);
-    --builder-sidebar-nav-bg: var(--oai-dark-bg-primary);
-    --builder-sidebar-icon: var(--oai-dark-text-secondary);
+    /* Sidebar (Dark) */
+    --builder-sidebar-bg: var(--gray-900);
+    --builder-sidebar-border: var(--gray-700);
+    --builder-sidebar-hover-bg: var(--gray-800);
+    --builder-sidebar-active-bg: var(--gray-100);
+    --builder-sidebar-active-text: var(--gray-900);
+    --builder-sidebar-nav-bg: var(--gray-900);
+    --builder-sidebar-icon: var(--gray-400);
 
-    /* Inspector (OpenAI Dark) */
-    --builder-inspector-bg: var(--oai-dark-bg-primary);
-    --builder-inspector-border: var(--oai-dark-border-light);
-    --builder-inspector-header-bg: var(--oai-dark-bg-secondary);
-    --builder-inspector-control-bg: var(--oai-dark-bg-secondary);
-    --builder-inspector-control-border: var(--oai-dark-border);
-    --builder-inspector-surface: var(--oai-dark-bg-primary);
-    --builder-inspector-text-primary: var(--oai-dark-text-primary);
-    --builder-inspector-text-secondary: var(--oai-dark-text-secondary);
-    --builder-inspector-hover-bg: var(--oai-dark-bg-tertiary);
-    --builder-inspector-focus-ring: var(--oai-accent);
-    --builder-inspector-tab-active: var(--oai-dark-text-primary);
-    --builder-inspector-divider: var(--oai-dark-border-light);
+    /* Inspector (Dark) */
+    --builder-inspector-bg: var(--gray-900);
+    --builder-inspector-border: var(--gray-700);
+    --builder-inspector-header-bg: var(--gray-850);
+    --builder-inspector-control-bg: var(--gray-850);
+    --builder-inspector-control-border: var(--gray-700);
+    --builder-inspector-surface: var(--gray-900);
+    --builder-inspector-text-primary: var(--gray-100);
+    --builder-inspector-text-secondary: var(--gray-400);
+    --builder-inspector-hover-bg: var(--gray-800);
+    --builder-inspector-focus-ring: var(--blue-400);
+    --builder-inspector-tab-active: var(--gray-100);
+    --builder-inspector-divider: var(--gray-700);
 
     /* Warning States (Dark) */
-    --builder-inspector-warning-bg: rgba(245, 158, 11, 0.1);
-    --builder-inspector-warning-border: rgba(245, 158, 11, 0.3);
-    --builder-inspector-warning-text: #fbbf24;
+    --builder-inspector-warning-bg: rgba(251, 106, 34, 0.15);
+    --builder-inspector-warning-border: rgba(251, 106, 34, 0.3);
+    --builder-inspector-warning-text: var(--orange-300);
 
     /* Success States (Dark) */
-    --builder-inspector-success-bg: rgba(16, 163, 127, 0.1);
-    --builder-inspector-success-border: rgba(16, 163, 127, 0.3);
-    --builder-inspector-success-text: #34d399;
+    --builder-inspector-success-bg: rgba(4, 184, 76, 0.15);
+    --builder-inspector-success-border: rgba(4, 184, 76, 0.3);
+    --builder-inspector-success-text: var(--green-200);
 
     /* Error States (Dark) */
-    --builder-inspector-error-bg: rgba(239, 68, 68, 0.1);
-    --builder-inspector-error-text: #f87171;
+    --builder-inspector-error-bg: rgba(250, 66, 62, 0.15);
+    --builder-inspector-error-text: var(--red-300);
 
     /* Danger States (Dark) */
-    --builder-inspector-danger-bg: #dc2626;
-    --builder-inspector-danger-text: var(--oai-dark-text-primary);
-    --builder-inspector-danger-hover: #b91c1c;
+    --builder-inspector-danger-bg: var(--red-600);
+    --builder-inspector-danger-text: var(--white);
+    --builder-inspector-danger-hover: var(--red-700);
 
     /* Info/Pending States (Dark) */
-    --builder-inspector-info-bg: rgba(16, 163, 127, 0.1);
-    --builder-inspector-info-border: rgba(16, 163, 127, 0.3);
-    --builder-inspector-info-text: #34d399;
+    --builder-inspector-info-bg: rgba(2, 133, 255, 0.15);
+    --builder-inspector-info-border: rgba(2, 133, 255, 0.3);
+    --builder-inspector-info-text: var(--blue-200);
 
-    /* Button States (OpenAI Dark) */
-    --builder-inspector-button-secondary-bg: var(--oai-dark-bg-secondary);
-    --builder-inspector-button-secondary-text: var(--oai-dark-text-primary);
-    --builder-inspector-button-secondary-hover-bg: var(--oai-dark-bg-tertiary);
-    --builder-inspector-button-secondary-hover-border: var(--oai-dark-border-hover);
-    --builder-inspector-button-disabled-bg: var(--oai-dark-bg-secondary);
-    --builder-inspector-button-disabled-text: var(--oai-dark-text-tertiary);
+    /* Button States (Dark) */
+    --builder-inspector-button-secondary-bg: var(--gray-800);
+    --builder-inspector-button-secondary-text: var(--gray-100);
+    --builder-inspector-button-secondary-hover-bg: var(--gray-700);
+    --builder-inspector-button-secondary-hover-border: var(--gray-600);
+    --builder-inspector-button-disabled-bg: var(--gray-850);
+    --builder-inspector-button-disabled-text: var(--gray-500);
 
-    /* Primary Button Variants (OpenAI Dark - White/Black inverted) */
-    --builder-inspector-button-primary-bg: var(--oai-dark-text-primary);
-    --builder-inspector-button-primary-hover: #ffffff;
+    /* Primary Button Variants (Dark - inverted) */
+    --builder-inspector-button-primary-bg: var(--gray-100);
+    --builder-inspector-button-primary-hover: var(--white);
 
-    /* Canvas (OpenAI Dark) */
-    --builder-canvas-bg: var(--oai-dark-bg-primary);
-    --builder-canvas-border: var(--oai-dark-border-light);
-    --builder-workspace-bg: #171717;
+    /* Canvas (Dark) */
+    --builder-canvas-bg: var(--gray-900);
+    --builder-canvas-border: var(--gray-700);
+    --builder-workspace-bg: var(--gray-950);
     --builder-grid-line-color: rgba(255, 255, 255, 0.06);
-    --builder-indicator-bg: var(--oai-accent);
-    --builder-indicator-text: var(--oai-dark-bg-primary);
+    --builder-indicator-bg: var(--blue-400);
+    --builder-indicator-text: var(--white);
 
     /* Status Indicators (Dark) */
-    --builder-status-info: var(--oai-accent);
-    --builder-status-success: var(--oai-accent);
-    --builder-status-warning: #fbbf24;
-    --builder-status-error: #f87171;
-    --builder-status-pending: var(--oai-dark-text-tertiary);
+    --builder-status-info: var(--blue-400);
+    --builder-status-success: var(--green-400);
+    --builder-status-warning: var(--orange-400);
+    --builder-status-error: var(--red-400);
+    --builder-status-pending: var(--gray-500);
 
     /* Error States (Dark) */
-    --builder-error-bg: rgba(239, 68, 68, 0.1);
-    --builder-error-border: rgba(239, 68, 68, 0.3);
-    --builder-error-text: #f87171;
+    --builder-error-bg: rgba(250, 66, 62, 0.15);
+    --builder-error-border: rgba(250, 66, 62, 0.3);
+    --builder-error-text: var(--red-300);
 
-    /* Modal (OpenAI Dark) */
-    --builder-modal-bg: var(--oai-dark-bg-secondary);
+    /* Modal (Dark) */
+    --builder-modal-bg: var(--gray-850);
     --builder-modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    --builder-modal-border: var(--oai-dark-border);
+    --builder-modal-border: var(--gray-700);
 
     /* Spinner (Dark) */
-    --builder-spinner-track: var(--oai-dark-bg-tertiary);
-    --builder-spinner-fill: var(--oai-accent);
+    --builder-spinner-track: var(--gray-700);
+    --builder-spinner-fill: var(--blue-400);
 
-    /* Buttons (OpenAI Dark) */
-    --builder-button-bg: var(--oai-dark-bg-secondary);
-    --builder-button-text: var(--oai-dark-text-primary);
-    --builder-button-border: var(--oai-dark-border);
-    --builder-button-hover-bg: var(--oai-dark-bg-tertiary);
-    --builder-button-active-bg: #525252;
-    --builder-button-pressed-bg: var(--oai-dark-bg-tertiary);
+    /* Buttons (Dark) */
+    --builder-button-bg: var(--gray-800);
+    --builder-button-text: var(--gray-100);
+    --builder-button-border: var(--gray-700);
+    --builder-button-hover-bg: var(--gray-700);
+    --builder-button-active-bg: var(--gray-600);
+    --builder-button-pressed-bg: var(--gray-650);
 
-    /* Primary Action (Dark - White/Black inverted) */
-    --builder-button-primary-bg: var(--oai-dark-text-primary);
-    --builder-button-primary-text: var(--oai-dark-bg-primary);
-    --builder-button-primary-hover: #ffffff;
-    --builder-button-primary-disabled: var(--oai-dark-text-tertiary);
+    /* Primary Action (Dark - inverted) */
+    --builder-button-primary-bg: var(--gray-100);
+    --builder-button-primary-text: var(--gray-900);
+    --builder-button-primary-hover: var(--white);
+    --builder-button-primary-disabled: var(--gray-500);
 
     /* Save Button (Dark) */
-    --builder-save-pending-bg: var(--oai-accent);
+    --builder-save-pending-bg: var(--green-500);
 
-    /* Focus/Selection (OpenAI Dark) */
-    --builder-focus-ring: var(--oai-accent);
-    --builder-selection-bg: rgba(16, 163, 127, 0.2);
-    --builder-selection-border: var(--oai-accent);
+    /* Focus/Selection (Dark) */
+    --builder-focus-ring: var(--blue-400);
+    --builder-selection-bg: rgba(2, 133, 255, 0.2);
+    --builder-selection-border: var(--blue-400);
 
-    /* Tree View (OpenAI Dark) */
-    --builder-tree-item-hover: var(--oai-dark-bg-secondary);
-    --builder-tree-item-selected: var(--oai-dark-bg-tertiary);
+    /* Tree View (Dark) */
+    --builder-tree-item-hover: var(--gray-800);
+    --builder-tree-item-selected: var(--gray-750);
   }
 
-  /* ==================== Builder Dark Mode - Component Overrides (OpenAI Style) ==================== */
+  /* ==================== Builder Dark Mode - Component Overrides ==================== */
   /* Builder UI 영역의 React Aria 컴포넌트가 Dark Mode에서 Builder 테마를 따르도록 오버라이드 */
   [data-builder-theme="dark"] .inspector,
   [data-builder-theme="dark"] .sidebar,
@@ -370,74 +387,91 @@
   [data-builder-theme="dark"] .footer,
   [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
   [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
-    /* ===== Core Semantic Colors (OpenAI Dark Mode) ===== */
-    --background-color: var(--oai-dark-bg-primary);
-    --text-color: var(--oai-dark-text-primary);
-    --text-color-base: var(--oai-dark-text-primary);
-    --text-color-hover: #ffffff;
-    --text-color-disabled: var(--oai-dark-text-tertiary);
-    --text-color-placeholder: var(--oai-dark-text-secondary);
-    --border-color: var(--oai-dark-border);
-    --border-color-hover: var(--oai-dark-border-hover);
-    --border-color-pressed: #6d6d6d;
-    --border-color-disabled: var(--oai-dark-border-light);
+    /* ===== Core Semantic Colors (Dark Mode) ===== */
+    --background-color: var(--gray-900);
+    --text-color: var(--gray-100);
+    --text-color-base: var(--gray-100);
+    --text-color-hover: var(--white);
+    --text-color-disabled: var(--gray-500);
+    --text-color-placeholder: var(--gray-400);
+    --border-color: var(--gray-700);
+    --border-color-hover: var(--gray-600);
+    --border-color-pressed: var(--gray-550);
+    --border-color-disabled: var(--gray-750);
 
-    /* ===== Button & Field Colors (OpenAI Dark) ===== */
-    --button-background: var(--oai-dark-bg-secondary);
-    --button-background-pressed: var(--oai-dark-bg-tertiary);
-    --field-background: var(--oai-dark-bg-secondary);
-    --field-text-color: var(--oai-dark-text-primary);
-    --overlay-background: var(--oai-dark-bg-secondary);
+    /* ===== Button & Field Colors (Dark) ===== */
+    --button-background: var(--gray-800);
+    --button-background-hover: var(--gray-700);
+    --button-background-pressed: var(--gray-650);
+    --field-background: var(--gray-850);
+    --field-text-color: var(--gray-100);
+    --overlay-background: var(--gray-850);
 
-    /* ===== Highlight Colors (OpenAI Accent Green Dark) ===== */
-    --focus-ring-color: var(--oai-accent);
-    --highlight-background: var(--oai-dark-text-primary);
-    --highlight-background-pressed: #ffffff;
-    --highlight-background-invalid: #f87171;
-    --highlight-foreground: var(--oai-dark-bg-primary);
-    --highlight-foreground-pressed: var(--oai-dark-bg-secondary);
-    --highlight-overlay: rgba(16, 163, 127, 0.2);
+    /* ===== Highlight Colors (Dark) ===== */
+    --focus-ring-color: var(--blue-400);
+    --highlight-background: var(--gray-100);
+    --highlight-background-hover: var(--gray-50);
+    --highlight-background-pressed: var(--white);
+    --highlight-background-invalid: var(--red-400);
+    --highlight-foreground: var(--gray-900);
+    --highlight-foreground-pressed: var(--gray-850);
+    --highlight-overlay: rgba(2, 133, 255, 0.2);
 
-    /* ===== M3 Primary Role (OpenAI Accent Green Dark) ===== */
-    --primary: var(--oai-accent);
-    --primary-hover: #34d399;
-    --primary-pressed: #6ee7b7;
-    --on-primary: var(--oai-dark-bg-primary);
-    --primary-container: rgba(16, 163, 127, 0.2);
-    --on-primary-container: #6ee7b7;
+    /* ===== M3 Primary Role (Blue - Dark) ===== */
+    --primary: var(--blue-400);
+    --primary-hover: var(--blue-300);
+    --primary-pressed: var(--blue-200);
+    --on-primary: var(--gray-900);
+    --primary-container: rgba(2, 133, 255, 0.2);
+    --on-primary-container: var(--blue-200);
 
-    /* ===== M3 Secondary Role (OpenAI Dark) ===== */
-    --secondary: var(--oai-dark-text-secondary);
-    --secondary-hover: var(--oai-dark-text-primary);
-    --secondary-pressed: #ffffff;
-    --on-secondary: var(--oai-dark-bg-primary);
-    --secondary-container: var(--oai-dark-bg-secondary);
-    --on-secondary-container: var(--oai-dark-text-primary);
+    /* ===== M3 Secondary Role (Dark) ===== */
+    --secondary: var(--gray-400);
+    --secondary-hover: var(--gray-300);
+    --secondary-pressed: var(--gray-200);
+    --on-secondary: var(--gray-900);
+    --secondary-container: var(--gray-800);
+    --on-secondary-container: var(--gray-100);
 
     /* ===== M3 Error Role (Dark) ===== */
-    --error: #f87171;
-    --on-error: var(--oai-dark-bg-primary);
-    --error-container: rgba(239, 68, 68, 0.2);
-    --on-error-container: #fecaca;
+    --error: var(--red-400);
+    --on-error: var(--gray-900);
+    --error-container: rgba(250, 66, 62, 0.2);
+    --on-error-container: var(--red-200);
 
-    /* ===== M3 Surface Role (OpenAI Dark) ===== */
-    --surface: var(--oai-dark-bg-primary);
-    --on-surface: var(--oai-dark-text-primary);
-    --surface-variant: var(--oai-dark-bg-secondary);
-    --on-surface-variant: var(--oai-dark-text-secondary);
-    --surface-container-lowest: #171717;
-    --surface-container-low: var(--oai-dark-bg-primary);
-    --surface-container: var(--oai-dark-bg-secondary);
-    --surface-container-high: var(--oai-dark-bg-tertiary);
-    --surface-container-highest: #525252;
+    /* ===== M3 Surface Role (Dark) ===== */
+    --surface: var(--gray-900);
+    --on-surface: var(--gray-100);
+    --surface-variant: var(--gray-850);
+    --on-surface-variant: var(--gray-400);
+    --surface-container-lowest: var(--gray-950);
+    --surface-container-low: var(--gray-900);
+    --surface-container: var(--gray-850);
+    --surface-container-high: var(--gray-800);
+    --surface-container-highest: var(--gray-750);
 
-    /* ===== M3 Outline Role (OpenAI Dark Border) ===== */
-    --outline: var(--oai-dark-text-tertiary);
-    --outline-variant: var(--oai-dark-border);
+    /* ===== M3 Outline Role (Dark) ===== */
+    --outline: var(--gray-500);
+    --outline-variant: var(--gray-700);
 
     /* ===== Invalid/Error States (Dark) ===== */
-    --invalid-color: #f87171;
-    --invalid-color-pressed: #fca5a5;
+    --invalid-color: var(--red-400);
+    --invalid-color-pressed: var(--red-300);
+
+    /* ===== Info States (Dark - Blue) ===== */
+    --info: var(--blue-400);
+    --info-container: rgba(2, 133, 255, 0.15);
+    --on-info-container: var(--blue-200);
+
+    /* ===== Warning States (Dark - Orange) ===== */
+    --warning: var(--orange-400);
+    --warning-container: rgba(251, 106, 34, 0.15);
+    --on-warning-container: var(--orange-200);
+
+    /* ===== Success States (Dark - Green) ===== */
+    --success: var(--green-400);
+    --success-container: rgba(4, 184, 76, 0.15);
+    --on-success-container: var(--green-200);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */
