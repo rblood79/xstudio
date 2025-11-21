@@ -166,6 +166,7 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
 
     /* 비활성 패널: translateX(시각적 이동) + margin-left(레이아웃 공간 제거) */
@@ -184,6 +185,7 @@
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
     }
 
@@ -192,6 +194,7 @@
       position: relative;
       transform: translateX(0);
       margin-left: 0; /* 레이아웃 공간 정상 사용 */
+      margin-right: 0;
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
@@ -201,6 +204,7 @@
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
     }
 
