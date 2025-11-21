@@ -16,7 +16,6 @@
 }
 
 .settings-panel {
-  background: var(--color-surface);
   max-width: 600px;
   overflow: hidden;
   display: flex;

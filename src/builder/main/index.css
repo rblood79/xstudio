@@ -18,6 +18,7 @@
       nav.header {
         grid-area: header;
         background-color: var(--builder-header-bg);
+        border-bottom: 1px solid var(--builder-header-border);
         color: var(--builder-header-text);
         display: flex;
         flex-direction: row;
@@ -267,8 +268,8 @@
 
             .publish {
               background: linear-gradient(
-                    var(--builder-indicator-text),
-                    var(--builder-header-text)
+                    var(--builder-header-bg),
+                    var(--builder-header-border)
                   )
                   padding-box,
                 linear-gradient(
@@ -280,10 +281,10 @@
                   )
                   border-box;
               border: 2px solid transparent;
-              color: var(--builder-header-bg);
-              line-height: var(--text-lg--line-height);
-              font-size: 12px;
-              padding: calc(var(--spacing) * 1.17) var(--spacing-lg);
+              color: var(--builder-header-text);
+              line-height: var(--text-sm--line-height);
+              font-size: var(--text-sm);
+              padding: var(--spacing-xs) var(--spacing-lg);
             }
           }
         }
@@ -303,7 +304,7 @@
           align-items: center;
           flex-grow: 1;
           position: relative;
-          background-color: var(--builder-header-text);
+          background-color: var(--builder-workspace-bg);
 
           .workspace {
             padding: 0;
@@ -361,9 +362,7 @@
 
       aside {
         z-index: 2;
-        background-color: var(--builder-indicator-text);
-        
-       
+
         &.sidebar {
           grid-area: sidebar;
           height: 100%;
@@ -387,8 +386,6 @@
             padding: var(--spacing-sm);
           }
 
-          
-
           .panel-title {
             padding-left: var(--spacing-sm);
             border-bottom: 0px;
@@ -400,11 +397,11 @@
             .react-aria-Input {
               border-width: 0px;
               border-radius: 0px;
-              outline:none;
+              outline: none;
             }
           }
         }
-        
+
         .header-actions {
           display: flex;
           flex-direction: row;

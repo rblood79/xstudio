@@ -142,6 +142,7 @@
 
   /* Panel Content */
   .panel-content {
+    background-color: var(--builder-sidebar-bg);
     display: flex;
     flex-direction: row;
     height: 100%;
@@ -151,6 +152,7 @@
 
   /* Panel Wrapper - 모든 패널을 항상 렌더링하되 CSS로 표시/숨김 제어 */
   .panel-wrapper {
+    background-color: inherit;
     /* ✅ 동적 넓이: CSS 변수로 패널마다 다른 넓이 지원 */
     width: var(--panel-width, 233px);
     min-width: var(--panel-width, 233px);
@@ -166,8 +168,7 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
+      margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
 
     /* 비활성 패널: translateX(시각적 이동) + margin-left(레이아웃 공간 제거) */
     /* ✅ 두 가지 모두 필요:
@@ -176,7 +177,9 @@
     &[data-active="false"] {
       position: relative;
       transform: translateX(-100%);
-      margin-left: calc(0px - var(--panel-width, 233px)); /* 레이아웃 공간 제거 */
+      margin-left: calc(
+        0px - var(--panel-width, 233px)
+      ); /* 레이아웃 공간 제거 */
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -185,8 +188,7 @@
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
+        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
     }
 
     /* 활성 패널: 레이아웃에 참여하여 나란히 표시 */
@@ -204,8 +206,7 @@
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
+        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
     }
 
     /* 패널 컴포넌트가 전체 높이를 차지하도록 */

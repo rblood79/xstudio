@@ -10,12 +10,7 @@ import {
   Smartphone,
   Asterisk,
 } from "lucide-react";
-import {
-  RadioGroup,
-  Radio,
-  Key,
-  Label,
-} from "react-aria-components";
+import { RadioGroup, Radio, Key, Label } from "react-aria-components";
 import { iconProps } from "../../utils/ui/uiConstants";
 
 export interface Breakpoint {
@@ -66,11 +61,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     <nav className="header">
       <div className="header_contents header_left">
         <button aria-label="Menu">
-          <Menu
-            color={"#fff"}
-            strokeWidth={iconProps.stroke}
-            size={iconProps.size}
-          />
+          <Menu strokeWidth={iconProps.stroke} size={iconProps.size} />
         </button>
         <div className="project-info">
           {projectName && <span className="project-name">{projectName}</span>}

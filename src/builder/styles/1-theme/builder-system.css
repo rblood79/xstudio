@@ -16,21 +16,21 @@
     --inspector-label-width: 27px;
 
     /* ==================== Builder Header (Light Mode) ==================== */
-    --builder-header-bg: var(--gray-950);
-    --builder-header-text: var(--gray-100);
-    --builder-header-border: var(--gray-800);
+    --builder-header-bg: var(--gray-100);
+    --builder-header-text: var(--gray-700);
+    --builder-header-border: var(--gray-200);
     --builder-header-button-bg: transparent;
     --builder-header-button-hover: rgba(255, 255, 255, 0.1);
     --builder-header-button-pressed: rgba(255, 255, 255, 0.15);
     --builder-header-text-secondary: var(--gray-400);
-    --builder-header-input-bg: var(--gray-800);
+    --builder-header-input-bg: var(--gray-100);
     --builder-header-input-border: var(--gray-700);
     --builder-header-input-focus-border: var(--blue-400);
-    --builder-header-badge-bg: var(--gray-600);
+    --builder-header-badge-bg: var(--gray-200);
 
     /* ==================== Builder Sidebar (Light Mode) ==================== */
-    --builder-sidebar-bg: var(--gray-0);
-    --builder-sidebar-border: var(--gray-100);
+    --builder-sidebar-bg: var(--gray-50);
+    --builder-sidebar-border: var(--gray-150);
     --builder-sidebar-hover-bg: var(--gray-50);
     --builder-sidebar-active-bg: var(--gray-1000);
     --builder-sidebar-active-text: var(--gray-0);
@@ -49,7 +49,7 @@
     --builder-inspector-hover-bg: var(--gray-75);
     --builder-inspector-focus-ring: var(--blue-400);
     --builder-inspector-tab-active: var(--gray-1000);
-    --builder-inspector-divider: var(--gray-100);
+    --builder-inspector-divider: var(--gray-400);
 
     /* Inspector Warning States (Light) */
     --builder-inspector-warning-bg: var(--orange-50);
@@ -148,7 +148,6 @@
     --builder-tree-item-hover: var(--gray-50);
     --builder-tree-item-selected: var(--gray-100);
     --builder-tree-indent: var(--spacing-lg);
-
   }
 
   /* ==================== Builder UI Scope Override ==================== */
@@ -385,8 +384,12 @@
   [data-builder-theme="dark"] .sidebar,
   [data-builder-theme="dark"] .builder-header,
   [data-builder-theme="dark"] .footer,
-  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
-  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
+  [data-builder-theme="dark"]
+    body:not([data-preview="true"])
+    .react-aria-Popover,
+  [data-builder-theme="dark"]
+    body:not([data-preview="true"])
+    .react-aria-Modal {
     /* ===== Core Semantic Colors (Dark Mode) ===== */
     --background-color: var(--gray-900);
     --text-color: var(--gray-100);
