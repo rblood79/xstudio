@@ -95,6 +95,7 @@ export interface DatabaseAdapter {
     deleteMany(ids: string[]): Promise<void>;
     getById(id: string): Promise<Element | null>;
     getByPage(pageId: string): Promise<Element[]>;
+    getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;
     getAll(): Promise<Element[]>;
   };

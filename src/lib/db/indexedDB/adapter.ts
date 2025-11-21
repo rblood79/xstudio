@@ -18,7 +18,7 @@ import type { DesignToken } from '../../../types/theme';
 import { LRUCache } from './LRUCache';
 
 const DB_NAME = 'xstudio';
-const DB_VERSION = 4; // ✅ 버전 4: layouts 스토어 추가
+const DB_VERSION = 5; // ✅ 버전 5: elements.layout_id 인덱스 추가
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -66,7 +66,18 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           elementsStore.createIndex('page_id', 'page_id', { unique: false });
           elementsStore.createIndex('parent_id', 'parent_id', { unique: false });
           elementsStore.createIndex('order_num', 'order_num', { unique: false });
+          elementsStore.createIndex('layout_id', 'layout_id', { unique: false });
           console.log('[IndexedDB] Created store: elements');
+        } else {
+          // ✅ 버전 5: 기존 스토어에 layout_id 인덱스 추가
+          const transaction = (event.target as IDBOpenDBRequest).transaction;
+          if (transaction) {
+            const elementsStore = transaction.objectStore('elements');
+            if (!elementsStore.indexNames.contains('layout_id')) {
+              elementsStore.createIndex('layout_id', 'layout_id', { unique: false });
+              console.log('[IndexedDB] Added index: elements.layout_id');
+            }
+          }
         }
 
         // Design tokens store
@@ -528,6 +539,10 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
     getByPage: async (pageId: string): Promise<Element[]> => {
       return this.getAllByIndex<Element>('elements', 'page_id', pageId);
+    },
+
+    getByLayout: async (layoutId: string): Promise<Element[]> => {
+      return this.getAllByIndex<Element>('elements', 'layout_id', layoutId);
     },
 
     getChildren: async (parentId: string): Promise<Element[]> => {

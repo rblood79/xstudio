@@ -234,3 +234,102 @@
   color: var(--color-secondary-700);
   border-radius: var(--radius-sm);
 }
+
+/* Pages List (새 스타일) */
+.pages-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: var(--spacing-sm);
+}
+
+.page-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.page-item.active {
+  background-color: var(--builder-button-active-bg);
+  box-shadow: var(--inset-shadow-sm);
+}
+
+.page-name {
+  font-size: var(--text-sm);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-item .delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  width: 20px;
+  height: 20px;
+  font-size: var(--text-sm);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.page-item:hover .delete-btn {
+  opacity: 1;
+}
+
+/* Page Layout Badge (Layout 선택 UI) */
+.page-layout-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.page-layout-select {
+  font-size: var(--text-2xs);
+  padding: 2px var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--builder-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-layout-select:hover {
+  border-color: var(--color-primary-400);
+}
+
+.page-layout-select:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-200);
+}
+
+.page-layout-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-gray-600);
+  transition: all 0.2s ease;
+}
+
+.page-layout-clear-btn:hover {
+  background: var(--color-red-100);
+  color: var(--color-red-600);
+}

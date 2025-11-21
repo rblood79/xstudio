@@ -18,6 +18,7 @@ import type { ElementTreeItem } from "../../../types/builder/stately.types";
 import type { Layout } from "../../../types/builder/layout.types";
 import { buildTreeFromElements } from "../../utils/treeUtils";
 import { MessageService } from "../../../utils/messaging";
+import { getDB } from "../../../lib/db";
 
 interface LayoutsTabProps {
   renderTree: <
@@ -101,11 +102,28 @@ export function LayoutsTab({
     return buildTreeFromElements(layoutElements);
   }, [layoutElements]);
 
-  // Layout 선택 핸들러
+  // Layout 선택 핸들러 - Layout elements 로드
   const handleSelectLayout = useCallback(
-    (layout: Layout) => {
+    async (layout: Layout) => {
       setCurrentLayoutInStore(layout.id);
       setEditModeLayoutId(layout.id);
+
+      // Layout elements 로드
+      try {
+        const db = await getDB();
+        const layoutElements = await db.elements.getByLayout(layout.id);
+
+        if (layoutElements.length > 0) {
+          // 기존 elements에서 이 Layout의 elements를 제외하고 새로 로드한 것으로 교체
+          const { elements, setElements } = useStore.getState();
+          const otherElements = elements.filter(el => el.layout_id !== layout.id);
+          const mergedElements = [...otherElements, ...layoutElements];
+          setElements(mergedElements, { skipHistory: true });
+          console.log(`📐 [LayoutsTab] Layout elements 로드: ${layout.name} (${layoutElements.length}개)`);
+        }
+      } catch (error) {
+        console.error("❌ [LayoutsTab] Layout elements 로드 실패:", error);
+      }
     },
     [setCurrentLayoutInStore, setEditModeLayoutId]
   );
