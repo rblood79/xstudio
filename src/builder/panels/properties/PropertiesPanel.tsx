@@ -123,11 +123,26 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
   );
 }, (prevProps, nextProps) => {
   // ⭐ 깊은 비교: selectedElement의 실제 내용이 변경되었는지 확인
-  return (
-    prevProps.selectedElement.id === nextProps.selectedElement.id &&
-    prevProps.selectedElement.type === nextProps.selectedElement.type &&
-    JSON.stringify(prevProps.selectedElement.properties) === JSON.stringify(nextProps.selectedElement.properties)
-  );
+  // 🎯 중요: useInspectorState는 Immer를 사용하지 않음
+  // - 수동 spread operator로 새 객체 생성
+  // - structural sharing 없음 → 참조 비교 불가
+  // - JSON.stringify로 깊은 비교 필수
+  const prev = prevProps.selectedElement;
+  const next = nextProps.selectedElement;
+
+  // 1단계: 기본 필드 빠른 비교 (early return)
+  if (prev.id !== next.id) return false;
+  if (prev.type !== next.type) return false;
+  if (prev.customId !== next.customId) return false;
+
+  // 2단계: 객체/배열 필드 깊은 비교
+  if (JSON.stringify(prev.properties) !== JSON.stringify(next.properties)) return false;
+  if (JSON.stringify(prev.style) !== JSON.stringify(next.style)) return false;
+  if (JSON.stringify(prev.dataBinding) !== JSON.stringify(next.dataBinding)) return false;
+  if (JSON.stringify(prev.events) !== JSON.stringify(next.events)) return false;
+
+  // 모든 필드가 같으면 리렌더 불필요
+  return true;
 });
 
 /**
@@ -234,11 +249,12 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
   }, [selectedElement, currentPageElements]);
 
-  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX (only recalculate when selectedElement changes)
-  const multiSelectMode = useMemo(() => useStore.getState().multiSelectMode || false, []);
-  const selectedElementIds = useMemo(() => useStore.getState().selectedElementIds || [], []);
-  const currentPageId = useMemo(() => useStore.getState().currentPageId, []);
-  const elements = useMemo(() => useStore.getState().elements, []);
+  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX
+  // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
+  const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
+  const selectedElementIds = useStore((state) => state.selectedElementIds) || [];
+  const currentPageId = useStore((state) => state.currentPageId);
+  const elements = useStore((state) => state.elements);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
