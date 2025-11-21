@@ -169,8 +169,8 @@
   }
 
   /* ==================== Builder Dark Mode ==================== */
-  /* Independent of Preview dark mode - toggled via [data-theme="dark"] on :root */
-  [data-theme="dark"] {
+  /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] on :root */
+  [data-builder-theme="dark"] {
     /* Header */
     --builder-header-bg: var(--color-gray-900);
     --builder-header-text: var(--color-neutral-50);
