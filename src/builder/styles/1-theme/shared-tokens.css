@@ -175,32 +175,179 @@
     --status-info: var(--color-info-600);
 
     /* ==================== OpenAI/ChatGPT Style Colors ==================== */
-    /* Light Mode Base */
-    --oai-bg-primary: #ffffff;
-    --oai-bg-secondary: #f7f7f8;
-    --oai-bg-tertiary: #ececf1;
-    --oai-text-primary: #0d0d0d;
-    --oai-text-secondary: #6e6e80;
-    --oai-text-tertiary: #8e8ea0;
-    --oai-border: #e5e5e5;
-    --oai-border-light: #ebebeb;
-    --oai-border-hover: #c5c5d2;
+    /* Base Colors */
+    --white: #fff;
+    --black: #000;
 
-    /* Dark Mode Base */
-    --oai-dark-bg-primary: #212121;
-    --oai-dark-bg-secondary: #2f2f2f;
-    --oai-dark-bg-tertiary: #424242;
-    --oai-dark-text-primary: #ececec;
-    --oai-dark-text-secondary: #9b9b9b;
-    --oai-dark-text-tertiary: #8e8ea0;
-    --oai-dark-border: #4d4d4d;
-    --oai-dark-border-light: #3d3d3d;
-    --oai-dark-border-hover: #5d5d5d;
+    /* Gray Scale - Light Mode Values */
+    --gray-0: #fff;
+    --gray-25: #fcfcfc;
+    --gray-50: #f9f9f9;
+    --gray-75: #f3f3f3;
+    --gray-100: #ededed;
+    --gray-150: #dfdfdf;
+    --gray-200: #cdcdcd;
+    --gray-250: #b9b9b9;
+    --gray-300: #afafaf;
+    --gray-350: #9f9f9f;
+    --gray-400: #8f8f8f;
+    --gray-450: #767676;
+    --gray-500: #5d5d5d;
+    --gray-550: #4f4f4f;
+    --gray-600: #414141;
+    --gray-650: #393939;
+    --gray-700: #303030;
+    --gray-750: #282828;
+    --gray-800: #212121;
+    --gray-850: #1c1c1c;
+    --gray-900: #181818;
+    --gray-925: #161616;
+    --gray-950: #131313;
+    --gray-975: #101010;
+    --gray-1000: #0d0d0d;
 
-    /* ChatGPT Accent (Green) */
-    --oai-accent: #10a37f;
-    --oai-accent-hover: #0d8a6b;
-    --oai-accent-light: #d1fae5;
+    /* Semantic Colors - Light Mode */
+    --color-text: var(--gray-750);
+    --color-text-secondary: var(--gray-500);
+    --color-text-tertiary: var(--gray-400);
+    --color-text-emphasis: var(--gray-1000);
+    --color-text-inverse: var(--gray-0);
+    --color-text-disabled: var(--gray-400);
+
+    /* Surface Colors - Light Mode */
+    --color-surface: var(--gray-0);
+    --color-surface-secondary: var(--gray-50);
+    --color-surface-tertiary: var(--gray-75);
+    --color-surface-elevated: var(--gray-0);
+    --color-surface-elevated-secondary: var(--gray-50);
+
+    /* Border Colors - Light Mode */
+    --color-border-subtle: rgba(13, 13, 13, 0.05);
+    --color-border: rgba(13, 13, 13, 0.10);
+    --color-border-strong: rgba(13, 13, 13, 0.15);
+
+    /* Light Mode Base (mapped to gray scale) */
+    --oai-bg-primary: var(--gray-0);
+    --oai-bg-secondary: var(--gray-50);
+    --oai-bg-tertiary: var(--gray-100);
+    --oai-text-primary: var(--gray-1000);
+    --oai-text-secondary: var(--gray-500);
+    --oai-text-tertiary: var(--gray-400);
+    --oai-border: var(--gray-100);
+    --oai-border-light: var(--gray-75);
+    --oai-border-hover: var(--gray-200);
+
+    /* Dark Mode Base (inverted gray scale) */
+    --oai-dark-bg-primary: var(--gray-800);
+    --oai-dark-bg-secondary: var(--gray-700);
+    --oai-dark-bg-tertiary: var(--gray-600);
+    --oai-dark-text-primary: var(--gray-100);
+    --oai-dark-text-secondary: var(--gray-300);
+    --oai-dark-text-tertiary: var(--gray-400);
+    --oai-dark-border: var(--gray-600);
+    --oai-dark-border-light: var(--gray-650);
+    --oai-dark-border-hover: var(--gray-500);
+
+    /* Green Scale */
+    --green-25: #edfaf2;
+    --green-50: #d9f4e4;
+    --green-75: #b8ebcc;
+    --green-100: #8cdfad;
+    --green-200: #66d492;
+    --green-300: #40c977;
+    --green-400: #04b84c;
+    --green-500: #00a240;
+    --green-600: #008635;
+    --green-700: #00692a;
+    --green-800: #004f1f;
+    --green-900: #003716;
+
+    /* Blue Scale */
+    --blue-25: #f5faff;
+    --blue-50: #e5f3ff;
+    --blue-75: #cce6ff;
+    --blue-100: #99ceff;
+    --blue-200: #66b5ff;
+    --blue-300: #339cff;
+    --blue-400: #0285ff;
+    --blue-500: #0169cc;
+    --blue-600: #004f99;
+    --blue-700: #003f7a;
+    --blue-800: #013566;
+    --blue-900: #00284d;
+
+    /* Red Scale */
+    --red-25: #fff0f0;
+    --red-50: #ffd9d9;
+    --red-75: #ffc6c5;
+    --red-100: #ffa4a2;
+    --red-200: #ff8583;
+    --red-300: #ff6764;
+    --red-400: #fa423e;
+    --red-500: #e02e2a;
+    --red-600: #ba2623;
+    --red-700: #911e1b;
+    --red-800: #6e1615;
+    --red-900: #4d100e;
+
+    /* Orange Scale */
+    --orange-25: #fff5f0;
+    --orange-50: #ffe7d9;
+    --orange-75: #ffcfb4;
+    --orange-100: #ffb790;
+    --orange-200: #ff9e6c;
+    --orange-300: #ff8549;
+    --orange-400: #fb6a22;
+    --orange-500: #e25507;
+    --orange-600: #b9480d;
+    --orange-700: #923b0f;
+    --orange-800: #6d2e0f;
+    --orange-900: #4a2206;
+
+    /* Yellow Scale */
+    --yellow-25: #fffbed;
+    --yellow-50: #fff6d9;
+    --yellow-75: #ffeeb8;
+    --yellow-100: #ffe48c;
+    --yellow-200: #ffdb66;
+    --yellow-300: #ffd240;
+    --yellow-400: #ffc300;
+    --yellow-500: #e0ac00;
+    --yellow-600: #ba8e00;
+    --yellow-700: #916f00;
+    --yellow-800: #6e5400;
+    --yellow-900: #4d3b00;
+
+    /* Purple Scale */
+    --purple-25: #f9f5fe;
+    --purple-50: #efe5fe;
+    --purple-75: #e0cefd;
+    --purple-100: #ceb0fb;
+    --purple-200: #be95fa;
+    --purple-300: #ad7bf9;
+    --purple-400: #924ff7;
+    --purple-500: #8046d9;
+    --purple-600: #6b3ab4;
+    --purple-700: #532d8d;
+    --purple-800: #3f226a;
+    --purple-900: #2c184a;
+
+    /* ChatGPT Accent (Green - using new scale) */
+    --oai-accent: var(--green-400);
+    --oai-accent-hover: var(--green-500);
+    --oai-accent-light: var(--green-50);
+
+    /* Ring Colors */
+    --color-ring: var(--blue-400);
+    --color-ring-danger: var(--red-200);
+
+    /* Shadow Variables */
+    --shadow-hairline-width: 1px;
+    --shadow-hairline-color: rgba(0, 0, 0, 0.08);
+    --shadow-100: 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+    --shadow-200: 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+    --shadow-300: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+    --shadow-400: 0 8px 16px -4px rgba(0, 0, 0, 0.12);
 
     /* Legacy base styles (from original theme.css) */
     --border-radius: var(--radius-sm);
