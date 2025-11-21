@@ -130,3 +130,24 @@ export const useStoreDebug = () => {
       useStore.subscribe(callback),
   };
 };
+
+// ============================================
+// Layout/Slot System Stores
+// ============================================
+export {
+  useLayoutsStore,
+  useCurrentLayout,
+  useLayouts,
+  useLayoutsLoading,
+  useLayoutsError,
+} from "./layouts";
+
+export {
+  useEditModeStore,
+  useEditMode,
+  useIsPageMode,
+  useIsLayoutMode,
+  useCurrentEditPageId,
+  useCurrentEditLayoutId,
+  useEditContext,
+} from "./editMode";

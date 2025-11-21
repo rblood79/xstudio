@@ -52,7 +52,7 @@ export interface Element {
   props: ComponentElementProps;
   parent_id?: string | null;
   order_num?: number;
-  page_id: string;
+  page_id?: string | null; // Layout element면 null (layout_id와 상호 배타적)
   created_at?: string;
   updated_at?: string;
   deleted?: boolean; // 삭제 여부 (UI 필터링용) ⭐
@@ -60,6 +60,9 @@ export interface Element {
   dataBinding?: DataBinding;
   // Inspector 이벤트 핸들러 (선택적)
   events?: unknown[]; // EventHandler[] 타입 (순환 참조 방지를 위해 unknown 사용)
+  // Layout/Slot System 필드
+  layout_id?: string | null; // Layout에 속한 요소면 Layout ID (page_id와 상호 배타적)
+  slot_name?: string | null; // Page 요소가 어떤 Slot에 들어갈지 (Page element에만 설정)
 }
 
 // === 통합된 Page 타입 ===
@@ -72,6 +75,8 @@ export interface Page {
   order_num?: number;
   created_at?: string;
   updated_at?: string;
+  // Layout/Slot System 필드
+  layout_id?: string | null; // 적용할 Layout ID (optional - 없으면 Layout 없이 렌더링)
 }
 
 // === 컴포넌트별 Props 타입 ===
@@ -486,6 +491,16 @@ export interface NavElementProps extends BaseElementProps {
   children?: React.ReactNode;
 }
 
+// === Slot Element Props (Layout System) ===
+export interface SlotElementProps extends BaseElementProps {
+  /** Slot 식별자 (예: "content", "sidebar", "navigation") */
+  name: string;
+  /** 필수 여부 - true면 Page에서 반드시 채워야 함 */
+  required?: boolean;
+  /** Slot 설명 (UI 표시용) */
+  description?: string;
+}
+
 // === 통합된 ComponentElementProps ===
 export type ComponentElementProps =
   | ButtonElementProps
@@ -529,7 +544,8 @@ export type ComponentElementProps =
   | TextElementProps
   | DivElementProps
   | SectionElementProps
-  | NavElementProps;
+  | NavElementProps
+  | SlotElementProps;
 
 // === 스토어 상태 타입 ===
 export interface ElementsState {
@@ -936,6 +952,14 @@ export function createDefaultNavProps(): NavElementProps {
   return {};
 }
 
+export function createDefaultSlotProps(): SlotElementProps {
+  return {
+    name: "content", // 기본 Slot 이름
+    required: false,
+    description: "",
+  };
+}
+
 // === 통합된 기본 props 생성 함수 ===
 export function getDefaultProps(tag: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
@@ -978,6 +1002,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Div: createDefaultDivProps,
     Section: createDefaultSectionProps,
     Nav: createDefaultNavProps,
+    Slot: createDefaultSlotProps,
   };
 
   const createProps = defaultPropsMap[tag];

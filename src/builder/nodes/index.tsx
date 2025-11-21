@@ -6,6 +6,13 @@ import { Page, Element } from "../../types/core/store.types"; // 통합된 타�
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import "./index.css";
 
+// New exports for Layout/Slot system
+export { NodesPanel } from "./NodesPanel";
+export { NodesPanelTabs } from "./NodesPanelTabs";
+export type { NodesPanelTabType } from "./NodesPanelTabs";
+export { PagesTab } from "./PagesTab";
+export { LayoutsTab } from "./LayoutsTab";
+
 interface NodesProps {
   pages: Page[];
   pageList: { remove: (...keys: string[]) => void };

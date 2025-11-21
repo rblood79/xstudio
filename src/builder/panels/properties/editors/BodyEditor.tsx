@@ -4,6 +4,8 @@ import { memo, useCallback, useMemo } from "react";
  *
  * Body는 페이지의 루트 컨테이너로 모든 요소의 부모 역할을 합니다.
  * 각 페이지마다 하나의 body 요소가 자동 생성됩니다.
+ *
+ * ⭐ Layout/Slot System: PageLayoutSelector를 통해 Page에 Layout 적용 가능
  */
 
 import { Type, Layout, Hash } from "lucide-react";
@@ -11,12 +13,16 @@ import { PropertyCustomId, PropertyInput, PropertySection } from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
+import { PageLayoutSelector } from "./PageLayoutSelector";
 
 export const BodyEditor = memo(function BodyEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-  // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
-  const customId = useMemo(() => {
+  // ⭐ 최적화: customId와 pageId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+  const { customId, pageId } = useMemo(() => {
     const element = useStore.getState().elementsMap.get(elementId);
-    return element?.customId || "";
+    return {
+      customId: element?.customId || "",
+      pageId: element?.page_id || null,
+    };
   }, [elementId]);
 
   // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
@@ -94,9 +100,16 @@ export const BodyEditor = memo(function BodyEditor({ elementId, currentProps, on
     ]
   );
 
+  // ⭐ Layout/Slot System: Page에 Layout 선택하는 섹션
+  const pageLayoutSection = useMemo(() => {
+    if (!pageId) return null;
+    return <PageLayoutSelector pageId={pageId} />;
+  }, [pageId]);
+
   return (
     <>
       {basicSection}
+      {pageLayoutSection}
       {layoutSection}
       {accessibilitySection}
     </>

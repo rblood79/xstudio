@@ -16,6 +16,8 @@ export interface ComponentCreationContext {
   parentElement: Element | null;
   pageId: string;
   elements: Element[];
+  // ⭐ Layout/Slot System: Layout 모드에서 요소 생성 시 사용
+  layoutId?: string | null;
 }
 
 /**

@@ -10,6 +10,8 @@ import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import Sidebar from "../../sidebar";
 import { useStore } from "../../stores";
+import { useEditModeStore } from "../../stores/editMode";
+import { useLayoutsStore } from "../../stores/layouts";
 import { usePageManager } from "../../hooks/usePageManager";
 import { useElementCreator } from "../../hooks/useElementCreator";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
@@ -24,6 +26,11 @@ export function NodesPanel({ isActive }: PanelProps) {
   // Store state
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
+  const elements = useStore((state) => state.elements);
+
+  // Edit Mode state
+  const editMode = useEditModeStore((state) => state.mode);
+  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
@@ -65,19 +72,36 @@ export function NodesPanel({ isActive }: PanelProps) {
   }, [fetchElements]);
 
   // handleAddElement wrapper - match Sidebar signature
+  // EditMode에 따라 Page 또는 Layout에 element 추가
   const handleAddElementWrapper = useCallback(
     async (tag: string) => {
+      // Layout 모드인 경우
+      if (editMode === "layout" && currentLayoutId) {
+        console.log(`🏗️ Layout 모드: ${tag}를 Layout ${currentLayoutId}에 추가`);
+        await handleAddElement(
+          tag,
+          "", // currentPageId - layout 모드에서는 사용 안함
+          null, // selectedElementId
+          elements.filter(el => el.layout_id === currentLayoutId), // 현재 레이아웃의 elements만
+          storeAddElement,
+          () => {}, // sendElementsToIframe - not used here
+          currentLayoutId // layoutId 전달
+        );
+        return;
+      }
+
+      // Page 모드인 경우
       if (!currentPageId) return;
       await handleAddElement(
         tag,
         currentPageId,
         null, // selectedElementId
-        [], // elements - will be fetched from store
+        elements.filter(el => el.page_id === currentPageId), // 현재 페이지의 elements만
         storeAddElement,
         () => {} // sendElementsToIframe - not used here
       );
     },
-    [currentPageId, handleAddElement]
+    [currentPageId, currentLayoutId, editMode, elements, handleAddElement]
   );
 
   // Force nodes tab to be active
@@ -88,8 +112,9 @@ export function NodesPanel({ isActive }: PanelProps) {
     return null;
   }
 
-  // 현재 페이지가 없으면 빈 상태 표시
-  if (!currentPageId) {
+  // Page 모드에서 페이지가 없으면 빈 상태 표시
+  // Layout 모드에서는 Sidebar를 렌더링해야 사용자가 레이아웃을 선택/생성할 수 있음
+  if (editMode === "page" && !currentPageId) {
     return (
       <div className="panel-empty-state">
         <p className="empty-message">페이지를 선택하세요</p>
@@ -107,6 +132,7 @@ export function NodesPanel({ isActive }: PanelProps) {
         fetchElements={handleFetchElements}
         selectedPageId={currentPageId}
         forcedActiveTabs={forcedActiveTabs}
+        projectId={projectId}
       />
     </div>
   );

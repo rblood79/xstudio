@@ -88,3 +88,149 @@
   color: #999;
   font-size: 0.875rem;
 }
+
+/* NodesPanel */
+.nodes-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.nodes-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* NodesPanelTabs */
+.nodes-panel-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  background-color: var(--builder-sidebar-bg);
+}
+
+.nodes-panel-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.nodes-panel-tab:hover {
+  background-color: var(--builder-sidebar-hover-bg);
+  color: var(--text-primary);
+}
+
+.nodes-panel-tab.active {
+  color: var(--text-primary);
+  background-color: var(--builder-sidebar-active-bg);
+}
+
+.nodes-panel-tab-label {
+  font-weight: var(--font-weight-medium);
+}
+
+/* PagesTab */
+.pages-tab {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* LayoutsTab */
+.layouts-tab {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sidebar_layouts {
+  width: 100%;
+  position: relative;
+}
+
+.layout-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.layout-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.layout-item.active {
+  background-color: var(--builder-button-active-bg);
+  box-shadow: var(--inset-shadow-sm);
+}
+
+.layout-name {
+  font-size: var(--text-sm);
+  flex: 1;
+}
+
+.layout-item .delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  width: 20px;
+  height: 20px;
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.layout-item:hover .delete-btn {
+  opacity: 1;
+}
+
+/* Slot Element 특별 표시 */
+.element[data-tag="Slot"] .elementItemLabel {
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-medium);
+}
+
+.element[data-tag="Slot"] .elementItemLabel::before {
+  content: "⬡ ";
+}
+
+/* slot_name 배지 */
+.slot-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+  margin-left: var(--spacing-sm);
+  font-size: var(--text-2xs);
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-700);
+  border-radius: var(--radius-sm);
+}
+
+/* Layout 배지 (Page에 적용된 Layout 이름) */
+.layout-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+  margin-left: var(--spacing-sm);
+  font-size: var(--text-2xs);
+  background-color: var(--color-secondary-100);
+  color: var(--color-secondary-700);
+  border-radius: var(--radius-sm);
+}

@@ -65,12 +65,14 @@ export class ComponentFactory {
 
   /**
    * 복합 컴포넌트 생성 (메인 메서드)
+   * @param layoutId - Layout 모드에서 요소 생성 시 사용 (page_id 대신 layout_id 설정)
    */
   static async createComplexComponent(
     tag: string,
     parentElement: Element | null,
     pageId: string,
-    elements: Element[]
+    elements: Element[],
+    layoutId?: string | null
   ): Promise<ComponentCreationResult> {
     const creator = this.creators[tag];
     if (!creator) {
@@ -81,6 +83,7 @@ export class ComponentFactory {
       parentElement,
       pageId,
       elements,
+      layoutId, // ⭐ Layout/Slot System
     };
 
     return await creator.call(this, context);

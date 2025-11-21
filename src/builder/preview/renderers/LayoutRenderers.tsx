@@ -17,6 +17,7 @@ import {
   Breadcrumb,
   Group,
 } from "../../components/list";
+import { Slot } from "../../components/Slot";
 import { PreviewElement, RenderContext } from "../types";
 import { createEventHandlerMap } from "../utils/eventHandlers";
 
@@ -581,5 +582,42 @@ export const renderBadge = (
         : null}
       {children.map((child) => renderElement(child, child.id))}
     </Badge>
+  );
+};
+
+/**
+ * Slot 렌더링
+ *
+ * Layout 내에서 Page 콘텐츠가 삽입될 위치를 표시하는 컴포넌트.
+ * - Layout 편집 모드: 빈 플레이스홀더 표시
+ * - Page 렌더링 모드: Page elements로 교체됨 (layoutResolver에서 처리)
+ */
+export const renderSlot = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement, editMode } = context;
+
+  // Layout 편집 모드인지 확인
+  const isLayoutEditMode = editMode === "layout";
+
+  // Slot에 들어갈 자식 요소들 (이미 layoutResolver에서 배치됨)
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  return (
+    <Slot
+      key={element.id}
+      data-element-id={element.id}
+      name={String(element.props.name || "content")}
+      required={Boolean(element.props.required)}
+      description={String(element.props.description || "")}
+      isEditMode={isLayoutEditMode}
+      style={element.props.style}
+      className={element.props.className}
+    >
+      {children.map((child) => renderElement(child, child.id))}
+    </Slot>
   );
 };

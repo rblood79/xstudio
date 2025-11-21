@@ -1,0 +1,103 @@
+/**
+ * Element Slot Selector
+ *
+ * Page Element가 어떤 Slot에 들어갈지 선택하는 UI.
+ * Layout이 적용된 Page의 root Element Inspector에 표시.
+ */
+
+import { memo, useMemo } from "react";
+import { Layers } from "lucide-react";
+import { PropertySelect, PropertySection } from "../../common";
+import { useLayoutsStore } from "../../../stores/layouts";
+import { useStore } from "../../../stores";
+import type { SlotInfo } from "../../../../types/builder/layout.types";
+
+interface ElementSlotSelectorProps {
+  elementId: string;
+  currentSlotName: string | null | undefined;
+  onSlotChange: (slotName: string) => void;
+}
+
+export const ElementSlotSelector = memo(function ElementSlotSelector({
+  elementId,
+  currentSlotName,
+  onSlotChange,
+}: ElementSlotSelectorProps) {
+  const element = useStore((state) =>
+    state.elements.find((el) => el.id === elementId)
+  );
+  const elements = useStore((state) => state.elements);
+  const pages = useStore((state) => state.pages);
+  const layouts = useLayoutsStore((state) => state.layouts);
+
+  // Element의 Page → Layout → Slots 찾기
+  const slots = useMemo((): SlotInfo[] => {
+    if (!element?.page_id) return [];
+
+    const page = pages.find((p) => p.id === element.page_id);
+    if (!page?.layout_id) return [];
+
+    // Layout의 Slot elements 찾기
+    const slotElements = elements.filter(
+      (el) => el.layout_id === page.layout_id && el.tag === "Slot"
+    );
+
+    return slotElements.map((el) => ({
+      name: (el.props as { name?: string })?.name || "unnamed",
+      required: (el.props as { required?: boolean })?.required || false,
+      description: (el.props as { description?: string })?.description,
+      elementId: el.id,
+    }));
+  }, [element, elements, pages]);
+
+  // Layout이 없거나 Slot이 없으면 표시 안함
+  if (slots.length === 0) return null;
+
+  // Root element만 Slot 선택 가능
+  // (parent_id가 null이거나 parent가 Page element가 아닌 경우)
+  const isRootElement = useMemo(() => {
+    if (!element?.parent_id) return true;
+    // parent가 Page element인지 확인
+    const parentIsPageElement = elements.some(
+      (el) => el.id === element.parent_id && el.page_id === element.page_id
+    );
+    return !parentIsPageElement;
+  }, [element, elements]);
+
+  if (!isRootElement) return null;
+
+  // Default slot (required가 있으면 그것, 없으면 첫 번째)
+  const defaultSlot = slots.find((s) => s.required) || slots[0];
+
+  // Slot options
+  const slotOptions = slots.map((slot) => ({
+    value: slot.name,
+    label: `${slot.name}${slot.required ? " *" : ""}`,
+  }));
+
+  return (
+    <PropertySection title="Slot Assignment" icon={Layers}>
+      <PropertySelect
+        label="Target Slot"
+        value={currentSlotName || defaultSlot?.name || "content"}
+        onChange={onSlotChange}
+        options={slotOptions}
+        icon={Layers}
+        description="Choose which slot this element fills in the layout"
+      />
+
+      {/* Slot description if available */}
+      {currentSlotName && (
+        <div className="slot-selector-info">
+          {slots.find((s) => s.name === currentSlotName)?.description && (
+            <p className="slot-selector-description">
+              {slots.find((s) => s.name === currentSlotName)?.description}
+            </p>
+          )}
+        </div>
+      )}
+    </PropertySection>
+  );
+});
+
+export default ElementSlotSelector;

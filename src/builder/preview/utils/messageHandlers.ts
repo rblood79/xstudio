@@ -203,6 +203,55 @@ export const handleNavigateToPage = (
 };
 
 /**
+ * SET_EDIT_MODE 메시지 처리
+ * Layout 모드 vs Page 모드 전환
+ */
+export const handleSetEditMode = (
+  data: MessageType,
+  setEditMode?: (mode: "page" | "layout") => void
+) => {
+  if (data.type === "SET_EDIT_MODE" && data.mode) {
+    const mode = data.mode as "page" | "layout";
+
+    // body에 data attribute 설정
+    if (mode === "layout") {
+      document.body.setAttribute("data-edit-mode", "layout");
+      document.body.classList.add("preview-layout-mode");
+    } else {
+      document.body.setAttribute("data-edit-mode", "page");
+      document.body.classList.remove("preview-layout-mode");
+    }
+
+    // 콜백이 있으면 호출
+    if (setEditMode) {
+      setEditMode(mode);
+    }
+
+    console.log("[preview] Edit mode:", mode);
+  }
+};
+
+/**
+ * UPDATE_PAGE_INFO 메시지 처리
+ * Layout/Slot System: Page 정보 업데이트
+ */
+export const handleUpdatePageInfo = (
+  data: MessageType,
+  setPageInfo?: (pageId: string | null, layoutId: string | null) => void
+) => {
+  if (data.type === "UPDATE_PAGE_INFO") {
+    const { pageId, layoutId } = data as { type: string; pageId: string | null; layoutId: string | null };
+
+    // 콜백이 있으면 호출
+    if (setPageInfo) {
+      setPageInfo(pageId, layoutId);
+    }
+
+    console.log("[preview] Page info updated:", { pageId, layoutId });
+  }
+};
+
+/**
  * REQUEST_ELEMENT_SELECTION 메시지 처리
  * Builder가 요청한 요소를 선택하고 rect 정보와 함께 응답
  */
@@ -315,5 +364,6 @@ export const handleMessage = (
   handleThemeVars(data);
   handleUpdateThemeTokens(data);
   handleSetDarkMode(data);
+  handleSetEditMode(data);
   handleRequestElementSelection(data, elements);
 };

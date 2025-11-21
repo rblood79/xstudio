@@ -1,0 +1,200 @@
+/**
+ * Slot Component Styles
+ *
+ * Layout 내에서 Page 콘텐츠 삽입 위치를 표시하는 플레이스홀더 스타일
+ */
+
+@layer components {
+  /* ============================================
+   * Base Slot Container
+   * ============================================ */
+  .react-aria-Slot {
+    position: relative;
+    min-height: 80px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-50);
+    transition: all 200ms ease;
+
+    /* Flex container for content */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  /* ============================================
+   * Empty State (Placeholder visible)
+   * ============================================ */
+  .react-aria-Slot.empty {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-surface-50),
+      var(--color-surface-50) 10px,
+      var(--color-surface-100) 10px,
+      var(--color-surface-100) 20px
+    );
+    border-color: var(--color-border-strong);
+  }
+
+  /* Required slot styling */
+  .react-aria-Slot.required {
+    border-color: var(--color-warning-500);
+  }
+
+  .react-aria-Slot.required.empty {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-warning-50),
+      var(--color-warning-50) 10px,
+      var(--color-warning-100) 10px,
+      var(--color-warning-100) 20px
+    );
+  }
+
+  /* ============================================
+   * Placeholder UI
+   * ============================================ */
+  .react-aria-Slot-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    text-align: center;
+    color: var(--color-text-secondary);
+    user-select: none;
+  }
+
+  /* Icon */
+  .react-aria-Slot-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-200);
+    color: var(--color-text-tertiary);
+  }
+
+  .react-aria-Slot-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Info section */
+  .react-aria-Slot-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+
+  /* Slot name */
+  .react-aria-Slot-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Required badge */
+  .react-aria-Slot-required-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--color-warning-700);
+    background: var(--color-warning-100);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Description */
+  .react-aria-Slot-description {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    max-width: 200px;
+  }
+
+  /* ============================================
+   * Interactive States
+   * ============================================ */
+
+  /* Hover state (edit mode) */
+  .react-aria-Slot:hover {
+    border-color: var(--color-primary-400);
+    background: var(--color-primary-50);
+  }
+
+  .react-aria-Slot.required:hover {
+    border-color: var(--color-warning-400);
+    background: var(--color-warning-50);
+  }
+
+  /* Selected state */
+  .react-aria-Slot[data-selected="true"] {
+    border-color: var(--color-primary-500);
+    border-style: solid;
+    box-shadow: 0 0 0 3px var(--color-primary-200);
+  }
+
+  .react-aria-Slot.required[data-selected="true"] {
+    border-color: var(--color-warning-500);
+    box-shadow: 0 0 0 3px var(--color-warning-200);
+  }
+
+  /* ============================================
+   * Filled State (Content present)
+   * ============================================ */
+  .react-aria-Slot:not(.empty) {
+    border-style: solid;
+    border-color: transparent;
+    background: transparent;
+    min-height: auto;
+  }
+
+  /* Show border on hover when filled */
+  .react-aria-Slot:not(.empty):hover {
+    border-color: var(--color-primary-300);
+    background: transparent;
+  }
+
+  /* ============================================
+   * Dark Mode Support
+   * ============================================ */
+  @media (prefers-color-scheme: dark) {
+    .react-aria-Slot.empty {
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color-surface-800),
+        var(--color-surface-800) 10px,
+        var(--color-surface-700) 10px,
+        var(--color-surface-700) 20px
+      );
+    }
+
+    .react-aria-Slot.required.empty {
+      background: repeating-linear-gradient(
+        45deg,
+        var(--color-warning-900),
+        var(--color-warning-900) 10px,
+        var(--color-warning-800) 10px,
+        var(--color-warning-800) 20px
+      );
+    }
+
+    .react-aria-Slot-icon {
+      background: var(--color-surface-700);
+    }
+
+    .react-aria-Slot-required-badge {
+      color: var(--color-warning-300);
+      background: var(--color-warning-900);
+    }
+  }
+}

@@ -19,3 +19,73 @@
     }
   }
 }
+
+/* Layout Edit Mode Visual Distinction */
+@layer preview-modes {
+  /* Layout Mode Banner */
+  body[data-edit-mode="layout"]::before {
+    content: "Layout Mode";
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    background: var(--color-primary-600, #2563eb);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 0 0 6px 6px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  /* Layout Mode Border */
+  body[data-edit-mode="layout"] {
+    outline: 2px dashed var(--color-primary-400, #60a5fa);
+    outline-offset: -2px;
+  }
+
+  /* Slot Visual in Layout Mode - Slot elements have special styling */
+  body[data-edit-mode="layout"] [data-element-id][data-tag="Slot"] {
+    position: relative;
+    background: linear-gradient(
+      45deg,
+      var(--color-primary-50, #eff6ff) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--color-primary-50, #eff6ff) 75%
+    );
+    background-size: 10px 10px;
+    border: 2px dashed var(--color-primary-400, #60a5fa);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Slot Label in Layout Mode */
+  body[data-edit-mode="layout"] [data-element-id][data-tag="Slot"]::after {
+    content: attr(data-slot-name);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 4px 8px;
+    background: var(--color-primary-100, #dbeafe);
+    color: var(--color-primary-700, #1d4ed8);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  /* Page Mode - Default, no special styling */
+  body[data-edit-mode="page"] {
+    /* Reset any Layout mode styles */
+    outline: none;
+  }
+
+  body[data-edit-mode="page"]::before {
+    display: none;
+  }
+}

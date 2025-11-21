@@ -7,21 +7,24 @@
   .chatPanel {
     display: flex;
     flex-direction: column;
+    flex: 1;
     height: 100%;
+    overflow-y: auto;
+    gap: var(--gap);
+    padding: 0;
     background-color: var(--surface-container-low);
   }
 
   /* Header styles are now inherited from global .panel-header */
   /* See sidebar/index.css for panel-header, panel-title, header-actions, iconButton */
 
-  .chatPanel{
+  .chat-content {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: var(--gap);
     padding: 0;
-    background-color: var(--background-color);
   }
 
   .chat-content::-webkit-scrollbar {

@@ -37,7 +37,7 @@
       font-size: var(--text-sm);
       color: var(--on-surface);
       outline: none;
-      transition: all 200ms ease;
+      transition: border-color 200ms ease, background-color 200ms ease;
       forced-color-adjust: none;
 
       /* Remove default browser search decorations */

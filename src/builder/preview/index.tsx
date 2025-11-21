@@ -4,8 +4,11 @@ import styles from "./index.module.css";
 import { EventEngine } from "../../utils/events/eventEngine";
 import { PreviewElement } from "./types";
 import { rendererMap } from "./renderers";
-import { handleMessage } from "./utils/messageHandlers";
+import { handleMessage, handleUpdatePageInfo } from "./utils/messageHandlers";
 import { cleanPropsForHTML } from "./utils/propsConverter";
+import { resolveLayoutForPage } from "./utils/layoutResolver";
+import type { Element, Page } from "../../types/builder/unified.types";
+import type { Layout, ResolvedElement } from "../../types/builder/layout.types";
 
 function Preview() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -14,6 +17,12 @@ function Preview() {
   // 🔧 FIX: Preview는 오직 postMessage를 통해서만 데이터 수신 (Zustand store 사용 안 함)
   // Builder store를 참조하면 iframe 재로드 시 요소가 사라지는 문제 발생
   const [elements, setElements] = React.useState<PreviewElement[]>([]);
+
+  // ⭐ Layout/Slot System: Page 정보 저장
+  const [pageInfo, setPageInfo] = React.useState<{
+    pageId: string | null;
+    layoutId: string | null;
+  }>({ pageId: null, layoutId: null });
 
   // ⭐ Lasso Selection (Shift + Drag)
   const [lassoBox, setLassoBox] = React.useState<{
@@ -79,15 +88,26 @@ function Preview() {
     updateElementPropsRef.current = updateElementProps;
   }, [elements, updateElementProps]);
 
+  // ⭐ Layout/Slot System: setPageInfo 콜백
+  const handleSetPageInfo = useCallback((pageId: string | null, layoutId: string | null) => {
+    setPageInfo({ pageId, layoutId });
+  }, []);
+
   // ✅ 의존성 없는 messageHandler (한 번만 생성, 메시지 손실 방지)
   const messageHandler = useCallback((event: MessageEvent) => {
+    // 기존 메시지 처리
     handleMessage(
       event,
       elementsRef.current,
       setElements,
       updateElementPropsRef.current
     );
-  }, []); // ✅ 빈 의존성 - 리스너 재등록 방지
+
+    // ⭐ Layout/Slot System: Page 정보 업데이트 처리
+    if (event.data?.type === "UPDATE_PAGE_INFO") {
+      handleUpdatePageInfo(event.data, handleSetPageInfo);
+    }
+  }, [handleSetPageInfo]); // handleSetPageInfo는 useCallback으로 안정적
 
   // ✅ PREVIEW_READY는 한 번만 전송 (mount 시에만)
   useEffect(() => {
@@ -213,7 +233,84 @@ function Preview() {
     renderElement,
   }), [baseContext, renderElement]);
 
+  /**
+   * ⭐ Layout/Slot System: ResolvedElement 트리를 렌더링하는 헬퍼 함수
+   */
+  const renderResolvedElement = useCallback((resolved: ResolvedElement): React.ReactNode => {
+    const el = resolved.element as PreviewElement;
+
+    // Slot 요소인 경우: children을 직접 렌더링 (Slot 컨테이너 포함)
+    if (resolved.isSlotReplaced || el.tag === "Slot") {
+      return (
+        <div
+          key={el.id}
+          data-element-id={el.id}
+          data-slot-name={(el.props as { name?: string })?.name || "content"}
+          className="slot-container"
+          style={el.props?.style as React.CSSProperties}
+        >
+          {resolved.children.map((child) => renderResolvedElement(child))}
+        </div>
+      );
+    }
+
+    // 일반 요소: renderElement 사용하되, children은 resolved tree에서 가져오기
+    const effectiveTag = el.tag === "body" ? "div" : el.tag;
+    const renderer = rendererMap[effectiveTag];
+
+    if (renderer) {
+      // renderer가 있으면 사용 (children은 이미 elements 배열에서 처리됨)
+      return renderer(el, fullContext);
+    }
+
+    // renderer가 없으면 기본 렌더링
+    return renderElement(el, el.id);
+  }, [fullContext, renderElement]);
+
   const renderElementsTree = (): React.ReactNode => {
+    // ⭐ Layout/Slot System: Page에 Layout이 적용되어 있으면 Layout 구조로 렌더링
+    if (pageInfo.layoutId && pageInfo.pageId) {
+      // Page와 Layout 객체 생성 (최소 필요 필드만)
+      const page: Page = {
+        id: pageInfo.pageId,
+        name: "",
+        slug: "",
+        order_num: 0,
+        layout_id: pageInfo.layoutId,
+      };
+
+      const layout: Layout = {
+        id: pageInfo.layoutId,
+        name: "",
+        project_id: projectId || "",
+      };
+
+      // Layout + Page 합성
+      const result = resolveLayoutForPage(page, layout, elements as unknown as Element[]);
+
+      console.log("🏗️ [Preview] Layout Resolution:", {
+        hasLayout: result.hasLayout,
+        resolvedTreeLength: result.resolvedTree.length,
+        validationErrors: result.validationErrors,
+      });
+
+      if (result.hasLayout && result.resolvedTree.length > 0) {
+        // Layout body 요소 찾기
+        const layoutBody = result.resolvedTree.find(
+          (r) => r.element.tag === "body"
+        );
+
+        if (layoutBody) {
+          // Layout body의 자식들 렌더링
+          return layoutBody.children.map((child) => renderResolvedElement(child));
+        }
+
+        // body가 없으면 전체 트리 렌더링
+        return result.resolvedTree.map((r) => renderResolvedElement(r));
+      }
+    }
+
+    // 기존 로직: Layout이 없는 경우
     // body 태그 확인
     const bodyElement = elements.find((el) => el.tag === "body");
 

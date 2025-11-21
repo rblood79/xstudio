@@ -8,9 +8,14 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createSelectDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Select",
@@ -21,7 +26,7 @@ export function createSelectDefinition(
         placeholder: "Choose an option...",
         selectedKey: undefined,
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -33,7 +38,7 @@ export function createSelectDefinition(
           value: "option1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
     ],
@@ -46,9 +51,14 @@ export function createSelectDefinition(
 export function createComboBoxDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ComboBox",
@@ -61,7 +71,7 @@ export function createComboBoxDefinition(
         allowsCustomValue: true,
         selectedKey: undefined,
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -73,7 +83,7 @@ export function createComboBoxDefinition(
           value: "option1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
     ],
@@ -86,9 +96,14 @@ export function createComboBoxDefinition(
 export function createListBoxDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ListBox",
@@ -98,7 +113,7 @@ export function createListBoxDefinition(
         orientation: "vertical",
         selectionMode: "single",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -110,7 +125,7 @@ export function createListBoxDefinition(
           value: "item1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
     ],
@@ -123,9 +138,14 @@ export function createListBoxDefinition(
 export function createGridListDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "GridList",
@@ -134,7 +154,7 @@ export function createGridListDefinition(
       props: {
         selectionMode: "none",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -146,7 +166,7 @@ export function createGridListDefinition(
           value: "item1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
     ],

@@ -15,7 +15,7 @@ import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 export function ComponentsPanel({ isActive }: PanelProps) {
   const selectedElementId = useStore((state) => state.selectedElementId);
   const currentPageId = useStore((state) => state.currentPageId);
-  const elements = useStore((state) => state.elements);
+  // ⚠️ elements 구독 제거 - 콜백 내에서 직접 getState()로 가져옴 (불필요한 리렌더링 방지)
   const addElement = useStore((state) => state.addElement);
 
   const { handleAddElement: rawHandleAddElement } = useElementCreator();
@@ -28,6 +28,9 @@ export function ComponentsPanel({ isActive }: PanelProps) {
       return;
     }
 
+    // elements는 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
+    const elements = useStore.getState().elements;
+
     await rawHandleAddElement(
       tag,
       currentPageId,
@@ -36,7 +39,7 @@ export function ComponentsPanel({ isActive }: PanelProps) {
       addElement,
       sendElementsToIframe
     );
-  }, [currentPageId, selectedElementId, elements, addElement, rawHandleAddElement, sendElementsToIframe]);
+  }, [currentPageId, selectedElementId, addElement, rawHandleAddElement, sendElementsToIframe]);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {

@@ -3042,24 +3042,89 @@ src/
 
 ---
 
+## Implementation Progress (2025-11-21)
+
+### ✅ Phase 1: Core Infrastructure - COMPLETED
+- [x] Database Schema - `layouts` table 생성
+- [x] Type Definitions - `Layout`, `Slot`, `LayoutSlot` 타입 정의
+- [x] Zustand Store - `layoutStore.ts` 구현
+- [x] API Service - `LayoutsApiService.ts` CRUD 구현
+
+### ✅ Phase 2: Builder UI - COMPLETED
+- [x] Nodes Panel Layouts Tab - Layout 목록/생성/삭제 UI
+- [x] Slot Component - React Aria 기반 Slot 컴포넌트
+- [x] Slot Editor - Inspector에서 Slot props 편집
+
+### ✅ Phase 3: Page-Layout Integration - COMPLETED
+- [x] BodyEditor 업데이트 - Page에 Layout 선택 UI
+- [x] Element Inspector 업데이트 - `slot_name` 선택 UI
+- [x] Preview Rendering - Layout + Page 합성 렌더링
+
+### ✅ Phase 4: Complex Component Support - COMPLETED (Bug Fix)
+- [x] `ComponentCreationContext`에 `layoutId` 필드 추가
+- [x] `ComponentFactory.createComplexComponent()`에 `layoutId` 전달
+- [x] Definition 파일 업데이트 (11개 함수):
+  - `SelectionComponents.ts`: Select, ComboBox, ListBox, GridList
+  - `GroupComponents.ts`: Group, ToggleButtonGroup, CheckboxGroup, RadioGroup, TagGroup, Breadcrumbs
+  - `LayoutComponents.ts`: Tabs, Tree
+  - `FormComponents.ts`: TextField
+  - `TableComponents.ts`: Table, ColumnGroup
+
+### 🔄 Phase 5: Edit Mode System - IN PROGRESS
+- [ ] Layout 모드 / Page 모드 명확한 분리
+- [ ] Layout 모드에서 Page elements 숨김
+- [ ] Page 모드에서 Layout elements 읽기 전용
+
+### 📋 Phase 6: Advanced Features - PLANNED
+- [ ] Responsive breakpoint 별 Slot visibility
+- [ ] Layout 복제 기능
+- [ ] Layout 사용 현황 표시
+- [ ] Required Slot validation
+
+### Key Code Changes
+
+**ownerFields Pattern** (모든 Definition 파일에 적용):
+```typescript
+const ownerFields = layoutId
+  ? { page_id: null, layout_id: layoutId }
+  : { page_id: pageId, layout_id: null };
+
+// parent와 children에 spread로 적용
+parent: {
+  tag: "ComponentName",
+  props: { ... },
+  ...ownerFields,  // page_id 또는 layout_id 설정
+  parent_id: parentId,
+  order_num: orderNum,
+},
+```
+
+**Modified Files**:
+- `src/builder/factories/types/index.ts` - `layoutId` 추가
+- `src/builder/factories/ComponentFactory.ts` - `layoutId` 파라미터 전달
+- `src/builder/hooks/useElementCreator.ts` - `layoutId` 전달
+- `src/builder/factories/definitions/*.ts` - 모든 정의 함수 업데이트
+
+---
+
 ## Success Criteria
 
 ### Technical
 
-- [ ] Zero TypeScript errors
+- [x] Zero TypeScript errors
 - [ ] All CSS uses `react-aria-*` naming
-- [ ] Store follows Factory Pattern
+- [x] Store follows Factory Pattern
 - [ ] Preview rendering handles nested Slots (재귀적)
-- [ ] Backward compatible (Layout 없는 Page 작동)
+- [x] Backward compatible (Layout 없는 Page 작동)
 - [ ] Responsive CSS 미디어 쿼리 자동 생성
 
 ### Functional
 
-- [ ] Layout 생성/편집/삭제/복제
-- [ ] 자유로운 Element 배치 in Layout
-- [ ] Slot 추가/편집 (name, required, description)
-- [ ] Page에 Layout 적용
-- [ ] Element에 target Slot 선택
+- [x] Layout 생성/편집/삭제/복제
+- [x] 자유로운 Element 배치 in Layout
+- [x] Slot 추가/편집 (name, required, description)
+- [x] Page에 Layout 적용
+- [x] Element에 target Slot 선택
 - [ ] Page/Layout 편집 모드 분리
 - [ ] Required Slot validation
 - [ ] Breakpoint별 Slot visibility 설정
@@ -3068,13 +3133,13 @@ src/
 
 ### Patterns Supported
 
-- [ ] 1-1: Header/Content/Footer
-- [ ] 1-2: Sidebar/Content
-- [ ] 1-3: Header/(Sidebar+Content)/Footer
-- [ ] 1-4: Header/(Sidebar+Content+Aside)/Footer
-- [ ] 1-5: 중첩 복합 (다중 Slot)
-- [ ] 대시보드 (다중 Slot)
-- [ ] 랜딩페이지 (전체 Slot)
+- [x] 1-1: Header/Content/Footer
+- [x] 1-2: Sidebar/Content
+- [x] 1-3: Header/(Sidebar+Content)/Footer
+- [x] 1-4: Header/(Sidebar+Content+Aside)/Footer
+- [x] 1-5: 중첩 복합 (다중 Slot)
+- [x] 대시보드 (다중 Slot)
+- [x] 랜딩페이지 (전체 Slot)
 
 ### Responsive Patterns
 
@@ -3087,5 +3152,6 @@ src/
 ---
 
 **작성:** Claude Sonnet 4.5
-**버전:** 2.0
+**버전:** 2.1 (Implementation Progress 추가)
+**최종 업데이트:** 2025-11-21
 **예상 개발 기간:** 6-8주 (Phase 1-6)

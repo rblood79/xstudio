@@ -14,6 +14,7 @@ import { getEditor } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
+import { ElementSlotSelector } from "./editors/ElementSlotSelector";
 import { Button } from "../../components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -1025,6 +1026,17 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
       {/* ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리 */}
       <PropertyEditorWrapper selectedElement={selectedElement} />
+
+      {/* ⭐ Layout/Slot System: Element가 들어갈 Slot 선택 */}
+      {selectedElement && !multiSelectMode && (
+        <ElementSlotSelector
+          elementId={selectedElement.id}
+          currentSlotName={selectedElement.properties?.slot_name as string | null | undefined}
+          onSlotChange={(slotName) => {
+            useInspectorState.getState().updateProperties({ slot_name: slotName });
+          }}
+        />
+      )}
 
       {/* ⭐ Sprint 3: Keyboard Shortcuts Help Panel */}
       <KeyboardShortcutsHelp

@@ -57,6 +57,7 @@ export const rendererMap: Record<
   Breadcrumb: LayoutRenderers.renderBreadcrumb,
   Link: LayoutRenderers.renderLink,
   Badge: LayoutRenderers.renderBadge,
+  Slot: LayoutRenderers.renderSlot,
 
   // Date 컴포넌트
   Calendar: DateRenderers.renderCalendar,

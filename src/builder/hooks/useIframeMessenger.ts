@@ -41,6 +41,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isSyncingToBuilder = useInspectorState((state) => state.isSyncingToBuilder);
     // updateElementProps는 useZundoActions에서 가져옴
 
+    // ⭐ Layout/Slot System: Page 정보 구독
+    const currentPageId = useStore((state) => state.currentPageId);
+    const pages = useStore((state) => state.pages);
+
     // 기존 히스토리 시스템에서 필요한 함수들만 가져오기
     // undo, redo는 함수 내에서 직접 호출
 
@@ -65,6 +69,32 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
         iframe.contentWindow.postMessage(message, window.location.origin);
+    }, []); // ✅ 의존성 제거 (Ref 사용)
+
+    // ⭐ Layout/Slot System: Page 정보를 iframe에 전송
+    const sendPageInfoToIframe = useCallback((pageId: string | null, layoutId: string | null) => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        const message = {
+            type: "UPDATE_PAGE_INFO",
+            pageId,
+            layoutId,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_PAGE_INFO",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('📄 [Builder] Sent UPDATE_PAGE_INFO:', { pageId, layoutId });
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
     // 요소 선택 시 iframe에 메시지 전송
@@ -125,6 +155,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             } else if (item.type === "REQUEST_ELEMENT_SELECTION") {
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
                 console.log(`✅ [Builder] Sent queued REQUEST_ELEMENT_SELECTION`);
+            } else if (item.type === "UPDATE_PAGE_INFO") {
+                // ⭐ Layout/Slot System: Page 정보 전송
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_PAGE_INFO`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -514,6 +548,35 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             }
         }, 1000);
     }, [elements, sendElementsToIframe]); // ✅ iframeReadyState 의존성 제거
+
+    // ⭐ Layout/Slot System: Page 정보가 변경될 때 iframe에 전송
+    const lastSentPageInfoRef = useRef<{ pageId: string | null; layoutId: string | null }>({
+        pageId: null,
+        layoutId: null,
+    });
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // 현재 Page 찾기
+        const currentPage = pages.find((p) => p.id === currentPageId);
+        const layoutId = currentPage?.layout_id || null;
+
+        // 이전 값과 같으면 스킵
+        if (
+            lastSentPageInfoRef.current.pageId === currentPageId &&
+            lastSentPageInfoRef.current.layoutId === layoutId
+        ) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentPageInfoRef.current = { pageId: currentPageId, layoutId };
+        sendPageInfoToIframe(currentPageId, layoutId);
+    }, [currentPageId, pages, sendPageInfoToIframe]);
 
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨

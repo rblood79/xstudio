@@ -12,7 +12,7 @@ import { useStore } from "../stores";
 import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element, Page } from "../../types/core/store.types"; // Page 타입도 추가
 import type { DataBinding } from "../../types/builder/unified.types";
-import { Nodes } from "../nodes";
+import { NodesPanel as NodesPanelWithTabs } from "../nodes";
 import Components from "../components";
 import { ThemesPanel } from "../panels/themes/ThemesPanel";
 import { AIPanel } from "../panels/ai/AIPanel";
@@ -36,6 +36,7 @@ interface SidebarProps {
   selectedPageId: string | null;
   children?: React.ReactNode;
   forcedActiveTabs?: Set<string>; // 외부에서 강제로 활성화할 탭 지정
+  projectId?: string; // Layout/Slot System용 projectId
 }
 
 export default function Sidebar({
@@ -47,6 +48,7 @@ export default function Sidebar({
   selectedPageId,
   children,
   forcedActiveTabs,
+  projectId,
 }: SidebarProps) {
   // 메모이제이션 추가
   const elements = useStore((state) => state.elements);
@@ -2078,7 +2080,7 @@ export default function Sidebar({
     if (activeTabs.has("nodes")) {
       contents.push(
         <div key="nodes" className="sidebar-section nodes">
-          <Nodes
+          <NodesPanelWithTabs
             pages={pages}
             pageList={pageList}
             handleAddPage={handleAddPage}
@@ -2089,7 +2091,8 @@ export default function Sidebar({
             selectedElementId={selectedElementId}
             setSelectedElement={setSelectedElement}
             sendElementSelectedMessage={sendElementSelectedMessage}
-            collapseAllTreeItems={collapseAllTreeItems} // 새 prop 전달
+            collapseAllTreeItems={collapseAllTreeItems}
+            projectId={projectId}
           />
         </div>
       );

@@ -9,13 +9,18 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createTabsDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 
   // 초기 Tab들을 위한 UUID 생성
   const tab1Id = ElementUtils.generateId();
   const tab2Id = ElementUtils.generateId();
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Tabs",
@@ -25,7 +30,7 @@ export function createTabsDefinition(
         defaultSelectedKey: tab1Id,
         orientation: "horizontal",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -36,7 +41,7 @@ export function createTabsDefinition(
           title: "Tab 1",
           tabId: tab1Id,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -46,7 +51,7 @@ export function createTabsDefinition(
           variant: "tab",
           tabId: tab1Id,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
       {
@@ -55,7 +60,7 @@ export function createTabsDefinition(
           title: "Tab 2",
           tabId: tab2Id,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 3,
       },
       {
@@ -65,7 +70,7 @@ export function createTabsDefinition(
           variant: "tab",
           tabId: tab2Id,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 4,
       },
     ],
@@ -78,9 +83,14 @@ export function createTabsDefinition(
 export function createTreeDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Tree",
@@ -91,7 +101,7 @@ export function createTreeDefinition(
         selectionMode: "single",
         selectionBehavior: "replace",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -102,7 +112,7 @@ export function createTreeDefinition(
           title: "Node 1",
           hasChildren: true,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -111,7 +121,7 @@ export function createTreeDefinition(
           title: "Node 2",
           hasChildren: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
     ],

@@ -18,7 +18,7 @@ import type { DesignToken } from '../../../types/theme';
 import { LRUCache } from './LRUCache';
 
 const DB_NAME = 'xstudio';
-const DB_VERSION = 3; // ✅ 버전 3: design_tokens에 theme_id 인덱스 추가
+const DB_VERSION = 4; // ✅ 버전 4: layouts 스토어 추가
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -107,6 +107,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         if (!db.objectStoreNames.contains('metadata')) {
           db.createObjectStore('metadata', { keyPath: 'project_id' });
           console.log('[IndexedDB] Created store: metadata');
+        }
+
+        // ✅ 버전 4: Layouts store (Layout/Slot System)
+        if (!db.objectStoreNames.contains('layouts')) {
+          const layoutsStore = db.createObjectStore('layouts', { keyPath: 'id' });
+          layoutsStore.createIndex('project_id', 'project_id', { unique: false });
+          layoutsStore.createIndex('name', 'name', { unique: false });
+          console.log('[IndexedDB] Created store: layouts');
         }
 
         console.log('[IndexedDB] Schema upgrade completed');
@@ -735,6 +743,47 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
   };
 
+  // === Layouts (Layout/Slot System) ===
+
+  layouts = {
+    insert: async (layout: { id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }) => {
+      const now = new Date().toISOString();
+      const layoutWithTimestamps = {
+        ...layout,
+        created_at: layout.created_at || now,
+        updated_at: layout.updated_at || now,
+      };
+      await this.putToStore('layouts', layoutWithTimestamps);
+      return layoutWithTimestamps;
+    },
+
+    update: async (id: string, updates: Partial<{ name: string; description: string }>) => {
+      const existing = await this.layouts.getById(id);
+      if (!existing) {
+        throw new Error(`Layout ${id} not found`);
+      }
+      const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('layouts', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('layouts', id);
+    },
+
+    getById: async (id: string) => {
+      return this.getFromStore<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts', id);
+    },
+
+    getByProject: async (projectId: string) => {
+      return this.getAllByIndex<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts', 'project_id', projectId);
+    },
+
+    getAll: async () => {
+      return this.getAllFromStore<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts');
+    },
+  };
+
   // === Metadata ===
 
   metadata = {
@@ -842,11 +891,11 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       const db = this.ensureDB();
       return new Promise<void>((resolve, reject) => {
         const tx = db.transaction(
-          ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata'],
+          ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata', 'layouts'],
           'readwrite'
         );
 
-        const stores = ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata'];
+        const stores = ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata', 'layouts'];
         let completed = 0;
 
         stores.forEach((storeName) => {

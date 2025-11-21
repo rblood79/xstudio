@@ -9,9 +9,14 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createGroupDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System: layoutId가 있으면 layout_id 사용, 없으면 page_id 사용
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Group",
@@ -24,7 +29,7 @@ export function createGroupDefinition(
           position: "relative",
         },
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -38,9 +43,14 @@ export function createGroupDefinition(
 export function createToggleButtonGroupDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "ToggleButtonGroup",
@@ -54,7 +64,7 @@ export function createToggleButtonGroupDefinition(
         selectionMode: "single",
         value: [],
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -68,7 +78,7 @@ export function createToggleButtonGroupDefinition(
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -80,7 +90,7 @@ export function createToggleButtonGroupDefinition(
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -93,9 +103,14 @@ export function createToggleButtonGroupDefinition(
 export function createCheckboxGroupDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "CheckboxGroup",
@@ -107,7 +122,7 @@ export function createCheckboxGroupDefinition(
         orientation: "vertical",
         value: [],
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -119,7 +134,7 @@ export function createCheckboxGroupDefinition(
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -129,7 +144,7 @@ export function createCheckboxGroupDefinition(
           isSelected: false,
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -142,9 +157,14 @@ export function createCheckboxGroupDefinition(
 export function createRadioGroupDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "RadioGroup",
@@ -155,7 +175,7 @@ export function createRadioGroupDefinition(
         orientation: "vertical",
         value: "",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -167,7 +187,7 @@ export function createRadioGroupDefinition(
           value: "option1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -177,7 +197,7 @@ export function createRadioGroupDefinition(
           value: "option2",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -190,9 +210,14 @@ export function createRadioGroupDefinition(
 export function createTagGroupDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "TagGroup",
@@ -203,7 +228,7 @@ export function createTagGroupDefinition(
         allowsRemoving: false,
         selectionMode: "multiple",
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -214,7 +239,7 @@ export function createTagGroupDefinition(
           children: "Tag 1",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -223,7 +248,7 @@ export function createTagGroupDefinition(
           children: "Tag 2",
           isDisabled: false,
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
     ],
@@ -236,9 +261,14 @@ export function createTagGroupDefinition(
 export function createBreadcrumbsDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "Breadcrumbs",
@@ -248,7 +278,7 @@ export function createBreadcrumbsDefinition(
         "aria-label": "Breadcrumbs",
         isDisabled: false,
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },
@@ -259,7 +289,7 @@ export function createBreadcrumbsDefinition(
           children: "Home",
           href: "/",
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 1,
       },
       {
@@ -268,7 +298,7 @@ export function createBreadcrumbsDefinition(
           children: "Category",
           href: "/category",
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 2,
       },
       {
@@ -277,7 +307,7 @@ export function createBreadcrumbsDefinition(
           children: "Page",
           href: "/category/page",
         } as ComponentElementProps,
-        page_id: pageId,
+        ...ownerFields,
         order_num: 3,
       },
     ],

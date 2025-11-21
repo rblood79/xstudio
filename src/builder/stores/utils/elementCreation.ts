@@ -30,8 +30,8 @@ export const createAddElementAction =
     // 1. 메모리 상태 업데이트 (우선)
     set(
       produce((state: ElementsState) => {
-        // 히스토리 추가
-        if (state.currentPageId) {
+        // 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+        if (state.currentPageId || element.layout_id) {
           historyManager.addEntry({
             type: "add",
             elementId: element.id,
@@ -61,11 +61,24 @@ export const createAddElementAction =
 
     // order_num 재정렬 (추가 후)
     const currentPageId = get().currentPageId;
+    // Page 요소인 경우
     if (currentPageId && element.page_id === currentPageId) {
       setTimeout(() => {
         const { elements, updateElementOrder } = get();
         reorderElements(elements, currentPageId, updateElementOrder);
       }, 100); // 상태 업데이트 후 재정렬
+    }
+    // Layout 요소인 경우 - layout_id로 재정렬
+    else if (element.layout_id) {
+      setTimeout(() => {
+        const { elements, updateElementOrder } = get();
+        // Layout 요소들만 필터링하여 재정렬
+        const layoutElements = elements.filter(el => el.layout_id === element.layout_id);
+        if (layoutElements.length > 0) {
+          // reorderElements는 pageId를 사용하지만, layout_id로 대체하여 호출
+          reorderElements(elements, element.layout_id, updateElementOrder);
+        }
+      }, 100);
     }
   };
 
@@ -89,8 +102,8 @@ export const createAddComplexElementAction =
     // 1. 메모리 상태 업데이트 (우선)
     set(
       produce((state: ElementsState) => {
-        // 복합 컴포넌트 생성 히스토리 추가
-        if (state.currentPageId) {
+        // 복합 컴포넌트 생성 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+        if (state.currentPageId || parentElement.layout_id) {
           historyManager.addEntry({
             type: "add",
             elementId: parentElement.id,

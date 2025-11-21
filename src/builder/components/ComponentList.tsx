@@ -38,7 +38,9 @@ import {
   Trash2,
   Link,
   Paintbrush,
+  Layers,
 } from "lucide-react";
+import { useEditModeStore } from "../stores/editMode";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
 import { useRecentComponents } from "../hooks/useRecentComponents";
@@ -62,6 +64,7 @@ const layoutComp = [
   { tag: "Link", label: "link", icon: Link },
   { tag: "Separator", label: "separator", icon: SeparatorHorizontal },
   { tag: "Nav", label: "navigation", icon: Menu },
+  { tag: "Slot", label: "slot", icon: Layers, layoutOnly: true },
 ] as const;
 
 const inputsComp = [
@@ -183,6 +186,10 @@ const ComponentList = memo(
     const { favoriteTags } = useFavoriteComponents();
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Edit Mode 상태 가져오기 (Layout 모드에서만 Slot 컴포넌트 표시)
+    const editMode = useEditModeStore((state) => state.mode);
+    const isLayoutMode = editMode === "layout";
+
     // 카테고리 펼치기/접기 상태 관리 (모든 카테고리 기본 펼침)
     const allCategoryKeys = useMemo(
       () => [
@@ -214,9 +221,12 @@ const ComponentList = memo(
     );
 
     // 컴포넌트 그룹을 메모이제이션 (8개 카테고리)
+    // Layout 모드가 아닐 때는 layoutOnly 컴포넌트(Slot)를 필터링
     const componentGroups = useMemo(
       () => ({
-        layout: layoutComp,
+        layout: isLayoutMode
+          ? layoutComp
+          : layoutComp.filter((comp) => !("layoutOnly" in comp && comp.layoutOnly)),
         inputs: inputsComp,
         actions: actionsComp,
         collections: collectionsComp,
@@ -226,7 +236,7 @@ const ComponentList = memo(
         structure: structureComp,
         other: otherComp,
       }),
-      []
+      [isLayoutMode]
     );
 
     // 검색용 모든 컴포넌트 배열 생성

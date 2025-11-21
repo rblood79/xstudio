@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Layout/Slot System Implementation (2025-11-21)
+
+#### Phase 1: Core Infrastructure ✅
+- **Database Schema** - `layouts` and `slots` tables with RLS policies
+- **Type Definitions** - Layout, Slot, LayoutSlot types in `unified.types.ts`
+- **Zustand Store** - `layoutStore.ts` with layouts/slots management
+- **API Service** - `LayoutsApiService.ts` for CRUD operations
+
+#### Phase 2: Builder UI ✅
+- **Nodes Panel Layouts Tab** - Layout 생성/삭제/선택 UI
+- **Slot Component** - 드래그 가능한 Slot 컴포넌트 with React Aria
+- **Slot Editor** - Inspector에서 Slot name/required 설정
+
+#### Phase 3: Page-Layout Integration ✅
+- **BodyEditor 업데이트** - Page에 Layout 할당 UI (Select 컴포넌트)
+- **Element Inspector 업데이트** - Element에 slot_name 지정 UI
+- **Preview Rendering** - Layout + Page 합성 렌더링 엔진
+
+#### Phase 4: Complex Component Support ✅ (Bug Fix)
+- **ComponentCreationContext 확장** - `layoutId` 필드 추가
+- **ComponentFactory 업데이트** - `createComplexComponent()`에 `layoutId` 파라미터 전달
+- **Definition 파일 업데이트** - 11개 컴포넌트 정의 함수에 `ownerFields` 패턴 적용
+  - `SelectionComponents.ts`: Select, ComboBox, ListBox, GridList
+  - `GroupComponents.ts`: Group, ToggleButtonGroup, CheckboxGroup, RadioGroup, TagGroup, Breadcrumbs
+  - `LayoutComponents.ts`: Tabs, Tree
+  - `FormComponents.ts`: TextField
+  - `TableComponents.ts`: Table, ColumnGroup
+
+#### Key Architecture Decisions
+- **ownerFields Pattern** - Layout/Page 모드 구분하여 `layout_id` 또는 `page_id` 설정
+  ```typescript
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
+  ```
+- **Element 소유권** - Element는 `page_id` 또는 `layout_id` 중 하나만 가짐 (상호 배타적)
+- **Slot 렌더링** - Preview에서 Slot 위치에 해당 `slot_name` Element들 삽입
+
+#### Files Modified
+- `src/builder/factories/types/index.ts`
+- `src/builder/factories/ComponentFactory.ts`
+- `src/builder/hooks/useElementCreator.ts`
+- `src/builder/factories/definitions/SelectionComponents.ts`
+- `src/builder/factories/definitions/GroupComponents.ts`
+- `src/builder/factories/definitions/LayoutComponents.ts`
+- `src/builder/factories/definitions/FormComponents.ts`
+- `src/builder/factories/definitions/TableComponents.ts`
+
+#### Related Documentation
+- [Layout/Slot System Plan V2](./LAYOUT_SLOT_SYSTEM_PLAN_V2.md) - 전체 구현 계획
+
+---
+
 ### Fixed - Theme System & iframe Communication (2025-11-14)
 
 #### Theme Cross-Selection Bug Fix

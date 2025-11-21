@@ -443,6 +443,18 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Slot",
+    label: "Slot",
+    category: "Layout",
+    icon: "🔲",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "SlotEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
 
   // Overlays
   {

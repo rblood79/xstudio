@@ -10,9 +10,14 @@ import { ComponentDefinition, ComponentCreationContext } from "../types";
 export function createTextFieldDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
-  const { parentElement, pageId, elements } = context;
+  const { parentElement, pageId, elements, layoutId } = context;
   const parentId = parentElement?.id || null;
   const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
+
+  // ⭐ Layout/Slot System
+  const ownerFields = layoutId
+    ? { page_id: null, layout_id: layoutId }
+    : { page_id: pageId, layout_id: null };
 
   return {
     tag: "TextField",
@@ -29,7 +34,7 @@ export function createTextFieldDefinition(
         isDisabled: false,
         isReadOnly: false,
       } as ComponentElementProps,
-      page_id: pageId,
+      ...ownerFields,
       parent_id: parentId,
       order_num: orderNum,
     },

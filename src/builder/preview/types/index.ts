@@ -13,10 +13,13 @@ export interface PreviewElement {
   props: ElementProps;
   text?: string;
   parent_id?: string | null;
-  page_id: string;
+  page_id?: string | null; // Layout element면 null
   order_num?: number;
   dataBinding?: DataBinding;
   deleted?: boolean;
+  // Layout/Slot System 필드
+  layout_id?: string | null; // Layout에 속한 요소면 Layout ID
+  slot_name?: string | null; // Page 요소가 들어갈 Slot 이름
 }
 
 /**
@@ -29,6 +32,8 @@ export interface RenderContext {
   eventEngine: EventEngine;
   projectId?: string;
   renderElement: (el: PreviewElement, key?: string) => React.ReactNode;
+  // Layout/Slot System 필드
+  editMode?: "page" | "layout"; // 현재 편집 모드
 }
 
 /**
@@ -113,6 +118,21 @@ export interface SetDarkModeMessage extends PreviewMessage {
   isDark: boolean;
 }
 
+export interface SetEditModeMessage extends PreviewMessage {
+  type: "SET_EDIT_MODE";
+  mode: "page" | "layout";
+}
+
+/**
+ * Layout/Slot System: Page 정보 업데이트 메시지
+ * Page가 변경될 때 해당 Page의 layout_id를 Preview에 전달
+ */
+export interface UpdatePageInfoMessage extends PreviewMessage {
+  type: "UPDATE_PAGE_INFO";
+  pageId: string | null;
+  layoutId: string | null;
+}
+
 export interface ElementSelectedMessage extends PreviewMessage {
   type: "ELEMENT_SELECTED";
   elementId: string;
@@ -146,5 +166,7 @@ export type MessageType =
   | AddColumnElementsMessage
   | NavigateToPageMessage
   | SetDarkModeMessage
+  | SetEditModeMessage
+  | UpdatePageInfoMessage
   | ElementSelectedMessage
   | ElementsDragSelectedMessage;

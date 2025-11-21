@@ -51,7 +51,8 @@ export interface UseElementCreatorReturn {
         selectedElementId: string | null,
         elements: Element[],
         addElement: (element: Element) => void,
-        sendElementsToIframe: (elements: Element[]) => void
+        sendElementsToIframe: (elements: Element[]) => void,
+        layoutId?: string | null // Layout 모드용 - page_id 대신 layout_id 사용
     ) => Promise<void>;
     getPerformanceStats: () => {
         cacheSize: number;
@@ -192,7 +193,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         selectedElementId: string | null,
         elements: Element[],
         addElement: (element: Element) => void,
-        sendElementsToIframe: (elements: Element[]) => void
+        sendElementsToIframe: (elements: Element[]) => void,
+        layoutId?: string | null // Layout 모드용
     ) => {
         if (isProcessingRef.current) return;
         isProcessingRef.current = true;
@@ -209,7 +211,8 @@ export const useElementCreator = (): UseElementCreatorReturn => {
         }
 
         try {
-            if (currentPageId) {
+            // Page 모드 또는 Layout 모드에서 실행
+            if (currentPageId || layoutId) {
                 // 요소 배열 참조 업데이트
                 elementsRef.current = elements;
 
@@ -233,13 +236,14 @@ export const useElementCreator = (): UseElementCreatorReturn => {
 
                 const operation = async () => {
                     if (complexComponents.includes(tag)) {
-                        console.log(`🏗️ 복합 컴포넌트 생성 시작: ${tag}`);
+                        console.log(`🏗️ 복합 컴포넌트 생성 시작: ${tag}`, layoutId ? `(Layout: ${layoutId})` : '');
                         // ComponentFactory를 사용하여 복합 컴포넌트 생성
                         const result = await ComponentFactory.createComplexComponent(
                             tag,
                             selectedElement ?? null,
                             currentPageId,
-                            elements // addElement 매개변수 제거
+                            elements,
+                            layoutId // ⭐ Layout/Slot System: layoutId 전달
                         );
                         console.log(`✅ 복합 컴포넌트 생성 완료: ${tag}, 총 ${result.allElements.length}개 요소 생성`);
 
@@ -264,7 +268,9 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                             tag,
                             customId: generateCustomId(tag, elements),
                             props: getDefaultProps(tag),
-                            page_id: currentPageId,
+                            // Layout 모드면 layout_id 사용, 아니면 page_id 사용
+                            page_id: layoutId ? null : currentPageId,
+                            layout_id: layoutId || null,
                             parent_id: parentId,
                             order_num: orderNum,
                             created_at: new Date().toISOString(),
