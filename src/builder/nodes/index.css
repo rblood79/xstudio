@@ -85,8 +85,8 @@
 
 .no_element {
   padding: var(--element-padding) calc(var(--element-padding) * 2);
-  color: #999;
-  font-size: 0.875rem;
+  color: var(--builder-inspector-text-secondary);
+  font-size: var(--text-sm);
 }
 
 /* NodesPanel */

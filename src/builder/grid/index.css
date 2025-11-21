@@ -10,15 +10,15 @@
   background-image:
     repeating-linear-gradient(
       0deg,
-      rgba(0, 0, 0, 0.05) 0px,
-      rgba(0, 0, 0, 0.05) 1px,
+      var(--builder-grid-line-color, rgba(0, 0, 0, 0.05)) 0px,
+      var(--builder-grid-line-color, rgba(0, 0, 0, 0.05)) 1px,
       transparent 1px,
       transparent
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.05) 0px,
-      rgba(0, 0, 0, 0.05) 1px,
+      var(--builder-grid-line-color, rgba(0, 0, 0, 0.05)) 0px,
+      var(--builder-grid-line-color, rgba(0, 0, 0, 0.05)) 1px,
       transparent 1px,
       transparent
     );

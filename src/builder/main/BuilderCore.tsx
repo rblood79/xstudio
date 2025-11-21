@@ -56,10 +56,10 @@ export const BuilderCore: React.FC = () => {
     }
   }, [currentPageId, setHistoryInfo]);
 
-  // Theme Mode 적용 (전역)
+  // Theme Mode 적용 (Builder UI 전용 - Preview와 분리)
   useEffect(() => {
     const applyTheme = (theme: 'light' | 'dark') => {
-      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-builder-theme', theme);
     };
 
     if (themeMode === 'auto') {
