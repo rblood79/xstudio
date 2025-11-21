@@ -153,19 +153,84 @@
   /* ==================== Builder UI Scope Override ==================== */
   /* Builder 영역에만 적용되는 변수 (Preview와 완전 분리)
    * Inspector, Sidebar, Header + Builder body에 portal된 Popover 포함
-   * Preview iframe은 body[data-preview="true"]로 제외됨 */
+   * Preview iframe은 body[data-preview="true"]로 제외됨
+   *
+   * 이 섹션은 Preview 테마 변경이 Builder UI 컴포넌트에 영향을 주지 않도록
+   * React Aria 컴포넌트가 사용하는 모든 시맨틱 변수를 Builder 고정값으로 오버라이드 */
   .inspector,
   .sidebar,
   .builder-header,
-  body:not([data-preview="true"]) .react-aria-Popover {
-    /* Highlight colors - Builder 전용 고정 색상 */
+  .footer,
+  body:not([data-preview="true"]) .react-aria-Popover,
+  body:not([data-preview="true"]) .react-aria-Modal {
+    /* ===== Core Semantic Colors (Light Mode Fixed) ===== */
+    --background-color: var(--color-white);
+    --text-color: var(--color-gray-900);
+    --text-color-base: var(--color-gray-900);
+    --text-color-hover: var(--color-gray-950);
+    --text-color-disabled: var(--color-gray-400);
+    --text-color-placeholder: var(--color-gray-500);
+    --border-color: var(--color-gray-300);
+    --border-color-hover: var(--color-gray-400);
+    --border-color-pressed: var(--color-gray-500);
+    --border-color-disabled: var(--color-gray-200);
+
+    /* ===== Button & Field Colors ===== */
+    --button-background: var(--color-gray-100);
+    --button-background-pressed: var(--color-gray-200);
+    --field-background: var(--color-white);
+    --field-text-color: var(--color-gray-900);
+    --overlay-background: var(--color-white);
+
+    /* ===== Highlight Colors (Selection/Focus) ===== */
     --focus-ring-color: var(--color-sky-500);
     --highlight-background: var(--color-gray-600);
     --highlight-background-pressed: var(--color-gray-700);
+    --highlight-background-invalid: var(--color-error-600);
     --highlight-foreground: var(--color-white);
     --highlight-foreground-pressed: var(--color-neutral-100);
-    --highlight-overlay: rgba(220, 38, 38, 0.15);
+    --highlight-overlay: rgba(14, 165, 233, 0.15);
 
+    /* ===== M3 Primary Role (Builder Fixed - Sky/Blue) ===== */
+    --primary: var(--color-sky-600);
+    --primary-hover: var(--color-sky-700);
+    --primary-pressed: var(--color-sky-800);
+    --on-primary: var(--color-white);
+    --primary-container: var(--color-sky-100);
+    --on-primary-container: var(--color-sky-900);
+
+    /* ===== M3 Secondary Role ===== */
+    --secondary: var(--color-gray-600);
+    --secondary-hover: var(--color-gray-700);
+    --secondary-pressed: var(--color-gray-800);
+    --on-secondary: var(--color-white);
+    --secondary-container: var(--color-gray-100);
+    --on-secondary-container: var(--color-gray-900);
+
+    /* ===== M3 Error Role ===== */
+    --error: var(--color-error-600);
+    --on-error: var(--color-white);
+    --error-container: var(--color-error-100);
+    --on-error-container: var(--color-error-900);
+
+    /* ===== M3 Surface Role ===== */
+    --surface: var(--color-white);
+    --on-surface: var(--color-gray-900);
+    --surface-variant: var(--color-gray-100);
+    --on-surface-variant: var(--color-gray-700);
+    --surface-container-lowest: var(--color-white);
+    --surface-container-low: var(--color-gray-50);
+    --surface-container: var(--color-gray-100);
+    --surface-container-high: var(--color-gray-200);
+    --surface-container-highest: var(--color-gray-300);
+
+    /* ===== M3 Outline Role ===== */
+    --outline: var(--color-gray-500);
+    --outline-variant: var(--color-gray-300);
+
+    /* ===== Invalid/Error States ===== */
+    --invalid-color: var(--color-error-500);
+    --invalid-color-pressed: var(--color-error-600);
   }
 
   /* ==================== Builder Dark Mode ==================== */
@@ -268,6 +333,84 @@
     /* Tree View */
     --builder-tree-item-hover: var(--color-gray-800);
     --builder-tree-item-selected: var(--color-primary-600);
+  }
+
+  /* ==================== Builder Dark Mode - Component Overrides ==================== */
+  /* Builder UI 영역의 React Aria 컴포넌트가 Dark Mode에서 Builder 테마를 따르도록 오버라이드 */
+  [data-builder-theme="dark"] .inspector,
+  [data-builder-theme="dark"] .sidebar,
+  [data-builder-theme="dark"] .builder-header,
+  [data-builder-theme="dark"] .footer,
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
+    /* ===== Core Semantic Colors (Dark Mode Fixed) ===== */
+    --background-color: var(--color-gray-900);
+    --text-color: var(--color-neutral-100);
+    --text-color-base: var(--color-neutral-100);
+    --text-color-hover: var(--color-neutral-50);
+    --text-color-disabled: var(--color-gray-500);
+    --text-color-placeholder: var(--color-gray-400);
+    --border-color: var(--color-gray-700);
+    --border-color-hover: var(--color-gray-600);
+    --border-color-pressed: var(--color-gray-500);
+    --border-color-disabled: var(--color-gray-800);
+
+    /* ===== Button & Field Colors ===== */
+    --button-background: var(--color-gray-800);
+    --button-background-pressed: var(--color-gray-700);
+    --field-background: var(--color-gray-800);
+    --field-text-color: var(--color-neutral-100);
+    --overlay-background: var(--color-gray-800);
+
+    /* ===== Highlight Colors (Selection/Focus) ===== */
+    --focus-ring-color: var(--color-sky-400);
+    --highlight-background: var(--color-sky-500);
+    --highlight-background-pressed: var(--color-sky-400);
+    --highlight-background-invalid: var(--color-error-500);
+    --highlight-foreground: var(--color-gray-900);
+    --highlight-foreground-pressed: var(--color-gray-800);
+    --highlight-overlay: rgba(56, 189, 248, 0.15);
+
+    /* ===== M3 Primary Role (Builder Fixed - Sky/Blue Dark) ===== */
+    --primary: var(--color-sky-400);
+    --primary-hover: var(--color-sky-300);
+    --primary-pressed: var(--color-sky-200);
+    --on-primary: var(--color-gray-900);
+    --primary-container: var(--color-sky-800);
+    --on-primary-container: var(--color-sky-100);
+
+    /* ===== M3 Secondary Role ===== */
+    --secondary: var(--color-gray-400);
+    --secondary-hover: var(--color-gray-300);
+    --secondary-pressed: var(--color-gray-200);
+    --on-secondary: var(--color-gray-900);
+    --secondary-container: var(--color-gray-800);
+    --on-secondary-container: var(--color-gray-100);
+
+    /* ===== M3 Error Role ===== */
+    --error: var(--color-error-400);
+    --on-error: var(--color-error-900);
+    --error-container: var(--color-error-800);
+    --on-error-container: var(--color-error-100);
+
+    /* ===== M3 Surface Role ===== */
+    --surface: var(--color-gray-900);
+    --on-surface: var(--color-neutral-100);
+    --surface-variant: var(--color-gray-800);
+    --on-surface-variant: var(--color-gray-400);
+    --surface-container-lowest: var(--color-gray-950);
+    --surface-container-low: var(--color-gray-900);
+    --surface-container: var(--color-gray-800);
+    --surface-container-high: var(--color-gray-700);
+    --surface-container-highest: var(--color-gray-600);
+
+    /* ===== M3 Outline Role ===== */
+    --outline: var(--color-gray-500);
+    --outline-variant: var(--color-gray-700);
+
+    /* ===== Invalid/Error States ===== */
+    --invalid-color: var(--color-error-400);
+    --invalid-color-pressed: var(--color-error-300);
   }
 
   /* ==================== Accessibility: High Contrast Mode ==================== */
