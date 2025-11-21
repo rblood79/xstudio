@@ -165,14 +165,17 @@
     /* 사라질 때도 애니메이션이 보이도록 transition 설정 */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
 
-    /* 비활성 패널: transform으로 위치와 공간 제거를 동시에 처리 */
-    /* ✅ translateX에서 -100% (자신의 너비) - var(--panel-width) (레이아웃 공간) */
+    /* 비활성 패널: translateX(시각적 이동) + margin-left(레이아웃 공간 제거) */
+    /* ✅ 두 가지 모두 필요:
+       - translateX: 시각적 위치 이동 (GPU 가속)
+       - margin-left: Flexbox 레이아웃 공간 제거 */
     &[data-active="false"] {
       position: relative;
-      /* 🚀 최적화: margin-left 제거, transform 하나로 통합 */
-      transform: translateX(calc(-100% - var(--panel-width, 233px)));
+      transform: translateX(-100%);
+      margin-left: calc(0px - var(--panel-width, 233px)); /* 레이아웃 공간 제거 */
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -180,6 +183,7 @@
       overflow: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
     }
 
@@ -187,6 +191,7 @@
     &[data-active="true"] {
       position: relative;
       transform: translateX(0);
+      margin-left: 0; /* 레이아웃 공간 정상 사용 */
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
@@ -195,6 +200,7 @@
       z-index: 1;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
     }
 
@@ -208,9 +214,10 @@
   }
 
   /* Right 사이드: 오른쪽으로 숨김 */
-  /* 🚀 최적화: +100% (자신의 너비) + var(--panel-width) (레이아웃 공간) */
   .panel-container[data-side="right"] .panel-wrapper[data-active="false"] {
-    transform: translateX(calc(100% + var(--panel-width, 233px)));
+    transform: translateX(100%);
+    margin-left: 0;
+    margin-right: calc(0px - var(--panel-width, 233px)); /* 오른쪽 공간 제거 */
   }
 
   .sidebar {
