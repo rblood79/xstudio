@@ -74,7 +74,11 @@ function Preview() {
   // 로컬 updateElementProps (Builder store 수정 방지)
   const updateElementProps = useCallback((id: string, props: Record<string, unknown>) => {
     setElements((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, props: { ...el.props, ...props } } : el))
+      prev.map((el) =>
+        el.id === id
+          ? { ...el, props: { ...el.props, ...props } as PreviewElement["props"] }
+          : el
+      )
     );
   }, []);
 
@@ -275,7 +279,8 @@ function Preview() {
       // Page와 Layout 객체 생성 (최소 필요 필드만)
       const page: Page = {
         id: pageInfo.pageId,
-        name: "",
+        title: "",
+        project_id: projectId || "",
         slug: "",
         order_num: 0,
         layout_id: pageInfo.layoutId,
@@ -330,7 +335,7 @@ function Preview() {
   /**
    * Collect computed styles from element
    */
-  const collectComputedStyle = (domElement: Element): Record<string, string> => {
+  const collectComputedStyle = (domElement: globalThis.Element): Record<string, string> => {
     const computed = window.getComputedStyle(domElement);
 
     // 주요 CSS 속성들만 수집 (string으로 반환)
