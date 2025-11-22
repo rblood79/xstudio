@@ -304,13 +304,12 @@
           align-items: center;
           flex-grow: 1;
           position: relative;
-          background-color: var(--builder-workspace-bg);
+          background-color: var(--builder-canvas-bg);
 
           .workspace {
             padding: 0;
-            background: var(--builder-canvas-bg);
-            border-width: 0px solid;
-            border-color: var(--builder-canvas-border);
+            background: var(--builder-workspace-bg);
+            border: 1px solid var(--builder-workspace-border);
 
             will-change: transform;
 

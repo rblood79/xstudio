@@ -31,7 +31,7 @@ type GetState = Parameters<StateCreator<LayoutsStore>>[1];
 
 /**
  * 프로젝트의 모든 Layout을 가져오는 액션
- * ⭐ Layout/Slot System: 레이아웃이 있고 선택된 레이아웃이 없으면 첫 번째 자동 선택
+ * ⭐ Layout/Slot System: order_num === 0인 레이아웃 우선 선택 (Pages 탭과 동일 패턴)
  */
 export const createFetchLayoutsAction =
   (set: SetState, get: GetState) =>
@@ -44,8 +44,12 @@ export const createFetchLayoutsAction =
       const data = await (db as unknown as { layouts: { getByProject: (projectId: string) => Promise<Layout[]> } }).layouts.getByProject(projectId);
       console.log(`📥 [fetchLayouts] IndexedDB에서 ${data?.length || 0}개 레이아웃 조회됨`);
 
-      // Sort by name
-      const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
+      // Sort by order_num first, then by name
+      const sortedData = (data || []).sort((a, b) => {
+        const orderDiff = (a.order_num || 0) - (b.order_num || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return a.name.localeCompare(b.name);
+      });
 
       // ⭐ Layout/Slot System: 저장된 currentLayoutId가 유효한지 검증
       const { currentLayoutId } = get();
@@ -56,7 +60,10 @@ export const createFetchLayoutsAction =
 
       // 자동 선택 조건: 레이아웃이 있고 (선택된 게 없거나 유효하지 않으면)
       const shouldAutoSelect = sortedData.length > 0 && !isCurrentLayoutValid;
-      const newCurrentLayoutId = shouldAutoSelect ? sortedData[0].id : (isCurrentLayoutValid ? currentLayoutId : null);
+
+      // ⭐ order_num === 0인 Layout 우선 선택, 없으면 첫 번째 선택 (Pages 탭과 동일)
+      const defaultLayout = sortedData.find((l) => l.order_num === 0) || sortedData[0];
+      const newCurrentLayoutId = shouldAutoSelect ? defaultLayout?.id : (isCurrentLayoutValid ? currentLayoutId : null);
 
       set({
         layouts: sortedData,
@@ -64,8 +71,8 @@ export const createFetchLayoutsAction =
         currentLayoutId: newCurrentLayoutId,
       });
 
-      if (shouldAutoSelect && sortedData.length > 0) {
-        console.log(`✅ [fetchLayouts] 첫 번째 Layout 자동 선택: ${sortedData[0].name} (${sortedData[0].id})`);
+      if (shouldAutoSelect && defaultLayout) {
+        console.log(`✅ [fetchLayouts] Layout 자동 선택 (order_num=${defaultLayout.order_num}): ${defaultLayout.name} (${defaultLayout.id})`);
       } else if (sortedData.length === 0) {
         console.log("📥 [fetchLayouts] 레이아웃이 없음");
       } else if (isCurrentLayoutValid) {

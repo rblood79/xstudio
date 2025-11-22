@@ -147,7 +147,7 @@ export function LayoutsTab({
     elements: layoutElements,
   });
 
-  // ⭐ Layout 전환 시 body 자동 펼치기 (단일 effect로 통합)
+  // ⭐ Layout 전환 시 body 자동 펼치기 + 선택 (Pages 탭과 동일 패턴)
   const prevLayoutIdRef = React.useRef<string | null>(null);
 
   useEffect(() => {
@@ -160,19 +160,21 @@ export function LayoutsTab({
       prevLayoutIdRef.current = currentLayout.id;
     }
 
-    // body 요소가 있으면 자동 펼치기
+    // body 요소 (order_num === 0) 자동 펼치기 + 선택 (Pages 탭과 동일 패턴)
     if (currentLayout && layoutElements.length > 0) {
-      const bodyElement = layoutElements.find(el => el.tag === 'body');
+      const bodyElement = layoutElements.find(el => el.order_num === 0) || layoutElements.find(el => el.tag === 'body');
       if (bodyElement) {
-        // 약간의 딜레이로 collapse 후 expand 실행 보장
+        // 약간의 딜레이로 collapse 후 expand/select 실행 보장
         const timeoutId = setTimeout(() => {
-          console.log(`📂 [LayoutsTab] body 자동 펼치기: ${bodyElement.id.slice(0, 8)}`);
+          console.log(`📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(0, 8)}`);
           expandKey(bodyElement.id);
+          // ⭐ Pages 탭과 동일: body 요소 자동 선택
+          setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
         }, 0);
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree]);
+  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree, setSelectedElement]);
 
   // ⭐ Layout 전용 Element Tree 렌더링 함수
   const renderLayoutTree = useCallback((

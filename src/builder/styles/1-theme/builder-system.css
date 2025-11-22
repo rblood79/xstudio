@@ -88,9 +88,10 @@
     --builder-inspector-button-primary-hover: var(--gray-1000);
 
     /* ==================== Builder Canvas/Workspace (Light Mode) ==================== */
-    --builder-canvas-bg: var(--gray-0);
+    --builder-canvas-bg: var(--gray-50);
     --builder-canvas-border: var(--gray-100);
-    --builder-workspace-bg: var(--gray-50);
+    --builder-workspace-bg: var(--color-white);
+    --builder-workspace-border: var(--gray-150);
     --builder-grid-line-color: rgba(0, 0, 0, 0.04);
     --builder-indicator-bg: var(--blue-400);
     --builder-indicator-text: var(--white);
@@ -326,6 +327,7 @@
     --builder-canvas-bg: var(--gray-900);
     --builder-canvas-border: var(--gray-700);
     --builder-workspace-bg: var(--gray-950);
+    --builder-workspace-border: var(--gray-700);
     --builder-grid-line-color: rgba(255, 255, 255, 0.06);
     --builder-indicator-bg: var(--blue-400);
     --builder-indicator-text: var(--white);

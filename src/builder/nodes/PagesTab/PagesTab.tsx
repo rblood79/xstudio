@@ -6,12 +6,13 @@
  * 기존 Pages, Layers 컴포넌트를 래핑.
  */
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Pages } from "../Pages";
 import { Layers } from "../Layers";
 import { ElementProps } from "../../../types/integrations/supabase.types";
 import { Element, Page } from "../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../types/builder/stately.types";
+import { useStore } from "../../stores";
 
 interface PagesTabProps {
   pages: Page[];
@@ -54,6 +55,31 @@ export function PagesTab({
   sendElementSelectedMessage,
   collapseAllTreeItems,
 }: PagesTabProps) {
+  // 현재 페이지 ID 추적
+  const currentPageId = useStore((state) => state.currentPageId);
+  const prevPageIdRef = useRef<string | null>(null);
+
+  // ⭐ 페이지 전환 시 body 자동 선택 (Layouts 탭과 동일 패턴)
+  useEffect(() => {
+    const pageChanged = currentPageId !== prevPageIdRef.current;
+
+    if (pageChanged && currentPageId) {
+      prevPageIdRef.current = currentPageId;
+
+      // body 요소 (order_num === 0) 자동 선택
+      if (elements.length > 0) {
+        const bodyElement = elements.find(el => el.order_num === 0) || elements.find(el => el.tag === 'body');
+        if (bodyElement) {
+          // 약간의 딜레이로 elements 업데이트 후 선택 보장
+          const timeoutId = setTimeout(() => {
+            setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
+          }, 0);
+          return () => clearTimeout(timeoutId);
+        }
+      }
+    }
+  }, [currentPageId, elements, setSelectedElement]);
+
   return (
     <div className="pages-tab" role="tabpanel" id="tabpanel-pages" aria-label="Pages">
       <Pages
