@@ -119,26 +119,30 @@
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
-  background: none;
+  background: var(--builder-header-border);
   cursor: pointer;
   font-size: var(--text-xs);
   line-height: var(--text-xs);
   color: var(--text-secondary);
   transition: all 0.2s ease;
 }
+.nodes-panel-tab-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--builder-header-text-secondary);
+}
 
 .nodes-panel-tab:hover {
-  background-color: var(--builder-sidebar-hover-bg);
+  background-color: var(--builder-header-bg);
   color: var(--text-primary);
 }
 
 .nodes-panel-tab.active {
   color: var(--text-primary);
-  background-color: var(--builder-sidebar-active-bg);
+  background-color: var(--builder-inspector-header-bg);
 }
 
-.nodes-panel-tab-label {
-  font-weight: var(--font-weight-medium);
+.nodes-panel-tab.active .nodes-panel-tab-label {
+  color: var(--builder-inspector-tab-active);
 }
 
 /* PagesTab */

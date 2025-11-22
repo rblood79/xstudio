@@ -27,6 +27,7 @@ interface LayoutsTabProps {
   selectedElementId: string | null;
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
+  requestAutoSelectAfterUpdate: (elementId: string) => void; // ⭐ ACK 기반 auto-select
   projectId?: string; // prop으로 받은 projectId (우선 사용)
 }
 
@@ -34,6 +35,7 @@ export function LayoutsTab({
   selectedElementId,
   setSelectedElement,
   sendElementSelectedMessage,
+  requestAutoSelectAfterUpdate,
   projectId: projectIdProp,
 }: LayoutsTabProps) {
   // URL params (fallback)
@@ -160,21 +162,19 @@ export function LayoutsTab({
       prevLayoutIdRef.current = currentLayout.id;
     }
 
-    // body 요소 (order_num === 0) 자동 펼치기 + 선택 (Pages 탭과 동일 패턴)
+    // body 요소 (order_num === 0) 자동 펼치기 + 선택 (ACK 기반)
     if (currentLayout && layoutElements.length > 0) {
       const bodyElement = layoutElements.find(el => el.order_num === 0) || layoutElements.find(el => el.tag === 'body');
       if (bodyElement) {
-        // 약간의 딜레이로 collapse 후 expand/select 실행 보장
-        const timeoutId = setTimeout(() => {
-          console.log(`📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(0, 8)}`);
-          expandKey(bodyElement.id);
-          // ⭐ Pages 탭과 동일: body 요소 자동 선택
-          setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
-        }, 0);
-        return () => clearTimeout(timeoutId);
+        console.log(`📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(0, 8)}`);
+        expandKey(bodyElement.id);
+        // ⭐ Store 업데이트
+        setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
+        // ⭐ ACK 기반 auto-select 등록 (iframe 렌더링 완료 후 overlay 표시)
+        requestAutoSelectAfterUpdate(bodyElement.id);
       }
     }
-  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree, setSelectedElement]);
+  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree, setSelectedElement, requestAutoSelectAfterUpdate]);
 
   // ⭐ Layout 전용 Element Tree 렌더링 함수
   const renderLayoutTree = useCallback((

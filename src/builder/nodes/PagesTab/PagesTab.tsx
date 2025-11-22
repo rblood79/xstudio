@@ -39,6 +39,7 @@ interface PagesTabProps {
   selectedElementId: string | null;
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
+  requestAutoSelectAfterUpdate: (elementId: string) => void; // ⭐ ACK 기반 auto-select
   collapseAllTreeItems?: () => void;
 }
 
@@ -53,13 +54,14 @@ export function PagesTab({
   selectedElementId,
   setSelectedElement,
   sendElementSelectedMessage,
+  requestAutoSelectAfterUpdate,
   collapseAllTreeItems,
 }: PagesTabProps) {
   // 현재 페이지 ID 추적
   const currentPageId = useStore((state) => state.currentPageId);
   const prevPageIdRef = useRef<string | null>(null);
 
-  // ⭐ 페이지 전환 시 body 자동 선택 (Layouts 탭과 동일 패턴)
+  // ⭐ 페이지 전환 시 body 자동 선택 (ACK 기반)
   useEffect(() => {
     const pageChanged = currentPageId !== prevPageIdRef.current;
 
@@ -70,15 +72,14 @@ export function PagesTab({
       if (elements.length > 0) {
         const bodyElement = elements.find(el => el.order_num === 0) || elements.find(el => el.tag === 'body');
         if (bodyElement) {
-          // 약간의 딜레이로 elements 업데이트 후 선택 보장
-          const timeoutId = setTimeout(() => {
-            setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
-          }, 0);
-          return () => clearTimeout(timeoutId);
+          // ⭐ Store 업데이트
+          setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
+          // ⭐ ACK 기반 auto-select 등록 (iframe 렌더링 완료 후 overlay 표시)
+          requestAutoSelectAfterUpdate(bodyElement.id);
         }
       }
     }
-  }, [currentPageId, elements, setSelectedElement]);
+  }, [currentPageId, elements, setSelectedElement, requestAutoSelectAfterUpdate]);
 
   return (
     <div className="pages-tab" role="tabpanel" id="tabpanel-pages" aria-label="Pages">

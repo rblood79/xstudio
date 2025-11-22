@@ -40,6 +40,7 @@ interface NodesPanelProps {
   selectedElementId: string | null;
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
+  requestAutoSelectAfterUpdate: (elementId: string) => void; // ⭐ ACK 기반 auto-select
   collapseAllTreeItems?: () => void;
   projectId?: string; // Layout/Slot System용 projectId
 }
@@ -55,6 +56,7 @@ export function NodesPanel({
   selectedElementId,
   setSelectedElement,
   sendElementSelectedMessage,
+  requestAutoSelectAfterUpdate,
   collapseAllTreeItems,
   projectId,
 }: NodesPanelProps) {
@@ -100,6 +102,7 @@ export function NodesPanel({
           selectedElementId={selectedElementId}
           setSelectedElement={setSelectedElement}
           sendElementSelectedMessage={sendElementSelectedMessage}
+          requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
           collapseAllTreeItems={collapseAllTreeItems}
         />
       );
@@ -110,6 +113,7 @@ export function NodesPanel({
         selectedElementId={selectedElementId}
         setSelectedElement={setSelectedElement}
         sendElementSelectedMessage={sendElementSelectedMessage}
+        requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
         projectId={projectId}
       />
     );
@@ -125,6 +129,7 @@ export function NodesPanel({
     selectedElementId,
     setSelectedElement,
     sendElementSelectedMessage,
+    requestAutoSelectAfterUpdate,
     collapseAllTreeItems,
     projectId,
   ]);

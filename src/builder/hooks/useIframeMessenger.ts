@@ -523,6 +523,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // ⭐ Layout/Slot System: filteredElements가 변경될 때마다 iframe에 전송
     // Phase 2.1 최적화: JSON.stringify 제거, 구조적 참조 비교
     const lastSentElementsRef = useRef<Element[]>([]);
+    const lastSentEditModeRef = useRef<string>('page');
     const isSendingRef = useRef(false);
 
     useEffect(() => {
@@ -531,42 +532,61 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // ✅ ACK 기반 중복 방지: 마지막 ACK 이후 100ms 이내면 스킵
-        const timeSinceLastAck = Date.now() - lastAckTimestampRef.current;
-        if (timeSinceLastAck < 100) {
-            console.log('⏭️ [Builder] ACK 직후 중복 전송 스킵 (마지막 ACK:', timeSinceLastAck, 'ms 전)');
-            return;
-        }
-
         // Phase 2.1 최적화: 구조적 참조 비교 (JSON.stringify 제거)
         // 배열 길이와 각 요소의 참조 비교
         const prevElements = lastSentElementsRef.current;
-        if (prevElements.length === filteredElements.length) {
-            let isSame = true;
+        const prevEditMode = lastSentEditModeRef.current;
+
+        // ⭐ editMode 변경 감지 (Layout ↔ Page 전환 시 항상 전송)
+        const editModeChanged = prevEditMode !== editMode;
+
+        // ⭐ 요소 개수 변경 감지 (0 → 5개 등)
+        const elementCountChanged = prevElements.length !== filteredElements.length;
+
+        // 구조적 변경 체크 (개수 같을 때만)
+        let structurallyChanged = false;
+        if (!elementCountChanged && filteredElements.length > 0) {
             for (let i = 0; i < filteredElements.length; i++) {
                 // 요소 참조가 다르거나 id/tag가 다르면 변경됨
                 if (prevElements[i] !== filteredElements[i] ||
                     prevElements[i].id !== filteredElements[i].id ||
                     prevElements[i].tag !== filteredElements[i].tag) {
-                    isSame = false;
+                    structurallyChanged = true;
                     break;
                 }
             }
-            if (isSame) {
+        }
+
+        // ⭐ 실제 변경이 없으면 스킵
+        if (!editModeChanged && !elementCountChanged && !structurallyChanged) {
+            return;
+        }
+
+        // ✅ ACK 기반 중복 방지: 실제 변경이 있을 때만 체크
+        // editMode 또는 요소 개수가 변경되었으면 ACK 타이밍 무시
+        if (!editModeChanged && !elementCountChanged) {
+            const timeSinceLastAck = Date.now() - lastAckTimestampRef.current;
+            if (timeSinceLastAck < 100) {
+                console.log('⏭️ [Builder] ACK 직후 중복 전송 스킵 (마지막 ACK:', timeSinceLastAck, 'ms 전)');
                 return;
             }
         }
 
         console.log('🔄 요소 변경 감지 - iframe 전송:', {
             editMode,
-            elementCount: filteredElements.length,
-            elementIds: filteredElements.map(el => el.id),
+            editModeChanged,
+            elementCountChanged,
+            structurallyChanged,
+            prevCount: prevElements.length,
+            newCount: filteredElements.length,
+            elementIds: filteredElements.slice(0, 3).map(el => el.id.slice(0, 8)),
             iframeReadyState: iframeReadyStateRef.current
         });
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
         lastSentElementsRef.current = filteredElements;
+        lastSentEditModeRef.current = editMode;
 
         // iframe에 요소 전송 (ACK를 받으면 isSendingRef.current = false로 해제됨)
         sendElementsToIframe(filteredElements);

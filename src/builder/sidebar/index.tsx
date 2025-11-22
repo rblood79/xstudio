@@ -2067,7 +2067,7 @@ export default function Sidebar({
   };
 
   // sendElementSelectedMessage 함수를 useIframeMessenger에서 가져와서 사용
-  const { sendElementSelectedMessage } = useIframeMessenger();
+  const { sendElementSelectedMessage, requestAutoSelectAfterUpdate } = useIframeMessenger();
 
   // 모든 트리 아이템 접기 함수 (useTreeExpandState의 collapseAll 사용)
   const collapseAllTreeItems = collapseAll;
@@ -2091,6 +2091,7 @@ export default function Sidebar({
             selectedElementId={selectedElementId}
             setSelectedElement={setSelectedElement}
             sendElementSelectedMessage={sendElementSelectedMessage}
+            requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
             collapseAllTreeItems={collapseAllTreeItems}
             projectId={projectId}
           />
