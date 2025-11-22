@@ -42,17 +42,20 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
       (el) => el.layout_id === page.layout_id && el.tag === "Slot"
     );
 
-    return slotElements.map((el) => ({
-      name: (el.props as { name?: string })?.name || "unnamed",
-      required: (el.props as { required?: boolean })?.required || false,
-      description: (el.props as { description?: string })?.description,
-      elementId: el.id,
-    }));
+    return slotElements.map((el) => {
+      const slotName = (el.props as { name?: string })?.name;
+      return {
+        // 이름 없는 Slot은 elementId를 접미사로 사용하여 고유성 보장
+        name: slotName || `slot_${el.id.slice(0, 8)}`,
+        displayName: slotName || "unnamed",
+        required: (el.props as { required?: boolean })?.required || false,
+        description: (el.props as { description?: string })?.description,
+        elementId: el.id,
+      };
+    });
   }, [element, elements, pages]);
 
-  // Layout이 없거나 Slot이 없으면 표시 안함
-  if (slots.length === 0) return null;
-
+  // ⭐ React Hook 규칙: useMemo는 조기 리턴 전에 호출해야 함
   // Root element만 Slot 선택 가능
   // (parent_id가 null이거나 parent가 Page element가 아닌 경우)
   const isRootElement = useMemo(() => {
@@ -64,15 +67,18 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
     return !parentIsPageElement;
   }, [element, elements]);
 
+  // Layout이 없거나 Slot이 없으면 표시 안함
+  if (slots.length === 0) return null;
+
   if (!isRootElement) return null;
 
   // Default slot (required가 있으면 그것, 없으면 첫 번째)
   const defaultSlot = slots.find((s) => s.required) || slots[0];
 
-  // Slot options
+  // Slot options - name은 고유 식별자, displayName은 UI 표시용
   const slotOptions = slots.map((slot) => ({
     value: slot.name,
-    label: `${slot.name}${slot.required ? " *" : ""}`,
+    label: `${slot.displayName}${slot.required ? " *" : ""}`,
   }));
 
   return (

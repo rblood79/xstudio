@@ -36,6 +36,41 @@ export class ElementUtils {
     }
 
     /**
+     * Find the body element for a given layout
+     * Used for automatically setting body as parent when parent_id is null in Layout mode
+     */
+    static findLayoutBodyElement(elements: Element[], layoutId: string): string | null {
+        const bodyElement = elements.find(
+            el => el.layout_id === layoutId && el.tag === 'body'
+        );
+        return bodyElement?.id || null;
+    }
+
+    /**
+     * Find body element by context (page or layout)
+     * Automatically chooses the right method based on provided IDs
+     * @param elements - All elements
+     * @param pageId - Page ID (for page mode)
+     * @param layoutId - Layout ID (for layout mode)
+     * @returns Body element ID or null
+     */
+    static findBodyByContext(
+        elements: Element[],
+        pageId: string | null,
+        layoutId: string | null
+    ): string | null {
+        // Layout mode takes priority
+        if (layoutId) {
+            return this.findLayoutBodyElement(elements, layoutId);
+        }
+        // Fall back to page mode
+        if (pageId) {
+            return this.findBodyElement(elements, pageId);
+        }
+        return null;
+    }
+
+    /**
      * Migrate orphan elements (parent_id === null) to body element
      * Excludes the body element itself
      *

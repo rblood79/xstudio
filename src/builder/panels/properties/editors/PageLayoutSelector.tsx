@@ -53,15 +53,28 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
     });
 
     try {
-      // 1. Update pages state in store
-      const { pages, setPages } = useStore.getState();
+      const { pages, setPages, elements, setElements } = useStore.getState();
+      const db = await getDB();
+
+      // 1. ⭐ Layout 요소들을 먼저 로드 (UPDATE_PAGE_INFO 전에 요소가 준비되어야 함)
+      let mergedElements = [...elements];
+      if (layoutId) {
+        const layoutElements = await db.elements.getByLayout(layoutId);
+        console.log(`📥 [PageLayoutSelector] Layout ${layoutId.slice(0, 8)} 요소 ${layoutElements.length}개 선 로드`);
+
+        // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
+        const otherElements = elements.filter((el) => el.layout_id !== layoutId);
+        mergedElements = [...otherElements, ...layoutElements];
+        setElements(mergedElements, { skipHistory: true });
+      }
+
+      // 2. 요소 로드 완료 후 pages 업데이트 (이때 UPDATE_PAGE_INFO 전송됨)
       const updatedPages = pages.map((p) =>
         p.id === pageId ? { ...p, layout_id: layoutId || null } : p
       );
       setPages(updatedPages);
 
-      // 2. Save to IndexedDB
-      const db = await getDB();
+      // 3. Save to IndexedDB
       await db.pages.update(pageId, { layout_id: layoutId || null });
 
       console.log("✅ Page layout updated successfully");

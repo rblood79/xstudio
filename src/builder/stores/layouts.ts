@@ -6,6 +6,7 @@
  */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { StateCreator } from "zustand";
 import type {
   Layout,
@@ -40,7 +41,8 @@ type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
 
 export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
   // Factory 함수로 액션 생성
-  const fetchLayouts = createFetchLayoutsAction(set);
+  // ⭐ Layout/Slot System: fetchLayouts에 get 추가 (자동 선택용)
+  const fetchLayouts = createFetchLayoutsAction(set, get);
   const createLayout = createCreateLayoutAction(set, get);
   const updateLayout = createUpdateLayoutAction(set, get);
   const deleteLayout = createDeleteLayoutAction(set, get);
@@ -88,9 +90,16 @@ export const createLayoutsSlice: StateCreator<LayoutsStore> = (set, get) => {
 
 // ============================================
 // Store Instance
+// ⭐ Layout/Slot System: persist middleware로 currentLayoutId 상태 유지
 // ============================================
 
-export const useLayoutsStore = create<LayoutsStore>(createLayoutsSlice);
+export const useLayoutsStore = create<LayoutsStore>()(
+  persist(createLayoutsSlice, {
+    name: "xstudio-layouts",
+    // currentLayoutId만 저장 (layouts 배열은 IndexedDB에서 로드)
+    partialize: (state) => ({ currentLayoutId: state.currentLayoutId }),
+  })
+);
 
 // ============================================
 // Selectors (for optimized re-renders)

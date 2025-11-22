@@ -53,7 +53,10 @@ export const createAddElementAction =
     // 3. IndexedDB에 저장 (빠름! 1-5ms)
     try {
       const db = await getDB();
-      await db.elements.insert(sanitizeElement(element));
+      const sanitized = sanitizeElement(element);
+      console.log(`💾 [IndexedDB] 저장 전: ${element.tag} layout_id=${element.layout_id} page_id=${element.page_id}`);
+      console.log(`💾 [IndexedDB] sanitized: layout_id=${sanitized.layout_id} page_id=${sanitized.page_id}`);
+      await db.elements.insert(sanitized);
       console.log("✅ [IndexedDB] 요소 저장 완료:", element.id);
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);

@@ -46,7 +46,7 @@
   }
 
   .nav-button.active {
-    background-color: var(--builder-sidebar-active-bg);
+    background-color: var(--builder-button-active-bg);
     border-radius: 6px;
 
     svg {

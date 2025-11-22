@@ -94,7 +94,8 @@ export interface PageLayoutFields {
  * Layout에서 추출한 Slot 정보
  */
 export interface SlotInfo {
-  name: string;
+  name: string; // 고유 식별자 (이름 없으면 slot_${elementId.slice(0,8)})
+  displayName: string; // UI 표시용 이름 (이름 없으면 "unnamed")
   required: boolean;
   description?: string;
   elementId: string; // Slot Element의 ID

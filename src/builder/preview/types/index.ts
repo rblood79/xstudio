@@ -60,6 +60,11 @@ export interface PreviewMessage {
 export interface UpdateElementsMessage extends PreviewMessage {
   type: "UPDATE_ELEMENTS";
   elements: PreviewElement[];
+  // ⭐ Layout/Slot System: Page 정보 포함 (초기 로드 시 Layout 렌더링용)
+  pageInfo?: {
+    pageId: string | null;
+    layoutId: string | null;
+  };
 }
 
 export interface UpdateElementPropsMessage extends PreviewMessage {

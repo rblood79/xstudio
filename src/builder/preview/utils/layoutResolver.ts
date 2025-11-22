@@ -53,6 +53,33 @@ export function resolveLayoutForPage(
   // Slot 정보 추출
   const slots = layoutElements.filter((el) => el.tag === "Slot");
 
+  // ⭐ Debug: Layout Resolution 데이터 로깅
+  console.log("🔍 [resolveLayoutForPage] Resolution data:", {
+    layoutId: layout.id.slice(0, 8),
+    pageId: page.id.slice(0, 8),
+    allElementsCount: allElements.length,
+    layoutElementsCount: layoutElements.length,
+    pageElementsCount: pageElements.length,
+    slotsCount: slots.length,
+    // 모든 요소의 page_id/layout_id 확인
+    allElements: allElements.map(e => ({
+      id: e.id.slice(0, 8),
+      tag: e.tag,
+      page_id: e.page_id?.slice(0, 8) || null,
+      layout_id: e.layout_id?.slice(0, 8) || null,
+    })),
+    slots: slots.map(s => ({
+      id: s.id.slice(0, 8),
+      name: (s.props as { name?: string })?.name || "unnamed",
+    })),
+    pageElements: pageElements.map(p => ({
+      id: p.id.slice(0, 8),
+      tag: p.tag,
+      parent_id: p.parent_id?.slice(0, 8) || null,
+      slot_name: (p.props as { slot_name?: string })?.slot_name || p.slot_name || "content",
+    })),
+  });
+
   // Page elements를 slot_name별로 그룹화
   const slotContents = groupElementsBySlot(pageElements, slots);
 
@@ -107,16 +134,20 @@ function groupElementsBySlot(
 
   // Page elements를 해당 Slot에 할당
   rootPageElements.forEach((element) => {
-    const slotName = element.slot_name || "content";
+    // ⭐ FIX: slot_name은 props 내부에 저장됨 (Inspector에서 설정)
+    const slotName = (element.props as { slot_name?: string })?.slot_name || element.slot_name || "content";
 
     const content = slotContents.get(slotName);
     if (content) {
       content.pageElements.push(element);
       content.isEmpty = false;
     } else {
-      // 유효하지 않은 slot_name → 기본 content에 추가
-      const defaultContent = slotContents.get("content");
+      // ⭐ FIX: 유효하지 않은 slot_name → 첫 번째 사용 가능한 Slot에 추가
+      // "content" → 첫 번째 Slot 순서로 폴백
+      const defaultContent = slotContents.get("content") ||
+        (slotContents.size > 0 ? slotContents.values().next().value : null);
       if (defaultContent) {
+        console.log(`⚠️ [groupElementsBySlot] Fallback: element ${element.id.slice(0, 8)} → Slot "${defaultContent.slotName}" (requested: "${slotName}")`);
         defaultContent.pageElements.push(element);
         defaultContent.isEmpty = false;
       }

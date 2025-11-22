@@ -329,6 +329,7 @@
               left: 50%;
               transform: translateX(-50%);
 
+              font-family: var(--font-mono);
               font-size: var(--text-xs);
               font-weight: var(--font-weight-semibold);
               background-color: var(--builder-indicator-bg);

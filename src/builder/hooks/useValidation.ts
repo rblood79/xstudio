@@ -9,9 +9,11 @@ export const useValidation = (): UseValidationReturn => {
     const validateOrderNumbers = useCallback((elements: Element[]) => {
         if (process.env.NODE_ENV !== 'development') return;
 
-        // 페이지별, 부모별로 그룹화
+        // 페이지별/레이아웃별, 부모별로 그룹화
+        // ⭐ Layout/Slot System: layout_id도 그룹핑 키에 포함
         const groups = elements.reduce((acc, element) => {
-            const key = `${element.page_id}_${element.parent_id || 'root'}`;
+            const contextId = element.page_id || element.layout_id || 'unknown';
+            const key = `${contextId}_${element.parent_id || 'root'}`;
             if (!acc[key]) acc[key] = [];
             acc[key].push(element);
             return acc;

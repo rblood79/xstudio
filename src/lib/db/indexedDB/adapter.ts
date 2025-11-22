@@ -18,7 +18,7 @@ import type { DesignToken } from '../../../types/theme';
 import { LRUCache } from './LRUCache';
 
 const DB_NAME = 'xstudio';
-const DB_VERSION = 4; // ✅ 버전 4: layouts 스토어 추가
+const DB_VERSION = 5; // ✅ 버전 5: elements.layout_id 인덱스 추가 (Layout/Slot System)
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -66,7 +66,18 @@ export class IndexedDBAdapter implements DatabaseAdapter {
           elementsStore.createIndex('page_id', 'page_id', { unique: false });
           elementsStore.createIndex('parent_id', 'parent_id', { unique: false });
           elementsStore.createIndex('order_num', 'order_num', { unique: false });
+          elementsStore.createIndex('layout_id', 'layout_id', { unique: false }); // ✅ Layout/Slot System
           console.log('[IndexedDB] Created store: elements');
+        } else {
+          // ✅ 버전 5: 기존 스토어에 layout_id 인덱스 추가
+          const transaction = (event.target as IDBOpenDBRequest).transaction;
+          if (transaction) {
+            const elementsStore = transaction.objectStore('elements');
+            if (!elementsStore.indexNames.contains('layout_id')) {
+              elementsStore.createIndex('layout_id', 'layout_id', { unique: false });
+              console.log('[IndexedDB] Added index: elements.layout_id');
+            }
+          }
         }
 
         // Design tokens store
@@ -528,6 +539,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
 
     getByPage: async (pageId: string): Promise<Element[]> => {
       return this.getAllByIndex<Element>('elements', 'page_id', pageId);
+    },
+
+    // ✅ Layout/Slot System: 레이아웃별 요소 조회
+    getByLayout: async (layoutId: string): Promise<Element[]> => {
+      console.log(`📥 [IndexedDB] getByLayout 호출: layoutId=${layoutId}`);
+      const elements = await this.getAllByIndex<Element>('elements', 'layout_id', layoutId);
+      console.log(`📥 [IndexedDB] getByLayout 결과: ${elements.length}개 요소`);
+      return elements;
     },
 
     getChildren: async (parentId: string): Promise<Element[]> => {

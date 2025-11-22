@@ -18,6 +18,7 @@ import type {
   LayoutsStoreActions,
 } from "../../../types/builder/layout.types";
 import type { Element, Page } from "../../../types/builder/unified.types";
+import { useStore } from "../elements";
 
 // Type aliases for set/get
 type LayoutsStore = LayoutsStoreState & LayoutsStoreActions;
@@ -30,20 +31,46 @@ type GetState = Parameters<StateCreator<LayoutsStore>>[1];
 
 /**
  * 프로젝트의 모든 Layout을 가져오는 액션
+ * ⭐ Layout/Slot System: 레이아웃이 있고 선택된 레이아웃이 없으면 첫 번째 자동 선택
  */
 export const createFetchLayoutsAction =
-  (set: SetState) =>
+  (set: SetState, get: GetState) =>
   async (projectId: string): Promise<void> => {
+    console.log(`📥 [fetchLayouts] 프로젝트 ${projectId}의 레이아웃 조회 시작...`);
     set({ isLoading: true, error: null });
 
     try {
       const db = await getDB();
       const data = await (db as unknown as { layouts: { getByProject: (projectId: string) => Promise<Layout[]> } }).layouts.getByProject(projectId);
+      console.log(`📥 [fetchLayouts] IndexedDB에서 ${data?.length || 0}개 레이아웃 조회됨`);
 
       // Sort by name
       const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
 
-      set({ layouts: sortedData, isLoading: false });
+      // ⭐ Layout/Slot System: 저장된 currentLayoutId가 유효한지 검증
+      const { currentLayoutId } = get();
+      console.log(`📥 [fetchLayouts] 현재 currentLayoutId: ${currentLayoutId}, 레이아웃 수: ${sortedData.length}`);
+
+      // 저장된 currentLayoutId가 실제 레이아웃 목록에 있는지 확인
+      const isCurrentLayoutValid = currentLayoutId && sortedData.some((l) => l.id === currentLayoutId);
+
+      // 자동 선택 조건: 레이아웃이 있고 (선택된 게 없거나 유효하지 않으면)
+      const shouldAutoSelect = sortedData.length > 0 && !isCurrentLayoutValid;
+      const newCurrentLayoutId = shouldAutoSelect ? sortedData[0].id : (isCurrentLayoutValid ? currentLayoutId : null);
+
+      set({
+        layouts: sortedData,
+        isLoading: false,
+        currentLayoutId: newCurrentLayoutId,
+      });
+
+      if (shouldAutoSelect && sortedData.length > 0) {
+        console.log(`✅ [fetchLayouts] 첫 번째 Layout 자동 선택: ${sortedData[0].name} (${sortedData[0].id})`);
+      } else if (sortedData.length === 0) {
+        console.log("📥 [fetchLayouts] 레이아웃이 없음");
+      } else if (isCurrentLayoutValid) {
+        console.log(`📥 [fetchLayouts] 저장된 레이아웃 복원: ${currentLayoutId}`);
+      }
     } catch (error) {
       console.error("❌ Layout 목록 조회 실패:", error);
       set({ error: error as Error, isLoading: false });
@@ -52,6 +79,7 @@ export const createFetchLayoutsAction =
 
 /**
  * 새 Layout을 생성하는 액션
+ * ⭐ Layout/Slot System: Layout 생성 시 body 요소도 함께 생성
  */
 export const createCreateLayoutAction =
   (set: SetState, get: GetState) =>
@@ -70,6 +98,26 @@ export const createCreateLayoutAction =
       };
 
       await (db as unknown as { layouts: { insert: (layout: Layout) => Promise<Layout> } }).layouts.insert(newLayout);
+
+      // ⭐ Layout/Slot System: Layout용 body 요소 생성
+      const bodyElement: Element = {
+        id: crypto.randomUUID(),
+        tag: "body",
+        props: {} as Element["props"],
+        parent_id: null,
+        page_id: null, // Layout 요소는 page_id 없음
+        layout_id: newLayout.id, // Layout ID 설정
+        order_num: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await db.elements.insert(bodyElement);
+      console.log("✅ Layout body 요소 생성 완료:", bodyElement.id);
+
+      // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
+      const { elements, setElements } = useStore.getState();
+      setElements([...elements, bodyElement], { skipHistory: true });
 
       // 메모리 상태 업데이트
       const { layouts } = get();
@@ -226,6 +274,7 @@ export const createDuplicateLayoutAction =
 export const createSetCurrentLayoutAction =
   (set: SetState) =>
   (layoutId: string | null): void => {
+    console.log(`🏗️ [setCurrentLayout] Layout ID 변경: ${layoutId}`);
     set({ currentLayoutId: layoutId });
   };
 
@@ -257,12 +306,17 @@ export const createGetLayoutSlotsAction =
       (el) => el.layout_id === layoutId && el.tag === "Slot"
     );
 
-    return slotElements.map((el) => ({
-      name: (el.props as { name?: string }).name || "unnamed",
-      required: (el.props as { required?: boolean }).required || false,
-      description: (el.props as { description?: string }).description,
-      elementId: el.id,
-    }));
+    return slotElements.map((el) => {
+      const slotName = (el.props as { name?: string }).name;
+      return {
+        // 이름 없는 Slot은 elementId를 접미사로 사용하여 고유성 보장
+        name: slotName || `slot_${el.id.slice(0, 8)}`,
+        displayName: slotName || "unnamed",
+        required: (el.props as { required?: boolean }).required || false,
+        description: (el.props as { description?: string }).description,
+        elementId: el.id,
+      };
+    });
   };
 
 /**

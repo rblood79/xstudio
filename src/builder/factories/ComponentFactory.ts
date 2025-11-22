@@ -91,17 +91,19 @@ export class ComponentFactory {
 
   /**
    * 공통 컴포넌트 생성 로직
+   * ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
    */
   private static async createComponent(
     definitionCreator: (context: ComponentCreationContext) => ComponentDefinition,
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    const { parentElement, pageId, elements } = context;
+    const { parentElement, pageId, elements, layoutId } = context;
     let parentId = parentElement?.id || null;
 
     // parent_id가 없으면 body 요소를 parent로 설정
+    // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
     if (!parentId) {
-      parentId = ElementUtils.findBodyElement(elements, pageId);
+      parentId = ElementUtils.findBodyByContext(elements, pageId || null, layoutId || null);
       // body element를 찾아서 context 업데이트
       const bodyElement = elements.find(el => el.id === parentId);
       if (bodyElement) {
@@ -119,7 +121,8 @@ export class ComponentFactory {
     addElementsToStore(parent, children);
 
     // 4. DB에 저장 (백그라운드)
-    saveElementsInBackground(parent, children, parentId, pageId);
+    // ⭐ Layout/Slot System: layoutId 전달
+    saveElementsInBackground(parent, children, parentId, pageId, layoutId);
 
     return {
       parent,

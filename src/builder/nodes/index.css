@@ -33,7 +33,7 @@
 
 .elementItem.active {
   box-shadow: var(--inset-shadow-sm);
-  background-color: var(--builder-button-active-bg);
+  background-color: var(--builder-sidebar-active-bg);
   outline: 1px solid var(--border-color);
   z-index: 1;
 }
@@ -169,9 +169,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
   cursor: pointer;
   transition: all 0.2s ease;
+
+  position: relative;
+  overflow: hidden;
 }
 
 .layout-item:hover {
@@ -179,13 +182,16 @@
 }
 
 .layout-item.active {
-  background-color: var(--builder-button-active-bg);
   box-shadow: var(--inset-shadow-sm);
+  background-color: var(--builder-sidebar-active-bg);
+  outline: 1px solid var(--border-color);
+  z-index: 1;
 }
 
 .layout-name {
-  font-size: var(--text-sm);
-  flex: 1;
+  font-size: var(--text-xs);
+  height: var(--text-2xl);
+  line-height: var(--text-2xl);
 }
 
 .layout-item .delete-btn {

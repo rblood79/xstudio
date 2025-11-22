@@ -6,17 +6,30 @@ import { PreviewElement, MessageType } from "../types";
 
 /**
  * UPDATE_ELEMENTS 메시지 처리
+ * ⭐ Layout/Slot System: pageInfo도 함께 처리 (초기 로드 시 Layout 렌더링용)
  */
 export const handleUpdateElements = (
   data: MessageType,
-  setElements: (elements: PreviewElement[]) => void
+  setElements: (elements: PreviewElement[]) => void,
+  setPageInfo?: (pageId: string | null, layoutId: string | null) => void
 ) => {
   if (data.type === "UPDATE_ELEMENTS") {
     const elements = data.elements || [];
+    // ⭐ Layout/Slot System: pageInfo 추출
+    const pageInfo = (data as { pageInfo?: { pageId: string | null; layoutId: string | null } }).pageInfo;
+
     console.log(`📥 [Preview] Received UPDATE_ELEMENTS: ${elements.length} elements`, {
       elementIds: elements.map((el: PreviewElement) => el.id),
-      tags: elements.map((el: PreviewElement) => el.tag)
+      tags: elements.map((el: PreviewElement) => el.tag),
+      pageInfo, // ⭐ Layout/Slot System: pageInfo 로그 추가
     });
+
+    // ⭐ Layout/Slot System: pageInfo가 있으면 먼저 설정 (렌더링 전에 설정되어야 함)
+    if (pageInfo && setPageInfo) {
+      console.log(`📄 [Preview] Setting pageInfo from UPDATE_ELEMENTS:`, pageInfo);
+      setPageInfo(pageInfo.pageId, pageInfo.layoutId);
+    }
+
     setElements(elements);
 
     // ✅ ACK: Builder에게 수신 확인 응답
@@ -337,12 +350,14 @@ export const handleRequestElementSelection = (
 
 /**
  * 모든 메시지 타입 처리
+ * ⭐ Layout/Slot System: setPageInfo 콜백 추가
  */
 export const handleMessage = (
   event: MessageEvent,
   elements: PreviewElement[],
   setElements: (elements: PreviewElement[]) => void,
-  updateElementProps: (id: string, props: Record<string, unknown>) => void
+  updateElementProps: (id: string, props: Record<string, unknown>) => void,
+  setPageInfo?: (pageId: string | null, layoutId: string | null) => void
 ) => {
   // Origin 체크 (보안)
   if (event.origin !== window.location.origin) {
@@ -357,7 +372,8 @@ export const handleMessage = (
   }
 
   // 각 메시지 타입별 처리
-  handleUpdateElements(data, setElements);
+  // ⭐ Layout/Slot System: setPageInfo 전달 (초기 로드 시 Layout 렌더링용)
+  handleUpdateElements(data, setElements, setPageInfo);
   handleUpdateElementProps(data, elements, updateElementProps);
   handleDeleteElements(data, elements, setElements);
   handleDeleteElement(data, elements, setElements);

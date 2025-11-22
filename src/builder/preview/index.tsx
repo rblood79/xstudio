@@ -96,14 +96,16 @@ function Preview() {
   // ✅ 의존성 없는 messageHandler (한 번만 생성, 메시지 손실 방지)
   const messageHandler = useCallback((event: MessageEvent) => {
     // 기존 메시지 처리
+    // ⭐ Layout/Slot System: handleSetPageInfo 전달 (초기 로드 시 Layout 렌더링용)
     handleMessage(
       event,
       elementsRef.current,
       setElements,
-      updateElementPropsRef.current
+      updateElementPropsRef.current,
+      handleSetPageInfo // ⭐ Layout/Slot System: pageInfo 설정 콜백 전달
     );
 
-    // ⭐ Layout/Slot System: Page 정보 업데이트 처리
+    // ⭐ Layout/Slot System: Page 정보 업데이트 처리 (UPDATE_PAGE_INFO 메시지용)
     if (event.data?.type === "UPDATE_PAGE_INFO") {
       handleUpdatePageInfo(event.data, handleSetPageInfo);
     }
@@ -268,6 +270,14 @@ function Preview() {
   }, [fullContext, renderElement]);
 
   const renderElementsTree = (): React.ReactNode => {
+    // ⭐ Debug: pageInfo 상태 확인
+    console.log("🎨 [Preview] renderElementsTree:", {
+      pageInfo,
+      elementsCount: elements.length,
+      hasLayoutId: !!pageInfo.layoutId,
+      hasPageId: !!pageInfo.pageId,
+    });
+
     // ⭐ Layout/Slot System: Page에 Layout이 적용되어 있으면 Layout 구조로 렌더링
     if (pageInfo.layoutId && pageInfo.pageId) {
       // Page와 Layout 객체 생성 (최소 필요 필드만)
@@ -314,11 +324,29 @@ function Preview() {
     // body 태그 확인
     const bodyElement = elements.find((el) => el.tag === "body");
 
+    console.log("⚠️ [Preview] Fallback rendering (no Layout):", {
+      bodyElementId: bodyElement?.id?.slice(0, 8),
+      bodyPageId: bodyElement?.page_id?.slice(0, 8),
+      bodyLayoutId: bodyElement?.layout_id?.slice(0, 8),
+      allBodies: elements.filter(el => el.tag === "body").map(el => ({
+        id: el.id.slice(0, 8),
+        page_id: el.page_id?.slice(0, 8),
+        layout_id: el.layout_id?.slice(0, 8),
+      })),
+    });
+
     if (bodyElement) {
       // body가 있는 경우, body의 직접 자식 요소들만 렌더링
       const bodyChildren = elements
         .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      console.log("⚠️ [Preview] Body children:", bodyChildren.map(el => ({
+        id: el.id.slice(0, 8),
+        tag: el.tag,
+        page_id: el.page_id?.slice(0, 8),
+        layout_id: el.layout_id?.slice(0, 8),
+      })));
 
       // body의 자식들을 렌더링 (body 자체는 Preview 컴포넌트의 루트에서 처리)
       return bodyChildren.map((el) => renderElement(el, el.id));

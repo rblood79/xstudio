@@ -7,7 +7,7 @@
 
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { CirclePlus, CopyMinus } from "lucide-react";
+import { CirclePlus, CopyMinus, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useEditModeStore } from "../../stores/editMode";
@@ -18,37 +18,22 @@ import type { ElementTreeItem } from "../../../types/builder/stately.types";
 import type { Layout } from "../../../types/builder/layout.types";
 import { buildTreeFromElements } from "../../utils/treeUtils";
 import { MessageService } from "../../../utils/messaging";
+import { getDB } from "../../../lib/db";
+import { useTreeExpandState } from "../../hooks/useTreeExpandState";
 
 interface LayoutsTabProps {
-  renderTree: <
-    T extends { id: string; parent_id?: string | null; order_num?: number }
-  >(
-    items: T[],
-    getLabel: (item: T) => string,
-    onClick: (item: T) => void,
-    onDelete: (item: T) => Promise<void>,
-    parentId?: string | null,
-    depth?: number
-  ) => React.ReactNode;
-  renderElementTree: (
-    tree: ElementTreeItem[],
-    onClick: (item: Element) => void,
-    onDelete: (item: Element) => Promise<void>,
-    depth?: number
-  ) => React.ReactNode;
+  // ⭐ renderTree/renderElementTree/collapseAllTreeItems 제거됨
+  // Layout은 자체 renderLayoutTree와 collapseLayoutTree 사용
   selectedElementId: string | null;
   setSelectedElement: (elementId: string | null, props?: ElementProps) => void;
   sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
-  collapseAllTreeItems?: () => void;
   projectId?: string; // prop으로 받은 projectId (우선 사용)
 }
 
 export function LayoutsTab({
-  renderElementTree,
   selectedElementId,
   setSelectedElement,
   sendElementSelectedMessage,
-  collapseAllTreeItems,
   projectId: projectIdProp,
 }: LayoutsTabProps) {
   // URL params (fallback)
@@ -67,7 +52,9 @@ export function LayoutsTab({
 
   // Compute currentLayout from layouts and currentLayoutId
   const currentLayout = useMemo(() => {
-    return layouts.find((l) => l.id === currentLayoutId) || null;
+    const found = layouts.find((l) => l.id === currentLayoutId) || null;
+    console.log(`📌 [currentLayout] 계산: currentLayoutId=${currentLayoutId?.slice(0,8)}, found=${found?.name}`);
+    return found;
   }, [layouts, currentLayoutId]);
 
   // Edit Mode store
@@ -78,6 +65,7 @@ export function LayoutsTab({
   // Elements store - Layout에 속한 요소들
   const allElements = useStore((state) => state.elements);
   const removeElement = useStore((state) => state.removeElement);
+  const setElements = useStore((state) => state.setElements);
 
   // 컴포넌트 마운트 시 Layouts 로드
   useEffect(() => {
@@ -90,24 +78,254 @@ export function LayoutsTab({
     }
   }, [projectId, fetchLayouts]);
 
+  // ⭐ Layout/Slot System: 이미 로드된 Layout ID 추적 (중복 로드 방지)
+  const loadedLayoutIdsRef = React.useRef<Set<string>>(new Set());
+
+  // ⭐ Layout/Slot System: Layout 선택 시 DB에서 요소 로드 (fallback용 - handleSelectLayout에서 주로 처리)
+  useEffect(() => {
+    if (!currentLayoutId) {
+      console.log("📥 [LayoutsTab] currentLayoutId가 없음 - 요소 로드 스킵");
+      return;
+    }
+
+    // 이미 로드된 Layout이면 스킵 (handleSelectLayout에서 이미 로드됨)
+    if (loadedLayoutIdsRef.current.has(currentLayoutId)) {
+      console.log(`📥 [LayoutsTab] Layout ${currentLayoutId.slice(0, 8)} 이미 로드됨 - 스킵`);
+      return;
+    }
+
+    const loadLayoutElements = async () => {
+      try {
+        console.log(`📥 [LayoutsTab] Layout ${currentLayoutId} 요소 로드 시작... (fallback)`);
+        const db = await getDB();
+        const layoutElements = await db.elements.getByLayout(currentLayoutId);
+        console.log(`📥 [LayoutsTab] IndexedDB에서 ${layoutElements.length}개 요소 조회됨`);
+
+        // 최신 elements 상태 가져오기 (stale closure 방지)
+        const currentElements = useStore.getState().elements;
+        const storeSetElements = useStore.getState().setElements;
+
+        // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지
+        const otherElements = currentElements.filter(
+          (el) => el.layout_id !== currentLayoutId
+        );
+        // 새로 로드한 레이아웃 요소들과 병합
+        const mergedElements = [...otherElements, ...layoutElements];
+        storeSetElements(mergedElements, { skipHistory: true });
+
+        // 로드 완료 표시
+        loadedLayoutIdsRef.current.add(currentLayoutId);
+        console.log(
+          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 ${layoutElements.length}개 로드 완료 (전체: ${mergedElements.length})`
+        );
+      } catch (error) {
+        console.error("[LayoutsTab] Layout 요소 로드 실패:", error);
+      }
+    };
+
+    loadLayoutElements();
+  }, [currentLayoutId]); // useStore.getState()를 사용하므로 다른 의존성 불필요
+
   // 현재 Layout의 요소들만 필터링
   const layoutElements = useMemo(() => {
+    console.log(`🎯 [layoutElements] 필터링: currentLayout=${currentLayout?.id?.slice(0,8)}, allElements=${allElements.length}개`);
     if (!currentLayout) return [];
-    return allElements.filter((el) => el.layout_id === currentLayout.id);
+    const filtered = allElements.filter((el) => el.layout_id === currentLayout.id);
+    console.log(`🎯 [layoutElements] 필터 결과: ${filtered.length}개 (${filtered.map(el => el.tag).join(', ')})`);
+    return filtered;
   }, [allElements, currentLayout]);
 
   // Layout 요소 트리 빌드
   const layoutElementTree = useMemo(() => {
+    console.log(`🌳 [layoutElementTree] 트리 빌드: ${layoutElements.length}개 요소`);
     return buildTreeFromElements(layoutElements);
   }, [layoutElements]);
 
+  // ⭐ Layout 전용 트리 펼치기/접기 상태 관리
+  const { expandedKeys, toggleKey, collapseAll: collapseLayoutTree, expandKey } = useTreeExpandState({
+    selectedElementId,
+    elements: layoutElements,
+  });
+
+  // ⭐ Layout 전환 시 body 자동 펼치기 (단일 effect로 통합)
+  const prevLayoutIdRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    const layoutChanged = currentLayout?.id !== prevLayoutIdRef.current;
+
+    if (layoutChanged && currentLayout?.id) {
+      // Layout이 변경되었으면 먼저 모든 확장 상태를 초기화
+      collapseLayoutTree();
+      console.log(`📂 [LayoutsTab] Layout 전환: ${prevLayoutIdRef.current?.slice(0, 8)} → ${currentLayout.id.slice(0, 8)}`);
+      prevLayoutIdRef.current = currentLayout.id;
+    }
+
+    // body 요소가 있으면 자동 펼치기
+    if (currentLayout && layoutElements.length > 0) {
+      const bodyElement = layoutElements.find(el => el.tag === 'body');
+      if (bodyElement) {
+        // 약간의 딜레이로 collapse 후 expand 실행 보장
+        const timeoutId = setTimeout(() => {
+          console.log(`📂 [LayoutsTab] body 자동 펼치기: ${bodyElement.id.slice(0, 8)}`);
+          expandKey(bodyElement.id);
+        }, 0);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree]);
+
+  // ⭐ Layout 전용 Element Tree 렌더링 함수
+  const renderLayoutTree = useCallback((
+    tree: ElementTreeItem[],
+    onClick: (item: Element) => void,
+    onDelete: (item: Element) => Promise<void>,
+    depth: number = 0
+  ): React.ReactNode => {
+    if (tree.length === 0) return null;
+
+    return (
+      <>
+        {tree.map((item) => {
+          const hasChildNodes = item.children && item.children.length > 0;
+          const isExpanded = expandedKeys.has(item.id);
+
+          // Element로 변환 (onClick, onDelete용)
+          const element: Element = {
+            id: item.id,
+            tag: item.tag,
+            parent_id: item.parent_id || null,
+            order_num: item.order_num,
+            props: item.props as ElementProps,
+            deleted: item.deleted,
+            layout_id: currentLayout?.id || null,
+            page_id: null,
+            created_at: "",
+            updated_at: "",
+          };
+
+          return (
+            <div
+              key={item.id}
+              data-depth={depth}
+              data-has-children={hasChildNodes}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(element);
+              }}
+              className="element"
+            >
+              <div
+                className={`elementItem ${
+                  selectedElementId === item.id ? "active" : ""
+                }`}
+              >
+                <div
+                  className="elementItemIndent"
+                  style={{ width: depth > 0 ? `${depth * 8}px` : "0px" }}
+                ></div>
+                <div
+                  className="elementItemIcon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (hasChildNodes) {
+                      toggleKey(item.id);
+                    }
+                  }}
+                >
+                  {hasChildNodes ? (
+                    <ChevronRight
+                      color={iconProps.color}
+                      strokeWidth={iconProps.stroke}
+                      size={iconProps.size}
+                      style={{
+                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      color={iconProps.color}
+                      strokeWidth={iconProps.stroke}
+                      size={iconProps.size}
+                      style={{ padding: "2px" }}
+                    />
+                  )}
+                </div>
+                <div className="elementItemLabel">
+                  {item.tag === "Slot" && item.props
+                    ? `Slot: ${(item.props as Record<string, unknown>).name || "unnamed"}`
+                    : item.tag}
+                </div>
+                <div className="elementItemActions">
+                  <button className="iconButton" aria-label="Settings">
+                    <Settings2
+                      color={iconProps.color}
+                      strokeWidth={iconProps.stroke}
+                      size={iconProps.size}
+                    />
+                  </button>
+                  {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
+                  {item.tag !== "body" && (
+                    <button
+                      className="iconButton"
+                      aria-label={`Delete ${item.tag}`}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await onDelete(element);
+                      }}
+                    >
+                      <Trash
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {isExpanded && hasChildNodes && item.children && (
+                renderLayoutTree(item.children, onClick, onDelete, depth + 1)
+              )}
+            </div>
+          );
+        })}
+      </>
+    );
+  }, [expandedKeys, toggleKey, selectedElementId, currentLayout?.id]);
+
   // Layout 선택 핸들러
+  // ⭐ 요소를 먼저 로드한 후 currentLayoutId 설정 (타이밍 문제 해결)
   const handleSelectLayout = useCallback(
-    (layout: Layout) => {
-      setCurrentLayoutInStore(layout.id);
-      setEditModeLayoutId(layout.id);
+    async (layout: Layout) => {
+      console.log(`🔄 [LayoutsTab] Layout 선택: ${layout.name} (${layout.id})`);
+      console.log(`🔄 [LayoutsTab] 현재 currentLayoutId: ${currentLayoutId}`);
+
+      try {
+        // 1. 먼저 Layout 요소들을 Store에 로드
+        const db = await getDB();
+        const layoutElements = await db.elements.getByLayout(layout.id);
+        console.log(`📥 [LayoutsTab] Layout ${layout.id.slice(0, 8)} 요소 ${layoutElements.length}개 선 로드`);
+
+        // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
+        const currentElements = useStore.getState().elements;
+        const otherElements = currentElements.filter((el) => el.layout_id !== layout.id);
+        const mergedElements = [...otherElements, ...layoutElements];
+        setElements(mergedElements, { skipHistory: true });
+
+        // 로드 완료 표시 (useEffect에서 중복 로드 방지)
+        loadedLayoutIdsRef.current.add(layout.id);
+
+        // 2. 그 다음 currentLayoutId 설정 (이제 요소들이 있으므로 필터링 정상 작동)
+        setCurrentLayoutInStore(layout.id);
+        setEditModeLayoutId(layout.id);
+        console.log(`🔄 [LayoutsTab] Layout 선택 완료`);
+      } catch (error) {
+        console.error("Layout 선택 에러:", error);
+        // 에러 발생해도 Layout 선택은 진행
+        setCurrentLayoutInStore(layout.id);
+        setEditModeLayoutId(layout.id);
+      }
     },
-    [setCurrentLayoutInStore, setEditModeLayoutId]
+    [setCurrentLayoutInStore, setEditModeLayoutId, currentLayoutId, setElements]
   );
 
   // Layout 삭제 핸들러
@@ -235,7 +453,7 @@ export function LayoutsTab({
             <button
               className="iconButton"
               aria-label="Collapse All"
-              onClick={() => collapseAllTreeItems?.()}
+              onClick={() => collapseLayoutTree()}
             >
               <CopyMinus
                 color={iconProps.color}
@@ -251,7 +469,7 @@ export function LayoutsTab({
           ) : layoutElements.length === 0 ? (
             <p className="no_element">No elements in this layout</p>
           ) : (
-            renderElementTree(
+            renderLayoutTree(
               layoutElementTree,
               (el) => {
                 setSelectedElement(el.id, el.props as ElementProps);

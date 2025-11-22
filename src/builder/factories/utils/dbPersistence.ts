@@ -6,31 +6,60 @@ import { supabase } from "../../../env/supabase.client";
 import { getDB } from "../../../lib/db";
 
 /**
- * 참조 무결성 검증: page_id와 parent_id가 Supabase DB에 존재하는지 확인
+ * 참조 무결성 검증: page_id/layout_id와 parent_id가 Supabase DB에 존재하는지 확인
  * ⭐ Supabase 저장 전용 검증 (IndexedDB는 별도 처리)
+ * ⭐ Layout/Slot System: layoutId가 있으면 layout 검증, 없으면 page 검증
  */
 async function validateReferences(
   pageId: string,
-  parentId: string | null
+  parentId: string | null,
+  layoutId?: string | null
 ): Promise<boolean> {
   try {
-    // 1. Page 존재 여부 확인 (Supabase DB만 확인)
-    const { data: page, error: pageError } = await supabase
-      .from("pages")
-      .select("id")
-      .eq("id", pageId)
-      .maybeSingle();
+    // ⭐ Layout/Slot System: Layout 모드 검증
+    if (layoutId) {
+      // Layout 존재 여부 확인
+      const { data: layout, error: layoutError } = await supabase
+        .from("layouts")
+        .select("id")
+        .eq("id", layoutId)
+        .maybeSingle();
 
-    if (pageError) {
-      console.warn(`[dbPersistence] Error checking page ${pageId}:`, pageError);
-      return false;
-    }
+      if (layoutError) {
+        console.warn(`[dbPersistence] Error checking layout ${layoutId}:`, layoutError);
+        return false;
+      }
 
-    if (!page) {
-      // Supabase에 페이지가 없으면 로컬 개발 환경으로 간주하고 스킵
-      console.log(
-        `[dbPersistence] ⏭️ Page ${pageId} not in Supabase - skipping cloud save (local-only mode)`
-      );
+      if (!layout) {
+        // Supabase에 레이아웃이 없으면 로컬 개발 환경으로 간주하고 스킵
+        console.log(
+          `[dbPersistence] ⏭️ Layout ${layoutId} not in Supabase - skipping cloud save (local-only mode)`
+        );
+        return false;
+      }
+    } else if (pageId) {
+      // 1. Page 존재 여부 확인 (Supabase DB만 확인)
+      const { data: page, error: pageError } = await supabase
+        .from("pages")
+        .select("id")
+        .eq("id", pageId)
+        .maybeSingle();
+
+      if (pageError) {
+        console.warn(`[dbPersistence] Error checking page ${pageId}:`, pageError);
+        return false;
+      }
+
+      if (!page) {
+        // Supabase에 페이지가 없으면 로컬 개발 환경으로 간주하고 스킵
+        console.log(
+          `[dbPersistence] ⏭️ Page ${pageId} not in Supabase - skipping cloud save (local-only mode)`
+        );
+        return false;
+      }
+    } else {
+      // pageId와 layoutId 둘 다 없으면 저장 스킵
+      console.warn("[dbPersistence] Neither pageId nor layoutId provided - skipping save");
       return false;
     }
 
@@ -86,16 +115,18 @@ async function validateReferences(
 /**
  * 부모 및 자식 요소들을 Supabase DB에 저장
  * ⚠️ 로컬 전용 모드(IndexedDB만)에서는 자동으로 스킵됨
+ * ⭐ Layout/Slot System: layoutId 지원
  */
 export async function saveElementsToDb(
   parent: Element,
   children: Element[],
   parentId: string | null,
-  pageId: string
+  pageId: string,
+  layoutId?: string | null
 ): Promise<void> {
   try {
     // ⭐ Supabase 참조 무결성 검증 (외래 키 위반 방지)
-    const isValid = await validateReferences(pageId, parentId);
+    const isValid = await validateReferences(pageId, parentId, layoutId);
     if (!isValid) {
       // 로컬 전용 모드: Supabase 저장 스킵 (IndexedDB에는 이미 저장됨)
       console.log(
@@ -104,13 +135,18 @@ export async function saveElementsToDb(
       return;
     }
 
+    // ⭐ Layout/Slot System: layout 모드에서는 빈 배열 사용 (pageId가 없음)
+    const existingElements = layoutId
+      ? [] // Layout 모드: order_num 계산용 요소 없음 (향후 필요시 layoutId로 조회)
+      : await elementsApi.getElementsByPageId(pageId);
+
     // 부모 먼저 저장
     const parentToSave = {
       ...parent,
       parent_id: parentId,
       order_num: HierarchyManager.calculateNextOrderNum(
         parentId,
-        await elementsApi.getElementsByPageId(pageId)
+        existingElements
       ),
     };
 
@@ -132,7 +168,7 @@ export async function saveElementsToDb(
     }
 
     console.log(
-      `[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children`
+      `[dbPersistence] Successfully saved parent ${savedParent.id} and ${children.length} children${layoutId ? ` (Layout: ${layoutId})` : ''}`
     );
   } catch (error) {
     console.error("Background save failed:", error);
@@ -141,14 +177,16 @@ export async function saveElementsToDb(
 
 /**
  * 백그라운드에서 DB 저장 (setTimeout 사용)
+ * ⭐ Layout/Slot System: layoutId 지원
  */
 export function saveElementsInBackground(
   parent: Element,
   children: Element[],
   parentId: string | null,
-  pageId: string
+  pageId: string,
+  layoutId?: string | null
 ): void {
   setTimeout(async () => {
-    await saveElementsToDb(parent, children, parentId, pageId);
+    await saveElementsToDb(parent, children, parentId, pageId, layoutId);
   }, 0);
 }

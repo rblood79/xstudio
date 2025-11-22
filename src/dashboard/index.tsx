@@ -244,7 +244,24 @@ function Dashboard() {
           await db.designTokens.delete(token.id);
         }
 
-        // 5. 프로젝트 삭제 (IndexedDB)
+        // ⭐ 5. Layout/Slot System: 프로젝트의 레이아웃과 레이아웃 요소 삭제
+        const layouts = await db.layouts.getByProject(id);
+        console.log('[Dashboard] 삭제할 레이아웃:', layouts.length);
+
+        for (const layout of layouts) {
+          // 레이아웃의 요소들 삭제 (layout_id로 조회)
+          const layoutElements = await db.elements.getByLayout(layout.id);
+          console.log('[Dashboard] 레이아웃', layout.name, '의 요소:', layoutElements.length);
+
+          for (const element of layoutElements) {
+            await db.elements.delete(element.id);
+          }
+
+          // 레이아웃 삭제
+          await db.layouts.delete(layout.id);
+        }
+
+        // 6. 프로젝트 삭제 (IndexedDB)
         await db.projects.delete(id);
         console.log('✅ [Dashboard] 로컬 프로젝트 삭제 완료');
       }

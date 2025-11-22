@@ -1,6 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
+import { useEditModeStore } from '../stores/editMode';
+import { useLayoutsStore } from '../stores/layouts';
 // useZundoActions는 제거됨 - 기존 시스템 사용
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { Element } from '../../types/core/store.types';
@@ -45,6 +47,22 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const currentPageId = useStore((state) => state.currentPageId);
     const pages = useStore((state) => state.pages);
 
+    // ⭐ Layout/Slot System: Edit Mode 구독
+    const editMode = useEditModeStore((state) => state.mode);
+    const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
+
+    // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
+    const filteredElements = useMemo(() => {
+        if (editMode === 'layout' && currentLayoutId) {
+            // Layout 편집 모드: 현재 레이아웃의 요소만 전송
+            const layoutElements = elements.filter(el => el.layout_id === currentLayoutId);
+            console.log(`🎯 [useIframeMessenger] Layout 모드 필터링: ${layoutElements.length}개 (layout_id=${currentLayoutId?.slice(0, 8)})`);
+            return layoutElements;
+        }
+        // Page 편집 모드: 모든 요소 전송 (기존 동작)
+        return elements;
+    }, [elements, editMode, currentLayoutId]);
+
     // 기존 히스토리 시스템에서 필요한 함수들만 가져오기
     // undo, redo는 함수 내에서 직접 호출
 
@@ -52,22 +70,31 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isIframeReady = iframeReadyState === 'ready';
 
     // 요소들을 iframe에 전송 (상태에 따라 큐잉)
+    // ⭐ Layout/Slot System: pageInfo도 함께 전송 (초기 로드 시 Layout 렌더링용)
     const sendElementsToIframe = useCallback((elementsToSend: Element[]) => {
         const iframe = MessageService.getIframe();
 
         // 🔧 FIX: Ref를 사용하여 최신 상태 확인 (비동기 state 업데이트 회피)
         const currentReadyState = iframeReadyStateRef.current;
 
+        // ⭐ Layout/Slot System: 현재 페이지의 layoutId 가져오기
+        const { currentPageId, pages } = useStore.getState();
+        const currentPage = pages.find((p) => p.id === currentPageId);
+        const pageInfo = {
+            pageId: currentPageId,
+            layoutId: currentPage?.layout_id || null,
+        };
+
         // iframe이 준비되지 않았으면 큐에 넣기
         if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
             messageQueueRef.current.push({
                 type: "UPDATE_ELEMENTS",
-                payload: elementsToSend
+                payload: { elements: elementsToSend, pageInfo }
             });
             return;
         }
 
-        const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend };
+        const message = { type: "UPDATE_ELEMENTS", elements: elementsToSend, pageInfo };
         iframe.contentWindow.postMessage(message, window.location.origin);
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
@@ -145,11 +172,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         queue.forEach(item => {
             if (item.type === "UPDATE_ELEMENTS") {
+                // ⭐ Layout/Slot System: 새 payload 형식 (elements + pageInfo)
+                const payload = item.payload as { elements: Element[]; pageInfo: { pageId: string | null; layoutId: string | null } };
                 iframe.contentWindow!.postMessage({
                     type: "UPDATE_ELEMENTS",
-                    elements: item.payload
+                    elements: payload.elements,
+                    pageInfo: payload.pageInfo,
                 }, window.location.origin);
-                console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${(item.payload as Element[]).length} elements`);
+                console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${payload.elements.length} elements`, { pageInfo: payload.pageInfo });
             } else if (item.type === "ELEMENT_SELECTED") {
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
             } else if (item.type === "REQUEST_ELEMENT_SELECTION") {
@@ -490,7 +520,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // Layer 트리에서 선택할 때:
     // sendElementSelectedMessage(selectedElementId, element.props);
 
-    // elements가 변경될 때마다 iframe에 전송 (무한 루프 방지)
+    // ⭐ Layout/Slot System: filteredElements가 변경될 때마다 iframe에 전송
     // Phase 2.1 최적화: JSON.stringify 제거, 구조적 참조 비교
     const lastSentElementsRef = useRef<Element[]>([]);
     const isSendingRef = useRef(false);
@@ -511,13 +541,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // Phase 2.1 최적화: 구조적 참조 비교 (JSON.stringify 제거)
         // 배열 길이와 각 요소의 참조 비교
         const prevElements = lastSentElementsRef.current;
-        if (prevElements.length === elements.length) {
+        if (prevElements.length === filteredElements.length) {
             let isSame = true;
-            for (let i = 0; i < elements.length; i++) {
+            for (let i = 0; i < filteredElements.length; i++) {
                 // 요소 참조가 다르거나 id/tag가 다르면 변경됨
-                if (prevElements[i] !== elements[i] ||
-                    prevElements[i].id !== elements[i].id ||
-                    prevElements[i].tag !== elements[i].tag) {
+                if (prevElements[i] !== filteredElements[i] ||
+                    prevElements[i].id !== filteredElements[i].id ||
+                    prevElements[i].tag !== filteredElements[i].tag) {
                     isSame = false;
                     break;
                 }
@@ -528,17 +558,18 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         console.log('🔄 요소 변경 감지 - iframe 전송:', {
-            elementCount: elements.length,
-            elementIds: elements.map(el => el.id),
+            editMode,
+            elementCount: filteredElements.length,
+            elementIds: filteredElements.map(el => el.id),
             iframeReadyState: iframeReadyStateRef.current
         });
 
         // 전송 중 플래그 설정
         isSendingRef.current = true;
-        lastSentElementsRef.current = elements;
+        lastSentElementsRef.current = filteredElements;
 
         // iframe에 요소 전송 (ACK를 받으면 isSendingRef.current = false로 해제됨)
-        sendElementsToIframe(elements);
+        sendElementsToIframe(filteredElements);
 
         // ✅ 백업: ACK를 못 받으면 1초 후 플래그 강제 해제
         setTimeout(() => {
@@ -547,7 +578,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 isSendingRef.current = false;
             }
         }, 1000);
-    }, [elements, sendElementsToIframe]); // ✅ iframeReadyState 의존성 제거
+    }, [filteredElements, sendElementsToIframe, editMode]); // ⭐ Layout/Slot System: filteredElements, editMode 의존성
 
     // ⭐ Layout/Slot System: Page 정보가 변경될 때 iframe에 전송
     const lastSentPageInfoRef = useRef<{ pageId: string | null; layoutId: string | null }>({

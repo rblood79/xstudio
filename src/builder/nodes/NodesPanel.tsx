@@ -107,12 +107,9 @@ export function NodesPanel({
 
     return (
       <LayoutsTab
-        renderTree={renderTree}
-        renderElementTree={renderElementTree}
         selectedElementId={selectedElementId}
         setSelectedElement={setSelectedElement}
         sendElementSelectedMessage={sendElementSelectedMessage}
-        collapseAllTreeItems={collapseAllTreeItems}
         projectId={projectId}
       />
     );

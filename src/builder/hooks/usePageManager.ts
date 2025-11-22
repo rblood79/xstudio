@@ -84,6 +84,22 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const db = await getDB();
             const elementsData = await db.elements.getByPage(pageId);
 
+            // ⭐ Layout/Slot System: 페이지에 적용된 Layout의 요소들도 함께 로드
+            const { pages } = useStore.getState();
+            const currentPage = pages.find(p => p.id === pageId);
+            let allElements = [...elementsData];
+
+            if (currentPage?.layout_id) {
+                const layoutElements = await db.elements.getByLayout(currentPage.layout_id);
+                console.log(`📥 [fetchElements] Layout ${currentPage.layout_id.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`);
+                // Layout 요소들 추가 (중복 제거)
+                const existingIds = new Set(allElements.map(el => el.id));
+                layoutElements.forEach(el => {
+                    if (!existingIds.has(el.id)) {
+                        allElements.push(el);
+                    }
+                });
+            }
 
             const { setElements, setSelectedElement } = useStore.getState() as unknown as {
                 setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
@@ -101,7 +117,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             }
 
             // 항상 히스토리 기록하지 않음 (useEffect → UPDATE_ELEMENTS → ACK → auto-select 실행)
-            setElements(elementsData, { skipHistory: true });
+            setElements(allElements, { skipHistory: true });
 
             // 페이지 변경 시 현재 페이지 ID 업데이트
             setCurrentPageId(pageId);
@@ -112,7 +128,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 setSelectedElement(bodyElement.id);
             }
 
-            return { success: true, data: elementsData };
+            return { success: true, data: allElements };
         } catch (error) {
             console.error('요소 로드 에러:', error);
             return { success: false, error: error as Error };
@@ -148,6 +164,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 slug: `page-${nextOrderNum + 1}`,
                 parent_id: null,
                 order_num: nextOrderNum,
+                layout_id: null, // ⭐ Layout/Slot System: 페이지 생성 시 layout_id 초기화
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             };
@@ -248,13 +265,19 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
             // 3. Zustand store에도 저장 (NodesPanel이 접근할 수 있도록)
             // ApiPage → store Page 변환 (title → name)
-            const storePages = apiPages.map(p => ({
-                id: p.id,
-                name: p.title, // title → name
-                slug: p.slug,
-                parent_id: p.parent_id,
-                order_num: p.order_num
-            }));
+            // ⭐ Layout/Slot System: layout_id도 함께 저장
+            const storePages = apiPages.map(p => {
+                // IndexedDB의 원본 페이지에서 layout_id 가져오기
+                const originalPage = projectPages.find(pp => pp.id === p.id);
+                return {
+                    id: p.id,
+                    name: p.title, // title → name
+                    slug: p.slug,
+                    parent_id: p.parent_id,
+                    order_num: p.order_num,
+                    layout_id: (originalPage as { layout_id?: string | null })?.layout_id || null
+                };
+            });
             setPages(storePages);
 
             // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택

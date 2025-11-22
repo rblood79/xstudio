@@ -7,6 +7,7 @@
  */
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { StateCreator } from "zustand";
 import type {
   EditMode,
@@ -101,9 +102,16 @@ export const createEditModeSlice: StateCreator<EditModeStore> = (set, get) => {
 
 // ============================================
 // Store Instance
+// ⭐ Layout/Slot System: persist middleware로 editMode 상태 유지
 // ============================================
 
-export const useEditModeStore = create<EditModeStore>(createEditModeSlice);
+export const useEditModeStore = create<EditModeStore>()(
+  persist(createEditModeSlice, {
+    name: "xstudio-edit-mode",
+    // mode만 저장 (pageId, layoutId는 저장하지 않음 - 각 스토어에서 관리)
+    partialize: (state) => ({ mode: state.mode }),
+  })
+);
 
 // ============================================
 // Selectors (for optimized re-renders)

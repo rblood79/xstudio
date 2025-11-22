@@ -254,12 +254,13 @@ export const useElementCreator = (): UseElementCreatorReturn => {
                         // iframe에 업데이트된 요소들 전송
                         sendElementsToIframe(updatedElements);
                     } else {
-                        console.log(`🔧 단순 컴포넌트 생성: ${tag}`);
+                        console.log(`🔧 단순 컴포넌트 생성: ${tag}`, layoutId ? `(Layout: ${layoutId})` : '');
                         // 단순 컴포넌트 생성 (캐시 활용)
                         // parent_id가 없으면 body 요소를 parent로 설정
+                        // ⭐ Layout/Slot System: layoutId 우선, 없으면 pageId 사용
                         let parentId = selectedElementId || null;
                         if (!parentId) {
-                            parentId = ElementUtils.findBodyElement(elements, currentPageId);
+                            parentId = ElementUtils.findBodyByContext(elements, currentPageId || null, layoutId || null);
                         }
                         const orderNum = HierarchyManager.calculateNextOrderNum(parentId, elements);
 

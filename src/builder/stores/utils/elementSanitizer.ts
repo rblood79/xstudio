@@ -22,6 +22,7 @@ export const sanitizeElement = (element: Element): Record<string, unknown> => {
         props: structuredClone(element.props || {}),
         parent_id: element.parent_id,
         page_id: element.page_id,
+        layout_id: element.layout_id, // ⭐ Layout/Slot System: layout_id 포함
         order_num: element.order_num,
         data_binding: element.dataBinding, // camelCase → snake_case 변환
       };
@@ -35,6 +36,7 @@ export const sanitizeElement = (element: Element): Record<string, unknown> => {
       props: JSON.parse(JSON.stringify(element.props || {})),
       parent_id: element.parent_id,
       page_id: element.page_id,
+      layout_id: element.layout_id, // ⭐ Layout/Slot System: layout_id 포함
       order_num: element.order_num,
       data_binding: element.dataBinding, // camelCase → snake_case 변환
     };
@@ -48,6 +50,7 @@ export const sanitizeElement = (element: Element): Record<string, unknown> => {
       props: {},
       parent_id: element.parent_id,
       page_id: element.page_id || "",
+      layout_id: element.layout_id || null, // ⭐ Layout/Slot System: layout_id 포함
       order_num: element.order_num || 0,
       data_binding: element.dataBinding, // camelCase → snake_case 변환
     };
