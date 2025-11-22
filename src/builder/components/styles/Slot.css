@@ -131,25 +131,22 @@
 
   /* Hover state (edit mode) */
   .react-aria-Slot:hover {
-    border-color: var(--color-primary-400);
-    background: var(--color-primary-50);
+    color: var(--color-ring);
   }
 
   .react-aria-Slot.required:hover {
-    border-color: var(--color-warning-400);
-    background: var(--color-warning-50);
+    color: var(--color-warning-400);
   }
 
   /* Selected state */
   .react-aria-Slot[data-selected="true"] {
-    border-color: var(--color-primary-500);
-    border-style: solid;
-    box-shadow: 0 0 0 3px var(--color-primary-200);
+    color: var(--color-ring);
+    box-shadow: 0 0 0 3px var(--builder-indicator-bg);
   }
 
   .react-aria-Slot.required[data-selected="true"] {
-    border-color: var(--color-warning-500);
-    box-shadow: 0 0 0 3px var(--color-warning-200);
+    border-color: var(--color-ring-danger);
+    box-shadow: 0 0 0 3px var(--builder-indicator-bg);
   }
 
   /* ============================================

@@ -302,8 +302,18 @@ function Preview() {
         );
 
         if (layoutBody) {
-          // Layout body의 자식들 렌더링
-          return layoutBody.children.map((child) => renderResolvedElement(child));
+          // ⭐ Layout body를 wrapper로 렌더링 (style 적용)
+          const bodyEl = layoutBody.element as PreviewElement;
+          return (
+            <div
+              key={bodyEl.id}
+              data-element-id={bodyEl.id}
+              className="layout-body"
+              style={bodyEl.props?.style as React.CSSProperties}
+            >
+              {layoutBody.children.map((child) => renderResolvedElement(child))}
+            </div>
+          );
         }
 
         // body가 없으면 전체 트리 렌더링
