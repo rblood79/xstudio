@@ -25,8 +25,10 @@ import { useValidation } from "../hooks/useValidation";
 import { useThemeMessenger } from "../hooks/useThemeMessenger";
 import { memoryMonitor } from "../stores/memoryMonitor";
 import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
-import { projectsApi, type Project } from "../../services/api";
+// import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
+import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
+import { getDB } from "../../lib/db";
 
 import "./index.css";
 import { MessageService } from "../../utils/messaging";
@@ -171,19 +173,21 @@ export const BuilderCore: React.FC = () => {
     console.log("[BuilderCore] Breakpoint changed:", value);
   }, []);
 
-  // 프로젝트 정보 가져오기
+  // 프로젝트 정보 가져오기 (IndexedDB만 조회 - Supabase 동기화는 대시보드에서 처리)
   useEffect(() => {
     const fetchProjectInfo = async () => {
-      if (projectId) {
-        try {
-          const projects = await projectsApi.fetchProjects();
-          const project = projects.find((p) => p.id === projectId);
-          if (project) {
-            setProjectInfo(project);
-          }
-        } catch (error) {
-          console.error("프로젝트 정보 로드 실패:", error);
+      if (!projectId) return;
+
+      try {
+        const db = await getDB();
+        const localProject = await db.projects.getById(projectId);
+        if (localProject) {
+          setProjectInfo(localProject as Project);
+        } else {
+          console.warn("[BuilderCore] 프로젝트를 찾을 수 없음:", projectId);
         }
+      } catch (error) {
+        console.error("[BuilderCore] 프로젝트 정보 로드 실패:", error);
       }
     };
 
