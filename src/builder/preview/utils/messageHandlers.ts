@@ -18,15 +18,8 @@ export const handleUpdateElements = (
     // ⭐ Layout/Slot System: pageInfo 추출
     const pageInfo = (data as { pageInfo?: { pageId: string | null; layoutId: string | null } }).pageInfo;
 
-    console.log(`📥 [Preview] Received UPDATE_ELEMENTS: ${elements.length} elements`, {
-      elementIds: elements.map((el: PreviewElement) => el.id),
-      tags: elements.map((el: PreviewElement) => el.tag),
-      pageInfo, // ⭐ Layout/Slot System: pageInfo 로그 추가
-    });
-
     // ⭐ Layout/Slot System: pageInfo가 있으면 먼저 설정 (렌더링 전에 설정되어야 함)
     if (pageInfo && setPageInfo) {
-      console.log(`📄 [Preview] Setting pageInfo from UPDATE_ELEMENTS:`, pageInfo);
       setPageInfo(pageInfo.pageId, pageInfo.layoutId);
     }
 

@@ -179,7 +179,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                     elements: payload.elements,
                     pageInfo: payload.pageInfo,
                 }, window.location.origin);
-                console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${payload.elements.length} elements`, { pageInfo: payload.pageInfo });
+                console.log(`✅ [Builder] Sent queued UPDATE_ELEMENTS: ${payload.elements.length} elements`);
             } else if (item.type === "ELEMENT_SELECTED") {
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
             } else if (item.type === "REQUEST_ELEMENT_SELECTION") {
