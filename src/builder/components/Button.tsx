@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import {
   composeRenderProps,
   Button as RACButton,
@@ -49,29 +50,32 @@ const button = tv({
   },
 });
 
-export function Button(props: ButtonProps) {
-  const { focusProps, isFocusVisible } = useFocusRing();
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(props, ref) {
+    const { focusProps, isFocusVisible } = useFocusRing();
 
-  return (
-    <RACButton
-      {...mergeProps(props, focusProps)}
-      type={props.type}
-      data-focus-visible={isFocusVisible}
-      className={composeRenderProps(
-        props.className,
-        (className, renderProps) => {
-          const generatedClass = button({
-            ...renderProps,
-            variant: props.variant,
-            size: props.size,
-            isFocusVisible, // 포커스 상태 추가
-            className,
-          });
-          return generatedClass;
-        }
-      )}
-    />
-  );
-}
+    return (
+      <RACButton
+        ref={ref}
+        {...mergeProps(props, focusProps)}
+        type={props.type}
+        data-focus-visible={isFocusVisible}
+        className={composeRenderProps(
+          props.className,
+          (className, renderProps) => {
+            const generatedClass = button({
+              ...renderProps,
+              variant: props.variant,
+              size: props.size,
+              isFocusVisible, // 포커스 상태 추가
+              className,
+            });
+            return generatedClass;
+          }
+        )}
+      />
+    );
+  }
+);
 
 export { Slider } from "./Slider";
