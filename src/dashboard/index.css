@@ -151,6 +151,7 @@
 
       .filters {
         display: flex;
+        flex-direction: row;
         gap: var(--spacing-xs);
 
         .react-aria-Button {
@@ -190,6 +191,7 @@
         gap: var(--spacing-md);
 
         .project-card {
+          width: var(--container-xs);
           border: 1px solid var(--color-border);
           border-radius: var(--radius-xl);
           display: flex;

@@ -10,7 +10,7 @@
    * ============================================ */
   .react-aria-Slot {
     position: relative;
-    min-height: 80px;
+    min-height: var(--text-5xl);
     border: 2px dashed var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface-50);
@@ -27,12 +27,16 @@
    * Empty State (Placeholder visible)
    * ============================================ */
   .react-aria-Slot.empty {
-    background: repeating-linear-gradient(
-      45deg,
-      var(--color-blue-50),
-      var(--color-blue-50) 4px,
-      var(--color-blue-100) 4px,
-      var(--color-blue-100) 8px
+    min-height: var(--text-5xl);
+    color: rgba(0, 0, 0, 0.1);
+    background-size: 8px 8px;
+    background-position: left top;
+    background-image: repeating-linear-gradient(
+      315deg,
+      currentColor 0,
+      currentColor 1px,
+      transparent 0,
+      transparent 50%
     );
     border-color: var(--color-border-strong);
   }
@@ -169,22 +173,30 @@
    * ============================================ */
   @media (prefers-color-scheme: dark) {
     .react-aria-Slot.empty {
-      background: repeating-linear-gradient(
-        45deg,
-        var(--color-blue-900),
-        var(--color-blue-900) 4px,
-        var(--color-blue-800) 4px,
-        var(--color-blue-800) 8px
+      height: 100%;
+      color: rgba(0, 0, 0, 0.1);
+      background-size: 8px 8px;
+      background-position: left top;
+      background-image: repeating-linear-gradient(
+        315deg,
+        currentColor 0,
+        currentColor 1px,
+        transparent 0,
+        transparent 50%
       );
     }
 
     .react-aria-Slot.required.empty {
-      background: repeating-linear-gradient(
-        45deg,
-        var(--color-warning-900),
-        var(--color-warning-900) 4px,
-        var(--color-warning-800) 4px,
-        var(--color-warning-800) 8px
+      height: 100%;
+      color: rgba(0, 0, 0, 0.1);
+      background-size: 8px 8px;
+      background-position: left top;
+      background-image: repeating-linear-gradient(
+        315deg,
+        currentColor 0,
+        currentColor 1px,
+        transparent 0,
+        transparent 50%
       );
     }
 

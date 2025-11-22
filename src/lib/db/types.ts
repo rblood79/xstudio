@@ -7,6 +7,7 @@
 
 import type { Element, Page } from '../../types/core/store.types';
 import type { DesignToken } from '../../types/theme';
+import type { Layout } from '../../types/builder/layout.types';
 
 // === Project Types ===
 
@@ -95,6 +96,7 @@ export interface DatabaseAdapter {
     deleteMany(ids: string[]): Promise<void>;
     getById(id: string): Promise<Element | null>;
     getByPage(pageId: string): Promise<Element[]>;
+    getByLayout(layoutId: string): Promise<Element[]>;
     getChildren(parentId: string): Promise<Element[]>;
     getAll(): Promise<Element[]>;
   };
@@ -107,6 +109,16 @@ export interface DatabaseAdapter {
     delete(id: string): Promise<void>;
     getByProject(projectId: string): Promise<DesignToken[]>;
     getAll(): Promise<DesignToken[]>;
+  };
+
+  // Layouts (Layout/Slot System)
+  layouts: {
+    insert(layout: Layout): Promise<Layout>;
+    update(id: string, data: Partial<Layout>): Promise<Layout>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<Layout | null>;
+    getByProject(projectId: string): Promise<Layout[]>;
+    getAll(): Promise<Layout[]>;
   };
 
   // History
