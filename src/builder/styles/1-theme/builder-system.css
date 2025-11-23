@@ -149,7 +149,6 @@
     /* ==================== Builder Tree/Layer View (Light) ==================== */
     --builder-tree-item-hover: var(--gray-50);
     --builder-tree-item-selected: var(--gray-100);
-    --builder-tree-indent: var(--spacing-lg);
   }
 
   /* ==================== Builder UI Scope Override ==================== */
