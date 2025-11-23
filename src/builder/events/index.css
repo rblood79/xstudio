@@ -16,7 +16,7 @@
     align-items: center;
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);
-    border-bottom: 1px solid var(--builder-inspector-border);
+    border-bottom: 1px solid var(--outline-variant);
 
 
 }
@@ -36,7 +36,7 @@
     justify-content: center;
     text-align: center;
     padding: var(--spacing-xl);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
 }
 
 .no-selection svg,
@@ -66,7 +66,7 @@
 }
 
 .event-editor {
-    border: 1px solid var(--builder-inspector-border);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     background: var(--surface-background);
     overflow: hidden;
@@ -100,15 +100,15 @@
 
 .event-actions-count {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
-    background: var(--builder-inspector-control-bg);
+    color: var(--on-surface-variant);
+    background: var(--surface-variant);
     padding: 2px 6px;
     border-radius: var(--radius-sm);
 }
 
 .event-description {
     font-size: var(--text-sm);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     margin-left: var(--spacing-sm);
 }
 
@@ -119,14 +119,14 @@
 
 .event-content {
     padding: var(--spacing-md);
-    border-top: 1px solid var(--builder-inspector-border);
+    border-top: 1px solid var(--outline-variant);
     background: var(--surface-background);
 }
 
 .actions-section {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
-    border-top: 1px solid var(--builder-inspector-border);
+    border-top: 1px solid var(--outline-variant);
 }
 
 .actions-header {
@@ -150,7 +150,7 @@
 }
 
 .action-editor {
-    border: 1px solid var(--builder-inspector-border);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-sm);
     background: var(--surface-background);
     overflow: hidden;
@@ -184,7 +184,7 @@
 
 .action-description {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
 }
 
 .action-controls {
@@ -194,14 +194,14 @@
 
 .action-content {
     padding: var(--spacing-sm);
-    border-top: 1px solid var(--builder-inspector-border);
+    border-top: 1px solid var(--outline-variant);
     background: var(--surface-background);
 }
 
 .action-value-editor {
     margin-top: var(--spacing-sm);
     padding-top: var(--spacing-sm);
-    border-top: 1px solid var(--builder-inspector-border);
+    border-top: 1px solid var(--outline-variant);
 }
 
 .checkbox-group {
@@ -223,7 +223,7 @@
 .checkbox-group input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: var(--builder-inspector-focus-ring);
+    accent-color: var(--focus-ring-color);
 }
 
 .select-wrapper {
@@ -241,7 +241,7 @@
 
 .event-type-select {
     padding: var(--spacing-2xs);
-    border: 1px solid var(--builder-inspector-border);
+    border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     background: var(--field-background);
     font-size: var(--text-sm);

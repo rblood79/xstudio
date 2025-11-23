@@ -47,7 +47,7 @@
       white-space: nowrap;
       padding: 0 var(--spacing-2xs);
       text-align: center;
-      color: var(--builder-inspector-text-secondary);
+      color: var(--on-surface-variant);
     }
   }
 

@@ -47,7 +47,7 @@
     /* Visual indication in builder mode (when element has data-element-id) */
     &[data-element-id] {
       /* Subtle border to indicate grouping boundary in builder */
-      outline: 1px dashed var(--builder-inspector-border, rgba(100, 100, 100, 0.3));
+      outline: 1px dashed var(--outline-variant);
       outline-offset: 2px;
 
       /* Hover state in builder */
@@ -69,11 +69,11 @@
       top: -20px;
       left: 0;
       font-size: var(--text-2xs);
-      color: var(--builder-inspector-text-secondary, rgba(100, 100, 100, 0.7));
-      background: var(--builder-inspector-bg, white);
+      color: var(--on-surface-variant);
+      background: var(--surface);
       padding: 2px 6px;
       border-radius: var(--radius-xs);
-      border: 1px solid var(--builder-inspector-border, rgba(100, 100, 100, 0.2));
+      border: 1px solid var(--outline-variant);
       pointer-events: none;
       z-index: 1;
     }

@@ -1,6 +1,6 @@
 @layer builder-system {
   :root {
-    --hover-bg: var(--builder-sidebar-hover-bg);
+    --hover-bg: var(--surface-container-low);
     --sidebar-width: 240px;
     --panel-nav-width: 48px;
   }
@@ -15,7 +15,7 @@
     width: var(--panel-nav-width);
     height: 100%;
     justify-content: space-between;
-    background-color: var(--builder-sidebar-nav-bg);
+    background-color: var(--surface);
   }
 
   .nav-list {
@@ -38,7 +38,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    stroke: var(--builder-sidebar-icon);
+    stroke: var(--on-surface-variant);
     border-radius: 6px;
     svg {
       stroke: inherit;
@@ -54,7 +54,7 @@
 
   .nav-button.active {
     background-color: var(--highlight-background);
-    stroke: var(--builder-sidebar-bg);
+    stroke: var(--surface-container);
   }
 
   /* Panel Slot */
@@ -143,7 +143,7 @@
 
   /* Panel Content */
   .panel-content {
-    background-color: var(--builder-sidebar-bg);
+    background-color: var(--secondary-container);
     display: flex;
     flex-direction: row;
     height: 100%;
@@ -228,22 +228,22 @@
 
   .sidebar {
     .panel-nav {
-      border-right: 1px solid var(--builder-sidebar-border);
+      border-right: 1px solid var(--outline-variant);
     }
     .panel-content {
       .panel-wrapper[data-active="true"] {
-        border-right: 1px solid var(--builder-sidebar-border);
+        border-right: 1px solid var(--outline-variant);
       }
     }
   }
 
   .inspector {
     .panel-nav {
-      border-left: 1px solid var(--builder-sidebar-border);
+      border-left: 1px solid var(--outline-variant);
     }
     .panel-content {
       .panel-wrapper[data-active="true"] {
-        border-left: 1px solid var(--builder-sidebar-border);
+        border-left: 1px solid var(--outline-variant);
       }
     }
   }
@@ -276,7 +276,7 @@
     justify-content: center;
     align-items: center;
     height: 100px;
-    color: var(--builder-sidebar-icon);
+    color: var(--on-surface-variant);
     font-size: var(--text-sm);
   }
 
@@ -308,8 +308,8 @@
     width: var(--panel-nav-width);
     height: 100%;
     justify-content: space-between;
-    background-color: var(--builder-sidebar-nav-bg);
-    border-right: 1px solid var(--builder-sidebar-border);
+    background-color: var(--surface);
+    border-right: 1px solid var(--outline-variant);
   }
 
   .sidebar-container {

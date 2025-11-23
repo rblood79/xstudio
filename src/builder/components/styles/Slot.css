@@ -141,12 +141,12 @@
   /* Selected state */
   .react-aria-Slot[data-selected="true"] {
     color: var(--color-ring);
-    box-shadow: 0 0 0 3px var(--builder-indicator-bg);
+    box-shadow: 0 0 0 3px var(--primary);
   }
 
   .react-aria-Slot.required[data-selected="true"] {
     border-color: var(--color-ring-danger);
-    box-shadow: 0 0 0 3px var(--builder-indicator-bg);
+    box-shadow: 0 0 0 3px var(--primary);
   }
 
   /* ============================================

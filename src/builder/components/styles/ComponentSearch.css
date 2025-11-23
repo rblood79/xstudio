@@ -33,7 +33,7 @@
 
   .component-search-field .react-aria-Input:focus {
     outline: none;
-    background-color: var(--builder-inspector-button-primary-bg);
+    background-color: var(--highlight-background);
     box-shadow: var(--inset-shadow-xs);
   }
 
@@ -55,7 +55,7 @@
   }
 
   .component-search-field .react-aria-Button:hover {
-    background: var(--builder-inspector-bg);
+    background: var(--surface);
     color: var(--text-color);
   }
 }

@@ -32,7 +32,7 @@
         width: calc(var(--indicator-width) - var(--spacing));
         height: calc(var(--indicator-height) - var(--spacing));
         border-radius: var(--radius-sm);
-        background: var(--builder-inspector-bg);
+        background: var(--on-surface);
       }
 
       .react-aria-ToggleButton {
@@ -42,18 +42,18 @@
         &[data-pressed] {
           background: transparent;
           border-color: transparent;
-          color: var(--builder-inspector-text-primary);
+          color: var(--on-surface);
         }
 
         &[data-selected] {
           background: transparent;
           border-color: transparent;
-          color: var(--builder-inspector-bg);
+          color: var(--surface);
 
           &[data-pressed] {
             background: transparent;
             border-color: transparent;
-            color: var(--builder-inspector-bg);
+            color: var(--surface);
           }
         }
       }
@@ -63,8 +63,8 @@
       font-size: var(--text-xs);
       line-height: var(--text-xs);
       font-weight: var(--font-weight-bold);
-      background-color: var(--builder-inspector-header-bg);
-      border-bottom: 1px solid var(--builder-inspector-control-bg);
+      background-color: var(--surface-variant);
+      border-bottom: 1px solid var(--surface-variant);
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -287,7 +287,7 @@
       .fieldset-legend {
         grid-area: label;
         font-size: var(--text-2xs);
-        color: var(--builder-inspector-text-secondary);
+        color: var(--on-surface-variant);
       }
 
       .fieldset-actions {
@@ -295,7 +295,7 @@
         display: flex;
 
         .react-aria-Button {
-          background-color: var(--builder-inspector-control-bg);
+          background-color: var(--surface-variant);
           border-color: transparent;
           padding: var(--spacing);
           height: var(--inspector-control-size);
@@ -336,7 +336,7 @@
               .alignment-dot {
                 width: var(--spacing);
                 height: var(--spacing);
-                background-color: var(--builder-inspector-divider);
+                background-color: var(--outline);
               }
             }
           }
@@ -355,7 +355,7 @@
     }
 
     .react-aria-Group {
-      background-color: var(--builder-sidebar-active-bg);
+      background-color: var(--outline-variant);
       border-radius: var(--radius-md);
       width: 100%;
       min-width: 0;
@@ -436,7 +436,7 @@
 
         .react-aria-SelectValue {
           font-size: var(--text-xs);
-          color: var(--builder-inspector-text-primary);
+          color: var(--on-surface);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -496,7 +496,7 @@
       border-right-width: 0;
       border-radius: var(--radius-md) 0 0 var(--radius-md);
       font-size: var(--text-xs);
-      color: var(--builder-inspector-text-secondary);
+      color: var(--on-surface-variant);
     }
 
     input.control-input {
@@ -522,7 +522,7 @@
 
     .react-aria-ToggleButtonGroup {
       width: 100%;
-      background-color: var(--builder-inspector-control-bg);
+      background-color: var(--surface-variant);
       border-radius: var(--radius-md);
       box-shadow: var(--inset-shadow-sm);
       outline-width: 0;
@@ -537,16 +537,16 @@
         border-color: transparent;
 
         &[data-selected] {
-          background: var(--builder-inspector-bg);
+          background: var(--surface);
           border-radius: var(--radius-md);
-          border-color: var(--builder-inspector-divider);
+          border-color: var(--outline);
           border-width: 1px;
         }
       }
     }
 
     .react-aria-CheckboxGroup {
-      background-color: var(--builder-inspector-control-bg);
+      background-color: var(--surface-variant);
       border-radius: var(--radius-md);
       gap: 0;
 
@@ -576,7 +576,7 @@
     .slider-track {
       flex: 1;
       height: 4px;
-      background: var(--builder-inspector-divider);
+      background: var(--outline);
       border-radius: var(--radius-full);
       position: relative;
     }
@@ -585,7 +585,7 @@
       width: 16px;
       height: 16px;
       background: var(--primary);
-      border: 2px solid var(--builder-inspector-bg);
+      border: 2px solid var(--surface);
       border-radius: var(--radius-full);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       cursor: pointer;
@@ -600,44 +600,44 @@
 
     .slider-output {
       font-size: var(--text-xs);
-      color: var(--builder-inspector-text-primary);
+      color: var(--on-surface);
       min-width: 40px;
       text-align: right;
     }
 
     .loading-message,
     .empty-message {
-      color: var(--builder-inspector-text-secondary);
+      color: var(--on-surface-variant);
       font-size: var(--font-size-sm);
     }
 
     .section-placeholder {
       padding: var(--spacing-4);
-      background: var(--builder-inspector-warning-bg);
-      border: 1px solid var(--builder-inspector-warning-border);
+      background: var(--warning-container);
+      border: 1px solid var(--warning-container);
       border-radius: var(--radius-md);
-      color: var(--builder-inspector-warning-text);
+      color: var(--on-warning-container);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-4);
     }
 
     .section-info {
       padding: var(--spacing-4);
-      background: var(--builder-inspector-surface);
-      border: 1px solid var(--builder-inspector-divider);
+      background: var(--surface);
+      border: 1px solid var(--outline);
       border-radius: var(--radius-md);
 
       h4 {
         margin: 0 0 var(--spacing-2) 0;
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-semibold);
-        color: var(--builder-inspector-text-primary);
+        color: var(--on-surface);
       }
 
       pre {
         margin: 0;
         padding: var(--spacing-2);
-        background: var(--builder-inspector-control-bg);
+        background: var(--surface-variant);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-family: var(--font-mono);
@@ -648,7 +648,7 @@
         margin: 0;
         padding-left: var(--spacing-4);
         font-size: var(--font-size-sm);
-        color: var(--builder-inspector-text-secondary);
+        color: var(--on-surface-variant);
       }
     }
   }
@@ -684,7 +684,7 @@
 
   /* Default - Component default (Gray) */
   .source-dot.default {
-    background: var(--builder-inspector-text-tertiary);
+    background: var(--on-surface-variant);
   }
 
   /* Source tooltip */
@@ -702,8 +702,8 @@
     transform: translateY(-50%);
     margin-left: var(--spacing);
     padding: var(--spacing-sm) var(--spacing);
-    background: var(--builder-inspector-tooltip-bg);
-    color: var(--builder-inspector-tooltip-text);
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
     white-space: nowrap;
@@ -795,13 +795,13 @@
 
   .loading-message {
     font-size: var(--text-sm);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
     text-align: center;
   }
 
   .loading-description {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-align: center;
   }
 
@@ -815,8 +815,8 @@
     flex-direction: column;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: var(--builder-inspector-surface);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
   }
 
@@ -825,7 +825,7 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: var(--spacing);
-    border-bottom: 1px solid var(--builder-inspector-divider);
+    border-bottom: 1px solid var(--outline);
   }
 
   .status-count {
@@ -842,7 +842,7 @@
 
   .count-label {
     font-size: var(--text-sm);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   .primary-element-badge {
@@ -850,14 +850,14 @@
     align-items: center;
     gap: var(--spacing-xs);
     padding: var(--spacing-2xs) var(--spacing-sm);
-    background: var(--builder-inspector-control-bg);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface-variant);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
   }
 
   .badge-label {
     font-size: var(--text-2xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -883,7 +883,7 @@
   .group-label {
     font-size: var(--text-2xs);
     font-weight: var(--font-weight-semibold);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding-left: var(--spacing-sm);
@@ -901,21 +901,21 @@
     justify-content: flex-start;
     gap: var(--spacing-sm);
     padding: var(--spacing) var(--spacing-sm);
-    background: var(--builder-inspector-control-bg);
+    background: var(--surface-variant);
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
     transition: all 200ms;
     position: relative;
 
     &:hover:not([aria-disabled="true"]) {
-      background: var(--builder-inspector-bg);
-      border-color: var(--builder-inspector-divider);
+      background: var(--surface);
+      border-color: var(--outline);
     }
 
     &[data-pressed]:not([aria-disabled="true"]) {
-      background: var(--builder-inspector-header-bg);
+      background: var(--surface-variant);
     }
 
     &[aria-disabled="true"] {
@@ -934,10 +934,10 @@
   .shortcut-hint {
     margin-left: auto;
     font-size: var(--text-2xs);
-    color: var(--builder-inspector-text-tertiary);
+    color: var(--on-surface-variant);
     font-weight: var(--font-weight-medium);
     padding: 2px var(--spacing-xs);
-    background: var(--builder-inspector-header-bg);
+    background: var(--surface-variant);
     border-radius: var(--radius-xs);
     font-family: var(--font-mono);
   }
@@ -947,20 +947,20 @@
     flex-direction: column;
     gap: var(--spacing-sm);
     padding: var(--spacing);
-    background: var(--builder-inspector-header-bg);
+    background: var(--surface-variant);
     border-radius: var(--radius-sm);
   }
 
   .info-text {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
   }
 
   .info-hint {
     margin: 0;
     font-size: var(--text-2xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   /* ========================================
@@ -973,8 +973,8 @@
     flex-direction: column;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: var(--builder-inspector-surface);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     margin-top: var(--spacing);
   }
@@ -984,7 +984,7 @@
     flex-direction: column;
     gap: var(--spacing);
     padding-bottom: var(--spacing);
-    border-bottom: 1px solid var(--builder-inspector-divider);
+    border-bottom: 1px solid var(--outline);
   }
 
   .batch-info {
@@ -997,13 +997,13 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
   }
 
   .batch-types {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   .batch-mixed {
@@ -1053,7 +1053,7 @@
     display: flex;
     gap: var(--spacing-sm);
     padding-top: var(--spacing);
-    border-top: 1px solid var(--builder-inspector-divider);
+    border-top: 1px solid var(--outline);
   }
 
   .batch-actions .react-aria-Button {
@@ -1061,21 +1061,21 @@
     justify-content: center;
     gap: var(--spacing-sm);
     padding: var(--spacing) var(--spacing-sm);
-    background: var(--builder-inspector-control-bg);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface-variant);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
     transition: all 200ms;
 
     &:hover {
-      background: var(--builder-inspector-bg);
+      background: var(--surface);
       border-color: var(--primary);
       color: var(--primary);
     }
 
     &[data-pressed] {
-      background: var(--builder-inspector-header-bg);
+      background: var(--surface-variant);
     }
   }
 
@@ -1083,14 +1083,14 @@
     margin: 0;
     padding: var(--spacing);
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-align: center;
     font-style: italic;
   }
 
   .batch-footer {
     padding-top: var(--spacing);
-    border-top: 1px solid var(--builder-inspector-divider);
+    border-top: 1px solid var(--outline);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
@@ -1099,7 +1099,7 @@
   .batch-hint {
     margin: 0;
     font-size: var(--text-2xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   .batch-warning {
@@ -1119,8 +1119,8 @@
     flex-direction: column;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: var(--builder-inspector-surface);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     margin-top: var(--spacing);
   }
@@ -1134,7 +1134,7 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: var(--spacing);
-    border-bottom: 1px solid var(--builder-inspector-divider);
+    border-bottom: 1px solid var(--outline);
   }
 
   .filter-title {
@@ -1143,7 +1143,7 @@
     gap: var(--spacing-sm);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--builder-inspector-text-primary);
+    color: var(--on-surface);
   }
 
   .filter-content {
@@ -1156,7 +1156,7 @@
     display: flex;
     gap: var(--spacing-sm);
     padding-top: var(--spacing);
-    border-top: 1px solid var(--builder-inspector-divider);
+    border-top: 1px solid var(--outline);
   }
 
   .filter-actions .react-aria-Button {
@@ -1173,8 +1173,8 @@
     flex-direction: column;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: var(--builder-inspector-surface);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     margin-top: var(--spacing);
   }
@@ -1188,7 +1188,7 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding-bottom: var(--spacing);
-    border-bottom: 1px solid var(--builder-inspector-divider);
+    border-bottom: 1px solid var(--outline);
   }
 
   .smart-selection-header h3 {
@@ -1196,13 +1196,13 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
   }
 
   .smart-selection-header .suggestion-count {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
-    background: var(--builder-inspector-divider);
+    color: var(--on-surface-variant);
+    background: var(--outline);
     padding: var(--spacing-2xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
   }
@@ -1219,7 +1219,7 @@
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
     background: transparent;
-    border: 1px solid var(--builder-inspector-divider);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all 150ms;
@@ -1228,7 +1228,7 @@
   }
 
   .suggestion-item:hover {
-    background: var(--builder-inspector-divider);
+    background: var(--outline);
     border-color: var(--color-primary-500);
   }
 
@@ -1242,24 +1242,24 @@
 
   .suggestion-description {
     font-size: var(--text-sm);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
     font-weight: var(--font-weight-medium);
   }
 
   .suggestion-count-badge {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   .smart-selection-footer {
     padding-top: var(--spacing);
-    border-top: 1px solid var(--builder-inspector-divider);
+    border-top: 1px solid var(--outline);
   }
 
   .footer-hint {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-align: center;
   }
 
@@ -1275,13 +1275,13 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
   }
 
   .smart-selection .empty-hint {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-align: center;
     max-width: 300px;
   }
@@ -1296,8 +1296,8 @@
     flex-direction: column;
     gap: var(--spacing);
     padding: var(--spacing);
-    background: var(--builder-inspector-surface);
-    border: 1px solid var(--builder-inspector-divider);
+    background: var(--surface);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-md);
     margin-top: var(--spacing);
   }
@@ -1311,7 +1311,7 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding-bottom: var(--spacing);
-    border-bottom: 1px solid var(--builder-inspector-divider);
+    border-bottom: 1px solid var(--outline);
   }
 
   .memory-header h3 {
@@ -1319,13 +1319,13 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
   }
 
   .memory-header .history-count {
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
-    background: var(--builder-inspector-divider);
+    color: var(--on-surface-variant);
+    background: var(--outline);
     padding: var(--spacing-2xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
   }
@@ -1346,13 +1346,13 @@
     align-items: center;
     gap: var(--spacing-2xs);
     background: transparent;
-    border: 1px solid var(--builder-inspector-divider);
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
     transition: all 150ms;
   }
 
   .history-item:hover {
-    background: var(--builder-inspector-divider);
+    background: var(--outline);
     border-color: var(--color-primary-500);
   }
 
@@ -1375,7 +1375,7 @@
 
   .history-label {
     font-size: var(--text-sm);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
     font-weight: var(--font-weight-medium);
   }
 
@@ -1384,7 +1384,7 @@
     align-items: center;
     gap: var(--spacing-2xs);
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
   }
 
   .history-item .delete-btn {
@@ -1400,7 +1400,7 @@
 
   .memory-footer {
     padding-top: var(--spacing);
-    border-top: 1px solid var(--builder-inspector-divider);
+    border-top: 1px solid var(--outline);
   }
 
   .selection-memory .empty-state {
@@ -1415,13 +1415,13 @@
     margin: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--builder-inspector-text);
+    color: var(--on-surface);
   }
 
   .selection-memory .empty-hint {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--builder-inspector-text-secondary);
+    color: var(--on-surface-variant);
     text-align: center;
     max-width: 300px;
   }

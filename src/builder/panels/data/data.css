@@ -15,7 +15,7 @@
         }
 
         .empty-message {
-          color: var(--builder-inspector-text-secondary);
+          color: var(--on-surface-variant);
           font-size: var(--font-size-sm);
         }
       }
@@ -28,8 +28,8 @@
       .data-editor-container {
         margin-top: var(--spacing-4);
         padding: var(--spacing-4);
-        background: var(--builder-inspector-surface);
-        border: 1px solid var(--builder-inspector-border);
+        background: var(--surface);
+        border: 1px solid var(--outline-variant);
         border-radius: var(--radius-md);
       }
     }
@@ -51,8 +51,8 @@
 
       .confirm-button {
         padding: var(--spacing-1) var(--spacing-3);
-        background: var(--builder-inspector-focus-ring);
-        color: var(--builder-inspector-tab-active);
+        background: var(--focus-ring-color);
+        color: var(--on-surface);
         border: none;
         border-radius: var(--radius-sm);
         font-size: var(--font-size-sm);
@@ -60,7 +60,7 @@
         transition: background 0.2s;
 
         &:hover {
-          background: var(--builder-inspector-button-primary-hover);
+          background: var(--highlight-background-hover);
         }
       }
     }
@@ -75,10 +75,10 @@
           margin-top: var(--spacing-2);
 
           &.field-modified {
-            border: 2px solid var(--builder-inspector-focus-ring);
+            border: 2px solid var(--focus-ring-color);
             border-radius: var(--radius-sm);
             padding: var(--spacing-2);
-            box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
+            box-shadow: 0 0 0 3px rgba(2, 133, 255, 0.1);
           }
         }
 
@@ -87,21 +87,21 @@
           align-items: center;
           gap: var(--spacing-2);
           padding: var(--spacing-2);
-          background: var(--builder-inspector-bg);
-          border: 1px solid var(--builder-inspector-border);
+          background: var(--surface);
+          border: 1px solid var(--outline-variant);
           border-radius: var(--radius-sm);
           cursor: pointer;
           transition: all 0.2s;
 
           &:hover {
-            background: var(--builder-inspector-hover-bg);
-            border-color: var(--builder-inspector-focus-ring);
+            background: var(--surface-container-low);
+            border-color: var(--focus-ring-color);
           }
 
           &.selected {
-            background: var(--builder-inspector-focus-ring);
-            color: var(--builder-inspector-tab-active);
-            border-color: var(--builder-inspector-focus-ring);
+            background: var(--focus-ring-color);
+            color: var(--on-surface);
+            border-color: var(--focus-ring-color);
           }
         }
       }
@@ -112,16 +112,16 @@
         flex: 1;
 
         &.field-modified {
-          border: 2px solid var(--builder-inspector-focus-ring);
+          border: 2px solid var(--focus-ring-color);
           border-radius: var(--radius-sm);
           padding: var(--spacing-2);
-          box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
+          box-shadow: 0 0 0 3px rgba(2, 133, 255, 0.1);
         }
 
         .order-direction {
           padding: var(--spacing-2) var(--spacing-4);
-          background: var(--builder-inspector-focus-ring);
-          color: var(--builder-inspector-tab-active);
+          background: var(--focus-ring-color);
+          color: var(--on-surface);
           border: none;
           border-radius: var(--radius-sm);
           cursor: pointer;
@@ -146,18 +146,18 @@
       .helper-text {
         margin-top: var(--spacing-4);
         padding: var(--spacing-3);
-        background: var(--builder-inspector-surface);
-        border: 1px solid var(--builder-inspector-border);
+        background: var(--surface);
+        border: 1px solid var(--outline-variant);
         border-radius: var(--radius-sm);
 
         .helper-code {
           display: block;
           padding: var(--spacing-2);
-          background: var(--builder-inspector-bg);
+          background: var(--surface);
           border-radius: var(--radius-sm);
           font-family: var(--font-mono);
           font-size: var(--font-size-xs);
-          color: var(--builder-inspector-focus-ring);
+          color: var(--focus-ring-color);
         }
       }
     }
@@ -166,8 +166,8 @@
     .static-data-editor {
       .example-button {
         padding: var(--spacing-1) var(--spacing-3);
-        background: var(--builder-inspector-tab-active);
-        color: var(--builder-inspector-surface);
+        background: var(--on-surface);
+        color: var(--surface);
         border: none;
         border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
@@ -185,9 +185,9 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--builder-inspector-error-bg);
-      color: var(--builder-inspector-danger-text);
-      border: 1px solid var(--builder-inspector-success-border);
+      background: var(--error-container);
+      color: var(--on-error);
+      border: 1px solid var(--success-container);
     }
 
     .success-message {
@@ -195,9 +195,9 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--builder-inspector-success-bg);
-      color: var(--builder-inspector-success-text);
-      border: 1px solid var(--builder-inspector-success-border);
+      background: var(--success-container);
+      color: var(--on-success-container);
+      border: 1px solid var(--success-container);
     }
 
     .pending-message {
@@ -205,16 +205,16 @@
       border-radius: var(--radius-sm);
       font-size: var(--font-size-sm);
       margin-bottom: var(--spacing-3);
-      background: var(--builder-inspector-warning-bg);
-      color: var(--builder-inspector-warning-text);
-      border: 1px solid var(--builder-inspector-warning-border);
+      background: var(--warning-container);
+      color: var(--on-warning-container);
+      border: 1px solid var(--warning-container);
     }
 
     /* Helper text */
     .helper-text {
       padding: var(--spacing-3);
-      background: var(--builder-inspector-surface);
-      border: 1px solid var(--builder-inspector-border);
+      background: var(--surface);
+      border: 1px solid var(--outline-variant);
       border-radius: var(--radius-sm);
 
       .helper-title {
@@ -226,7 +226,7 @@
       .helper-content {
         margin: 0;
         font-size: var(--font-size-xs);
-        color: var(--builder-inspector-text-secondary);
+        color: var(--on-surface-variant);
         line-height: 1.4;
       }
     }
@@ -247,9 +247,9 @@
     .api-collection-editor {
       /* 변경된 필드 하이라이트 */
       .control-input.field-modified {
-        border-color: var(--builder-inspector-focus-ring);
+        border-color: var(--focus-ring-color);
         border-width: 2px;
-        box-shadow: 0 0 0 3px rgba(var(--builder-inspector-focus-ring), 0.1);
+        box-shadow: 0 0 0 3px rgba(2, 133, 255, 0.1);
         transition: all 0.2s ease-in-out;
       }
 
@@ -263,24 +263,24 @@
       /* Discard Changes 버튼 */
       .discard-button {
         padding: var(--spacing-2) var(--spacing-4);
-        background: var(--builder-inspector-button-secondary-bg);
-        color: var(--builder-inspector-button-secondary-text);
-        border: 1px solid var(--builder-inspector-border);
+        background: var(--button-background);
+        color: var(--on-surface);
+        border: 1px solid var(--outline-variant);
         border-radius: var(--radius-sm);
         font-size: var(--font-size-sm);
         cursor: pointer;
         transition: all 0.2s;
 
         &:hover {
-          background: var(--builder-inspector-button-secondary-hover-bg);
-          border-color: var(--builder-inspector-button-secondary-hover-border);
+          background: var(--button-background-hover);
+          border-color: var(--outline-variant);
         }
       }
 
       /* Apply Changes 버튼 */
       .apply-button {
         padding: var(--spacing) var(--spacing-md);
-        background: var(--builder-inspector-button-primary-bg);
+        background: var(--highlight-background);
         color: white;
         border: none;
         border-radius: var(--radius-sm);
@@ -290,13 +290,13 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-          background: var(--builder-inspector-button-primary-hover);
-          box-shadow: 0 2px 8px rgba(var(--builder-inspector-focus-ring), 0.3);
+          background: var(--highlight-background-hover);
+          box-shadow: 0 2px 8px rgba(2, 133, 255, 0.3);
         }
 
         &:disabled {
-          background: var(--builder-inspector-button-disabled-bg);
-          color: var(--builder-inspector-button-disabled-text);
+          background: var(--surface-container-low);
+          color: var(--text-color-disabled);
           cursor: not-allowed;
           opacity: 0.6;
         }
@@ -304,16 +304,16 @@
         /* 변경사항 있음 표시 */
         &.has-changes::after {
           content: " ●";
-          color: var(--builder-inspector-success-text);
+          color: var(--on-success-container);
         }
       }
 
       /* Discard 버튼 */
       .discard-button {
         padding: var(--spacing) var(--spacing-md);
-        background: var(--builder-inspector-button-secondary-hover-bg);
-        color: var(--builder-inspector-text-primary);
-        border: 1px solid var(--builder-inspector-button-disabled-bg);
+        background: var(--button-background-hover);
+        color: var(--on-surface);
+        border: 1px solid var(--surface-container-low);
         border-radius: var(--radius-sm);
         font-size: var(--text-sm);
         font-weight: var(--font-weight-medium);
@@ -321,14 +321,14 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-          background: var(--builder-inspector-button-disabled-bg);
-          border-color: var(--builder-inspector-button-secondary-hover-border);
+          background: var(--surface-container-low);
+          border-color: var(--outline-variant);
         }
 
         &:disabled {
-          background: var(--builder-inspector-button-secondary-bg);
-          color: var(--builder-inspector-button-secondary-hover-border);
-          border-color: var(--builder-inspector-button-secondary-hover-bg);
+          background: var(--button-background);
+          color: var(--outline-variant);
+          border-color: var(--button-background-hover);
           cursor: not-allowed;
           opacity: 0.6;
         }
@@ -360,25 +360,25 @@
         flex-direction: column;
         gap: var(--spacing);
         padding: var(--spacing-md);
-        background: var(--builder-inspector-header-bg);
+        background: var(--surface-variant);
         border-radius: var(--radius);
-        border: 1px solid var(--builder-inspector-button-secondary-hover-bg);
+        border: 1px solid var(--button-background-hover);
 
         .info-text {
           font-size: 14px;
-          color: var(--builder-inspector-button-secondary-text);
+          color: var(--on-surface);
           line-height: 1.5;
           margin: 0;
         }
 
         .warning-text {
           font-size: 13px;
-          color: var(--builder-inspector-warning-text);
+          color: var(--on-warning-container);
           line-height: 1.5;
           margin: 0;
           padding: var(--spacing);
-          background: var(--builder-inspector-warning-bg);
-          border: 1px solid var(--builder-inspector-warning-border);
+          background: var(--warning-container);
+          border: 1px solid var(--warning-container);
           border-radius: var(--radius-sm);
         }
       }
@@ -386,12 +386,12 @@
       /* Pending 변경 알림 */
       .pending-change-notice {
         font-size: 13px;
-        color: var(--builder-inspector-info-text);
+        color: var(--on-info-container);
         line-height: 1.5;
         margin: 0;
         padding: var(--spacing-md);
-        background: var(--builder-inspector-info-bg);
-        border: 1px solid var(--builder-inspector-info-border);
+        background: var(--info-container);
+        border: 1px solid var(--info-container);
         border-radius: var(--radius);
       }
     }

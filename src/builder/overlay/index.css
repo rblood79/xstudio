@@ -3,7 +3,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 1;
-  outline: 1px solid var(--builder-indicator-bg);
+  outline: 1px solid var(--primary);
   outline-offset: 0;
 }
 
@@ -19,8 +19,8 @@
   font-size: var(--text-xs);
   text-transform: uppercase;
   padding: var(--spacing) var(--spacing-sm);
-  background-color: var(--builder-indicator-bg);
-  color: var(--builder-indicator-text);
+  background-color: var(--primary);
+  color: var(--on-primary);
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
@@ -29,7 +29,7 @@
 
 .overlay-tag-parent {
   padding: var(--spacing);
-  background: var(--builder-indicator-hover-bg);
+  background: var(--primary-hover);
   margin-left: -25px;
 }
 
@@ -38,7 +38,7 @@
   z-index: 1;
   height: 100%;
   width: 100%;
-  background-color: var(--builder-indicator-bg);
+  background-color: var(--primary);
   opacity: 0.05;
   box-shadow: var(--inset-shadow-sm);
 }
@@ -69,7 +69,7 @@
   right: 0;
   width: 2px;
   height: 100%;
-  background: var(--builder-indicator-bg);
+  background: var(--primary);
   top: 50%;
   transform: translateY(-50%);
   left: 100%;
