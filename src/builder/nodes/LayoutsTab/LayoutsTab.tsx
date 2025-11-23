@@ -418,29 +418,46 @@ export function LayoutsTab({
           {layouts.length === 0 ? (
             <p className="no_element">No layouts available</p>
           ) : (
-            <div className="layout-list">
-              {layouts.map((layout) => (
+            layouts.map((layout) => (
+              <div
+                key={layout.id}
+                className="element"
+                onClick={() => handleSelectLayout(layout)}
+              >
                 <div
-                  key={layout.id}
-                  className={`layout-item ${
+                  className={`elementItem ${
                     currentLayout?.id === layout.id ? "active" : ""
                   }`}
-                  onClick={() => handleSelectLayout(layout)}
                 >
-                  <span className="layout-name">{layout.name}</span>
-                  <button
-                    className="iconButton delete-btn"
-                    aria-label={`Delete ${layout.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteLayout(layout);
-                    }}
-                  >
-                    ×
-                  </button>
+                  <div className="elementItemIndent" style={{ width: "0px" }}></div>
+                  <div className="elementItemIcon">
+                    <Box
+                      color={iconProps.color}
+                      strokeWidth={iconProps.stroke}
+                      size={iconProps.size}
+                      style={{ padding: "2px" }}
+                    />
+                  </div>
+                  <div className="elementItemLabel">{layout.name}</div>
+                  <div className="elementItemActions">
+                    <button
+                      className="iconButton"
+                      aria-label={`Delete ${layout.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLayout(layout);
+                      }}
+                    >
+                      <Trash
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                      />
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -448,9 +465,7 @@ export function LayoutsTab({
       {/* Layout Element Tree */}
       <div className="sidebar_elements">
         <div className="panel-header">
-          <h3 className="panel-title">
-            {currentLayout ? `${currentLayout.name} Elements` : "Elements"}
-          </h3>
+          <h3 className="panel-title">Layers</h3>
           <div className="header-actions">
             <button
               className="iconButton"

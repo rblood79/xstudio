@@ -23,7 +23,7 @@ export function NodesPanelTabs({
   const tabs: { id: NodesPanelTabType; label: string; icon: React.ReactNode }[] = [
     {
       id: "pages",
-      label: "Pages",
+      label: "Page",
       icon: (
         <FileText
           color={iconProps.color}
@@ -34,7 +34,7 @@ export function NodesPanelTabs({
     },
     {
       id: "layouts",
-      label: "Layouts",
+      label: "Layout",
       icon: (
         <Layout
           color={iconProps.color}

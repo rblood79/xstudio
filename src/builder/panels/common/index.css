@@ -4,7 +4,7 @@
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
   }
-  [data-focus-visible]{
+  [data-focus-visible] {
     outline-offset: -2px;
   }
   .section {
@@ -355,7 +355,7 @@
     }
 
     .react-aria-Group {
-      background-color: var(--builder-inspector-control-bg);
+      background-color: var(--builder-sidebar-active-bg);
       border-radius: var(--radius-md);
       width: 100%;
       min-width: 0;

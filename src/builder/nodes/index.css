@@ -50,20 +50,24 @@
 }
 
 .elementItemIcon {
+  stroke: var(--builder-sidebar-icon);
   width: var(--spacing-lg);
   height: var(--spacing-lg);
   min-width: var(--spacing-lg);
   min-height: var(--spacing-lg);
+  svg {
+    stroke: inherit;
+  }
 }
 
 .elementItemLabel {
+  color: var(--builder-sidebar-text);
   flex: 1;
   font-size: var(--text-xs);
   height: var(--text-2xl);
   line-height: var(--text-2xl);
   -webkit-user-select: none;
   user-select: none;
-
   text-indent: var(--spacing);
 }
 
@@ -81,6 +85,10 @@
 .elementItem:hover .elementItemActions,
 .elementItem.active .elementItemActions {
   transform: translateX(0%);
+}
+
+.elementItem.active .elementItemLabel {
+  color: var(--builder-sidebar-active-text);
 }
 
 .no_element {
@@ -162,53 +170,6 @@
 .sidebar_layouts {
   width: 100%;
   position: relative;
-}
-
-.layout-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.layout-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-xs) var(--spacing-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  position: relative;
-  overflow: hidden;
-}
-
-.layout-item:hover {
-  background-color: var(--hover-bg);
-}
-
-.layout-item.active {
-  box-shadow: var(--inset-shadow-sm);
-  background-color: var(--builder-sidebar-active-bg);
-  outline: 1px solid var(--border-color);
-  z-index: 1;
-}
-
-.layout-name {
-  font-size: var(--text-xs);
-  height: var(--text-2xl);
-  line-height: var(--text-2xl);
-}
-
-.layout-item .delete-btn {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  width: 20px;
-  height: 20px;
-  font-size: var(--text-sm);
-  line-height: 1;
-}
-
-.layout-item:hover .delete-btn {
-  opacity: 1;
 }
 
 /* Slot Element 특별 표시 */

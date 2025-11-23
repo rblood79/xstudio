@@ -38,22 +38,23 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    stroke: var(--builder-sidebar-icon);
+    border-radius: 6px;
+    svg {
+      stroke: inherit;
+      stroke-width: 1.5;
+      transition: color 0.2s ease;
+    }
   }
 
   .nav-button:hover {
-    background-color: var(--builder-sidebar-hover-bg);
+    background-color: var(--highlight-foreground-pressed);
     border-radius: 6px;
   }
 
   .nav-button.active {
-    background-color: var(--builder-button-active-bg);
-    border-radius: 6px;
-
-    svg {
-      stroke: var(--builder-sidebar-active-text);
-      stroke-width: 1.5;
-      transition: color 0.2s ease;
-    }
+    background-color: var(--highlight-background);
+    stroke: var(--builder-sidebar-bg);
   }
 
   /* Panel Slot */

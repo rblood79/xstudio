@@ -33,9 +33,10 @@
     --builder-sidebar-border: var(--gray-150);
     --builder-sidebar-hover-bg: var(--gray-50);
     --builder-sidebar-active-bg: var(--gray-200);
-    --builder-sidebar-active-text: var(--gray-0);
+    --builder-sidebar-active-text: var(--gray-1000);
     --builder-sidebar-nav-bg: var(--gray-0);
-    --builder-sidebar-icon: var(--gray-500);
+    --builder-sidebar-icon: var(--gray-400);
+    --builder-sidebar-text: var(--gray-500);
 
     /* ==================== Builder Inspector (Light Mode) ==================== */
     --builder-inspector-bg: var(--gray-0);
@@ -268,10 +269,11 @@
     --builder-sidebar-bg: var(--gray-900);
     --builder-sidebar-border: var(--gray-700);
     --builder-sidebar-hover-bg: var(--gray-800);
-    --builder-sidebar-active-bg: var(--gray-100);
-    --builder-sidebar-active-text: var(--gray-900);
+    --builder-sidebar-active-bg: var(--gray-700);
+    --builder-sidebar-active-text: var(--gray-0);
     --builder-sidebar-nav-bg: var(--gray-900);
-    --builder-sidebar-icon: var(--gray-400);
+    --builder-sidebar-icon: var(--gray-500);
+    --builder-sidebar-text: var(--gray-600);
 
     /* Inspector (Dark) */
     --builder-inspector-bg: var(--gray-900);

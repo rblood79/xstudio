@@ -40,7 +40,7 @@ export function Layers({
   return (
     <div className="sidebar_elements">
       <div className="panel-header">
-        <h3 className="panel-title">Layer</h3>
+        <h3 className="panel-title">Layers</h3>
         <div className="header-actions">
           <button
             className="iconButton"
