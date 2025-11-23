@@ -3,11 +3,12 @@
  *
  * Layouts 탭의 메인 컨테이너.
  * Layout 목록과 현재 Layout의 Element 트리를 표시.
+ * Layout 프리셋 선택 기능 지원.
  */
 
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { CirclePlus, CopyMinus, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
+import { CirclePlus, CopyMinus, ChevronRight, Box, Trash, Settings2, LayoutTemplate } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useLayoutsStore } from "../../stores/layouts";
 import { useEditModeStore } from "../../stores/editMode";
@@ -20,6 +21,11 @@ import { buildTreeFromElements } from "../../utils/treeUtils";
 import { MessageService } from "../../../utils/messaging";
 import { getDB } from "../../../lib/db";
 import { useTreeExpandState } from "../../hooks/useTreeExpandState";
+import { LayoutPresetPicker } from "./LayoutPresetPicker";
+import {
+  type LayoutTemplate as LayoutTemplateType,
+  createElementsFromTemplate,
+} from "../../templates/layoutTemplates";
 
 interface LayoutsTabProps {
   // ⭐ renderTree/renderElementTree/collapseAllTreeItems 제거됨
@@ -356,7 +362,110 @@ export function LayoutsTab({
     ]
   );
 
-  // 새 Layout 생성 핸들러
+  // ⭐ 프리셋 선택 UI 표시 상태
+  const [showPresetPicker, setShowPresetPicker] = useState(false);
+
+  // 프리셋 피커 열기
+  const handleOpenPresetPicker = useCallback(() => {
+    setShowPresetPicker(true);
+  }, []);
+
+  // 프리셋 피커 닫기
+  const handleClosePresetPicker = useCallback(() => {
+    setShowPresetPicker(false);
+  }, []);
+
+  // ⭐ 프리셋 선택 시 Layout + 요소 생성
+  const handlePresetSelect = useCallback(
+    async (template: LayoutTemplateType) => {
+      if (!projectId) {
+        console.error("프로젝트 ID가 없습니다");
+        return;
+      }
+
+      try {
+        console.log(`📐 [LayoutsTab] 프리셋 선택: ${template.name}`);
+
+        // 1. Layout 생성
+        const newLayout = await createLayout({
+          name: template.name === "Blank Layout" ? `Layout ${layouts.length + 1}` : template.name,
+          description: template.description,
+          project_id: projectId,
+        });
+
+        if (!newLayout) {
+          console.error("Layout 생성 실패");
+          return;
+        }
+
+        // 2. Blank Layout이 아니면 템플릿 요소들 생성
+        if (template.id !== "blank" && template.elements.length > 0) {
+          console.log(`📐 [LayoutsTab] 템플릿 요소 ${template.elements.length}개 생성 시작...`);
+
+          // 템플릿에서 요소 생성
+          const templateElements = createElementsFromTemplate(
+            template,
+            newLayout.id,
+            () => crypto.randomUUID()
+          );
+
+          // DB에 저장
+          const db = await getDB();
+          for (const el of templateElements) {
+            const element: Element = {
+              id: el.id,
+              tag: el.tag,
+              props: {
+                ...el.props,
+                ...(el.style ? { style: el.style } : {}),
+              } as ElementProps,
+              parent_id: el.parent_id,
+              page_id: null,
+              layout_id: el.layout_id,
+              order_num: el.order_num,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            await db.elements.insert(element);
+          }
+
+          console.log(`✅ [LayoutsTab] 템플릿 요소 ${templateElements.length}개 생성 완료`);
+
+          // 요소들을 Store에 추가
+          const currentElements = useStore.getState().elements;
+          const newElements = templateElements.map((el) => ({
+            id: el.id,
+            tag: el.tag,
+            props: {
+              ...el.props,
+              ...(el.style ? { style: el.style } : {}),
+            } as ElementProps,
+            parent_id: el.parent_id,
+            page_id: null,
+            layout_id: el.layout_id,
+            order_num: el.order_num,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }));
+
+          setElements([...currentElements, ...newElements], { skipHistory: true });
+        }
+
+        // 3. 생성된 Layout 선택
+        handleSelectLayout(newLayout);
+
+        // 4. 프리셋 피커 닫기
+        setShowPresetPicker(false);
+
+        console.log(`✅ [LayoutsTab] Layout "${newLayout.name}" 생성 완료 (프리셋: ${template.name})`);
+      } catch (error) {
+        console.error("Layout 생성 에러:", error);
+      }
+    },
+    [projectId, createLayout, layouts.length, handleSelectLayout, setElements]
+  );
+
+  // 기존 새 Layout 생성 핸들러 (프리셋 피커 없이 빈 Layout 생성)
   const handleAddLayout = useCallback(async () => {
     if (!projectId) {
       console.error("프로젝트 ID가 없습니다");
@@ -395,15 +504,38 @@ export function LayoutsTab({
       id="tabpanel-layouts"
       aria-label="Layouts"
     >
+      {/* ⭐ Layout Preset Picker */}
+      {showPresetPicker && (
+        <LayoutPresetPicker
+          onSelect={handlePresetSelect}
+          onClose={handleClosePresetPicker}
+        />
+      )}
+
       {/* Layouts List */}
       <div className="sidebar_layouts">
         <div className="panel-header">
           <h3 className="panel-title">Layouts</h3>
           <div className="header-actions">
+            {/* 프리셋 선택 버튼 */}
             <button
               className="iconButton"
-              aria-label="Add Layout"
+              aria-label="Add Layout from Template"
+              onClick={handleOpenPresetPicker}
+              title="Choose layout template"
+            >
+              <LayoutTemplate
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            </button>
+            {/* 빈 Layout 추가 버튼 */}
+            <button
+              className="iconButton"
+              aria-label="Add Blank Layout"
               onClick={handleAddLayout}
+              title="Add blank layout"
             >
               <CirclePlus
                 color={iconProps.color}
