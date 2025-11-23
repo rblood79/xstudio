@@ -470,6 +470,9 @@
         /* Remove focus ring from indicator */
         .indicator {
           outline: none !important;
+          &::before {
+            height: 100%;
+          }
         }
 
         &[data-focus-visible] .indicator {
