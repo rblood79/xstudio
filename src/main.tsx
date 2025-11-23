@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   useParams,
+  useLocation,
 } from "react-router";
 import "./index.css";
 import App from "./App.tsx";
@@ -16,6 +17,10 @@ import Signin from "./auth/Signin";
 import { ThemeStudio } from "./builder/panels/themes/ThemeStudio.tsx";
 import { supabase } from "./env/supabase.client";
 import { Session } from "@supabase/supabase-js";
+import {
+  ParticleBackground,
+  ParticleBackgroundProvider,
+} from "./components/ParticleBackground";
 
 export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -43,45 +48,62 @@ function ThemeStudioRoute() {
   return <ThemeStudio projectId={projectId} />;
 }
 
+function AppLayout() {
+  const location = useLocation();
+  const shouldShowBackground =
+    location.pathname === "/" ||
+    location.pathname === "/signin" ||
+    location.pathname === "/dashboard";
+
+  return (
+    <>
+      {shouldShowBackground && <ParticleBackground />}
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/signin" element={<Signin />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/builder/:projectId"
+          element={
+            <ProtectedRoute>
+              <Builder />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/preview/:projectId"
+          element={
+            <ProtectedRoute>
+              <Preview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/theme/:projectId"
+          element={
+            <ProtectedRoute>
+              <ThemeStudioRoute />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </>
+  );
+}
+
 const root = document.getElementById("root");
 
 ReactDOM.createRoot(root!).render(
   <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<App />} />
-      <Route path="/signin" element={<Signin />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/builder/:projectId"
-        element={
-          <ProtectedRoute>
-            <Builder />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/preview/:projectId"
-        element={
-          <ProtectedRoute>
-            <Preview />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/theme/:projectId"
-        element={
-          <ProtectedRoute>
-            <ThemeStudioRoute />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <ParticleBackgroundProvider>
+      <AppLayout />
+    </ParticleBackgroundProvider>
   </BrowserRouter>
 );
