@@ -138,17 +138,7 @@
     --builder-button-primary-disabled: var(--gray-400);
 
     /* Builder Save Button (using primary blue) */
-    --builder-save-pending-bg: var(--blue-500);
     --builder-save-pending-pulse: pulse 2s infinite;
-
-    /* ==================== Builder Focus/Selection (Light) ==================== */
-    --builder-focus-ring: var(--blue-400);
-    --builder-selection-bg: var(--blue-50);
-    --builder-selection-border: var(--blue-400);
-
-    /* ==================== Builder Tree/Layer View (Light) ==================== */
-    --builder-tree-item-hover: var(--gray-50);
-    --builder-tree-item-selected: var(--gray-100);
   }
 
   /* ==================== Builder UI Scope Override ==================== */
@@ -367,18 +357,6 @@
     --builder-button-primary-text: var(--gray-900);
     --builder-button-primary-hover: var(--white);
     --builder-button-primary-disabled: var(--gray-500);
-
-    /* Save Button (Dark) */
-    --builder-save-pending-bg: var(--green-500);
-
-    /* Focus/Selection (Dark) */
-    --builder-focus-ring: var(--blue-400);
-    --builder-selection-bg: rgba(2, 133, 255, 0.2);
-    --builder-selection-border: var(--blue-400);
-
-    /* Tree View (Dark) */
-    --builder-tree-item-hover: var(--gray-800);
-    --builder-tree-item-selected: var(--gray-750);
   }
 
   /* ==================== Builder Dark Mode - Component Overrides ==================== */
