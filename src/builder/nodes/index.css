@@ -21,20 +21,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, outline 0s ease;
   overflow: hidden;
 }
 
 .elementItem:hover {
-  background-color: var(--hover-bg);
-  outline: 1px solid var(--border-color);
-  z-index: 1;
+  background-color: var(--button-background-hover);
+  outline: 1px solid var(--border-color-hover);
+  
 }
 
 .elementItem.active {
   box-shadow: var(--inset-shadow-sm);
-  background-color: var(--outline-variant);
-  outline: 1px solid var(--border-color);
+  background-color: var(--button-background-pressed);
+  outline: 1px solid var(--border-color-pressed);
   z-index: 1;
 }
 

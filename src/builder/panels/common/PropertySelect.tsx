@@ -33,8 +33,8 @@ export const PropertySelect = memo(function PropertySelect({
 }: PropertySelectProps) {
     const handleChange = (key: React.Key | null) => {
         const selectedValue = key as string;
-        // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
-        if (selectedValue === "auto") {
+        // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
+        if (selectedValue === "reset") {
             onChange("");
         } else {
             onChange(selectedValue);

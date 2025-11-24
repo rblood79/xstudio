@@ -58,7 +58,7 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
         label="Font Family"
         value={getStyleValue(selectedElement, 'fontFamily', 'Arial')}
         options={[
-          { value: 'auto', label: 'auto' },
+          { value: 'reset', label: 'Reset' },
           { value: 'Arial', label: 'Arial' },
           { value: 'Helvetica', label: 'Helvetica' },
           { value: 'Times New Roman', label: 'Times New Roman' },
@@ -82,7 +82,7 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           icon={Type}
           label="Font Size"
           value={getStyleValue(selectedElement, 'fontSize', '16px')}
-          units={['auto', 'px', 'rem', 'em', 'pt']}
+          units={['reset', 'px', 'rem', 'em', 'pt']}
           onChange={(value) => updateStyle('fontSize', value)}
           min={8}
           max={200}
@@ -92,7 +92,7 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           label="Line Height"
           className="text-size-height"
           value={getStyleValue(selectedElement, 'lineHeight', 'normal')}
-          units={['auto', 'px', 'rem', 'em', '']}
+          units={['reset', 'px', 'rem', 'em', '']}
           onChange={(value) => updateStyle('lineHeight', value)}
           min={0}
           max={10}
@@ -115,7 +115,7 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           label="Font Weight"
           value={getStyleValue(selectedElement, 'fontWeight', 'normal')}
           options={[
-            { value: 'auto', label: 'auto' },
+            { value: 'reset', label: 'Reset' },
             { value: '100', label: '100 - Thin' },
             { value: '200', label: '200 - Extra Light' },
             { value: '300', label: '300 - Light' },
@@ -135,7 +135,7 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           label="Letter Spacing"
           className="text-weight-spacing-letter"
           value={getStyleValue(selectedElement, 'letterSpacing', 'normal')}
-          units={['auto', 'px', 'rem', 'em']}
+          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('letterSpacing', value)}
           min={-10}
           max={10}

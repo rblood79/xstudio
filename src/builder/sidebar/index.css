@@ -143,7 +143,8 @@
 
   /* Panel Content */
   .panel-content {
-    background-color: var(--secondary-container);
+    background-color: var(--surface);
+
     display: flex;
     flex-direction: row;
     height: 100%;

@@ -12,6 +12,7 @@
     --panel-nav-width: 48px;
 
     /* Inspector control sizes */
+    --header-height: 32px;
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
 
@@ -43,8 +44,8 @@
     --text-color-disabled: var(--gray-400);
     --text-color-placeholder: var(--gray-500);
     --border-color: var(--gray-300);
-    --border-color-hover: var(--gray-200);
-    --border-color-pressed: var(--gray-250);
+    --border-color-hover: var(--gray-100);
+    --border-color-pressed: var(--gray-150);
     --border-color-disabled: var(--gray-75);
 
     /* ===== Button & Field Colors ===== */

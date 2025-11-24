@@ -13,9 +13,9 @@
 
   .category-count {
     font-size: var(--text-xs);
-    color: var(--on-secondary);
+    color: var(--on-surface-variant);
     padding: var(--spacing-2xs);
-    background: var(--secondary);
+    background: var(--secondary-container);
     border-radius: var(--radius-sm);
     box-shadow: var(--inset-shadow-sm);
     min-width: var(--text-2xl);
@@ -30,6 +30,7 @@
     display: grid;
     gap: var(--spacing-md) var(--spacing);
     grid-template-columns: repeat(3, minmax(30%, 1fr));
+    background-color: var(--secondary-container);
   }
 
   .component-list-item {

@@ -137,7 +137,7 @@ export function TransformSection({ selectedElement }: TransformSectionProps) {
           icon={RulerDimensionLine}
           label="Width"
           value={getStyleValue(selectedElement, 'width', 'auto')}
-          units={['px', '%', 'rem', 'em', 'vh', 'vw', 'auto']}
+          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
           onChange={(value) => updateStyle('width', value)}
           min={0}
           max={9999}
@@ -147,7 +147,7 @@ export function TransformSection({ selectedElement }: TransformSectionProps) {
           label="Height"
           className="transform-size-height"
           value={getStyleValue(selectedElement, 'height', 'auto')}
-          units={['px', '%', 'rem', 'em', 'vh', 'vw', 'auto']}
+          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
           onChange={(value) => updateStyle('height', value)}
           min={0}
           max={9999}
@@ -169,7 +169,7 @@ export function TransformSection({ selectedElement }: TransformSectionProps) {
           label="Left"
           className="transform-position-left"
           value={getStyleValue(selectedElement, 'left', 'auto')}
-          units={['px', '%', 'rem', 'em', 'vh', 'vw', 'auto']}
+          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
           onChange={(value) => updateStyle('left', value)}
           min={-9999}
           max={9999}
@@ -179,7 +179,7 @@ export function TransformSection({ selectedElement }: TransformSectionProps) {
           label="Top"
           className="transform-position-top"
           value={getStyleValue(selectedElement, 'top', 'auto')}
-          units={['px', '%', 'rem', 'em', 'vh', 'vw', 'auto']}
+          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
           onChange={(value) => updateStyle('top', value)}
           min={-9999}
           max={9999}

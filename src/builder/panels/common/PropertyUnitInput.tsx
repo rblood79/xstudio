@@ -26,8 +26,8 @@ interface PropertyUnitInputProps {
   max?: number;
 }
 
-const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "auto"];
-const KEYWORDS = ["auto", "inherit", "initial", "unset", "normal"];
+const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "reset"];
+const KEYWORDS = ["reset", "inherit", "initial", "unset", "normal"];
 
 function parseUnitValue(value: string): {
   numericValue: number | null;
@@ -88,8 +88,8 @@ export function PropertyUnitInput({
 
     if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
       const keyword = trimmed.toLowerCase();
-      // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
-      if (keyword === "auto") {
+      // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
+      if (keyword === "reset") {
         onChange("");
       } else {
         onChange(keyword);
@@ -123,8 +123,8 @@ export function PropertyUnitInput({
 
   const handleUnitChange = (selectedUnit: string) => {
     if (KEYWORDS.includes(selectedUnit)) {
-      // "auto" 선택 시 inline style 제거 (빈 문자열 전달)
-      if (selectedUnit === "auto") {
+      // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
+      if (selectedUnit === "reset") {
         onChange("");
       } else {
         onChange(selectedUnit);
@@ -208,7 +208,7 @@ export function PropertyUnitInput({
               onBlur={handleInputBlur}
               onKeyDown={handleKeyDown}
               aria-label={label || "Value"}
-              placeholder="auto"
+              placeholder="reset"
             />
             <Button className="react-aria-Button">
               <ChevronDown size={16} />

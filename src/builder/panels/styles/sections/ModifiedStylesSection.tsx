@@ -170,19 +170,19 @@ function formatLabel(property: string): string {
 // Helper: Get units for property
 function getUnitsForProperty(property: string): string[] {
   if (['width', 'height', 'top', 'left', 'right', 'bottom'].includes(property)) {
-    return ['px', '%', 'rem', 'em', 'vh', 'vw', 'auto'];
+    return ['reset', 'px', '%', 'rem', 'em', 'vh', 'vw'];
   }
   if (['padding', 'margin', 'gap'].includes(property)) {
-    return ['auto', 'px', 'rem', 'em'];
+    return ['reset', 'px', 'rem', 'em'];
   }
   if (['fontSize', 'lineHeight', 'letterSpacing'].includes(property)) {
-    return ['auto', 'px', 'rem', 'em', 'pt'];
+    return ['reset', 'px', 'rem', 'em', 'pt'];
   }
   if (['borderWidth'].includes(property)) {
-    return ['auto', 'px'];
+    return ['reset', 'px'];
   }
   if (['borderRadius'].includes(property)) {
-    return ['auto', 'px', '%', 'rem', 'em'];
+    return ['reset', 'px', '%', 'rem', 'em'];
   }
   return ['px'];
 }

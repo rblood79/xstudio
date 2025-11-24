@@ -371,11 +371,12 @@
         }
 
         .panel-header {
+          height: var(--header-height);
           font-size: var(--text-xs);
           line-height: var(--text-xs);
           font-weight: var(--font-weight-bold);
           background-color: var(--surface-variant);
-          border-bottom: 1px solid var(--surface-variant);
+          border-bottom: 1px solid var(--outline-variant);
           display: flex;
           flex-direction: row;
           align-items: center;
@@ -397,6 +398,8 @@
               border-width: 0px;
               border-radius: 0px;
               outline: none;
+              background-color: var(--secondary-container);
+              border-bottom: 1px solid var(--outline-variant);
             }
           }
         }

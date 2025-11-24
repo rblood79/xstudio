@@ -176,7 +176,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           icon={LayoutGrid}
           className="gap-control"
           value={getStyleValue(selectedElement, 'gap', '0px')}
-          units={['auto', 'px', 'rem', 'em']}
+          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('gap', value)}
           min={0}
           max={500}
@@ -189,7 +189,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           label="Padding"
           className="layout-padding"
           value={getStyleValue(selectedElement, 'padding', '0px')}
-          units={['auto', 'px', 'rem', 'em']}
+          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('padding', value)}
           min={0}
           max={500}
@@ -199,7 +199,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           label="Margin"
           className="layout-margin"
           value={getStyleValue(selectedElement, 'margin', '0px')}
-          units={['px', 'rem', 'em', 'auto']}
+          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('margin', value)}
           min={0}
           max={500}

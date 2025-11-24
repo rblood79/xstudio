@@ -63,7 +63,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           label="Border Width"
           className="border-width-control"
           value={getStyleValue(selectedElement, 'borderWidth', '0px')}
-          units={['auto', 'px']}
+          units={['reset', 'px']}
           onChange={(value) => updateStyle('borderWidth', value)}
           min={0}
           max={100}
@@ -73,7 +73,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           label="Border Radius"
           className="border-radius-control"
           value={getStyleValue(selectedElement, 'borderRadius', '0px')}
-          units={['auto', 'px', '%', 'rem', 'em']}
+          units={['reset', 'px', '%', 'rem', 'em']}
           onChange={(value) => updateStyle('borderRadius', value)}
           min={0}
           max={500}
@@ -84,7 +84,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           className="border-style-control"
           value={getStyleValue(selectedElement, 'borderStyle', 'solid')}
           options={[
-            { value: 'auto', label: 'auto' },
+            { value: 'reset', label: 'Reset' },
             { value: 'none', label: 'none' },
             { value: 'solid', label: 'solid' },
             { value: 'dashed', label: 'dashed' },
