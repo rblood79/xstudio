@@ -3020,14 +3020,21 @@ src/
 │   │       ├── BreakpointProvider.tsx   # Breakpoint Context
 │   │       └── BreakpointTester.tsx     # Preview Breakpoint UI
 │   │
-│   ├── inspector/
+│   ├── panels/
 │   │   └── properties/
 │   │       └── editors/
 │   │           ├── SlotEditor.tsx
 │   │           ├── PageLayoutSelector.tsx
 │   │           ├── ElementSlotSelector.tsx
-│   │           ├── ResponsiveVisibilityEditor.tsx   # (NEW)
-│   │           └── ResponsivePropsEditor.tsx        # (NEW)
+│   │           ├── PageBodyEditor.tsx              # Page body 전용 (NEW)
+│   │           ├── LayoutBodyEditor.tsx            # Layout body 전용 (NEW)
+│   │           ├── LayoutPresetSelector/           # 프리셋 폴더 (NEW)
+│   │           │   ├── index.tsx                   # 메인 컴포넌트
+│   │           │   ├── presetDefinitions.ts        # 프리셋 정의
+│   │           │   ├── PresetPreview.tsx           # 썸네일 미리보기
+│   │           │   └── usePresetApply.ts           # Slot 자동 생성 훅
+│   │           ├── ResponsiveVisibilityEditor.tsx  # (NEW)
+│   │           └── ResponsivePropsEditor.tsx       # (NEW)
 │   │
 │   ├── hooks/
 │   │   └── useLayoutEditMode.ts
@@ -3091,10 +3098,152 @@ src/
   - `renderElementsTree()`: body를 div로 직접 렌더링 (line 343-353)
   - `containerProps`: style, data-element-id, data-original-tag 제거 (line 563-571)
 
-### 🔄 Phase 6: Edit Mode System - IN PROGRESS
+### 🔄 Phase 6: Edit Mode System & BodyEditor 분리 - IN PROGRESS
+
+#### 6.1 BodyEditor 분리 (Page vs Layout)
+
+**문제점:**
+- Layout 생성 후 body 선택 시 동일한 BodyEditor 사용됨
+- Page body: Layout 선택 기능 필요 (`PageLayoutSelector`)
+- Layout body: 프리셋 선택 기능 필요 (`LayoutPresetSelector`)
+- 두 기능이 근본적으로 다름
+
+**해결 방안: BodyEditor 분리**
+
+| 에디터 | 용도 | 주요 기능 |
+|--------|------|----------|
+| `PageBodyEditor` | Page의 body 편집 | Layout 선택 (드롭다운) |
+| `LayoutBodyEditor` | Layout의 body 편집 | 프리셋 선택 (썸네일 미리보기 + 자동 생성) |
+
+**파일 구조:**
+```
+src/builder/panels/properties/editors/
+├─ PageBodyEditor.tsx           # Page body 전용
+│  ├─ Basic (customId)
+│  ├─ PageLayoutSelector        # 기존 컴포넌트 재사용
+│  ├─ Layout (className)
+│  └─ Accessibility
+│
+├─ LayoutBodyEditor.tsx         # Layout body 전용
+│  ├─ Basic (customId)
+│  ├─ LayoutPresetSelector      # 프리셋 UI (NEW)
+│  ├─ Container Settings        # max-width, padding 등 (NEW)
+│  ├─ Layout (className)
+│  └─ Accessibility
+│
+└─ LayoutPresetSelector/        # 프리셋 전용 폴더
+   ├─ index.tsx                 # 메인 컴포넌트
+   ├─ presetDefinitions.ts      # 프리셋 정의 (구조, Slot 목록)
+   ├─ PresetPreview.tsx         # 썸네일 미리보기
+   └─ usePresetApply.ts         # Slot 자동 생성 훅
+```
+
+#### 6.2 Layout Preset 기능
+
+**기능 설명:**
+- 일반적인 웹페이지 구성(수직 2단, 3단, 복합 등) 미리보기 제공
+- 선택 시 Layout의 Layers에 Slot 자동 생성
+  - header Slot
+  - content Slot
+  - sidebar Slot
+  - footer Slot
+  - 등 프리셋 구조에 따라 자동 생성
+
+**프리셋 목록:**
+```typescript
+// presetDefinitions.ts
+export const LAYOUT_PRESETS = {
+  'vertical-2': {
+    name: '수직 2단',
+    description: 'Header + Content',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'content', required: true },
+    ],
+  },
+  'vertical-3': {
+    name: '수직 3단',
+    description: 'Header + Content + Footer',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'content', required: true },
+      { name: 'footer', required: false },
+    ],
+  },
+  'sidebar-left': {
+    name: '좌측 사이드바',
+    description: 'Sidebar + Content',
+    slots: [
+      { name: 'sidebar', required: false },
+      { name: 'content', required: true },
+    ],
+  },
+  'holy-grail': {
+    name: 'Holy Grail',
+    description: 'Header + (Sidebar + Content + Aside) + Footer',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'sidebar', required: false },
+      { name: 'content', required: true },
+      { name: 'aside', required: false },
+      { name: 'footer', required: false },
+    ],
+  },
+  'dashboard': {
+    name: '대시보드',
+    description: 'Navigation + Sidebar + Main Content',
+    slots: [
+      { name: 'navigation', required: false },
+      { name: 'sidebar', required: false },
+      { name: 'content', required: true },
+    ],
+  },
+};
+```
+
+**프리셋 적용 로직:**
+```typescript
+// usePresetApply.ts
+export function usePresetApply(layoutId: string) {
+  const { addElement } = useStore();
+
+  const applyPreset = useCallback(async (presetKey: string) => {
+    const preset = LAYOUT_PRESETS[presetKey];
+    if (!preset) return;
+
+    // Layout의 body 찾기
+    const body = elements.find(el =>
+      el.layout_id === layoutId && el.tag === 'body'
+    );
+
+    // 각 Slot 생성
+    for (const slotDef of preset.slots) {
+      const slotElement = {
+        id: crypto.randomUUID(),
+        tag: 'Slot',
+        props: {
+          name: slotDef.name,
+          required: slotDef.required,
+        },
+        parent_id: body.id,
+        layout_id: layoutId,
+        page_id: null,
+        order_num: nextOrderNum++,
+      };
+      await addElement(slotElement);
+    }
+  }, [layoutId, addElement]);
+
+  return { applyPreset };
+}
+```
+
+#### 6.3 Edit Mode 기타 항목
+
 - [ ] Layout 모드에서 Page elements 숨김
 - [ ] Page 모드에서 Layout elements 읽기 전용
 - [ ] Edit Mode 전환 시 UI 상태 동기화
+- [x] BodyEditor 분리 설계 완료
 
 ### 📋 Phase 7: Advanced Features - PLANNED
 - [ ] Responsive breakpoint 별 Slot visibility
@@ -3150,6 +3299,8 @@ parent: {
 - [x] Element에 target Slot 선택
 - [x] Layout 전용 / Layout + Page 모드 구분
 - [ ] Page/Layout 편집 모드 UI 분리
+- [ ] BodyEditor 분리 (PageBodyEditor / LayoutBodyEditor)
+- [ ] Layout Preset 기능 (프리셋 선택 → Slot 자동 생성)
 - [ ] Required Slot validation
 - [ ] Breakpoint별 Slot visibility 설정
 - [ ] Breakpoint별 Element props 설정
@@ -3226,6 +3377,6 @@ if (pageInfo.layoutId && pageInfo.pageId && hasPageElements && hasLayoutElements
 ---
 
 **작성:** Claude Sonnet 4.5
-**버전:** 2.2 (Preview Rendering Bug Fix 추가)
+**버전:** 2.3 (Layout Preset & BodyEditor 분리 추가)
 **최종 업데이트:** 2025-11-24
 **예상 개발 기간:** 6-8주 (Phase 1-7)

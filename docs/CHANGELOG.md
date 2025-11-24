@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Style Panel Improvements (2025-11-24)
+
+#### PropertyUnitInput Shorthand Parsing
+- **Shorthand Value Support** - CSS shorthand 값 (예: `"8px 12px"`) 파싱 시 첫 번째 값 추출
+- **Smart Change Detection** - 문자열 비교 대신 파싱된 숫자값/단위 비교로 불필요한 onChange 방지
+- **Focus Bug Fix** - Mixed 값에서 포커스 인/아웃만 해도 값이 변경되던 버그 수정
+
+#### LayoutSection Figma-style Expandable Spacing
+- **Expandable Spacing UI** - Figma 스타일 단일 값 ↔ 4방향 개별 입력 토글
+- **Mixed Value Detection** - 4방향 값이 다를 때 "(Mixed)" 라벨 표시
+- **4-Direction Grid** - T/R/B/L 개별 입력 그리드 레이아웃
+- **Bulk Update** - 축소 모드에서 4방향 동시 업데이트
+
+#### Files Modified
+- `src/builder/panels/common/PropertyUnitInput.tsx` - Shorthand 파싱 및 변경 감지 로직
+- `src/builder/panels/styles/sections/LayoutSection.tsx` - 확장형 Spacing UI
+- `src/builder/panels/common/index.css` - `.layout-spacing`, `.spacing-4way-grid` 스타일
+
+---
+
 ### Added - Layout/Slot System Implementation (2025-11-21)
 
 #### Phase 1: Core Infrastructure ✅

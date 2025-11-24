@@ -39,7 +39,11 @@ function parseUnitValue(value: string): {
     return { numericValue: null, unit: trimmed };
   }
 
-  const match = trimmed.match(/^(-?\d+\.?\d*)([a-z%]+)?$/i);
+  // ⭐ Shorthand 값 처리: "8px 12px" → 첫 번째 값 "8px" 사용
+  // padding, margin 등의 shorthand CSS 속성이 여러 값을 가질 때 첫 번째 값을 파싱
+  const firstValue = trimmed.split(/\s+/)[0];
+
+  const match = firstValue.match(/^(-?\d+\.?\d*)([a-z%]+)?$/i);
   if (match) {
     const numericValue = parseFloat(match[1]);
     const unit = match[2] || "";
@@ -144,9 +148,15 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       return;
     }
 
+    // ⭐ Shorthand 값 비교: "8px 12px" → 첫 번째 값 "8px"와 비교
+    // 원본 값을 파싱하여 실제 숫자값/단위가 변경되었는지 확인
+    const originalParsed = parseUnitValue(value);
+    const valueActuallyChanged =
+      originalParsed.numericValue !== num || originalParsed.unit !== unit;
+
     const newValue = `${num}${unit}`;
-    // ⭐ 값이 변경된 경우에만 onChange 호출 + 중복 호출 방지
-    if (newValue !== value && newValue !== lastSavedValueRef.current) {
+    // 실제로 값이 변경된 경우에만 onChange 호출
+    if (valueActuallyChanged && newValue !== lastSavedValueRef.current) {
       lastSavedValueRef.current = newValue;
       onChange(newValue);
     }
@@ -206,8 +216,13 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       } else {
         const num = parseFloat(trimmed);
         if (!isNaN(num) && num >= min && num <= max) {
-          const newVal = `${num}${unit}`;
-          if (newVal !== value) {
+          // ⭐ Shorthand 값 비교: 실제 숫자값/단위가 변경되었는지 확인
+          const originalParsed = parseUnitValue(value);
+          const valueActuallyChanged =
+            originalParsed.numericValue !== num || originalParsed.unit !== unit;
+
+          if (valueActuallyChanged) {
+            const newVal = `${num}${unit}`;
             onChange(newVal);
             shouldSave = true;
           }

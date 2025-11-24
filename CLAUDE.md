@@ -130,6 +130,79 @@ The Inspector provides a comprehensive inline style editor with bidirectional sy
 - **StyleSection.tsx** - Main style editor UI with Flexbox controls
 - **types.ts** - Extended with `style` and `computedStyle` properties
 
+#### Style Panel Components
+
+**Location**: `src/builder/panels/`
+
+**PropertyUnitInput** (`src/builder/panels/common/PropertyUnitInput.tsx`)
+
+Unified input component for CSS values with unit selection (px, %, rem, em, vh, vw).
+
+**Key Features:**
+- **Shorthand Parsing** - Handles CSS shorthand values like `"8px 12px"` by extracting first value
+- **Smart Change Detection** - Compares parsed numeric value and unit, not string representation
+- **Unit Dropdown** - ComboBox with unit selection and keyword support (auto, inherit, reset)
+- **Keyboard Support** - Arrow up/down with Shift for 10x increment
+- **Focus Optimization** - Prevents unnecessary onChange calls on focus in/out
+
+**Shorthand Value Handling:**
+```typescript
+// CSS shorthand like "8px 12px 8px 12px" → extracts first value "8px"
+const firstValue = trimmed.split(/\s+/)[0];
+
+// Change detection compares parsed values, not strings
+// This prevents overwriting mixed values on blur without actual changes
+const originalParsed = parseUnitValue(value); // "8px 12px" → {numericValue: 8, unit: "px"}
+const valueActuallyChanged =
+  originalParsed.numericValue !== num || originalParsed.unit !== unit;
+```
+
+**LayoutSection** (`src/builder/panels/styles/sections/LayoutSection.tsx`)
+
+Figma-style expandable layout editor with flex direction, alignment, gap, padding, and margin controls.
+
+**Key Features:**
+- **Flex Direction Controls** - Block/Row/Column with visual toggle buttons
+- **3x3 Alignment Grid** - Combined justifyContent + alignItems control
+- **Justify Content Spacing** - space-around, space-between, space-evenly options
+- **Expandable Spacing** - Figma-style single value ↔ 4-direction individual inputs
+
+**Expandable Spacing Pattern:**
+```typescript
+// Collapsed mode: single input for uniform padding/margin
+<PropertyUnitInput
+  value={paddingValues.displayValue}
+  onChange={(value) => updateSpacingAll('padding', value)}
+/>
+
+// Expanded mode: 4-direction individual inputs (T/R/B/L)
+<PropertyUnitInput label="T" value={paddingValues.top} onChange={...} />
+<PropertyUnitInput label="R" value={paddingValues.right} onChange={...} />
+<PropertyUnitInput label="B" value={paddingValues.bottom} onChange={...} />
+<PropertyUnitInput label="L" value={paddingValues.left} onChange={...} />
+```
+
+**Mixed Value Detection:**
+```typescript
+function get4DirectionValues(element, prefix: 'padding' | 'margin') {
+  const top = getStyleValue(element, `${prefix}Top`, '0px');
+  const right = getStyleValue(element, `${prefix}Right`, '0px');
+  const bottom = getStyleValue(element, `${prefix}Bottom`, '0px');
+  const left = getStyleValue(element, `${prefix}Left`, '0px');
+
+  // Mixed = not all values are equal
+  const isMixed = !(top === right && right === bottom && bottom === left);
+
+  return { top, right, bottom, left, isMixed, displayValue: isMixed ? shorthand : top };
+}
+```
+
+**CSS Classes** (`src/builder/panels/common/index.css`):
+- `.layout-spacing` - Main container with expand/collapse
+- `.spacing-header` - Header with title and chevron toggle button
+- `.spacing-4way` - Fieldset for each property (padding/margin)
+- `.spacing-4way-grid` - CSS Grid for T/R/B/L positioning
+
 ### API Service Layer
 
 Structured API services in `src/services/api/`:
