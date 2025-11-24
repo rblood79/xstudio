@@ -370,9 +370,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
             //console.log('Element selected from preview:', event.data.elementId);
 
-            // Inspector → Builder 동기화 중이면 Preview의 업데이트 무시 (무한 루프 방지)
-            if (isSyncingToBuilder) {
-                console.log('⏸️ Inspector 동기화 중 - Preview 업데이트 무시');
+            const currentSelectedId = useStore.getState().selectedElementId;
+            const newElementId = event.data.elementId;
+
+            // ⭐ FIX: 다른 요소 선택은 항상 허용
+            // 같은 요소 재선택만 동기화 중일 때 스킵 (무한 루프 방지)
+            if (isSyncingToBuilder && newElementId === currentSelectedId) {
+                console.log('⏸️ 같은 요소 재선택 - 동기화 완료 대기');
                 return;
             }
 
@@ -382,12 +386,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             if (isMultiSelect) {
                 // Cmd/Ctrl + Click: 다중 선택 토글
                 const store = useStore.getState();
-                store.toggleElementInSelection(event.data.elementId);
+                store.toggleElementInSelection(newElementId);
             } else {
                 // 일반 클릭: 단일 선택 (computedStyle 없이 즉시 선택 - Option B+C)
                 // computedStyle은 별도 메시지(ELEMENT_COMPUTED_STYLE)로 나중에 도착
                 setSelectedElement(
-                    event.data.elementId,
+                    newElementId,
                     event.data.payload?.props,
                     event.data.payload?.style,
                     undefined // computedStyle은 나중에 업데이트
@@ -410,12 +414,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
             //console.log('Elements drag selected from preview:', event.data.elementIds);
 
-            // Inspector → Builder 동기화 중이면 Preview의 업데이트 무시
-            if (isSyncingToBuilder) {
-                console.log('⏸️ Inspector 동기화 중 - Preview 업데이트 무시');
-                return;
-            }
-
+            // ⭐ FIX: 드래그 선택은 새로운 선택 세트를 설정하므로 항상 허용
+            // (isSyncingToBuilder 체크 제거 - 새 요소 선택은 차단하지 않음)
             const store = useStore.getState();
             store.setSelectedElements(event.data.elementIds);
         }
