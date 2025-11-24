@@ -177,12 +177,16 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     // Use the current input value, not the state numericValue
     const currentNum = parseFloat(inputValue);
     let newValue: string;
-    if (!isNaN(currentNum)) {
+    if (!isNaN(currentNum) && currentNum !== 0) {
+      // 현재 값이 유효한 숫자이고 0이 아니면 유지
       newValue = `${currentNum}${selectedUnit}`;
-    } else if (numericValue !== null) {
+    } else if (numericValue !== null && numericValue !== 0) {
+      // state에 저장된 값이 있고 0이 아니면 사용
       newValue = `${numericValue}${selectedUnit}`;
     } else {
-      newValue = `0${selectedUnit}`;
+      // ⭐ %, vh, vw 단위는 100을 기본값으로, 나머지는 0
+      const defaultValue = ['%', 'vh', 'vw'].includes(selectedUnit) ? 100 : 0;
+      newValue = `${defaultValue}${selectedUnit}`;
     }
 
     // ⭐ 중복 호출 방지

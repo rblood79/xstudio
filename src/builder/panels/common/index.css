@@ -361,10 +361,9 @@
        * ======================================== */
       .layout-spacing {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         gap: var(--spacing-sm);
-        padding: var(--spacing-sm);
-        background: var(--surface-variant);
         border-radius: var(--radius-md);
 
         .spacing-header {
@@ -402,88 +401,55 @@
           }
         }
 
-        /* Expanded mode: 4-way grid for each property */
-        .spacing-expanded {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-sm);
-        }
-
-        .spacing-4way {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-sm);
-          background: var(--surface);
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--outline-variant);
-
-          legend {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            font-size: var(--text-xs);
-            font-weight: var(--font-weight-medium);
-            color: var(--on-surface-variant);
-            padding: 0 var(--spacing-xs);
-          }
-        }
-
-        .spacing-4way-grid {
+        /* 4-way grid: 3x3 pattern (edges for padding/margin, corners for border-radius) */
+        .four-way-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: auto auto;
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(3, 1fr);
           grid-template-areas:
-            "top top"
-            "left right"
-            "bottom bottom";
-          gap: var(--spacing-xs);
-          justify-items: center;
+            ".    top    ."
+            "left .      right"
+            ".    bottom .";
+          gap: 3px;
+          border-radius: var(--radius-md);
 
-          .spacing-top {
+          .react-aria-Input {
+            margin: 2px;
+            background: var(--surface-container-high);
+            border: none;
+            border-radius: var(--radius-sm);
+            width: 23px;
+            height: 23px;
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-xs);
+            font-size: var(--text-xs);
+            text-align: center;
+            color: var(--outline);
+
+            &::placeholder {
+              color: var(--on-surface-variant);
+              opacity: 0.5;
+            }
+
+            &:focus {
+              outline: 0px;
+            }
+          }
+
+          .four-way-top {
             grid-area: top;
-            width: 100%;
-            max-width: 120px;
           }
 
-          .spacing-right {
+          .four-way-right {
             grid-area: right;
-            width: 100%;
           }
 
-          .spacing-bottom {
+          .four-way-bottom {
             grid-area: bottom;
-            width: 100%;
-            max-width: 120px;
           }
 
-          .spacing-left {
+          .four-way-left {
             grid-area: left;
-            width: 100%;
-          }
-
-          /* Compact input styling */
-          .properties-aria {
-            .fieldset-legend {
-              font-size: var(--text-2xs);
-              text-align: center;
-            }
-
-            .react-aria-Group {
-              min-height: 24px;
-            }
-
-            .react-aria-Input {
-              padding: var(--spacing-xs);
-              padding-inline-start: 20px;
-              font-size: var(--text-2xs);
-            }
-
-            .control-label {
-              width: 20px;
-              height: 24px;
-              font-size: var(--text-2xs);
-            }
           }
         }
 
