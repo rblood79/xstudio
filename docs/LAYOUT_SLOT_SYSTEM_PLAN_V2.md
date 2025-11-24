@@ -3070,12 +3070,33 @@ src/
   - `FormComponents.ts`: TextField
   - `TableComponents.ts`: Table, ColumnGroup
 
-### 🔄 Phase 5: Edit Mode System - IN PROGRESS
-- [ ] Layout 모드 / Page 모드 명확한 분리
+### ✅ Phase 5: Preview Rendering Bug Fix - COMPLETED (2025-11-24)
+- [x] Layout 전용 모드 / Layout + Page 모드 명확한 분리
+- [x] body padding 이중 적용 버그 수정
+- [x] Preview에서 body 요소 직접 클릭 선택 가능하도록 개선
+
+**문제:**
+1. Layout Tab에서 body에 padding 적용 시 두 번 적용됨
+   - 루트 컨테이너에서 한 번
+   - layout-body wrapper에서 한 번
+2. Preview에서 body를 클릭해서 선택할 수 없음 (Layout 트리에서만 선택 가능)
+
+**해결:**
+- 루트 컨테이너는 중립적 wrapper로만 사용 (style 적용 안함)
+- body element를 `renderElementsTree()`에서 직접 렌더링
+- `hasPageElements`, `hasLayoutElements` 체크로 모드 구분
+
+**수정 파일:**
+- `src/builder/preview/index.tsx`
+  - `renderElementsTree()`: body를 div로 직접 렌더링 (line 343-353)
+  - `containerProps`: style, data-element-id, data-original-tag 제거 (line 563-571)
+
+### 🔄 Phase 6: Edit Mode System - IN PROGRESS
 - [ ] Layout 모드에서 Page elements 숨김
 - [ ] Page 모드에서 Layout elements 읽기 전용
+- [ ] Edit Mode 전환 시 UI 상태 동기화
 
-### 📋 Phase 6: Advanced Features - PLANNED
+### 📋 Phase 7: Advanced Features - PLANNED
 - [ ] Responsive breakpoint 별 Slot visibility
 - [ ] Layout 복제 기능
 - [ ] Layout 사용 현황 표시
@@ -3112,10 +3133,12 @@ parent: {
 ### Technical
 
 - [x] Zero TypeScript errors
-- [ ] All CSS uses `react-aria-*` naming
+- [x] All CSS uses `react-aria-*` naming (Slot.css)
 - [x] Store follows Factory Pattern
-- [ ] Preview rendering handles nested Slots (재귀적)
+- [x] Preview rendering handles nested Slots (재귀적)
 - [x] Backward compatible (Layout 없는 Page 작동)
+- [x] Preview에서 body 요소 직접 선택 가능
+- [x] body style 단일 적용 (이중 적용 버그 수정)
 - [ ] Responsive CSS 미디어 쿼리 자동 생성
 
 ### Functional
@@ -3125,7 +3148,8 @@ parent: {
 - [x] Slot 추가/편집 (name, required, description)
 - [x] Page에 Layout 적용
 - [x] Element에 target Slot 선택
-- [ ] Page/Layout 편집 모드 분리
+- [x] Layout 전용 / Layout + Page 모드 구분
+- [ ] Page/Layout 편집 모드 UI 분리
 - [ ] Required Slot validation
 - [ ] Breakpoint별 Slot visibility 설정
 - [ ] Breakpoint별 Element props 설정
@@ -3151,7 +3175,57 @@ parent: {
 
 ---
 
+## Preview Rendering Architecture (2025-11-24)
+
+### 렌더링 모드 구분
+
+Preview는 세 가지 모드로 렌더링됩니다:
+
+| 모드 | 조건 | body 렌더링 위치 |
+|------|------|-----------------|
+| **Layout + Page** | `hasPageElements && hasLayoutElements` | `layout-body` wrapper |
+| **Layout 전용** | `hasLayoutElements && !hasPageElements` | `renderElementsTree()` 내부 |
+| **Page 전용** | `hasPageElements && !hasLayoutElements` | `renderElementsTree()` 내부 |
+
+### 모드 감지 로직
+
+```typescript
+// renderElementsTree() 시작 부분
+const hasPageElements = elements.some((el) => el.page_id !== null);
+const hasLayoutElements = elements.some((el) => el.layout_id !== null);
+
+if (pageInfo.layoutId && pageInfo.pageId && hasPageElements && hasLayoutElements) {
+  // Layout + Page 모드: resolveLayoutForPage() 사용
+} else {
+  // Layout 전용 또는 Page 전용 모드: body 직접 렌더링
+}
+```
+
+### body 렌더링 구조
+
+```tsx
+// Layout 전용 / Page 전용 모드
+<div className={styles.main}>  {/* 루트 컨테이너 (중립적 wrapper) */}
+  <div
+    data-element-id={bodyElement.id}
+    data-original-tag="body"
+    style={bodyElement.props?.style}
+    className="layout-body"
+  >
+    {bodyChildren.map((el) => renderElement(el, el.id))}
+  </div>
+</div>
+```
+
+### 핵심 원칙
+
+1. **루트 컨테이너는 중립적**: style, data-element-id 적용 안함
+2. **body는 항상 직접 렌더링**: Preview에서 클릭 선택 가능
+3. **style 단일 적용**: body style은 한 곳에서만 적용
+
+---
+
 **작성:** Claude Sonnet 4.5
-**버전:** 2.1 (Implementation Progress 추가)
-**최종 업데이트:** 2025-11-21
-**예상 개발 기간:** 6-8주 (Phase 1-6)
+**버전:** 2.2 (Preview Rendering Bug Fix 추가)
+**최종 업데이트:** 2025-11-24
+**예상 개발 기간:** 6-8주 (Phase 1-7)

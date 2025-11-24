@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import {
   ComboBox as AriaComboBox,
   Button,
@@ -27,7 +27,7 @@ interface PropertyUnitInputProps {
 }
 
 const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "reset"];
-const KEYWORDS = ["reset", "inherit", "initial", "unset", "normal"];
+const KEYWORDS = ["reset", "auto", "inherit", "initial", "unset", "normal"];
 
 function parseUnitValue(value: string): {
   numericValue: number | null;
@@ -49,7 +49,7 @@ function parseUnitValue(value: string): {
   return { numericValue: 0, unit: "px" };
 }
 
-export function PropertyUnitInput({
+export const PropertyUnitInput = memo(function PropertyUnitInput({
   label,
   value,
   onChange,
@@ -65,18 +65,23 @@ export function PropertyUnitInput({
   const [isKeyword, setIsKeyword] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
+  // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
+  const justSavedViaEnterRef = useRef(false);
+
   useEffect(() => {
     const parsed = parseUnitValue(value);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNumericValue(parsed.numericValue);
-     
+
     setUnit(parsed.unit);
-     
+
     setIsKeyword(parsed.numericValue === null);
-     
+
     setInputValue(
       parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
     );
+    // Reset the flag when value changes from parent
+    justSavedViaEnterRef.current = false;
   }, [value]);
 
   const handleInputChange = (newValue: string) => {
@@ -84,15 +89,21 @@ export function PropertyUnitInput({
   };
 
   const handleInputBlur = () => {
+    // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
+    if (justSavedViaEnterRef.current) {
+      justSavedViaEnterRef.current = false;
+      return;
+    }
+
     const trimmed = inputValue.trim();
 
     if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
       const keyword = trimmed.toLowerCase();
       // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
-      if (keyword === "reset") {
-        onChange("");
-      } else {
-        onChange(keyword);
+      const newValue = keyword === "reset" ? "" : keyword;
+      // 값이 변경된 경우에만 onChange 호출
+      if (newValue !== value) {
+        onChange(newValue);
       }
       return;
     }
@@ -118,7 +129,11 @@ export function PropertyUnitInput({
       return;
     }
 
-    onChange(`${num}${unit}`);
+    const newValue = `${num}${unit}`;
+    // 값이 변경된 경우에만 onChange 호출
+    if (newValue !== value) {
+      onChange(newValue);
+    }
   };
 
   const handleUnitChange = (selectedUnit: string) => {
@@ -146,12 +161,41 @@ export function PropertyUnitInput({
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     // Select all text on focus for easier editing
     e.target.select();
+    // Reset flag on focus (new editing session)
+    justSavedViaEnterRef.current = false;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleInputBlur();
+      // ⭐ Enter로 저장하기 전에 값이 변경되었는지 확인
+      const trimmed = inputValue.trim();
+      let shouldSave = false;
+
+      if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
+        const keyword = trimmed.toLowerCase();
+        const newVal = keyword === "reset" ? "" : keyword;
+        if (newVal !== value) {
+          onChange(newVal);
+          shouldSave = true;
+        }
+      } else {
+        const num = parseFloat(trimmed);
+        if (!isNaN(num) && num >= min && num <= max) {
+          const newVal = `${num}${unit}`;
+          if (newVal !== value) {
+            onChange(newVal);
+            shouldSave = true;
+          }
+        }
+      }
+
+      if (shouldSave) {
+        // ⭐ useRef로 즉시 플래그 설정 (setState와 달리 동기적!)
+        justSavedViaEnterRef.current = true;
+      }
+      // Blur the input to confirm the change
+      (e.target as HTMLInputElement).blur();
       return;
     }
 
@@ -227,4 +271,16 @@ export function PropertyUnitInput({
       </div>
     </fieldset>
   );
-}
+}, (prevProps, nextProps) => {
+  // ⭐ 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+  return (
+    prevProps.label === nextProps.label &&
+    prevProps.value === nextProps.value &&
+    prevProps.className === nextProps.className &&
+    prevProps.icon === nextProps.icon &&
+    prevProps.min === nextProps.min &&
+    prevProps.max === nextProps.max &&
+    prevProps.allowKeywords === nextProps.allowKeywords &&
+    JSON.stringify(prevProps.units) === JSON.stringify(nextProps.units)
+  );
+});
