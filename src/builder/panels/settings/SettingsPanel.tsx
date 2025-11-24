@@ -19,6 +19,7 @@ import {
   Save,
   Moon,
   Sun,
+  CaseSensitive,
 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
@@ -69,6 +70,9 @@ function SettingsContent() {
 
   const uiScale = useStore((state) => state.uiScale);
   const setUiScale = useStore((state) => state.setUiScale);
+
+  const defaultUnit = useStore((state) => state.defaultUnit);
+  const setDefaultUnit = useStore((state) => state.setDefaultUnit);
 
   // SaveMode 상태
   const isRealtimeMode = useStore((state) => state.isRealtimeMode);
@@ -138,9 +142,20 @@ function SettingsContent() {
     { value: "24", label: "24px" },
   ];
 
+  const defaultUnitOptions = [
+    { value: "px", label: "Pixels (px)" },
+    { value: "rem", label: "Root EM (rem)" },
+    { value: "em", label: "EM (em)" },
+    { value: "%", label: "Percent (%)" },
+  ];
+
   const handleGridSizeChange = (value: string) => {
     const size = parseInt(value) as 8 | 16 | 24;
     setGridSize(size);
+  };
+
+  const handleDefaultUnitChange = (value: string) => {
+    setDefaultUnit(value as 'px' | 'rem' | 'em' | '%');
   };
 
   const handleThemeModeChange = (value: string) => {
@@ -212,6 +227,17 @@ function SettingsContent() {
                 : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
             </Button>
           )}
+        </PropertySection>
+
+        {/* Units Section */}
+        <PropertySection title="Units">
+          <PropertySelect
+            label="Default Unit"
+            value={defaultUnit}
+            onChange={handleDefaultUnitChange}
+            options={defaultUnitOptions}
+            icon={CaseSensitive}
+          />
         </PropertySection>
 
         {/* Preview & Overlay Section */}

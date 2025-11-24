@@ -11,6 +11,9 @@ export interface HistoryInfo {
  * Settings 상태 인터페이스
  * 빌더 환경 설정 관리
  */
+/** CSS 단위 타입 */
+export type CSSUnit = 'px' | 'rem' | 'em' | '%';
+
 export interface SettingsState {
   /** Selection Overlay 표시 여부 (기본값: true) */
   showOverlay: boolean;
@@ -38,6 +41,9 @@ export interface SettingsState {
 
   /** UI 스케일 (기본값: 100, 범위: 80 | 100 | 120) */
   uiScale: 80 | 100 | 120;
+
+  /** 기본 CSS 단위 (기본값: 'px') - 포토샵 스타일 전역 단위 설정 */
+  defaultUnit: CSSUnit;
 
   /** History 정보 (Monitor에서 사용) */
   historyInfo: HistoryInfo;
@@ -71,6 +77,9 @@ export interface SettingsState {
 
   /** History 정보 업데이트 */
   setHistoryInfo: (info: HistoryInfo) => void;
+
+  /** 기본 CSS 단위 설정 */
+  setDefaultUnit: (unit: CSSUnit) => void;
 }
 
 /**
@@ -86,6 +95,7 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
   overlayOpacity: 100,
   themeMode: 'auto',
   uiScale: 100,
+  defaultUnit: 'px',
   historyInfo: {
     canUndo: false,
     canRedo: false,
@@ -161,5 +171,12 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
    */
   setHistoryInfo: (info: HistoryInfo) => {
     set({ historyInfo: info });
+  },
+
+  /**
+   * 기본 CSS 단위 설정
+   */
+  setDefaultUnit: (unit: CSSUnit) => {
+    set({ defaultUnit: unit });
   },
 });

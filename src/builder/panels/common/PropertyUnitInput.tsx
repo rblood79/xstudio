@@ -1,14 +1,14 @@
+/**
+ * PropertyUnitInput - 전역 단위 설정을 사용하는 단순화된 CSS 값 입력
+ *
+ * 포토샵 스타일: Settings에서 설정한 기본 단위를 사용
+ * - 숫자만 입력 → 자동으로 전역 단위 적용
+ * - auto, inherit, reset 등 키워드 직접 입력 가능
+ */
+
 import React, { useState, useEffect, useRef, memo } from "react";
-import {
-  ComboBox as AriaComboBox,
-  Button,
-  Input,
-  ListBox,
-  ListBoxItem,
-  Popover,
-} from "react-aria-components";
-import { ChevronDown } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { Input } from "react-aria-components";
+import { useStore } from "../../stores";
 
 interface PropertyUnitInputProps {
   label?: string;
@@ -20,13 +20,11 @@ interface PropertyUnitInputProps {
     strokeWidth?: number;
   }>;
   className?: string;
-  units?: string[];
   allowKeywords?: boolean;
   min?: number;
   max?: number;
 }
 
-const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "reset"];
 const KEYWORDS = ["reset", "auto", "inherit", "initial", "unset", "normal"];
 
 function parseUnitValue(value: string): {
@@ -39,8 +37,7 @@ function parseUnitValue(value: string): {
     return { numericValue: null, unit: trimmed };
   }
 
-  // ⭐ Shorthand 값 처리: "8px 12px" → 첫 번째 값 "8px" 사용
-  // padding, margin 등의 shorthand CSS 속성이 여러 값을 가질 때 첫 번째 값을 파싱
+  // Shorthand 값 처리: "8px 12px" → 첫 번째 값 "8px" 사용
   const firstValue = trimmed.split(/\s+/)[0];
 
   const match = firstValue.match(/^(-?\d+\.?\d*)([a-z%]+)?$/i);
@@ -59,36 +56,34 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   onChange,
   icon: Icon,
   className,
-  units = DEFAULT_UNITS,
   allowKeywords = true,
   min = 0,
   max = 9999,
 }: PropertyUnitInputProps) {
-  const [numericValue, setNumericValue] = useState<number | null>(null);
-  const [unit, setUnit] = useState<string>("px");
-  const [isKeyword, setIsKeyword] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  // 전역 기본 단위 가져오기
+  const defaultUnit = useStore((state) => state.defaultUnit);
 
-  // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
+  const [inputValue, setInputValue] = useState("");
+  const [isKeyword, setIsKeyword] = useState(false);
+
+  // Enter 키로 저장했는지 추적
   const justSavedViaEnterRef = useRef(false);
-  // ⭐ 마지막으로 저장한 값 추적 - 중복 호출 방지
+  // 마지막으로 저장한 값 추적 - 중복 호출 방지
   const lastSavedValueRef = useRef<string>(value);
 
   useEffect(() => {
     const parsed = parseUnitValue(value);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNumericValue(parsed.numericValue);
-
-    setUnit(parsed.unit);
-
     setIsKeyword(parsed.numericValue === null);
 
-    setInputValue(
-      parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
-    );
-    // Reset the flag when value changes from parent
+    // 숫자값이면 숫자만 표시, 키워드면 키워드 그대로 표시
+    if (parsed.numericValue !== null) {
+      setInputValue(String(parsed.numericValue));
+    } else {
+      setInputValue(parsed.unit);
+    }
+
+    // Reset flags
     justSavedViaEnterRef.current = false;
-    // ⭐ 외부에서 값이 변경되면 lastSavedValueRef도 업데이트
     lastSavedValueRef.current = value;
   }, [value]);
 
@@ -96,30 +91,20 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     setInputValue(newValue);
   };
 
-  // ⭐ ComboBox 컨테이너 ref - 내부 포커스 이동 감지용
-  const comboBoxRef = useRef<HTMLDivElement>(null);
-
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
+  const handleInputBlur = () => {
+    // Skip if just saved via Enter
     if (justSavedViaEnterRef.current) {
       justSavedViaEnterRef.current = false;
       return;
     }
 
-    // ⭐ ComboBox 내부로 포커스 이동 시 blur 처리 스킵
-    // Input → Button 이동 시 불필요한 onChange 방지
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    if (relatedTarget && comboBoxRef.current?.contains(relatedTarget)) {
-      return;
-    }
-
     const trimmed = inputValue.trim();
 
+    // 키워드 처리 (auto, inherit, reset 등)
     if (allowKeywords && KEYWORDS.includes(trimmed.toLowerCase())) {
       const keyword = trimmed.toLowerCase();
       // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
       const newValue = keyword === "reset" ? "" : keyword;
-      // ⭐ 값이 변경된 경우에만 onChange 호출 + 중복 호출 방지
       if (newValue !== value && newValue !== lastSavedValueRef.current) {
         lastSavedValueRef.current = newValue;
         onChange(newValue);
@@ -127,11 +112,13 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       return;
     }
 
+    // 숫자 처리
     const num = parseFloat(trimmed);
     if (isNaN(num)) {
-      // Invalid input, revert to previous value
-      if (numericValue !== null) {
-        setInputValue(String(numericValue));
+      // Invalid input - revert
+      const parsed = parseUnitValue(value);
+      if (parsed.numericValue !== null) {
+        setInputValue(String(parsed.numericValue));
       } else {
         setInputValue("");
       }
@@ -139,70 +126,36 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     }
 
     if (num < min || num > max) {
-      // Out of range, revert to previous value
-      if (numericValue !== null) {
-        setInputValue(String(numericValue));
+      // Out of range - revert
+      const parsed = parseUnitValue(value);
+      if (parsed.numericValue !== null) {
+        setInputValue(String(parsed.numericValue));
       } else {
         setInputValue("");
       }
       return;
     }
 
-    // ⭐ Shorthand 값 비교: "8px 12px" → 첫 번째 값 "8px"와 비교
-    // 원본 값을 파싱하여 실제 숫자값/단위가 변경되었는지 확인
+    // 전역 단위 사용
     const originalParsed = parseUnitValue(value);
     const valueActuallyChanged =
-      originalParsed.numericValue !== num || originalParsed.unit !== unit;
+      originalParsed.numericValue !== num || originalParsed.unit !== defaultUnit;
 
-    const newValue = `${num}${unit}`;
-    // 실제로 값이 변경된 경우에만 onChange 호출
+    const newValue = `${num}${defaultUnit}`;
     if (valueActuallyChanged && newValue !== lastSavedValueRef.current) {
       lastSavedValueRef.current = newValue;
       onChange(newValue);
     }
   };
 
-  const handleUnitChange = (selectedUnit: string) => {
-    if (KEYWORDS.includes(selectedUnit)) {
-      // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
-      const newValue = selectedUnit === "reset" ? "" : selectedUnit;
-      // ⭐ 중복 호출 방지
-      if (newValue !== value && newValue !== lastSavedValueRef.current) {
-        lastSavedValueRef.current = newValue;
-        onChange(newValue);
-      }
-      return;
-    }
-
-    // Use the current input value, not the state numericValue
-    const currentNum = parseFloat(inputValue);
-    let newValue: string;
-    if (!isNaN(currentNum)) {
-      newValue = `${currentNum}${selectedUnit}`;
-    } else if (numericValue !== null) {
-      newValue = `${numericValue}${selectedUnit}`;
-    } else {
-      newValue = `0${selectedUnit}`;
-    }
-
-    // ⭐ 중복 호출 방지
-    if (newValue !== value && newValue !== lastSavedValueRef.current) {
-      lastSavedValueRef.current = newValue;
-      onChange(newValue);
-    }
-  };
-
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Select all text on focus for easier editing
     e.target.select();
-    // Reset flag on focus (new editing session)
     justSavedViaEnterRef.current = false;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      // ⭐ Enter로 저장하기 전에 값이 변경되었는지 확인
       const trimmed = inputValue.trim();
       let shouldSave = false;
 
@@ -216,13 +169,13 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       } else {
         const num = parseFloat(trimmed);
         if (!isNaN(num) && num >= min && num <= max) {
-          // ⭐ Shorthand 값 비교: 실제 숫자값/단위가 변경되었는지 확인
           const originalParsed = parseUnitValue(value);
           const valueActuallyChanged =
-            originalParsed.numericValue !== num || originalParsed.unit !== unit;
+            originalParsed.numericValue !== num ||
+            originalParsed.unit !== defaultUnit;
 
           if (valueActuallyChanged) {
-            const newVal = `${num}${unit}`;
+            const newVal = `${num}${defaultUnit}`;
             onChange(newVal);
             shouldSave = true;
           }
@@ -230,29 +183,32 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       }
 
       if (shouldSave) {
-        // ⭐ useRef로 즉시 플래그 설정 (setState와 달리 동기적!)
         justSavedViaEnterRef.current = true;
       }
-      // Blur the input to confirm the change
       (e.target as HTMLInputElement).blur();
       return;
     }
 
     if (isKeyword) return;
 
+    // Arrow up/down for incrementing/decrementing
     const step = e.shiftKey ? 10 : 1;
-    let newValue = numericValue || 0;
+    const parsed = parseUnitValue(value);
+    let currentNum = parsed.numericValue || 0;
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      newValue = Math.min(newValue + step, max);
-      onChange(`${newValue}${unit}`);
+      currentNum = Math.min(currentNum + step, max);
+      onChange(`${currentNum}${defaultUnit}`);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      newValue = Math.max(newValue - step, min);
-      onChange(`${newValue}${unit}`);
+      currentNum = Math.max(currentNum - step, min);
+      onChange(`${currentNum}${defaultUnit}`);
     }
   };
+
+  // 단위 표시 (숫자값일 때만)
+  const displayUnit = !isKeyword ? defaultUnit : "";
 
   return (
     <fieldset
@@ -262,56 +218,30 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       <div className="react-aria-control react-aria-Group">
         {Icon && (
           <label className="control-label">
-            <Icon
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
+            <Icon color="var(--color-text-secondary)" size={14} strokeWidth={1.5} />
           </label>
         )}
-        <AriaComboBox
-          className="react-aria-ComboBox react-aria-UnitComboBox"
-          inputValue={unit === "" ? "—" : unit}
-          onSelectionChange={(key) => {
-            if (key !== null) {
-              const selectedUnit = key === "—" ? "" : (key as string);
-              handleUnitChange(selectedUnit);
-            }
-          }}
-          selectedKey={unit === "" ? "—" : unit}
-          aria-label="Unit"
-        >
-          <div className="combobox-container" ref={comboBoxRef}>
-            <Input
-              className="react-aria-Input"
-              type="text"
-              value={inputValue}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              onKeyDown={handleKeyDown}
-              aria-label={label || "Value"}
-              placeholder="reset"
-            />
-            <Button className="react-aria-Button">
-              <ChevronDown size={16} />
-            </Button>
-          </div>
-          <Popover className="react-aria-Popover">
-            <ListBox className="react-aria-ListBox">
-              {units.map((u) => (
-                <ListBoxItem key={u === "" ? "—" : u} id={u === "" ? "—" : u} className="react-aria-ListBoxItem">
-                  {u === "" ? "—" : u}
-                </ListBoxItem>
-              ))}
-            </ListBox>
-          </Popover>
-        </AriaComboBox>
+        <div className="unit-input-wrapper">
+          <Input
+            className="react-aria-Input"
+            type="text"
+            value={inputValue}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            aria-label={label || "Value"}
+            placeholder="auto"
+          />
+          {displayUnit && (
+            <span className="unit-suffix">{displayUnit}</span>
+          )}
+        </div>
       </div>
     </fieldset>
   );
 }, (prevProps, nextProps) => {
-  // ⭐ 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+  // 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
   return (
     prevProps.label === nextProps.label &&
     prevProps.value === nextProps.value &&
@@ -319,7 +249,6 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     prevProps.icon === nextProps.icon &&
     prevProps.min === nextProps.min &&
     prevProps.max === nextProps.max &&
-    prevProps.allowKeywords === nextProps.allowKeywords &&
-    JSON.stringify(prevProps.units) === JSON.stringify(nextProps.units)
+    prevProps.allowKeywords === nextProps.allowKeywords
   );
 });

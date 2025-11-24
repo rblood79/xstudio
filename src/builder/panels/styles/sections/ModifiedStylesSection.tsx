@@ -118,7 +118,6 @@ export function ModifiedStylesSection({
         icon={RulerDimensionLine}
         label={formatLabel(property)}
         value={String(value)}
-        units={getUnitsForProperty(property)}
         onChange={(newValue) => updateStyle(property, newValue)}
         min={getMinForProperty(property)}
         max={getMaxForProperty(property)}
@@ -165,26 +164,6 @@ function formatLabel(property: string): string {
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (str) => str.toUpperCase())
     .trim();
-}
-
-// Helper: Get units for property
-function getUnitsForProperty(property: string): string[] {
-  if (['width', 'height', 'top', 'left', 'right', 'bottom'].includes(property)) {
-    return ['reset', 'px', '%', 'rem', 'em', 'vh', 'vw'];
-  }
-  if (['padding', 'margin', 'gap'].includes(property)) {
-    return ['reset', 'px', 'rem', 'em'];
-  }
-  if (['fontSize', 'lineHeight', 'letterSpacing'].includes(property)) {
-    return ['reset', 'px', 'rem', 'em', 'pt'];
-  }
-  if (['borderWidth'].includes(property)) {
-    return ['reset', 'px'];
-  }
-  if (['borderRadius'].includes(property)) {
-    return ['reset', 'px', '%', 'rem', 'em'];
-  }
-  return ['px'];
 }
 
 // Helper: Get min value for property

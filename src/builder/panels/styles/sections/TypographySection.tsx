@@ -82,7 +82,6 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           icon={Type}
           label="Font Size"
           value={getStyleValue(selectedElement, 'fontSize', '16px')}
-          units={['reset', 'px', 'rem', 'em', 'pt']}
           onChange={(value) => updateStyle('fontSize', value)}
           min={8}
           max={200}
@@ -92,7 +91,6 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           label="Line Height"
           className="text-size-height"
           value={getStyleValue(selectedElement, 'lineHeight', 'normal')}
-          units={['reset', 'px', 'rem', 'em', '']}
           onChange={(value) => updateStyle('lineHeight', value)}
           min={0}
           max={10}
@@ -135,7 +133,6 @@ export function TypographySection({ selectedElement }: TypographySectionProps) {
           label="Letter Spacing"
           className="text-weight-spacing-letter"
           value={getStyleValue(selectedElement, 'letterSpacing', 'normal')}
-          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('letterSpacing', value)}
           min={-10}
           max={10}

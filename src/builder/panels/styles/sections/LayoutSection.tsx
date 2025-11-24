@@ -240,7 +240,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           icon={LayoutGrid}
           className="gap-control"
           value={getStyleValue(selectedElement, 'gap', '0px')}
-          units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('gap', value)}
           min={0}
           max={500}
@@ -280,7 +279,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
               label={paddingValues.isMixed ? 'Padding (Mixed)' : 'Padding'}
               className="layout-padding"
               value={paddingValues.displayValue}
-              units={['reset', 'px', 'rem', 'em']}
               onChange={(value) => updateSpacingAll('padding', value)}
               min={0}
               max={500}
@@ -290,7 +288,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
               label={marginValues.isMixed ? 'Margin (Mixed)' : 'Margin'}
               className="layout-margin"
               value={marginValues.displayValue}
-              units={['reset', 'px', 'rem', 'em']}
               onChange={(value) => updateSpacingAll('margin', value)}
               min={0}
               max={500}
@@ -314,7 +311,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="T"
                   className="spacing-top"
                   value={paddingValues.top}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('paddingTop', value)}
                   min={0}
                   max={500}
@@ -323,7 +319,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="R"
                   className="spacing-right"
                   value={paddingValues.right}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('paddingRight', value)}
                   min={0}
                   max={500}
@@ -332,7 +327,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="B"
                   className="spacing-bottom"
                   value={paddingValues.bottom}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('paddingBottom', value)}
                   min={0}
                   max={500}
@@ -341,7 +335,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="L"
                   className="spacing-left"
                   value={paddingValues.left}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('paddingLeft', value)}
                   min={0}
                   max={500}
@@ -364,7 +357,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="T"
                   className="spacing-top"
                   value={marginValues.top}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('marginTop', value)}
                   min={-500}
                   max={500}
@@ -373,7 +365,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="R"
                   className="spacing-right"
                   value={marginValues.right}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('marginRight', value)}
                   min={-500}
                   max={500}
@@ -382,7 +373,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="B"
                   className="spacing-bottom"
                   value={marginValues.bottom}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('marginBottom', value)}
                   min={-500}
                   max={500}
@@ -391,7 +381,6 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
                   label="L"
                   className="spacing-left"
                   value={marginValues.left}
-                  units={['reset', 'px', 'rem', 'em']}
                   onChange={(value) => updateStyle('marginLeft', value)}
                   min={-500}
                   max={500}

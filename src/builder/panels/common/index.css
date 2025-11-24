@@ -531,6 +531,30 @@
            * 수정 불필요 - ComboBox.css와 동일한 변수명 */
         }
       }
+
+      /* ========================================
+       * PropertyUnitInput - Simplified unit input
+       * Global unit setting from Settings panel
+       * ======================================== */
+      .unit-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+
+      .unit-input-wrapper .react-aria-Input {
+        padding-right: calc(var(--spacing-lg) + var(--spacing-sm));
+      }
+
+      .unit-suffix {
+        position: absolute;
+        right: var(--spacing-sm);
+        font-size: var(--text-xs);
+        color: var(--on-surface-variant);
+        pointer-events: none;
+        user-select: none;
+      }
     }
 
     .react-aria-control {

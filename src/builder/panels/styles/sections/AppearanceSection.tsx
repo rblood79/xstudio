@@ -63,7 +63,6 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           label="Border Width"
           className="border-width-control"
           value={getStyleValue(selectedElement, 'borderWidth', '0px')}
-          units={['reset', 'px']}
           onChange={(value) => updateStyle('borderWidth', value)}
           min={0}
           max={100}
@@ -73,7 +72,6 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           label="Border Radius"
           className="border-radius-control"
           value={getStyleValue(selectedElement, 'borderRadius', '0px')}
-          units={['reset', 'px', '%', 'rem', 'em']}
           onChange={(value) => updateStyle('borderRadius', value)}
           min={0}
           max={500}
