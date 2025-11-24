@@ -2,6 +2,13 @@
   .react-aria-ToggleButtonGroup {
     display: flex;
 
+    /* ⭐ 그룹 전체에 focus-within 스타일 적용 (클릭/탭 모두 표시) */
+    &:focus-within {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: 2px;
+      border-radius: var(--border-radius);
+    }
+
     > button {
       border-radius: 0;
       z-index: 1;
@@ -10,9 +17,14 @@
         z-index: 0;
       }
 
-      &[data-selected],
+      &[data-selected] {
+        z-index: 2;
+      }
+
+      /* ⭐ 그룹 내부 버튼은 개별 포커스 표시 제거 */
       &[data-focus-visible] {
         z-index: 2;
+        outline: none;
       }
     }
 

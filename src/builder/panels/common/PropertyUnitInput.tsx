@@ -67,6 +67,8 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
 
   // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
   const justSavedViaEnterRef = useRef(false);
+  // ⭐ 마지막으로 저장한 값 추적 - 중복 호출 방지
+  const lastSavedValueRef = useRef<string>(value);
 
   useEffect(() => {
     const parsed = parseUnitValue(value);
@@ -82,16 +84,28 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     );
     // Reset the flag when value changes from parent
     justSavedViaEnterRef.current = false;
+    // ⭐ 외부에서 값이 변경되면 lastSavedValueRef도 업데이트
+    lastSavedValueRef.current = value;
   }, [value]);
 
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
   };
 
-  const handleInputBlur = () => {
+  // ⭐ ComboBox 컨테이너 ref - 내부 포커스 이동 감지용
+  const comboBoxRef = useRef<HTMLDivElement>(null);
+
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     // ⭐ Skip save if we just saved via Enter key (useRef는 즉시 반영됨!)
     if (justSavedViaEnterRef.current) {
       justSavedViaEnterRef.current = false;
+      return;
+    }
+
+    // ⭐ ComboBox 내부로 포커스 이동 시 blur 처리 스킵
+    // Input → Button 이동 시 불필요한 onChange 방지
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (relatedTarget && comboBoxRef.current?.contains(relatedTarget)) {
       return;
     }
 
@@ -101,8 +115,9 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       const keyword = trimmed.toLowerCase();
       // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
       const newValue = keyword === "reset" ? "" : keyword;
-      // 값이 변경된 경우에만 onChange 호출
-      if (newValue !== value) {
+      // ⭐ 값이 변경된 경우에만 onChange 호출 + 중복 호출 방지
+      if (newValue !== value && newValue !== lastSavedValueRef.current) {
+        lastSavedValueRef.current = newValue;
         onChange(newValue);
       }
       return;
@@ -130,8 +145,9 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     }
 
     const newValue = `${num}${unit}`;
-    // 값이 변경된 경우에만 onChange 호출
-    if (newValue !== value) {
+    // ⭐ 값이 변경된 경우에만 onChange 호출 + 중복 호출 방지
+    if (newValue !== value && newValue !== lastSavedValueRef.current) {
+      lastSavedValueRef.current = newValue;
       onChange(newValue);
     }
   };
@@ -139,22 +155,30 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   const handleUnitChange = (selectedUnit: string) => {
     if (KEYWORDS.includes(selectedUnit)) {
       // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
-      if (selectedUnit === "reset") {
-        onChange("");
-      } else {
-        onChange(selectedUnit);
+      const newValue = selectedUnit === "reset" ? "" : selectedUnit;
+      // ⭐ 중복 호출 방지
+      if (newValue !== value && newValue !== lastSavedValueRef.current) {
+        lastSavedValueRef.current = newValue;
+        onChange(newValue);
       }
       return;
     }
 
     // Use the current input value, not the state numericValue
     const currentNum = parseFloat(inputValue);
+    let newValue: string;
     if (!isNaN(currentNum)) {
-      onChange(`${currentNum}${selectedUnit}`);
+      newValue = `${currentNum}${selectedUnit}`;
     } else if (numericValue !== null) {
-      onChange(`${numericValue}${selectedUnit}`);
+      newValue = `${numericValue}${selectedUnit}`;
     } else {
-      onChange(`0${selectedUnit}`);
+      newValue = `0${selectedUnit}`;
+    }
+
+    // ⭐ 중복 호출 방지
+    if (newValue !== value && newValue !== lastSavedValueRef.current) {
+      lastSavedValueRef.current = newValue;
+      onChange(newValue);
     }
   };
 
@@ -242,7 +266,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
           selectedKey={unit === "" ? "—" : unit}
           aria-label="Unit"
         >
-          <div className="combobox-container">
+          <div className="combobox-container" ref={comboBoxRef}>
             <Input
               className="react-aria-Input"
               type="text"

@@ -9,7 +9,8 @@ import { useMemo } from 'react';
 import type { SelectedElement } from '../../../inspector/types';
 
 // Properties that should only show inline styles (not computed)
-// Reason: computedStyle.width/height always returns pixel values, even when not explicitly set
+// Reason: computedStyle.width/height/position always returns pixel values, even when not explicitly set
+// Note: padding, margin, gap CAN use computed styles as they return actual values
 const INLINE_ONLY_PROPERTIES = [
   'width',
   'height',
@@ -17,9 +18,6 @@ const INLINE_ONLY_PROPERTIES = [
   'left',
   'right',
   'bottom',
-  'padding',
-  'margin',
-  'gap',
 ] as const;
 
 /**

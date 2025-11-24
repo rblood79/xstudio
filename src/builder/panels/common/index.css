@@ -516,10 +516,17 @@
       padding: calc(var(--spacing) * 1.125);
       padding-inline-start: var(--inspector-label-width);
 
+      /* ⭐ 개별 Input 포커스 스타일 제거 - 부모 Group에서 처리 */
       &:focus {
-        outline: 2px solid var(--focus-ring-color);
-        box-shadow: var(--inset-shadow-sm);
+        outline: none;
       }
+    }
+
+    /* ⭐ 문제 2,3 해결: 포커스 스타일을 부모 Group에 적용
+     * Input/Button 사이 이동 시 깜빡임 방지 */
+    .react-aria-Group:focus-within {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: -2px;
     }
 
     .react-aria-ToggleButtonGroup {
@@ -529,6 +536,12 @@
       box-shadow: var(--inset-shadow-sm);
       outline-width: 0;
 
+      /* ⭐ 그룹 전체에 focus-within 스타일 적용 (클릭/탭 모두 표시) */
+      &:focus-within {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
+
       .react-aria-ToggleButton {
         padding: var(--spacing);
         flex: 1;
@@ -537,6 +550,11 @@
         justify-content: center;
         background-color: transparent;
         border-color: transparent;
+
+        /* ⭐ 그룹 내부 버튼은 개별 포커스 표시 제거 */
+        &[data-focus-visible] {
+          outline: none;
+        }
 
         &[data-selected] {
           background: var(--surface);
