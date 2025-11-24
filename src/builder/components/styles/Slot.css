@@ -12,7 +12,6 @@
     position: relative;
     min-height: var(--text-5xl);
     border: 2px dashed var(--color-border);
-    border-radius: var(--radius-md);
     background: var(--color-surface-50);
     transition: all 200ms ease;
 

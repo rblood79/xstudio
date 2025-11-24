@@ -274,8 +274,13 @@ function Preview() {
   }, [fullContext, renderElement]);
 
   const renderElementsTree = (): React.ReactNode => {
-    // ⭐ Layout/Slot System: Page에 Layout이 적용되어 있으면 Layout 구조로 렌더링
-    if (pageInfo.layoutId && pageInfo.pageId) {
+    // ⭐ FIX: Layout 전용 모드인지 확인 (Page elements가 없으면 Layout 전용)
+    // Layout Tab에서 Layout을 직접 편집할 때는 Page elements가 없음
+    const hasPageElements = elements.some((el) => el.page_id !== null && el.page_id !== undefined);
+    const hasLayoutElements = elements.some((el) => el.layout_id !== null && el.layout_id !== undefined);
+
+    // ⭐ Layout/Slot System: Page에 Layout이 적용되어 있고 Page elements가 있으면 Layout + Page 모드
+    if (pageInfo.layoutId && pageInfo.pageId && hasPageElements && hasLayoutElements) {
       // Page와 Layout 객체 생성 (최소 필요 필드만)
       const page: Page = {
         id: pageInfo.pageId,
@@ -321,17 +326,31 @@ function Preview() {
       }
     }
 
-    // 기존 로직: Layout이 없는 경우
+    // 기존 로직: Layout 전용 모드 또는 Page 전용 모드
+    // - Layout 전용 모드: Layout elements만 있음 (Layout Tab에서 편집)
+    // - Page 전용 모드: Page elements만 있음 (Layout 없는 Page)
+    // ⭐ FIX: body element를 직접 렌더링하여 Preview에서 선택 가능하도록 함
     const bodyElement = elements.find((el) => el.tag === "body");
 
     if (bodyElement) {
-      // body가 있는 경우, body의 직접 자식 요소들만 렌더링
+      // body가 있는 경우, body를 div로 렌더링 (Preview에서 선택 가능)
       const bodyChildren = elements
         .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-      // body의 자식들을 렌더링 (body 자체는 Preview 컴포넌트의 루트에서 처리)
-      return bodyChildren.map((el) => renderElement(el, el.id));
+      // ⭐ FIX: body element를 직접 렌더링 (div로 변환, style 포함)
+      // 이렇게 하면 Preview에서 body를 클릭해서 선택할 수 있음
+      return (
+        <div
+          key={bodyElement.id}
+          data-element-id={bodyElement.id}
+          data-original-tag="body"
+          style={bodyElement.props?.style as React.CSSProperties}
+          className="layout-body"
+        >
+          {bodyChildren.map((el) => renderElement(el, el.id))}
+        </div>
+      );
     } else {
       // body가 없는 경우 루트 요소들 렌더링
       const rootElements = elements
@@ -533,22 +552,22 @@ function Preview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lassoBox, elements, rectanglesIntersect]);
 
-  // body 요소 확인
-  const bodyElement = elements.find((el) => el.tag === "body");
-  //const rootElement = bodyElement || { tag: 'div', props: {} as ElementProps };
+  // ⭐ FIX: 루트 컨테이너는 중립적인 wrapper로만 사용
+  // body element는 renderElementsTree()에서 직접 렌더링되므로 여기서는 style 적용 안함
+  // 이렇게 하면:
+  // 1. Preview에서 body를 클릭해서 선택 가능
+  // 2. padding 이중 적용 방지
+  // 3. body style이 정확히 body element에만 적용됨
 
-  // 루트 컨테이너는 항상 div로 렌더링 (실제 body는 HTML 문서의 body)
+  // 루트 컨테이너는 항상 div로 렌더링 (중립적 wrapper)
   const containerProps = {
     className: styles.main,
     id: projectId || "preview-container",
-    "data-element-id": bodyElement?.id,
+    // ⭐ FIX: data-element-id 제거 (body는 renderElementsTree에서 렌더링)
     onMouseUp: handleMouseUp, // ⭐ Lasso Selection 종료 + Click 처리
     onMouseDown: handleMouseDown, // ⭐ Lasso Selection 시작
     onMouseMove: handleMouseMove, // ⭐ Lasso Selection 드래그
-    // body 요소의 스타일만 적용 (다른 props는 제외)
-    style: bodyElement?.props?.style || {},
-    // body였다면 원래 태그 정보 기록
-    ...(bodyElement ? { "data-original-tag": "body" } : {}),
+    // ⭐ FIX: style과 data-original-tag 제거 (body는 renderElementsTree에서 렌더링)
   };
 
   // ⭐ Lasso Box 렌더링
