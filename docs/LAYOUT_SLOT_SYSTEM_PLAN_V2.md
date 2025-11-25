@@ -5074,17 +5074,409 @@ function SlotRenderer({ slot }: { slot: Element }) {
 }
 ```
 
+##### 6.11.6 Slot 이름 중복 (Cross-Layout Collision)
+
+**문제:**
+다른 Layout에서 동일한 Slot 이름을 사용할 때, Page가 Layout을 전환하면 기존 `slot_name` 매핑이 의도치 않게 새 Layout의 Slot에 연결됨.
+
+```
+시나리오:
+1. Layout A: Slot[sidebar], Slot[content]
+2. Layout B: Slot[sidebar], Slot[main]  ← 동일한 "sidebar" 이름
+3. Page X: Layout A 사용, element.slot_name = "sidebar"
+4. Page X: Layout B로 전환
+5. ❌ 기존 sidebar 요소가 Layout B의 sidebar에 자동 매핑 (의도와 다를 수 있음)
+```
+
+**해결책 A: Layout ID Prefix (권장)**
+```typescript
+// slot_name에 Layout ID prefix 포함
+// Format: "{layoutId}:{slotName}" 또는 명시적 분리
+
+interface ElementSlotAssignment {
+  layoutId: string;
+  slotName: string;
+}
+
+// Element props 확장
+interface ElementProps {
+  // 기존: slot_name?: string;
+  slotAssignment?: ElementSlotAssignment;  // NEW: 명시적 Layout-Slot 매핑
+}
+
+// Preview 렌더링 시 검증
+function resolveSlotContent(
+  slot: Element,
+  pageElements: Element[],
+  currentLayoutId: string
+) {
+  return pageElements.filter(el => {
+    const assignment = el.props?.slotAssignment as ElementSlotAssignment | undefined;
+
+    // 새 방식: slotAssignment 사용
+    if (assignment) {
+      return assignment.layoutId === currentLayoutId &&
+             assignment.slotName === slot.props?.name;
+    }
+
+    // 레거시 호환: slot_name만 있는 경우 (Layout 전환 시 경고)
+    if (el.props?.slot_name === slot.props?.name) {
+      console.warn(
+        `[Slot] Legacy slot_name mapping detected. ` +
+        `Consider migrating to slotAssignment for element ${el.id}`
+      );
+      return true;
+    }
+
+    return false;
+  });
+}
+```
+
+**해결책 B: Layout 전환 시 확인 다이얼로그**
+```typescript
+// PageLayoutSelector.tsx에서 Layout 전환 시 검증
+
+async function handleLayoutChange(newLayoutId: string) {
+  const currentLayoutId = page?.layout_id;
+  if (!currentLayoutId || currentLayoutId === newLayoutId) {
+    return applyLayout(newLayoutId);
+  }
+
+  // 기존 slot_name 매핑 검사
+  const assignedElements = pageElements.filter(el => el.props?.slot_name);
+  if (assignedElements.length === 0) {
+    return applyLayout(newLayoutId);
+  }
+
+  // 새 Layout의 Slot 이름 가져오기
+  const newLayoutSlots = layoutElements
+    .filter(el => el.layout_id === newLayoutId && el.tag === 'Slot')
+    .map(el => el.props?.name as string);
+
+  // 매핑 충돌 검사
+  const conflicts = assignedElements.filter(el => {
+    const slotName = el.props?.slot_name as string;
+    return newLayoutSlots.includes(slotName);  // 동일 이름 존재 = 잠재적 충돌
+  });
+
+  if (conflicts.length > 0) {
+    const confirmed = await showConfirmDialog({
+      title: 'Slot 매핑 확인',
+      message: `${conflicts.length}개 요소가 새 Layout의 동일 이름 Slot에 매핑됩니다. 계속하시겠습니까?`,
+      details: conflicts.map(el => `• ${el.tag} → ${el.props?.slot_name}`),
+      actions: ['유지', '매핑 해제', '취소'],
+    });
+
+    if (confirmed === '취소') return;
+    if (confirmed === '매핑 해제') {
+      await clearSlotAssignments(conflicts);
+    }
+  }
+
+  return applyLayout(newLayoutId);
+}
+```
+
+**해결책 C: Slot 이름 자동 네임스페이싱**
+```typescript
+// Layout 생성 시 Slot 이름에 자동 prefix
+
+function createSlotElement(layoutId: string, slotName: string): Element {
+  // Short hash of layoutId for human-readable prefix
+  const layoutPrefix = layoutId.slice(0, 4);
+
+  return {
+    id: crypto.randomUUID(),
+    tag: 'Slot',
+    props: {
+      name: slotName,                           // UI 표시용: "sidebar"
+      internalName: `${layoutPrefix}_${slotName}`,  // 내부 매핑용: "a1b2_sidebar"
+    },
+    layout_id: layoutId,
+    // ...
+  };
+}
+
+// slot_name 할당 시 internalName 사용
+function assignToSlot(element: Element, slot: Element) {
+  return {
+    ...element,
+    props: {
+      ...element.props,
+      slot_name: slot.props?.internalName,  // "a1b2_sidebar"
+    },
+  };
+}
+```
+
+##### 6.11.7 History Undo 시 Responsive 메타 복원 실패
+
+**문제:**
+Slot 삭제 시 `cleanupSlotMetadata`가 실행되어 responsive visibility 메타가 삭제됨.
+Undo 실행 시 Slot Element는 복원되지만 cleanup된 메타데이터는 복원되지 않음.
+
+```
+시나리오:
+1. sidebar Slot 존재, responsiveProps: { mobile: 'hidden' }
+2. sidebar Slot 삭제 → cleanupSlotMetadata 실행
+   - body.props.responsiveVisibility.sidebar 삭제됨
+3. Undo 실행
+4. sidebar Slot 복원됨 ✓
+5. ❌ responsiveVisibility.sidebar는 복원 안됨 (데이터 불일치)
+```
+
+**해결책: History Entry에 Cleanup 메타데이터 스냅샷 포함**
+```typescript
+// src/builder/stores/utils/elementRemoval.ts
+
+interface SlotRemovalHistoryData {
+  element: Element;
+  cleanupSnapshot: {
+    bodyId: string;
+    responsiveVisibility?: Record<string, unknown>;
+    affectedPageElements: Array<{
+      elementId: string;
+      previousSlotName: string;
+    }>;
+  };
+}
+
+export const createRemoveElementAction = (set, get) => async (elementId: string) => {
+  const element = get().elementsMap.get(elementId);
+  if (!element) return;
+
+  // Slot 삭제 시 cleanup 전 스냅샷 저장
+  let cleanupSnapshot: SlotRemovalHistoryData['cleanupSnapshot'] | undefined;
+
+  if (element.tag === 'Slot' && element.layout_id) {
+    const slotName = element.props?.name as string;
+    const body = get().elements.find(
+      el => el.layout_id === element.layout_id && el.tag === 'body'
+    );
+
+    // 스냅샷 생성 (cleanup 전)
+    cleanupSnapshot = {
+      bodyId: body?.id || '',
+      responsiveVisibility: body?.props?.responsiveVisibility
+        ? { [slotName]: body.props.responsiveVisibility[slotName] }
+        : undefined,
+      affectedPageElements: get().elements
+        .filter(el => el.page_id && el.props?.slot_name === slotName)
+        .map(el => ({
+          elementId: el.id,
+          previousSlotName: slotName,
+        })),
+    };
+
+    // Cleanup 실행
+    await cleanupSlotMetadata(elementId, slotName, element.layout_id);
+  }
+
+  // History entry에 스냅샷 포함
+  set(produce((state) => {
+    historyManager.addEntry({
+      type: 'remove',
+      elementId: element.id,
+      data: {
+        element: { ...element },
+        cleanupSnapshot,  // ⭐ Undo 시 복원에 사용
+      },
+    });
+
+    // 요소 삭제
+    state.elements = state.elements.filter(el => el.id !== elementId);
+  }));
+};
+```
+
+**Undo Handler 확장:**
+```typescript
+// src/builder/stores/history/historyActions.ts
+
+export const createUndoAction = (set, get) => async () => {
+  const entry = historyManager.undo();
+  if (!entry) return;
+
+  switch (entry.type) {
+    case 'remove': {
+      const { element, cleanupSnapshot } = entry.data as SlotRemovalHistoryData;
+
+      // 1. 요소 복원
+      set(produce((state) => {
+        state.elements.push(element);
+      }));
+
+      // 2. ⭐ Slot인 경우 cleanup된 메타데이터 복원
+      if (element.tag === 'Slot' && cleanupSnapshot) {
+        const { bodyId, responsiveVisibility, affectedPageElements } = cleanupSnapshot;
+
+        // Body의 responsiveVisibility 복원
+        if (bodyId && responsiveVisibility) {
+          const body = get().elementsMap.get(bodyId);
+          if (body) {
+            await get().updateElement(bodyId, {
+              props: {
+                ...body.props,
+                responsiveVisibility: {
+                  ...(body.props?.responsiveVisibility as Record<string, unknown> || {}),
+                  ...responsiveVisibility,
+                },
+              },
+            });
+          }
+        }
+
+        // Page elements의 slot_name 복원
+        await Promise.all(
+          affectedPageElements.map(({ elementId, previousSlotName }) =>
+            get().updateElement(elementId, {
+              props: {
+                ...get().elementsMap.get(elementId)?.props,
+                slot_name: previousSlotName,
+              },
+            })
+          )
+        );
+
+        console.log(`[Undo] Restored Slot metadata for: ${element.props?.name}`);
+      }
+
+      break;
+    }
+    // ... 다른 case들
+  }
+};
+```
+
+**Redo Handler도 동일하게 처리:**
+```typescript
+case 'remove': {
+  const { element, cleanupSnapshot } = entry.data as SlotRemovalHistoryData;
+
+  // Redo 시 다시 cleanup 실행
+  if (element.tag === 'Slot' && element.layout_id) {
+    await cleanupSlotMetadata(
+      element.id,
+      element.props?.name as string,
+      element.layout_id
+    );
+  }
+
+  // 요소 삭제
+  set(produce((state) => {
+    state.elements = state.elements.filter(el => el.id !== element.id);
+  }));
+
+  break;
+}
+```
+
+##### 6.11.8 Slot 이름 변경 시 기존 매핑 유실
+
+**문제:**
+Layout에서 Slot 이름을 변경하면 해당 Slot에 할당된 Page elements의 `slot_name`이 더 이상 매칭되지 않음.
+
+```
+시나리오:
+1. Layout: Slot[sidebar]
+2. Page: element.slot_name = "sidebar"
+3. Layout에서 Slot 이름을 "leftPanel"로 변경
+4. ❌ Page element가 orphan 상태 (slot_name="sidebar"는 더 이상 존재하지 않음)
+```
+
+**해결책: Slot 이름 변경 시 cascade 업데이트**
+```typescript
+// src/builder/panels/properties/editors/SlotEditor.tsx
+
+const handleSlotNameChange = useCallback(async (newName: string) => {
+  const oldName = currentProps.name as string;
+  if (oldName === newName) return;
+
+  // 이름 중복 체크
+  const existingSlot = elements.find(
+    el => el.layout_id === layoutId &&
+          el.tag === 'Slot' &&
+          el.props?.name === newName &&
+          el.id !== elementId
+  );
+
+  if (existingSlot) {
+    showError(`Slot name "${newName}" already exists in this layout`);
+    return;
+  }
+
+  // 1. Slot 이름 변경
+  await onUpdate({ ...currentProps, name: newName });
+
+  // 2. ⭐ 해당 Layout을 사용하는 모든 Page의 elements 업데이트
+  const pagesUsingLayout = pages.filter(p => p.layout_id === layoutId);
+
+  const affectedElements = elements.filter(el =>
+    el.page_id &&
+    pagesUsingLayout.some(p => p.id === el.page_id) &&
+    el.props?.slot_name === oldName
+  );
+
+  if (affectedElements.length > 0) {
+    await Promise.all(
+      affectedElements.map(el =>
+        updateElementProps(el.id, { slot_name: newName })
+      )
+    );
+
+    console.log(
+      `[SlotRename] Updated ${affectedElements.length} elements: ` +
+      `"${oldName}" → "${newName}"`
+    );
+  }
+
+  // 3. Body의 responsiveVisibility 키 업데이트
+  const body = elements.find(
+    el => el.layout_id === layoutId && el.tag === 'body'
+  );
+
+  if (body?.props?.responsiveVisibility?.[oldName]) {
+    const { [oldName]: oldValue, ...rest } = body.props.responsiveVisibility;
+    await updateElementProps(body.id, {
+      responsiveVisibility: {
+        ...rest,
+        [newName]: oldValue,
+      },
+    });
+  }
+}, [currentProps, layoutId, elements, pages, onUpdate, updateElementProps]);
+```
+
 ---
 
 #### 6.12 Edge Case 체크리스트
 
-| 문제 | 해결책 | 테스트 항목 |
-|------|--------|-------------|
-| Slot visibility 불일치 | layout_id 기준 필터링 | Layout hide → Page 렌더링 확인 |
-| Responsive props 충돌 | breakpoint 클래스 스코핑 | tablet에서 스타일 우선순위 확인 |
-| Preview/Inspector 탈동기화 | BreakpointProvider 전역화 | breakpoint 전환 후 Inspector 값 확인 |
-| Slot 삭제 시 메타 잔존 | cleanupSlotMetadata 의무 호출 | Slot 삭제 후 에러 없음 확인 |
-| 프리셋 깜빡임 | 기본 responsive props 포함 생성 | 프리셋 적용 시 깜빡임 없음 확인 |
+| # | 문제 | 해결책 | 테스트 항목 |
+|---|------|--------|-------------|
+| 1 | Slot visibility 불일치 | layout_id 기준 필터링 | Layout hide → Page 렌더링 확인 |
+| 2 | Responsive props 충돌 | breakpoint 클래스 스코핑 | tablet에서 스타일 우선순위 확인 |
+| 3 | Preview/Inspector 탈동기화 | BreakpointProvider 전역화 | breakpoint 전환 후 Inspector 값 확인 |
+| 4 | Slot 삭제 시 메타 잔존 | cleanupSlotMetadata 의무 호출 | Slot 삭제 후 에러 없음 확인 |
+| 5 | 프리셋 깜빡임 | 기본 responsive props 포함 생성 | 프리셋 적용 시 깜빡임 없음 확인 |
+| 6 | Slot 이름 중복 | Layout ID prefix 또는 확인 다이얼로그 | Layout 전환 후 매핑 정확성 확인 |
+| 7 | History Undo 메타 복원 | cleanupSnapshot 포함 저장 | Slot 삭제 → Undo → 메타 복원 확인 |
+| 8 | Slot 이름 변경 매핑 유실 | cascade 업데이트 | 이름 변경 후 Page 요소 매핑 확인 |
+
+---
+
+#### 6.13 Edge Case 구현 우선순위
+
+| 우선순위 | 문제 | 이유 |
+|----------|------|------|
+| 🔴 Critical | #3 Preview/Inspector 탈동기화 | 데이터 손상 가능 |
+| 🔴 Critical | #7 History Undo 메타 복원 | 데이터 정합성 |
+| 🟠 High | #4 Slot 삭제 메타 잔존 | Runtime error 유발 |
+| 🟠 High | #8 Slot 이름 변경 매핑 유실 | 사용자 혼란 |
+| 🟡 Medium | #1 Slot visibility 불일치 | UI 불일치 |
+| 🟡 Medium | #5 프리셋 깜빡임 | UX 저하 |
+| 🟢 Low | #2 Responsive props 충돌 | CSS 전문 지식 필요 |
+| 🟢 Low | #6 Slot 이름 중복 | 드문 시나리오 |
 
 ### 📋 Phase 7: Advanced Features - PLANNED
 - [ ] Responsive breakpoint 별 Slot visibility
