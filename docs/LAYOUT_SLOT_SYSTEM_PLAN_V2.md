@@ -3100,150 +3100,1670 @@ src/
 
 ### 🔄 Phase 6: Edit Mode System & BodyEditor 분리 - IN PROGRESS
 
-#### 6.1 BodyEditor 분리 (Page vs Layout)
+> **Last Updated:** 2025-11-25
+> **Status:** 상세 설계 완료, 구현 대기
 
-**문제점:**
-- Layout 생성 후 body 선택 시 동일한 BodyEditor 사용됨
-- Page body: Layout 선택 기능 필요 (`PageLayoutSelector`)
-- Layout body: 프리셋 선택 기능 필요 (`LayoutPresetSelector`)
-- 두 기능이 근본적으로 다름
+---
 
-**보충 사항 (2025-11-24 검토):**
-- Layout에 프리셋 자동 생성 흐름을 붙이면서 Page와 동일한 BodyEditor를 공유하면 UI가 뒤섞이는 문제가 발생
-- Page 모드 전환 시에는 레이아웃 선택이 핵심이고, Layout 모드 전환 시에는 프리셋 선택 → Slot 자동 생성이 핵심이므로 에디터 역할을 명확히 분리해야 함
-- 전환 시 상태 간섭을 막기 위해 BodyEditor 교체가 모드 전환 로직에 포함되어야 함 (Page ↔ Layout 전환 시 각각 전용 에디터로 스왑)
+#### 6.0 Executive Summary
 
-**해결 방안: BodyEditor 분리**
+**핵심 문제:**
+- Page body와 Layout body가 동일한 BodyEditor를 사용하여 UI 충돌 발생
+- Page → Layout 선택, Layout → 프리셋/Slot 생성으로 기능이 완전히 다름
 
-| 에디터 | 용도 | 주요 기능 |
-|--------|------|----------|
-| `PageBodyEditor` | Page의 body 편집 | Layout 선택 (드롭다운) |
-| `LayoutBodyEditor` | Layout의 body 편집 | 프리셋 선택 (썸네일 미리보기 + 자동 생성) |
+**해결 전략:**
+1. **동적 Editor 라우팅** - `layout_id` 유무로 Editor 자동 선택
+2. **BodyEditor 분리** - PageBodyEditor / LayoutBodyEditor
+3. **프리셋 시스템** - 썸네일 선택 → Slot 일괄 생성
+4. **기존 Slot 처리** - 덮어쓰기/병합/취소 선택 UI
+5. **History 통합** - 프리셋 적용을 단일 Undo 엔트리로 기록
 
-**파일 구조:**
-```
-src/builder/panels/properties/editors/
-├─ PageBodyEditor.tsx           # Page body 전용
-│  ├─ Basic (customId)
-│  ├─ PageLayoutSelector        # 기존 컴포넌트 재사용
-│  ├─ Layout (className)
-│  └─ Accessibility
-│
-├─ LayoutBodyEditor.tsx         # Layout body 전용
-│  ├─ Basic (customId)
-│  ├─ LayoutPresetSelector      # 프리셋 UI (NEW)
-│  ├─ Container Settings        # max-width, padding 등 (NEW)
-│  ├─ Layout (className)
-│  └─ Accessibility
-│
-└─ LayoutPresetSelector/        # 프리셋 전용 폴더
-   ├─ index.tsx                 # 메인 컴포넌트
-   ├─ presetDefinitions.ts      # 프리셋 정의 (구조, Slot 목록)
-   ├─ PresetPreview.tsx         # 썸네일 미리보기
-   └─ usePresetApply.ts         # Slot 자동 생성 훅
-```
+---
 
-#### 6.2 Layout Preset 기능
+#### 6.1 BodyEditor 분리 아키텍처
 
-**기능 설명:**
-- 일반적인 웹페이지 구성(수직 2단, 3단, 복합 등) 미리보기 제공
-- 선택 시 Layout의 Layers에 Slot 자동 생성
-  - header Slot
-  - content Slot
-  - sidebar Slot
-  - footer Slot
-  - 등 프리셋 구조에 따라 자동 생성
+##### 6.1.1 동적 Editor 라우팅 메커니즘
 
-**프리셋 목록:**
+**현재 시스템 분석:**
 ```typescript
-// presetDefinitions.ts
-export const LAYOUT_PRESETS = {
-  'vertical-2': {
-    name: '수직 2단',
-    description: 'Header + Content',
-    slots: [
-      { name: 'header', required: false },
-      { name: 'content', required: true },
-    ],
-  },
-  'vertical-3': {
-    name: '수직 3단',
-    description: 'Header + Content + Footer',
-    slots: [
-      { name: 'header', required: false },
-      { name: 'content', required: true },
-      { name: 'footer', required: false },
-    ],
-  },
-  'sidebar-left': {
-    name: '좌측 사이드바',
-    description: 'Sidebar + Content',
-    slots: [
-      { name: 'sidebar', required: false },
-      { name: 'content', required: true },
-    ],
-  },
-  'holy-grail': {
-    name: 'Holy Grail',
-    description: 'Header + (Sidebar + Content + Aside) + Footer',
-    slots: [
-      { name: 'header', required: false },
-      { name: 'sidebar', required: false },
-      { name: 'content', required: true },
-      { name: 'aside', required: false },
-      { name: 'footer', required: false },
-    ],
-  },
-  'dashboard': {
-    name: '대시보드',
-    description: 'Navigation + Sidebar + Main Content',
-    slots: [
-      { name: 'navigation', required: false },
-      { name: 'sidebar', required: false },
-      { name: 'content', required: true },
-    ],
-  },
-};
-```
-
-**프리셋 적용 로직:**
-```typescript
-// usePresetApply.ts
-export function usePresetApply(layoutId: string) {
-  const { addElement } = useStore();
-
-  const applyPreset = useCallback(async (presetKey: string) => {
-    const preset = LAYOUT_PRESETS[presetKey];
-    if (!preset) return;
-
-    // Layout의 body 찾기
-    const body = elements.find(el =>
-      el.layout_id === layoutId && el.tag === 'body'
-    );
-
-    // 각 Slot 생성
-    for (const slotDef of preset.slots) {
-      const slotElement = {
-        id: crypto.randomUUID(),
-        tag: 'Slot',
-        props: {
-          name: slotDef.name,
-          required: slotDef.required,
-        },
-        parent_id: body.id,
-        layout_id: layoutId,
-        page_id: null,
-        order_num: nextOrderNum++,
-      };
-      await addElement(slotElement);
-    }
-  }, [layoutId, addElement]);
-
-  return { applyPreset };
+// src/builder/inspector/editors/registry.ts
+// 현재는 element.type만으로 Editor 결정
+export async function getEditor(type: string) {
+  const metadata = componentMetadata.find((c) => c.type === type);
+  if (!metadata?.inspector.hasCustomEditor) return null;
+  return await importEditor(metadata.inspector.editorName);
 }
 ```
 
-#### 6.3 Edit Mode 기타 항목
+**문제점:**
+- `type: "body"`에 대해 항상 `BodyEditor` 반환
+- `layout_id` 존재 여부를 고려하지 않음
+
+**해결 방안 A: Registry 확장 (권장)**
+
+```typescript
+// src/builder/inspector/editors/registry.ts 수정
+
+/**
+ * 에디터 조회 (자동 로딩) - 확장 버전
+ *
+ * @param type - 요소 타입
+ * @param context - 추가 컨텍스트 (layout_id 등)
+ */
+export async function getEditor(
+  type: string,
+  context?: { layoutId?: string | null; pageId?: string | null }
+): Promise<ComponentType<ComponentEditorProps> | null> {
+  // 🎯 Special case: body 타입은 context에 따라 다른 Editor 반환
+  if (type === 'body') {
+    const editorName = context?.layoutId ? 'LayoutBodyEditor' : 'PageBodyEditor';
+
+    // 캐시 키에 context 포함
+    const cacheKey = `body:${context?.layoutId ? 'layout' : 'page'}`;
+    if (editorCache.has(cacheKey)) {
+      return editorCache.get(cacheKey)!;
+    }
+
+    const editor = await importEditor(editorName);
+    if (editor) {
+      editorCache.set(cacheKey, editor);
+    }
+    return editor;
+  }
+
+  // 기존 로직 유지
+  if (editorCache.has(type)) {
+    return editorCache.get(type)!;
+  }
+
+  const metadata = componentMetadata.find((c) => c.type === type);
+  // ... 나머지 동일
+}
+```
+
+**PropertyEditorWrapper 수정:**
+
+```typescript
+// src/builder/panels/properties/PropertiesPanel.tsx
+// PropertyEditorWrapper 내부 수정
+
+const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
+  selectedElement,
+}: {
+  selectedElement: SelectedElement;
+}) {
+  const [Editor, setEditor] = useState<ComponentType<ComponentEditorProps> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ⭐ 요소에서 layout_id 가져오기
+  const elementContext = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(selectedElement.id);
+    return {
+      layoutId: element?.layout_id || null,
+      pageId: element?.page_id || null,
+    };
+  }, [selectedElement.id]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!selectedElement) {
+      Promise.resolve().then(() => {
+        if (isMounted) {
+          setEditor(null);
+          setLoading(false);
+        }
+      });
+      return;
+    }
+
+    Promise.resolve().then(() => {
+      if (!isMounted) return;
+      setLoading(true);
+
+      // ⭐ context 전달
+      getEditor(selectedElement.type, elementContext)
+        .then((editor) => {
+          if (isMounted) {
+            setEditor(() => editor);
+            setLoading(false);
+          }
+        })
+        .catch((error) => {
+          // ... 에러 처리
+        });
+    });
+
+    return () => { isMounted = false; };
+  }, [selectedElement.type, elementContext.layoutId]); // ⭐ layoutId 의존성 추가
+
+  // ... 나머지 동일
+});
+```
+
+##### 6.1.2 Editor 비교표
+
+| 항목 | PageBodyEditor | LayoutBodyEditor |
+|------|----------------|------------------|
+| **대상** | `page_id` 있는 body | `layout_id` 있는 body |
+| **주요 기능** | Layout 선택 드롭다운 | 프리셋 선택 + Slot 생성 |
+| **섹션 구성** | Basic, Layout Selection, Layout, Accessibility | Basic, Preset Selection, Container, Layout, Accessibility |
+| **상태 관리** | pages store 연동 | layouts store + elements store 연동 |
+
+##### 6.1.3 파일 구조
+
+```
+src/builder/panels/properties/editors/
+├─ BodyEditor.tsx               # 삭제 예정 (deprecated)
+│
+├─ PageBodyEditor.tsx           # Page body 전용 (NEW)
+│  ├─ PropertySection: Basic
+│  │   └─ PropertyCustomId
+│  ├─ PageLayoutSelector        # 기존 컴포넌트 재사용
+│  ├─ PropertySection: Layout
+│  │   └─ PropertyInput (className)
+│  └─ PropertySection: Accessibility
+│      ├─ PropertyInput (aria-label)
+│      └─ PropertyInput (aria-labelledby)
+│
+├─ LayoutBodyEditor.tsx         # Layout body 전용 (NEW)
+│  ├─ PropertySection: Basic
+│  │   └─ PropertyCustomId
+│  ├─ LayoutPresetSelector/     # 프리셋 UI
+│  ├─ PropertySection: Container
+│  │   ├─ PropertyInput (maxWidth)
+│  │   ├─ PropertyInput (padding)
+│  │   └─ PropertySwitch (centerContent)
+│  ├─ PropertySection: Layout
+│  │   └─ PropertyInput (className)
+│  └─ PropertySection: Accessibility
+│      ├─ PropertyInput (aria-label)
+│      └─ PropertyInput (aria-labelledby)
+│
+├─ LayoutPresetSelector/        # 프리셋 시스템 (NEW)
+│  ├─ index.tsx                 # 메인 컴포넌트
+│  ├─ types.ts                  # 타입 정의
+│  ├─ presetDefinitions.ts      # 프리셋 정의
+│  ├─ PresetCard.tsx            # 개별 프리셋 카드
+│  ├─ PresetPreview.tsx         # SVG 썸네일 렌더러
+│  ├─ ExistingSlotDialog.tsx    # 기존 Slot 처리 다이얼로그
+│  └─ usePresetApply.ts         # Slot 생성 훅
+│
+└─ PageLayoutSelector.tsx       # 기존 유지
+```
+
+---
+
+#### 6.2 PageBodyEditor 구현
+
+```typescript
+// src/builder/panels/properties/editors/PageBodyEditor.tsx
+
+import { memo, useCallback, useMemo } from "react";
+import { Type, Layout, Hash } from "lucide-react";
+import { PropertyCustomId, PropertyInput, PropertySection } from "../../common";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
+import { PageLayoutSelector } from "./PageLayoutSelector";
+
+/**
+ * PageBodyEditor - Page의 body 요소 전용 에디터
+ *
+ * Page body의 핵심 기능: Layout 선택
+ * - PageLayoutSelector를 통해 Layout 템플릿 적용
+ * - className, aria 속성 편집
+ */
+export const PageBodyEditor = memo(function PageBodyEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
+  // 최적화: customId와 pageId를 현재 시점에만 가져오기
+  const { customId, pageId } = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return {
+      customId: element?.customId || "",
+      pageId: element?.page_id || null,
+    };
+  }, [elementId]);
+
+  // 각 필드별 onChange 함수 메모이제이션
+  const handleClassNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, className: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  return (
+    <>
+      {/* Basic Section */}
+      <PropertySection title="Basic">
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="body"
+        />
+      </PropertySection>
+
+      {/* ⭐ Page 전용: Layout 선택 */}
+      {pageId && <PageLayoutSelector pageId={pageId} />}
+
+      {/* Layout Section */}
+      <PropertySection title="Layout">
+        <PropertyInput
+          label="Class Name"
+          value={String(currentProps.className || "")}
+          onChange={handleClassNameChange}
+          placeholder="page-container"
+          icon={Layout}
+        />
+      </PropertySection>
+
+      {/* Accessibility Section */}
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps["aria-label"] || "")}
+          onChange={handleAriaLabelChange}
+          icon={Type}
+          placeholder="Main page content"
+        />
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps["aria-labelledby"] || "")}
+          onChange={handleAriaLabelledbyChange}
+          icon={Hash}
+          placeholder="ID of labeling element"
+        />
+      </PropertySection>
+    </>
+  );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});
+
+export default PageBodyEditor;
+```
+
+---
+
+#### 6.3 LayoutBodyEditor 구현
+
+```typescript
+// src/builder/panels/properties/editors/LayoutBodyEditor.tsx
+
+import { memo, useCallback, useMemo } from "react";
+import { Type, Layout, Hash, Maximize2, AlignCenter } from "lucide-react";
+import { PropertyCustomId, PropertyInput, PropertySection, PropertySwitch } from "../../common";
+import { PropertyEditorProps } from "../types/editorTypes";
+import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
+import { useStore } from "../../../stores";
+import { LayoutPresetSelector } from "./LayoutPresetSelector";
+
+/**
+ * LayoutBodyEditor - Layout의 body 요소 전용 에디터
+ *
+ * Layout body의 핵심 기능: 프리셋 선택 + Slot 자동 생성
+ * - LayoutPresetSelector를 통해 레이아웃 구조 선택
+ * - Container 설정 (maxWidth, padding, centerContent)
+ * - className, aria 속성 편집
+ */
+export const LayoutBodyEditor = memo(function LayoutBodyEditor({
+  elementId,
+  currentProps,
+  onUpdate,
+}: PropertyEditorProps) {
+  // 최적화: customId와 layoutId를 현재 시점에만 가져오기
+  const { customId, layoutId } = useMemo(() => {
+    const element = useStore.getState().elementsMap.get(elementId);
+    return {
+      customId: element?.customId || "",
+      layoutId: element?.layout_id || null,
+    };
+  }, [elementId]);
+
+  // style 객체 가져오기
+  const currentStyle = useMemo(() => {
+    return (currentProps.style as Record<string, unknown>) || {};
+  }, [currentProps.style]);
+
+  // 각 필드별 onChange 함수
+  const handleClassNameChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, className: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleMaxWidthChange = useCallback((value: string) => {
+    const newStyle = { ...currentStyle, maxWidth: value || undefined };
+    onUpdate({ ...currentProps, style: newStyle });
+  }, [currentProps, currentStyle, onUpdate]);
+
+  const handlePaddingChange = useCallback((value: string) => {
+    const newStyle = { ...currentStyle, padding: value || undefined };
+    onUpdate({ ...currentProps, style: newStyle });
+  }, [currentProps, currentStyle, onUpdate]);
+
+  const handleCenterContentChange = useCallback((checked: boolean) => {
+    const newStyle = {
+      ...currentStyle,
+      marginLeft: checked ? "auto" : undefined,
+      marginRight: checked ? "auto" : undefined,
+    };
+    onUpdate({ ...currentProps, style: newStyle });
+  }, [currentProps, currentStyle, onUpdate]);
+
+  const handleAriaLabelChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-label": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleAriaLabelledbyChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, "aria-labelledby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  // centerContent 계산
+  const isCentered = currentStyle.marginLeft === "auto" && currentStyle.marginRight === "auto";
+
+  return (
+    <>
+      {/* Basic Section */}
+      <PropertySection title="Basic">
+        <PropertyCustomId
+          label="ID"
+          value={customId}
+          elementId={elementId}
+          placeholder="layout-body"
+        />
+      </PropertySection>
+
+      {/* ⭐ Layout 전용: 프리셋 선택 */}
+      {layoutId && (
+        <LayoutPresetSelector
+          layoutId={layoutId}
+          bodyElementId={elementId}
+        />
+      )}
+
+      {/* Container Settings Section */}
+      <PropertySection title="Container" icon={Maximize2}>
+        <PropertyInput
+          label="Max Width"
+          value={String(currentStyle.maxWidth || "")}
+          onChange={handleMaxWidthChange}
+          placeholder="1200px, 80rem, 100%"
+          icon={Maximize2}
+        />
+        <PropertyInput
+          label="Padding"
+          value={String(currentStyle.padding || "")}
+          onChange={handlePaddingChange}
+          placeholder="16px, 1rem 2rem"
+          icon={Layout}
+        />
+        <PropertySwitch
+          label="Center Content"
+          isSelected={isCentered}
+          onChange={handleCenterContentChange}
+          icon={AlignCenter}
+        />
+      </PropertySection>
+
+      {/* Layout Section */}
+      <PropertySection title="Layout">
+        <PropertyInput
+          label="Class Name"
+          value={String(currentProps.className || "")}
+          onChange={handleClassNameChange}
+          placeholder="layout-container"
+          icon={Layout}
+        />
+      </PropertySection>
+
+      {/* Accessibility Section */}
+      <PropertySection title="Accessibility">
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABEL}
+          value={String(currentProps["aria-label"] || "")}
+          onChange={handleAriaLabelChange}
+          icon={Type}
+          placeholder="Layout content area"
+        />
+        <PropertyInput
+          label={PROPERTY_LABELS.ARIA_LABELLEDBY}
+          value={String(currentProps["aria-labelledby"] || "")}
+          onChange={handleAriaLabelledbyChange}
+          icon={Hash}
+          placeholder="ID of labeling element"
+        />
+      </PropertySection>
+    </>
+  );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.elementId === nextProps.elementId &&
+    JSON.stringify(prevProps.currentProps) === JSON.stringify(nextProps.currentProps)
+  );
+});
+
+export default LayoutBodyEditor;
+```
+
+---
+
+#### 6.4 Layout Preset 시스템
+
+##### 6.4.1 타입 정의
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/types.ts
+
+export interface SlotDefinition {
+  name: string;
+  required: boolean;
+  description?: string;
+  defaultStyle?: React.CSSProperties;
+}
+
+export interface LayoutPreset {
+  id: string;
+  name: string;
+  description: string;
+  category: 'basic' | 'sidebar' | 'complex' | 'dashboard';
+  slots: SlotDefinition[];
+  /** CSS Grid 또는 Flexbox 스타일 */
+  containerStyle?: React.CSSProperties;
+  /** SVG 미리보기용 영역 정의 */
+  previewAreas: PreviewArea[];
+}
+
+export interface PreviewArea {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isSlot: boolean;
+  required?: boolean;
+}
+
+export type PresetApplyMode = 'replace' | 'merge' | 'cancel';
+
+export interface ExistingSlotInfo {
+  slotName: string;
+  elementId: string;
+  hasChildren: boolean;
+}
+```
+
+##### 6.4.2 프리셋 정의
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/presetDefinitions.ts
+
+import type { LayoutPreset } from './types';
+
+export const LAYOUT_PRESETS: Record<string, LayoutPreset> = {
+  // ========== Basic Presets ==========
+  'vertical-2': {
+    id: 'vertical-2',
+    name: '수직 2단',
+    description: 'Header + Content',
+    category: 'basic',
+    slots: [
+      { name: 'header', required: false, description: '상단 헤더 영역' },
+      { name: 'content', required: true, description: '메인 콘텐츠 영역' },
+    ],
+    containerStyle: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'header', x: 0, y: 0, width: 100, height: 15, isSlot: true },
+      { name: 'content', x: 0, y: 15, width: 100, height: 85, isSlot: true, required: true },
+    ],
+  },
+
+  'vertical-3': {
+    id: 'vertical-3',
+    name: '수직 3단',
+    description: 'Header + Content + Footer',
+    category: 'basic',
+    slots: [
+      { name: 'header', required: false, description: '상단 헤더 영역' },
+      { name: 'content', required: true, description: '메인 콘텐츠 영역' },
+      { name: 'footer', required: false, description: '하단 푸터 영역' },
+    ],
+    containerStyle: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'header', x: 0, y: 0, width: 100, height: 12, isSlot: true },
+      { name: 'content', x: 0, y: 12, width: 100, height: 76, isSlot: true, required: true },
+      { name: 'footer', x: 0, y: 88, width: 100, height: 12, isSlot: true },
+    ],
+  },
+
+  // ========== Sidebar Presets ==========
+  'sidebar-left': {
+    id: 'sidebar-left',
+    name: '좌측 사이드바',
+    description: 'Sidebar + Content',
+    category: 'sidebar',
+    slots: [
+      { name: 'sidebar', required: false, description: '좌측 사이드바', defaultStyle: { width: '250px' } },
+      { name: 'content', required: true, description: '메인 콘텐츠' },
+    ],
+    containerStyle: {
+      display: 'flex',
+      flexDirection: 'row',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'sidebar', x: 0, y: 0, width: 25, height: 100, isSlot: true },
+      { name: 'content', x: 25, y: 0, width: 75, height: 100, isSlot: true, required: true },
+    ],
+  },
+
+  'sidebar-right': {
+    id: 'sidebar-right',
+    name: '우측 사이드바',
+    description: 'Content + Sidebar',
+    category: 'sidebar',
+    slots: [
+      { name: 'content', required: true, description: '메인 콘텐츠' },
+      { name: 'sidebar', required: false, description: '우측 사이드바', defaultStyle: { width: '250px' } },
+    ],
+    containerStyle: {
+      display: 'flex',
+      flexDirection: 'row',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'content', x: 0, y: 0, width: 75, height: 100, isSlot: true, required: true },
+      { name: 'sidebar', x: 75, y: 0, width: 25, height: 100, isSlot: true },
+    ],
+  },
+
+  // ========== Complex Presets ==========
+  'holy-grail': {
+    id: 'holy-grail',
+    name: 'Holy Grail',
+    description: 'Header + (Sidebar + Content + Aside) + Footer',
+    category: 'complex',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'sidebar', required: false, defaultStyle: { width: '200px' } },
+      { name: 'content', required: true },
+      { name: 'aside', required: false, defaultStyle: { width: '200px' } },
+      { name: 'footer', required: false },
+    ],
+    containerStyle: {
+      display: 'grid',
+      gridTemplateAreas: `
+        "header header header"
+        "sidebar content aside"
+        "footer footer footer"
+      `,
+      gridTemplateColumns: '200px 1fr 200px',
+      gridTemplateRows: 'auto 1fr auto',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'header', x: 0, y: 0, width: 100, height: 12, isSlot: true },
+      { name: 'sidebar', x: 0, y: 12, width: 20, height: 76, isSlot: true },
+      { name: 'content', x: 20, y: 12, width: 60, height: 76, isSlot: true, required: true },
+      { name: 'aside', x: 80, y: 12, width: 20, height: 76, isSlot: true },
+      { name: 'footer', x: 0, y: 88, width: 100, height: 12, isSlot: true },
+    ],
+  },
+
+  'complex-3col': {
+    id: 'complex-3col',
+    name: '3열 레이아웃',
+    description: 'Header + 3 Columns + Footer',
+    category: 'complex',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'left', required: false },
+      { name: 'content', required: true },
+      { name: 'right', required: false },
+      { name: 'footer', required: false },
+    ],
+    containerStyle: {
+      display: 'grid',
+      gridTemplateAreas: `
+        "header header header"
+        "left content right"
+        "footer footer footer"
+      `,
+      gridTemplateColumns: '1fr 2fr 1fr',
+      gridTemplateRows: 'auto 1fr auto',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'header', x: 0, y: 0, width: 100, height: 12, isSlot: true },
+      { name: 'left', x: 0, y: 12, width: 25, height: 76, isSlot: true },
+      { name: 'content', x: 25, y: 12, width: 50, height: 76, isSlot: true, required: true },
+      { name: 'right', x: 75, y: 12, width: 25, height: 76, isSlot: true },
+      { name: 'footer', x: 0, y: 88, width: 100, height: 12, isSlot: true },
+    ],
+  },
+
+  // ========== Dashboard Presets ==========
+  'dashboard': {
+    id: 'dashboard',
+    name: '대시보드',
+    description: 'Navigation + Sidebar + Main Content',
+    category: 'dashboard',
+    slots: [
+      { name: 'navigation', required: false, description: '상단 네비게이션' },
+      { name: 'sidebar', required: false, description: '좌측 메뉴', defaultStyle: { width: '240px' } },
+      { name: 'content', required: true, description: '대시보드 콘텐츠' },
+    ],
+    containerStyle: {
+      display: 'grid',
+      gridTemplateAreas: `
+        "navigation navigation"
+        "sidebar content"
+      `,
+      gridTemplateColumns: '240px 1fr',
+      gridTemplateRows: 'auto 1fr',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'navigation', x: 0, y: 0, width: 100, height: 10, isSlot: true },
+      { name: 'sidebar', x: 0, y: 10, width: 24, height: 90, isSlot: true },
+      { name: 'content', x: 24, y: 10, width: 76, height: 90, isSlot: true, required: true },
+    ],
+  },
+
+  'dashboard-widgets': {
+    id: 'dashboard-widgets',
+    name: '대시보드 (위젯)',
+    description: 'Header + Sidebar + Main + Widgets Panel',
+    category: 'dashboard',
+    slots: [
+      { name: 'header', required: false },
+      { name: 'sidebar', required: false },
+      { name: 'content', required: true },
+      { name: 'widgets', required: false },
+    ],
+    containerStyle: {
+      display: 'grid',
+      gridTemplateAreas: `
+        "header header header"
+        "sidebar content widgets"
+      `,
+      gridTemplateColumns: '200px 1fr 280px',
+      gridTemplateRows: 'auto 1fr',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'header', x: 0, y: 0, width: 100, height: 10, isSlot: true },
+      { name: 'sidebar', x: 0, y: 10, width: 20, height: 90, isSlot: true },
+      { name: 'content', x: 20, y: 10, width: 52, height: 90, isSlot: true, required: true },
+      { name: 'widgets', x: 72, y: 10, width: 28, height: 90, isSlot: true },
+    ],
+  },
+
+  // ========== Minimal Presets ==========
+  'fullscreen': {
+    id: 'fullscreen',
+    name: '전체화면',
+    description: '단일 전체 화면 콘텐츠',
+    category: 'basic',
+    slots: [
+      { name: 'content', required: true, description: '전체 화면 콘텐츠' },
+    ],
+    containerStyle: {
+      display: 'flex',
+      minHeight: '100vh',
+    },
+    previewAreas: [
+      { name: 'content', x: 0, y: 0, width: 100, height: 100, isSlot: true, required: true },
+    ],
+  },
+};
+
+// 카테고리별 그룹핑
+export const PRESET_CATEGORIES = {
+  basic: { label: '기본', icon: 'Layout' },
+  sidebar: { label: '사이드바', icon: 'Columns2' },
+  complex: { label: '복합', icon: 'LayoutGrid' },
+  dashboard: { label: '대시보드', icon: 'LayoutDashboard' },
+};
+
+// 프리셋 ID 목록
+export const PRESET_ORDER = [
+  'fullscreen',
+  'vertical-2',
+  'vertical-3',
+  'sidebar-left',
+  'sidebar-right',
+  'holy-grail',
+  'complex-3col',
+  'dashboard',
+  'dashboard-widgets',
+];
+```
+
+##### 6.4.3 PresetPreview 컴포넌트 (SVG 썸네일)
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/PresetPreview.tsx
+
+import { memo, useMemo } from 'react';
+import type { PreviewArea } from './types';
+
+interface PresetPreviewProps {
+  areas: PreviewArea[];
+  width?: number;
+  height?: number;
+  selectedSlot?: string;
+}
+
+/**
+ * PresetPreview - SVG 기반 레이아웃 썸네일
+ *
+ * 성능 최적화:
+ * - memo로 불필요한 리렌더링 방지
+ * - useMemo로 SVG 요소 캐싱
+ * - 단순 SVG rect만 사용하여 가벼운 렌더링
+ */
+export const PresetPreview = memo(function PresetPreview({
+  areas,
+  width = 120,
+  height = 80,
+  selectedSlot,
+}: PresetPreviewProps) {
+  // SVG rect 요소 캐싱
+  const rectElements = useMemo(() => {
+    return areas.map((area) => {
+      const isSelected = selectedSlot === area.name;
+      const isRequired = area.required;
+
+      // 색상 결정
+      let fill: string;
+      if (isSelected) {
+        fill = 'var(--color-primary-200)';
+      } else if (isRequired) {
+        fill = 'var(--color-primary-100)';
+      } else if (area.isSlot) {
+        fill = 'var(--color-gray-100)';
+      } else {
+        fill = 'var(--color-gray-50)';
+      }
+
+      return (
+        <g key={area.name}>
+          <rect
+            x={`${area.x}%`}
+            y={`${area.y}%`}
+            width={`${area.width}%`}
+            height={`${area.height}%`}
+            fill={fill}
+            stroke={isSelected ? 'var(--color-primary-500)' : 'var(--color-gray-300)'}
+            strokeWidth={isSelected ? 2 : 1}
+            rx={2}
+          />
+          {/* Slot 이름 표시 (영역이 충분히 크면) */}
+          {area.width >= 20 && area.height >= 15 && (
+            <text
+              x={`${area.x + area.width / 2}%`}
+              y={`${area.y + area.height / 2}%`}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="var(--color-gray-600)"
+              fontSize="8"
+              fontFamily="var(--font-sans)"
+            >
+              {area.name}
+            </text>
+          )}
+          {/* Required 표시 */}
+          {isRequired && area.width >= 15 && (
+            <text
+              x={`${area.x + area.width - 2}%`}
+              y={`${area.y + 4}%`}
+              textAnchor="end"
+              fill="var(--color-primary-600)"
+              fontSize="8"
+              fontWeight="bold"
+            >
+              *
+            </text>
+          )}
+        </g>
+      );
+    });
+  }, [areas, selectedSlot]);
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      className="preset-preview-svg"
+      style={{
+        border: '1px solid var(--color-gray-200)',
+        borderRadius: 'var(--radius-sm)',
+        backgroundColor: 'var(--color-white)',
+      }}
+    >
+      {rectElements}
+    </svg>
+  );
+});
+```
+
+##### 6.4.4 ExistingSlotDialog (기존 Slot 처리)
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/ExistingSlotDialog.tsx
+
+import { memo, useCallback } from 'react';
+import { AlertTriangle, Trash2, Merge, X } from 'lucide-react';
+import { Button } from '../../../../components';
+import { Dialog, DialogTrigger, Modal, Heading } from 'react-aria-components';
+import type { ExistingSlotInfo, PresetApplyMode } from './types';
+
+interface ExistingSlotDialogProps {
+  isOpen: boolean;
+  existingSlots: ExistingSlotInfo[];
+  presetName: string;
+  onConfirm: (mode: PresetApplyMode) => void;
+  onClose: () => void;
+}
+
+/**
+ * ExistingSlotDialog - 기존 Slot 처리 확인 다이얼로그
+ *
+ * 프리셋 적용 시 기존 Slot이 있으면:
+ * - 덮어쓰기: 기존 Slot 삭제 후 새로 생성
+ * - 병합: 기존 Slot 유지, 없는 Slot만 추가
+ * - 취소: 프리셋 적용 취소
+ */
+export const ExistingSlotDialog = memo(function ExistingSlotDialog({
+  isOpen,
+  existingSlots,
+  presetName,
+  onConfirm,
+  onClose,
+}: ExistingSlotDialogProps) {
+  const hasChildrenSlots = existingSlots.some((slot) => slot.hasChildren);
+
+  const handleReplace = useCallback(() => {
+    onConfirm('replace');
+  }, [onConfirm]);
+
+  const handleMerge = useCallback(() => {
+    onConfirm('merge');
+  }, [onConfirm]);
+
+  const handleCancel = useCallback(() => {
+    onConfirm('cancel');
+    onClose();
+  }, [onConfirm, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <DialogTrigger isOpen={isOpen}>
+      <Modal isDismissable onOpenChange={(open) => !open && onClose()}>
+        <Dialog className="react-aria-Dialog existing-slot-dialog">
+          <Heading slot="title" className="dialog-title">
+            <AlertTriangle className="icon-warning" />
+            기존 Slot이 있습니다
+          </Heading>
+
+          <div className="dialog-content">
+            <p className="dialog-description">
+              "{presetName}" 프리셋을 적용하려면 기존 Slot을 어떻게 처리할지 선택하세요.
+            </p>
+
+            <div className="existing-slots-list">
+              <p className="list-title">현재 Slot ({existingSlots.length}개):</p>
+              <ul>
+                {existingSlots.map((slot) => (
+                  <li key={slot.elementId}>
+                    <span className="slot-name">{slot.slotName}</span>
+                    {slot.hasChildren && (
+                      <span className="slot-warning">(콘텐츠 있음)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {hasChildrenSlots && (
+              <div className="warning-box">
+                <AlertTriangle size={16} />
+                <span>일부 Slot에 콘텐츠가 있습니다. 덮어쓰기 시 삭제됩니다.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="dialog-actions">
+            <Button
+              variant="default"
+              onPress={handleCancel}
+            >
+              <X size={16} />
+              취소
+            </Button>
+            <Button
+              variant="secondary"
+              onPress={handleMerge}
+            >
+              <Merge size={16} />
+              병합 (새 Slot만 추가)
+            </Button>
+            <Button
+              variant="primary"
+              onPress={handleReplace}
+            >
+              <Trash2 size={16} />
+              덮어쓰기
+            </Button>
+          </div>
+        </Dialog>
+      </Modal>
+    </DialogTrigger>
+  );
+});
+```
+
+##### 6.4.5 usePresetApply 훅 (핵심 로직)
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/usePresetApply.ts
+
+import { useCallback, useMemo } from 'react';
+import { useStore } from '../../../../stores';
+import { historyManager } from '../../../../stores/history';
+import { LAYOUT_PRESETS } from './presetDefinitions';
+import type { PresetApplyMode, ExistingSlotInfo, SlotDefinition } from './types';
+import type { Element } from '../../../../../types/core/store.types';
+
+interface UsePresetApplyOptions {
+  layoutId: string;
+  bodyElementId: string;
+}
+
+interface UsePresetApplyReturn {
+  /** 현재 Layout의 기존 Slot 목록 */
+  existingSlots: ExistingSlotInfo[];
+  /** 프리셋 적용 함수 */
+  applyPreset: (presetKey: string, mode: PresetApplyMode) => Promise<void>;
+  /** 적용 중 여부 */
+  isApplying: boolean;
+}
+
+/**
+ * usePresetApply - 프리셋 적용 훅
+ *
+ * 핵심 기능:
+ * 1. 기존 Slot 감지
+ * 2. 모드별 처리 (replace/merge/cancel)
+ * 3. Slot 일괄 생성 (addComplexElement 패턴)
+ * 4. History 단일 엔트리 기록
+ */
+export function usePresetApply({
+  layoutId,
+  bodyElementId,
+}: UsePresetApplyOptions): UsePresetApplyReturn {
+  // Store actions
+  const elements = useStore((state) => state.elements);
+  const addComplexElement = useStore((state) => state.addComplexElement);
+  const removeElement = useStore((state) => state.removeElement);
+  const updateElementProps = useStore((state) => state.updateElementProps);
+
+  // 현재 Layout의 기존 Slot 목록
+  const existingSlots = useMemo((): ExistingSlotInfo[] => {
+    return elements
+      .filter((el) => el.layout_id === layoutId && el.tag === 'Slot')
+      .map((slot) => {
+        // Slot의 자식 요소 확인 (다른 Layout에서 이 Slot에 할당된 Page element)
+        const hasChildren = elements.some(
+          (el) => el.parent_id === slot.id || el.props?.slot_name === slot.props?.name
+        );
+        return {
+          slotName: (slot.props?.name as string) || 'unnamed',
+          elementId: slot.id,
+          hasChildren,
+        };
+      });
+  }, [elements, layoutId]);
+
+  // 프리셋 적용 함수
+  const applyPreset = useCallback(
+    async (presetKey: string, mode: PresetApplyMode): Promise<void> => {
+      if (mode === 'cancel') return;
+
+      const preset = LAYOUT_PRESETS[presetKey];
+      if (!preset) {
+        console.error(`[usePresetApply] Unknown preset: ${presetKey}`);
+        return;
+      }
+
+      console.log(`[Preset] Applying "${preset.name}" to layout ${layoutId.slice(0, 8)}...`);
+
+      try {
+        // ============================================
+        // Step 1: 기존 Slot 처리
+        // ============================================
+        if (mode === 'replace' && existingSlots.length > 0) {
+          console.log(`[Preset] Removing ${existingSlots.length} existing slots...`);
+
+          // ⭐ History: 삭제할 Slot들 기록
+          const slotsToRemove = existingSlots.map((s) => {
+            const element = elements.find((el) => el.id === s.elementId);
+            return element;
+          }).filter((el): el is Element => el !== undefined);
+
+          // 삭제 실행
+          await Promise.all(
+            existingSlots.map((slot) => removeElement(slot.elementId))
+          );
+
+          console.log(`[Preset] Removed ${existingSlots.length} existing slots`);
+        }
+
+        // ============================================
+        // Step 2: 새 Slot 생성 준비
+        // ============================================
+        const existingSlotNames = new Set(existingSlots.map((s) => s.slotName));
+        const slotsToCreate: SlotDefinition[] = mode === 'merge'
+          ? preset.slots.filter((s) => !existingSlotNames.has(s.name))
+          : preset.slots;
+
+        if (slotsToCreate.length === 0) {
+          console.log('[Preset] No new slots to create (all already exist)');
+          return;
+        }
+
+        console.log(`[Preset] Creating ${slotsToCreate.length} new slots...`);
+
+        // ============================================
+        // Step 3: Slot Element 배열 생성
+        // ============================================
+        let orderNum = 1;
+        const slotElements: Element[] = slotsToCreate.map((slotDef) => ({
+          id: crypto.randomUUID(),
+          tag: 'Slot',
+          props: {
+            name: slotDef.name,
+            required: slotDef.required,
+            description: slotDef.description,
+            style: slotDef.defaultStyle,
+          },
+          parent_id: bodyElementId,
+          layout_id: layoutId,
+          page_id: null,
+          order_num: orderNum++,
+        }));
+
+        // ============================================
+        // Step 4: Body에 containerStyle 적용 (있으면)
+        // ============================================
+        if (preset.containerStyle) {
+          const body = elements.find((el) => el.id === bodyElementId);
+          if (body) {
+            const currentStyle = (body.props?.style as Record<string, unknown>) || {};
+            const mergedStyle = { ...currentStyle, ...preset.containerStyle };
+            await updateElementProps(bodyElementId, { style: mergedStyle });
+            console.log('[Preset] Applied container style to body');
+          }
+        }
+
+        // ============================================
+        // Step 5: Slot 일괄 생성 (단일 History 엔트리)
+        // ============================================
+        if (slotElements.length > 0) {
+          // ⭐ 첫 번째 Slot을 "parent"로, 나머지를 "children"으로 처리
+          // addComplexElement가 단일 History 엔트리 생성
+          const [firstSlot, ...restSlots] = slotElements;
+          await addComplexElement(firstSlot, restSlots);
+
+          console.log(`✅ [Preset] Created ${slotElements.length} slots with single history entry`);
+        }
+
+        console.log(`✅ [Preset] "${preset.name}" applied successfully`);
+      } catch (error) {
+        console.error('[Preset] Failed to apply preset:', error);
+        throw error;
+      }
+    },
+    [layoutId, bodyElementId, existingSlots, elements, addComplexElement, removeElement, updateElementProps]
+  );
+
+  return {
+    existingSlots,
+    applyPreset,
+    isApplying: false, // TODO: 비동기 상태 추가
+  };
+}
+```
+
+##### 6.4.6 LayoutPresetSelector 메인 컴포넌트
+
+```typescript
+// src/builder/panels/properties/editors/LayoutPresetSelector/index.tsx
+
+import { memo, useState, useCallback, useMemo } from 'react';
+import { LayoutGrid, Check } from 'lucide-react';
+import { PropertySection } from '../../../common';
+import { Button } from '../../../../components';
+import { PresetPreview } from './PresetPreview';
+import { ExistingSlotDialog } from './ExistingSlotDialog';
+import { usePresetApply } from './usePresetApply';
+import { LAYOUT_PRESETS, PRESET_CATEGORIES, PRESET_ORDER } from './presetDefinitions';
+import type { PresetApplyMode } from './types';
+import './styles.css';
+
+interface LayoutPresetSelectorProps {
+  layoutId: string;
+  bodyElementId: string;
+}
+
+/**
+ * LayoutPresetSelector - 레이아웃 프리셋 선택 UI
+ *
+ * 기능:
+ * - 카테고리별 프리셋 그리드 표시
+ * - 현재 적용된 프리셋 하이라이트
+ * - 기존 Slot 감지 및 처리 다이얼로그
+ * - 썸네일 hover 시 상세 정보 표시
+ */
+export const LayoutPresetSelector = memo(function LayoutPresetSelector({
+  layoutId,
+  bodyElementId,
+}: LayoutPresetSelectorProps) {
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [pendingPreset, setPendingPreset] = useState<string | null>(null);
+
+  const { existingSlots, applyPreset } = usePresetApply({
+    layoutId,
+    bodyElementId,
+  });
+
+  // 프리셋 선택 핸들러
+  const handlePresetSelect = useCallback((presetKey: string) => {
+    if (existingSlots.length > 0) {
+      // 기존 Slot이 있으면 다이얼로그 표시
+      setPendingPreset(presetKey);
+      setShowDialog(true);
+    } else {
+      // 기존 Slot이 없으면 바로 적용
+      applyPreset(presetKey, 'replace');
+      setSelectedPreset(presetKey);
+    }
+  }, [existingSlots, applyPreset]);
+
+  // 다이얼로그 확인 핸들러
+  const handleDialogConfirm = useCallback(async (mode: PresetApplyMode) => {
+    if (pendingPreset && mode !== 'cancel') {
+      await applyPreset(pendingPreset, mode);
+      setSelectedPreset(pendingPreset);
+    }
+    setShowDialog(false);
+    setPendingPreset(null);
+  }, [pendingPreset, applyPreset]);
+
+  // 카테고리별 프리셋 그룹핑
+  const presetsByCategory = useMemo(() => {
+    const grouped: Record<string, typeof LAYOUT_PRESETS[string][]> = {};
+
+    PRESET_ORDER.forEach((presetKey) => {
+      const preset = LAYOUT_PRESETS[presetKey];
+      if (preset) {
+        if (!grouped[preset.category]) {
+          grouped[preset.category] = [];
+        }
+        grouped[preset.category].push(preset);
+      }
+    });
+
+    return grouped;
+  }, []);
+
+  return (
+    <PropertySection title="Layout Preset" icon={LayoutGrid}>
+      <div className="preset-selector">
+        {Object.entries(presetsByCategory).map(([category, presets]) => (
+          <div key={category} className="preset-category">
+            <h4 className="preset-category-title">
+              {PRESET_CATEGORIES[category as keyof typeof PRESET_CATEGORIES]?.label || category}
+            </h4>
+            <div className="preset-grid">
+              {presets.map((preset) => (
+                <button
+                  key={preset.id}
+                  className={`preset-card ${selectedPreset === preset.id ? 'selected' : ''}`}
+                  onClick={() => handlePresetSelect(preset.id)}
+                  title={preset.description}
+                >
+                  <PresetPreview areas={preset.previewAreas} />
+                  <span className="preset-name">{preset.name}</span>
+                  {selectedPreset === preset.id && (
+                    <span className="preset-check">
+                      <Check size={12} />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* 현재 Slot 정보 표시 */}
+        {existingSlots.length > 0 && (
+          <div className="current-slots-info">
+            <span className="info-label">현재 Slot:</span>
+            <span className="slot-badges">
+              {existingSlots.map((slot) => (
+                <span key={slot.elementId} className="slot-badge">
+                  {slot.slotName}
+                  {slot.hasChildren && <span className="has-content">●</span>}
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 기존 Slot 처리 다이얼로그 */}
+      <ExistingSlotDialog
+        isOpen={showDialog}
+        existingSlots={existingSlots}
+        presetName={pendingPreset ? LAYOUT_PRESETS[pendingPreset]?.name || '' : ''}
+        onConfirm={handleDialogConfirm}
+        onClose={() => setShowDialog(false)}
+      />
+    </PropertySection>
+  );
+});
+
+export default LayoutPresetSelector;
+```
+
+##### 6.4.7 CSS 스타일
+
+```css
+/* src/builder/panels/properties/editors/LayoutPresetSelector/styles.css */
+
+@layer components {
+  .preset-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .preset-category {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .preset-category-title {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-sm);
+  }
+
+  .preset-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    cursor: pointer;
+    transition: all 150ms ease;
+    position: relative;
+  }
+
+  .preset-card:hover {
+    border-color: var(--color-primary-300);
+    background: var(--color-primary-50);
+  }
+
+  .preset-card.selected {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-50);
+  }
+
+  .preset-name {
+    font-size: var(--text-xs);
+    color: var(--color-gray-700);
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .preset-check {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-500);
+    color: white;
+    border-radius: var(--radius-full);
+  }
+
+  /* Current Slots Info */
+  .current-slots-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
+  .info-label {
+    color: var(--color-gray-500);
+    flex-shrink: 0;
+  }
+
+  .slot-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .slot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: var(--color-gray-200);
+    border-radius: var(--radius-sm);
+    color: var(--color-gray-700);
+  }
+
+  .slot-badge .has-content {
+    color: var(--color-primary-500);
+    font-size: 8px;
+  }
+
+  /* Preview SVG */
+  .preset-preview-svg {
+    transition: transform 150ms ease;
+  }
+
+  .preset-card:hover .preset-preview-svg {
+    transform: scale(1.02);
+  }
+
+  /* Dialog Styles */
+  .existing-slot-dialog {
+    padding: var(--spacing-lg);
+    max-width: 480px;
+  }
+
+  .existing-slot-dialog .dialog-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: var(--text-lg);
+  }
+
+  .existing-slot-dialog .icon-warning {
+    color: var(--color-warning-500);
+  }
+
+  .existing-slot-dialog .dialog-content {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .existing-slot-dialog .dialog-description {
+    color: var(--color-gray-600);
+    margin: 0 0 var(--spacing-md) 0;
+  }
+
+  .existing-slot-dialog .existing-slots-list {
+    background: var(--color-gray-50);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .existing-slot-dialog .list-title {
+    font-weight: 500;
+    margin: 0 0 var(--spacing-xs) 0;
+  }
+
+  .existing-slot-dialog ul {
+    margin: 0;
+    padding-left: var(--spacing-lg);
+  }
+
+  .existing-slot-dialog li {
+    margin: var(--spacing-xs) 0;
+  }
+
+  .existing-slot-dialog .slot-name {
+    font-weight: 500;
+  }
+
+  .existing-slot-dialog .slot-warning {
+    color: var(--color-warning-600);
+    font-size: var(--text-xs);
+    margin-left: var(--spacing-xs);
+  }
+
+  .existing-slot-dialog .warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-warning-50);
+    border: 1px solid var(--color-warning-200);
+    border-radius: var(--radius-sm);
+    color: var(--color-warning-700);
+    font-size: var(--text-sm);
+    margin-top: var(--spacing-md);
+  }
+
+  .existing-slot-dialog .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+  }
+}
+```
+
+---
+
+#### 6.5 History 통합 상세
+
+##### 6.5.1 프리셋 적용 History 패턴
+
+프리셋 적용 시 다음 작업이 단일 Undo 엔트리로 기록됩니다:
+
+```
+프리셋 적용 = [
+  1. 기존 Slot 삭제 (mode: replace인 경우)
+  2. Body containerStyle 업데이트
+  3. 새 Slot 일괄 생성
+]
+
+⭐ Undo 시 모든 작업이 함께 롤백됨
+```
+
+##### 6.5.2 addComplexElement 활용
+
+```typescript
+// 핵심: addComplexElement는 단일 History 엔트리 생성
+// src/builder/stores/utils/elementCreation.ts 참조
+
+// 프리셋 적용 시:
+const [firstSlot, ...restSlots] = slotElements;
+await addComplexElement(firstSlot, restSlots);
+
+// History 엔트리:
+{
+  type: "add",
+  elementId: firstSlot.id,
+  data: {
+    element: firstSlot,
+    childElements: restSlots,
+  },
+}
+
+// Undo 시: firstSlot + restSlots 모두 삭제
+// Redo 시: firstSlot + restSlots 모두 복원
+```
+
+---
+
+#### 6.6 성능 최적화
+
+##### 6.6.1 PresetPreview 최적화
+
+```typescript
+// 1. memo로 불필요한 리렌더링 방지
+export const PresetPreview = memo(function PresetPreview(...) {
+  // 2. useMemo로 SVG 요소 캐싱
+  const rectElements = useMemo(() => {
+    return areas.map(...);
+  }, [areas, selectedSlot]);
+
+  // 3. 단순 SVG rect만 사용 (DOM 노드 최소화)
+  return <svg>...</svg>;
+});
+```
+
+##### 6.6.2 프리셋 그리드 성능
+
+- **Lazy Loading 불필요**: 프리셋 개수가 제한적 (10개 미만)
+- **가상화 불필요**: 한 화면에 모두 표시 가능
+- **메모이제이션**: 카테고리별 그룹핑 useMemo로 캐싱
+
+##### 6.6.3 다이얼로그 최적화
+
+```typescript
+// 조건부 렌더링으로 불필요한 DOM 방지
+if (!isOpen) return null;
+
+return <DialogTrigger isOpen={isOpen}>...</DialogTrigger>;
+```
+
+---
+
+#### 6.7 에러 처리
+
+##### 6.7.1 프리셋 적용 실패 시
+
+```typescript
+try {
+  await applyPreset(presetKey, mode);
+} catch (error) {
+  console.error('[Preset] Failed to apply preset:', error);
+
+  // TODO: Toast 알림 표시
+  // showToast({
+  //   type: 'error',
+  //   message: '프리셋 적용에 실패했습니다.',
+  //   description: error.message,
+  // });
+
+  // 상태 롤백은 History가 자동 처리
+  // (실패한 작업 전 상태로 유지됨)
+}
+```
+
+##### 6.7.2 Slot 생성 부분 실패 시
+
+```typescript
+// addComplexElement는 트랜잭션처럼 동작
+// - 성공: 모든 Slot 생성 + 단일 History 엔트리
+// - 실패: 어떤 Slot도 생성되지 않음 (메모리 상태 정합성 유지)
+```
+
+---
+
+#### 6.8 마이그레이션 계획
+
+##### 6.8.1 기존 BodyEditor 처리
+
+```typescript
+// 1단계: PageBodyEditor, LayoutBodyEditor 생성
+// 2단계: registry.ts 수정 (context 기반 라우팅)
+// 3단계: 기존 BodyEditor.tsx를 deprecated 표시
+// 4단계: 테스트 후 BodyEditor.tsx 삭제
+```
+
+##### 6.8.2 호환성 유지
+
+```typescript
+// registry.ts - 기존 API 호환 유지
+export async function getEditor(
+  type: string,
+  context?: { layoutId?: string | null; pageId?: string | null }
+) {
+  // context가 없으면 기존 동작 유지 (BodyEditor 반환)
+  // context가 있으면 새 로직 (PageBodyEditor/LayoutBodyEditor)
+}
+```
+
+---
+
+#### 6.9 테스트 체크리스트
+
+**Unit Tests:**
+- [ ] PageBodyEditor 렌더링
+- [ ] LayoutBodyEditor 렌더링
+- [ ] PresetPreview SVG 생성
+- [ ] usePresetApply 훅 - replace 모드
+- [ ] usePresetApply 훅 - merge 모드
+- [ ] ExistingSlotDialog 동작
+
+**Integration Tests:**
+- [ ] Page body 선택 → PageBodyEditor 표시
+- [ ] Layout body 선택 → LayoutBodyEditor 표시
+- [ ] 프리셋 선택 → Slot 생성 확인
+- [ ] 기존 Slot 있을 때 다이얼로그 표시
+- [ ] 프리셋 적용 후 Undo/Redo
+
+**E2E Tests:**
+- [ ] Layout 생성 → 프리셋 선택 → Preview 확인
+- [ ] 프리셋 변경 → 기존 Slot 덮어쓰기
+- [ ] 프리셋 변경 → 병합 모드
+
+---
+
+#### 6.10 Edit Mode 기타 항목
 
 - [ ] Layout 모드에서 Page elements 숨김
 - [ ] Page 모드에서 Layout elements 읽기 전용
