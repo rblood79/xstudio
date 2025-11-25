@@ -4770,6 +4770,322 @@ export async function getEditor(
 - [ ] Edit Mode 전환 시 UI 상태 동기화
 - [x] BodyEditor 분리 설계 완료
 
+---
+
+#### 6.11 예상 문제 & 해결책 (Edge Cases)
+
+##### 6.11.1 Slot Visibility 불일치
+
+**문제:**
+Layout에서 breakpoint마다 Slot hide 설정이 Page 데이터와 어긋나면 렌더링 불일치 발생.
+
+```
+예시:
+- Layout에서 sidebar Slot을 mobile에서 숨김 설정
+- Page A의 sidebar 콘텐츠가 mobile에서 렌더링됨 (불일치)
+```
+
+**해결책:**
+```typescript
+// Inspector에서 slot visibility 저장/적용 시
+// Layout 요소의 layout_id 기준으로만 계산하고, Page 전용 요소는 필터링
+
+function getSlotVisibility(slotName: string, breakpoint: Breakpoint, layoutId: string) {
+  // Layout 요소만 필터링
+  const layoutElements = elements.filter(el => el.layout_id === layoutId);
+  const slot = layoutElements.find(el => el.tag === 'Slot' && el.props?.name === slotName);
+
+  if (!slot) return true; // 기본값: visible
+
+  // Slot의 responsive visibility 확인
+  const responsiveProps = slot.props?.responsiveProps as ResponsiveProps | undefined;
+  return responsiveProps?.[breakpoint]?.visibility !== 'hidden';
+}
+```
+
+##### 6.11.2 Responsive Props 우선순위 충돌
+
+**문제:**
+Layout 기본 스타일과 responsive override 간 className/style 덮어쓰기 충돌.
+
+```css
+/* 충돌 예시 */
+.layout-sidebar { width: 250px; }  /* Layout 기본 */
+@media (max-width: 768px) {
+  .layout-sidebar { width: 100%; }  /* Page override */
+}
+/* ❌ 어떤 스타일이 적용될지 불명확 */
+```
+
+**해결책:**
+```typescript
+// responsiveCSS.ts
+// breakpoint별 CSS를 별도 scope(class)로 생성
+
+function generateResponsiveCSS(element: Element, breakpoints: Breakpoint[]) {
+  const rules: string[] = [];
+
+  breakpoints.forEach(bp => {
+    const responsiveProps = element.props?.responsiveProps?.[bp.name];
+    if (responsiveProps?.style) {
+      // 브레이크포인트별 클래스로 스코핑
+      rules.push(`
+        .breakpoint-${bp.name} [data-element-id="${element.id}"] {
+          ${styleObjectToCSS(responsiveProps.style)}
+        }
+      `);
+    }
+  });
+
+  return rules.join('\n');
+}
+
+// Preview/Canvas에서 현재 breakpoint 클래스를 루트에 부여
+function PreviewContainer({ currentBreakpoint }: Props) {
+  return (
+    <div className={`preview-root breakpoint-${currentBreakpoint}`}>
+      {children}
+    </div>
+  );
+}
+```
+
+##### 6.11.3 Preview/Inspector 상태 탈동기화
+
+**문제:**
+Breakpoint 스위처 조작 시 Preview와 Inspector가 다른 breakpoint를 바라보면 값이 꼬임.
+
+```
+시나리오:
+1. Preview: tablet 뷰로 전환
+2. Inspector: 여전히 desktop 값 표시
+3. 사용자가 Inspector에서 값 수정
+4. ❌ desktop 값이 변경됨 (의도와 다름)
+```
+
+**해결책:**
+```typescript
+// BreakpointProvider를 전역 context로 올리기
+
+// src/builder/providers/BreakpointProvider.tsx
+interface BreakpointContextValue {
+  currentBreakpoint: Breakpoint;
+  setCurrentBreakpoint: (bp: Breakpoint) => void;
+  breakpoints: Breakpoint[];
+}
+
+const BreakpointContext = createContext<BreakpointContextValue | null>(null);
+
+export function BreakpointProvider({ children }: { children: React.ReactNode }) {
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>(
+    BREAKPOINTS.desktop
+  );
+
+  return (
+    <BreakpointContext.Provider value={{
+      currentBreakpoint,
+      setCurrentBreakpoint,
+      breakpoints: Object.values(BREAKPOINTS),
+    }}>
+      {children}
+    </BreakpointContext.Provider>
+  );
+}
+
+// Preview와 Inspector 모두 동일 provider 구독
+export function useBreakpoint() {
+  const context = useContext(BreakpointContext);
+  if (!context) throw new Error('useBreakpoint must be used within BreakpointProvider');
+  return context;
+}
+```
+
+**컴포넌트 트리:**
+```
+<BreakpointProvider>           ← 전역 Provider
+  <BuilderHeader>
+    <BreakpointSwitcher />     ← setCurrentBreakpoint 호출
+  </BuilderHeader>
+  <Preview />                   ← currentBreakpoint 구독
+  <Inspector />                 ← currentBreakpoint 구독 (동기화!)
+</BreakpointProvider>
+```
+
+##### 6.11.4 Slot 삭제/추가 시 Responsive 메타 잔존
+
+**문제:**
+Slot을 삭제하거나 이름을 변경하면 이전 responsive visibility 메타가 남아 reference error 유발.
+
+```typescript
+// 문제 시나리오
+const responsiveVisibility = {
+  'sidebar': { mobile: 'hidden', tablet: 'visible' },
+  'content': { mobile: 'visible' },
+};
+
+// sidebar Slot 삭제 후에도 responsiveVisibility['sidebar'] 참조 시도
+// ❌ Orphaned metadata
+```
+
+**해결책:**
+```typescript
+// Slot 삭제 훅에서 관련 responsive visibility/props 메타 정리
+
+// src/builder/stores/utils/slotCleanup.ts
+export async function cleanupSlotMetadata(
+  slotId: string,
+  slotName: string,
+  layoutId: string
+) {
+  const { elements, updateElement } = useStore.getState();
+
+  // 1. Layout body의 responsiveVisibility에서 해당 slot 제거
+  const body = elements.find(
+    el => el.layout_id === layoutId && el.tag === 'body'
+  );
+
+  if (body?.props?.responsiveVisibility) {
+    const { [slotName]: removed, ...remainingVisibility } =
+      body.props.responsiveVisibility as Record<string, unknown>;
+
+    await updateElement(body.id, {
+      props: {
+        ...body.props,
+        responsiveVisibility: remainingVisibility,
+      },
+    });
+
+    console.log(`[SlotCleanup] Removed responsive visibility for slot: ${slotName}`);
+  }
+
+  // 2. 해당 Slot에 할당된 Page elements의 slot_name 정리
+  const pageElements = elements.filter(
+    el => el.page_id && el.props?.slot_name === slotName
+  );
+
+  await Promise.all(
+    pageElements.map(el =>
+      updateElement(el.id, {
+        props: { ...el.props, slot_name: undefined },
+      })
+    )
+  );
+
+  if (pageElements.length > 0) {
+    console.log(`[SlotCleanup] Cleared slot_name from ${pageElements.length} page elements`);
+  }
+}
+
+// removeElement 시 자동 호출
+export const createRemoveElementAction = (set, get) => async (elementId: string) => {
+  const element = get().elementsMap.get(elementId);
+
+  // Slot 삭제 시 cleanup 의무 호출
+  if (element?.tag === 'Slot' && element.layout_id) {
+    await cleanupSlotMetadata(
+      elementId,
+      element.props?.name as string,
+      element.layout_id
+    );
+  }
+
+  // 기존 삭제 로직...
+};
+```
+
+##### 6.11.5 템플릿/프리셋 반영 지연 (깜빡임)
+
+**문제:**
+프리셋으로 Slot이 추가된 뒤 responsive 초기값이 없는 상태에서 Preview가 즉시 렌더링되면 깜빡임 발생.
+
+```
+시나리오:
+1. 프리셋 선택 → Slot 생성 시작
+2. Preview가 Slot 감지 → 즉시 렌더링 시도
+3. responsive props 아직 없음 → 기본값으로 렌더링
+4. responsive props 생성 완료 → 다시 렌더링
+5. ❌ 깜빡임 발생
+```
+
+**해결책:**
+```typescript
+// usePresetApply.ts 수정
+// 프리셋 적용 시 기본 responsive props를 함께 생성
+
+const applyPreset = useCallback(async (presetKey: string, mode: PresetApplyMode) => {
+  // ... 기존 로직 ...
+
+  // ============================================
+  // Step 3: Slot Element 배열 생성 (responsive props 포함)
+  // ============================================
+  const slotElements: Element[] = slotsToCreate.map((slotDef) => ({
+    id: crypto.randomUUID(),
+    tag: 'Slot',
+    props: {
+      name: slotDef.name,
+      required: slotDef.required,
+      description: slotDef.description,
+      style: slotDef.defaultStyle,
+      // ⭐ 기본 responsive props 포함
+      responsiveProps: {
+        desktop: { visibility: 'visible' },
+        tablet: { visibility: 'visible' },
+        mobile: { visibility: slotDef.hideOnMobile ? 'hidden' : 'visible' },
+      },
+    },
+    parent_id: bodyElementId,
+    layout_id: layoutId,
+    page_id: null,
+    order_num: orderNum++,
+  }));
+
+  // ... 기존 로직 ...
+}, [...]);
+
+// Preview는 해당 생성 promise 완료 후 렌더링
+// useIframeMessenger.ts
+useEffect(() => {
+  // ⭐ Slot 생성 완료 후에만 Preview 업데이트
+  const hasAllResponsiveProps = elements
+    .filter(el => el.tag === 'Slot' && el.layout_id)
+    .every(slot => slot.props?.responsiveProps !== undefined);
+
+  if (hasAllResponsiveProps) {
+    sendElementsToIframe(elements);
+  }
+}, [elements]);
+```
+
+**대안: 로딩 상태 표시**
+```typescript
+// Preview에서 Slot 초기화 중 로딩 표시
+function SlotRenderer({ slot }: { slot: Element }) {
+  const hasResponsiveProps = slot.props?.responsiveProps !== undefined;
+
+  if (!hasResponsiveProps) {
+    return (
+      <div className="slot-initializing">
+        <Spinner size="sm" />
+      </div>
+    );
+  }
+
+  return <SlotContent slot={slot} />;
+}
+```
+
+---
+
+#### 6.12 Edge Case 체크리스트
+
+| 문제 | 해결책 | 테스트 항목 |
+|------|--------|-------------|
+| Slot visibility 불일치 | layout_id 기준 필터링 | Layout hide → Page 렌더링 확인 |
+| Responsive props 충돌 | breakpoint 클래스 스코핑 | tablet에서 스타일 우선순위 확인 |
+| Preview/Inspector 탈동기화 | BreakpointProvider 전역화 | breakpoint 전환 후 Inspector 값 확인 |
+| Slot 삭제 시 메타 잔존 | cleanupSlotMetadata 의무 호출 | Slot 삭제 후 에러 없음 확인 |
+| 프리셋 깜빡임 | 기본 responsive props 포함 생성 | 프리셋 적용 시 깜빡임 없음 확인 |
+
 ### 📋 Phase 7: Advanced Features - PLANNED
 - [ ] Responsive breakpoint 별 Slot visibility
 - [ ] Layout 복제 기능
