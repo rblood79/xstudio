@@ -24,6 +24,9 @@ export function InspectorSync() {
   // 마지막으로 처리한 syncVersion 추적 (Inspector → Builder 변경 무시)
   const lastProcessedSyncVersionRef = useRef<number>(0);
 
+  // ⭐ FIX: 이전 선택 ID 추적 (선택 변경 우선 처리용)
+  const previousElementIdRef = useRef<string | null>(null);
+
   // ⭐ Performance: Get selected element without subscribing to elementsMap
   // - elementsMap 구독하면 모든 element 변경 시 불필요한 리렌더 발생
   // - selectedElementId 변경 시에만 요소를 다시 가져옴
@@ -39,6 +42,25 @@ export function InspectorSync() {
 
   // Builder → Inspector 동기화
   useEffect(() => {
+    const currentId = selectedBuilderElement?.id || null;
+    const isSelectionChanged = currentId !== previousElementIdRef.current;
+
+    // ⭐ FIX: 1순위 - 선택된 요소 ID가 변경되었는지 먼저 검사
+    // syncVersion, isSyncingToBuilder와 무관하게 새 요소 선택은 항상 처리
+    if (isSelectionChanged) {
+      previousElementIdRef.current = currentId;
+
+      if (!selectedBuilderElement) {
+        setSelectedElement(null);
+        return;
+      }
+
+      const mappedElement = mapElementToSelected(selectedBuilderElement);
+      setSelectedElement(mappedElement);
+      return; // 선택 변경 처리 완료
+    }
+
+    // ⭐ 2순위: 같은 요소의 속성 변경일 때만 syncVersion/isSyncingToBuilder 체크
     // Inspector → Builder 동기화 중이면 건너뛰기
     if (isSyncingToBuilder) {
       return;
@@ -67,28 +89,22 @@ export function InspectorSync() {
 
     const mappedElement = mapElementToSelected(selectedBuilderElement);
 
-    // 최초 선택이거나 ID가 변경된 경우
-    if (!selectedElement || selectedElement.id !== selectedBuilderElement.id) {
-      setSelectedElement(mappedElement);
-      return;
-    }
-
     // 같은 요소인 경우 props 비교 (Builder에서 외부 변경 감지용)
     const currentPropsJson = JSON.stringify(
-      selectedElement.properties,
-      Object.keys(selectedElement.properties || {}).sort()
+      selectedElement?.properties,
+      Object.keys(selectedElement?.properties || {}).sort()
     );
     const newPropsJson = JSON.stringify(
       mappedElement.properties,
       Object.keys(mappedElement.properties || {}).sort()
     );
 
-    const currentDataBindingJson = JSON.stringify(selectedElement.dataBinding);
+    const currentDataBindingJson = JSON.stringify(selectedElement?.dataBinding);
     const newDataBindingJson = JSON.stringify(mappedElement.dataBinding);
 
     const currentStyleJson = JSON.stringify(
-      selectedElement.style,
-      Object.keys(selectedElement.style || {}).sort()
+      selectedElement?.style,
+      Object.keys(selectedElement?.style || {}).sort()
     );
     const newStyleJson = JSON.stringify(
       mappedElement.style,
@@ -96,15 +112,15 @@ export function InspectorSync() {
     );
 
     const currentComputedStyleJson = JSON.stringify(
-      selectedElement.computedStyle,
-      Object.keys(selectedElement.computedStyle || {}).sort()
+      selectedElement?.computedStyle,
+      Object.keys(selectedElement?.computedStyle || {}).sort()
     );
     const newComputedStyleJson = JSON.stringify(
       mappedElement.computedStyle,
       Object.keys(mappedElement.computedStyle || {}).sort()
     );
 
-    const currentEventsJson = JSON.stringify(selectedElement.events);
+    const currentEventsJson = JSON.stringify(selectedElement?.events);
     const newEventsJson = JSON.stringify(mappedElement.events);
 
     if (
