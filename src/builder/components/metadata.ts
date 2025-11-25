@@ -438,7 +438,10 @@ export const componentMetadata: ComponentMeta[] = [
     icon: "📄",
     inspector: {
       hasCustomEditor: true,
-      editorName: "BodyEditor",
+      // ⭐ Phase 6: editorName은 registry.ts에서 context 기반으로 결정
+      // - Page body → PageBodyEditor
+      // - Layout body → LayoutBodyEditor
+      editorName: null,
       dataBindingType: null,
       supportedEvents: [],
     },

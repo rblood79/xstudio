@@ -10,7 +10,7 @@
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import type { ComponentType } from "react";
 import type { PanelProps } from "../core/types";
-import { getEditor } from "../../inspector/editors/registry";
+import { getEditor, type EditorContext } from "../../inspector/editors/registry";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
@@ -45,6 +45,15 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
   const [Editor, setEditor] = useState<ComponentType<ComponentEditorProps> | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ⭐ Phase 6: body 타입의 경우 layout_id 유무에 따라 다른 Editor 로드
+  const elementContext = useMemo((): EditorContext => {
+    const element = useStore.getState().elementsMap.get(selectedElement.id);
+    return {
+      layoutId: element?.layout_id || null,
+      pageId: element?.page_id || null,
+    };
+  }, [selectedElement.id]);
+
   // 요소 타입에 맞는 에디터 동적 로드
   useEffect(() => {
     let isMounted = true;
@@ -64,7 +73,8 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
 
       setLoading(true);
 
-      getEditor(selectedElement.type)
+      // ⭐ Phase 6: context 전달 (body 타입의 경우 layoutId로 Editor 결정)
+      getEditor(selectedElement.type, elementContext)
         .then((editor) => {
           if (isMounted) {
             setEditor(() => editor);
@@ -90,7 +100,7 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedElement.type]);
+  }, [selectedElement.type, elementContext.layoutId]);
 
   // handleUpdate는 항상 안정적인 함수 (getState 사용)
   const handleUpdate = useCallback((updatedProps: Record<string, unknown>) => {

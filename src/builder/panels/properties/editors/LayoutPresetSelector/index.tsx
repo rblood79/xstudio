@@ -1,0 +1,183 @@
+/**
+ * LayoutPresetSelector - 레이아웃 프리셋 선택 컴포넌트
+ *
+ * Phase 6: Layout 프리셋 시스템 메인 컴포넌트
+ *
+ * 기능:
+ * 1. 카테고리별 프리셋 그리드 표시
+ * 2. SVG 미리보기 썸네일
+ * 3. 기존 Slot 감지 시 확인 다이얼로그
+ * 4. 프리셋 적용 (History 단일 엔트리)
+ */
+
+import { memo, useCallback, useMemo, useState } from "react";
+import { Layout, LayoutGrid, Columns2, LayoutDashboard } from "lucide-react";
+import { Button } from "../../../../components";
+import { PresetPreview } from "./PresetPreview";
+import { ExistingSlotDialog } from "./ExistingSlotDialog";
+import { usePresetApply } from "./usePresetApply";
+import {
+  LAYOUT_PRESETS,
+  PRESET_CATEGORIES,
+  PRESET_ORDER,
+} from "./presetDefinitions";
+import type { PresetApplyMode } from "./types";
+import "./styles.css";
+
+interface LayoutPresetSelectorProps {
+  /** Layout ID */
+  layoutId: string;
+  /** Body Element ID */
+  bodyElementId: string;
+}
+
+/**
+ * 카테고리 아이콘 매핑
+ */
+const CATEGORY_ICONS: Record<string, typeof Layout> = {
+  basic: Layout,
+  sidebar: Columns2,
+  complex: LayoutGrid,
+  dashboard: LayoutDashboard,
+};
+
+export const LayoutPresetSelector = memo(function LayoutPresetSelector({
+  layoutId,
+  bodyElementId,
+}: LayoutPresetSelectorProps) {
+  // 선택된 프리셋 상태
+  const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>(
+    null
+  );
+  // 다이얼로그 열림 상태
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // 프리셋 적용 훅
+  const { existingSlots, applyPreset, isApplying } = usePresetApply({
+    layoutId,
+    bodyElementId,
+  });
+
+  // 카테고리별 프리셋 그룹화
+  const presetsByCategory = useMemo(() => {
+    const groups: Record<string, string[]> = {
+      basic: [],
+      sidebar: [],
+      complex: [],
+      dashboard: [],
+    };
+
+    PRESET_ORDER.forEach((key) => {
+      const preset = LAYOUT_PRESETS[key];
+      if (preset) {
+        groups[preset.category].push(key);
+      }
+    });
+
+    return groups;
+  }, []);
+
+  // 프리셋 클릭 핸들러
+  const handlePresetClick = useCallback(
+    (presetKey: string) => {
+      setSelectedPresetKey(presetKey);
+
+      // 기존 Slot이 있으면 다이얼로그 표시
+      if (existingSlots.length > 0) {
+        setDialogOpen(true);
+      } else {
+        // 기존 Slot이 없으면 바로 적용
+        applyPreset(presetKey, "replace");
+      }
+    },
+    [existingSlots.length, applyPreset]
+  );
+
+  // 다이얼로그 확인 핸들러
+  const handleDialogConfirm = useCallback(
+    (mode: PresetApplyMode) => {
+      if (selectedPresetKey && mode !== "cancel") {
+        applyPreset(selectedPresetKey, mode);
+      }
+      setDialogOpen(false);
+      setSelectedPresetKey(null);
+    },
+    [selectedPresetKey, applyPreset]
+  );
+
+  // 다이얼로그 닫기 핸들러
+  const handleDialogClose = useCallback(() => {
+    setDialogOpen(false);
+    setSelectedPresetKey(null);
+  }, []);
+
+  return (
+    <div className="layout-preset-selector">
+      <div className="preset-selector-header">
+        <h4 className="preset-selector-title">레이아웃 프리셋</h4>
+        {existingSlots.length > 0 && (
+          <span className="preset-slot-count">
+            현재 Slot: {existingSlots.length}개
+          </span>
+        )}
+      </div>
+
+      <div className="preset-categories">
+        {Object.entries(PRESET_CATEGORIES).map(([categoryKey, meta]) => {
+          const presetKeys = presetsByCategory[categoryKey];
+          if (!presetKeys || presetKeys.length === 0) return null;
+
+          const CategoryIcon = CATEGORY_ICONS[categoryKey] || Layout;
+
+          return (
+            <div key={categoryKey} className="preset-category">
+              <div className="preset-category-header">
+                <CategoryIcon size={14} className="category-icon" />
+                <span className="category-label">{meta.label}</span>
+              </div>
+
+              <div className="preset-grid">
+                {presetKeys.map((presetKey) => {
+                  const preset = LAYOUT_PRESETS[presetKey];
+                  if (!preset) return null;
+
+                  const isSelected = selectedPresetKey === presetKey;
+
+                  return (
+                    <Button
+                      key={presetKey}
+                      variant="default"
+                      className={`preset-item ${isSelected ? "selected" : ""}`}
+                      onPress={() => handlePresetClick(presetKey)}
+                      isDisabled={isApplying}
+                    >
+                      <PresetPreview
+                        areas={preset.previewAreas}
+                        width={80}
+                        height={60}
+                      />
+                      <span className="preset-name">{preset.name}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 기존 Slot 처리 다이얼로그 */}
+      <ExistingSlotDialog
+        isOpen={dialogOpen}
+        existingSlots={existingSlots}
+        presetName={
+          selectedPresetKey ? LAYOUT_PRESETS[selectedPresetKey]?.name || "" : ""
+        }
+        onConfirm={handleDialogConfirm}
+        onClose={handleDialogClose}
+      />
+    </div>
+  );
+});
+
+export default LayoutPresetSelector;

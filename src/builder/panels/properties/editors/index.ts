@@ -46,7 +46,9 @@ export { BreadcrumbsEditor } from './BreadcrumbsEditor';
 export { DateRangePickerEditor } from './DateRangePickerEditor';
 export { BreadcrumbEditor } from './BreadcrumbEditor';
 export { GroupEditor } from './GroupEditor';
-export { BodyEditor } from './BodyEditor';
+// ⭐ Phase 6: BodyEditor 분리
+export { PageBodyEditor } from './PageBodyEditor';
+export { LayoutBodyEditor } from './LayoutBodyEditor';
 export { MenuEditor } from './MenuEditor';
 export { MenuItemEditor } from './MenuItemEditor';
 export { NumberFieldEditor } from './NumberFieldEditor';

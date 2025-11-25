@@ -56,12 +56,48 @@ async function importEditor(
 }
 
 /**
+ * Editor 조회 컨텍스트
+ */
+export interface EditorContext {
+  layoutId?: string | null;
+  pageId?: string | null;
+}
+
+/**
  * 에디터 조회 (자동 로딩)
+ *
+ * @param type - 요소 타입
+ * @param context - 추가 컨텍스트 (body 타입의 경우 layoutId로 Editor 결정)
  */
 export async function getEditor(
-  type: string
+  type: string,
+  context?: EditorContext
 ): Promise<ComponentType<ComponentEditorProps> | null> {
-  // 캐시 확인
+  // ⭐ Special case: body 타입은 context에 따라 다른 Editor 반환
+  if (type === "body") {
+    const editorName = context?.layoutId
+      ? "LayoutBodyEditor"
+      : "PageBodyEditor";
+    const cacheKey = `body:${context?.layoutId ? "layout" : "page"}`;
+
+    // 캐시 확인
+    if (editorCache.has(cacheKey)) {
+      return editorCache.get(cacheKey)!;
+    }
+
+    // 동적 import
+    const editor = await importEditor(editorName);
+
+    if (editor) {
+      editorCache.set(cacheKey, editor);
+    } else {
+      console.warn("[getEditor] Failed to import body editor:", editorName);
+    }
+
+    return editor;
+  }
+
+  // 일반 에디터: 캐시 확인
   if (editorCache.has(type)) {
     return editorCache.get(type)!;
   }
