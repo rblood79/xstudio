@@ -54,8 +54,8 @@
 
   .component-list button {
     position: relative;
-    width: var(--text-3xl);
-    height: var(--text-3xl);
+    width: var(--text-5xl);
+    height: var(--text-5xl);
     display: flex;
     align-items: center;
     justify-content: center;
