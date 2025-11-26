@@ -29,6 +29,10 @@
     height: 100%;
   }
 
+  .panel[data-panel="components"] .section .section-content {
+    display: grid;
+  }
+
   .panel-contents {
     display: flex;
     flex-direction: column;
@@ -447,6 +451,7 @@
 
     /* Section Content - styles/properties 패널 전용 */
     /* components 패널은 ComponentList.css에서 별도 스타일 적용 */
+
     .panel[data-panel="styles"] .section-content,
     .panel[data-panel="properties"] .section-content {
       padding: var(--spacing-sm);
