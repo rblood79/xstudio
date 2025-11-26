@@ -124,8 +124,7 @@ export function StylesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="styles-panel">
-        
+    <div className="panel" data-panel="styles">
           <div className="panel-header">
             <ToggleButtonGroup
               aria-label="Style filter"
@@ -180,7 +179,7 @@ export function StylesPanel({ isActive }: PanelProps) {
       
 
       {/* Sections */}
-      <div className="style-section">
+      <div className="panel-contents">
         {filter === "all" ? (
           <>
             <TransformSection selectedElement={selectedElement} />

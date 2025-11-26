@@ -9,6 +9,33 @@
     outline-offset: -2px;
   }
 
+  /* ========================================
+   * Panel System - 패널 공통 구조
+   * .panel[data-panel="{name}"]
+   * ├── .panel-header
+   * │   ├── .panel-title
+   * │   └── .panel-actions
+   * └── .panel-contents (복수형: 상위 .panel-content와 구분)
+   *     └── .section (반복)
+   *         ├── .section-header
+   *         │   ├── .section-title
+   *         │   └── .section-actions
+   *         └── .section-content
+   * ======================================== */
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .panel-contents {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+  }
+
   .section {
     display: flex;
     flex-direction: column;
@@ -22,372 +49,25 @@
       min-height: 200px;
     }
 
-    &[data-section-id="layout"] {
-      .section-content {
-        .component-props {
-          .layout-direction {
-            display: grid;
-            grid-template-columns: 1fr 1fr var(--inspector-control-size);
-            grid-template-rows: auto auto auto;
-            grid-template-areas:
-              "flex-direction flex-alignment icon"
-              "justify-content flex-alignment icon"
-              "displayGap displayGap icon";
-            gap: var(--spacing) var(--spacing-sm);
-
-            .flex-direction {
-              grid-area: flex-direction;
-            }
-            .flex-alignment {
-              grid-area: flex-alignment;
-            }
-            .justify-content {
-              grid-area: justify-content;
-            }
-            .displayGap {
-              grid-area: displayGap;
-            }
-            .actions-icon {
-              grid-area: icon;
-              display: flex;
-            }
-          }
-
-          .layout-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr var(--inspector-control-size);
-            grid-template-rows: auto;
-            gap: var(--spacing-sm);
-            grid-template-areas:
-              "padding margin actions-spacing";
-
-            > * {
-              min-width: 0;
-            }
-
-            .padding {
-              grid-area: padding;
-            }
-            .margin {
-              grid-area: margin;
-            }
-            .actions-spacing {
-              grid-area: actions-spacing;
-            }
-
-            /* 확장 모드: 4방향 그리드 */
-            &.layout-container-expanded {
-              grid-template-areas:
-                "layout-padding layout-margin actions-spacing";
-
-              .layout-padding {
-                grid-area: layout-padding;
-              }
-              .layout-margin {
-                grid-area: layout-margin;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    &[data-section-id="transform"] {
-      .section-content {
-        .component-props {
-          display: grid;
-          grid-template-columns: 1fr 1fr var(--inspector-control-size);
-          grid-template-rows: auto;
-          gap: var(--spacing-sm);
-          grid-template-areas:
-            "width height actions-size"
-            "left top actions-position";
-
-          > * {
-            min-width: 0;
-          }
-
-          .width {
-            grid-area: width;
-          }
-          .height {
-            grid-area: height;
-
-            .react-aria-control .control-label svg {
-              transform: rotate(90deg);
-            }
-          }
-          .actions-size {
-            grid-area: actions-size;
-          }
-          .left {
-            grid-area: left;
-          }
-          .top {
-            grid-area: top;
-          }
-          .actions-position {
-            grid-area: actions-position;
-          }
-        }
-      }
-    }
-
-    &[data-section-id="appearance"] {
-      .section-content {
-        .component-props {
-          .style-background {
-            display: grid;
-            grid-template-columns: 1fr 1fr var(--inspector-control-size);
-            grid-template-rows: auto;
-            gap: var(--spacing-sm);
-            grid-template-areas:
-              "background-color background-color icon";
-
-            >* {
-              min-width: 0;
-            }
-          }
-
-          .background-color {
-            grid-area: background-color;
-          }
-
-          .actions-icon {
-            grid-area: icon;
-            display: flex;
-          }
-
-          .style-border {
-            display: grid;
-            grid-template-columns: 1fr 1fr var(--inspector-control-size);
-            grid-template-rows: auto;
-            gap: var(--spacing-sm);
-            grid-template-areas:
-              "border-style border-style border-color"
-              "border-width border-radius icon";
-
-            >* {
-              min-width: 0;
-            }
-          }
-
-          .border-style {
-            grid-area: border-style;
-          }
-
-          .border-color {
-            grid-area: border-color;
-          }
-
-          .border-width {
-            grid-area: border-width;
-          }
-
-          .border-radius {
-            grid-area: border-radius;
-          }
-        }
-      }
-    }
-
-    &[data-section-id="typography"] {
-      .section-content {
-        .component-props {
-          display: grid;
-          grid-template-columns: 1fr 1fr var(--inspector-control-size);
-          grid-template-rows: auto;
-          gap: var(--spacing-sm);
-          grid-template-areas:
-            "font-family font-family color"
-            "font-size line-height icon"
-            "font-weight letter-spacing ."
-            "text-align vertical-align ."
-            "font-style text-decoration ."
-            "text-transform . .";
-
-          /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
-          >* {
-            min-width: 0;
-          }
-        }
-
-        .font-family {
-          grid-area: font-family;
-        }
-
-        .color {
-          grid-area: color;
-        }
-
-        .font-size {
-          grid-area: font-size;
-        }
-
-        .line-height {
-          grid-area: line-height;
-        }
-
-        .letter-spacing {
-          grid-area: letter-spacing;
-        }
-
-        .font-weight {
-          grid-area: font-weight;
-        }
-
-        .text-align {
-          grid-area: text-align;
-        }
-
-        .vertical-align {
-          grid-area: vertical-align;
-        }
-
-        .text-decoration {
-          grid-area: text-decoration;
-        }
-
-        .font-style {
-          grid-area: font-style;
-        }
-
-        .text-transform {
-          grid-area: text-transform;
-        }
-
-        .actions-font {
-          grid-area: icon;
-          display: flex;
-        }
-      }
-
-    }
-
-    label,
-    legend {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-ToggleButtonGroup[data-indicator="true"] {
-      &::before {
-        top: 2px;
-        left: 2px;
-        width: calc(var(--indicator-width) - var(--spacing));
-        height: calc(var(--indicator-height) - var(--spacing));
-        border-radius: var(--radius-sm);
-        background: var(--surface-container-high);
-      }
-
-      .react-aria-ToggleButton {
-        background-color: transparent;
-        border-color: transparent;
-
-        &[data-pressed] {
-          background: transparent;
-          border-color: transparent;
-          color: var(--on-surface);
-        }
-
-        &[data-selected] {
-          background: transparent;
-          border-color: transparent;
-          color: var(--surface);
-
-          &[data-pressed] {
-            background: transparent;
-            border-color: transparent;
-            color: var(--surface);
-          }
-        }
-      }
-    }
-
-    /* Section Header */
-    .section-header {
-      height: var(--header-height);
-      font-size: var(--text-xs);
-      line-height: var(--text-xs);
-      font-weight: var(--font-weight-bold);
-      background-color: var(--surface-variant);
-      border-bottom: 1px solid var(--outline-variant);
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .section-header .section-title {
-      padding: var(--spacing-sm);
-      border-bottom: 0;
-      font-weight: var(--font-weight-semibold);
-      font-size: var(--text-sm);
-    }
-
-    .section-header .header-actions {
-      display: flex;
-    }
-
-    .section-header .header-actions .iconButton {
-      padding: var(--spacing-sm);
-    }
-
-    /* Section Content */
-    .section-content {
-      padding: var(--spacing-sm);
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-sm);
-      background: var(--secondary-container);
-
-      .component-props {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-sm);
-      }
-
-      .properties-aria {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-sm);
-
-        .react-aria-ListBoxItem {
-          flex-direction: row;
-          justify-content: space-between;
-        }
-      }
-
-      .component-fieldset {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-sm);
-      }
-
-      .fieldset-legend {
-        grid-area: label;
-        font-size: var(--text-2xs);
-        color: var(--on-surface-variant);
-      }
-
-      .fieldset-actions {
-        grid-area: icon;
-        display: flex;
-
-        .react-aria-Button {
-          background-color: var(--surface-variant);
-          border-color: transparent;
-          padding: var(--spacing);
-          height: var(--inspector-control-size);
-          width: var(--inspector-control-size);
-          box-shadow: var(--shadow-xs);
-        }
-      }
-
+    /* Styles Panel - Section-specific layouts */
+    &[data-section-id="layout"] .section-content {
       .layout-direction {
-        .direction-alignment-grid {
-          grid-area: input2;
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+          "flex-direction flex-alignment icon"
+          "justify-content flex-alignment icon"
+          "displayGap displayGap icon";
+        gap: var(--spacing) var(--spacing-sm);
 
+        .flex-direction {
+          grid-area: flex-direction;
+        }
+        .flex-alignment {
+          grid-area: flex-alignment;
+
+          /* 3x3 alignment grid */
           .react-aria-ToggleButtonGroup {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -407,18 +87,56 @@
             }
           }
         }
-
-        .justify-control {
-          grid-area: input3;
+        .justify-content {
+          grid-area: justify-content;
+        }
+        .displayGap {
+          grid-area: displayGap;
+        }
+        .actions-icon {
+          grid-area: icon;
           display: flex;
-          flex-direction: column;
+        }
+      }
+
+      .layout-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "padding margin actions-spacing";
+
+        > * {
+          min-width: 0;
+        }
+
+        .padding {
+          grid-area: padding;
+        }
+        .margin {
+          grid-area: margin;
+        }
+        .actions-spacing {
+          grid-area: actions-spacing;
+        }
+
+        /* 확장 모드: 4방향 그리드 */
+        &.layout-container-expanded {
+          grid-template-areas: "layout-padding layout-margin actions-spacing";
+
+          .layout-padding {
+            grid-area: layout-padding;
+          }
+          .layout-margin {
+            grid-area: layout-margin;
+          }
         }
       }
 
       /* ========================================
-       * Layout Spacing Section (Figma-style expandable)
-       * Padding & Margin with 4-direction support
-       * ======================================== */
+         * Layout Spacing Section (Figma-style expandable)
+         * Padding & Margin with 4-direction support
+         * ======================================== */
       .layout-spacing {
         display: flex;
         align-items: center;
@@ -477,17 +195,318 @@
             grid-area: left;
           }
         }
+      }
+    }
 
-        /* Mixed value indicator in label */
-        .layout-padding,
-        .layout-margin {
-          .fieldset-legend {
-            color: var(--on-surface-variant);
+    &[data-section-id="transform"] .section-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr var(--inspector-control-size);
+      grid-template-rows: auto;
+      gap: var(--spacing-sm);
+      grid-template-areas:
+        "width height actions-size"
+        "left top actions-position";
 
-            &:has(+ .react-aria-Group [data-mixed="true"]) {
-              color: var(--color-warning-600);
+      > * {
+        min-width: 0;
+      }
+
+      .width {
+        grid-area: width;
+      }
+      .height {
+        grid-area: height;
+
+        .react-aria-control .control-label svg {
+          transform: rotate(90deg);
+        }
+      }
+      .actions-size {
+        grid-area: actions-size;
+      }
+      .left {
+        grid-area: left;
+      }
+      .top {
+        grid-area: top;
+      }
+      .actions-position {
+        grid-area: actions-position;
+      }
+    }
+
+    &[data-section-id="appearance"] .section-content {
+      .style-background {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas: "background-color background-color icon";
+
+        > * {
+          min-width: 0;
+        }
+      }
+
+      .background-color {
+        grid-area: background-color;
+      }
+
+      .actions-icon {
+        grid-area: icon;
+        display: flex;
+      }
+
+      .style-border {
+        display: grid;
+        grid-template-columns: 1fr 1fr var(--inspector-control-size);
+        grid-template-rows: auto;
+        gap: var(--spacing-sm);
+        grid-template-areas:
+          "border-style border-style border-color"
+          "border-width border-radius icon";
+
+        > * {
+          min-width: 0;
+        }
+      }
+
+      .border-style {
+        grid-area: border-style;
+      }
+
+      .border-color {
+        grid-area: border-color;
+      }
+
+      .border-width {
+        grid-area: border-width;
+      }
+
+      .border-radius {
+        grid-area: border-radius;
+      }
+    }
+
+    &[data-section-id="typography"] .section-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr var(--inspector-control-size);
+      grid-template-rows: auto;
+      gap: var(--spacing-sm);
+      grid-template-areas:
+        "font-family font-family color"
+        "font-size line-height icon"
+        "font-weight letter-spacing ."
+        "text-align vertical-align ."
+        "font-style text-decoration ."
+        "text-transform . .";
+
+      /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
+      > * {
+        min-width: 0;
+      }
+
+      .font-family {
+        grid-area: font-family;
+      }
+
+      .color {
+        grid-area: color;
+      }
+
+      .font-size {
+        grid-area: font-size;
+      }
+
+      .line-height {
+        grid-area: line-height;
+      }
+
+      .letter-spacing {
+        grid-area: letter-spacing;
+      }
+
+      .font-weight {
+        grid-area: font-weight;
+      }
+
+      .text-align {
+        grid-area: text-align;
+      }
+
+      .vertical-align {
+        grid-area: vertical-align;
+      }
+
+      .text-decoration {
+        grid-area: text-decoration;
+      }
+
+      .font-style {
+        grid-area: font-style;
+      }
+
+      .text-transform {
+        grid-area: text-transform;
+      }
+
+      .actions-font {
+        grid-area: icon;
+        display: flex;
+      }
+    }
+
+    label,
+    legend {
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+    }
+
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      &::before {
+        top: 2px;
+        left: 2px;
+        width: calc(var(--indicator-width) - var(--spacing));
+        height: calc(var(--indicator-height) - var(--spacing));
+        border-radius: var(--radius-sm);
+        background: var(--surface-container-high);
+      }
+
+      .react-aria-ToggleButton {
+        background-color: transparent;
+        border-color: transparent;
+
+        &[data-pressed] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--on-surface);
+        }
+
+        &[data-selected] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--surface);
+
+          &[data-pressed] {
+            background: transparent;
+            border-color: transparent;
+            color: var(--surface);
+          }
+        }
+      }
+    }
+
+    /* Section Header */
+    .section-header {
+      height: var(--header-height);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs);
+      font-weight: var(--font-weight-bold);
+      background-color: var(--surface-variant);
+      border-bottom: 1px solid var(--outline-variant);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-header .section-title {
+      padding: var(--spacing-sm);
+      border-bottom: 0;
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--text-sm);
+    }
+
+    .section-header .section-actions {
+      display: flex;
+    }
+
+    .section-header .section-actions .iconButton {
+      padding: var(--spacing-sm);
+    }
+
+    .section-content {
+      padding: var(--spacing-sm);
+
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      .fieldset-actions {
+        grid-area: icon;
+        display: flex;
+        .react-aria-Button {
+          background-color: var(--surface-variant);
+          border-color: transparent;
+          padding: var(--spacing);
+          height: var(--inspector-control-size);
+          width: var(--inspector-control-size);
+          box-shadow: var(--shadow-xs);
+        }
+      }
+    }
+
+    /* Section Content - styles/properties 패널 전용 */
+    /* components 패널은 ComponentList.css에서 별도 스타일 적용 */
+    .panel[data-panel="styles"] .section-content,
+    .panel[data-panel="properties"] .section-content {
+      padding: var(--spacing-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      background: var(--secondary-container);
+
+      .properties-aria {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+
+        .react-aria-ListBoxItem {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      }
+
+      .component-fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .fieldset-legend {
+        grid-area: label;
+        font-size: var(--text-2xs);
+        color: var(--on-surface-variant);
+      }
+
+      .layout-direction {
+        .direction-alignment-grid {
+          grid-area: input2;
+
+          .react-aria-ToggleButtonGroup {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            border-radius: var(--radius-md);
+
+            .react-aria-ToggleButton {
+              margin-inline-start: 0;
+              height: var(--inspector-control-size);
+
+              .alignment-dot {
+                width: var(--spacing);
+                height: var(--spacing);
+                background-color: var(--outline);
+              }
             }
           }
+        }
+
+        .justify-control {
+          grid-area: input3;
+          display: flex;
+          flex-direction: column;
         }
       }
 
@@ -554,7 +573,6 @@
       min-width: 0;
       min-height: var(--inspector-control-size);
       box-shadow: var(--inset-shadow-sm);
-
 
       .react-aria-Select,
       .react-aria-ComboBox {
@@ -649,7 +667,8 @@
         border-radius: var(--border-radius);
         font-size: var(--text-xs);
         line-height: var(--text-xs--line-height);
-        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs) calc(var(--spacing) * 1.378);
+        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
+          calc(var(--spacing) * 1.378);
         padding-inline-start: var(--inspector-label-width);
         flex-direction: row-reverse;
 

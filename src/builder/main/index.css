@@ -395,6 +395,7 @@
         .component-search {
           .component-search-field {
             .react-aria-Input {
+              height: var(--header-height);
               border-width: 0px;
               border-radius: 0px;
               outline: none;

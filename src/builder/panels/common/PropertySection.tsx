@@ -49,7 +49,7 @@ export const PropertySection = memo(function PropertySection({
     <div className="section" data-section-id={id}>
       <div className="section-header">
         <div className="section-title">{title}</div>
-        <div className="header-actions">
+        <div className="section-actions">
           {/* Reset button */}
           {onReset && (
             <button
@@ -87,9 +87,7 @@ export const PropertySection = memo(function PropertySection({
         </div>
       </div>
       {isExpanded && (
-        <div className="section-content">
-          <div className="component-props">{children}</div>
-        </div>
+        <div className="section-content">{children}</div>
       )}
     </div>
   );

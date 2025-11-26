@@ -944,7 +944,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="properties-panel">
+    <div className="panel" data-panel="properties">
       <PanelHeader
         title={multiSelectMode ? `${selectedElementIds.length}개 요소 선택됨` : selectedElement.type}
         actions={
@@ -981,6 +981,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         }
       />
 
+      <div className="panel-contents">
       {/* ⭐ Multi-select status indicator */}
       {multiSelectMode && selectedElementIds.length > 1 && (
         <>
@@ -1059,6 +1060,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
         isOpen={showKeyboardHelp}
         onClose={() => setShowKeyboardHelp(false)}
       />
+      </div>
     </div>
   );
 }
