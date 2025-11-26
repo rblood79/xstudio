@@ -10,8 +10,6 @@ import { persist } from "zustand/middleware";
 import type { StateCreator } from "zustand";
 import type {
   Layout,
-  LayoutCreate,
-  LayoutUpdate,
   SlotInfo,
   LayoutsStoreState,
   LayoutsStoreActions,

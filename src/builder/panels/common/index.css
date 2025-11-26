@@ -4,9 +4,11 @@
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
   }
+
   [data-focus-visible] {
     outline-offset: -2px;
   }
+
   .section {
     display: flex;
     flex-direction: column;
@@ -18,6 +20,176 @@
       align-items: center;
       justify-content: center;
       min-height: 200px;
+    }
+
+    &[data-section-id="layout"] {
+      .section-content {
+        .component-props {
+          .layout-direction {
+            display: grid;
+            grid-template-columns: 1fr 1fr var(--inspector-control-size);
+            grid-template-rows: auto auto auto;
+            grid-template-areas:
+              "flex-direction flex-alignment icon"
+              "justify-content flex-alignment icon"
+              "displayGap displayGap icon";
+            gap: var(--spacing) var(--spacing-sm);
+
+            .flex-direction {
+              grid-area: flex-direction;
+            }
+            .flex-alignment {
+              grid-area: flex-alignment;
+            }
+            .justify-content {
+              grid-area: justify-content;
+            }
+            .displayGap {
+              grid-area: displayGap;
+            }
+            .actions-icon {
+              grid-area: icon;
+              display: flex;
+            }
+          }
+        }
+      }
+    }
+
+    &[data-section-id="appearance"] {
+      .section-content {
+        .component-props {
+          .style-background {
+            display: grid;
+            grid-template-columns: 1fr 1fr var(--inspector-control-size);
+            grid-template-rows: auto;
+            gap: var(--spacing-sm);
+            grid-template-areas:
+              "background-color background-color icon";
+
+            >* {
+              min-width: 0;
+            }
+          }
+
+          .background-color {
+            grid-area: background-color;
+          }
+
+          .actions-icon {
+            grid-area: icon;
+            display: flex;
+          }
+
+          .style-border {
+            display: grid;
+            grid-template-columns: 1fr 1fr var(--inspector-control-size);
+            grid-template-rows: auto;
+            gap: var(--spacing-sm);
+            grid-template-areas:
+              "border-style border-style border-color"
+              "border-width border-radius icon";
+
+            >* {
+              min-width: 0;
+            }
+          }
+
+          .border-style {
+            grid-area: border-style;
+          }
+
+          .border-color {
+            grid-area: border-color;
+          }
+
+          .border-width {
+            grid-area: border-width;
+          }
+
+          .border-radius {
+            grid-area: border-radius;
+          }
+
+          .actions-icon {
+            grid-area: icon;
+            display: flex;
+          }
+        }
+      }
+    }
+
+    &[data-section-id="typography"] {
+      .section-content {
+        .component-props {
+          display: grid;
+          grid-template-columns: 1fr 1fr var(--inspector-control-size);
+          grid-template-rows: auto;
+          gap: var(--spacing-sm);
+          grid-template-areas:
+            "font-family font-family color"
+            "font-size line-height icon"
+            "font-weight letter-spacing ."
+            "text-align vertical-align ."
+            "font-style text-decoration ."
+            "text-transform . .";
+
+          /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
+          >* {
+            min-width: 0;
+          }
+        }
+
+        .font-family {
+          grid-area: font-family;
+        }
+
+        .color {
+          grid-area: color;
+        }
+
+        .font-size {
+          grid-area: font-size;
+        }
+
+        .line-height {
+          grid-area: line-height;
+        }
+
+        .letter-spacing {
+          grid-area: letter-spacing;
+        }
+
+        .font-weight {
+          grid-area: font-weight;
+        }
+
+        .text-align {
+          grid-area: text-align;
+        }
+
+        .vertical-align {
+          grid-area: vertical-align;
+        }
+
+        .text-decoration {
+          grid-area: text-decoration;
+        }
+
+        .font-style {
+          grid-area: font-style;
+        }
+
+        .text-transform {
+          grid-area: text-transform;
+        }
+
+        .actions-font {
+          grid-area: icon;
+          display: flex;
+        }
+      }
+
     }
 
     label,
@@ -58,6 +230,7 @@
         }
       }
     }
+
     /* Section Header */
     .section-header {
       height: var(--header-height);
@@ -130,7 +303,6 @@
         gap: var(--spacing-sm);
       }
 
-      .transform-alignment,
       .spacing-controls-container {
         display: grid;
         grid-template-rows: auto var(--inspector-control-size);
@@ -140,7 +312,6 @@
           "input1 input2 icon";
         gap: var(--spacing) var(--spacing-sm);
 
-        .alignment-controls-horizontal,
         .color-control,
         .size-control-width,
         .position-control-x,
@@ -149,7 +320,6 @@
           display: flex;
         }
 
-        .alignment-controls-vertical,
         .size-control-height,
         .position-control-y {
           grid-area: input2;
@@ -200,12 +370,12 @@
         align-items: flex-end;
         justify-content: space-between;
 
-        > .properties-aria {
+        >.properties-aria {
           flex: 1;
           min-width: 0;
         }
 
-        > .fieldset-actions {
+        >.fieldset-actions {
           flex-shrink: 0;
         }
       }
@@ -302,24 +472,12 @@
           padding: var(--spacing);
           height: var(--inspector-control-size);
           width: var(--inspector-control-size);
+          box-shadow: var(--shadow-xs);
         }
       }
 
       .layout-direction {
-        display: grid;
-        grid-template-rows: auto var(--inspector-control-size);
-        grid-template-columns: 1fr 1fr var(--inspector-control-size);
-        grid-template-areas:
-          "label label label"
-          "input1 input2 icon"
-          "input3 input2 icon"
-          "input4 input2 icon";
-        gap: var(--spacing) var(--spacing-sm);
 
-        .direction-controls {
-          grid-area: input1;
-          display: flex;
-        }
 
         .direction-alignment-grid {
           grid-area: input2;
@@ -347,6 +505,7 @@
         .justify-control {
           grid-area: input3;
           display: flex;
+          flex-direction: column;
         }
 
         .gap-control {
@@ -395,7 +554,7 @@
           gap: var(--spacing-sm);
           align-items: flex-end;
 
-          > .properties-aria {
+          >.properties-aria {
             flex: 1;
             min-width: 0;
           }
@@ -465,6 +624,61 @@
           }
         }
       }
+
+      /* ========================================
+       * Page Layout Selector
+       * Layout assignment info and clear button
+       * ======================================== */
+      .page-layout-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+        background: var(--surface-variant);
+        border-radius: var(--radius-sm);
+        margin-top: var(--spacing-sm);
+      }
+
+      .page-layout-description {
+        margin: 0;
+        font-size: var(--text-xs);
+        color: var(--on-surface-variant);
+        line-height: 1.4;
+      }
+
+      .page-layout-clear {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        background: transparent;
+        border: 1px solid var(--outline);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-xs);
+        color: var(--on-surface-variant);
+        cursor: pointer;
+        transition: all 150ms;
+
+        &:hover {
+          background: var(--error-container);
+          border-color: var(--error);
+          color: var(--on-error-container);
+        }
+
+        &:active {
+          background: var(--error);
+          color: var(--on-error);
+        }
+      }
+    }
+
+    .color-swatch-button {
+      padding: var(--spacing-xs);
+
+      .react-aria-ColorSwatch {
+        height: var(--text-lg);
+        border-radius: var(--radius-sm);
+      }
     }
 
     .react-aria-Group {
@@ -474,6 +688,7 @@
       min-width: 0;
       min-height: var(--inspector-control-size);
       box-shadow: var(--inset-shadow-sm);
+
 
       .react-aria-Select,
       .react-aria-ComboBox {
@@ -488,6 +703,7 @@
           }
         }
       }
+
       .react-aria-UnitComboBox {
         .react-aria-Button {
           width: var(--text-xl);
@@ -567,8 +783,7 @@
         border-radius: var(--border-radius);
         font-size: var(--text-xs);
         line-height: var(--text-xs--line-height);
-        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
-          calc(var(--spacing) * 1.378);
+        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs) calc(var(--spacing) * 1.378);
         padding-inline-start: var(--inspector-label-width);
         flex-direction: row-reverse;
 
@@ -583,6 +798,7 @@
         /* Remove focus ring from indicator */
         .indicator {
           outline: none !important;
+
           &::before {
             height: 100%;
           }
@@ -904,6 +1120,7 @@
     0% {
       transform: rotate(0deg);
     }
+
     100% {
       transform: rotate(360deg);
     }
@@ -914,10 +1131,12 @@
       stroke-dasharray: 1, 150;
       stroke-dashoffset: 0;
     }
+
     50% {
       stroke-dasharray: 90, 150;
       stroke-dashoffset: -35;
     }
+
     100% {
       stroke-dasharray: 90, 150;
       stroke-dashoffset: -124;

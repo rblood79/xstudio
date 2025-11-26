@@ -174,124 +174,133 @@ export function LayoutsTab({
         requestAutoSelectAfterUpdate(bodyElement.id);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree, setSelectedElement, requestAutoSelectAfterUpdate]);
 
-  // ⭐ Layout 전용 Element Tree 렌더링 함수
+  // ⭐ Layout 전용 Element Tree 렌더링 함수 (재귀 호출을 위해 내부 함수로 구현)
   const renderLayoutTree = useCallback((
     tree: ElementTreeItem[],
     onClick: (item: Element) => void,
     onDelete: (item: Element) => Promise<void>,
     depth: number = 0
   ): React.ReactNode => {
-    if (tree.length === 0) return null;
+    // 재귀 호출을 위한 내부 헬퍼 함수
+    const renderTree = (
+      items: ElementTreeItem[],
+      currentDepth: number
+    ): React.ReactNode => {
+      if (items.length === 0) return null;
 
-    return (
-      <>
-        {tree.map((item) => {
-          const hasChildNodes = item.children && item.children.length > 0;
-          const isExpanded = expandedKeys.has(item.id);
+      return (
+        <>
+          {items.map((item) => {
+            const hasChildNodes = item.children && item.children.length > 0;
+            const isExpanded = expandedKeys.has(item.id);
 
-          // Element로 변환 (onClick, onDelete용)
-          const element: Element = {
-            id: item.id,
-            tag: item.tag,
-            parent_id: item.parent_id || null,
-            order_num: item.order_num,
-            props: item.props as ElementProps,
-            deleted: item.deleted,
-            layout_id: currentLayout?.id || null,
-            page_id: null,
-            created_at: "",
-            updated_at: "",
-          };
+            // Element로 변환 (onClick, onDelete용)
+            const element: Element = {
+              id: item.id,
+              tag: item.tag,
+              parent_id: item.parent_id || null,
+              order_num: item.order_num,
+              props: item.props as ElementProps,
+              deleted: item.deleted,
+              layout_id: currentLayout?.id || null,
+              page_id: null,
+              created_at: "",
+              updated_at: "",
+            };
 
-          return (
-            <div
-              key={item.id}
-              data-depth={depth}
-              data-has-children={hasChildNodes}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick(element);
-              }}
-              className="element"
-            >
+            return (
               <div
-                className={`elementItem ${
-                  selectedElementId === item.id ? "active" : ""
-                }`}
+                key={item.id}
+                data-depth={currentDepth}
+                data-has-children={hasChildNodes}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClick(element);
+                }}
+                className="element"
               >
                 <div
-                  className="elementItemIndent"
-                  style={{ width: depth > 0 ? `${depth * 8}px` : "0px" }}
-                ></div>
-                <div
-                  className="elementItemIcon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (hasChildNodes) {
-                      toggleKey(item.id);
-                    }
-                  }}
+                  className={`elementItem ${
+                    selectedElementId === item.id ? "active" : ""
+                  }`}
                 >
-                  {hasChildNodes ? (
-                    <ChevronRight
-                      color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
-                      size={iconProps.size}
-                      style={{
-                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
-                      size={iconProps.size}
-                      style={{ padding: "2px" }}
-                    />
-                  )}
-                </div>
-                <div className="elementItemLabel">
-                  {item.tag === "Slot" && item.props
-                    ? `Slot: ${(item.props as Record<string, unknown>).name || "unnamed"}`
-                    : item.tag}
-                </div>
-                <div className="elementItemActions">
-                  <button className="iconButton" aria-label="Settings">
-                    <Settings2
-                      color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
-                      size={iconProps.size}
-                    />
-                  </button>
-                  {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
-                  {item.tag !== "body" && (
-                    <button
-                      className="iconButton"
-                      aria-label={`Delete ${item.tag}`}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await onDelete(element);
-                      }}
-                    >
-                      <Trash
+                  <div
+                    className="elementItemIndent"
+                    style={{ width: currentDepth > 0 ? `${currentDepth * 8}px` : "0px" }}
+                  ></div>
+                  <div
+                    className="elementItemIcon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (hasChildNodes) {
+                        toggleKey(item.id);
+                      }
+                    }}
+                  >
+                    {hasChildNodes ? (
+                      <ChevronRight
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                        style={{
+                          transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                        style={{ padding: "2px" }}
+                      />
+                    )}
+                  </div>
+                  <div className="elementItemLabel">
+                    {item.tag === "Slot" && item.props
+                      ? `Slot: ${(item.props as Record<string, unknown>).name || "unnamed"}`
+                      : item.tag}
+                  </div>
+                  <div className="elementItemActions">
+                    <button className="iconButton" aria-label="Settings">
+                      <Settings2
                         color={iconProps.color}
                         strokeWidth={iconProps.stroke}
                         size={iconProps.size}
                       />
                     </button>
-                  )}
+                    {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
+                    {item.tag !== "body" && (
+                      <button
+                        className="iconButton"
+                        aria-label={`Delete ${item.tag}`}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await onDelete(element);
+                        }}
+                      >
+                        <Trash
+                          color={iconProps.color}
+                          strokeWidth={iconProps.stroke}
+                          size={iconProps.size}
+                        />
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {isExpanded && hasChildNodes && item.children && (
+                  renderTree(item.children, currentDepth + 1)
+                )}
               </div>
-              {isExpanded && hasChildNodes && item.children && (
-                renderLayoutTree(item.children, onClick, onDelete, depth + 1)
-              )}
-            </div>
-          );
-        })}
-      </>
-    );
+            );
+          })}
+        </>
+      );
+    };
+
+    return renderTree(tree, depth);
   }, [expandedKeys, toggleKey, selectedElementId, currentLayout?.id]);
 
   // Layout 선택 핸들러

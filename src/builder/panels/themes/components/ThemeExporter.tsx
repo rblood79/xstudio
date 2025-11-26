@@ -3,6 +3,7 @@
  * 테마/토큰을 다양한 형식으로 Export
  */
 
+/* eslint-disable local/prefer-copy-paste-hook */
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
@@ -200,7 +201,7 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
                   <span className="code-label">미리보기</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(exportMutation.data!.content);
+                      void navigator.clipboard.writeText(exportMutation.data!.content);
                       alert('클립보드에 복사되었습니다');
                     }}
                     className="copy-btn"

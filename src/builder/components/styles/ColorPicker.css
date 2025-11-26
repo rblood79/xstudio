@@ -8,6 +8,7 @@
  */
 
 @layer components {
+
   /* ========== Base ColorPicker Styles ========== */
   .react-aria-ColorPicker {
     background: none;
@@ -49,6 +50,67 @@
       box-sizing: border-box;
       overflow: auto;
       background: var(--surface-container);
+    }
+
+    .color-picker-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .react-aria-ColorField {
+        width: 100%;
+
+        .react-aria-Input {
+          width: 100%;
+          padding: var(--spacing-sm) var(--spacing);
+          font-size: var(--text-sm);
+          font-family: var(--font-mono);
+          background: var(--surface-container-high);
+          border: 1px solid var(--outline-variant);
+          border-radius: var(--radius-sm);
+          color: var(--on-surface);
+          text-align: center;
+
+          &:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: -2px;
+            border-color: var(--primary);
+          }
+        }
+      }
+    }
+  }
+
+  /* Color swatch button for compact mode */
+  .color-swatch-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing);
+    background: var(--outline-variant);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    min-height: var(--text-sm);
+    box-shadow: var(--inset-shadow-sm);
+
+    &:hover {
+      background: var(--surface-container-high);
+    }
+
+    &[data-pressed] {
+      background: var(--surface-container-highest);
+    }
+
+    &[data-focus-visible] {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+
+    .react-aria-ColorSwatch {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-sm);
     }
   }
 

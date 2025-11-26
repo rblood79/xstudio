@@ -8,7 +8,6 @@
 import { memo, useMemo } from "react";
 import { Layers } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../common";
-import { useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
 import type { SlotInfo } from "../../../../types/builder/layout.types";
 
@@ -28,7 +27,6 @@ export const ElementSlotSelector = memo(function ElementSlotSelector({
   );
   const elements = useStore((state) => state.elements);
   const pages = useStore((state) => state.pages);
-  const layouts = useLayoutsStore((state) => state.layouts);
 
   // Element의 Page → Layout → Slots 찾기
   const slots = useMemo((): SlotInfo[] => {

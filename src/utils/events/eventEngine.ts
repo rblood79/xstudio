@@ -1,3 +1,4 @@
+/* eslint-disable local/prefer-copy-paste-hook */
 import {
     EventAction,
     ElementEvent,

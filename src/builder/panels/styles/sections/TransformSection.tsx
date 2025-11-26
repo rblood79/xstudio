@@ -1,11 +1,12 @@
 /**
  * TransformSection - Transform 스타일 편집 섹션
  *
- * Alignment, Size, Position 편집
+ * Size, Position 편집
+ * Note: Alignment는 Layout 섹션의 3x3 Flex alignment로 통합됨
  */
 
 import { PropertySection, PropertyUnitInput } from '../../common';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../../components';
+import { Button } from '../../../components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
 import {
@@ -13,125 +14,23 @@ import {
   RulerDimensionLine,
   ArrowRightFromLine,
   ArrowDownFromLine,
-  AlignStartVertical,
-  AlignHorizontalJustifyCenter,
-  AlignEndVertical,
-  AlignStartHorizontal,
-  AlignVerticalJustifyCenter,
-  AlignEndHorizontal,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
-import {
-  getStyleValue,
-  getVerticalAlignmentKeys,
-  getHorizontalAlignmentKeys,
-} from '../hooks/useStyleValues';
+import { getStyleValue } from '../hooks/useStyleValues';
 
 interface TransformSectionProps {
   selectedElement: SelectedElement;
 }
 
 export function TransformSection({ selectedElement }: TransformSectionProps) {
-  const {
-    updateStyle,
-    resetStyles,
-    handleVerticalAlignment,
-    handleHorizontalAlignment,
-  } = useStyleActions();
+  const { updateStyle, resetStyles } = useStyleActions();
 
   const handleReset = () => {
-    resetStyles(['alignItems', 'justifyContent', 'width', 'height', 'top', 'left']);
+    resetStyles(['width', 'height', 'top', 'left']);
   };
 
   return (
     <PropertySection id="transform" title="Transform" onReset={handleReset}>
-      <fieldset className="transform-alignment">
-        <legend className="fieldset-legend">Alignment</legend>
-        <div className="alignment-controls-horizontal">
-          <ToggleButtonGroup
-            aria-label="Flex alignment-vertical"
-            indicator
-            selectedKeys={getVerticalAlignmentKeys(selectedElement)}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0] as string;
-              if (value) {
-                console.log('🎯 Flex alignment-vertical 선택 변경:', keys);
-                console.log('✅ display: flex + alignItems 설정 시작');
-                handleVerticalAlignment(value);
-              }
-            }}
-          >
-            <ToggleButton id="align-vertical-start">
-              <AlignStartVertical
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-            <ToggleButton id="align-vertical-center">
-              <AlignHorizontalJustifyCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-            <ToggleButton id="align-vertical-end">
-              <AlignEndVertical
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-        <div className="alignment-controls-vertical">
-          <ToggleButtonGroup
-            aria-label="Flex alignment-horizontal"
-            indicator
-            selectedKeys={getHorizontalAlignmentKeys(selectedElement)}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0] as string;
-              if (value) {
-                console.log('🎯 Flex alignment-horizontal 선택 변경:', keys);
-                console.log('✅ display: flex + justifyContent 설정 시작');
-                handleHorizontalAlignment(value);
-              }
-            }}
-          >
-            <ToggleButton id="align-horizontal-start">
-              <AlignStartHorizontal
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-            <ToggleButton id="align-horizontal-center">
-              <AlignVerticalJustifyCenter
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-            <ToggleButton id="align-horizontal-end">
-              <AlignEndHorizontal
-                color={iconProps.color}
-                size={iconProps.size}
-                strokeWidth={iconProps.stroke}
-              />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-        <div className="fieldset-actions">
-          <Button>
-            <EllipsisVertical
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
-        </div>
-      </fieldset>
-
       <div className="transform-size">
         <PropertyUnitInput
           icon={RulerDimensionLine}

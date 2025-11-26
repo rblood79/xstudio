@@ -5,6 +5,8 @@
  * Preview 내에서 반응형 값을 관리하는 데 사용.
  */
 
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useMemo } from "react";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import type {

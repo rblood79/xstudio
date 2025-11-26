@@ -30,16 +30,17 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
   };
 
   return (
-    <PropertySection id="appearance" title="Style" onReset={handleReset}>
+    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
       <div className="style-background">
         <PropertyColor
           icon={Square}
           label="Background Color"
+          className="background-color"
           value={getStyleValue(selectedElement, 'backgroundColor', '#FFFFFF')}
           onChange={(value) => updateStyle('backgroundColor', value)}
           placeholder="#FFFFFF"
         />
-        <div className="fieldset-actions">
+        <div className="fieldset-actions actions-icon">
           <Button>
             <EllipsisVertical
               color={iconProps.color}
@@ -49,11 +50,12 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           </Button>
         </div>
       </div>
-      <div className="border-controls-container">
+
+      <div className="style-border">
         <PropertyColor
           icon={Square}
-          label="Border Color"
-          className="color-control"
+          label="Color"
+          className="border-color"
           value={getStyleValue(selectedElement, 'borderColor', '#000000')}
           onChange={(value) => updateStyle('borderColor', value)}
           placeholder="#000000"
@@ -61,7 +63,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
         <PropertyUnitInput
           icon={SquareDashed}
           label="Border Width"
-          className="border-width-control"
+          className="border-width"
           value={getStyleValue(selectedElement, 'borderWidth', '0px')}
           units={['reset', 'px']}
           onChange={(value) => updateStyle('borderWidth', value)}
@@ -71,7 +73,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
         <PropertyUnitInput
           icon={SquareRoundCorner}
           label="Border Radius"
-          className="border-radius-control"
+          className="border-radius"
           value={getStyleValue(selectedElement, 'borderRadius', '0px')}
           units={['reset', 'px', '%', 'rem', 'em']}
           onChange={(value) => updateStyle('borderRadius', value)}
@@ -81,7 +83,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
         <PropertySelect
           icon={SquareDashedBottom}
           label="Border Style"
-          className="border-style-control"
+          className="border-style"
           value={getStyleValue(selectedElement, 'borderStyle', 'solid')}
           options={[
             { value: 'reset', label: 'Reset' },
@@ -97,7 +99,7 @@ export function AppearanceSection({ selectedElement }: AppearanceSectionProps) {
           ]}
           onChange={(value) => updateStyle('borderStyle', value)}
         />
-        <div className="fieldset-actions">
+        <div className="fieldset-actions actions-icon">
           <Button>
             <EllipsisVertical
               color={iconProps.color}

@@ -60,7 +60,7 @@ interface FourWayGridProps {
   allowNegative?: boolean;
 }
 
-function FourWayGrid({ values, onChange, allowNegative = false }: FourWayGridProps) {
+function FourWayGrid({ values, onChange }: FourWayGridProps) {
   const handleChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', inputValue: string) => {
     // 숫자만 추출하고 px 단위 추가
     const numericValue = inputValue.replace(/[^0-9.-]/g, '');
@@ -149,8 +149,9 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
 
   return (
     <PropertySection id="layout" title="Layout" onReset={handleReset}>
-      <fieldset className="layout-direction">
-        <div className="direction-controls">
+      <div className="layout-direction">
+        <div className="direction-controls flex-direction">
+          <legend className="fieldset-legend">Direction</legend>
           <ToggleButtonGroup
             aria-label="Flex direction"
             indicator
@@ -183,7 +184,8 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
             </ToggleButton>
           </ToggleButtonGroup>
         </div>
-        <div className="direction-alignment-grid">
+        <div className="direction-alignment-grid flex-alignment">
+          <legend className="fieldset-legend">Alignment</legend>
           <ToggleButtonGroup
             aria-label="Flex alignment"
             indicator
@@ -239,7 +241,8 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
             />
           </Button>
         </div>
-        <div className="justify-control">
+        <div className="justify-control justify-content">
+          <legend className="fieldset-legend">Justify</legend>
           <ToggleButtonGroup
             aria-label="Justify content alignment"
             indicator
@@ -277,14 +280,15 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
         </div>
         <PropertyUnitInput
           icon={LayoutGrid}
-          className="gap-control"
+          label="Gap"
+          className="displayGap"
           value={getStyleValue(selectedElement, 'gap', '0px')}
           units={['reset', 'px', 'rem', 'em']}
           onChange={(value) => updateStyle('gap', value)}
           min={0}
           max={500}
         />
-      </fieldset>
+      </div>
 
       {/* Spacing Section: Padding & Margin */}
       {!isSpacingExpanded ? (
@@ -293,7 +297,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           <PropertyUnitInput
             icon={SquareSquare}
             label="Padding"
-            className="layout-padding"
+            className="padding"
             value={getStyleValue(selectedElement, 'padding', '0px')}
             units={['reset', 'px', 'rem', 'em']}
             onChange={(value) => updateStyle('padding', value)}
@@ -303,7 +307,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           <PropertyUnitInput
             icon={Frame}
             label="Margin"
-            className="layout-margin"
+            className="margin"
             value={getStyleValue(selectedElement, 'margin', '0px')}
             units={['reset', 'px', 'rem', 'em']}
             onChange={(value) => updateStyle('margin', value)}

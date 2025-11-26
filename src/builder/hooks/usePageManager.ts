@@ -87,7 +87,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             // ⭐ Layout/Slot System: 페이지에 적용된 Layout의 요소들도 함께 로드
             const { pages } = useStore.getState();
             const currentPage = pages.find(p => p.id === pageId);
-            let allElements = [...elementsData];
+            const allElements = [...elementsData];
 
             if (currentPage?.layout_id) {
                 const layoutElements = await db.elements.getByLayout(currentPage.layout_id);

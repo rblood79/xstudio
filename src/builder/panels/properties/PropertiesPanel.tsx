@@ -263,7 +263,8 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX
   // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
   const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
-  const selectedElementIds = useStore((state) => state.selectedElementIds) || [];
+  const rawSelectedElementIds = useStore((state) => state.selectedElementIds);
+  const selectedElementIds = useMemo(() => rawSelectedElementIds || [], [rawSelectedElementIds]);
   const currentPageId = useStore((state) => state.currentPageId);
   const elements = useStore((state) => state.elements);
 

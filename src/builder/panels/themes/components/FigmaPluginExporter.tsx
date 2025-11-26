@@ -3,6 +3,7 @@
  * XStudio 토큰을 Figma Plugin 형식으로 Export
  */
 
+/* eslint-disable local/prefer-copy-paste-hook */
 import { useState } from 'react';
 import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
@@ -298,7 +299,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
                 <div className="file-actions">
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(exportMutation.data!.files[selectedFile]!);
+                      void navigator.clipboard.writeText(exportMutation.data!.files[selectedFile]!);
                       alert('클립보드에 복사되었습니다');
                     }}
                     className="copy-btn"
