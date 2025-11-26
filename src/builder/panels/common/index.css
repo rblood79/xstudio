@@ -430,8 +430,8 @@
     }
 
     .section-content {
+      background-color: var(--secondary-container);
       padding: var(--spacing-sm);
-
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm);
