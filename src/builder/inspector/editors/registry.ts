@@ -61,6 +61,8 @@ async function importEditor(
 export interface EditorContext {
   layoutId?: string | null;
   pageId?: string | null;
+  /** 현재 편집 모드 (page/layout) - body 에디터 선택 시 사용 */
+  editMode?: "page" | "layout";
 }
 
 /**
@@ -73,12 +75,14 @@ export async function getEditor(
   type: string,
   context?: EditorContext
 ): Promise<ComponentType<ComponentEditorProps> | null> {
-  // ⭐ Special case: body 타입은 context에 따라 다른 Editor 반환
+  // ⭐ Special case: body 타입은 현재 편집 모드에 따라 다른 Editor 반환
+  // ⭐ Phase 6 Fix: layout_id가 아닌 editMode를 기준으로 결정
+  // - Page 모드: PageBodyEditor (Layout 선택 기능)
+  // - Layout 모드: LayoutBodyEditor (프리셋 + Slot 생성)
   if (type === "body") {
-    const editorName = context?.layoutId
-      ? "LayoutBodyEditor"
-      : "PageBodyEditor";
-    const cacheKey = `body:${context?.layoutId ? "layout" : "page"}`;
+    const isLayoutMode = context?.editMode === "layout";
+    const editorName = isLayoutMode ? "LayoutBodyEditor" : "PageBodyEditor";
+    const cacheKey = `body:${isLayoutMode ? "layout" : "page"}`;
 
     // 캐시 확인
     if (editorCache.has(cacheKey)) {

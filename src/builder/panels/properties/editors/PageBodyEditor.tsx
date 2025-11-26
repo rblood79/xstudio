@@ -24,14 +24,15 @@ export const PageBodyEditor = memo(
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
-    // ⭐ 최적화: customId와 pageId를 현재 시점에만 가져오기 (Zustand 구독 방지)
-    const { customId, pageId } = useMemo(() => {
+    // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)
+    const customId = useMemo(() => {
       const element = useStore.getState().elementsMap.get(elementId);
-      return {
-        customId: element?.customId || "",
-        pageId: element?.page_id || null,
-      };
+      return element?.customId || "";
     }, [elementId]);
+
+    // ⭐ Phase 6 Fix: pageId는 요소의 page_id가 아닌 현재 편집 중인 페이지 ID 사용
+    // Page 모드에서 Layout body가 선택되어도 현재 페이지의 Layout을 선택할 수 있어야 함
+    const currentPageId = useStore((state) => state.currentPageId);
 
     // ⭐ 최적화: 각 필드별 onChange 함수를 개별 메모이제이션
     const handleClassNameChange = useCallback(
@@ -68,7 +69,7 @@ export const PageBodyEditor = memo(
         </PropertySection>
 
         {/* ⭐ Page 전용: Layout 선택 */}
-        {pageId && <PageLayoutSelector pageId={pageId} />}
+        {currentPageId && <PageLayoutSelector pageId={currentPageId} />}
 
         {/* Layout Section */}
         <PropertySection title="Layout">
