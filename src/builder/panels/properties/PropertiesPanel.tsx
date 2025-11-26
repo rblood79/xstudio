@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import type { ComponentType } from "react";
 import type { PanelProps } from "../core/types";
 import { getEditor, type EditorContext } from "../../inspector/editors/registry";
+import { useEditModeStore } from "../../stores/editMode";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
@@ -45,14 +46,18 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
   const [Editor, setEditor] = useState<ComponentType<ComponentEditorProps> | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ⭐ Phase 6: body 타입의 경우 layout_id 유무에 따라 다른 Editor 로드
+  // ⭐ Phase 6 Fix: body 타입의 경우 현재 편집 모드(editMode)에 따라 다른 Editor 로드
+  // - Page 모드: PageBodyEditor
+  // - Layout 모드: LayoutBodyEditor
+  const editMode = useEditModeStore((state) => state.mode);
   const elementContext = useMemo((): EditorContext => {
     const element = useStore.getState().elementsMap.get(selectedElement.id);
     return {
       layoutId: element?.layout_id || null,
       pageId: element?.page_id || null,
+      editMode, // ⭐ 현재 편집 모드 전달
     };
-  }, [selectedElement.id]);
+  }, [selectedElement.id, editMode]);
 
   // 요소 타입에 맞는 에디터 동적 로드
   useEffect(() => {
@@ -100,7 +105,7 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedElement.type, elementContext.layoutId]);
+  }, [selectedElement.type, elementContext.editMode]);
 
   // handleUpdate는 항상 안정적인 함수 (getState 사용)
   const handleUpdate = useCallback((updatedProps: Record<string, unknown>) => {
