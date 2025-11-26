@@ -416,11 +416,6 @@
           display: flex;
           flex-direction: column;
         }
-
-        .gap-control {
-          grid-area: input4;
-          display: flex;
-        }
       }
 
       /* ========================================
@@ -453,19 +448,6 @@
             &:hover {
               background: var(--outline-variant);
             }
-          }
-        }
-
-        /* Collapsed mode: single inputs side by side */
-        .layout-container {
-          display: flex;
-          flex-direction: row;
-          gap: var(--spacing-sm);
-          align-items: flex-end;
-
-          >.properties-aria {
-            flex: 1;
-            min-width: 0;
           }
         }
 
@@ -1052,13 +1034,14 @@
     }
   }
 
-  .loading-message {
+  /* Loading Spinner 전용 - .loading-state 컨텍스트 */
+  .loading-state .loading-message {
     font-size: var(--text-sm);
     color: var(--on-surface);
     text-align: center;
   }
 
-  .loading-description {
+  .loading-state .loading-description {
     font-size: var(--text-xs);
     color: var(--on-surface-variant);
     text-align: center;
