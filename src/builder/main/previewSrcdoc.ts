@@ -130,11 +130,19 @@ export function generatePreviewSrcdoc(projectId: string): string {
 
 /**
  * Preview iframe이 srcdoc 모드를 사용해야 하는지 여부
+ *
+ * 테스트 방법:
+ * 1. 브라우저 콘솔에서: window.__USE_SRCDOC__ = true
+ * 2. 또는 이 함수에서 직접 return true
+ *
  * 현재는 false로 설정하여 기존 src 방식 유지
- * Phase 1 완료 후 true로 변경
  */
 export function shouldUseSrcdoc(): boolean {
+  // 브라우저 콘솔에서 테스트: window.__USE_SRCDOC__ = true
+  if (typeof window !== 'undefined' && (window as unknown as { __USE_SRCDOC__?: boolean }).__USE_SRCDOC__) {
+    return true;
+  }
+
   // TODO: Phase 1 완료 후 true로 변경
-  // return true;
   return false;
 }
