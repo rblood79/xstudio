@@ -24,6 +24,7 @@
 - [CSS Architecture & Theme System (2025-11-09)](#css-architecture--theme-system)
 - [M3 Color System Guide (2025-11-19)](#m3-color-system-guide)
 - [Panel System Standardization (2025-11-13)](#panel-system-standardization)
+- [Layout Preset System (2025-11-26)](#layout-preset-system)
 
 ---
 
@@ -575,9 +576,60 @@ src/builder/panels/
 
 ---
 
+## Layout Preset System
+
+**Status**: ✅ Complete (2025-11-26)
+
+### Overview
+Layout body에 미리 정의된 레이아웃 구조를 적용하고 Slot을 자동 생성하는 시스템.
+
+### Key Features
+- **Body 에디터 분리**: PageBodyEditor (Layout 선택) / LayoutBodyEditor (프리셋 + Slot)
+- **9개 프리셋**: Basic(3), Sidebar(2), Complex(2), Dashboard(2)
+- **SVG 미리보기**: PresetPreview 컴포넌트로 시각적 썸네일
+- **기존 Slot 처리**: 덮어쓰기/병합/취소 옵션 다이얼로그
+- **History 통합**: addComplexElement로 단일 엔트리 기록
+- **containerStyle 자동 적용**: CSS Grid/Flexbox
+
+### Files
+```
+src/builder/panels/properties/editors/
+├── PageBodyEditor.tsx           # Page body 전용
+├── LayoutBodyEditor.tsx         # Layout body 전용
+└── LayoutPresetSelector/
+    ├── index.tsx                # 메인 컴포넌트
+    ├── presetDefinitions.ts     # 9개 프리셋 정의
+    ├── types.ts                 # 타입 정의
+    ├── PresetPreview.tsx        # SVG 썸네일
+    ├── ExistingSlotDialog.tsx   # 확인 다이얼로그
+    ├── usePresetApply.ts        # 적용 로직
+    └── styles.css               # 스타일
+```
+
+### Preset Categories
+
+| Category | Presets |
+|----------|---------|
+| **Basic** | 전체화면, 수직 2단, 수직 3단 |
+| **Sidebar** | 좌측 사이드바, 우측 사이드바 |
+| **Complex** | Holy Grail, 3열 레이아웃 |
+| **Dashboard** | 대시보드, 대시보드 (위젯) |
+
+### Performance Optimizations
+- `memo` + 커스텀 비교 함수
+- `useMemo`로 Zustand 구독 방지
+- `useCallback`으로 onChange 개별 메모이제이션
+- SVG rect 요소 캐싱
+
+### Documentation
+- [LAYOUT_PRESET_SYSTEM.md](features/LAYOUT_PRESET_SYSTEM.md)
+- [LAYOUT_SLOT_SYSTEM_PLAN_V2.md](LAYOUT_SLOT_SYSTEM_PLAN_V2.md)
+
+---
+
 ## Summary Statistics
 
-### Total Features Completed: 18
+### Total Features Completed: 19
 ### Total Lines of Code Added: ~15,000+
 ### Code Reduction Achieved: 37-88% in refactored areas
 ### Performance Improvements:
@@ -591,9 +643,10 @@ src/builder/panels/
 ✅ Performance optimization (RAF, virtual scrolling)
 ✅ Complete theme system isolation
 ✅ Panel system standardization
+✅ Layout Preset System with Slot auto-creation
 ✅ Comprehensive documentation
 
 ---
 
-**Last Updated**: 2025-11-20
-**Next Steps**: See CLAUDE.md for planned features (Context Menu System, Dataset Component Architecture)
+**Last Updated**: 2025-11-26
+**Next Steps**: See [PLANNED_FEATURES.md](PLANNED_FEATURES.md) for upcoming implementations

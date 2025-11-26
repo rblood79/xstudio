@@ -314,7 +314,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
             min={0}
             max={500}
           />
-          <div className="fieldset-actions">
+          <div className="fieldset-actions actions-spacing">
             <Button
               onPress={() => setIsSpacingExpanded(true)}
               aria-label="Expand spacing to 4-way input"
@@ -329,7 +329,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
         </div>
       ) : (
         /* 확장 모드: 4방향 그리드 입력 */
-        <div className="layout-container">
+        <div className="layout-container layout-container-expanded">
           <fieldset className="properties-aria property-unit-input layout-padding">
             <legend className="fieldset-legend">Padding</legend>
             <div className="react-aria-Group layout-spacing">
@@ -349,7 +349,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
               />
             </div>
           </fieldset>
-          <div className="fieldset-actions">
+          <div className="fieldset-actions actions-spacing">
             <Button
               onPress={() => setIsSpacingExpanded(false)}
               aria-label="Collapse spacing to single input"

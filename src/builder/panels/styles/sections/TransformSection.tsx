@@ -31,67 +31,64 @@ export function TransformSection({ selectedElement }: TransformSectionProps) {
 
   return (
     <PropertySection id="transform" title="Transform" onReset={handleReset}>
-      <div className="transform-size">
-        <PropertyUnitInput
-          icon={RulerDimensionLine}
-          label="Width"
-          value={getStyleValue(selectedElement, 'width', 'auto')}
-          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-          onChange={(value) => updateStyle('width', value)}
-          min={0}
-          max={9999}
-        />
-        <PropertyUnitInput
-          icon={RulerDimensionLine}
-          label="Height"
-          className="transform-size-height"
-          value={getStyleValue(selectedElement, 'height', 'auto')}
-          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-          onChange={(value) => updateStyle('height', value)}
-          min={0}
-          max={9999}
-        />
-        <div className="fieldset-actions">
-          <Button>
-            <EllipsisVertical
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
-        </div>
+      <PropertyUnitInput
+        icon={RulerDimensionLine}
+        label="Width"
+        className="width"
+        value={getStyleValue(selectedElement, 'width', 'auto')}
+        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        onChange={(value) => updateStyle('width', value)}
+        min={0}
+        max={9999}
+      />
+      <PropertyUnitInput
+        icon={RulerDimensionLine}
+        label="Height"
+        className="height"
+        value={getStyleValue(selectedElement, 'height', 'auto')}
+        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        onChange={(value) => updateStyle('height', value)}
+        min={0}
+        max={9999}
+      />
+      <div className="fieldset-actions actions-size">
+        <Button>
+          <EllipsisVertical
+            color={iconProps.color}
+            size={iconProps.size}
+            strokeWidth={iconProps.stroke}
+          />
+        </Button>
       </div>
 
-      <div className="transform-position">
-        <PropertyUnitInput
-          icon={ArrowRightFromLine}
-          label="Left"
-          className="transform-position-left"
-          value={getStyleValue(selectedElement, 'left', 'auto')}
-          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-          onChange={(value) => updateStyle('left', value)}
-          min={-9999}
-          max={9999}
-        />
-        <PropertyUnitInput
-          icon={ArrowDownFromLine}
-          label="Top"
-          className="transform-position-top"
-          value={getStyleValue(selectedElement, 'top', 'auto')}
-          units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-          onChange={(value) => updateStyle('top', value)}
-          min={-9999}
-          max={9999}
-        />
-        <div className="fieldset-actions">
-          <Button>
-            <EllipsisVertical
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.stroke}
-            />
-          </Button>
-        </div>
+      <PropertyUnitInput
+        icon={ArrowRightFromLine}
+        label="Left"
+        className="left"
+        value={getStyleValue(selectedElement, 'left', 'auto')}
+        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        onChange={(value) => updateStyle('left', value)}
+        min={-9999}
+        max={9999}
+      />
+      <PropertyUnitInput
+        icon={ArrowDownFromLine}
+        label="Top"
+        className="top"
+        value={getStyleValue(selectedElement, 'top', 'auto')}
+        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        onChange={(value) => updateStyle('top', value)}
+        min={-9999}
+        max={9999}
+      />
+      <div className="fieldset-actions actions-position">
+        <Button>
+          <EllipsisVertical
+            color={iconProps.color}
+            size={iconProps.size}
+            strokeWidth={iconProps.stroke}
+          />
+        </Button>
       </div>
     </PropertySection>
   );
