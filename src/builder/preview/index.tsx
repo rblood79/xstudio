@@ -115,11 +115,64 @@ function Preview() {
     }
   }, [handleSetPageInfo]); // handleSetPageInfo는 useCallback으로 안정적
 
+  /**
+   * ⭐ iframe 격리: 링크 클릭 가로채기
+   *
+   * Bolt, v0 등과 같이 iframe 내에서 링크 클릭을 가로채서:
+   * - 내부 링크 (/ 시작): postMessage로 부모에게 전달 (Builder가 처리)
+   * - 외부 링크 (http:// 등): 새 탭에서 열기 (iframe 보호)
+   *
+   * 이렇게 하면 iframe 자체는 절대 네비게이션되지 않음
+   */
+  const handleLinkClick = useCallback((e: MouseEvent) => {
+    // 클릭된 요소에서 가장 가까운 <a> 태그 찾기
+    const target = e.target as HTMLElement;
+    const anchor = target.closest('a');
+
+    if (!anchor) return;
+
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+
+    // 이미 target="_blank"인 경우는 기본 동작 허용
+    if (anchor.getAttribute('target') === '_blank') return;
+
+    // 외부 URL 패턴: http://, https://, //, mailto:, tel:, javascript:
+    const externalUrlPattern = /^(https?:\/\/|\/\/|mailto:|tel:|javascript:)/i;
+    const isExternal = externalUrlPattern.test(href);
+
+    // 앵커 링크 (#으로 시작)는 기본 동작 허용
+    if (href.startsWith('#')) return;
+
+    // 기본 동작 중지 (iframe 네비게이션 방지)
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isExternal) {
+      // 외부 링크: 새 탭에서 열기 (보안상 iframe 내에서 외부 사이트 로드 방지)
+      window.open(href, '_blank', 'noopener,noreferrer');
+      console.log('🔗 [Preview] External link opened in new tab:', href);
+    } else {
+      // 내부 링크: postMessage로 부모에게 네비게이션 요청
+      window.parent.postMessage({
+        type: 'NAVIGATE_TO_PAGE',
+        payload: {
+          path: href,
+          replace: false
+        }
+      }, window.location.origin);
+      console.log('🔗 [Preview] Internal navigation requested:', href);
+    }
+  }, []);
+
   // ✅ PREVIEW_READY는 한 번만 전송 (mount 시에만)
   useEffect(() => {
     console.log('🖼️ [Preview] Mounting - registering message listener');
 
     window.addEventListener("message", messageHandler);
+
+    // ⭐ iframe 격리: 모든 링크 클릭 가로채기 (capture phase에서 처리)
+    document.addEventListener('click', handleLinkClick, true);
 
     // Preview iframe임을 표시 (Builder CSS 분리를 위해)
     document.body.setAttribute('data-preview', 'true');
@@ -135,9 +188,10 @@ function Preview() {
     return () => {
       console.log('🧹 [Preview] Unmounting - removing message listener');
       window.removeEventListener("message", messageHandler);
+      document.removeEventListener('click', handleLinkClick, true);
       document.body.removeAttribute('data-preview');
     };
-  }, [messageHandler]); // messageHandler는 변경되지 않으므로 한 번만 실행
+  }, [messageHandler, handleLinkClick]); // messageHandler는 변경되지 않으므로 한 번만 실행
 
   document.documentElement.classList.add(styles.root);
 
