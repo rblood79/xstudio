@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useStore } from '../stores';
+import { generatePreviewSrcdoc, shouldUseSrcdoc } from './previewSrcdoc';
 
 export interface BuilderWorkspaceProps {
     projectId?: string;
@@ -26,6 +27,13 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
     const currentBreakpoint = breakpoints.find(bp => bp.id === Array.from(breakpoint)[0]);
     const showElementBorders = useStore((state) => state.showElementBorders);
     const showElementLabels = useStore((state) => state.showElementLabels);
+
+    // srcdoc 모드 여부 및 srcdoc 콘텐츠 생성
+    const useSrcdoc = shouldUseSrcdoc();
+    const srcdocContent = useMemo(() => {
+        if (!useSrcdoc || !projectId) return null;
+        return generatePreviewSrcdoc(projectId);
+    }, [useSrcdoc, projectId]);
 
     // Phase 2.2 최적화: useRef 패턴으로 리스너 재등록 방지
     const onMessageRef = React.useRef(onMessage);
@@ -115,14 +123,32 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
                         borderWidth: currentBreakpoint?.id === 'screen' ? '0px' : '1px'
                     }}
                 >
-                    <iframe
-                        id="previewFrame"
-                        src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
-                        style={{ width: "100%", height: "100%", border: "none" }}
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                        title="XStudio Preview"
-                        onLoad={onIframeLoad}
-                    />
+                    {/*
+                      * Preview iframe
+                      * - srcdoc 모드: 완전히 독립된 Preview Runtime (권장)
+                      * - src 모드: 기존 방식 (동일 앱 내 /preview 라우트)
+                      *
+                      * TODO: Phase 1 완료 후 shouldUseSrcdoc()을 true로 변경
+                      */}
+                    {useSrcdoc && srcdocContent ? (
+                        <iframe
+                            id="previewFrame"
+                            srcDoc={srcdocContent}
+                            style={{ width: "100%", height: "100%", border: "none" }}
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                            title="XStudio Preview"
+                            onLoad={onIframeLoad}
+                        />
+                    ) : (
+                        <iframe
+                            id="previewFrame"
+                            src={projectId ? `/preview/${projectId}?isIframe=true` : "/preview?isIframe=true"}
+                            style={{ width: "100%", height: "100%", border: "none" }}
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                            title="XStudio Preview"
+                            onLoad={onIframeLoad}
+                        />
+                    )}
                     {children}
                 </div>
             </div>
