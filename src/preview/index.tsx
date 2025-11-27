@@ -23,28 +23,19 @@ const injectBaseStyles = () => {
       box-sizing: border-box;
     }
 
-    html, body, #preview-root {
+    html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
     }
 
+    /* ⭐ body가 React 루트이자 body element로 사용됨 */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       line-height: 1.5;
       color: var(--text-color, #1a1a1a);
       background: var(--background-color, #ffffff);
-    }
-
-    .preview-container {
-      width: 100%;
-      min-height: 100%;
-    }
-
-    .preview-body {
-      width: 100%;
-      min-height: 100%;
     }
 
     .preview-empty {
@@ -93,20 +84,14 @@ function initPreviewRuntime() {
   // Preview 마커 설정
   document.body.setAttribute('data-preview', 'true');
 
-  // Root 엘리먼트 찾기 또는 생성
-  let root = document.getElementById('preview-root');
-
-  if (!root) {
-    root = document.createElement('div');
-    root.id = 'preview-root';
-    document.body.appendChild(root);
-  }
-
-  // React 앱 렌더링
-  const reactRoot = createRoot(root);
+  // ⭐ 원천적 해결: React를 document.body에 직접 마운트
+  // - DOM 트리와 데이터 트리가 완벽히 일치
+  // - body element가 실제 <body> 태그와 1:1 매핑
+  // - 에디터 Overlay는 Builder 측(iframe 바깥)에서 처리되므로 충돌 없음
+  const reactRoot = createRoot(document.body);
   reactRoot.render(<PreviewApp />);
 
-  console.log('[Preview Runtime] Initialized');
+  console.log('[Preview Runtime] Initialized - React mounted directly on document.body');
 }
 
 // ============================================

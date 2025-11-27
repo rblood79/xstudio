@@ -11,18 +11,17 @@
 
 const BASE_STYLES = `
   * { box-sizing: border-box; }
-  html, body, #preview-root {
+  html, body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
   }
+  /* ⭐ body가 React 루트이자 body element로 사용됨 (DOM/데이터 트리 일치) */
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;
   }
-  .preview-container { width: 100%; min-height: 100%; }
-  .preview-body { width: 100%; min-height: 100%; }
   .preview-empty, .preview-loading {
     display: flex;
     align-items: center;
@@ -47,6 +46,7 @@ const BASE_STYLES = `
 export function generateDevSrcdoc(projectId: string): string {
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
   // React Refresh preamble 전역 변수를 먼저 설정해야 함
+  // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
   return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -57,9 +57,7 @@ export function generateDevSrcdoc(projectId: string): string {
   <style>${BASE_STYLES}</style>
 </head>
 <body data-preview="true" data-project-id="${projectId}">
-  <div id="preview-root">
-    <div class="preview-loading">Loading Preview Runtime...</div>
-  </div>
+  <div class="preview-loading">Loading Preview Runtime...</div>
   <script>
     // React Refresh preamble 전역 변수 설정 (모듈 로드 전에 필요)
     // @vitejs/plugin-react-swc가 이 변수들을 확인함
@@ -81,13 +79,13 @@ export function generateDevSrcdoc(projectId: string): string {
           console.warn('[Preview] React Refresh not available:', e.message);
         }
 
-        // 3. preview 로드
+        // 3. preview 로드 (React가 body에 직접 마운트됨)
         await import('/src/preview/index.tsx');
 
         console.log('[Preview] Runtime loaded successfully');
       } catch (err) {
         console.error('[Preview] Failed to load preview:', err);
-        document.getElementById('preview-root').innerHTML =
+        document.body.innerHTML =
           '<div class="preview-loading">Failed to load Preview Runtime: ' + err.message + '</div>';
       }
     }
@@ -126,6 +124,7 @@ export function generateProdSrcdoc(projectId: string): string {
     return generateDevSrcdoc(projectId);
   }
 
+  // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
   return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -137,7 +136,6 @@ export function generateProdSrcdoc(projectId: string): string {
   ${previewCSS ? `<style>${previewCSS}</style>` : ''}
 </head>
 <body data-preview="true" data-project-id="${projectId}">
-  <div id="preview-root"></div>
   <script>${previewBundle}</script>
 </body>
 </html>
