@@ -38,6 +38,52 @@ function PreviewContent() {
     setGlobalNavigate(navigate);
   }, [navigate]);
 
+  // ⭐ 실제 <body> 태그에 body element의 속성 적용 (가짜 body div 제거)
+  useEffect(() => {
+    // body element 찾기 (Layout body 또는 Page body)
+    let bodyElement: PreviewElement | undefined;
+
+    if (currentLayoutId && currentPageId) {
+      // Layout 모드: Layout의 body 사용
+      bodyElement = elements.find((el) => el.tag === 'body' && el.layout_id === currentLayoutId && !el.parent_id);
+    } else if (currentLayoutId && !currentPageId) {
+      // Layout 편집 모드: Layout의 body 사용
+      bodyElement = elements.find((el) => el.tag === 'body' && el.layout_id === currentLayoutId && !el.parent_id);
+    } else {
+      // Page 모드: Page의 body 사용
+      bodyElement = elements.find((el) => el.tag === 'body' && !el.parent_id);
+    }
+
+    if (bodyElement) {
+      // 실제 <body> 태그에 data-element-id 설정
+      document.body.setAttribute('data-element-id', bodyElement.id);
+      document.body.setAttribute('data-original-tag', 'body');
+
+      // body element의 style 적용
+      if (bodyElement.props?.style) {
+        const style = bodyElement.props.style as Record<string, string>;
+        Object.entries(style).forEach(([key, value]) => {
+          document.body.style.setProperty(
+            key.replace(/([A-Z])/g, '-$1').toLowerCase(), // camelCase → kebab-case
+            value
+          );
+        });
+      }
+
+      // body element의 className 적용
+      if (bodyElement.props?.className) {
+        document.body.className = `${document.body.className} ${bodyElement.props.className}`.trim();
+      }
+    }
+
+    // Cleanup: 컴포넌트 언마운트 또는 body element 변경 시 초기화
+    return () => {
+      document.body.removeAttribute('data-element-id');
+      document.body.removeAttribute('data-original-tag');
+      // 스타일 초기화는 복잡하므로 유지 (다음 body element가 덮어씀)
+    };
+  }, [elements, currentLayoutId, currentPageId]);
+
   // Computed style 수집
   const collectComputedStyle = useCallback((domElement: Element): Record<string, string> => {
     const computed = window.getComputedStyle(domElement);
@@ -69,9 +115,17 @@ function PreviewContent() {
   }, []);
 
   // 클릭 핸들러 (capture 단계에서 실행)
+  // ⭐ 실제 <body> 태그 클릭도 처리
   const handleElementSelection = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    const elementWithId = target.closest('[data-element-id]');
+
+    // ⭐ body 클릭 처리: target이 body이거나 closest로 body를 찾음
+    let elementWithId = target.closest('[data-element-id]');
+
+    // target이 body인 경우 (body의 빈 영역 클릭)
+    if (!elementWithId && target === document.body && document.body.hasAttribute('data-element-id')) {
+      elementWithId = document.body;
+    }
 
     if (!elementWithId) return;
 
@@ -102,20 +156,19 @@ function PreviewContent() {
 
     // Computed style 전송 (RAF로 지연)
     requestAnimationFrame(() => {
-      const computedStyle = collectComputedStyle(elementWithId);
+      const computedStyle = collectComputedStyle(elementWithId!);
       messageSender.sendComputedStyle(elementId, computedStyle);
     });
   }, [elements, collectComputedStyle]);
 
   // 요소 선택을 위한 capture 단계 클릭 리스너
+  // ⭐ document에 등록하여 body 클릭도 캡처
   // React Aria 컴포넌트가 이벤트를 가로채기 전에 선택을 처리
   useEffect(() => {
-    const container = document.querySelector('.preview-container');
-    if (!container) return;
-
-    container.addEventListener('click', handleElementSelection, true); // capture: true
+    // document에 등록하여 body 클릭도 캡처 가능
+    document.addEventListener('click', handleElementSelection, true); // capture: true
     return () => {
-      container.removeEventListener('click', handleElementSelection, true);
+      document.removeEventListener('click', handleElementSelection, true);
     };
   }, [handleElementSelection]);
 
@@ -172,6 +225,9 @@ function PreviewContent() {
 
   // Element 렌더링 함수 (내부)
   const renderElementInternal = useCallback((el: PreviewElement, key?: string): React.ReactNode => {
+    // ⭐ body 태그는 실제 <body>에서 처리되므로 여기에 도달하면 일반 요소임
+    // (body는 renderElementsTree에서 자식만 렌더링하도록 처리됨)
+
     // rendererMap에서 해당 태그의 렌더러 찾기
     const renderer = rendererMap[el.tag];
     if (renderer) {
@@ -179,7 +235,6 @@ function PreviewContent() {
     }
 
     // 렌더러가 없으면 기본 HTML 렌더링
-    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
 
     // 자식 요소 찾기
     const children = elements
@@ -194,10 +249,6 @@ function PreviewContent() {
       className: el.props?.className,
     };
 
-    if (el.tag === 'body') {
-      cleanProps['data-original-tag'] = 'body';
-    }
-
     // 자식 콘텐츠
     const content = children.length > 0
       ? children.map((child) => renderElementInternal(child, child.id))
@@ -205,7 +256,7 @@ function PreviewContent() {
 
     // HTML 요소로 렌더링
     return React.createElement(
-      effectiveTag.toLowerCase(),
+      el.tag.toLowerCase(),
       cleanProps,
       content
     );
@@ -244,28 +295,27 @@ function PreviewContent() {
       );
     }
 
+    // ⭐ body 태그는 실제 <body>에서 처리되므로 자식만 렌더링 (이미 renderElementsTree에서 처리됨)
+    // 여기에 도달하면 body가 아닌 일반 요소임
+
     // 일반 Layout element: 자식 재귀 렌더링
     const children = layoutElements
       .filter((child) => child.parent_id === el.id)
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-    // body 태그는 div로 변환
-    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
-
     // rendererMap에서 렌더러가 있으면 사용
     const renderer = rendererMap[el.tag];
-    if (renderer && el.tag !== 'body') {
+    if (renderer) {
       return renderer(el, renderContext);
     }
 
     return React.createElement(
-      effectiveTag.toLowerCase(),
+      el.tag.toLowerCase(),
       {
         key: el.id,
         'data-element-id': el.id,
         style: el.props?.style as React.CSSProperties,
         className: el.props?.className,
-        ...(el.tag === 'body' ? { 'data-original-tag': 'body' } : {}),
       },
       children.length > 0
         ? children.map((child) => renderLayoutElement(child, layoutElements, pageElements))
@@ -285,10 +335,10 @@ function PreviewContent() {
       return renderer(el, renderContext);
     }
 
-    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
+    // ⭐ body 태그는 실제 <body>에서 처리되므로 여기에 도달하면 일반 요소임
 
     return React.createElement(
-      effectiveTag.toLowerCase(),
+      el.tag.toLowerCase(),
       {
         key: el.id,
         'data-element-id': el.id,
@@ -302,6 +352,7 @@ function PreviewContent() {
   }, [renderContext]);
 
   // Elements 트리 렌더링
+  // ⭐ 실제 <body> 태그를 사용하므로 body element를 div로 렌더링하지 않고 자식만 렌더링
   const renderElementsTree = useCallback(() => {
     // ⭐ Page 모드에서 Layout이 적용된 경우: Layout 기반 렌더링
     // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
@@ -313,42 +364,52 @@ function PreviewContent() {
       const layoutBody = layoutElements.find((el) => el.tag === 'body' && !el.parent_id);
 
       if (layoutBody) {
+        // ⭐ body를 div로 렌더링하지 않고 자식들만 직접 렌더링
+        // body의 속성은 useEffect에서 실제 <body> 태그에 적용됨
         const bodyChildren = layoutElements
           .filter((el) => el.parent_id === layoutBody.id)
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
         return (
-          <div
-            key={layoutBody.id}
-            data-element-id={layoutBody.id}
-            data-original-tag="body"
-            style={layoutBody.props?.style as React.CSSProperties}
-            className="preview-body preview-layout-body"
-          >
+          <>
             {bodyChildren.map((el) => renderLayoutElement(el, layoutElements, pageElements))}
-          </div>
+          </>
         );
       }
     }
 
-    // ⭐ Layout이 없는 경우: 기존 방식
-    const bodyElement = elements.find((el) => el.tag === 'body');
+    // ⭐ Layout 편집 모드 (currentLayoutId만 있고 currentPageId 없음)
+    if (currentLayoutId && !currentPageId) {
+      const layoutElements = elements.filter((el) => el.layout_id === currentLayoutId);
+      const layoutBody = layoutElements.find((el) => el.tag === 'body' && !el.parent_id);
+
+      if (layoutBody) {
+        const bodyChildren = layoutElements
+          .filter((el) => el.parent_id === layoutBody.id)
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        return (
+          <>
+            {bodyChildren.map((el) => renderElement(el, el.id))}
+          </>
+        );
+      }
+    }
+
+    // ⭐ Layout이 없는 경우 (Page만 있음)
+    const bodyElement = elements.find((el) => el.tag === 'body' && !el.parent_id);
 
     if (bodyElement) {
+      // ⭐ body를 div로 렌더링하지 않고 자식들만 직접 렌더링
+      // body의 속성은 useEffect에서 실제 <body> 태그에 적용됨
       const bodyChildren = elements
         .filter((el) => el.parent_id === bodyElement.id)
         .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
       return (
-        <div
-          key={bodyElement.id}
-          data-element-id={bodyElement.id}
-          data-original-tag="body"
-          style={bodyElement.props?.style as React.CSSProperties}
-          className="preview-body"
-        >
+        <>
           {bodyChildren.map((el) => renderElement(el, el.id))}
-        </div>
+        </>
       );
     }
 

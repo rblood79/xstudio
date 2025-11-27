@@ -63,23 +63,15 @@ export default function SelectionOverlay() {
         `[data-element-id="${selectedElementId}"]`
       ) as HTMLElement;
 
-      // ⭐ Layout/Slot System: Page body를 못 찾으면 Layout body로 대체
+      // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
+      // (실제 body에 data-element-id가 설정되어 있음)
       if (!element) {
         const selectedElement = elementsMap.get(selectedElementId);
-        // 선택된 요소가 Page의 body인 경우
-        if (selectedElement?.tag === 'body' && selectedElement?.page_id) {
-          // Layout body 찾기 (layout_id가 있는 body)
-          const layoutBody = Array.from(elementsMap.values()).find(el =>
-            el.tag === 'body' && el.layout_id && !el.page_id
-          );
-          if (layoutBody) {
-            element = iframe.contentDocument.querySelector(
-              `[data-element-id="${layoutBody.id}"]`
-            ) as HTMLElement;
-            console.log(`🔄 [Overlay] Page body → Layout body 대체:`, {
-              pageBodyId: selectedElementId,
-              layoutBodyId: layoutBody.id
-            });
+        if (selectedElement?.tag === 'body') {
+          // 실제 <body> 태그에서 찾기
+          if (iframe.contentDocument.body.getAttribute('data-element-id')) {
+            element = iframe.contentDocument.body;
+            console.log(`🔄 [Overlay] body element → 실제 <body> 태그 사용`);
           }
         }
       }
@@ -99,6 +91,7 @@ export default function SelectionOverlay() {
       };
 
       setOverlayRect(newRect);
+      // ⭐ body 태그 선택 시 'body' 표시
       setSelectedTag(element.tagName.toLowerCase());
     };
 
@@ -136,17 +129,13 @@ export default function SelectionOverlay() {
         `[data-element-id="${elementId}"]`
       ) as HTMLElement;
 
-      // ⭐ Layout/Slot System: Page body를 못 찾으면 Layout body로 대체
+      // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
       if (!element) {
         const selectedElement = elementsMap.get(elementId);
-        if (selectedElement?.tag === 'body' && selectedElement?.page_id) {
-          const layoutBody = Array.from(elementsMap.values()).find(el =>
-            el.tag === 'body' && el.layout_id && !el.page_id
-          );
-          if (layoutBody) {
-            element = iframe.contentDocument!.querySelector(
-              `[data-element-id="${layoutBody.id}"]`
-            ) as HTMLElement;
+        if (selectedElement?.tag === 'body') {
+          // 실제 <body> 태그에서 찾기
+          if (iframe.contentDocument!.body.getAttribute('data-element-id')) {
+            element = iframe.contentDocument!.body;
           }
         }
       }

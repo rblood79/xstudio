@@ -21,8 +21,8 @@ const BASE_STYLES = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;
   }
+  /* ⭐ 실제 <body> 태그가 element로 사용되므로 preview-body 클래스 불필요 */
   .preview-container { width: 100%; min-height: 100%; }
-  .preview-body { width: 100%; min-height: 100%; }
   .preview-empty, .preview-loading {
     display: flex;
     align-items: center;
