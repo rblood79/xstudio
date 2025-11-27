@@ -166,12 +166,10 @@ const ComponentItem = ({
   return (
     <div className="component-list-item">
       <button onClick={handleClick} title={`Add ${component.label} element`}>
-        <component.icon strokeWidth={1} width={16} height={16} />
-        {isRecent && count > 0 && (
-          <Badge size="xs">{count}</Badge>
-        )}
+        <component.icon strokeWidth={1} width={21} height={21} />
+        {isRecent && count > 0 && <Badge>{count}</Badge>}
       </button>
-      <label>{component.label}</label>
+      <span className="item-text">{component.label}</span>
     </div>
   );
 };
@@ -181,8 +179,12 @@ ComponentItem.displayName = "ComponentItem";
 // 메인 컴포넌트
 const ComponentList = memo(
   ({ handleAddElement, selectedElementId }: ComponentListProps) => {
-    const { recentTags, addRecentComponent, clearRecentComponents, getComponentCount } =
-      useRecentComponents();
+    const {
+      recentTags,
+      addRecentComponent,
+      clearRecentComponents,
+      getComponentCount,
+    } = useRecentComponents();
     const { favoriteTags } = useFavoriteComponents();
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -226,7 +228,9 @@ const ComponentList = memo(
       () => ({
         layout: isLayoutMode
           ? layoutComp
-          : layoutComp.filter((comp) => !("layoutOnly" in comp && comp.layoutOnly)),
+          : layoutComp.filter(
+              (comp) => !("layoutOnly" in comp && comp.layoutOnly)
+            ),
         inputs: inputsComp,
         actions: actionsComp,
         collections: collectionsComp,
@@ -458,7 +462,9 @@ const ComponentList = memo(
                   <div className="section-header">
                     <div className="category-info">
                       <h3 className="section-title">{config.label}</h3>
-                      <span className="category-count">{components.length}</span>
+                      <span className="category-count">
+                        {components.length}
+                      </span>
                     </div>
                     <div className="section-actions">
                       <button
@@ -509,7 +515,9 @@ const ComponentList = memo(
                   <div className="section-header">
                     <div className="category-info">
                       <h3 className="section-title">{config.label}</h3>
-                      <span className="category-count">{components.length}</span>
+                      <span className="category-count">
+                        {components.length}
+                      </span>
                     </div>
                     <div className="section-actions">
                       <button

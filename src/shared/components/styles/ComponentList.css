@@ -43,7 +43,7 @@
       gap: var(--gap);
       font-size: var(--text-xs);
 
-      label {
+      .item-text {
         width: 100%;
         font-size: var(--text-xs);
         text-overflow: ellipsis;

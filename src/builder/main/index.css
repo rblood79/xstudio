@@ -266,7 +266,7 @@
     flex: 1;
   }
 
-  .header_contents:last-child button {
+  .header_contents:last-child button:not(.publish) {
     border-radius: var(--radius-md);
     background-color: var(--on-primary);
     padding: var(--spacing-sm);
@@ -293,6 +293,7 @@
         )
         border-box;
     border: 2px solid transparent;
+    border-radius: var(--radius-md);
     color: var(--on-surface);
     line-height: var(--text-sm--line-height);
     font-size: var(--text-sm);

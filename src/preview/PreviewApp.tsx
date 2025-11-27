@@ -273,11 +273,26 @@ function PreviewContent() {
     if (el.tag === 'Slot') {
       const slotName = (el.props as { name?: string })?.name || 'content';
 
-      // 해당 Slot에 속하는 Page elements 찾기
-      const slotChildren = pageElements.filter((pe) => {
-        const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
-        return peSlotName === slotName && !pe.parent_id;
-      }).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      // ⭐ Page의 body 찾기 (body는 렌더링하지 않고 자식만 사용)
+      const pageBody = pageElements.find((pe) => pe.tag === 'body' && !pe.parent_id);
+
+      // ⭐ Slot에 들어갈 실제 콘텐츠: body의 자식들
+      // body는 렌더링하지 않음 - body 스타일은 Layout의 body가 document.body에 적용됨
+      let slotContent: PreviewElement[] = [];
+
+      if (pageBody) {
+        // Page body의 자식들을 Slot에 배치
+        slotContent = pageElements
+          .filter((pe) => pe.parent_id === pageBody.id)
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      } else {
+        // body가 없으면 기존 로직 (slot_name으로 찾기, body 제외)
+        slotContent = pageElements.filter((pe) => {
+          if (pe.tag === 'body') return false; // body는 제외
+          const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
+          return peSlotName === slotName && !pe.parent_id;
+        }).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      }
 
       // Slot 자체를 div로 렌더링하고 내부에 Page elements 배치
       return (
@@ -288,8 +303,8 @@ function PreviewContent() {
           style={el.props?.style as React.CSSProperties}
           className="preview-slot"
         >
-          {slotChildren.length > 0
-            ? slotChildren.map((child) => renderPageElementWithChildren(child, pageElements))
+          {slotContent.length > 0
+            ? slotContent.map((child) => renderPageElementWithChildren(child, pageElements))
             : null}
         </div>
       );
@@ -324,6 +339,7 @@ function PreviewContent() {
   }, [renderContext]);
 
   // Page element와 자식들 렌더링 (Layout 모드용)
+  // ⭐ 주의: body 요소는 이 함수에 전달되지 않음 (renderLayoutElement에서 body의 자식만 전달)
   const renderPageElementWithChildren = useCallback((el: PreviewElement, allPageElements: PreviewElement[]): React.ReactNode => {
     const children = allPageElements
       .filter((child) => child.parent_id === el.id)
@@ -334,8 +350,6 @@ function PreviewContent() {
     if (renderer) {
       return renderer(el, renderContext);
     }
-
-    // ⭐ body 태그는 실제 <body>에서 처리되므로 여기에 도달하면 일반 요소임
 
     return React.createElement(
       el.tag.toLowerCase(),
