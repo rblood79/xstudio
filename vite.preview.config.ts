@@ -1,7 +1,7 @@
 /**
- * Vite Configuration for Preview Runtime
+ * Vite Configuration for Preview
  *
- * Preview Runtime을 독립적인 번들로 빌드합니다.
+ * Preview를 독립적인 번들로 빌드합니다.
  * srcdoc iframe에 인라인으로 삽입될 JavaScript를 생성합니다.
  */
 
@@ -12,13 +12,13 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: "dist/preview-runtime",
+    outDir: "dist/preview",
     emptyOutDir: true,
     lib: {
-      entry: path.resolve(__dirname, "src/preview-runtime/index.tsx"),
-      name: "PreviewRuntime",
+      entry: path.resolve(__dirname, "src/preview/index.tsx"),
+      name: "Preview",
       formats: ["iife"], // 즉시 실행 함수로 번들링 (srcdoc용)
-      fileName: () => "preview-runtime.js",
+      fileName: () => "preview.js",
     },
     rollupOptions: {
       // 모든 의존성을 번들에 포함
@@ -27,7 +27,7 @@ export default defineConfig({
         // 전역 변수 설정 (필요 시)
         globals: {},
         // 인라인 CSS
-        assetFileNames: "preview-runtime.[ext]",
+        assetFileNames: "preview.[ext]",
       },
     },
     // 번들 최적화

@@ -29,7 +29,7 @@
  *    - Main, Sidebar, Inspector, ThemeStudio
  *
  * Note: Component styles (React Aria) are imported separately
- * via src/builder/components/index.css
+ * via src/shared/components/index.css
  */
 
 /* ==================== 1. Theme Layer ==================== */

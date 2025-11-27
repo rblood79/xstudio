@@ -39,10 +39,14 @@ const BASE_STYLES = `
 
 /**
  * 개발 모드용 srcdoc 생성
- * preview-runtime 모듈을 동적으로 import합니다.
+ * preview 모듈을 동적으로 import합니다.
+ *
+ * 중요: Vite React SWC 플러그인은 React Refresh preamble이 필요합니다.
+ * srcdoc iframe에서는 이를 수동으로 로드해야 합니다.
  */
 export function generateDevSrcdoc(projectId: string): string {
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
+  // React Refresh preamble 전역 변수를 먼저 설정해야 함
   return `
 <!DOCTYPE html>
 <html lang="ko">
@@ -56,13 +60,39 @@ export function generateDevSrcdoc(projectId: string): string {
   <div id="preview-root">
     <div class="preview-loading">Loading Preview Runtime...</div>
   </div>
+  <script>
+    // React Refresh preamble 전역 변수 설정 (모듈 로드 전에 필요)
+    // @vitejs/plugin-react-swc가 이 변수들을 확인함
+    window.$RefreshReg$ = () => {};
+    window.$RefreshSig$ = () => (type) => type;
+    window.__vite_plugin_react_preamble_installed__ = true;
+  </script>
   <script type="module">
-    // 개발 모드: preview-runtime을 동적 import
-    import('/src/preview-runtime/index.tsx').catch(err => {
-      console.error('[Preview] Failed to load preview-runtime:', err);
-      document.getElementById('preview-root').innerHTML =
-        '<div class="preview-loading">Failed to load Preview Runtime</div>';
-    });
+    // 개발 모드: Vite client와 preview 로드
+    async function loadPreviewRuntime() {
+      try {
+        // 1. Vite client 로드 (HMR 지원)
+        await import('/@vite/client');
+
+        // 2. React Refresh 모듈 로드 (실제 HMR 기능)
+        try {
+          await import('/@react-refresh');
+        } catch (e) {
+          console.warn('[Preview] React Refresh not available:', e.message);
+        }
+
+        // 3. preview 로드
+        await import('/src/preview/index.tsx');
+
+        console.log('[Preview] Runtime loaded successfully');
+      } catch (err) {
+        console.error('[Preview] Failed to load preview:', err);
+        document.getElementById('preview-root').innerHTML =
+          '<div class="preview-loading">Failed to load Preview Runtime: ' + err.message + '</div>';
+      }
+    }
+
+    loadPreviewRuntime();
   </script>
 </body>
 </html>
@@ -73,17 +103,17 @@ export function generateDevSrcdoc(projectId: string): string {
 // Production Mode: Inline Bundle
 // ============================================
 
-// 빌드된 preview-runtime 번들 (빌드 시 주입됨)
-let previewRuntimeBundle: string | null = null;
-let previewRuntimeCSS: string | null = null;
+// 빌드된 preview 번들 (빌드 시 주입됨)
+let previewBundle: string | null = null;
+let previewCSS: string | null = null;
 
 /**
  * 프로덕션 빌드된 번들 설정
  * 빌드 프로세스에서 호출됩니다.
  */
-export function setPreviewRuntimeBundle(js: string, css?: string): void {
-  previewRuntimeBundle = js;
-  previewRuntimeCSS = css || null;
+export function setPreviewBundle(js: string, css?: string): void {
+  previewBundle = js;
+  previewCSS = css || null;
 }
 
 /**
@@ -91,7 +121,7 @@ export function setPreviewRuntimeBundle(js: string, css?: string): void {
  * 빌드된 번들을 인라인으로 포함합니다.
  */
 export function generateProdSrcdoc(projectId: string): string {
-  if (!previewRuntimeBundle) {
+  if (!previewBundle) {
     console.warn('[Preview] Production bundle not available, falling back to dev mode');
     return generateDevSrcdoc(projectId);
   }
@@ -104,11 +134,11 @@ export function generateProdSrcdoc(projectId: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
-  ${previewRuntimeCSS ? `<style>${previewRuntimeCSS}</style>` : ''}
+  ${previewCSS ? `<style>${previewCSS}</style>` : ''}
 </head>
 <body data-preview="true" data-project-id="${projectId}">
   <div id="preview-root"></div>
-  <script>${previewRuntimeBundle}</script>
+  <script>${previewBundle}</script>
 </body>
 </html>
 `;
@@ -159,6 +189,6 @@ export function shouldUseSrcdoc(): boolean {
     return true;
   }
 
-  // TODO: Phase 1 완료 후 true로 변경
-  return false;
+  // Phase 1 완료 - srcdoc 기본 활성화
+  return true;
 }

@@ -161,7 +161,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 id: ElementUtils.generateId(),
                 project_id: projectId,
                 name: `Page ${nextOrderNum + 1}`,
-                slug: `page-${nextOrderNum + 1}`,
+                slug: `/page-${nextOrderNum + 1}`,
                 parent_id: null,
                 order_num: nextOrderNum,
                 layout_id: null, // ⭐ Layout/Slot System: 페이지 생성 시 layout_id 초기화

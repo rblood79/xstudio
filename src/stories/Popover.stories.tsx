@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { HelpCircle } from 'lucide-react';
 import { DialogTrigger, Heading } from 'react-aria-components';
-import { Button } from '../builder/components/Button';
-import { Dialog } from '../builder/components/Dialog';
-import { Popover } from '../builder/components/Popover';
+import { Button } from '../shared/components/Button';
+import { Dialog } from '../shared/components/Dialog';
+import { Popover } from '../shared/components/Popover';
 
 const meta: Meta<typeof Popover> = {
   title: 'Builder/Components/Popover',

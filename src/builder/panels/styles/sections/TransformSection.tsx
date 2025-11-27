@@ -6,7 +6,7 @@
  */
 
 import { PropertySection, PropertyUnitInput } from '../../common';
-import { Button } from '../../../components';
+import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
 import {

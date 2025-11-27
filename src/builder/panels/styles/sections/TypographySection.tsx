@@ -5,7 +5,7 @@
  */
 
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../common';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../../components';
+import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
 import {

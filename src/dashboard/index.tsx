@@ -4,7 +4,7 @@ import { projectsApi, pagesApi, elementsApi, type Project } from '../services/ap
 import { getDB } from '../lib/db';
 import { ElementProps } from '../types/integrations/supabase.types';
 import { ElementUtils } from '../utils/element/elementUtils';
-import { Button, TextField } from '../builder/components/list';
+import { Button, TextField } from '../shared/components/list';
 import { useAsyncQuery } from '../builder/hooks/useAsyncQuery';
 import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
 import {
@@ -18,6 +18,7 @@ import {
   Package,
   CloudAlert,
   CloudUpload,
+  Trash,
 } from "lucide-react";
 import {
   mergeProjects,
@@ -220,7 +221,7 @@ function Dashboard() {
         const pages = await db.pages.getByProject(id);
         console.log('[Dashboard] 삭제할 페이지:', pages.length);
 
-        // 2. 각 페이지의 요소들 삭제
+        // 2. 각 페이지의 요소들과 히스토리 삭제
         for (const page of pages) {
           const elements = await db.elements.getByPage(page.id);
           console.log('[Dashboard] 페이지', page.title, '의 요소:', elements.length);
@@ -228,20 +229,31 @@ function Dashboard() {
           for (const element of elements) {
             await db.elements.delete(element.id);
           }
+
+          // 페이지의 히스토리 삭제
+          await db.history.clear(page.id);
         }
 
         // 3. 페이지 삭제
         for (const page of pages) {
           await db.pages.delete(page.id);
         }
+        console.log('[Dashboard] 페이지 및 히스토리 삭제 완료');
 
         // 4. 프로젝트의 디자인 토큰 삭제
-        // Note: DatabaseAdapter에는 themes 속성이 없으므로 designTokens만 삭제
         const tokens = await db.designTokens.getByProject(id);
         console.log('[Dashboard] 삭제할 디자인 토큰:', tokens.length);
 
         for (const token of tokens) {
           await db.designTokens.delete(token.id);
+        }
+
+        // 4-1. 프로젝트의 디자인 테마 삭제
+        const themes = await db.themes.getByProject(id);
+        console.log('[Dashboard] 삭제할 디자인 테마:', themes.length);
+
+        for (const theme of themes) {
+          await db.themes.delete(theme.id as string);
         }
 
         // ⭐ 5. Layout/Slot System: 프로젝트의 레이아웃과 레이아웃 요소 삭제
@@ -523,8 +535,8 @@ function Dashboard() {
                   <Button
                     onPress={() => handleDeleteProject(project.id)}
                     isDisabled={loading}
-                    children="Del"
-                    variant="ghost"
+                    children={<Trash size={16} />}
+                    variant="default"
                     size="sm"
                   />
                 </div>

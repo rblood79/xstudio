@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
 import { supabase } from '../env/supabase.client';
-import { TextField, Button } from '../builder/components/list';
+import { TextField, Button } from '../shared/components/list';
 import './index.css';
 import '../builder/styles/1-theme/builder-system.css';
 

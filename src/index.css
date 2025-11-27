@@ -1,6 +1,6 @@
 @import "../node_modules/pretendard/dist/web/static/pretendard.css";
 @import "tailwindcss";
-@import "./builder/components/index.css";
+@import "./shared/components/index.css";
 
 /* Declare all CSS layers in priority order (later = higher priority)
  * This ensures consistent cascade order across all modules

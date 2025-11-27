@@ -11,16 +11,17 @@
 
   /* ========================================
    * Panel System - 패널 공통 구조
-   * .panel[data-panel="{name}"]
-   * ├── .panel-header
-   * │   ├── .panel-title
-   * │   └── .panel-actions
-   * └── .panel-contents (복수형: 상위 .panel-content와 구분)
-   *     └── .section (반복)
-   *         ├── .section-header
-   *         │   ├── .section-title
-   *         │   └── .section-actions
-   *         └── .section-content
+   * .panel-wrapper[data-panel="{name}"]
+   * └── .panel
+   *     ├── .panel-header
+   *     │   ├── .panel-title
+   *     │   └── .panel-actions
+   *     └── .panel-contents (복수형: 상위 .panel-content와 구분)
+   *         └── .section (반복)
+   *             ├── .section-header
+   *             │   ├── .section-title
+   *             │   └── .section-actions
+   *             └── .section-content
    * ======================================== */
 
   .panel {
@@ -29,7 +30,7 @@
     height: 100%;
   }
 
-  .panel[data-panel="components"] .section .section-content {
+  .panel-wrapper[data-panel="components"] .section .section-content {
     display: grid;
   }
 
@@ -452,8 +453,8 @@
     /* Section Content - styles/properties 패널 전용 */
     /* components 패널은 ComponentList.css에서 별도 스타일 적용 */
 
-    .panel[data-panel="styles"] .section-content,
-    .panel[data-panel="properties"] .section-content {
+    .panel-wrapper[data-panel="styles"] .section-content,
+    .panel-wrapper[data-panel="properties"] .section-content {
       padding: var(--spacing-sm);
       display: flex;
       flex-direction: column;

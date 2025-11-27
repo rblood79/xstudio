@@ -140,12 +140,12 @@
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
-      padding: var(--spacing-lg);
-      border-bottom: 1px solid var(--color-border);
+      padding: 0;
 
       h1 {
-        font-size: var(--text-2xl);
-        font-weight: var(--font-weight-bold);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-medium);
+        padding-left: var(--spacing-lg);
         margin: 0;
       }
 

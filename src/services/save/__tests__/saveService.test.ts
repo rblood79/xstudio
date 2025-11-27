@@ -64,6 +64,31 @@ vi.mock("../../../env/supabase.client", () => ({
   },
 }));
 
+// Mock IndexedDB (getDB) - hoisted for vi.mock
+const { mockElementsUpdate, mockPagesUpdate, mockProjectsUpdate, mockDesignTokensUpdate } = vi.hoisted(() => ({
+  mockElementsUpdate: vi.fn().mockResolvedValue({}),
+  mockPagesUpdate: vi.fn().mockResolvedValue({}),
+  mockProjectsUpdate: vi.fn().mockResolvedValue({}),
+  mockDesignTokensUpdate: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock("../../../lib/db", () => ({
+  getDB: vi.fn().mockResolvedValue({
+    elements: {
+      update: mockElementsUpdate,
+    },
+    pages: {
+      update: mockPagesUpdate,
+    },
+    projects: {
+      update: mockProjectsUpdate,
+    },
+    designTokens: {
+      update: mockDesignTokensUpdate,
+    },
+  }),
+}));
+
 describe("SaveService", () => {
   beforeEach(() => {
     storeState.isRealtimeMode = true;
@@ -75,9 +100,14 @@ describe("SaveService", () => {
     storeState.addPendingChange.mockClear();
     storeState.clearPendingChanges.mockClear();
     storeState.getPendingChanges.mockClear();
+    // IndexedDB mocks
+    mockElementsUpdate.mockClear();
+    mockPagesUpdate.mockClear();
+    mockProjectsUpdate.mockClear();
+    mockDesignTokensUpdate.mockClear();
   });
 
-  it("실시간 모드에서는 즉시 Supabase에 저장한다", async () => {
+  it("실시간 모드에서는 즉시 IndexedDB에 저장한다", async () => {
     storeState.isRealtimeMode = true;
 
     await saveService.savePropertyChange({
@@ -86,9 +116,8 @@ describe("SaveService", () => {
       data: { name: "Heading" },
     });
 
-    expect(fromMock).toHaveBeenCalledWith("elements");
-    expect(updateMock).toHaveBeenCalledWith({ name: "Heading" });
-    expect(eqMock).toHaveBeenCalledWith("id", "element-1");
+    // 실시간 모드: IndexedDB에 저장 (로컬 우선)
+    expect(mockElementsUpdate).toHaveBeenCalledWith("element-1", { name: "Heading" });
     expect(storeState.addPendingChange).not.toHaveBeenCalled();
     expect(storeState.pendingChanges.size).toBe(0);
   });

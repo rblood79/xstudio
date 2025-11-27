@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Panel } from '../builder/components/Panel';
+import { Panel } from '../shared/components/Panel';
 
 const meta: Meta<typeof Panel> = {
   title: 'Builder/Components/Panel',

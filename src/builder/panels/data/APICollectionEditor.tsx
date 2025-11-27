@@ -4,7 +4,7 @@ import { Database, Send, Link, Settings, Lock, Map, Route, Download } from "luci
 import { iconProps } from '../../../utils/ui/uiConstants';
 import { PropertySelect, PropertyInput, PropertyFieldset } from '../common';
 
-import { Button, Checkbox, CheckboxGroup } from "../../components/list";
+import { Button, Checkbox, CheckboxGroup } from "../../../shared/components/list";
 import type { APICollectionConfig } from "../../inspector/types";
 import { detectColumnsFromData } from "../../../utils/element/columnTypeInference";
 import type { ColumnMapping } from "../../../types/builder/unified.types";

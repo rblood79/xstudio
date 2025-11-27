@@ -1,7 +1,7 @@
 // src/App.tsx
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./builder/components/list";
+import { Button } from "./shared/components/list";
 import "./App.css";
 import {
   SquarePlus,

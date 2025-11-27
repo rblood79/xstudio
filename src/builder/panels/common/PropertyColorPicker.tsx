@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { parseColor, type Color } from 'react-aria-components';
-import { MyColorSwatches } from '../../components/TailSwatch';
+import { MyColorSwatches } from '../../../shared/components/TailSwatch';
 import { Paintbrush } from 'lucide-react';
 
 export interface PropertyColorPickerProps {

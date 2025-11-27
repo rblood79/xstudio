@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ToggleButton } from '../builder/components/ToggleButton';
+import { ToggleButton } from '../shared/components/ToggleButton';
 
 const meta: Meta<typeof ToggleButton> = {
   title: 'Builder/Components/ToggleButton',

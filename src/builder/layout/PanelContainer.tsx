@@ -86,7 +86,7 @@ export function PanelContainer({
             <div
               key={panelId}
               className="panel-wrapper"
-              data-panel-id={panelId}
+              data-panel={panelId}
               data-active={isActive}
               style={{
                 // CSS 변수로 패널 넓이 전달

@@ -11,7 +11,7 @@
 
 import { memo, useCallback } from "react";
 import { AlertTriangle, Trash2, Merge, X } from "lucide-react";
-import { Button } from "../../../../components";
+import { Button } from "../../../../../shared/components";
 import {
   Dialog,
   DialogTrigger,

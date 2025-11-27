@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { Button } from "../../components";
+import { Button } from "../../../shared/components";
 import { Keyboard, X, ChevronDown, ChevronRight } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 

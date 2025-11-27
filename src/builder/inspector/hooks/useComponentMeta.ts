@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getComponentMeta } from "../../components/metadata";
+import { getComponentMeta } from "../../../shared/components/metadata";
 
 /**
  * 컴포넌트 메타데이터 조회 Hook

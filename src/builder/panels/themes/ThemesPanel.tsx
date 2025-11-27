@@ -16,7 +16,7 @@ import {
   PropertyInput,
   EmptyState,
 } from '../common';
-import { Button } from '../../components';
+import { Button } from '../../../shared/components';
 
 function ThemesContent() {
   const { projectId } = useParams<{ projectId: string }>();

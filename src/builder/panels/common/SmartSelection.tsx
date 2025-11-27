@@ -7,7 +7,7 @@
 
 import { useMemo } from "react";
 import type { Element } from "../../../types/core/store.types";
-import { Button } from "../../components";
+import { Button } from "../../../shared/components";
 import { Sparkles, Users, GitBranch, Box, Tag, Palette, Type } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { getAllSuggestions, type SuggestionResult } from "../../utils/smartSelection";

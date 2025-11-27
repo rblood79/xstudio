@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../common';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../../components';
+import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { Input } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';

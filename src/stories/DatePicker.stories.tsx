@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { parseDate } from '@internationalized/date';
-import { DatePicker } from '../builder/components/DatePicker';
+import { DatePicker } from '../shared/components/DatePicker';
 
 const meta: Meta<typeof DatePicker> = {
   title: 'Builder/Components/DatePicker',

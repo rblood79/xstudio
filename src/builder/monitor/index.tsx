@@ -9,7 +9,7 @@ import type {
   ValidationError,
 } from "../../services/save/saveService";
 import { useStore } from "../stores";
-import Table from "../components/Table";
+import Table from "../../shared/components/Table";
 
 interface HistoryLog {
   id: string; // Table requires id field

@@ -9,7 +9,7 @@ import { useState, useMemo } from "react";
 import type { Element } from "../../../types/core/store.types";
 import { PropertyInput, PropertySelect } from "../common";
 import { Filter, X } from "lucide-react";
-import { Button } from "../../components";
+import { Button } from "../../../shared/components";
 import { iconProps } from "../../../utils/ui/uiConstants";
 
 export interface SelectionFilterProps {

@@ -9,7 +9,7 @@
 
 import { useCallback } from "react";
 import type { PanelProps } from "../core/types";
-import Components from "../../components";
+import Components from "../../../shared/components";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ListBox, ListBoxItem } from '../builder/components/ListBox';
+import { ListBox, ListBoxItem } from '../shared/components/ListBox';
 
 const meta: Meta<typeof ListBox> = {
   title: 'Builder/Components/ListBox',

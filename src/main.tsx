@@ -12,7 +12,6 @@ import "./index.css";
 import App from "./App.tsx";
 import Dashboard from "./dashboard";
 import Builder from "./builder";
-import Preview from "./builder/preview/index.tsx";
 import Signin from "./auth/Signin";
 import { ThemeStudio } from "./builder/panels/themes/ThemeStudio.tsx";
 import { supabase } from "./env/supabase.client";
@@ -74,14 +73,6 @@ function AppLayout() {
           element={
             <ProtectedRoute>
               <Builder />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/preview/:projectId"
-          element={
-            <ProtectedRoute>
-              <Preview />
             </ProtectedRoute>
           }
         />

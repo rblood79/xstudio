@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Form, Radio } from 'react-aria-components';
-import { Button } from '../builder/components/Button';
-import { RadioGroup } from '../builder/components/RadioGroup';
+import { Button } from '../shared/components/Button';
+import { RadioGroup } from '../shared/components/RadioGroup';
 
 const meta: Meta<typeof RadioGroup> = {
   title: 'Builder/Components/RadioGroup',

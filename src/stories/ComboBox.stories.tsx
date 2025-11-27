@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { ComboBox, ComboBoxItem } from '../builder/components/ComboBox';
+import { ComboBox, ComboBoxItem } from '../shared/components/ComboBox';
 
 const fruits = [
   { id: 'apple', name: 'Apple' },

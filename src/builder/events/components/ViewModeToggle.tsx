@@ -1,4 +1,4 @@
-import { ToggleButtonGroup, ToggleButton, Key } from "../../components/list";
+import { ToggleButtonGroup, ToggleButton, Key } from "../../../shared/components/list";
 
 export type ViewMode = "list" | "simple" | "reactflow";
 

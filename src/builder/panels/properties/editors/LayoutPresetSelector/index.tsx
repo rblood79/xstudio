@@ -12,7 +12,7 @@
 
 import { memo, useCallback, useMemo, useState } from "react";
 import { Layout, LayoutGrid, Columns2, LayoutDashboard } from "lucide-react";
-import { Button } from "../../../../components";
+import { Button } from "../../../../../shared/components";
 import { PresetPreview } from "./PresetPreview";
 import { ExistingSlotDialog } from "./ExistingSlotDialog";
 import { usePresetApply } from "./usePresetApply";

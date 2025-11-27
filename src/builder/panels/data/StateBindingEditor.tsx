@@ -1,6 +1,6 @@
 import React from "react";
 import { Database, Filter, Workflow } from "lucide-react";
-import { Button } from "../../components/list";
+import { Button } from "../../../shared/components/list";
 import { PropertyInput } from '../common';
 import type {
   DataBindingType,

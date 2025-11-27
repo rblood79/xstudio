@@ -13,7 +13,7 @@ import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element, Page } from "../../types/core/store.types"; // Page 타입도 추가
 import type { DataBinding } from "../../types/builder/unified.types";
 import { NodesPanel as NodesPanelWithTabs } from "../nodes";
-import Components from "../components";
+import Components from "../../shared/components";
 import { ThemesPanel } from "../panels/themes/ThemesPanel";
 import { AIPanel } from "../panels/ai/AIPanel";
 import { SettingsPanel } from "../panels/settings/SettingsPanel";

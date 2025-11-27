@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Database, Columns, Type } from "lucide-react";
-import { Button } from "../../components/list";
+import { Button } from "../../../shared/components/list";
 import { PropertyInput } from '../common';
 import type {
   DataBindingType,

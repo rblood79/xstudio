@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ToggleButton } from '../builder/components/ToggleButton';
-import { ToggleButtonGroup } from '../builder/components/ToggleButtonGroup';
+import { ToggleButton } from '../shared/components/ToggleButton';
+import { ToggleButtonGroup } from '../shared/components/ToggleButtonGroup';
 
 const meta: Meta<typeof ToggleButtonGroup> = {
   title: 'Builder/Components/ToggleButtonGroup',

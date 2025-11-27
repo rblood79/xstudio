@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "../../components/list";
+import { Button } from "../../../shared/components/list";
 import { useStore } from "../../stores/elements";
 import { getDB } from "../../../lib/db";
 import type { Element } from "../../../types/core/store.types";

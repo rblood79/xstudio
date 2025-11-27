@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { GridList, GridListItem } from '../builder/components/GridList';
+import { GridList, GridListItem } from '../shared/components/GridList';
 
 interface FileItem {
   id: string;

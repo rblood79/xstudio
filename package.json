@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:preview-runtime": "vite build --config vite.preview.config.ts",
-    "build:all": "npm run build:preview-runtime && npm run build",
+    "build:preview": "vite build --config vite.preview.config.ts",
+    "build:all": "npm run build:preview && npm run build",
     "lint": "eslint src --ext .ts,.tsx",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",

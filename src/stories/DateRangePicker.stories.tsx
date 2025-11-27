@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { parseDate } from '@internationalized/date';
-import { DateRangePicker } from '../builder/components/DateRangePicker';
+import { DateRangePicker } from '../shared/components/DateRangePicker';
 
 const meta: Meta<typeof DateRangePicker> = {
   title: 'Builder/Components/DateRangePicker',

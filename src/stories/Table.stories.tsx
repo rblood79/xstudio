@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import Table from '../builder/components/Table';
+import Table from '../shared/components/Table';
 
 interface User {
   id: number;

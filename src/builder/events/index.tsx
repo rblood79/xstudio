@@ -7,8 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { Button } from "../../components/list";
-import { PropertyInput, PropertySelect, PropertyCheckbox } from "../components";
+import { Button } from "../../../shared/components/list";
+import { PropertyInput, PropertySelect, PropertyCheckbox } from "../../../shared/components";
 import { useStore } from "../../stores";
 import {
   EventType,

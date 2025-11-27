@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Button } from "../../components";
+import { Button } from "../../../shared/components";
 import { History, Clock, Trash2, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import {

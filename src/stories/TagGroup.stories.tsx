@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 // import { action } from '@storybook/addon-actions';
 const action = (name: string) => (...args: unknown[]) => console.log(name, ...args);
-import { Tag, TagGroup } from '../builder/components/TagGroup';
+import { Tag, TagGroup } from '../shared/components/TagGroup';
 
 interface TagItem {
   id: string;

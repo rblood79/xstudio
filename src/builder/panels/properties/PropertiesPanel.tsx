@@ -16,7 +16,7 @@ import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
-import { Button } from "../../components";
+import { Button } from "../../../shared/components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
@@ -944,7 +944,7 @@ export function PropertiesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="panel" data-panel="properties">
+    <div className="panel">
       <PanelHeader
         title={multiSelectMode ? `${selectedElementIds.length}개 요소 선택됨` : selectedElement.type}
         actions={

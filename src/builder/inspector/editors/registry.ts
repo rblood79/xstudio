@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { ComponentEditorProps } from "../types";
-import { componentMetadata } from "../../components/metadata";
+import { componentMetadata } from "../../../shared/components/metadata";
 
 /**
  * 에디터 캐시

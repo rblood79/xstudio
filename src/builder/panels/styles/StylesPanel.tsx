@@ -12,7 +12,7 @@ import "../../panels/common/index.css";
 import { useState, useMemo, useCallback } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
-import { ToggleButtonGroup, ToggleButton, Button } from "../../components";
+import { ToggleButtonGroup, ToggleButton, Button } from "../../../shared/components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../common";
@@ -124,7 +124,7 @@ export function StylesPanel({ isActive }: PanelProps) {
   }
 
   return (
-    <div className="panel" data-panel="styles">
+    <div className="panel">
           <div className="panel-header">
             <ToggleButtonGroup
               aria-label="Style filter"

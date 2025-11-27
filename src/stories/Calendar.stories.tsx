@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { getLocalTimeZone, today } from '@internationalized/date';
-import { Calendar } from '../builder/components/Calendar';
+import { Calendar } from '../shared/components/Calendar';
 
 const meta: Meta<typeof Calendar> = {
   title: 'Builder/Components/Calendar',

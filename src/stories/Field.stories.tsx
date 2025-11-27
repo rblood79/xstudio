@@ -5,7 +5,7 @@ import {
   Input,
   Description,
   FieldError
-} from '../builder/components/Field';
+} from '../shared/components/Field';
 
 const meta: Meta<typeof FieldGroup> = {
   title: 'Builder/Components/Field',

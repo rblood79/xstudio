@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Radio } from '../builder/components/Radio';
-//import { RadioGroup } from '../builder/components/RadioGroup';
+import { Radio } from '../shared/components/Radio';
+//import { RadioGroup } from '../shared/components/RadioGroup';
 
 const meta: Meta<typeof Radio> = {
   title: 'Builder/Components/Radio',

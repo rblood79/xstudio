@@ -7,8 +7,8 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { Form } from 'react-aria-components';
-import { Button } from '../builder/components/Button';
-import { TextField } from '../builder/components/TextField';
+import { Button } from '../shared/components/Button';
+import { TextField } from '../shared/components/TextField';
 
 const meta: Meta<typeof TextField> = {
   title: 'Builder/Components/TextField',
