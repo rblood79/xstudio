@@ -20,114 +20,116 @@
   }
 
   /* ========== M3 Variant Colors ========== */
+  /* CSS 변수 패턴으로 색상 스타일 통합 */
 
-  /* ===== Primary Variant ===== */
+  .react-aria-Calendar {
+    /* 기본 variant 변수 */
+    --cal-accent: var(--primary);
+    --cal-accent-container: var(--primary-container);
+    --cal-on-accent-container: var(--on-primary-container);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-Calendar.primary {
-    .react-aria-CalendarCell {
-      &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-
-      &[data-focus-visible] {
-        outline-color: var(--primary);
-      }
-    }
+    --cal-accent: var(--primary);
+    --cal-accent-container: var(--primary-container);
+    --cal-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== Secondary Variant ===== */
   .react-aria-Calendar.secondary {
-    .react-aria-CalendarCell {
-      &[data-selected] {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-      }
-
-      &[data-focus-visible] {
-        outline-color: var(--secondary);
-      }
-    }
+    --cal-accent: var(--secondary);
+    --cal-accent-container: var(--secondary-container);
+    --cal-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== Tertiary Variant ===== */
+  .react-aria-Calendar.tertiary {
+    --cal-accent: var(--tertiary);
+    --cal-accent-container: var(--tertiary-container);
+    --cal-on-accent-container: var(--on-tertiary-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-Calendar.primary,
+  .react-aria-Calendar.secondary,
   .react-aria-Calendar.tertiary {
     .react-aria-CalendarCell {
       &[data-selected] {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
+        background: var(--cal-accent-container);
+        color: var(--cal-on-accent-container);
       }
 
       &[data-focus-visible] {
-        outline-color: var(--tertiary);
+        outline-color: var(--cal-accent);
       }
     }
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-Calendar {
+    /* 기본 size 변수 (md) */
+    --cal-heading-size: var(--text-sm);
+    --cal-btn-width: var(--text-3xl);
+    --cal-btn-height: var(--text-3xl);
+    --cal-header-size: var(--text-sm);
+    --cal-cell-width: 2rem;
+    --cal-cell-line-height: 2rem;
+    --cal-cell-size: var(--text-sm);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-Calendar.sm {
-    header .react-aria-Heading {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-Button {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
-    }
-
-    .react-aria-CalendarGridHeader th {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
-      width: 1.5rem;
-      line-height: 1.5rem;
-      font-size: var(--text-xs);
-    }
+    --cal-heading-size: var(--text-xs);
+    --cal-btn-width: var(--text-2xl);
+    --cal-btn-height: var(--text-2xl);
+    --cal-header-size: var(--text-xs);
+    --cal-cell-width: 1.5rem;
+    --cal-cell-line-height: 1.5rem;
+    --cal-cell-size: var(--text-xs);
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-Calendar.md {
-    header .react-aria-Heading {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-Button {
-      width: var(--text-3xl);
-      height: var(--text-3xl);
-    }
-
-    .react-aria-CalendarGridHeader th {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-CalendarGridBody td .react-aria-CalendarCell {
-      width: 2rem;
-      line-height: 2rem;
-      font-size: var(--text-sm);
-    }
+    --cal-heading-size: var(--text-sm);
+    --cal-btn-width: var(--text-3xl);
+    --cal-btn-height: var(--text-3xl);
+    --cal-header-size: var(--text-sm);
+    --cal-cell-width: 2rem;
+    --cal-cell-line-height: 2rem;
+    --cal-cell-size: var(--text-sm);
   }
 
-  /* ===== Large Size ===== */
+  .react-aria-Calendar.lg {
+    --cal-heading-size: var(--text-base);
+    --cal-btn-width: var(--text-4xl);
+    --cal-btn-height: var(--text-4xl);
+    --cal-header-size: var(--text-base);
+    --cal-cell-width: 2.5rem;
+    --cal-cell-line-height: 2.5rem;
+    --cal-cell-size: var(--text-base);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-Calendar.sm,
+  .react-aria-Calendar.md,
   .react-aria-Calendar.lg {
     header .react-aria-Heading {
-      font-size: var(--text-base);
+      font-size: var(--cal-heading-size);
     }
 
     .react-aria-Button {
-      width: var(--text-4xl);
-      height: var(--text-4xl);
+      width: var(--cal-btn-width);
+      height: var(--cal-btn-height);
     }
 
     .react-aria-CalendarGridHeader th {
-      font-size: var(--text-base);
+      font-size: var(--cal-header-size);
     }
 
     .react-aria-CalendarGridBody td .react-aria-CalendarCell {
-      width: 2.5rem;
-      line-height: 2.5rem;
-      font-size: var(--text-base);
+      width: var(--cal-cell-width);
+      line-height: var(--cal-cell-line-height);
+      font-size: var(--cal-cell-size);
     }
   }
 }

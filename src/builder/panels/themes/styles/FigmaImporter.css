@@ -2,6 +2,8 @@
  * Figma Importer Styles
  */
 
+@import './_common.css';
+
 @layer components {
   .figma-importer-container {
     max-width: 800px;
@@ -72,26 +74,9 @@
     font-weight: var(--font-weight-semibold);
   }
 
-  /* Checkbox Group */
-  .checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-  }
-
+  /* Checkbox Label Override - FigmaImporter uses text-base instead of text-sm */
   .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-2);
     font-size: var(--text-base);
-    color: var(--text-color);
-    cursor: pointer;
-  }
-
-  .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
   }
 
   /* Import Button */
@@ -129,21 +114,13 @@
   .importing-state .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid var(--border-color);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    border-width: 3px;
+    animation-duration: 1s;
   }
 
   .importing-state p {
     font-size: var(--text-base);
     color: var(--text-color-secondary);
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   /* Results */
@@ -215,12 +192,6 @@
 
   .stat-card.total .stat-number {
     color: var(--surface-container);
-  }
-
-  .stat-label {
-    font-size: var(--text-xs);
-    color: var(--text-color-secondary);
-    text-transform: uppercase;
   }
 
   .stat-card.total .stat-label {

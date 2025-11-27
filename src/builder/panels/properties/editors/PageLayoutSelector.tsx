@@ -7,7 +7,7 @@
  * ⭐ Layout/Slot System: Page에 Layout을 할당하여 템플릿 적용
  */
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, useEffect } from "react";
 import { Layout, X } from "lucide-react";
 import { PropertySelect, PropertySection } from "../../common";
 import { useLayoutsStore } from "../../../stores/layouts";
@@ -24,6 +24,14 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
   // Get current page
   const page = useStore((state) => state.pages.find((p) => p.id === pageId));
   const layouts = useLayoutsStore((state) => state.layouts);
+  const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
+
+  // ⭐ layouts가 비어있으면 자동 로드
+  useEffect(() => {
+    if (layouts.length === 0) {
+      fetchLayouts();
+    }
+  }, [layouts.length, fetchLayouts]);
 
   // Current layout
   const currentLayoutId = page?.layout_id || "";

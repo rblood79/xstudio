@@ -171,16 +171,27 @@
   }
 
   /* ========== Checkbox Integration ========== */
+  /* CSS 변수 패턴으로 Checkbox 스타일 통합 */
+
+  .react-aria-GridList {
+    /* 기본 Checkbox 변수 */
+    --gl-cb-selected: var(--primary);
+    --gl-cb-checkmark: var(--on-primary);
+    --gl-cb-bg: var(--primary-container);
+    --gl-cb-selected-on: var(--on-primary-container);
+    --gl-cb-checkmark-on: var(--primary-container);
+  }
+
   :where(.react-aria-GridListItem) .react-aria-Checkbox {
-    --selected-color: var(--primary);
-    --selected-color-pressed: var(--primary);
-    --checkmark-color: var(--on-primary);
-    --background-color: var(--primary-container);
+    --selected-color: var(--gl-cb-selected);
+    --selected-color-pressed: var(--gl-cb-selected);
+    --checkmark-color: var(--gl-cb-checkmark);
+    --background-color: var(--gl-cb-bg);
   }
 
   .react-aria-GridListItem[data-selected] .react-aria-Checkbox {
-    --selected-color: var(--on-primary-container);
-    --checkmark-color: var(--primary-container);
+    --selected-color: var(--gl-cb-selected-on);
+    --checkmark-color: var(--gl-cb-checkmark-on);
   }
 
   /* ========== Drag and Drop Styles ========== */
@@ -207,178 +218,103 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 색상 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-GridList {
+    /* 기본 variant 변수 */
+    --gl-accent: var(--outline-variant);
+    --gl-accent-container: var(--primary-container);
+    --gl-on-accent-container: var(--on-primary-container);
+    --gl-drop-bg: color-mix(in srgb, var(--primary) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--primary) 12%, transparent);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-GridList.primary {
-    border-color: var(--primary);
-
-    &[data-focus-visible] {
-      outline-color: var(--primary);
-    }
-
-    .react-aria-GridListItem {
-      &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 8%, transparent);
-    }
-
-    .react-aria-GridListItem[data-drop-target] {
-      outline-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 12%, transparent);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--primary);
-    }
+    --gl-accent: var(--primary);
+    --gl-accent-container: var(--primary-container);
+    --gl-on-accent-container: var(--on-primary-container);
+    --gl-drop-bg: color-mix(in srgb, var(--primary) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--primary) 12%, transparent);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-GridList.secondary {
-    border-color: var(--secondary);
-
-    &[data-focus-visible] {
-      outline-color: var(--secondary);
-    }
-
-    .react-aria-GridListItem {
-      &[data-focus-visible] {
-        outline-color: var(--secondary);
-      }
-
-      &[data-selected] {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-
-        &[data-focus-visible] {
-          outline-color: var(--secondary);
-        }
-
-        .react-aria-Checkbox {
-          --selected-color: var(--on-secondary-container);
-          --checkmark-color: var(--secondary-container);
-        }
-      }
-    }
-
-    :where(.react-aria-GridListItem) .react-aria-Checkbox {
-      --selected-color: var(--secondary);
-      --background-color: var(--secondary-container);
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--secondary);
-      background: color-mix(in srgb, var(--secondary) 8%, transparent);
-    }
-
-    .react-aria-GridListItem[data-drop-target] {
-      outline-color: var(--secondary);
-      background: color-mix(in srgb, var(--secondary) 12%, transparent);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--secondary);
-    }
+    --gl-accent: var(--secondary);
+    --gl-accent-container: var(--secondary-container);
+    --gl-on-accent-container: var(--on-secondary-container);
+    --gl-drop-bg: color-mix(in srgb, var(--secondary) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--secondary) 12%, transparent);
+    --gl-cb-selected: var(--secondary);
+    --gl-cb-checkmark: var(--on-secondary);
+    --gl-cb-bg: var(--secondary-container);
+    --gl-cb-selected-on: var(--on-secondary-container);
+    --gl-cb-checkmark-on: var(--secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-GridList.tertiary {
-    border-color: var(--tertiary);
-
-    &[data-focus-visible] {
-      outline-color: var(--tertiary);
-    }
-
-    .react-aria-GridListItem {
-      &[data-focus-visible] {
-        outline-color: var(--tertiary);
-      }
-
-      &[data-selected] {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
-
-        &[data-focus-visible] {
-          outline-color: var(--tertiary);
-        }
-
-        .react-aria-Checkbox {
-          --selected-color: var(--on-tertiary-container);
-          --checkmark-color: var(--tertiary-container);
-        }
-      }
-    }
-
-    :where(.react-aria-GridListItem) .react-aria-Checkbox {
-      --selected-color: var(--tertiary);
-      --background-color: var(--tertiary-container);
-    }
-
-    &[data-drop-target] {
-      outline-color: var(--tertiary);
-      background: color-mix(in srgb, var(--tertiary) 8%, transparent);
-    }
-
-    .react-aria-GridListItem[data-drop-target] {
-      outline-color: var(--tertiary);
-      background: color-mix(in srgb, var(--tertiary) 12%, transparent);
-    }
-
-    .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--tertiary);
-    }
+    --gl-accent: var(--tertiary);
+    --gl-accent-container: var(--tertiary-container);
+    --gl-on-accent-container: var(--on-tertiary-container);
+    --gl-drop-bg: color-mix(in srgb, var(--tertiary) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--tertiary) 12%, transparent);
+    --gl-cb-selected: var(--tertiary);
+    --gl-cb-checkmark: var(--on-tertiary);
+    --gl-cb-bg: var(--tertiary-container);
+    --gl-cb-selected-on: var(--on-tertiary-container);
+    --gl-cb-checkmark-on: var(--tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
   .react-aria-GridList.error {
-    border-color: var(--error);
+    --gl-accent: var(--error);
+    --gl-accent-container: var(--error-container);
+    --gl-on-accent-container: var(--on-error-container);
+    --gl-drop-bg: color-mix(in srgb, var(--error) 8%, transparent);
+    --gl-drop-bg-item: color-mix(in srgb, var(--error) 12%, transparent);
+    --gl-cb-selected: var(--error);
+    --gl-cb-checkmark: var(--on-error);
+    --gl-cb-bg: var(--error-container);
+    --gl-cb-selected-on: var(--on-error-container);
+    --gl-cb-checkmark-on: var(--error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-GridList.primary,
+  .react-aria-GridList.secondary,
+  .react-aria-GridList.tertiary,
+  .react-aria-GridList.error {
+    border-color: var(--gl-accent);
 
     &[data-focus-visible] {
-      outline-color: var(--error);
+      outline-color: var(--gl-accent);
     }
 
     .react-aria-GridListItem {
       &[data-focus-visible] {
-        outline-color: var(--error);
+        outline-color: var(--gl-accent);
       }
 
       &[data-selected] {
-        background: var(--error-container);
-        color: var(--on-error-container);
+        background: var(--gl-accent-container);
+        color: var(--gl-on-accent-container);
 
         &[data-focus-visible] {
-          outline-color: var(--error);
-        }
-
-        .react-aria-Checkbox {
-          --selected-color: var(--on-error-container);
-          --checkmark-color: var(--error-container);
+          outline-color: var(--gl-accent);
         }
       }
     }
 
-    :where(.react-aria-GridListItem) .react-aria-Checkbox {
-      --selected-color: var(--error);
-      --background-color: var(--error-container);
-    }
-
     &[data-drop-target] {
-      outline-color: var(--error);
-      background: color-mix(in srgb, var(--error) 8%, transparent);
+      outline-color: var(--gl-accent);
+      background: var(--gl-drop-bg);
     }
 
     .react-aria-GridListItem[data-drop-target] {
-      outline-color: var(--error);
-      background: color-mix(in srgb, var(--error) 12%, transparent);
+      outline-color: var(--gl-accent);
+      background: var(--gl-drop-bg-item);
     }
 
     .react-aria-DropIndicator[data-drop-target] {
-      outline-color: var(--error);
+      outline-color: var(--gl-accent);
     }
   }
 
@@ -400,66 +336,73 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-GridList {
+    /* 기본 size 변수 (md) */
+    --gl-list-padding: var(--spacing-xs);
+    --gl-list-gap: var(--spacing-2xs);
+    --gl-item-padding: var(--spacing) var(--spacing-md);
+    --gl-item-min-height: 40px;
+    --gl-item-font-size: var(--text-sm);
+    --gl-btn-padding: var(--spacing) var(--spacing-md);
+    --gl-btn-font-size: var(--text-sm);
+    --gl-drag-width: 15px;
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-GridList.sm {
-    padding: var(--spacing-2xs);
-    gap: var(--spacing-3xs);
-
-    .react-aria-GridListItem {
-      padding: var(--spacing-sm) var(--spacing);
-      min-height: 32px;
-      font-size: var(--text-xs);
-
-      .react-aria-Button {
-        padding: var(--spacing-sm) var(--spacing);
-        font-size: var(--text-xs);
-      }
-
-      [slot=drag] {
-        width: 12px;
-      }
-    }
+    --gl-list-padding: var(--spacing-2xs);
+    --gl-list-gap: var(--spacing-3xs);
+    --gl-item-padding: var(--spacing-sm) var(--spacing);
+    --gl-item-min-height: 32px;
+    --gl-item-font-size: var(--text-xs);
+    --gl-btn-padding: var(--spacing-sm) var(--spacing);
+    --gl-btn-font-size: var(--text-xs);
+    --gl-drag-width: 12px;
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-GridList.md {
-    padding: var(--spacing-xs);
-    gap: var(--spacing-2xs);
-
-    .react-aria-GridListItem {
-      padding: var(--spacing) var(--spacing-md);
-      min-height: 40px;
-      font-size: var(--text-sm);
-
-      .react-aria-Button {
-        padding: var(--spacing) var(--spacing-md);
-        font-size: var(--text-sm);
-      }
-
-      [slot=drag] {
-        width: 15px;
-      }
-    }
+    --gl-list-padding: var(--spacing-xs);
+    --gl-list-gap: var(--spacing-2xs);
+    --gl-item-padding: var(--spacing) var(--spacing-md);
+    --gl-item-min-height: 40px;
+    --gl-item-font-size: var(--text-sm);
+    --gl-btn-padding: var(--spacing) var(--spacing-md);
+    --gl-btn-font-size: var(--text-sm);
+    --gl-drag-width: 15px;
   }
 
-  /* ===== Large Size ===== */
   .react-aria-GridList.lg {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-xs);
+    --gl-list-padding: var(--spacing-sm);
+    --gl-list-gap: var(--spacing-xs);
+    --gl-item-padding: var(--spacing-md) var(--spacing-lg);
+    --gl-item-min-height: 48px;
+    --gl-item-font-size: var(--text-base);
+    --gl-btn-padding: var(--spacing-md) var(--spacing-lg);
+    --gl-btn-font-size: var(--text-base);
+    --gl-drag-width: 18px;
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-GridList.sm,
+  .react-aria-GridList.md,
+  .react-aria-GridList.lg {
+    padding: var(--gl-list-padding);
+    gap: var(--gl-list-gap);
 
     .react-aria-GridListItem {
-      padding: var(--spacing-md) var(--spacing-lg);
-      min-height: 48px;
-      font-size: var(--text-base);
+      padding: var(--gl-item-padding);
+      min-height: var(--gl-item-min-height);
+      font-size: var(--gl-item-font-size);
 
       .react-aria-Button {
-        padding: var(--spacing-md) var(--spacing-lg);
-        font-size: var(--text-base);
+        padding: var(--gl-btn-padding);
+        font-size: var(--gl-btn-font-size);
       }
 
       [slot=drag] {
-        width: 18px;
+        width: var(--gl-drag-width);
       }
     }
   }

@@ -152,135 +152,72 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 Button/Input 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-NumberField {
+    /* 기본 variant 변수 */
+    --nf-accent: var(--outline-variant);
+    --nf-accent-container: var(--surface-container-high);
+    --nf-on-accent-container: var(--on-surface);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-NumberField.primary {
-    .react-aria-Label {
-      color: var(--primary);
-    }
-
-    .react-aria-Group {
-      &[data-focus-within] {
-        outline-color: var(--primary);
-      }
-    }
-
-    .react-aria-Button {
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-        color: var(--on-primary-container);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--primary-container) 88%, black);
-      }
-    }
-
-    .react-aria-Input {
-      border-color: var(--primary);
-
-      &[data-focus-within] {
-        background: var(--primary-container);
-      }
-    }
+    --nf-accent: var(--primary);
+    --nf-accent-container: var(--primary-container);
+    --nf-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-NumberField.secondary {
-    .react-aria-Label {
-      color: var(--secondary);
-    }
-
-    .react-aria-Group {
-      &[data-focus-within] {
-        outline-color: var(--secondary);
-      }
-    }
-
-    .react-aria-Button {
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-        color: var(--on-secondary-container);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--secondary-container) 88%, black);
-      }
-    }
-
-    .react-aria-Input {
-      border-color: var(--secondary);
-
-      &[data-focus-within] {
-        background: var(--secondary-container);
-      }
-    }
+    --nf-accent: var(--secondary);
+    --nf-accent-container: var(--secondary-container);
+    --nf-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-NumberField.tertiary {
-    .react-aria-Label {
-      color: var(--tertiary);
-    }
-
-    .react-aria-Group {
-      &[data-focus-within] {
-        outline-color: var(--tertiary);
-      }
-    }
-
-    .react-aria-Button {
-      &[data-hovered]:not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-        color: var(--on-tertiary-container);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--tertiary-container) 88%, black);
-      }
-    }
-
-    .react-aria-Input {
-      border-color: var(--tertiary);
-
-      &[data-focus-within] {
-        background: var(--tertiary-container);
-      }
-    }
+    --nf-accent: var(--tertiary);
+    --nf-accent-container: var(--tertiary-container);
+    --nf-on-accent-container: var(--on-tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
+  .react-aria-NumberField.error {
+    --nf-accent: var(--error);
+    --nf-accent-container: var(--error-container);
+    --nf-on-accent-container: var(--on-error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-NumberField.primary,
+  .react-aria-NumberField.secondary,
+  .react-aria-NumberField.tertiary,
   .react-aria-NumberField.error {
     .react-aria-Label {
-      color: var(--error);
+      color: var(--nf-accent);
     }
 
     .react-aria-Group {
       &[data-focus-within] {
-        outline-color: var(--error);
+        outline-color: var(--nf-accent);
       }
     }
 
     .react-aria-Button {
       &[data-hovered]:not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
-        color: var(--on-error-container);
+        background: var(--nf-accent-container);
+        border-color: var(--nf-accent);
+        color: var(--nf-on-accent-container);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--error-container) 88%, black);
+        background: color-mix(in srgb, var(--nf-accent-container) 88%, black);
       }
     }
 
     .react-aria-Input {
-      border-color: var(--error);
+      border-color: var(--nf-accent);
 
       &[data-focus-within] {
-        background: var(--error-container);
+        background: var(--nf-accent-container);
       }
     }
   }
@@ -319,76 +256,77 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-NumberField {
+    /* 기본 size 변수 (md) */
+    --nf-label-size: var(--text-sm);
+    --nf-btn-size: var(--text-sm);
+    --nf-btn-width: 32px;
+    --nf-btn-padding: var(--spacing);
+    --nf-input-padding: var(--spacing) var(--spacing-md);
+    --nf-input-size: var(--text-sm);
+    --nf-input-width: 120px;
+    --nf-hint-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-NumberField.sm {
-    .react-aria-Label {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-Button {
-      font-size: var(--text-xs);
-      width: 28px;
-      padding: var(--spacing-sm);
-    }
-
-    .react-aria-Input {
-      padding: var(--spacing-sm) var(--spacing);
-      font-size: var(--text-xs);
-      width: 80px;
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: 10px;
-    }
+    --nf-label-size: var(--text-xs);
+    --nf-btn-size: var(--text-xs);
+    --nf-btn-width: 28px;
+    --nf-btn-padding: var(--spacing-sm);
+    --nf-input-padding: var(--spacing-sm) var(--spacing);
+    --nf-input-size: var(--text-xs);
+    --nf-input-width: 80px;
+    --nf-hint-size: 10px;
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-NumberField.md {
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-Button {
-      font-size: var(--text-sm);
-      width: 32px;
-      padding: var(--spacing);
-    }
-
-    .react-aria-Input {
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
-      width: 120px;
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-    }
+    --nf-label-size: var(--text-sm);
+    --nf-btn-size: var(--text-sm);
+    --nf-btn-width: 32px;
+    --nf-btn-padding: var(--spacing);
+    --nf-input-padding: var(--spacing) var(--spacing-md);
+    --nf-input-size: var(--text-sm);
+    --nf-input-width: 120px;
+    --nf-hint-size: var(--text-xs);
   }
 
-  /* ===== Large Size ===== */
+  .react-aria-NumberField.lg {
+    --nf-label-size: var(--text-base);
+    --nf-btn-size: var(--text-base);
+    --nf-btn-width: 40px;
+    --nf-btn-padding: var(--spacing-md);
+    --nf-input-padding: var(--spacing-md) var(--spacing-lg);
+    --nf-input-size: var(--text-base);
+    --nf-input-width: 160px;
+    --nf-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-NumberField.sm,
+  .react-aria-NumberField.md,
   .react-aria-NumberField.lg {
     .react-aria-Label {
-      font-size: var(--text-base);
+      font-size: var(--nf-label-size);
     }
 
     .react-aria-Button {
-      font-size: var(--text-base);
-      width: 40px;
-      padding: var(--spacing-md);
+      font-size: var(--nf-btn-size);
+      width: var(--nf-btn-width);
+      padding: var(--nf-btn-padding);
     }
 
     .react-aria-Input {
-      padding: var(--spacing-md) var(--spacing-lg);
-      font-size: var(--text-base);
-      width: 160px;
+      padding: var(--nf-input-padding);
+      font-size: var(--nf-input-size);
+      width: var(--nf-input-width);
     }
 
     [slot="description"],
     .react-aria-FieldError {
-      font-size: var(--text-sm);
+      font-size: var(--nf-hint-size);
     }
   }
 

@@ -527,8 +527,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isSendingRef = useRef(false);
 
     useEffect(() => {
-        // 🔧 FIX: Ref 사용
-        if (iframeReadyStateRef.current !== 'ready' || isSendingRef.current) {
+        // 🔧 FIX: Ref 사용 - iframe 준비 체크만
+        if (iframeReadyStateRef.current !== 'ready') {
             return;
         }
 
@@ -562,9 +562,13 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // ✅ ACK 기반 중복 방지: 실제 변경이 있을 때만 체크
-        // editMode 또는 요소 개수가 변경되었으면 ACK 타이밍 무시
+        // ✅ ACK 기반 중복 방지: 구조적 변경만 있을 때 체크
+        // ⭐ FIX: editMode 또는 요소 개수가 변경되었으면 isSendingRef와 ACK 타이밍 무시
         if (!editModeChanged && !elementCountChanged) {
+            // 전송 중이면 스킵 (구조적 변경만 있는 경우)
+            if (isSendingRef.current) {
+                return;
+            }
             const timeSinceLastAck = Date.now() - lastAckTimestampRef.current;
             if (timeSinceLastAck < 100) {
                 console.log('⏭️ [Builder] ACK 직후 중복 전송 스킵 (마지막 ACK:', timeSinceLastAck, 'ms 전)');

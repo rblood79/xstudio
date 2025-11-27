@@ -103,35 +103,33 @@
     }
   }
 
-  /* ===== M3 Primary Variant ===== */
+  /* ========== M3 Color Variants ========== */
+  /* variant는 이미 CSS 변수로 정의되어 있어 추가 통합 필요 없음 */
+
   .react-aria-Checkbox.primary {
     --selected-color: var(--primary);
     --selected-color-pressed: var(--primary-pressed);
     --checkmark-color: var(--on-primary);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-Checkbox.secondary {
     --selected-color: var(--secondary);
     --selected-color-pressed: var(--secondary-pressed);
     --checkmark-color: var(--on-secondary);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-Checkbox.tertiary {
     --selected-color: var(--tertiary);
     --selected-color-pressed: var(--tertiary-pressed);
     --checkmark-color: var(--on-tertiary);
   }
 
-  /* ===== M3 Error Variant ===== */
   .react-aria-Checkbox.error {
     --selected-color: var(--error);
     --selected-color-pressed: var(--error-pressed);
     --checkmark-color: var(--on-error);
   }
 
-  /* ===== M3 Surface Variant ===== */
   .react-aria-Checkbox.surface {
     --selected-color: var(--surface-container-highest);
     --selected-color-pressed: color-mix(in srgb, var(--surface-container-highest) 88%, black);
@@ -168,48 +166,45 @@
     }
   }
 
-  /* Small size */
+  /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
+
+  .react-aria-Checkbox {
+    /* 기본 size 변수 (md) */
+    --cb-font-size: var(--text-base);
+    --cb-box-size: var(--text-xl);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-Checkbox.sm {
-    font-size: var(--text-sm);
-
-    .checkbox {
-      width: var(--text-lg);
-      height: var(--text-lg);
-    }
-
-    svg {
-      width: var(--text-lg);
-      height: var(--text-lg);
-    }
+    --cb-font-size: var(--text-sm);
+    --cb-box-size: var(--text-lg);
   }
 
-  /* Medium size (default) */
   .react-aria-Checkbox.md {
-    font-size: var(--text-base);
-
-    .checkbox {
-      width: var(--text-xl);
-      height: var(--text-xl);
-    }
-
-    svg {
-      width: var(--text-xl);
-      height: var(--text-xl);
-    }
+    --cb-font-size: var(--text-base);
+    --cb-box-size: var(--text-xl);
   }
 
-  /* Large size */
   .react-aria-Checkbox.lg {
-    font-size: var(--text-lg);
+    --cb-font-size: var(--text-lg);
+    --cb-box-size: var(--text-2xl);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-Checkbox.sm,
+  .react-aria-Checkbox.md,
+  .react-aria-Checkbox.lg {
+    font-size: var(--cb-font-size);
 
     .checkbox {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
+      width: var(--cb-box-size);
+      height: var(--cb-box-size);
     }
 
     svg {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
+      width: var(--cb-box-size);
+      height: var(--cb-box-size);
     }
   }
 
@@ -255,48 +250,38 @@
     --checkmark-color: var(--on-surface);
   }
 
-  /* Small size - controlled by CheckboxGroup */
+  /* ===== Size - Controlled by CheckboxGroup ===== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
+
   .react-aria-CheckboxGroup[data-checkbox-size="sm"] .react-aria-Checkbox {
-    font-size: var(--text-sm);
-
-    .checkbox {
-      width: var(--text-lg);
-      height: var(--text-lg);
-    }
-
-    svg {
-      width: var(--text-lg);
-      height: var(--text-lg);
-    }
+    --cb-font-size: var(--text-sm);
+    --cb-box-size: var(--text-lg);
   }
 
-  /* Medium size - controlled by CheckboxGroup (default) */
   .react-aria-CheckboxGroup[data-checkbox-size="md"] .react-aria-Checkbox {
-    font-size: var(--text-base);
-
-    .checkbox {
-      width: var(--text-xl);
-      height: var(--text-xl);
-    }
-
-    svg {
-      width: var(--text-xl);
-      height: var(--text-xl);
-    }
+    --cb-font-size: var(--text-base);
+    --cb-box-size: var(--text-xl);
   }
 
-  /* Large size - controlled by CheckboxGroup */
   .react-aria-CheckboxGroup[data-checkbox-size="lg"] .react-aria-Checkbox {
-    font-size: var(--text-lg);
+    --cb-font-size: var(--text-lg);
+    --cb-box-size: var(--text-2xl);
+  }
+
+  /* 모든 group size에 공통 적용되는 스타일 */
+  .react-aria-CheckboxGroup[data-checkbox-size="sm"] .react-aria-Checkbox,
+  .react-aria-CheckboxGroup[data-checkbox-size="md"] .react-aria-Checkbox,
+  .react-aria-CheckboxGroup[data-checkbox-size="lg"] .react-aria-Checkbox {
+    font-size: var(--cb-font-size);
 
     .checkbox {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
+      width: var(--cb-box-size);
+      height: var(--cb-box-size);
     }
 
     svg {
-      width: var(--text-2xl);
-      height: var(--text-2xl);
+      width: var(--cb-box-size);
+      height: var(--cb-box-size);
     }
   }
 }

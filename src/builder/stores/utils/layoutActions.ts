@@ -173,6 +173,9 @@ export const createUpdateLayoutAction =
 
 /**
  * Layout을 삭제하는 액션
+ * ⭐ Layout 삭제 시 관련 데이터도 정리:
+ * 1. Layout을 사용하는 Page들의 layout_id를 null로 설정
+ * 2. Layout의 모든 elements 삭제
  */
 export const createDeleteLayoutAction =
   (set: SetState, get: GetState) =>
@@ -181,6 +184,50 @@ export const createDeleteLayoutAction =
 
     try {
       const db = await getDB();
+
+      // 1. ⭐ Layout을 사용하는 Page들의 layout_id를 null로 설정
+      const allPages = await db.pages.getAll();
+      const pagesUsingLayout = allPages.filter(
+        (p) => (p as Page & { layout_id?: string }).layout_id === id
+      );
+
+      if (pagesUsingLayout.length > 0) {
+        console.log(`🧹 [deleteLayout] ${pagesUsingLayout.length}개 Page의 layout_id 정리 중...`);
+        await Promise.all(
+          pagesUsingLayout.map((page) =>
+            db.pages.update(page.id, { layout_id: null })
+          )
+        );
+
+        // 메모리 상태의 pages도 업데이트
+        const { pages, setPages } = useStore.getState();
+        const updatedPages = pages.map((p) =>
+          pagesUsingLayout.some((up) => up.id === p.id)
+            ? { ...p, layout_id: null }
+            : p
+        );
+        setPages(updatedPages);
+        console.log(`✅ [deleteLayout] ${pagesUsingLayout.length}개 Page의 layout_id 정리 완료`);
+      }
+
+      // 2. ⭐ Layout의 모든 elements 삭제
+      const allElements = await db.elements.getAll();
+      const layoutElements = allElements.filter((el) => el.layout_id === id);
+
+      if (layoutElements.length > 0) {
+        console.log(`🧹 [deleteLayout] ${layoutElements.length}개 Layout elements 삭제 중...`);
+        await Promise.all(
+          layoutElements.map((el) => db.elements.delete(el.id))
+        );
+
+        // 메모리 상태의 elements도 업데이트
+        const { elements, setElements } = useStore.getState();
+        const filteredElements = elements.filter((el) => el.layout_id !== id);
+        setElements(filteredElements, { skipHistory: true });
+        console.log(`✅ [deleteLayout] ${layoutElements.length}개 Layout elements 삭제 완료`);
+      }
+
+      // 3. Layout 삭제
       await (db as unknown as { layouts: { delete: (id: string) => Promise<void> } }).layouts.delete(id);
 
       // 메모리 상태 업데이트

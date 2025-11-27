@@ -199,143 +199,79 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 Button/Input 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-ComboBox {
+    /* 기본 variant 변수 */
+    --combo-accent: var(--outline-variant);
+    --combo-accent-container: var(--surface-container-high);
+    --combo-on-accent-container: var(--on-surface);
+    --combo-on-accent: var(--on-surface);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ComboBox.primary {
-    .react-aria-Label {
-      color: var(--primary);
-    }
-
-    .react-aria-Input {
-      border-color: var(--primary);
-
-      &[data-focused] {
-        outline-color: var(--primary);
-        border-color: var(--primary);
-        background: var(--primary-container);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-      }
-    }
-
-    .react-aria-Button {
-      background: var(--primary-container);
-      color: var(--on-primary-container);
-
-      &[data-hovered]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-primary) 12%, var(--primary-container));
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-primary) 16%, var(--primary-container));
-      }
-    }
+    --combo-accent: var(--primary);
+    --combo-accent-container: var(--primary-container);
+    --combo-on-accent-container: var(--on-primary-container);
+    --combo-on-accent: var(--on-primary);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-ComboBox.secondary {
-    .react-aria-Label {
-      color: var(--secondary);
-    }
-
-    .react-aria-Input {
-      border-color: var(--secondary);
-
-      &[data-focused] {
-        outline-color: var(--secondary);
-        border-color: var(--secondary);
-        background: var(--secondary-container);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-      }
-    }
-
-    .react-aria-Button {
-      background: var(--secondary-container);
-      color: var(--on-secondary-container);
-
-      &[data-hovered]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-secondary) 12%, var(--secondary-container));
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-secondary) 16%, var(--secondary-container));
-      }
-    }
+    --combo-accent: var(--secondary);
+    --combo-accent-container: var(--secondary-container);
+    --combo-on-accent-container: var(--on-secondary-container);
+    --combo-on-accent: var(--on-secondary);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-ComboBox.tertiary {
-    .react-aria-Label {
-      color: var(--tertiary);
-    }
-
-    .react-aria-Input {
-      border-color: var(--tertiary);
-
-      &[data-focused] {
-        outline-color: var(--tertiary);
-        border-color: var(--tertiary);
-        background: var(--tertiary-container);
-      }
-
-      &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-      }
-    }
-
-    .react-aria-Button {
-      background: var(--tertiary-container);
-      color: var(--on-tertiary-container);
-
-      &[data-hovered]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-tertiary) 12%, var(--tertiary-container));
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-tertiary) 16%, var(--tertiary-container));
-      }
-    }
+    --combo-accent: var(--tertiary);
+    --combo-accent-container: var(--tertiary-container);
+    --combo-on-accent-container: var(--on-tertiary-container);
+    --combo-on-accent: var(--on-tertiary);
   }
 
-  /* ===== M3 Error Variant ===== */
+  .react-aria-ComboBox.error {
+    --combo-accent: var(--error);
+    --combo-accent-container: var(--error-container);
+    --combo-on-accent-container: var(--on-error-container);
+    --combo-on-accent: var(--on-error);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-ComboBox.primary,
+  .react-aria-ComboBox.secondary,
+  .react-aria-ComboBox.tertiary,
   .react-aria-ComboBox.error {
     .react-aria-Label {
-      color: var(--error);
+      color: var(--combo-accent);
     }
 
     .react-aria-Input {
-      border-color: var(--error);
+      border-color: var(--combo-accent);
 
       &[data-focused] {
-        outline-color: var(--error);
-        border-color: var(--error);
-        background: var(--error-container);
+        outline-color: var(--combo-accent);
+        border-color: var(--combo-accent);
+        background: var(--combo-accent-container);
       }
 
       &[data-hovered]:not([data-focused]):not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
+        background: var(--combo-accent-container);
+        border-color: var(--combo-accent);
       }
     }
 
     .react-aria-Button {
-      background: var(--error-container);
-      color: var(--on-error-container);
+      background: var(--combo-accent-container);
+      color: var(--combo-on-accent-container);
 
       &[data-hovered]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-error) 12%, var(--error-container));
+        background: color-mix(in srgb, var(--combo-on-accent) 12%, var(--combo-accent-container));
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: color-mix(in srgb, var(--on-error) 16%, var(--error-container));
+        background: color-mix(in srgb, var(--combo-on-accent) 16%, var(--combo-accent-container));
       }
     }
   }
@@ -362,33 +298,82 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-ComboBox {
+    /* 기본 size 변수 (md) */
+    --combo-label-size: var(--text-sm);
+    --combo-input-padding: var(--spacing) var(--spacing-md);
+    --combo-input-padding-right: calc(var(--spacing-2xl) + var(--spacing));
+    --combo-input-font-size: var(--text-sm);
+    --combo-btn-size: 24px;
+    --combo-btn-margin-left: calc(var(--spacing-2xl) * -1);
+    --combo-btn-margin-right: var(--spacing);
+    --combo-hint-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-ComboBox.sm {
+    --combo-label-size: var(--text-xs);
+    --combo-input-padding: var(--spacing-sm) var(--spacing);
+    --combo-input-padding-right: calc(var(--spacing-lg) + var(--spacing));
+    --combo-input-font-size: var(--text-xs);
+    --combo-btn-size: 20px;
+    --combo-btn-margin-left: calc(var(--spacing-lg) * -1);
+    --combo-btn-margin-right: var(--spacing-sm);
+    --combo-hint-size: 10px;
+  }
+
+  .react-aria-ComboBox.md {
+    --combo-label-size: var(--text-sm);
+    --combo-input-padding: var(--spacing) var(--spacing-md);
+    --combo-input-padding-right: calc(var(--spacing-2xl) + var(--spacing));
+    --combo-input-font-size: var(--text-sm);
+    --combo-btn-size: 24px;
+    --combo-btn-margin-left: calc(var(--spacing-2xl) * -1);
+    --combo-btn-margin-right: var(--spacing);
+    --combo-hint-size: var(--text-xs);
+  }
+
+  .react-aria-ComboBox.lg {
+    --combo-label-size: var(--text-base);
+    --combo-input-padding: var(--spacing-md) var(--spacing-lg);
+    --combo-input-padding-right: calc(var(--spacing-3xl) + var(--spacing));
+    --combo-input-font-size: var(--text-base);
+    --combo-btn-size: 28px;
+    --combo-btn-margin-left: calc(var(--spacing-3xl) * -1);
+    --combo-btn-margin-right: var(--spacing-md);
+    --combo-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-ComboBox.sm,
+  .react-aria-ComboBox.md,
+  .react-aria-ComboBox.lg {
     .react-aria-Label {
-      font-size: var(--text-xs);
+      font-size: var(--combo-label-size);
     }
 
     .react-aria-Input {
-      padding: var(--spacing-sm) var(--spacing);
-      padding-right: calc(var(--spacing-lg) + var(--spacing));
-      font-size: var(--text-xs);
+      padding: var(--combo-input-padding);
+      padding-right: var(--combo-input-padding-right);
+      font-size: var(--combo-input-font-size);
     }
 
     .react-aria-Button {
-      width: 20px;
-      height: 20px;
-      margin-left: calc(var(--spacing-lg) * -1);
-      margin-right: var(--spacing-sm);
+      width: var(--combo-btn-size);
+      height: var(--combo-btn-size);
+      margin-left: var(--combo-btn-margin-left);
+      margin-right: var(--combo-btn-margin-right);
     }
 
     [slot="description"],
     .react-aria-FieldError {
-      font-size: 10px;
+      font-size: var(--combo-hint-size);
     }
   }
 
-  /* Popover small size */
+  /* Popover size variants */
   .react-aria-Popover[data-trigger="ComboBox"].sm {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-sm) var(--spacing);
@@ -396,32 +381,6 @@
     }
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-ComboBox.md {
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-Input {
-      padding: var(--spacing) var(--spacing-md);
-      padding-right: calc(var(--spacing-2xl) + var(--spacing));
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-Button {
-      width: 24px;
-      height: 24px;
-      margin-left: calc(var(--spacing-2xl) * -1);
-      margin-right: var(--spacing);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-    }
-  }
-
-  /* Popover medium size */
   .react-aria-Popover[data-trigger="ComboBox"].md {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing) var(--spacing-md);
@@ -429,32 +388,6 @@
     }
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-ComboBox.lg {
-    .react-aria-Label {
-      font-size: var(--text-base);
-    }
-
-    .react-aria-Input {
-      padding: var(--spacing-md) var(--spacing-lg);
-      padding-right: calc(var(--spacing-3xl) + var(--spacing));
-      font-size: var(--text-base);
-    }
-
-    .react-aria-Button {
-      width: 28px;
-      height: 28px;
-      margin-left: calc(var(--spacing-3xl) * -1);
-      margin-right: var(--spacing-md);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-sm);
-    }
-  }
-
-  /* Popover large size */
   .react-aria-Popover[data-trigger="ComboBox"].lg {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-md) var(--spacing-lg);

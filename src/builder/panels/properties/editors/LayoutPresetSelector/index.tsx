@@ -112,59 +112,48 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
   }, []);
 
   return (
-    <div className="layout-preset-selector">
-      <div className="preset-selector-header">
-        <h4 className="preset-selector-title">레이아웃 프리셋</h4>
-        {existingSlots.length > 0 && (
-          <span className="preset-slot-count">
-            현재 Slot: {existingSlots.length}개
-          </span>
-        )}
-      </div>
+    <>
+      {Object.entries(PRESET_CATEGORIES).map(([categoryKey, meta]) => {
+        const presetKeys = presetsByCategory[categoryKey];
+        if (!presetKeys || presetKeys.length === 0) return null;
 
-      <div className="preset-categories">
-        {Object.entries(PRESET_CATEGORIES).map(([categoryKey, meta]) => {
-          const presetKeys = presetsByCategory[categoryKey];
-          if (!presetKeys || presetKeys.length === 0) return null;
+        const CategoryIcon = CATEGORY_ICONS[categoryKey] || Layout;
 
-          const CategoryIcon = CATEGORY_ICONS[categoryKey] || Layout;
-
-          return (
-            <div key={categoryKey} className="preset-category">
-              <div className="preset-category-header">
-                <CategoryIcon size={14} className="category-icon" />
-                <span className="category-label">{meta.label}</span>
-              </div>
-
-              <div className="preset-grid">
-                {presetKeys.map((presetKey) => {
-                  const preset = LAYOUT_PRESETS[presetKey];
-                  if (!preset) return null;
-
-                  const isSelected = selectedPresetKey === presetKey;
-
-                  return (
-                    <Button
-                      key={presetKey}
-                      variant="default"
-                      className={`preset-item ${isSelected ? "selected" : ""}`}
-                      onPress={() => handlePresetClick(presetKey)}
-                      isDisabled={isApplying}
-                    >
-                      <PresetPreview
-                        areas={preset.previewAreas}
-                        width={80}
-                        height={60}
-                      />
-                      <span className="preset-name">{preset.name}</span>
-                    </Button>
-                  );
-                })}
-              </div>
+        return (
+          <div key={categoryKey} className="preset-category">
+            <div className="preset-category-header">
+              <CategoryIcon size={14} className="category-icon" />
+              <span className="category-label">{meta.label}</span>
             </div>
-          );
-        })}
-      </div>
+
+            <div className="preset-grid">
+              {presetKeys.map((presetKey) => {
+                const preset = LAYOUT_PRESETS[presetKey];
+                if (!preset) return null;
+
+                const isSelected = selectedPresetKey === presetKey;
+
+                return (
+                  <Button
+                    key={presetKey}
+                    variant="default"
+                    className={`preset-item ${isSelected ? "selected" : ""}`}
+                    onPress={() => handlePresetClick(presetKey)}
+                    isDisabled={isApplying}
+                  >
+                    <PresetPreview
+                      areas={preset.previewAreas}
+                      width={80}
+                      height={60}
+                    />
+                    <span className="preset-name">{preset.name}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       {/* 기존 Slot 처리 다이얼로그 */}
       <ExistingSlotDialog
@@ -176,7 +165,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         onConfirm={handleDialogConfirm}
         onClose={handleDialogClose}
       />
-    </div>
+    </>
   );
 });
 

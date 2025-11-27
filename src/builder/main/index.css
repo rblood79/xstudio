@@ -1,437 +1,460 @@
 @layer builder-system {
+  /* ========================================
+   * Main Builder Layout
+   * 평탄화된 CSS 구조 (최대 깊이 3레벨)
+   * ======================================== */
+
+  /* App Root */
   .app {
-    /* font-size는 BuilderCore.tsx의 uiScale useEffect에서 동적으로 설정됨 */
     display: contents;
-
-    .contents {
-      height: 100vh;
-      overflow: hidden;
-      display: grid;
-
-      grid-template-rows: 48px calc(100% - 48px - 24px) 24px;
-      grid-template-columns: auto 1fr auto;
-      grid-template-areas:
-        "header header header"
-        "sidebar main inspector"
-        "footer footer footer";
-
-      nav.header {
-        grid-area: header;
-        background-color: var(--surface-container);
-        border-bottom: 1px solid var(--outline-variant);
-        color: var(--on-surface);
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        position: relative;
-        height: calc(var(--spacing) * 12);
-        padding: 0;
-        z-index: 1000;
-
-        .header_contents {
-          .history-info {
-            font-size: var(--text-sm);
-            font-weight: var(--font-weight-bold);
-            color: var(--on-surface);
-          }
-          /*button {
-                    font-size: var(--text-sm);
-                    @apply bg-[var(--builder-header-badge-bg)] rounded-[var(--radius-md)] p-[calc(var(--spacing)*1.375)];
-
-                }*/
-          .aria-ToggleButton {
-            padding: var(--spacing) var(--spacing-sm);
-          }
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--spacing);
-          position: relative;
-
-          &.screen {
-            .sizeInfo {
-              position: absolute;
-              width: 64px;
-              left: -64px;
-            }
-
-            .react-aria-RadioGroup {
-              display: flex;
-              align-items: center;
-              font-size: var(--text-sm);
-              gap: 0;
-            }
-
-            .aria-Radio {
-              padding: var(--spacing-sm);
-              background-color: var(--on-primary);
-
-              .react-aria-Label {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-              }
-
-              &[data-selected] {
-                background-color: var(--outline);
-                color: var(--on-primary);
-
-                svg {
-                  stroke: var(--on-primary);
-                  stroke-width: 2;
-                }
-              }
-
-              &:first-child {
-                border-radius: var(--radius-md) 0 0 var(--radius-md);
-              }
-
-              &:last-child {
-                border-radius: 0 var(--radius-md) var(--radius-md) 0;
-              }
-            }
-
-            /*font-size: var(--text-sm);
-                    @apply flex rounded-[var(--radius-md)] bg-[var(--builder-header-badge-bg)] gap-[var(--spacing)];*/
-          }
-
-          flex: 0;
-
-          &:first-child {
-            justify-content: flex-start;
-            flex: 1;
-
-            button {
-              padding: var(--spacing-lg);
-              background-color: transparent;
-            }
-
-            .project-info {
-              display: flex;
-              flex-direction: column;
-              gap: 0;
-
-              .project-name {
-                font-weight: 600;
-                color: var(--on-surface);
-              }
-
-              .project-id {
-                font-size: var(--text-xs);
-                color: var(--on-surface-variant);
-                opacity: 0.8;
-              }
-            }
-          }
-
-          &.screen {
-            gap: var(--spacing-sm);
-
-            /* Theme selector 스타일 */
-            .theme-selector {
-              display: flex;
-              align-items: center;
-              gap: var(--spacing-sm);
-
-              .react-aria-Select {
-                display: flex;
-                align-items: center;
-                gap: var(--spacing-sm);
-
-                .react-aria-Label {
-                  font-size: var(--text-sm);
-                  font-weight: 500;
-                  color: var(--on-surface);
-                  white-space: nowrap;
-                }
-
-                .react-aria-Button {
-                  padding: var(--spacing-xs) var(--spacing);
-                  font-size: var(--text-sm);
-                  border: 1px solid var(--outline);
-                  border-radius: var(--radius-md);
-                  background: var(--field-background);
-                  color: var(--on-surface);
-                  cursor: pointer;
-                  transition: all 0.2s;
-                  display: flex;
-                  align-items: center;
-                  gap: var(--spacing-sm);
-                  min-width: 120px;
-
-                  &[data-hovered] {
-                    border-color: var(--focus-ring-color);
-                    background: var(--outline);
-                  }
-
-                  &[data-focus-visible] {
-                    outline: 2px solid var(--focus-ring-color);
-                    outline-offset: 2px;
-                    border-color: var(--focus-ring-color);
-                  }
-
-                  &[data-disabled] {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                  }
-
-                  .select-chevron {
-                    display: flex;
-                    align-items: center;
-                    margin-left: auto;
-                  }
-                }
-
-                .react-aria-Popover {
-                  background: var(--field-background);
-                  border: 1px solid var(--outline);
-                  border-radius: var(--radius-md);
-                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                  margin-top: var(--spacing-sm);
-
-                  .react-aria-ListBox {
-                    padding: var(--spacing-sm);
-                    outline: none;
-
-                    .react-aria-ListBoxItem {
-                      padding: var(--spacing-sm) var(--spacing);
-                      font-size: var(--text-sm);
-                      color: var(--on-surface);
-                      border-radius: var(--radius-sm);
-                      cursor: pointer;
-                      transition: background-color 0.2s;
-
-                      &[data-hovered] {
-                        background: var(--outline);
-                      }
-
-                      &[data-selected] {
-                        background: var(--focus-ring-color);
-                        color: var(--on-primary);
-                        font-weight: 500;
-                      }
-
-                      &[data-focused] {
-                        outline: 2px solid var(--focus-ring-color);
-                        outline-offset: -2px;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            /* Dark mode toggle 스타일 */
-            .dark-mode-toggle {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: var(--spacing-sm);
-              background: transparent;
-              border: none;
-              border-radius: var(--radius-md);
-              cursor: pointer;
-              transition: background-color 0.2s;
-
-              &:hover:not(:disabled) {
-                background: var(--button-background-hover);
-              }
-
-              &:active:not(:disabled) {
-                background: var(--button-background-pressed);
-              }
-
-              &:disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-              }
-            }
-          }
-
-          &:last-child {
-            justify-content: flex-end;
-            flex: 1;
-
-            button {
-              border-radius: var(--radius-md);
-              background-color: var(--on-primary);
-              padding: var(--spacing-sm);
-
-              &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-              }
-            }
-
-            .publish {
-              background: linear-gradient(
-                    var(--surface-container),
-                    var(--outline-variant)
-                  )
-                  padding-box,
-                linear-gradient(
-                    82.77deg,
-                    var(--info) 11.87%,
-                    var(--info) 38.42%,
-                    var(--on-surface-variant) 64.19%,
-                    var(--error) 89.96%
-                  )
-                  border-box;
-              border: 2px solid transparent;
-              color: var(--on-surface);
-              line-height: var(--text-sm--line-height);
-              font-size: var(--text-sm);
-              padding: var(--spacing-xs) var(--spacing-lg);
-            }
-          }
-        }
-      }
-
-      main {
-        grid-area: main;
-        display: flex;
-        flex-wrap: nowrap;
-        flex-direction: column;
-        position: relative;
-        z-index: 1;
-
-        .bg {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-grow: 1;
-          position: relative;
-          background-color: var(--surface-variant);
-
-          .workspace {
-            padding: 0;
-            background: var(--background-color);
-            border: 1px solid var(--outline-variant);
-
-            will-change: transform;
-
-            .workspace_overlay {
-              position: absolute;
-              transform-origin: center;
-              will-change: transform;
-            }
-
-            &::before {
-              content: " " attr(data-max-width) "px ";
-              display: block;
-              width: auto;
-              position: absolute;
-              top: -24px;
-              left: 50%;
-              transform: translateX(-50%);
-
-              font-family: var(--font-mono);
-              font-size: var(--text-xs);
-              font-weight: var(--font-weight-semibold);
-              background-color: var(--primary);
-              color: var(--on-primary);
-              padding: 0 var(--spacing-sm);
-              border-radius: var(--radius-xs);
-              text-align: center;
-            }
-
-            &::after {
-              transform-origin: center center;
-              content: " " attr(data-max-height) "px ";
-              display: block;
-              width: auto;
-              position: absolute;
-              top: 50%;
-              left: -16px;
-              transform: translate(-50%, -50%) rotate(-90deg);
-
-              font-size: var(--text-xs);
-              font-weight: var(--font-weight-semibold);
-              background-color: var(--primary);
-              color: var(--on-primary);
-              padding: 0 var(--spacing-sm);
-              border-radius: var(--radius-xs);
-              text-align: center;
-            }
-          }
-        }
-      }
-
-      aside {
-        z-index: 2;
-
-        &.sidebar {
-          grid-area: sidebar;
-          height: 100%;
-          display: flex;
-          position: relative;
-          overflow: auto;
-        }
-
-        .panel-header {
-          height: var(--header-height);
-          font-size: var(--text-xs);
-          line-height: var(--text-xs);
-          font-weight: var(--font-weight-bold);
-          background-color: var(--surface-variant);
-          border-bottom: 1px solid var(--outline-variant);
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-
-          .iconButton {
-            padding: var(--spacing-sm);
-          }
-
-          .panel-title {
-            padding-left: var(--spacing-sm);
-            border-bottom: 0px;
-          }
-        }
-
-        .component-search {
-          .component-search-field {
-            .react-aria-Input {
-              height: var(--header-height);
-              border-width: 0px;
-              border-radius: 0px;
-              outline: none;
-              background-color: var(--secondary-container);
-              border-bottom: 1px solid var(--outline-variant);
-            }
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          flex-direction: row;
-        }
-
-        .panel-content {
-          padding: 0;
-          display: flex;
-          flex-direction: row;
-          gap: 0px;
-        }
-      }
-
-      footer {
-        isolation: isolate;
-        grid-area: footer;
-        background: var(--highlight-background-hover);
-
-        .contents {
-          height: fit-content;
-          display: none;
-        }
-      }
-    }
   }
 
-  /* 에러 배너 및 로딩 오버레이 스타일 추가 */
+  /* Main Grid Layout */
+  .app .contents {
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 48px calc(100% - 48px - 24px) 24px;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "header header header"
+      "sidebar main inspector"
+      "footer footer footer";
+  }
+
+  /* ========================================
+   * Header
+   * ======================================== */
+
+  .app nav.header {
+    grid-area: header;
+    background-color: var(--surface-container);
+    border-bottom: 1px solid var(--outline-variant);
+    color: var(--on-surface);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    height: calc(var(--spacing) * 12);
+    padding: 0;
+    z-index: 1000;
+  }
+
+  /* Header Contents */
+  .header_contents {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing);
+    position: relative;
+    flex: 0;
+  }
+
+  .header_contents .history-info {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--on-surface);
+  }
+
+  .header_contents .aria-ToggleButton {
+    padding: var(--spacing) var(--spacing-sm);
+  }
+
+  /* Header First Child (Left Section) */
+  .header_contents:first-child {
+    justify-content: flex-start;
+    flex: 1;
+  }
+
+  .header_contents:first-child button {
+    padding: var(--spacing-lg);
+    background-color: transparent;
+  }
+
+  /* Project Info */
+  .header_contents .project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .header_contents .project-name {
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  .header_contents .project-id {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    opacity: 0.8;
+  }
+
+  /* Header Screen Section */
+  .header_contents.screen {
+    gap: var(--spacing-sm);
+  }
+
+  .header_contents.screen .sizeInfo {
+    position: absolute;
+    width: 64px;
+    left: -64px;
+  }
+
+  .header_contents.screen .react-aria-RadioGroup {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-sm);
+    gap: 0;
+  }
+
+  /* Radio Buttons in Screen Section */
+  .header_contents.screen .aria-Radio {
+    padding: var(--spacing-sm);
+    background-color: var(--on-primary);
+  }
+
+  .header_contents.screen .aria-Radio .react-aria-Label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .header_contents.screen .aria-Radio[data-selected] {
+    background-color: var(--outline);
+    color: var(--on-primary);
+  }
+
+  .header_contents.screen .aria-Radio[data-selected] svg {
+    stroke: var(--on-primary);
+    stroke-width: 2;
+  }
+
+  .header_contents.screen .aria-Radio:first-child {
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+
+  .header_contents.screen .aria-Radio:last-child {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  /* Theme Selector */
+  .header_contents .theme-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-Select {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-Select .react-aria-Label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--on-surface);
+    white-space: nowrap;
+  }
+
+  .theme-selector .react-aria-Select .react-aria-Button {
+    padding: var(--spacing-xs) var(--spacing);
+    font-size: var(--text-sm);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-md);
+    background: var(--field-background);
+    color: var(--on-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 120px;
+  }
+
+  .theme-selector .react-aria-Button[data-hovered] {
+    border-color: var(--focus-ring-color);
+    background: var(--outline);
+  }
+
+  .theme-selector .react-aria-Button[data-focus-visible] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+    border-color: var(--focus-ring-color);
+  }
+
+  .theme-selector .react-aria-Button[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .theme-selector .select-chevron {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  /* Theme Selector Popover */
+  .theme-selector .react-aria-Popover {
+    background: var(--field-background);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    margin-top: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-ListBox {
+    padding: var(--spacing-sm);
+    outline: none;
+  }
+
+  .theme-selector .react-aria-ListBoxItem {
+    padding: var(--spacing-sm) var(--spacing);
+    font-size: var(--text-sm);
+    color: var(--on-surface);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-hovered] {
+    background: var(--outline);
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-selected] {
+    background: var(--focus-ring-color);
+    color: var(--on-primary);
+    font-weight: 500;
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-focused] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: -2px;
+  }
+
+  /* Dark Mode Toggle */
+  .header_contents .dark-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .dark-mode-toggle:hover:not(:disabled) {
+    background: var(--button-background-hover);
+  }
+
+  .dark-mode-toggle:active:not(:disabled) {
+    background: var(--button-background-pressed);
+  }
+
+  .dark-mode-toggle:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Header Last Child (Right Section) */
+  .header_contents:last-child {
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  .header_contents:last-child button {
+    border-radius: var(--radius-md);
+    background-color: var(--on-primary);
+    padding: var(--spacing-sm);
+  }
+
+  .header_contents:last-child button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Publish Button */
+  .header_contents .publish {
+    background: linear-gradient(
+          var(--surface-container),
+          var(--outline-variant)
+        )
+        padding-box,
+      linear-gradient(
+          82.77deg,
+          var(--info) 11.87%,
+          var(--info) 38.42%,
+          var(--on-surface-variant) 64.19%,
+          var(--error) 89.96%
+        )
+        border-box;
+    border: 2px solid transparent;
+    color: var(--on-surface);
+    line-height: var(--text-sm--line-height);
+    font-size: var(--text-sm);
+    padding: var(--spacing-xs) var(--spacing-lg);
+  }
+
+  /* ========================================
+   * Main Content Area
+   * ======================================== */
+
+  .app main {
+    grid-area: main;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Background Container */
+  .app .bg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    position: relative;
+    background-color: var(--surface-variant);
+  }
+
+  /* Workspace */
+  .app .workspace {
+    padding: 0;
+    background: var(--background-color);
+    border: 1px solid var(--outline-variant);
+    will-change: transform;
+  }
+
+  .workspace .workspace_overlay {
+    position: absolute;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  /* Workspace Width Label */
+  .workspace::before {
+    content: " " attr(data-max-width) "px ";
+    display: block;
+    width: auto;
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    background-color: var(--primary);
+    color: var(--on-primary);
+    padding: 0 var(--spacing-sm);
+    border-radius: var(--radius-xs);
+    text-align: center;
+  }
+
+  /* Workspace Height Label */
+  .workspace::after {
+    transform-origin: center center;
+    content: " " attr(data-max-height) "px ";
+    display: block;
+    width: auto;
+    position: absolute;
+    top: 50%;
+    left: -16px;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    background-color: var(--primary);
+    color: var(--on-primary);
+    padding: 0 var(--spacing-sm);
+    border-radius: var(--radius-xs);
+    text-align: center;
+  }
+
+  /* ========================================
+   * Sidebar
+   * ======================================== */
+
+  .app aside {
+    z-index: 2;
+  }
+
+  .app aside.sidebar {
+    grid-area: sidebar;
+    height: 100%;
+    display: flex;
+    position: relative;
+    overflow: auto;
+  }
+
+  /* Panel Header */
+  .app aside .panel-header {
+    height: var(--header-height);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    background-color: var(--surface-variant);
+    border-bottom: 1px solid var(--outline-variant);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-header .iconButton {
+    padding: var(--spacing-sm);
+  }
+
+  .panel-header .panel-title {
+    padding-left: var(--spacing-sm);
+    border-bottom: 0px;
+  }
+
+  /* Component Search */
+  .component-search .component-search-field .react-aria-Input {
+    height: var(--header-height);
+    border-width: 0px;
+    border-radius: 0px;
+    outline: none;
+    background-color: var(--secondary-container);
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  /* Header Actions */
+  .app aside .header-actions {
+    display: flex;
+    flex-direction: row;
+  }
+
+  /* Panel Content */
+  .app aside .panel-content {
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0px;
+  }
+
+  /* ========================================
+   * Footer
+   * ======================================== */
+
+  .app footer {
+    isolation: isolate;
+    grid-area: footer;
+    background: var(--highlight-background-hover);
+  }
+
+  .app footer .contents {
+    height: fit-content;
+    display: none;
+  }
+
+  /* ========================================
+   * Error Banner & Loading Overlay
+   * ======================================== */
 
   .error-banner {
     background-color: var(--error-container);
@@ -475,7 +498,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--overlay-background);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -488,7 +511,7 @@
     border-radius: 8px;
     font-size: 16px;
     font-weight: 500;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
   }
 
   .loading-spinner:before {
@@ -508,7 +531,6 @@
     0% {
       transform: rotate(0deg);
     }
-
     100% {
       transform: rotate(360deg);
     }

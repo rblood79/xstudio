@@ -3,6 +3,41 @@
     /* Inspector 전용 크기 토큰 */
     --inspector-control-size: 27px;
     --inspector-label-width: 27px;
+
+    /* Panel Button 공통 스타일 변수 */
+    --panel-btn-bg: var(--surface-variant);
+    --panel-btn-bg-hover: var(--surface);
+    --panel-btn-bg-pressed: var(--surface-variant);
+    --panel-btn-border: transparent;
+    --panel-btn-border-hover: var(--outline);
+    --panel-btn-color: var(--on-surface);
+    --panel-btn-font-size: var(--text-xs);
+    --panel-btn-radius: var(--radius-sm);
+    --panel-btn-transition: all 200ms;
+  }
+
+  /* Panel Button 기본 스타일 (공통) */
+  .panel-btn {
+    background: var(--panel-btn-bg);
+    border: 1px solid var(--panel-btn-border);
+    border-radius: var(--panel-btn-radius);
+    font-size: var(--panel-btn-font-size);
+    color: var(--panel-btn-color);
+    transition: var(--panel-btn-transition);
+
+    &:hover:not([aria-disabled="true"]) {
+      background: var(--panel-btn-bg-hover);
+      border-color: var(--panel-btn-border-hover);
+    }
+
+    &[data-pressed]:not([aria-disabled="true"]) {
+      background: var(--panel-btn-bg-pressed);
+    }
+
+    &[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   [data-focus-visible] {
@@ -489,6 +524,7 @@
         .direction-alignment-grid {
           grid-area: input2;
 
+          /* 3x3 alignment grid */
           .react-aria-ToggleButtonGroup {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1137,27 +1173,29 @@
     gap: var(--spacing-xs);
   }
 
+  /* status-actions: 전체 너비, 왼쪽 정렬 버튼 */
   .status-actions .react-aria-Button {
     width: 100%;
     display: flex;
     justify-content: flex-start;
     gap: var(--spacing-sm);
     padding: var(--spacing) var(--spacing-sm);
-    background: var(--surface-variant);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    color: var(--on-surface);
-    transition: all 200ms;
     position: relative;
+    /* 공통 스타일은 .panel-btn 변수 사용 */
+    background: var(--panel-btn-bg);
+    border: 1px solid var(--panel-btn-border);
+    border-radius: var(--panel-btn-radius);
+    font-size: var(--panel-btn-font-size);
+    color: var(--panel-btn-color);
+    transition: var(--panel-btn-transition);
 
     &:hover:not([aria-disabled="true"]) {
-      background: var(--surface);
-      border-color: var(--outline);
+      background: var(--panel-btn-bg-hover);
+      border-color: var(--panel-btn-border-hover);
     }
 
     &[data-pressed]:not([aria-disabled="true"]) {
-      background: var(--surface-variant);
+      background: var(--panel-btn-bg-pressed);
     }
 
     &[aria-disabled="true"] {
@@ -1298,26 +1336,28 @@
     border-top: 1px solid var(--outline);
   }
 
+  /* batch-actions: 균등 분할, 중앙 정렬 버튼 (호버 시 primary 강조) */
   .batch-actions .react-aria-Button {
     flex: 1;
     justify-content: center;
     gap: var(--spacing-sm);
     padding: var(--spacing) var(--spacing-sm);
-    background: var(--surface-variant);
+    /* 공통 스타일 변수 사용 */
+    background: var(--panel-btn-bg);
     border: 1px solid var(--outline);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    color: var(--on-surface);
-    transition: all 200ms;
+    border-radius: var(--panel-btn-radius);
+    font-size: var(--panel-btn-font-size);
+    color: var(--panel-btn-color);
+    transition: var(--panel-btn-transition);
 
     &:hover {
-      background: var(--surface);
+      background: var(--panel-btn-bg-hover);
       border-color: var(--primary);
       color: var(--primary);
     }
 
     &[data-pressed] {
-      background: var(--surface-variant);
+      background: var(--panel-btn-bg-pressed);
     }
   }
 

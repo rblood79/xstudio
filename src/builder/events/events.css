@@ -1,7 +1,143 @@
-/* ===== EventSection Styles ===== */
+/* ===== EventsPanel Styles ===== */
+/* Phase 2 Refactoring: 표준 Panel 구조 준수 */
+/* DOM 구조: .events-panel > PanelHeader > .panel-contents > PropertySection */
 
-/* NOTE: .event-section layout is now handled by shared styles in inspector/index.css
- * using standard .section-header and .section-content classes */
+@layer builder-system {
+  /* ========================================
+   * EventsPanel Base - 패널 기본 구조
+   * ======================================== */
+
+  .events-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .events-panel .panel-contents {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* ========================================
+   * Handlers List View - 이벤트 핸들러 목록
+   * ======================================== */
+
+  .handlers-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .handler-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing) var(--spacing-sm);
+    background: var(--surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .handler-item:hover {
+    background: var(--surface-container-low);
+    border-color: var(--primary);
+  }
+
+  .handler-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .handler-type {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .handler-action-count {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    background: var(--surface-variant);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+
+  /* ========================================
+   * Handler Detail View - 핸들러 상세 뷰
+   * ======================================== */
+
+  .events-panel .section[data-section-id="handler-detail"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .events-panel .section[data-section-id="handler-detail"] > .section-header {
+    background-color: var(--surface-variant);
+    border-bottom: 1px solid var(--outline-variant);
+    padding: var(--spacing-sm);
+  }
+
+  .events-panel .section[data-section-id="handler-detail"] > .section-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    background-color: transparent;
+  }
+
+  /* ========================================
+   * Actions Section - 액션 관리
+   * ======================================== */
+
+  .actions-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .actions-header .iconButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+  }
+
+  .actions-header .button-label {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+  }
+
+  .action-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    padding: var(--spacing-sm);
+    background: var(--surface-variant);
+    border-radius: var(--radius-md);
+  }
+
+  .action-picker-container .react-aria-Button.secondary {
+    padding: var(--spacing-sm) var(--spacing);
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    background: transparent;
+    border: 1px solid var(--outline);
+  }
+}
+
+/* ===== Legacy EventSection Styles ===== */
+/* NOTE: 아래 스타일들은 events/ 내부 컴포넌트용 (점진적 마이그레이션) */
 
 /* Event List */
 .event-list {

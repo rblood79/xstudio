@@ -83,13 +83,4 @@ export const PropertySelect = memo(function PropertySelect({
             </div>
         </fieldset>
     );
-}, (prevProps, nextProps) => {
-    // ⭐ 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
-    return (
-        prevProps.label === nextProps.label &&
-        prevProps.value === nextProps.value &&
-        prevProps.className === nextProps.className &&
-        prevProps.icon === nextProps.icon &&
-        JSON.stringify(prevProps.options) === JSON.stringify(nextProps.options)
-    );
 });

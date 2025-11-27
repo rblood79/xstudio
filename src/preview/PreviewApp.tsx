@@ -23,6 +23,8 @@ function PreviewContent() {
   const elements = usePreviewStore((s) => s.elements) as PreviewElement[];
   const updateElementProps = usePreviewStore((s) => s.updateElementProps);
   const setElements = usePreviewStore((s) => s.setElements);
+  const currentLayoutId = usePreviewStore((s) => s.currentLayoutId);
+  const currentPageId = usePreviewStore((s) => s.currentPageId);
   const navigate = useNavigate();
 
   // EventEngine 인스턴스 (싱글톤)
@@ -214,8 +216,122 @@ function PreviewContent() {
     return renderElementInternal(el, key);
   }, [renderElementInternal]);
 
+  // ⭐ Layout 기반 렌더링: Slot을 Page elements로 교체
+  const renderLayoutElement = useCallback((el: PreviewElement, layoutElements: PreviewElement[], pageElements: PreviewElement[]): React.ReactNode => {
+    // Slot인 경우: Page elements로 교체
+    if (el.tag === 'Slot') {
+      const slotName = (el.props as { name?: string })?.name || 'content';
+
+      // 해당 Slot에 속하는 Page elements 찾기
+      const slotChildren = pageElements.filter((pe) => {
+        const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
+        return peSlotName === slotName && !pe.parent_id;
+      }).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+      // Slot 자체를 div로 렌더링하고 내부에 Page elements 배치
+      return (
+        <div
+          key={el.id}
+          data-element-id={el.id}
+          data-slot-name={slotName}
+          style={el.props?.style as React.CSSProperties}
+          className="preview-slot"
+        >
+          {slotChildren.length > 0
+            ? slotChildren.map((child) => renderPageElementWithChildren(child, pageElements))
+            : null}
+        </div>
+      );
+    }
+
+    // 일반 Layout element: 자식 재귀 렌더링
+    const children = layoutElements
+      .filter((child) => child.parent_id === el.id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // body 태그는 div로 변환
+    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
+
+    // rendererMap에서 렌더러가 있으면 사용
+    const renderer = rendererMap[el.tag];
+    if (renderer && el.tag !== 'body') {
+      return renderer(el, renderContext);
+    }
+
+    return React.createElement(
+      effectiveTag.toLowerCase(),
+      {
+        key: el.id,
+        'data-element-id': el.id,
+        style: el.props?.style as React.CSSProperties,
+        className: el.props?.className,
+        ...(el.tag === 'body' ? { 'data-original-tag': 'body' } : {}),
+      },
+      children.length > 0
+        ? children.map((child) => renderLayoutElement(child, layoutElements, pageElements))
+        : el.props?.children
+    );
+  }, [renderContext]);
+
+  // Page element와 자식들 렌더링 (Layout 모드용)
+  const renderPageElementWithChildren = useCallback((el: PreviewElement, allPageElements: PreviewElement[]): React.ReactNode => {
+    const children = allPageElements
+      .filter((child) => child.parent_id === el.id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // rendererMap에서 렌더러가 있으면 사용
+    const renderer = rendererMap[el.tag];
+    if (renderer) {
+      return renderer(el, renderContext);
+    }
+
+    const effectiveTag = el.tag === 'body' ? 'div' : el.tag;
+
+    return React.createElement(
+      effectiveTag.toLowerCase(),
+      {
+        key: el.id,
+        'data-element-id': el.id,
+        style: el.props?.style as React.CSSProperties,
+        className: el.props?.className,
+      },
+      children.length > 0
+        ? children.map((child) => renderPageElementWithChildren(child, allPageElements))
+        : el.props?.children
+    );
+  }, [renderContext]);
+
   // Elements 트리 렌더링
   const renderElementsTree = useCallback(() => {
+    // ⭐ Page 모드에서 Layout이 적용된 경우: Layout 기반 렌더링
+    // (currentPageId가 있고 currentLayoutId가 있을 때만 - Layout 모드에서는 currentPageId가 null)
+    if (currentLayoutId && currentPageId) {
+      const layoutElements = elements.filter((el) => el.layout_id === currentLayoutId);
+      const pageElements = elements.filter((el) => el.page_id === currentPageId && !el.layout_id);
+
+      // Layout의 root element (body) 찾기
+      const layoutBody = layoutElements.find((el) => el.tag === 'body' && !el.parent_id);
+
+      if (layoutBody) {
+        const bodyChildren = layoutElements
+          .filter((el) => el.parent_id === layoutBody.id)
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        return (
+          <div
+            key={layoutBody.id}
+            data-element-id={layoutBody.id}
+            data-original-tag="body"
+            style={layoutBody.props?.style as React.CSSProperties}
+            className="preview-body preview-layout-body"
+          >
+            {bodyChildren.map((el) => renderLayoutElement(el, layoutElements, pageElements))}
+          </div>
+        );
+      }
+    }
+
+    // ⭐ Layout이 없는 경우: 기존 방식
     const bodyElement = elements.find((el) => el.tag === 'body');
 
     if (bodyElement) {
@@ -242,7 +358,7 @@ function PreviewContent() {
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
     return rootElements.map((el) => renderElement(el, el.id));
-  }, [elements, renderElement]);
+  }, [elements, renderElement, currentLayoutId, currentPageId, renderLayoutElement]);
 
   return (
     <div

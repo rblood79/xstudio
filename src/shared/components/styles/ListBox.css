@@ -288,79 +288,59 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 색상 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-ListBox {
+    /* 기본 variant 변수 */
+    --lb-accent: var(--outline-variant);
+    --lb-accent-container: var(--primary-container);
+    --lb-on-accent-container: var(--on-primary-container);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ListBox.primary {
-    border-color: var(--primary);
-
-    &[data-focus-visible] {
-      outline-color: var(--primary);
-    }
-
-    .react-aria-ListBoxItem {
-      &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-    }
+    --lb-accent: var(--primary);
+    --lb-accent-container: var(--primary-container);
+    --lb-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-ListBox.secondary {
-    border-color: var(--secondary);
-
-    &[data-focus-visible] {
-      outline-color: var(--secondary);
-    }
-
-    .react-aria-ListBoxItem {
-      &[data-focus-visible] {
-        outline-color: var(--secondary);
-      }
-
-      &[data-selected] {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-      }
-    }
+    --lb-accent: var(--secondary);
+    --lb-accent-container: var(--secondary-container);
+    --lb-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-ListBox.tertiary {
-    border-color: var(--tertiary);
-
-    &[data-focus-visible] {
-      outline-color: var(--tertiary);
-    }
-
-    .react-aria-ListBoxItem {
-      &[data-focus-visible] {
-        outline-color: var(--tertiary);
-      }
-
-      &[data-selected] {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
-      }
-    }
+    --lb-accent: var(--tertiary);
+    --lb-accent-container: var(--tertiary-container);
+    --lb-on-accent-container: var(--on-tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
   .react-aria-ListBox.error {
-    border-color: var(--error);
+    --lb-accent: var(--error);
+    --lb-accent-container: var(--error-container);
+    --lb-on-accent-container: var(--on-error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-ListBox.primary,
+  .react-aria-ListBox.secondary,
+  .react-aria-ListBox.tertiary,
+  .react-aria-ListBox.error {
+    border-color: var(--lb-accent);
 
     &[data-focus-visible] {
-      outline-color: var(--error);
+      outline-color: var(--lb-accent);
     }
 
     .react-aria-ListBoxItem {
       &[data-focus-visible] {
-        outline-color: var(--error);
+        outline-color: var(--lb-accent);
       }
 
       &[data-selected] {
-        background: var(--error-container);
-        color: var(--on-error-container);
+        background: var(--lb-accent-container);
+        color: var(--lb-on-accent-container);
       }
     }
   }
@@ -376,73 +356,80 @@
       }
 
       &[data-selected] {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
+        background: var(--lb-accent-container);
+        color: var(--lb-on-accent-container);
       }
     }
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-ListBox {
+    /* 기본 size 변수 (md) */
+    --lb-padding: var(--spacing-xs);
+    --lb-gap: var(--spacing-2xs);
+    --lb-header-size: var(--text-sm);
+    --lb-header-padding: 0 var(--spacing-md);
+    --lb-item-padding: var(--spacing) var(--spacing-md);
+    --lb-item-min-height: 40px;
+    --lb-item-size: var(--text-sm);
+    --lb-desc-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-ListBox.sm {
-    padding: var(--spacing-2xs);
-    gap: var(--spacing-3xs);
-
-    .react-aria-Header {
-      font-size: var(--text-xs);
-      padding: 0 var(--spacing);
-    }
-
-    .react-aria-ListBoxItem {
-      padding: var(--spacing-sm) var(--spacing);
-      min-height: 32px;
-      font-size: var(--text-xs);
-
-      [slot="description"] {
-        font-size: 10px;
-      }
-    }
+    --lb-padding: var(--spacing-2xs);
+    --lb-gap: var(--spacing-3xs);
+    --lb-header-size: var(--text-xs);
+    --lb-header-padding: 0 var(--spacing);
+    --lb-item-padding: var(--spacing-sm) var(--spacing);
+    --lb-item-min-height: 32px;
+    --lb-item-size: var(--text-xs);
+    --lb-desc-size: 10px;
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-ListBox.md {
-    padding: var(--spacing-xs);
-    gap: var(--spacing-2xs);
-
-    .react-aria-Header {
-      font-size: var(--text-sm);
-      padding: 0 var(--spacing-md);
-    }
-
-    .react-aria-ListBoxItem {
-      padding: var(--spacing) var(--spacing-md);
-      min-height: 40px;
-      font-size: var(--text-sm);
-
-      [slot="description"] {
-        font-size: var(--text-xs);
-      }
-    }
+    --lb-padding: var(--spacing-xs);
+    --lb-gap: var(--spacing-2xs);
+    --lb-header-size: var(--text-sm);
+    --lb-header-padding: 0 var(--spacing-md);
+    --lb-item-padding: var(--spacing) var(--spacing-md);
+    --lb-item-min-height: 40px;
+    --lb-item-size: var(--text-sm);
+    --lb-desc-size: var(--text-xs);
   }
 
-  /* ===== Large Size ===== */
   .react-aria-ListBox.lg {
-    padding: var(--spacing-sm);
-    gap: var(--spacing-xs);
+    --lb-padding: var(--spacing-sm);
+    --lb-gap: var(--spacing-xs);
+    --lb-header-size: var(--text-base);
+    --lb-header-padding: 0 var(--spacing-lg);
+    --lb-item-padding: var(--spacing-md) var(--spacing-lg);
+    --lb-item-min-height: 48px;
+    --lb-item-size: var(--text-base);
+    --lb-desc-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-ListBox.sm,
+  .react-aria-ListBox.md,
+  .react-aria-ListBox.lg {
+    padding: var(--lb-padding);
+    gap: var(--lb-gap);
 
     .react-aria-Header {
-      font-size: var(--text-base);
-      padding: 0 var(--spacing-lg);
+      font-size: var(--lb-header-size);
+      padding: var(--lb-header-padding);
     }
 
     .react-aria-ListBoxItem {
-      padding: var(--spacing-md) var(--spacing-lg);
-      min-height: 48px;
-      font-size: var(--text-base);
+      padding: var(--lb-item-padding);
+      min-height: var(--lb-item-min-height);
+      font-size: var(--lb-item-size);
 
       [slot="description"] {
-        font-size: var(--text-sm);
+        font-size: var(--lb-desc-size);
       }
     }
   }

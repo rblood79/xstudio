@@ -1,14 +1,20 @@
-/* Auth Container */
-.auth-container {
+/* Auth styles - scoped to dashboard layer */
+@layer dashboard {
+  /* Auth Container */
+  .auth-container {
     min-height: 100vh;
-    background: linear-gradient(48deg, var(--highlight-background) 0%, var(--highlight-overlay) 100%);
+    background: linear-gradient(
+      48deg,
+      var(--highlight-background) 0%,
+      var(--highlight-overlay) 100%
+    );
     display: flex;
     align-items: center;
     justify-content: center;
-}
+  }
 
-/* Auth Card */
-.auth-card {
+  /* Auth Card */
+  .auth-card {
     width: 100%;
     max-width: var(--container-xs);
     background: var(--color-white);
@@ -17,66 +23,69 @@
     flex-direction: column;
     gap: var(--spacing-md);
     padding: var(--spacing-xl);
-}
+  }
 
-/* Auth Header */
-
-.helper-text {
+  /* Auth Header */
+  .helper-text {
     display: flex;
     justify-content: center;
     align-items: center;
-}
+  }
 
-.auth-header {
+  .auth-header {
     text-align: center;
-}
+  }
 
-.auth-title {
+  .auth-title {
     font-size: var(--text-2xl);
-}
+  }
 
-.auth-subtitle {
+  .auth-subtitle {
     font-size: var(--text-sm);
-}
+  }
 
-/* Auth Form */
-.auth-form {
+  /* Auth Form */
+  .auth-form {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+  }
 
-    .react-aria-TextField {
-        width: 100%;
-    }
-    .primary {
-        background: var(--builder-button-bg);
-        color: var(--builder-button-text);
-        border-color: var(--builder-button-border);
-        &:hover {
-            background: var(--builder-button-hover-bg);
-            color: var(--builder-button-text);
-            border-color: var(--builder-button-border);
-        }
-        &:active {
-            background: var(--builder-button-active-bg);
-            color: var(--builder-button-text);
-            border-color: var(--builder-button-border);
-        }
-    }
-}
+  .auth-form .react-aria-TextField {
+    width: 100%;
+  }
 
-/* Responsive Design */
-@media (max-width: 640px) {
+  .auth-form .primary {
+    background: var(--builder-button-bg);
+    color: var(--builder-button-text);
+    border-color: var(--builder-button-border);
+  }
+
+  .auth-form .primary:hover {
+    background: var(--builder-button-hover-bg);
+    color: var(--builder-button-text);
+    border-color: var(--builder-button-border);
+  }
+
+  .auth-form .primary:active {
+    background: var(--builder-button-active-bg);
+    color: var(--builder-button-text);
+    border-color: var(--builder-button-border);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 640px) {
     .auth-card {
-        padding: 1.5rem;
-        margin: 1rem;
+      padding: var(--spacing-lg);
+      margin: var(--spacing);
     }
 
     .auth-title {
-        font-size: 1.5rem;
+      font-size: var(--text-xl);
     }
 
     .social-buttons {
-        flex-direction: column;
+      flex-direction: column;
     }
+  }
 }

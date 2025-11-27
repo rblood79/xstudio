@@ -25,6 +25,7 @@
 - [M3 Color System Guide (2025-11-19)](#m3-color-system-guide)
 - [Panel System Standardization (2025-11-13)](#panel-system-standardization)
 - [Layout Preset System (2025-11-26)](#layout-preset-system)
+- [Preview Runtime Isolation (2025-11-27)](#preview-runtime-isolation)
 
 ---
 
@@ -627,9 +628,59 @@ src/builder/panels/properties/editors/
 
 ---
 
+## Preview Runtime Isolation
+
+**Status**: ✅ Phase 1 Complete (2025-11-27)
+
+### Overview
+Preview Runtime을 Builder와 완전히 분리된 독립적인 React 애플리케이션으로 구현. `srcdoc` iframe 내에서 실행되며 `postMessage`를 통해서만 통신.
+
+### Key Features
+- **Security Isolation**: srcdoc iframe으로 완전 격리 (origin 분리)
+- **State Independence**: 독립적인 Zustand store (`previewStore.ts`)
+- **CSS/Style Isolation**: Builder 스타일과 완전 분리
+- **Performance Optimized**: Option B+C 패턴으로 요소 선택 최적화
+- **3-Level State Hierarchy**: App/Page/Component 상태 관리
+- **ACK-based Communication**: 안정적인 양방향 메시지 프로토콜
+
+### Architecture
+
+```
+Builder (Parent)          Preview Runtime (srcdoc iframe)
+     │                              │
+     │──── UPDATE_ELEMENTS ────────>│
+     │                              │
+     │<─── ELEMENTS_UPDATED_ACK ────│
+     │                              │
+     │<─── ELEMENT_SELECTED ────────│ (즉시 - rect, props)
+     │<─── ELEMENT_COMPUTED_STYLE ──│ (지연 - RAF)
+```
+
+### Files
+```
+src/preview/
+├── index.tsx              # Entry point
+├── PreviewApp.tsx         # Main component
+├── messaging/             # postMessage 처리
+├── store/                 # 독립 Zustand store
+├── router/                # MemoryRouter
+├── renderers/             # 컴포넌트별 렌더러 (6개)
+├── types/                 # Preview 전용 타입
+└── utils/                 # 유틸리티 (5개)
+```
+
+### Communication Protocol
+- **Builder → Preview**: UPDATE_ELEMENTS, THEME_VARS, SET_DARK_MODE, etc.
+- **Preview → Builder**: PREVIEW_READY, ELEMENT_SELECTED, ELEMENT_COMPUTED_STYLE
+
+### Documentation
+- [PREVIEW_RUNTIME_ISOLATION.md](features/PREVIEW_RUNTIME_ISOLATION.md)
+
+---
+
 ## Summary Statistics
 
-### Total Features Completed: 19
+### Total Features Completed: 20
 ### Total Lines of Code Added: ~15,000+
 ### Code Reduction Achieved: 37-88% in refactored areas
 ### Performance Improvements:
@@ -644,9 +695,10 @@ src/builder/panels/properties/editors/
 ✅ Complete theme system isolation
 ✅ Panel system standardization
 ✅ Layout Preset System with Slot auto-creation
+✅ Preview Runtime Isolation (srcdoc iframe, independent store)
 ✅ Comprehensive documentation
 
 ---
 
-**Last Updated**: 2025-11-26
+**Last Updated**: 2025-11-27
 **Next Steps**: See [PLANNED_FEATURES.md](PLANNED_FEATURES.md) for upcoming implementations

@@ -1,5 +1,12 @@
 @layer components {
   .react-aria-ToggleButton {
+    /* CSS Variables for variant theming */
+    --tb-selected-bg: var(--primary);
+    --tb-selected-bg-pressed: var(--primary-pressed);
+    --tb-selected-border: var(--primary);
+    --tb-selected-border-pressed: var(--primary-pressed);
+    --tb-selected-text: var(--on-primary);
+
     color: var(--on-surface);
     background: var(--surface-container-high);
     border: 1px solid var(--outline-variant);
@@ -20,13 +27,13 @@
     }
 
     &[data-selected] {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: var(--on-primary);
+      background: var(--tb-selected-bg);
+      border-color: var(--tb-selected-border);
+      color: var(--tb-selected-text);
 
       &[data-pressed] {
-        background: var(--primary-pressed);
-        border-color: var(--primary-pressed);
+        background: var(--tb-selected-bg-pressed);
+        border-color: var(--tb-selected-border-pressed);
       }
     }
 
@@ -43,186 +50,86 @@
     }
   }
 
-  /* ===== M3 Primary - Controlled by ToggleButtonGroup ===== */
+  /* ===== M3 Primary ===== */
+  .react-aria-ToggleButton.primary,
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"]
     .react-aria-ToggleButton {
-    &[data-selected] {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: var(--on-primary);
-
-      &[data-pressed] {
-        background: var(--primary-pressed);
-        border-color: var(--primary-pressed);
-      }
-    }
+    --tb-selected-bg: var(--primary);
+    --tb-selected-bg-pressed: var(--primary-pressed);
+    --tb-selected-border: var(--primary);
+    --tb-selected-border-pressed: var(--primary-pressed);
+    --tb-selected-text: var(--on-primary);
   }
 
-  /* ===== M3 Secondary - Controlled by ToggleButtonGroup ===== */
+  /* ===== M3 Secondary ===== */
+  .react-aria-ToggleButton.secondary,
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"]
     .react-aria-ToggleButton {
-    &[data-selected] {
-      background: var(--secondary);
-      border-color: var(--secondary);
-      color: var(--on-secondary);
-
-      &[data-pressed] {
-        background: var(--secondary-pressed);
-        border-color: var(--secondary-pressed);
-      }
-    }
+    --tb-selected-bg: var(--secondary);
+    --tb-selected-bg-pressed: var(--secondary-pressed);
+    --tb-selected-border: var(--secondary);
+    --tb-selected-border-pressed: var(--secondary-pressed);
+    --tb-selected-text: var(--on-secondary);
   }
 
-  /* ===== M3 Tertiary - Controlled by ToggleButtonGroup ===== */
+  /* ===== M3 Tertiary ===== */
+  .react-aria-ToggleButton.tertiary,
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="tertiary"]
     .react-aria-ToggleButton {
-    &[data-selected] {
-      background: var(--tertiary);
-      border-color: var(--tertiary);
-      color: var(--on-tertiary);
-
-      &[data-pressed] {
-        background: var(--tertiary-pressed);
-        border-color: var(--tertiary-pressed);
-      }
-    }
+    --tb-selected-bg: var(--tertiary);
+    --tb-selected-bg-pressed: var(--tertiary-pressed);
+    --tb-selected-border: var(--tertiary);
+    --tb-selected-border-pressed: var(--tertiary-pressed);
+    --tb-selected-text: var(--on-tertiary);
   }
 
-  /* ===== M3 Error - Controlled by ToggleButtonGroup ===== */
+  /* ===== M3 Error ===== */
+  .react-aria-ToggleButton.error,
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="error"]
     .react-aria-ToggleButton {
-    &[data-selected] {
-      background: var(--error);
-      border-color: var(--error);
-      color: var(--on-error);
-
-      &[data-pressed] {
-        background: var(--error-pressed);
-        border-color: var(--error-pressed);
-      }
-    }
+    --tb-selected-bg: var(--error);
+    --tb-selected-bg-pressed: var(--error-pressed);
+    --tb-selected-border: var(--error);
+    --tb-selected-border-pressed: var(--error-pressed);
+    --tb-selected-text: var(--on-error);
   }
 
-  /* ===== M3 Surface - Controlled by ToggleButtonGroup ===== */
+  /* ===== M3 Surface ===== */
+  .react-aria-ToggleButton.surface,
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"]
     .react-aria-ToggleButton {
-    &[data-selected] {
-      background: var(--surface-container-highest);
-      border-color: var(--outline-variant);
-      color: var(--on-surface);
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-        border-color: var(--outline);
-      }
-    }
+    --tb-selected-bg: var(--surface-container-highest);
+    --tb-selected-bg-pressed: color-mix(
+      in srgb,
+      var(--surface-container-highest) 88%,
+      black
+    );
+    --tb-selected-border: var(--outline-variant);
+    --tb-selected-border-pressed: var(--outline);
+    --tb-selected-text: var(--on-surface);
   }
 
-  /* Small size - controlled by ToggleButtonGroup */
+  /* ===== Size Variants ===== */
+  /* Small */
+  .react-aria-ToggleButton.sm,
   .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
     .react-aria-ToggleButton {
     font-size: var(--text-sm);
     padding: var(--spacing) var(--spacing-md);
   }
 
-  /* Medium size - controlled by ToggleButtonGroup (default) */
+  /* Medium (default) */
+  .react-aria-ToggleButton.md,
   .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
     .react-aria-ToggleButton {
     font-size: var(--text-base);
     padding: var(--spacing-sm) var(--spacing-xl);
   }
 
-  /* Large size - controlled by ToggleButtonGroup */
+  /* Large */
+  .react-aria-ToggleButton.lg,
   .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
     .react-aria-ToggleButton {
-    font-size: var(--text-lg);
-    padding: var(--spacing-md) var(--spacing-2xl);
-  }
-
-  /* ===== Standalone ToggleButton variants (not in a group) ===== */
-
-  /* M3 Primary Standalone */
-  .react-aria-ToggleButton.primary {
-    &[data-selected] {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: var(--on-primary);
-
-      &[data-pressed] {
-        background: var(--primary-pressed);
-        border-color: var(--primary-pressed);
-      }
-    }
-  }
-
-  /* M3 Secondary Standalone */
-  .react-aria-ToggleButton.secondary {
-    &[data-selected] {
-      background: var(--secondary);
-      border-color: var(--secondary);
-      color: var(--on-secondary);
-
-      &[data-pressed] {
-        background: var(--secondary-pressed);
-        border-color: var(--secondary-pressed);
-      }
-    }
-  }
-
-  /* M3 Tertiary Standalone */
-  .react-aria-ToggleButton.tertiary {
-    &[data-selected] {
-      background: var(--tertiary);
-      border-color: var(--tertiary);
-      color: var(--on-tertiary);
-
-      &[data-pressed] {
-        background: var(--tertiary-pressed);
-        border-color: var(--tertiary-pressed);
-      }
-    }
-  }
-
-  /* M3 Error Standalone */
-  .react-aria-ToggleButton.error {
-    &[data-selected] {
-      background: var(--error);
-      border-color: var(--error);
-      color: var(--on-error);
-
-      &[data-pressed] {
-        background: var(--error-pressed);
-        border-color: var(--error-pressed);
-      }
-    }
-  }
-
-  /* M3 Surface Standalone */
-  .react-aria-ToggleButton.surface {
-    &[data-selected] {
-      background: var(--surface-container-highest);
-      border-color: var(--outline-variant);
-      color: var(--on-surface);
-
-      &[data-pressed] {
-        background: color-mix(in srgb, var(--surface-container-highest) 88%, black);
-        border-color: var(--outline);
-      }
-    }
-  }
-
-  /* Standalone ToggleButton sizes (not in a group) */
-  .react-aria-ToggleButton.sm {
-    font-size: var(--text-sm);
-    padding: var(--spacing) var(--spacing-md);
-  }
-
-  .react-aria-ToggleButton.md {
-    font-size: var(--text-base);
-    padding: var(--spacing-sm) var(--spacing-xl);
-  }
-
-  .react-aria-ToggleButton.lg {
     font-size: var(--text-lg);
     padding: var(--spacing-md) var(--spacing-2xl);
   }

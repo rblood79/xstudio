@@ -1,8 +1,10 @@
 /**
  * EventsPanel - 이벤트 관리 패널
  *
- * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * React Stately 기반 이벤트 관리 로직을 직접 포함 (이전 EventSection 통합)
+ * Phase 2: 표준 Panel 구조로 리팩토링
+ * - PropertySection 컴포넌트 사용
+ * - common/index.css 패턴 준수
+ * - DOM 구조: .events-panel > PanelHeader > .panel-contents > PropertySection
  */
 
 import React, { useState } from "react";
@@ -15,7 +17,6 @@ import type {
   ActionType as EventHandlerActionType,
 } from "../../events/types/eventTypes";
 import { isImplementedEventType } from "@/types/events/events.types";
-import type { ComponentElementProps } from "../../../types/builder/unified.types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventHandlerManager } from "../../events/components/EventHandlerManager";
 import { EventTypePicker } from "../../events/pickers/EventTypePicker";
@@ -25,12 +26,11 @@ import { useActions } from "../../events/state/useActions";
 import { useEventSelection } from "../../events/state/useEventSelection";
 import { ConditionEditor } from "../../events/components/ConditionEditor";
 import { DebounceThrottleEditor } from "../../events/components/DebounceThrottleEditor";
-import { ChevronLeft, Trash, CirclePlus } from "lucide-react";
+import { ChevronLeft, Trash, CirclePlus, Zap } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { useStore } from "../../stores";
-import { PanelHeader } from "../common";
+import { PanelHeader, PropertySection, EmptyState } from "../common";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
-import "../../panels/common/index.css";
+import "../common/index.css";
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);
@@ -47,16 +47,20 @@ export function EventsPanel({ isActive }: PanelProps) {
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
     return (
-      <div className="inspector empty">
-        <div className="empty-state">
-          <p className="empty-message">요소를 선택하세요</p>
+      <div className="events-panel">
+        <PanelHeader title="Events" />
+        <div className="panel-contents">
+          <EmptyState message="요소를 선택하세요" />
         </div>
       </div>
     );
   }
 
+  // ⭐ key prop으로 요소 변경 시 컴포넌트 리마운트 강제
+  // useEventHandlers 훅이 새 요소의 이벤트로 초기화됨
   return (
     <EventsPanelContent
+      key={selectedElement.id}
       selectedElement={selectedElement}
       updateEvents={updateEvents}
       showAddAction={showAddAction}
@@ -78,23 +82,19 @@ function EventsPanelContent({
   showAddAction,
   setShowAddAction,
 }: EventsPanelContentProps) {
-  // Builder store에서 실제 element 가져오기 (DB 데이터 보존을 위해)
-  const builderElement = useStore((state) =>
-    state.elements.find((el) => el.id === selectedElement?.id)
-  );
+  // ⭐ selectedElement.events에 이미 매핑된 이벤트 사용
+  // elementMapper.ts에서 element.props.events → selectedElement.events로 매핑됨
+  const eventsFromElement = selectedElement?.events || [];
 
-  // events는 props 안에 저장됨 (DB 스키마)
-  const eventsFromProps = (builderElement?.props as ComponentElementProps)
-    ?.events;
-
-  // React Stately로 이벤트 핸들러 관리 - props.events 사용
+  // React Stately로 이벤트 핸들러 관리
   const { handlers: rawHandlers, addHandler, updateHandler, removeHandler } =
-    useEventHandlers((eventsFromProps || []) as unknown as EventHandler[]);
+    useEventHandlers(eventsFromElement as EventHandler[]);
 
   // ⭐ Memoize handlers to prevent infinite loop
-  // useListData의 list.items가 매 렌더마다 새 참조를 반환할 수 있으므로
-  // JSON 비교로 실제 내용이 변경되었을 때만 새 배열 생성
-  const handlersJson = React.useMemo(() => JSON.stringify(rawHandlers), [rawHandlers]);
+  const handlersJson = React.useMemo(
+    () => JSON.stringify(rawHandlers),
+    [rawHandlers]
+  );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handlers = React.useMemo(() => rawHandlers, [handlersJson]);
 
@@ -106,7 +106,6 @@ function EventsPanelContent({
   const { actions, addAction } = useActions(selectedHandler?.actions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
-  // Filter to only include implemented event types from registry
   const registeredEventTypes: EventType[] = handlers
     .map((h) => h.event)
     .filter((event): event is EventType => isImplementedEventType(event));
@@ -133,27 +132,23 @@ function EventsPanelContent({
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
     const newHandler = addHandler(eventType);
-    // 자동으로 새 핸들러 선택
     selectHandler(newHandler.id);
   };
 
   // 이벤트 핸들러 삭제
   const handleRemoveHandler = (handlerId: string) => {
     removeHandler(handlerId);
-    // 다음 핸들러 자동 선택
     selectAfterDelete(handlerId);
   };
 
   // 액션 추가
   const handleAddAction = (actionType: ActionType) => {
-    // Normalize snake_case to camelCase for compatibility with eventTypes.ts
     const normalizedActionType = normalizeActionType(actionType);
     addAction(normalizedActionType, {});
     setShowAddAction(false);
   };
 
   // Helper function to normalize action types (snake_case -> camelCase)
-  // Returns ActionType from eventTypes.ts (used by handlers)
   const normalizeActionType = (
     actionType: ActionType
   ): EventHandlerActionType => {
@@ -172,171 +167,181 @@ function EventsPanelContent({
   };
 
   return (
-    <div className="inspector events-panel">
-      <div className="event-section">
-        <PanelHeader
-          title="Events"
-          actions={
-            <EventTypePicker
-              onSelect={handleAddEvent}
-              registeredTypes={registeredEventTypes}
-            />
-          }
-        />
+    <div className="events-panel">
+      <PanelHeader
+        title="Events"
+        actions={
+          <EventTypePicker
+            onSelect={handleAddEvent}
+            registeredTypes={registeredEventTypes}
+          />
+        }
+      />
 
-        <div className="section-content">
-          {/* 등록된 이벤트 핸들러 목록 */}
-          {handlers.length === 0 ? (
-            <p className="empty-message">
-              No event handlers registered. Use the selector above to add one.
-            </p>
-          ) : (
-            <div className="event-handlers-list">
-              {selectedHandler ? (
-                // 선택된 핸들러의 상세 화면
-                <div className="selected-handler-container">
-                  <div className="selected-handler-header">
-                    <Button
-                      className="react-aria-Button"
-                      onPress={() => selectHandler(null)}
-                    >
-                      <ChevronLeft
-                        color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
-                        size={iconProps.size}
-                      />
-                    </Button>
-                    <span className="selected-handler-type">
-                      {selectedHandler.event}
-                    </span>
-                    <Button
-                      className="react-aria-Button"
-                      onPress={() => handleRemoveHandler(selectedHandler.id)}
-                    >
-                      <Trash
-                        color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
-                        size={iconProps.size}
-                      />
-                    </Button>
-                  </div>
-
-                  {/* Handler-level Advanced Settings */}
-                  <div className="handler-advanced-settings">
-                    <ConditionEditor
-                      condition={selectedHandler.condition}
-                      onChange={(condition) => {
-                        const updated = { ...selectedHandler, condition };
-                        updateHandler(selectedHandler.id, updated);
-                      }}
-                      label="Execute handler when"
-                      placeholder="state.isEnabled === true"
-                    />
-
-                    <DebounceThrottleEditor
-                      debounce={selectedHandler.debounce}
-                      throttle={selectedHandler.throttle}
-                      onChange={({ debounce, throttle }) => {
-                        const updated = {
-                          ...selectedHandler,
-                          debounce,
-                          throttle,
-                        };
-                        updateHandler(selectedHandler.id, updated);
-                      }}
-                    />
-                  </div>
-
-                  {/* Actions Section */}
-                  <div className="actions-section">
-                    <div className="actions-header">
-                      <h4 className="actions-title">Actions</h4>
-                      {!showAddAction && (
-                        <Button
-                          className="iconButton"
-                          onPress={() => setShowAddAction(true)}
-                          aria-label="Add Action"
-                        >
-                          <CirclePlus
-                            color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
-                            size={iconProps.size}
-                          />
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* ActionTypePicker - 간단한 Select로 대체 */}
-                    {showAddAction ? (
-                      <div className="add-action-container">
-                        <ActionTypePicker
-                          onSelect={(actionType) =>
-                            handleAddAction(actionType as ActionType)
-                          }
-                          showCategories={true}
-                        />
-                        <Button
-                          className="react-aria-Button"
-                          onPress={() => setShowAddAction(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <EventHandlerManager
-                        eventHandler={selectedHandler}
-                        onUpdateAction={(actionId, updates) => {
-                          const action = actions.find((a) => a.id === actionId);
-                          if (action) {
-                            const updatedAction = { ...action, ...updates };
-                            const updatedActions = actions.map((a) =>
-                              a.id === actionId ? updatedAction : a
-                            );
-                            const updatedHandler = {
-                              ...selectedHandler,
-                              actions: updatedActions,
-                            };
-                            updateHandler(selectedHandler.id, updatedHandler);
-                          }
-                        }}
-                        onRemoveAction={(actionId) => {
-                          const updatedActions = actions.filter(
-                            (a) => a.id !== actionId
-                          );
-                          const updatedHandler = {
-                            ...selectedHandler,
-                            actions: updatedActions,
-                          };
-                          updateHandler(selectedHandler.id, updatedHandler);
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
-              ) : (
-                // 핸들러 목록 화면
-                <div className="handlers-list">
-                  {handlers.map((handler) => (
-                    <div
-                      key={handler.id}
-                      className="handler-item"
-                      onClick={() => selectHandler(handler.id)}
-                    >
-                      <div className="handler-info">
-                        <span className="handler-type">{handler.event}</span>
-                        <span className="handler-action-count">
-                          {handler.actions?.length || 0} action
-                          {(handler.actions?.length || 0) !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <span className="handler-arrow">→</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+      <div className="panel-contents">
+        {handlers.length === 0 ? (
+          /* 이벤트 핸들러 없음 */
+          <EmptyState
+            icon={<Zap size={32} color={iconProps.color} strokeWidth={iconProps.stroke} />}
+            message="이벤트 핸들러가 없습니다"
+            description="상단의 + 버튼을 눌러 이벤트를 추가하세요"
+          />
+        ) : selectedHandler ? (
+          /* 선택된 핸들러 상세 뷰 */
+          <div className="section" data-section-id="handler-detail">
+            {/* Handler Header with Back/Delete */}
+            <div className="section-header">
+              <Button
+                className="iconButton"
+                onPress={() => selectHandler(null)}
+                aria-label="Back to list"
+              >
+                <ChevronLeft
+                  color={iconProps.color}
+                  strokeWidth={iconProps.stroke}
+                  size={iconProps.size}
+                />
+              </Button>
+              <span className="section-title">{selectedHandler.event}</span>
+              <div className="section-actions">
+                <Button
+                  className="iconButton"
+                  onPress={() => handleRemoveHandler(selectedHandler.id)}
+                  aria-label="Delete handler"
+                >
+                  <Trash
+                    color={iconProps.color}
+                    strokeWidth={iconProps.stroke}
+                    size={iconProps.size}
+                  />
+                </Button>
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="section-content">
+              {/* Handler Advanced Settings */}
+              <PropertySection id="handler-settings" title="Settings">
+                <ConditionEditor
+                  condition={selectedHandler.condition}
+                  onChange={(condition) => {
+                    const updated = { ...selectedHandler, condition };
+                    updateHandler(selectedHandler.id, updated);
+                  }}
+                  label="Execute when"
+                  placeholder="state.isEnabled === true"
+                />
+
+                <DebounceThrottleEditor
+                  debounce={selectedHandler.debounce}
+                  throttle={selectedHandler.throttle}
+                  onChange={({ debounce, throttle }) => {
+                    const updated = {
+                      ...selectedHandler,
+                      debounce,
+                      throttle,
+                    };
+                    updateHandler(selectedHandler.id, updated);
+                  }}
+                />
+              </PropertySection>
+
+              {/* Actions Section */}
+              <PropertySection
+                id="actions"
+                title="Actions"
+              >
+                <div className="actions-header">
+                  {!showAddAction && (
+                    <Button
+                      className="iconButton"
+                      onPress={() => setShowAddAction(true)}
+                      aria-label="Add Action"
+                    >
+                      <CirclePlus
+                        color={iconProps.color}
+                        strokeWidth={iconProps.stroke}
+                        size={iconProps.size}
+                      />
+                      <span className="button-label">Add Action</span>
+                    </Button>
+                  )}
+                </div>
+
+                {showAddAction ? (
+                  <div className="action-picker-container">
+                    <ActionTypePicker
+                      onSelect={(actionType) =>
+                        handleAddAction(actionType as ActionType)
+                      }
+                      showCategories={true}
+                    />
+                    <Button
+                      className="react-aria-Button secondary"
+                      onPress={() => setShowAddAction(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <EventHandlerManager
+                    eventHandler={selectedHandler}
+                    onUpdateAction={(actionId, updates) => {
+                      const action = actions.find((a) => a.id === actionId);
+                      if (action) {
+                        const updatedAction = { ...action, ...updates };
+                        const updatedActions = actions.map((a) =>
+                          a.id === actionId ? updatedAction : a
+                        );
+                        const updatedHandler = {
+                          ...selectedHandler,
+                          actions: updatedActions,
+                        };
+                        updateHandler(selectedHandler.id, updatedHandler);
+                      }
+                    }}
+                    onRemoveAction={(actionId) => {
+                      const updatedActions = actions.filter(
+                        (a) => a.id !== actionId
+                      );
+                      const updatedHandler = {
+                        ...selectedHandler,
+                        actions: updatedActions,
+                      };
+                      updateHandler(selectedHandler.id, updatedHandler);
+                    }}
+                  />
+                )}
+              </PropertySection>
+            </div>
+          </div>
+        ) : (
+          /* 핸들러 목록 뷰 */
+          <PropertySection id="handlers-list" title="Event Handlers">
+            <div className="handlers-list">
+              {handlers.map((handler) => (
+                <button
+                  key={handler.id}
+                  type="button"
+                  className="handler-item"
+                  onClick={() => selectHandler(handler.id)}
+                >
+                  <div className="handler-info">
+                    <Zap
+                      size={14}
+                      color={iconProps.color}
+                      strokeWidth={iconProps.stroke}
+                    />
+                    <span className="handler-type">{handler.event}</span>
+                  </div>
+                  <span className="handler-action-count">
+                    {handler.actions?.length || 0} action
+                    {(handler.actions?.length || 0) !== 1 ? "s" : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </PropertySection>
+        )}
       </div>
     </div>
   );

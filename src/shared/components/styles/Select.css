@@ -179,107 +179,65 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 Button 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-Select {
+    /* 기본 variant 변수 */
+    --select-accent: var(--outline-variant);
+    --select-accent-container: var(--surface-container-high);
+    --select-on-accent-container: var(--on-surface);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-Select.primary {
-    .react-aria-Label {
-      color: var(--primary);
-    }
-
-    .react-aria-Button {
-      border-color: var(--primary);
-
-      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-      }
-
-      .select-chevron {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-    }
+    --select-accent: var(--primary);
+    --select-accent-container: var(--primary-container);
+    --select-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-Select.secondary {
-    .react-aria-Label {
-      color: var(--secondary);
-    }
-
-    .react-aria-Button {
-      border-color: var(--secondary);
-
-      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-      }
-
-      .select-chevron {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-      }
-    }
+    --select-accent: var(--secondary);
+    --select-accent-container: var(--secondary-container);
+    --select-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-Select.tertiary {
-    .react-aria-Label {
-      color: var(--tertiary);
-    }
-
-    .react-aria-Button {
-      border-color: var(--tertiary);
-
-      &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-      }
-
-      &[data-pressed]:not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-      }
-
-      .select-chevron {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
-      }
-    }
+    --select-accent: var(--tertiary);
+    --select-accent-container: var(--tertiary-container);
+    --select-on-accent-container: var(--on-tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
+  .react-aria-Select.error {
+    --select-accent: var(--error);
+    --select-accent-container: var(--error-container);
+    --select-on-accent-container: var(--on-error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 Button 스타일 */
+  .react-aria-Select.primary,
+  .react-aria-Select.secondary,
+  .react-aria-Select.tertiary,
   .react-aria-Select.error {
     .react-aria-Label {
-      color: var(--error);
+      color: var(--select-accent);
     }
 
     .react-aria-Button {
-      border-color: var(--error);
+      border-color: var(--select-accent);
 
       &[data-hovered]:not([data-pressed]):not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
+        background: var(--select-accent-container);
+        border-color: var(--select-accent);
       }
 
       &[data-pressed]:not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
+        background: var(--select-accent-container);
+        border-color: var(--select-accent);
       }
 
       .select-chevron {
-        background: var(--error-container);
-        color: var(--on-error-container);
+        background: var(--select-accent-container);
+        color: var(--select-on-accent-container);
       }
     }
   }
@@ -309,35 +267,76 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-Select {
+    /* 기본 size 변수 (md) */
+    --select-label-size: var(--text-sm);
+    --select-btn-padding: var(--spacing) var(--spacing-md);
+    --select-btn-font-size: var(--text-sm);
+    --select-chevron-size: 24px;
+    --select-chevron-margin: var(--spacing);
+    --select-hint-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-Select.sm {
+    --select-label-size: var(--text-xs);
+    --select-btn-padding: var(--spacing-sm) var(--spacing);
+    --select-btn-font-size: var(--text-xs);
+    --select-chevron-size: 20px;
+    --select-chevron-margin: var(--spacing-sm);
+    --select-hint-size: 10px;
+  }
+
+  .react-aria-Select.md {
+    --select-label-size: var(--text-sm);
+    --select-btn-padding: var(--spacing) var(--spacing-md);
+    --select-btn-font-size: var(--text-sm);
+    --select-chevron-size: 24px;
+    --select-chevron-margin: var(--spacing);
+    --select-hint-size: var(--text-xs);
+  }
+
+  .react-aria-Select.lg {
+    --select-label-size: var(--text-base);
+    --select-btn-padding: var(--spacing-md) var(--spacing-lg);
+    --select-btn-font-size: var(--text-base);
+    --select-chevron-size: 28px;
+    --select-chevron-margin: var(--spacing-md);
+    --select-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-Select.sm,
+  .react-aria-Select.md,
+  .react-aria-Select.lg {
     .react-aria-Label {
-      font-size: var(--text-xs);
+      font-size: var(--select-label-size);
     }
 
     .react-aria-Button {
-      padding: var(--spacing-sm) var(--spacing);
-      font-size: var(--text-xs);
+      padding: var(--select-btn-padding);
+      font-size: var(--select-btn-font-size);
     }
 
     .react-aria-SelectValue {
-      font-size: var(--text-xs);
+      font-size: var(--select-btn-font-size);
     }
 
     .select-chevron {
-      width: 20px;
-      height: 20px;
-      margin-left: var(--spacing-sm);
+      width: var(--select-chevron-size);
+      height: var(--select-chevron-size);
+      margin-left: var(--select-chevron-margin);
     }
 
     [slot="description"],
     .react-aria-FieldError {
-      font-size: 10px;
+      font-size: var(--select-hint-size);
     }
   }
 
-  /* Popover small size */
+  /* Popover size variants */
   .react-aria-Popover[data-trigger="Select"].sm {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-sm) var(--spacing);
@@ -345,34 +344,6 @@
     }
   }
 
-  /* ===== Medium Size (Default) ===== */
-  .react-aria-Select.md {
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-Button {
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-SelectValue {
-      font-size: var(--text-sm);
-    }
-
-    .select-chevron {
-      width: 24px;
-      height: 24px;
-      margin-left: var(--spacing);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-    }
-  }
-
-  /* Popover medium size */
   .react-aria-Popover[data-trigger="Select"].md {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing) var(--spacing-md);
@@ -380,34 +351,6 @@
     }
   }
 
-  /* ===== Large Size ===== */
-  .react-aria-Select.lg {
-    .react-aria-Label {
-      font-size: var(--text-base);
-    }
-
-    .react-aria-Button {
-      padding: var(--spacing-md) var(--spacing-lg);
-      font-size: var(--text-base);
-    }
-
-    .react-aria-SelectValue {
-      font-size: var(--text-base);
-    }
-
-    .select-chevron {
-      width: 28px;
-      height: 28px;
-      margin-left: var(--spacing-md);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-sm);
-    }
-  }
-
-  /* Popover large size */
   .react-aria-Popover[data-trigger="Select"].lg {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-md) var(--spacing-lg);

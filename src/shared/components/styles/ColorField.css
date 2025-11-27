@@ -53,111 +53,117 @@
   }
 
   /* ========== M3 Variant Colors ========== */
+  /* CSS 변수 패턴으로 Input 스타일 통합 */
 
-  /* ===== Primary Variant ===== */
+  .react-aria-ColorField {
+    /* 기본 variant 변수 */
+    --cf-accent: var(--outline-variant);
+    --cf-accent-bg: var(--surface-container);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-ColorField.primary {
-    .react-aria-Input {
-      &[data-focused] {
-        outline: 2px solid var(--primary);
-        outline-offset: -1px;
-        border-color: var(--primary);
-      }
-    }
+    --cf-accent: var(--primary);
   }
 
-  /* ===== Secondary Variant ===== */
   .react-aria-ColorField.secondary {
-    .react-aria-Input {
-      &[data-focused] {
-        outline: 2px solid var(--secondary);
-        outline-offset: -1px;
-        border-color: var(--secondary);
-      }
-    }
+    --cf-accent: var(--secondary);
   }
 
-  /* ===== Tertiary Variant ===== */
   .react-aria-ColorField.tertiary {
+    --cf-accent: var(--tertiary);
+  }
+
+  .react-aria-ColorField.error {
+    --cf-accent: var(--error);
+  }
+
+  .react-aria-ColorField.filled {
+    --cf-accent: var(--on-surface);
+    --cf-accent-bg: var(--surface-container-highest);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-ColorField.primary,
+  .react-aria-ColorField.secondary,
+  .react-aria-ColorField.tertiary,
+  .react-aria-ColorField.error {
     .react-aria-Input {
       &[data-focused] {
-        outline: 2px solid var(--tertiary);
+        outline: 2px solid var(--cf-accent);
         outline-offset: -1px;
-        border-color: var(--tertiary);
+        border-color: var(--cf-accent);
       }
     }
   }
 
-  /* ===== Error Variant ===== */
+  /* error variant의 기본 border */
   .react-aria-ColorField.error {
     .react-aria-Input {
       border-color: var(--error);
-
-      &[data-focused] {
-        outline: 2px solid var(--error);
-        outline-offset: -1px;
-      }
-    }
-
-    .react-aria-FieldError {
-      color: var(--error);
     }
   }
 
-  /* ===== Filled Variant ===== */
+  /* ===== M3 Filled Variant ===== */
   .react-aria-ColorField.filled {
     .react-aria-Input {
-      background: var(--surface-container-highest);
+      background: var(--cf-accent-bg);
       border-color: transparent;
 
       &[data-focused] {
-        outline: 2px solid var(--on-surface);
+        outline: 2px solid var(--cf-accent);
         outline-offset: -1px;
-        border-color: var(--on-surface);
+        border-color: var(--cf-accent);
       }
     }
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-ColorField {
+    /* 기본 size 변수 (md) */
+    --cf-input-padding: 0.286rem;
+    --cf-input-size: var(--text-sm);
+    --cf-input-max-width: 12ch;
+    --cf-hint-size: 12px;
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-ColorField.sm {
-    .react-aria-Input {
-      padding: 0.214rem;
-      font-size: var(--text-xs);
-      max-width: 10ch;
-    }
-
-    .react-aria-FieldError,
-    [slot=description] {
-      font-size: var(--text-2xs);
-    }
+    --cf-input-padding: 0.214rem;
+    --cf-input-size: var(--text-xs);
+    --cf-input-max-width: 10ch;
+    --cf-hint-size: var(--text-2xs);
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-ColorField.md {
-    .react-aria-Input {
-      padding: 0.286rem;
-      font-size: var(--text-sm);
-      max-width: 12ch;
-    }
-
-    .react-aria-FieldError,
-    [slot=description] {
-      font-size: 12px;
-    }
+    --cf-input-padding: 0.286rem;
+    --cf-input-size: var(--text-sm);
+    --cf-input-max-width: 12ch;
+    --cf-hint-size: 12px;
   }
 
-  /* ===== Large Size ===== */
+  .react-aria-ColorField.lg {
+    --cf-input-padding: 0.357rem;
+    --cf-input-size: var(--text-base);
+    --cf-input-max-width: 14ch;
+    --cf-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-ColorField.sm,
+  .react-aria-ColorField.md,
   .react-aria-ColorField.lg {
     .react-aria-Input {
-      padding: 0.357rem;
-      font-size: var(--text-base);
-      max-width: 14ch;
+      padding: var(--cf-input-padding);
+      font-size: var(--cf-input-size);
+      max-width: var(--cf-input-max-width);
     }
 
     .react-aria-FieldError,
     [slot=description] {
-      font-size: var(--text-sm);
+      font-size: var(--cf-hint-size);
     }
   }
 

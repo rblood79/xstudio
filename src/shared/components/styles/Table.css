@@ -198,16 +198,27 @@
   }
 
   /* ========== Checkbox Integration ========== */
+  /* CSS 변수 패턴으로 Checkbox 스타일 통합 */
+
+  .react-aria-Table {
+    /* 기본 Checkbox 변수 */
+    --tbl-cb-selected: var(--primary);
+    --tbl-cb-checkmark: var(--on-primary);
+    --tbl-cb-bg: var(--primary-container);
+    --tbl-cb-selected-on: var(--on-primary-container);
+    --tbl-cb-checkmark-on: var(--primary-container);
+  }
+
   :where(.react-aria-Row) .react-aria-Checkbox {
-    --selected-color: var(--primary);
-    --selected-color-pressed: var(--primary);
-    --checkmark-color: var(--on-primary);
-    --background-color: var(--primary-container);
+    --selected-color: var(--tbl-cb-selected);
+    --selected-color-pressed: var(--tbl-cb-selected);
+    --checkmark-color: var(--tbl-cb-checkmark);
+    --background-color: var(--tbl-cb-bg);
   }
 
   .react-aria-Row[data-selected] .react-aria-Checkbox {
-    --selected-color: var(--on-primary-container);
-    --checkmark-color: var(--primary-container);
+    --selected-color: var(--tbl-cb-selected-on);
+    --checkmark-color: var(--tbl-cb-checkmark-on);
   }
 
   /* ========== Link Rows ========== */
@@ -421,6 +432,13 @@
 
   /* ===== M3 Primary Variant ===== */
   .react-aria-Table.primary {
+    /* Checkbox 변수 오버라이드 - 기본과 동일하므로 생략 가능하지만 명시성을 위해 유지 */
+    --tbl-cb-selected: var(--primary);
+    --tbl-cb-checkmark: var(--on-primary);
+    --tbl-cb-bg: var(--primary-container);
+    --tbl-cb-selected-on: var(--on-primary-container);
+    --tbl-cb-checkmark-on: var(--primary-container);
+
     border-color: var(--primary);
 
     &[data-focus-visible] {
@@ -468,16 +486,6 @@
       }
     }
 
-    :where(.react-aria-Row) .react-aria-Checkbox {
-      --selected-color: var(--primary);
-      --background-color: var(--primary-container);
-    }
-
-    .react-aria-Row[data-selected] .react-aria-Checkbox {
-      --selected-color: var(--on-primary-container);
-      --checkmark-color: var(--primary-container);
-    }
-
     [slot="drag"][data-focus-visible] {
       outline-color: var(--primary);
     }
@@ -515,6 +523,12 @@
 
   /* ===== M3 Secondary Variant ===== */
   .react-aria-Table.secondary {
+    --tbl-cb-selected: var(--secondary);
+    --tbl-cb-checkmark: var(--on-secondary);
+    --tbl-cb-bg: var(--secondary-container);
+    --tbl-cb-selected-on: var(--on-secondary-container);
+    --tbl-cb-checkmark-on: var(--secondary-container);
+
     border-color: var(--secondary);
 
     &[data-focus-visible] {
@@ -570,16 +584,6 @@
       }
     }
 
-    :where(.react-aria-Row) .react-aria-Checkbox {
-      --selected-color: var(--secondary);
-      --background-color: var(--secondary-container);
-    }
-
-    .react-aria-Row[data-selected] .react-aria-Checkbox {
-      --selected-color: var(--on-secondary-container);
-      --checkmark-color: var(--secondary-container);
-    }
-
     [slot="drag"][data-focus-visible] {
       outline-color: var(--secondary);
     }
@@ -617,6 +621,12 @@
 
   /* ===== M3 Tertiary Variant ===== */
   .react-aria-Table.tertiary {
+    --tbl-cb-selected: var(--tertiary);
+    --tbl-cb-checkmark: var(--on-tertiary);
+    --tbl-cb-bg: var(--tertiary-container);
+    --tbl-cb-selected-on: var(--on-tertiary-container);
+    --tbl-cb-checkmark-on: var(--tertiary-container);
+
     border-color: var(--tertiary);
 
     &[data-focus-visible] {
@@ -672,16 +682,6 @@
       }
     }
 
-    :where(.react-aria-Row) .react-aria-Checkbox {
-      --selected-color: var(--tertiary);
-      --background-color: var(--tertiary-container);
-    }
-
-    .react-aria-Row[data-selected] .react-aria-Checkbox {
-      --selected-color: var(--on-tertiary-container);
-      --checkmark-color: var(--tertiary-container);
-    }
-
     [slot="drag"][data-focus-visible] {
       outline-color: var(--tertiary);
     }
@@ -719,6 +719,12 @@
 
   /* ===== M3 Error Variant ===== */
   .react-aria-Table.error {
+    --tbl-cb-selected: var(--error);
+    --tbl-cb-checkmark: var(--on-error);
+    --tbl-cb-bg: var(--error-container);
+    --tbl-cb-selected-on: var(--on-error-container);
+    --tbl-cb-checkmark-on: var(--error-container);
+
     border-color: var(--error);
 
     &[data-focus-visible] {
@@ -772,16 +778,6 @@
       &[data-focus-visible] {
         outline-color: var(--error);
       }
-    }
-
-    :where(.react-aria-Row) .react-aria-Checkbox {
-      --selected-color: var(--error);
-      --background-color: var(--error-container);
-    }
-
-    .react-aria-Row[data-selected] .react-aria-Checkbox {
-      --selected-color: var(--on-error-container);
-      --checkmark-color: var(--error-container);
     }
 
     [slot="drag"][data-focus-visible] {

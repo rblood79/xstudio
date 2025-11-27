@@ -134,119 +134,68 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 색상 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-TimeField {
+    /* 기본 variant 변수 */
+    --tf-accent: var(--outline-variant);
+    --tf-accent-container: var(--surface-container-high);
+    --tf-on-accent-container: var(--on-surface);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-TimeField.primary {
-    .react-aria-Label {
-      color: var(--primary);
-    }
-
-    .react-aria-TimeInput {
-      border-color: var(--primary);
-
-      &[data-focus-within] {
-        outline-color: var(--primary);
-        border-color: var(--primary);
-        background: var(--primary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-      }
-    }
-
-    .react-aria-TimeSegment {
-      &:focus {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-    }
+    --tf-accent: var(--primary);
+    --tf-accent-container: var(--primary-container);
+    --tf-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-TimeField.secondary {
-    .react-aria-Label {
-      color: var(--secondary);
-    }
-
-    .react-aria-TimeInput {
-      border-color: var(--secondary);
-
-      &[data-focus-within] {
-        outline-color: var(--secondary);
-        border-color: var(--secondary);
-        background: var(--secondary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-      }
-    }
-
-    .react-aria-TimeSegment {
-      &:focus {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-      }
-    }
+    --tf-accent: var(--secondary);
+    --tf-accent-container: var(--secondary-container);
+    --tf-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-TimeField.tertiary {
-    .react-aria-Label {
-      color: var(--tertiary);
-    }
-
-    .react-aria-TimeInput {
-      border-color: var(--tertiary);
-
-      &[data-focus-within] {
-        outline-color: var(--tertiary);
-        border-color: var(--tertiary);
-        background: var(--tertiary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-      }
-    }
-
-    .react-aria-TimeSegment {
-      &:focus {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
-      }
-    }
+    --tf-accent: var(--tertiary);
+    --tf-accent-container: var(--tertiary-container);
+    --tf-on-accent-container: var(--on-tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
+  .react-aria-TimeField.error {
+    --tf-accent: var(--error);
+    --tf-accent-container: var(--error-container);
+    --tf-on-accent-container: var(--on-error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-TimeField.primary,
+  .react-aria-TimeField.secondary,
+  .react-aria-TimeField.tertiary,
   .react-aria-TimeField.error {
     .react-aria-Label {
-      color: var(--error);
+      color: var(--tf-accent);
     }
 
     .react-aria-TimeInput {
-      border-color: var(--error);
+      border-color: var(--tf-accent);
 
       &[data-focus-within] {
-        outline-color: var(--error);
-        border-color: var(--error);
-        background: var(--error-container);
+        outline-color: var(--tf-accent);
+        border-color: var(--tf-accent);
+        background: var(--tf-accent-container);
       }
 
       &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
+        background: var(--tf-accent-container);
+        border-color: var(--tf-accent);
       }
     }
 
     .react-aria-TimeSegment {
       &:focus {
-        background: var(--error-container);
-        color: var(--on-error-container);
+        background: var(--tf-accent-container);
+        color: var(--tf-on-accent-container);
       }
     }
   }
@@ -277,70 +226,67 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-TimeField {
+    /* 기본 size 변수 (md) */
+    --tf-label-size: var(--text-sm);
+    --tf-input-padding: var(--spacing) var(--spacing-md);
+    --tf-input-size: var(--text-sm);
+    --tf-input-min-width: 150px;
+    --tf-segment-size: var(--text-sm);
+    --tf-hint-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-TimeField.sm {
-    .react-aria-Label {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-TimeInput {
-      padding: var(--spacing-sm) var(--spacing);
-      font-size: var(--text-xs);
-      min-width: 120px;
-    }
-
-    .react-aria-TimeSegment {
-      font-size: var(--text-xs);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: 10px;
-    }
+    --tf-label-size: var(--text-xs);
+    --tf-input-padding: var(--spacing-sm) var(--spacing);
+    --tf-input-size: var(--text-xs);
+    --tf-input-min-width: 120px;
+    --tf-segment-size: var(--text-xs);
+    --tf-hint-size: 10px;
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-TimeField.md {
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-TimeInput {
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
-      min-width: 150px;
-    }
-
-    .react-aria-TimeSegment {
-      font-size: var(--text-sm);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-    }
+    --tf-label-size: var(--text-sm);
+    --tf-input-padding: var(--spacing) var(--spacing-md);
+    --tf-input-size: var(--text-sm);
+    --tf-input-min-width: 150px;
+    --tf-segment-size: var(--text-sm);
+    --tf-hint-size: var(--text-xs);
   }
 
-  /* ===== Large Size ===== */
+  .react-aria-TimeField.lg {
+    --tf-label-size: var(--text-base);
+    --tf-input-padding: var(--spacing-md) var(--spacing-lg);
+    --tf-input-size: var(--text-base);
+    --tf-input-min-width: 180px;
+    --tf-segment-size: var(--text-base);
+    --tf-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-TimeField.sm,
+  .react-aria-TimeField.md,
   .react-aria-TimeField.lg {
     .react-aria-Label {
-      font-size: var(--text-base);
+      font-size: var(--tf-label-size);
     }
 
     .react-aria-TimeInput {
-      padding: var(--spacing-md) var(--spacing-lg);
-      font-size: var(--text-base);
-      min-width: 180px;
+      padding: var(--tf-input-padding);
+      font-size: var(--tf-input-size);
+      min-width: var(--tf-input-min-width);
     }
 
     .react-aria-TimeSegment {
-      font-size: var(--text-base);
+      font-size: var(--tf-segment-size);
     }
 
     [slot="description"],
     .react-aria-FieldError {
-      font-size: var(--text-sm);
+      font-size: var(--tf-hint-size);
     }
   }
 

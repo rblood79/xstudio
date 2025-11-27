@@ -260,6 +260,8 @@ export const handleUpdatePageInfo = (
 /**
  * REQUEST_ELEMENT_SELECTION 메시지 처리
  * Builder가 요청한 요소를 선택하고 rect 정보와 함께 응답
+ *
+ * ⭐ Layout/Slot System: Page body가 DOM에 없을 때 Layout body로 대체
  */
 export const handleRequestElementSelection = (
   data: MessageType,
@@ -269,14 +271,41 @@ export const handleRequestElementSelection = (
     const elementId = data.elementId;
 
     // DOM에서 요소 먼저 찾기 (타이밍 이슈 방지 - React state 업데이트 전에도 작동)
-    const elementWithId = document.querySelector(`[data-element-id="${elementId}"]`);
+    let elementWithId = document.querySelector(`[data-element-id="${elementId}"]`);
+    let actualElementId = elementId;
+
+    // ⭐ Layout/Slot System: DOM에서 못 찾으면 Page body → Layout body 대체 시도
     if (!elementWithId) {
-      console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
-      return;
+      const requestedElement = elements.find((el) => el.id === elementId);
+
+      // 요청된 요소가 Page의 body인 경우
+      if (requestedElement?.tag === 'body' && requestedElement?.page_id) {
+        // Layout body 찾기 (layout_id가 있는 body)
+        const layoutBody = elements.find((el) =>
+          el.tag === 'body' && el.layout_id && !el.page_id
+        );
+
+        if (layoutBody) {
+          elementWithId = document.querySelector(`[data-element-id="${layoutBody.id}"]`);
+          if (elementWithId) {
+            actualElementId = layoutBody.id;
+            console.log(`🔄 [Preview] Page body → Layout body 대체:`, {
+              pageBodyId: elementId,
+              layoutBodyId: layoutBody.id
+            });
+          }
+        }
+      }
+
+      // 여전히 못 찾으면 경고 후 종료
+      if (!elementWithId) {
+        console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
+        return;
+      }
     }
 
-    // elements 배열에서 찾기 (props 정보 필요)
-    const element = elements.find((el) => el.id === elementId);
+    // elements 배열에서 찾기 (props 정보 필요) - 실제 DOM의 element ID 사용
+    const element = elements.find((el) => el.id === actualElementId);
 
     // Computed styles 수집 (Preview의 collectComputedStyle 로직과 동일)
     const computed = window.getComputedStyle(elementWithId);

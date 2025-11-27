@@ -134,119 +134,68 @@
   }
 
   /* ========== M3 Color Variants ========== */
+  /* CSS 변수 패턴으로 색상 스타일 통합 */
 
-  /* ===== M3 Primary Variant ===== */
+  .react-aria-DateField {
+    /* 기본 variant 변수 */
+    --df-accent: var(--outline-variant);
+    --df-accent-container: var(--surface-container-high);
+    --df-on-accent-container: var(--on-surface);
+  }
+
+  /* Variant별 CSS 변수만 오버라이드 */
   .react-aria-DateField.primary {
-    .react-aria-Label {
-      color: var(--primary);
-    }
-
-    .react-aria-DateInput {
-      border-color: var(--primary);
-
-      &[data-focus-within] {
-        outline-color: var(--primary);
-        border-color: var(--primary);
-        background: var(--primary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--primary-container);
-        border-color: var(--primary);
-      }
-    }
-
-    .react-aria-DateSegment {
-      &:focus {
-        background: var(--primary-container);
-        color: var(--on-primary-container);
-      }
-    }
+    --df-accent: var(--primary);
+    --df-accent-container: var(--primary-container);
+    --df-on-accent-container: var(--on-primary-container);
   }
 
-  /* ===== M3 Secondary Variant ===== */
   .react-aria-DateField.secondary {
-    .react-aria-Label {
-      color: var(--secondary);
-    }
-
-    .react-aria-DateInput {
-      border-color: var(--secondary);
-
-      &[data-focus-within] {
-        outline-color: var(--secondary);
-        border-color: var(--secondary);
-        background: var(--secondary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--secondary-container);
-        border-color: var(--secondary);
-      }
-    }
-
-    .react-aria-DateSegment {
-      &:focus {
-        background: var(--secondary-container);
-        color: var(--on-secondary-container);
-      }
-    }
+    --df-accent: var(--secondary);
+    --df-accent-container: var(--secondary-container);
+    --df-on-accent-container: var(--on-secondary-container);
   }
 
-  /* ===== M3 Tertiary Variant ===== */
   .react-aria-DateField.tertiary {
-    .react-aria-Label {
-      color: var(--tertiary);
-    }
-
-    .react-aria-DateInput {
-      border-color: var(--tertiary);
-
-      &[data-focus-within] {
-        outline-color: var(--tertiary);
-        border-color: var(--tertiary);
-        background: var(--tertiary-container);
-      }
-
-      &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--tertiary-container);
-        border-color: var(--tertiary);
-      }
-    }
-
-    .react-aria-DateSegment {
-      &:focus {
-        background: var(--tertiary-container);
-        color: var(--on-tertiary-container);
-      }
-    }
+    --df-accent: var(--tertiary);
+    --df-accent-container: var(--tertiary-container);
+    --df-on-accent-container: var(--on-tertiary-container);
   }
 
-  /* ===== M3 Error Variant ===== */
+  .react-aria-DateField.error {
+    --df-accent: var(--error);
+    --df-accent-container: var(--error-container);
+    --df-on-accent-container: var(--on-error-container);
+  }
+
+  /* 모든 color variant에 공통 적용되는 스타일 */
+  .react-aria-DateField.primary,
+  .react-aria-DateField.secondary,
+  .react-aria-DateField.tertiary,
   .react-aria-DateField.error {
     .react-aria-Label {
-      color: var(--error);
+      color: var(--df-accent);
     }
 
     .react-aria-DateInput {
-      border-color: var(--error);
+      border-color: var(--df-accent);
 
       &[data-focus-within] {
-        outline-color: var(--error);
-        border-color: var(--error);
-        background: var(--error-container);
+        outline-color: var(--df-accent);
+        border-color: var(--df-accent);
+        background: var(--df-accent-container);
       }
 
       &[data-hovered]:not([data-focus-within]):not([data-disabled]) {
-        background: var(--error-container);
-        border-color: var(--error);
+        background: var(--df-accent-container);
+        border-color: var(--df-accent);
       }
     }
 
     .react-aria-DateSegment {
       &:focus {
-        background: var(--error-container);
-        color: var(--on-error-container);
+        background: var(--df-accent-container);
+        color: var(--df-on-accent-container);
       }
     }
   }
@@ -277,70 +226,67 @@
   }
 
   /* ========== Size Variants ========== */
+  /* CSS 변수 패턴으로 크기 스타일 통합 */
 
-  /* ===== Small Size ===== */
+  .react-aria-DateField {
+    /* 기본 size 변수 (md) */
+    --df-label-size: var(--text-sm);
+    --df-input-padding: var(--spacing) var(--spacing-md);
+    --df-input-size: var(--text-sm);
+    --df-input-min-width: 150px;
+    --df-segment-size: var(--text-sm);
+    --df-hint-size: var(--text-xs);
+  }
+
+  /* Size별 CSS 변수만 오버라이드 */
   .react-aria-DateField.sm {
-    .react-aria-Label {
-      font-size: var(--text-xs);
-    }
-
-    .react-aria-DateInput {
-      padding: var(--spacing-sm) var(--spacing);
-      font-size: var(--text-xs);
-      min-width: 120px;
-    }
-
-    .react-aria-DateSegment {
-      font-size: var(--text-xs);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: 10px;
-    }
+    --df-label-size: var(--text-xs);
+    --df-input-padding: var(--spacing-sm) var(--spacing);
+    --df-input-size: var(--text-xs);
+    --df-input-min-width: 120px;
+    --df-segment-size: var(--text-xs);
+    --df-hint-size: 10px;
   }
 
-  /* ===== Medium Size (Default) ===== */
   .react-aria-DateField.md {
-    .react-aria-Label {
-      font-size: var(--text-sm);
-    }
-
-    .react-aria-DateInput {
-      padding: var(--spacing) var(--spacing-md);
-      font-size: var(--text-sm);
-      min-width: 150px;
-    }
-
-    .react-aria-DateSegment {
-      font-size: var(--text-sm);
-    }
-
-    [slot="description"],
-    .react-aria-FieldError {
-      font-size: var(--text-xs);
-    }
+    --df-label-size: var(--text-sm);
+    --df-input-padding: var(--spacing) var(--spacing-md);
+    --df-input-size: var(--text-sm);
+    --df-input-min-width: 150px;
+    --df-segment-size: var(--text-sm);
+    --df-hint-size: var(--text-xs);
   }
 
-  /* ===== Large Size ===== */
+  .react-aria-DateField.lg {
+    --df-label-size: var(--text-base);
+    --df-input-padding: var(--spacing-md) var(--spacing-lg);
+    --df-input-size: var(--text-base);
+    --df-input-min-width: 180px;
+    --df-segment-size: var(--text-base);
+    --df-hint-size: var(--text-sm);
+  }
+
+  /* 모든 size에 공통 적용되는 스타일 */
+  .react-aria-DateField.sm,
+  .react-aria-DateField.md,
   .react-aria-DateField.lg {
     .react-aria-Label {
-      font-size: var(--text-base);
+      font-size: var(--df-label-size);
     }
 
     .react-aria-DateInput {
-      padding: var(--spacing-md) var(--spacing-lg);
-      font-size: var(--text-base);
-      min-width: 180px;
+      padding: var(--df-input-padding);
+      font-size: var(--df-input-size);
+      min-width: var(--df-input-min-width);
     }
 
     .react-aria-DateSegment {
-      font-size: var(--text-base);
+      font-size: var(--df-segment-size);
     }
 
     [slot="description"],
     .react-aria-FieldError {
-      font-size: var(--text-sm);
+      font-size: var(--df-hint-size);
     }
   }
 

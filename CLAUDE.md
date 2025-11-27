@@ -2206,9 +2206,9 @@ Copilot learns from code patterns. Tips:
 > **Note**: This section has been moved to a dedicated document for better organization.
 > See **[COMPLETED_FEATURES.md](docs/COMPLETED_FEATURES.md)** for full implementation details of all completed features.
 
-### Summary of Completed Features (2025-11-26)
+### Summary of Completed Features (2025-11-27)
 
-**Total Features Completed**: 19 major features
+**Total Features Completed**: 20 major features
 **Code Reduction**: 37-88% in refactored areas
 **Performance Improvements**: 30-50% reduction in CPU/Memory usage
 
@@ -2232,12 +2232,13 @@ Copilot learns from code patterns. Tips:
 17. ✅ **M3 Color System** - Real-time M3 role visualization in Theme Studio
 18. ✅ **Panel Standardization** - Consistent naming, hooks compliance, unified styles
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
+20. ✅ **Preview Runtime Isolation** - srcdoc iframe, 독립 Zustand store, postMessage 통신 ([상세](docs/features/PREVIEW_RUNTIME_ISOLATION.md))
 
 **Key Achievements**:
 - Zero TypeScript errors
 - Zero hardcoded colors (100% CSS variables)
 - 5 custom ESLint rules for anti-pattern prevention
-- Comprehensive documentation (19 feature docs)
+- Comprehensive documentation (20 feature docs)
 
 **Next**: See [PLANNED_FEATURES.md](docs/PLANNED_FEATURES.md) for upcoming implementations.
 

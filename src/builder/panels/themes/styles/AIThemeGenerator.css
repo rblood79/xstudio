@@ -2,6 +2,8 @@
  * AI Theme Generator Styles
  */
 
+@import './_common.css';
+
 @layer components {
   .ai-generator-container {
     max-width: 800px;
@@ -272,16 +274,9 @@
     border-radius: var(--radius-md);
   }
 
-  .stat-label {
-    font-size: var(--text-xs);
-    color: var(--text-color-secondary);
-    text-transform: uppercase;
-  }
-
+  /* Override stat-value for AIThemeGenerator - uses text-lg */
   .stat-value {
     font-size: var(--text-lg);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-color);
   }
 
   /* Palette Preview */

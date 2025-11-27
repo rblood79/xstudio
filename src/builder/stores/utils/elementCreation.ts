@@ -117,8 +117,8 @@ export const createAddComplexElementAction =
           });
         }
 
-        // 모든 요소 추가
-        state.elements.push(...allElements);
+        // ⭐ 새로운 배열 참조 생성 (리렌더링 보장 - addElement와 동일 패턴)
+        state.elements = [...state.elements, ...allElements];
       })
     );
 
