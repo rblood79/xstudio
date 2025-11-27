@@ -292,8 +292,8 @@ function AIPanelContent() {
               // Use selected element as parent
               parentId = selectedElementId;
             } else {
-              // Find Body element and use it as parent
-              const bodyElement = elements.find((el) => el.tag === "Body");
+              // Find body element and use it as parent
+              const bodyElement = elements.find((el) => el.tag === "body");
               if (bodyElement) {
                 parentId = bodyElement.id;
               }
