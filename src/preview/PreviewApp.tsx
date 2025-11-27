@@ -421,17 +421,16 @@ function PreviewContent() {
     return rootElements.map((el) => renderElement(el, el.id));
   }, [elements, renderElement, currentLayoutId, currentPageId, renderLayoutElement]);
 
+  // ⭐ React가 document.body에 직접 마운트되므로 preview-container 불필요
+  // body element의 자식들이 직접 <body> 안에 렌더링됨
   return (
-    <div
-      className="preview-container"
-      style={{ width: '100%', height: '100%' }}
-    >
+    <>
       {elements.length === 0 ? (
         <div className="preview-empty">No elements available</div>
       ) : (
         renderElementsTree()
       )}
-    </div>
+    </>
   );
 }
 
