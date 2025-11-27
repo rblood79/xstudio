@@ -131,15 +131,31 @@ export function generatePreviewSrcdoc(projectId: string): string {
 /**
  * Preview iframe이 srcdoc 모드를 사용해야 하는지 여부
  *
- * 테스트 방법:
- * 1. 브라우저 콘솔에서: window.__USE_SRCDOC__ = true
- * 2. 또는 이 함수에서 직접 return true
- *
- * 현재는 false로 설정하여 기존 src 방식 유지
+ * 테스트 방법 (한 번만 설정하면 유지됨):
+ * - 활성화: localStorage.setItem('USE_SRCDOC', 'true')
+ * - 비활성화: localStorage.removeItem('USE_SRCDOC')
+ * - 또는 URL 파라미터: ?srcdoc=true
  */
 export function shouldUseSrcdoc(): boolean {
-  // 브라우저 콘솔에서 테스트: window.__USE_SRCDOC__ = true
-  if (typeof window !== 'undefined' && (window as unknown as { __USE_SRCDOC__?: boolean }).__USE_SRCDOC__) {
+  if (typeof window === 'undefined') return false;
+
+  // 1. URL 파라미터 체크 (?srcdoc=true)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('srcdoc') === 'true') {
+    return true;
+  }
+
+  // 2. localStorage 체크 (한 번 설정하면 브라우저 닫아도 유지)
+  try {
+    if (localStorage.getItem('USE_SRCDOC') === 'true') {
+      return true;
+    }
+  } catch {
+    // localStorage 접근 불가 시 무시
+  }
+
+  // 3. 전역 변수 체크 (레거시 지원)
+  if ((window as unknown as { __USE_SRCDOC__?: boolean }).__USE_SRCDOC__) {
     return true;
   }
 
