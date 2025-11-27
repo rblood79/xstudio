@@ -27,15 +27,32 @@ export function InspectorSync() {
   // ⭐ FIX: 이전 선택 ID 추적 (선택 변경 우선 처리용)
   const previousElementIdRef = useRef<string | null>(null);
 
+  // ⭐ Preview에서 보낸 props 구독 (body 등 요소 선택 시 최신 props 사용)
+  const selectedElementProps = useStore((state) => state.selectedElementProps);
+
   // ⭐ Performance: Get selected element without subscribing to elementsMap
   // - elementsMap 구독하면 모든 element 변경 시 불필요한 리렌더 발생
   // - selectedElementId 변경 시에만 요소를 다시 가져옴
+  // - ⭐ FIX: selectedElementProps도 의존성에 추가 (Preview에서 보낸 최신 props 반영)
   const selectedBuilderElement = useMemo(() => {
     const elementsMap = useStore.getState().elementsMap;
-    return selectedElementId
+    const element = selectedElementId
       ? elementsMap.get(selectedElementId) || null
       : null;
-  }, [selectedElementId]);
+
+    // ⭐ FIX: Preview에서 보낸 props가 있으면 병합 (최신 style/computedStyle 포함)
+    if (element && selectedElementProps && Object.keys(selectedElementProps).length > 0) {
+      return {
+        ...element,
+        props: {
+          ...element.props,
+          ...selectedElementProps,
+        },
+      };
+    }
+
+    return element;
+  }, [selectedElementId, selectedElementProps]);
 
   // Inspector → Builder 동기화
   useSyncWithBuilder();

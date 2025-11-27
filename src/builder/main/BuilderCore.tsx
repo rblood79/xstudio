@@ -29,6 +29,8 @@ import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
 import { getDB } from "../../lib/db";
+import { useEditModeStore } from "../stores/editMode";
+import { useLayoutsStore } from "../stores/layouts";
 
 import "./index.css";
 import { MessageService } from "../../utils/messaging";
@@ -214,6 +216,33 @@ export const BuilderCore: React.FC = () => {
         setError(result.error?.message || "프로젝트 초기화 실패");
         isInitializing.current = false;
         return;
+      }
+
+      // ⭐ Layout/Slot System: editMode가 'layout'이면 Layout 요소도 로드
+      // (새로고침 시 editMode와 currentLayoutId가 localStorage에서 복원됨)
+      const editMode = useEditModeStore.getState().mode;
+      const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
+
+      if (editMode === 'layout' && currentLayoutId) {
+        try {
+          console.log(`🏗️ [BuilderCore] Layout 모드 복원 - Layout ${currentLayoutId.slice(0, 8)} 요소 로드`);
+          const db = await getDB();
+          const layoutElements = await db.elements.getByLayout(currentLayoutId);
+
+          // 기존 요소들과 병합
+          const { elements, setElements } = useStore.getState();
+          const otherElements = elements.filter((el) => el.layout_id !== currentLayoutId);
+          const mergedElements = [...otherElements, ...layoutElements];
+          setElements(mergedElements, { skipHistory: true });
+
+          console.log(`🏗️ [BuilderCore] Layout 요소 ${layoutElements.length}개 로드 완료`);
+
+          // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
+          const { fetchLayouts } = useLayoutsStore.getState();
+          await fetchLayouts(projectId);
+        } catch (error) {
+          console.error('[BuilderCore] Layout 요소 로드 실패:', error);
+        }
       }
 
       setIsLoading(false);

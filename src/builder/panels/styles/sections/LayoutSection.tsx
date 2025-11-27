@@ -22,6 +22,9 @@ import {
   StretchVertical,
   AlignHorizontalSpaceAround,
   GalleryHorizontal,
+  WrapText,
+  CornerDownLeft,
+  ArrowRightToLine,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import {
@@ -29,6 +32,7 @@ import {
   getFlexDirectionKeys,
   getFlexAlignmentKeys,
   getJustifyContentSpacingKeys,
+  getFlexWrapKeys,
 } from '../hooks/useStyleValues';
 
 interface LayoutSectionProps {
@@ -119,6 +123,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
     handleFlexDirection,
     handleFlexAlignment,
     handleJustifyContentSpacing,
+    handleFlexWrap,
   } = useStyleActions();
 
   // 4방향 값 계산
@@ -133,7 +138,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
 
   const handleReset = () => {
     resetStyles([
-      'display', 'flexDirection', 'alignItems', 'justifyContent', 'gap',
+      'display', 'flexDirection', 'flexWrap', 'alignItems', 'justifyContent', 'gap',
       'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
       'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
     ]);
@@ -271,6 +276,43 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
             </ToggleButton>
             <ToggleButton id="space-evenly">
               <AlignHorizontalSpaceAround
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </div>
+        <div className="justify-control flex-wrap">
+          <legend className="fieldset-legend">Wrap</legend>
+          <ToggleButtonGroup
+            aria-label="Flex wrap"
+            indicator
+            selectionMode="single"
+            selectedKeys={getFlexWrapKeys(selectedElement)}
+            onSelectionChange={(keys) => {
+              const value = Array.from(keys)[0] as string;
+              if (value) {
+                handleFlexWrap(value);
+              }
+            }}
+          >
+            <ToggleButton id="wrap">
+              <WrapText
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+            <ToggleButton id="wrap-reverse">
+              <CornerDownLeft
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.stroke}
+              />
+            </ToggleButton>
+            <ToggleButton id="nowrap">
+              <ArrowRightToLine
                 color={iconProps.color}
                 size={iconProps.size}
                 strokeWidth={iconProps.stroke}

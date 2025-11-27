@@ -179,7 +179,8 @@ export function StylesPanel({ isActive }: PanelProps) {
       
 
       {/* Sections */}
-      <div className="panel-contents">
+      {/* ⭐ key prop으로 요소 변경 시 섹션 리마운트 (로컬 상태 초기화) */}
+      <div className="panel-contents" key={selectedElement.id}>
         {filter === "all" ? (
           <>
             <TransformSection selectedElement={selectedElement} />

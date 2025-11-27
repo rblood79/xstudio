@@ -10,7 +10,9 @@ import {
   Smartphone,
   Asterisk,
 } from "lucide-react";
-import { RadioGroup, Radio, Key, Label } from "react-aria-components";
+import { Key } from "react-aria-components";
+import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
+import { ToggleButton } from "../../shared/components/ToggleButton";
 import { iconProps } from "../../utils/ui/uiConstants";
 
 export interface Breakpoint {
@@ -83,13 +85,17 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           }
         </code>
 
-        <RadioGroup
-          orientation="horizontal"
-          value={Array.from(breakpoint)[0]?.toString()}
-          onChange={(value) => onBreakpointChange(value)}
+        <ToggleButtonGroup
+          selectionMode="single"
+          selectedKeys={breakpoint}
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0];
+            if (selected) onBreakpointChange(selected);
+          }}
+          indicator={true}
         >
           {breakpoints.map((bp) => (
-            <Radio value={bp.id} key={bp.id} className="aria-Radio">
+            <ToggleButton id={bp.id} key={bp.id} aria-label={bp.label}>
               {bp.id === "screen" && (
                 <Asterisk
                   color={iconProps.color}
@@ -118,10 +124,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
                   size={iconProps.size}
                 />
               )}
-              <Label>{bp.label}</Label>
-            </Radio>
+            </ToggleButton>
           ))}
-        </RadioGroup>
+        </ToggleButtonGroup>
       </div>
 
       <div className="header_contents header_right">

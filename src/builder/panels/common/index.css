@@ -98,7 +98,7 @@
         grid-template-areas:
           "flex-direction flex-alignment icon"
           "justify-content flex-alignment icon"
-          "displayGap displayGap icon";
+          "flex-wrap displayGap icon";
         gap: var(--spacing) var(--spacing-sm);
 
         .flex-direction {
@@ -129,6 +129,9 @@
         }
         .justify-content {
           grid-area: justify-content;
+        }
+        .flex-wrap {
+          grid-area: flex-wrap;
         }
         .displayGap {
           grid-area: displayGap;
@@ -403,6 +406,7 @@
     }
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      min-height: var(--icon-size);
       &::before {
         top: 2px;
         left: 2px;

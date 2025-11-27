@@ -77,13 +77,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 🔧 FIX: Ref를 사용하여 최신 상태 확인 (비동기 state 업데이트 회피)
         const currentReadyState = iframeReadyStateRef.current;
 
-        // ⭐ Layout/Slot System: 현재 페이지의 layoutId 가져오기
+        // ⭐ Layout/Slot System: editMode에 따라 pageInfo 결정
+        const currentEditMode = useEditModeStore.getState().mode;
+        const layoutStoreLayoutId = useLayoutsStore.getState().currentLayoutId;
         const { currentPageId, pages } = useStore.getState();
         const currentPage = pages.find((p) => p.id === currentPageId);
-        const pageInfo = {
-            pageId: currentPageId,
-            layoutId: currentPage?.layout_id || null,
-        };
+
+        // Layout 편집 모드: pageId=null, layoutId=currentLayoutId
+        // Page 모드: pageId=currentPageId, layoutId=page.layout_id (Page에 적용된 Layout)
+        const pageInfo = currentEditMode === 'layout'
+            ? { pageId: null, layoutId: layoutStoreLayoutId }
+            : { pageId: currentPageId, layoutId: currentPage?.layout_id || null };
 
         // iframe이 준비되지 않았으면 큐에 넣기
         if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
@@ -218,13 +222,39 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // ✅ 즉시 처리 (setTimeout 제거)
             processMessageQueue();
 
-            // 현재 요소들을 전송 (초기 로드 시에도 전송)
-            const currentElements = useStore.getState().elements;
-            if (currentElements.length > 0) {
-                // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
-                lastSentElementsRef.current = currentElements;
+            // ⭐ Layout/Slot System: persist hydration 완료 후 요소 전송
+            // (새로고침 시 editMode가 아직 hydration 안 됐을 수 있음)
+            const sendInitialElements = () => {
+                const currentElements = useStore.getState().elements;
+                if (currentElements.length > 0) {
+                    // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
+                    lastSentElementsRef.current = currentElements;
+                    sendElementsToIframe(currentElements);
+                }
+            };
 
-                sendElementsToIframe(currentElements);
+            // persist hydration 완료 확인
+            const editModeHydrated = useEditModeStore.persist?.hasHydrated?.() ?? true;
+            const layoutsHydrated = useLayoutsStore.persist?.hasHydrated?.() ?? true;
+
+            if (editModeHydrated && layoutsHydrated) {
+                // 이미 hydration 완료 → 즉시 전송
+                sendInitialElements();
+            } else {
+                // hydration 대기 후 전송
+                console.log('⏳ [PREVIEW_READY] persist hydration 대기 중...');
+                const checkHydration = () => {
+                    const editDone = useEditModeStore.persist?.hasHydrated?.() ?? true;
+                    const layoutDone = useLayoutsStore.persist?.hasHydrated?.() ?? true;
+                    if (editDone && layoutDone) {
+                        console.log('✅ [PREVIEW_READY] persist hydration 완료 → 요소 전송');
+                        sendInitialElements();
+                    } else {
+                        // 다음 프레임에서 다시 확인
+                        requestAnimationFrame(checkHydration);
+                    }
+                };
+                requestAnimationFrame(checkHydration);
             }
 
             return;

@@ -166,6 +166,19 @@ export function useStyleActions() {
   );
 
   /**
+   * Flex wrap 버튼 선택 핸들러
+   */
+  const handleFlexWrap = useCallback(
+    (value: string) => {
+      useInspectorState.getState().updateInlineStyles({
+        display: 'flex',
+        flexWrap: value, // wrap, wrap-reverse, nowrap
+      });
+    },
+    []
+  );
+
+  /**
    * Reset styles (inline style 제거)
    */
   const resetStyles = useCallback(
@@ -207,5 +220,6 @@ export function useStyleActions() {
     handleFlexDirection,
     handleFlexAlignment,
     handleJustifyContentSpacing,
+    handleFlexWrap,
   };
 }

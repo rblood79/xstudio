@@ -209,3 +209,18 @@ export function getJustifyContentSpacingKeys(element: SelectedElement | null): s
 
   return [];
 }
+
+/**
+ * Helper: Get selected flex wrap button ID
+ */
+export function getFlexWrapKeys(element: SelectedElement | null): string[] {
+  if (!element) return ['nowrap'];
+
+  const flexWrap = getStyleValue(element, 'flexWrap', '');
+
+  if (flexWrap === 'wrap') return ['wrap'];
+  if (flexWrap === 'wrap-reverse') return ['wrap-reverse'];
+  if (flexWrap === 'nowrap') return ['nowrap'];
+
+  return ['nowrap'];
+}

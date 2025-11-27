@@ -6,6 +6,7 @@
 @layer shared-tokens {
   :root {
     /* Typography Scale - Tailwind v4 표준 (고정값, AI 생성 불필요) */
+    --icon-size: calc(var(--spacing-xl) * 1.125);
     /* Font Sizes */
     --text-2xs: 0.625rem; /* 10px */
     --text-xs: 0.75rem; /* 12px */
@@ -227,7 +228,7 @@
 
     /* Border Colors - Light Mode */
     --color-border-subtle: rgba(13, 13, 13, 0.05);
-    --color-border: rgba(13, 13, 13, 0.10);
+    --color-border: rgba(13, 13, 13, 0.1);
     --color-border-strong: rgba(13, 13, 13, 0.15);
 
     /* Light Mode Base (mapped to gray scale) */

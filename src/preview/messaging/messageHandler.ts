@@ -31,6 +31,11 @@ function getTargetOrigin(): string {
 export interface UpdateElementsMessage {
   type: 'UPDATE_ELEMENTS';
   elements: PreviewElement[];
+  // ⭐ Layout/Slot System: pageInfo도 함께 전송 (초기 로드 시 Layout 렌더링용)
+  pageInfo?: {
+    pageId: string | null;
+    layoutId: string | null;
+  };
 }
 
 export interface UpdateElementPropsMessage {
@@ -205,6 +210,13 @@ export class MessageHandler {
   private handleUpdateElements(data: UpdateElementsMessage): void {
     const elements = data.elements || [];
     this.store.setElements(elements);
+
+    // ⭐ Layout/Slot System: pageInfo가 함께 전송된 경우 처리 (초기 로드 시)
+    if (data.pageInfo) {
+      this.store.setCurrentPageId(data.pageInfo.pageId);
+      this.store.setCurrentLayoutId(data.pageInfo.layoutId);
+      console.log(`[Preview] Page info updated: pageId=${data.pageInfo.pageId}, layoutId=${data.pageInfo.layoutId}`);
+    }
 
     // ACK 전송
     this.sendToBuilder({ type: 'ELEMENTS_UPDATED_ACK' });

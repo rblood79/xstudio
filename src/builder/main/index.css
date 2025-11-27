@@ -93,50 +93,52 @@
   /* Header Screen Section */
   .header_contents.screen {
     gap: var(--spacing-sm);
+
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      background-color: var(--outline-variant);
+      box-shadow: var(--inset-shadow-sm);
+      border-radius: var(--radius-lg);
+      &::before {
+        top: 2px;
+        left: 2px;
+        width: calc(var(--indicator-width) - var(--spacing));
+        height: calc(var(--indicator-height) - var(--spacing));
+        border-radius: var(--radius-md);
+        background: var(--surface-container-high);
+      }
+
+      .react-aria-ToggleButton {
+        background-color: transparent;
+        border-color: transparent;
+        padding: var(--spacing-sm);
+        max-height: var(--spacing-2xl);
+        max-width: var(--spacing-2xl);
+
+        &[data-pressed] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--on-surface);
+        }
+
+        &[data-selected] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--surface);
+
+          &[data-pressed] {
+            background: transparent;
+            border-color: transparent;
+            color: var(--surface);
+          }
+        }
+      }
+    }
   }
 
   .header_contents.screen .sizeInfo {
     position: absolute;
     width: 64px;
     left: -64px;
-  }
-
-  .header_contents.screen .react-aria-RadioGroup {
-    display: flex;
-    align-items: center;
-    font-size: var(--text-sm);
-    gap: 0;
-  }
-
-  /* Radio Buttons in Screen Section */
-  .header_contents.screen .aria-Radio {
-    padding: var(--spacing-sm);
-    background-color: var(--on-primary);
-  }
-
-  .header_contents.screen .aria-Radio .react-aria-Label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-  }
-
-  .header_contents.screen .aria-Radio[data-selected] {
-    background-color: var(--outline);
-    color: var(--on-primary);
-  }
-
-  .header_contents.screen .aria-Radio[data-selected] svg {
-    stroke: var(--on-primary);
-    stroke-width: 2;
-  }
-
-  .header_contents.screen .aria-Radio:first-child {
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-  }
-
-  .header_contents.screen .aria-Radio:last-child {
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
   }
 
   /* Theme Selector */

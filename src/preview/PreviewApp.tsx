@@ -38,8 +38,29 @@ function PreviewContent() {
     setGlobalNavigate(navigate);
   }, [navigate]);
 
+  // ⭐ 이전에 적용된 body 스타일 키들을 추적
+  const appliedStyleKeysRef = useRef<Set<string>>(new Set());
+  const appliedClassNameRef = useRef<string>('');
+
   // ⭐ 실제 <body> 태그에 body element의 속성 적용 (가짜 body div 제거)
   useEffect(() => {
+    // ⭐ 이전 스타일 제거 (Layout 변경 시 이전 Layout의 스타일 정리)
+    appliedStyleKeysRef.current.forEach((key) => {
+      document.body.style.removeProperty(key);
+    });
+    appliedStyleKeysRef.current.clear();
+
+    // ⭐ 이전 className 제거
+    if (appliedClassNameRef.current) {
+      const currentClasses = document.body.className.split(' ');
+      const classesToRemove = appliedClassNameRef.current.split(' ');
+      document.body.className = currentClasses
+        .filter((cls) => !classesToRemove.includes(cls))
+        .join(' ')
+        .trim();
+      appliedClassNameRef.current = '';
+    }
+
     // body element 찾기 (Layout body 또는 Page body)
     let bodyElement: PreviewElement | undefined;
 
@@ -50,8 +71,8 @@ function PreviewContent() {
       // Layout 편집 모드: Layout의 body 사용
       bodyElement = elements.find((el) => el.tag === 'body' && el.layout_id === currentLayoutId && !el.parent_id);
     } else {
-      // Page 모드: Page의 body 사용
-      bodyElement = elements.find((el) => el.tag === 'body' && !el.parent_id);
+      // Page 모드: Page의 body 사용 (Layout 없음)
+      bodyElement = elements.find((el) => el.tag === 'body' && !el.parent_id && !el.layout_id);
     }
 
     if (bodyElement) {
@@ -59,28 +80,46 @@ function PreviewContent() {
       document.body.setAttribute('data-element-id', bodyElement.id);
       document.body.setAttribute('data-original-tag', 'body');
 
-      // body element의 style 적용
+      // body element의 style 적용 및 추적
       if (bodyElement.props?.style) {
         const style = bodyElement.props.style as Record<string, string>;
         Object.entries(style).forEach(([key, value]) => {
-          document.body.style.setProperty(
-            key.replace(/([A-Z])/g, '-$1').toLowerCase(), // camelCase → kebab-case
-            value
-          );
+          const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase(); // camelCase → kebab-case
+          document.body.style.setProperty(cssKey, value);
+          appliedStyleKeysRef.current.add(cssKey);
         });
       }
 
-      // body element의 className 적용
+      // body element의 className 적용 및 추적
       if (bodyElement.props?.className) {
-        document.body.className = `${document.body.className} ${bodyElement.props.className}`.trim();
+        const newClassName = bodyElement.props.className as string;
+        document.body.className = `${document.body.className} ${newClassName}`.trim();
+        appliedClassNameRef.current = newClassName;
       }
+    } else {
+      // body element가 없으면 data-element-id 제거
+      document.body.removeAttribute('data-element-id');
+      document.body.removeAttribute('data-original-tag');
     }
 
-    // Cleanup: 컴포넌트 언마운트 또는 body element 변경 시 초기화
+    // Cleanup: 컴포넌트 언마운트 시 정리
     return () => {
       document.body.removeAttribute('data-element-id');
       document.body.removeAttribute('data-original-tag');
-      // 스타일 초기화는 복잡하므로 유지 (다음 body element가 덮어씀)
+      // ⭐ 스타일과 className도 정리
+      appliedStyleKeysRef.current.forEach((key) => {
+        document.body.style.removeProperty(key);
+      });
+      appliedStyleKeysRef.current.clear();
+      if (appliedClassNameRef.current) {
+        const currentClasses = document.body.className.split(' ');
+        const classesToRemove = appliedClassNameRef.current.split(' ');
+        document.body.className = currentClasses
+          .filter((cls) => !classesToRemove.includes(cls))
+          .join(' ')
+          .trim();
+        appliedClassNameRef.current = '';
+      }
     };
   }, [elements, currentLayoutId, currentPageId]);
 
