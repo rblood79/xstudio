@@ -74,27 +74,30 @@ export function usePresetApply({
       });
   }, [elements, layoutId]);
 
-  // 현재 적용된 프리셋 감지
+  // ⭐ 현재 적용된 프리셋 감지 (body element의 appliedPreset prop에서 읽기)
   const currentPresetKey = useMemo((): string | null => {
-    if (existingSlots.length === 0) return null;
+    const body = elements.find((el) => el.id === bodyElementId);
+    if (!body) return null;
 
-    const existingSlotNames = new Set(existingSlots.map((s) => s.slotName));
+    const appliedPreset = (body.props as { appliedPreset?: string })?.appliedPreset;
 
-    // 각 프리셋과 비교하여 slot 이름이 정확히 일치하는지 확인
-    for (const [presetKey, preset] of Object.entries(LAYOUT_PRESETS)) {
+    // appliedPreset이 있고, 해당 프리셋이 존재하며, 현재 slots과 일치하는지 검증
+    if (appliedPreset && LAYOUT_PRESETS[appliedPreset]) {
+      const preset = LAYOUT_PRESETS[appliedPreset];
       const presetSlotNames = new Set(preset.slots.map((s) => s.name));
+      const existingSlotNames = new Set(existingSlots.map((s) => s.slotName));
 
-      // 크기가 같고 모든 이름이 일치하면 동일한 프리셋
+      // slot 구성이 여전히 일치하면 유효
       if (
         existingSlotNames.size === presetSlotNames.size &&
         [...existingSlotNames].every((name) => presetSlotNames.has(name))
       ) {
-        return presetKey;
+        return appliedPreset;
       }
     }
 
     return null;
-  }, [existingSlots]);
+  }, [elements, bodyElementId, existingSlots]);
 
   // 프리셋 적용 함수
   const applyPreset = useCallback(
@@ -171,20 +174,27 @@ export function usePresetApply({
         );
 
         // ============================================
-        // Step 4: Body에 containerStyle 적용 (있으면)
+        // Step 4: Body에 containerStyle 및 appliedPreset 저장
         // ============================================
-        if (preset.containerStyle) {
-          const body = elements.find((el) => el.id === bodyElementId);
-          if (body) {
-            const currentStyle =
-              ((body.props as { style?: Record<string, unknown> })?.style as Record<
-                string,
-                unknown
-              >) || {};
-            const mergedStyle = { ...currentStyle, ...preset.containerStyle };
-            await updateElementProps(bodyElementId, { style: mergedStyle });
-            console.log("[Preset] Applied container style to body");
-          }
+        const body = elements.find((el) => el.id === bodyElementId);
+        if (body) {
+          const currentStyle =
+            ((body.props as { style?: Record<string, unknown> })?.style as Record<
+              string,
+              unknown
+            >) || {};
+
+          // containerStyle이 있으면 병합, 없으면 기존 스타일 유지
+          const mergedStyle = preset.containerStyle
+            ? { ...currentStyle, ...preset.containerStyle }
+            : currentStyle;
+
+          // ⭐ appliedPreset 키 저장 (동일 프리셋 감지용)
+          await updateElementProps(bodyElementId, {
+            style: mergedStyle,
+            appliedPreset: presetKey,
+          });
+          console.log(`[Preset] Saved appliedPreset="${presetKey}" to body`);
         }
 
         // ============================================

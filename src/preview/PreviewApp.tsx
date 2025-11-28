@@ -332,14 +332,19 @@ function PreviewContent() {
       // ⭐ Page의 body 찾기 (body는 렌더링하지 않고 자식만 사용)
       const pageBody = pageElements.find((pe) => pe.tag === 'body' && !pe.parent_id);
 
-      // ⭐ Slot에 들어갈 실제 콘텐츠: body의 자식들
+      // ⭐ Slot에 들어갈 실제 콘텐츠: slot_name이 일치하는 요소들만
       // body는 렌더링하지 않음 - body 스타일은 Layout의 body가 document.body에 적용됨
       let slotContent: PreviewElement[] = [];
 
       if (pageBody) {
-        // Page body의 자식들을 Slot에 배치
+        // ⭐ FIX: Page body의 자식들 중 slot_name이 일치하는 것만 배치
+        // slot_name이 없는 요소는 'content' 슬롯에 배치
         slotContent = pageElements
-          .filter((pe) => pe.parent_id === pageBody.id)
+          .filter((pe) => {
+            if (pe.parent_id !== pageBody.id) return false;
+            const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
+            return peSlotName === slotName;
+          })
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       } else {
         // body가 없으면 기존 로직 (slot_name으로 찾기, body 제외)

@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Layout Preset System Critical Bugs (2025-11-28)
+
+#### Same Preset Reapply Bug
+- **문제**: 동일한 프리셋(예: 전체화면) 적용 후 다시 같은 프리셋 클릭 시 덮어쓰기 다이얼로그가 표시됨
+- **원인**: `sidebar-left`와 `sidebar-right`가 동일한 Slot 이름(`sidebar`, `content`)을 가져 Set 비교로 구분 불가
+- **해결**: Slot 이름 비교 대신 `appliedPreset` 키를 body element props에 저장하여 감지
+- **파일**: `usePresetApply.ts`, `LayoutPresetSelector/index.tsx`, `styles.css`
+
+```typescript
+// body element props에서 직접 읽기
+const currentPresetKey = useMemo((): string | null => {
+  const body = elements.find((el) => el.id === bodyElementId);
+  const appliedPreset = (body?.props as { appliedPreset?: string })?.appliedPreset;
+  // appliedPreset이 있고 slot 구성이 일치하면 유효
+  if (appliedPreset && LAYOUT_PRESETS[appliedPreset]) {
+    // ... slot 검증 로직
+    return appliedPreset;
+  }
+  return null;
+}, [elements, bodyElementId, existingSlots]);
+```
+
+#### LayoutsTab Body Auto-Select Bug
+- **문제**: Layout 모드에서 Slot 선택 시 자동으로 body가 선택되어 버림
+- **원인**: body 자동 선택 useEffect가 layout 변경 시뿐 아니라 `layoutElements` 변경 시마다 실행됨
+- **해결**: `bodyAutoSelectedRef`를 추가하여 layout 당 한 번만 body 자동 선택 실행
+- **파일**: `LayoutsTab.tsx`
+
+```typescript
+const bodyAutoSelectedRef = React.useRef<boolean>(false);
+
+useEffect(() => {
+  if (layoutChanged) {
+    bodyAutoSelectedRef.current = false; // 레이아웃 변경 시 리셋
+  }
+
+  // 한 번만 실행
+  if (!bodyAutoSelectedRef.current && bodyElement) {
+    setSelectedElement(bodyElement.id, ...);
+    bodyAutoSelectedRef.current = true;
+  }
+}, [currentLayout?.id, layoutElements, ...]);
+```
+
+#### Critical: Layout Slot Content Duplication Bug
+- **문제**: Layout 프리셋 적용 시 Page body 내부의 모든 컴포넌트가 모든 Slot에 복제됨
+- **원인**: `renderLayoutElement`에서 Slot 렌더링 시 `slot_name` 필터링 없이 모든 body 자식을 삽입
+- **해결**: `slot_name` 매칭 필터 추가 - 각 Slot에는 해당 `slot_name`을 가진 요소만 삽입
+
+**Before (Bug)**:
+```typescript
+slotContent = pageElements
+  .filter((pe) => pe.parent_id === pageBody.id)  // 모든 body 자식
+  .sort(...);
+```
+
+**After (Fix)**:
+```typescript
+slotContent = pageElements
+  .filter((pe) => {
+    if (pe.parent_id !== pageBody.id) return false;
+    const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
+    return peSlotName === slotName;  // slot_name 매칭
+  })
+  .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+```
+
+- **파일**: `PreviewApp.tsx`
+
+---
+
 ### Added - Style Panel Improvements (2025-11-24)
 
 #### PropertyUnitInput Shorthand Parsing

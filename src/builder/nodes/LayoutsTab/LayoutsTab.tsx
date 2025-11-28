@@ -151,6 +151,8 @@ export function LayoutsTab({
 
   // ⭐ Layout 전환 시 body 자동 펼치기 + 선택 (Pages 탭과 동일 패턴)
   const prevLayoutIdRef = React.useRef<string | null>(null);
+  // ⭐ body 자동 선택 완료 여부 추적 (중복 선택 방지)
+  const bodyAutoSelectedRef = React.useRef<boolean>(false);
 
   useEffect(() => {
     const layoutChanged = currentLayout?.id !== prevLayoutIdRef.current;
@@ -160,10 +162,12 @@ export function LayoutsTab({
       collapseLayoutTree();
       console.log(`📂 [LayoutsTab] Layout 전환: ${prevLayoutIdRef.current?.slice(0, 8)} → ${currentLayout.id.slice(0, 8)}`);
       prevLayoutIdRef.current = currentLayout.id;
+      // ⭐ Layout 변경 시 body 자동 선택 플래그 초기화
+      bodyAutoSelectedRef.current = false;
     }
 
-    // body 요소 (order_num === 0) 자동 펼치기 + 선택 (ACK 기반)
-    if (currentLayout && layoutElements.length > 0) {
+    // ⭐ body 요소 자동 펼치기 + 선택 (Layout 전환 후 1회만 실행)
+    if (currentLayout && layoutElements.length > 0 && !bodyAutoSelectedRef.current) {
       const bodyElement = layoutElements.find(el => el.order_num === 0) || layoutElements.find(el => el.tag === 'body');
       if (bodyElement) {
         console.log(`📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(0, 8)}`);
@@ -172,6 +176,8 @@ export function LayoutsTab({
         setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
         // ⭐ ACK 기반 auto-select 등록 (iframe 렌더링 완료 후 overlay 표시)
         requestAutoSelectAfterUpdate(bodyElement.id);
+        // ⭐ 중복 실행 방지
+        bodyAutoSelectedRef.current = true;
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -106,6 +106,7 @@ interface LayoutPresetSelectorProps {
 ```typescript
 interface UsePresetApplyReturn {
   existingSlots: ExistingSlotInfo[];  // 현재 Layout의 기존 Slot 목록
+  currentPresetKey: string | null;    // 현재 적용된 프리셋 키 (2025-11-28 추가)
   applyPreset: (presetKey: string, mode: PresetApplyMode) => Promise<void>;
   isApplying: boolean;
 }
@@ -117,7 +118,7 @@ type PresetApplyMode = "replace" | "merge" | "cancel";
 1. 기존 Slot 처리 (replace 모드 시 삭제)
 2. 새 Slot 생성 준비 (merge 모드 시 없는 것만)
 3. Slot Element 배열 생성
-4. Body에 containerStyle 적용
+4. Body에 containerStyle 및 `appliedPreset` 키 저장
 5. Slot 일괄 생성 (addComplexElement → 단일 History 엔트리)
 
 ---
@@ -269,6 +270,54 @@ export const LayoutBodyEditor = memo(
 - [x] containerStyle 적용 확인
 - [x] History 단일 엔트리 기록 확인
 - [x] 기존 Slot 처리 다이얼로그 동작 확인
+- [x] 동일 프리셋 재적용 시 스킵 확인 (2025-11-28)
+- [x] Slot 콘텐츠 slot_name 필터링 확인 (2025-11-28)
+
+---
+
+## 버그 수정 (2025-11-28)
+
+### 1. 동일 프리셋 재적용 버그
+
+**문제**: 동일한 프리셋(예: 전체화면) 적용 후 다시 같은 프리셋 클릭 시 덮어쓰기 다이얼로그가 표시됨
+
+**원인**: `sidebar-left`와 `sidebar-right`가 동일한 Slot 이름(`sidebar`, `content`)을 가져 Set 비교로 구분 불가
+
+**해결**:
+1. `usePresetApply.ts`에 `currentPresetKey` 반환 추가
+2. Body element props에 `appliedPreset` 키 저장
+3. Slot 이름 비교 대신 저장된 `appliedPreset`으로 감지
+4. `index.tsx`에서 동일 프리셋 클릭 시 early return
+5. `styles.css`에 `.applied` 클래스 및 "적용됨" 배지 추가
+
+### 2. LayoutsTab Body 자동 선택 버그
+
+**문제**: Layout 모드에서 Slot 선택 시 자동으로 body가 선택되어 버림
+
+**원인**: Body 자동 선택 useEffect가 layout 변경 시뿐 아니라 `layoutElements` 변경 시마다 실행됨
+
+**해결**:
+- `LayoutsTab.tsx`에 `bodyAutoSelectedRef` 추가
+- Layout 변경 시에만 ref 리셋
+- 한 번 자동 선택 후에는 더 이상 실행되지 않음
+
+### 3. Layout Slot 콘텐츠 복제 버그 (Critical)
+
+**문제**: Layout 프리셋 적용 시 Page body 내부의 모든 컴포넌트가 모든 Slot에 복제됨
+
+**원인**: `PreviewApp.tsx`의 `renderLayoutElement`에서 Slot 렌더링 시 `slot_name` 필터링 없이 모든 body 자식을 삽입
+
+**해결**:
+```typescript
+// slot_name 매칭 필터 추가
+slotContent = pageElements
+  .filter((pe) => {
+    if (pe.parent_id !== pageBody.id) return false;
+    const peSlotName = (pe.props as { slot_name?: string })?.slot_name || 'content';
+    return peSlotName === slotName;  // 해당 Slot에만 삽입
+  })
+  .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+```
 
 ---
 

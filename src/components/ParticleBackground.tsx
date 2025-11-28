@@ -1,7 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useRef, ReactNode, useCallback, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  ReactNode,
+  useCallback,
+  useState,
+} from "react";
 import * as THREE from "three";
-
 
 // ==================== 상수 ====================
 const PARTICLE_COUNT = 18000;
@@ -11,63 +18,64 @@ const PIXEL_SAMPLE_STEP = 4;
 const POINT_SCALE = 0.28;
 const SVG_SCALE = 30;
 const BASE_FONT_SIZE = 260;
-const LEAVE_DELAY_MS = 50;
+const LEAVE_DELAY_MS = 60;
 
 // 애니메이션 속도
 const MORPH_IN_SPEED = 0.08;
-const MORPH_OUT_SPEED = 0.04;
-const TRANSITION_SPEED = 0.08;
+const MORPH_OUT_SPEED = 0.015;
+const TRANSITION_SPEED = 0.045; // 형태 간 전환 속도
+const VORTEX_FADE_SPEED = 0.015; // 회오리 흩어지는 속도 (MORPH_OUT과 동일)
 
 // 사막 모래 색상 팔레트 (누렇고 탁한 베이지색)
 const SAND_COLORS = {
   dark: {
-    primary: { r: 0.92, g: 0.78, b: 0.52 },    // 밝은 황금 모래
-    secondary: { r: 0.75, g: 0.58, b: 0.35 },  // 중간 모래
-    dust: { r: 0.85, g: 0.72, b: 0.48 },       // 먼지 색상
+    primary: { r: 0.92, g: 0.78, b: 0.52 }, // 밝은 황금 모래
+    secondary: { r: 0.75, g: 0.58, b: 0.35 }, // 중간 모래
+    dust: { r: 0.85, g: 0.72, b: 0.48 }, // 먼지 색상
   },
   light: {
-    primary: { r: 0.72, g: 0.55, b: 0.32 },
-    secondary: { r: 0.58, g: 0.42, b: 0.22 },
-    dust: { r: 0.65, g: 0.50, b: 0.30 },
+    primary: { r: 0.35, g: 0.25, b: 0.12 }, // 진한 갈색 (밝은 배경에서 잘 보이게)
+    secondary: { r: 0.28, g: 0.18, b: 0.08 }, // 어두운 갈색
+    dust: { r: 0.42, g: 0.32, b: 0.18 }, // 중간 갈색
   },
 } as const;
 
 // 평상시 모래바람 설정 (사막의 공기가 거칠고 무거운 느낌)
 const BREEZE_CONFIG = {
   // 기본 바람
-  windSpeed: 1.2,              // 지속적인 수평 바람
-  windDirection: -1.0,         // 바람 방향
+  windSpeed: 1.2, // 지속적인 수평 바람
+  windDirection: -1.0, // 바람 방향
   // 층별 움직임
-  groundBounce: 2.5,           // 바닥 근처 굵은 알갱이 튀어오름
-  midLayerDrift: 1.8,          // 중간층 떠다님
-  highLayerFloat: 0.8,         // 상층 미세먼지 부유
+  groundBounce: 2.5, // 바닥 근처 굵은 알갱이 튀어오름
+  midLayerDrift: 1.8, // 중간층 떠다님
+  highLayerFloat: 0.8, // 상층 미세먼지 부유
   // 물결무늬
-  surfaceWaveSpeed: 0.4,       // 모래언덕 표면 물결
-  surfaceWaveScale: 0.015,     // 물결 스케일
+  surfaceWaveSpeed: 0.4, // 모래언덕 표면 물결
+  surfaceWaveScale: 0.015, // 물결 스케일
   // 군집
-  clusterStrength: 1.5,        // 무리지어 이동
-  clusterScale: 0.008,         // 군집 크기
+  clusterStrength: 1.5, // 무리지어 이동
+  clusterScale: 0.008, // 군집 크기
 } as const;
 
 // 회오리 설정 (마우스 클릭 시)
 const VORTEX_CONFIG = {
   // 성장
-  growthRate: 0.15,            // 누르는 시간에 따른 성장률
-  maxRadius: 180.0,            // 최대 회오리 반경
-  minRadius: 20.0,             // 최소 회오리 반경
-  maxHeight: 250.0,            // 최대 높이 (몇십 미터 치솟는 기둥)
+  growthRate: 0.15, // 누르는 시간에 따른 성장률
+  maxRadius: 180.0, // 최대 회오리 반경
+  minRadius: 20.0, // 최소 회오리 반경
+  maxHeight: 250.0, // 최대 높이 (몇십 미터 치솟는 기둥)
   // 회전
-  rotationSpeed: 3.0,          // 회전 속도
-  spiralTightness: 0.03,       // 나선 조임 정도
+  rotationSpeed: 3.0, // 회전 속도
+  spiralTightness: 0.03, // 나선 조임 정도
   // 흡입력
-  suctionStrength: 15.0,       // 바닥 모래 빨아들이는 힘
-  liftForce: 8.0,              // 위로 솟구치는 힘
+  suctionStrength: 15.0, // 바닥 모래 빨아들이는 힘
+  liftForce: 8.0, // 위로 솟구치는 힘
   // 밀도
-  coreDensity: 1.0,            // 중심부 밀도 (빽빽하게)
-  edgeDensity: 0.3,            // 가장자리 밀도 (옅어짐)
+  coreDensity: 1.0, // 중심부 밀도 (빽빽하게)
+  edgeDensity: 0.3, // 가장자리 밀도 (옅어짐)
   // 기울기 (날렵한 깃발처럼)
-  tiltAmount: 0.15,            // 한쪽으로 기울어짐
-  tiltDirection: 1.0,          // 기울기 방향
+  tiltAmount: 0.15, // 한쪽으로 기울어짐
+  tiltDirection: 1.0, // 기울기 방향
 } as const;
 
 // 모래폭풍 설정 (버튼 호버 시 - 텍스트 형성)
@@ -75,7 +83,7 @@ const STORM_CONFIG = {
   turbulence: 4.0,
   gustStrength: 12.0,
   gustFrequency: 0.6,
-  convergenceForce: 0.85,  // 수렴력 크게 증가 (0.18 → 0.85)
+  convergenceForce: 0.85, // 수렴력 크게 증가 (0.18 → 0.85)
   dustLayerCount: 5,
 } as const;
 
@@ -88,9 +96,9 @@ interface VortexState {
   active: boolean;
   x: number;
   y: number;
-  strength: number;      // 0~1, 누른 시간에 따라 증가
-  radius: number;        // 현재 반경
-  height: number;        // 현재 높이
+  strength: number; // 0~1, 누른 시간에 따라 증가
+  radius: number; // 현재 반경
+  height: number; // 현재 높이
 }
 
 interface ParticleBackgroundContextValue {
@@ -102,9 +110,14 @@ interface ParticleBackgroundContextValue {
 }
 
 // ==================== Context ====================
-const ParticleBackgroundContext = createContext<ParticleBackgroundContextValue | null>(null);
+const ParticleBackgroundContext =
+  createContext<ParticleBackgroundContextValue | null>(null);
 
-export function ParticleBackgroundProvider({ children }: { children: ReactNode }) {
+export function ParticleBackgroundProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const targetMorphRef = useRef(0);
   const contentRef = useRef<MorphContent>({ type: "text", value: "BESPOKE" });
   const [contentVersion, setContentVersion] = useState(0);
@@ -129,7 +142,7 @@ export function ParticleBackgroundProvider({ children }: { children: ReactNode }
     if (content) {
       contentRef.current = content;
       targetMorphRef.current = 1;
-      setContentVersion(v => v + 1);
+      setContentVersion((v) => v + 1);
     } else {
       leaveTimeoutRef.current = setTimeout(() => {
         targetMorphRef.current = 0;
@@ -139,13 +152,15 @@ export function ParticleBackgroundProvider({ children }: { children: ReactNode }
   }, []);
 
   return (
-    <ParticleBackgroundContext.Provider value={{
-      targetMorphRef,
-      contentRef,
-      setHoverContent,
-      contentVersion,
-      vortexRef,
-    }}>
+    <ParticleBackgroundContext.Provider
+      value={{
+        targetMorphRef,
+        contentRef,
+        setHoverContent,
+        contentVersion,
+        vortexRef,
+      }}
+    >
       {children}
     </ParticleBackgroundContext.Provider>
   );
@@ -154,7 +169,9 @@ export function ParticleBackgroundProvider({ children }: { children: ReactNode }
 export function useParticleBackground() {
   const context = useContext(ParticleBackgroundContext);
   if (!context) {
-    throw new Error("useParticleBackground must be used within ParticleBackgroundProvider");
+    throw new Error(
+      "useParticleBackground must be used within ParticleBackgroundProvider"
+    );
   }
   return context;
 }
@@ -163,7 +180,10 @@ export function useParticleBackground() {
 let sharedCanvas: HTMLCanvasElement | null = null;
 let sharedCtx: CanvasRenderingContext2D | null = null;
 
-function getSharedCanvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+function getSharedCanvas(): {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+} {
   if (!sharedCanvas) {
     sharedCanvas = document.createElement("canvas");
     sharedCanvas.width = CANVAS_WIDTH;
@@ -177,14 +197,23 @@ function getAttr(elem: Element, name: string, defaultValue = 0): number {
   return parseFloat(elem.getAttribute(name) || String(defaultValue));
 }
 
-const svgRenderers: Record<string, (elem: Element, ctx: CanvasRenderingContext2D) => void> = {
+const svgRenderers: Record<
+  string,
+  (elem: Element, ctx: CanvasRenderingContext2D) => void
+> = {
   path: (elem, ctx) => {
     const d = elem.getAttribute("d");
     if (d) ctx.stroke(new Path2D(d));
   },
   circle: (elem, ctx) => {
     ctx.beginPath();
-    ctx.arc(getAttr(elem, "cx"), getAttr(elem, "cy"), getAttr(elem, "r"), 0, Math.PI * 2);
+    ctx.arc(
+      getAttr(elem, "cx"),
+      getAttr(elem, "cy"),
+      getAttr(elem, "r"),
+      0,
+      Math.PI * 2
+    );
     ctx.stroke();
   },
   line: (elem, ctx) => {
@@ -194,8 +223,10 @@ const svgRenderers: Record<string, (elem: Element, ctx: CanvasRenderingContext2D
     ctx.stroke();
   },
   rect: (elem, ctx) => {
-    const x = getAttr(elem, "x"), y = getAttr(elem, "y");
-    const w = getAttr(elem, "width"), h = getAttr(elem, "height");
+    const x = getAttr(elem, "x"),
+      y = getAttr(elem, "y");
+    const w = getAttr(elem, "width"),
+      h = getAttr(elem, "height");
     const rx = getAttr(elem, "rx");
     if (rx > 0) {
       ctx.beginPath();
@@ -207,15 +238,28 @@ const svgRenderers: Record<string, (elem: Element, ctx: CanvasRenderingContext2D
   },
   ellipse: (elem, ctx) => {
     ctx.beginPath();
-    ctx.ellipse(getAttr(elem, "cx"), getAttr(elem, "cy"), getAttr(elem, "rx"), getAttr(elem, "ry"), 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      getAttr(elem, "cx"),
+      getAttr(elem, "cy"),
+      getAttr(elem, "rx"),
+      getAttr(elem, "ry"),
+      0,
+      0,
+      Math.PI * 2
+    );
     ctx.stroke();
   },
   polyline: (elem, ctx) => renderPoly(elem, ctx, false),
   polygon: (elem, ctx) => renderPoly(elem, ctx, true),
 };
 
-function renderPoly(elem: Element, ctx: CanvasRenderingContext2D, close: boolean) {
-  const points = elem.getAttribute("points")?.trim().split(/\s+|,/).map(Number) || [];
+function renderPoly(
+  elem: Element,
+  ctx: CanvasRenderingContext2D,
+  close: boolean
+) {
+  const points =
+    elem.getAttribute("points")?.trim().split(/\s+|,/).map(Number) || [];
   if (points.length < 4) return;
   ctx.beginPath();
   ctx.moveTo(points[0], points[1]);
@@ -231,7 +275,9 @@ function drawSvgToCanvas(svgString: string, ctx: CanvasRenderingContext2D) {
   const svg = doc.querySelector("svg");
   if (!svg) return;
 
-  const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [0, 0, 24, 24];
+  const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [
+    0, 0, 24, 24,
+  ];
   const [, , svgWidth, svgHeight] = viewBox;
 
   ctx.save();
@@ -244,10 +290,12 @@ function drawSvgToCanvas(svgString: string, ctx: CanvasRenderingContext2D) {
   ctx.strokeStyle = ctx.fillStyle = "white";
   ctx.lineCap = ctx.lineJoin = "round";
 
-  svg.querySelectorAll("path, circle, line, rect, ellipse, polyline, polygon").forEach(elem => {
-    const renderer = svgRenderers[elem.tagName.toLowerCase()];
-    if (renderer) renderer(elem, ctx);
-  });
+  svg
+    .querySelectorAll("path, circle, line, rect, ellipse, polyline, polygon")
+    .forEach((elem) => {
+      const renderer = svgRenderers[elem.tagName.toLowerCase()];
+      if (renderer) renderer(elem, ctx);
+    });
 
   ctx.restore();
 }
@@ -265,8 +313,10 @@ function drawTextToCanvas(text: string, ctx: CanvasRenderingContext2D) {
   }
 
   const metrics = ctx.measureText(text);
-  const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-  const centerY = CANVAS_HEIGHT / 2 + metrics.actualBoundingBoxAscent - textHeight / 2;
+  const textHeight =
+    metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+  const centerY =
+    CANVAS_HEIGHT / 2 + metrics.actualBoundingBoxAscent - textHeight / 2;
   ctx.fillText(text, CANVAS_WIDTH / 2, centerY);
 }
 
@@ -562,7 +612,42 @@ const DESERT_SAND_VERTEX_SHADER = `
 
     pos = morphedPos;
 
-    // 미세한 진동 (살아있는 느낌)
+    // ========== 형태 유지 시 살아있는 움직임 ==========
+    if (morphProgress > 0.5) {
+      float aliveIntensity = (morphProgress - 0.5) * 2.0; // 0.5~1.0 → 0~1
+
+      // 1. 호흡하는 듯한 팽창/수축 (형태 전체가 숨쉬듯)
+      float breathe = sin(time * 1.2) * 0.5 + sin(time * 0.7) * 0.3;
+      vec3 breatheMove = normalize(currentTarget) * breathe * 2.5 * aliveIntensity;
+
+      // 2. 파동 효과 (형태 표면을 따라 물결) - 약하게
+      float wavePhase = length(currentTarget.xy) * 0.05 + time * 2.0;
+      float wave = sin(wavePhase + random * 6.28) * 0.5;
+      vec3 waveMove = vec3(
+        cos(wavePhase) * wave,
+        sin(wavePhase * 0.8) * wave,
+        sin(wavePhase * 1.2) * wave * 0.3
+      ) * aliveIntensity;
+
+      // 3. 개별 파티클 떨림 (각 파티클이 독립적으로 진동)
+      vec3 jitter = vec3(
+        sin(time * 8.0 + random * 30.0),
+        cos(time * 7.0 + random * 25.0),
+        sin(time * 6.0 + random * 20.0)
+      ) * 0.8 * aliveIntensity;
+
+      // 4. 형태 가장자리 흔들림 (외곽이 더 많이 움직임) - 약하게
+      float edgeFactor = smoothstep(0.0, 50.0, length(currentTarget.xy));
+      vec3 edgeWobble = vec3(
+        sin(time * 3.0 + currentTarget.x * 0.1) * 0.8,
+        cos(time * 2.5 + currentTarget.y * 0.1) * 0.8,
+        sin(time * 2.0) * 0.4
+      ) * edgeFactor * aliveIntensity;
+
+      pos += breatheMove + waveMove + jitter + edgeWobble;
+    }
+
+    // 기본 진동 (항상 적용)
     vec3 vibration = vec3(
       sin(time * 5.0 + random * 20.0) * 0.4,
       cos(time * 4.5 + random * 15.0) * 0.4,
@@ -646,7 +731,8 @@ const DESERT_SAND_FRAGMENT_SHADER = `
 // ==================== 컴포넌트 ====================
 export function ParticleBackground() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
+  const { targetMorphRef, contentRef, contentVersion, vortexRef } =
+    useParticleBackground();
   const morphProgressRef = useRef(0);
   const transitionProgressRef = useRef(1);
   const geometryRef = useRef<THREE.BufferGeometry | null>(null);
@@ -666,7 +752,10 @@ export function ParticleBackground() {
 
     geometry.setAttribute(
       "targetPos",
-      new THREE.BufferAttribute(generatePointsFromContent(contentRef.current), 3)
+      new THREE.BufferAttribute(
+        generatePointsFromContent(contentRef.current),
+        3
+      )
     );
 
     transitionProgressRef.current = 0;
@@ -678,10 +767,21 @@ export function ParticleBackground() {
     const mountElement = mountRef.current;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 200;
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    // 정면에서 바라보는 시점
+    camera.position.set(0, 0, 200);
+    camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountElement.appendChild(renderer.domElement);
@@ -714,13 +814,27 @@ export function ParticleBackground() {
     const initialPoints = generatePointsFromContent(contentRef.current);
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("random", new THREE.BufferAttribute(randoms, 1));
-    geometry.setAttribute("heightLayer", new THREE.BufferAttribute(heightLayers, 1));
-    geometry.setAttribute("particleSize", new THREE.BufferAttribute(particleSizes, 1));
-    geometry.setAttribute("targetPos", new THREE.BufferAttribute(initialPoints, 3));
-    geometry.setAttribute("prevTargetPos", new THREE.BufferAttribute(new Float32Array(initialPoints), 3));
+    geometry.setAttribute(
+      "heightLayer",
+      new THREE.BufferAttribute(heightLayers, 1)
+    );
+    geometry.setAttribute(
+      "particleSize",
+      new THREE.BufferAttribute(particleSizes, 1)
+    );
+    geometry.setAttribute(
+      "targetPos",
+      new THREE.BufferAttribute(initialPoints, 3)
+    );
+    geometry.setAttribute(
+      "prevTargetPos",
+      new THREE.BufferAttribute(new Float32Array(initialPoints), 3)
+    );
     geometryRef.current = geometry;
 
-    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDarkMode = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
     const colors = isDarkMode ? SAND_COLORS.dark : SAND_COLORS.light;
 
     const material = new THREE.ShaderMaterial({
@@ -730,9 +844,23 @@ export function ParticleBackground() {
         transitionProgress: { value: 1 },
 
         // 색상
-        colorPrimary: { value: new THREE.Vector3(colors.primary.r, colors.primary.g, colors.primary.b) },
-        colorSecondary: { value: new THREE.Vector3(colors.secondary.r, colors.secondary.g, colors.secondary.b) },
-        colorDust: { value: new THREE.Vector3(colors.dust.r, colors.dust.g, colors.dust.b) },
+        colorPrimary: {
+          value: new THREE.Vector3(
+            colors.primary.r,
+            colors.primary.g,
+            colors.primary.b
+          ),
+        },
+        colorSecondary: {
+          value: new THREE.Vector3(
+            colors.secondary.r,
+            colors.secondary.g,
+            colors.secondary.b
+          ),
+        },
+        colorDust: {
+          value: new THREE.Vector3(colors.dust.r, colors.dust.g, colors.dust.b),
+        },
 
         // 회오리 (비활성화)
         vortexActive: { value: 0 },
@@ -781,8 +909,16 @@ export function ParticleBackground() {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleThemeChange = (e: MediaQueryListEvent) => {
       const c = e.matches ? SAND_COLORS.dark : SAND_COLORS.light;
-      material.uniforms.colorPrimary.value.set(c.primary.r, c.primary.g, c.primary.b);
-      material.uniforms.colorSecondary.value.set(c.secondary.r, c.secondary.g, c.secondary.b);
+      material.uniforms.colorPrimary.value.set(
+        c.primary.r,
+        c.primary.g,
+        c.primary.b
+      );
+      material.uniforms.colorSecondary.value.set(
+        c.secondary.r,
+        c.secondary.g,
+        c.secondary.b
+      );
       material.uniforms.colorDust.value.set(c.dust.r, c.dust.g, c.dust.b);
     };
     mediaQuery.addEventListener("change", handleThemeChange);
@@ -798,13 +934,35 @@ export function ParticleBackground() {
       material.uniforms.time.value += delta;
 
       // 모핑 진행도
-      const morphSpeed = targetMorphRef.current > morphProgressRef.current ? MORPH_IN_SPEED : MORPH_OUT_SPEED;
-      morphProgressRef.current += (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
+      const morphSpeed =
+        targetMorphRef.current > morphProgressRef.current
+          ? MORPH_IN_SPEED
+          : MORPH_OUT_SPEED;
+      morphProgressRef.current +=
+        (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
       material.uniforms.morphProgress.value = morphProgressRef.current;
 
       // 전환 진행도
-      transitionProgressRef.current += (1 - transitionProgressRef.current) * TRANSITION_SPEED;
-      material.uniforms.transitionProgress.value = transitionProgressRef.current;
+      transitionProgressRef.current +=
+        (1 - transitionProgressRef.current) * TRANSITION_SPEED;
+      material.uniforms.transitionProgress.value =
+        transitionProgressRef.current;
+
+      // 회오리 상태 업데이트
+      const vortex = vortexRef.current;
+
+      // 회오리가 비활성화되면 천천히 strength 감소 (MORPH_OUT과 동일한 속도)
+      if (!vortex.active && vortex.strength > 0) {
+        vortex.strength = Math.max(0, vortex.strength - VORTEX_FADE_SPEED);
+        vortex.radius = 20 + vortex.strength * 160;
+        vortex.height = vortex.strength * 250;
+      }
+
+      material.uniforms.vortexActive.value = vortex.strength > 0.01 ? 1 : 0;
+      material.uniforms.vortexCenter.value.set(vortex.x, vortex.y);
+      material.uniforms.vortexStrength.value = vortex.strength;
+      material.uniforms.vortexRadius.value = vortex.radius;
+      material.uniforms.vortexHeight.value = vortex.height;
 
       renderer.render(scene, camera);
       animationFrameId = requestAnimationFrame(animate);
@@ -831,7 +989,7 @@ export function ParticleBackground() {
       material.dispose();
       renderer.dispose();
     };
-  }, [targetMorphRef, contentRef]);
+  }, [targetMorphRef, contentRef, vortexRef]);
 
   return (
     <div
