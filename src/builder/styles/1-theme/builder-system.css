@@ -13,8 +13,8 @@
 
     /* Inspector control sizes */
     --header-height: 32px;
-    --inspector-control-size: 27px;
-    --inspector-label-width: 27px;
+    --inspector-control-size: calc(var(--text-2xl) + var(--spacing));
+    --inspector-label-width: calc(var(--text-2xl) + var(--spacing));
 
     /* Builder Save Button (using primary blue) */
     --builder-save-pending-pulse: pulse 2s infinite;

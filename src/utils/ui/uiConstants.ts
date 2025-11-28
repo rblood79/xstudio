@@ -41,3 +41,13 @@ export const iconInspector = {
     stroke: 1,
     size: 14
 };
+
+/**
+ * 컴퍼넌트아이콘 속성
+ * 컴퍼넌트 관련 아이콘에 적용되는 스타일
+ */
+export const iconComponent = {
+    color: 'var(--color-red-500)',
+    stroke: 1,
+    size: 16
+};

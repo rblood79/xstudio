@@ -52,6 +52,7 @@
     /* Spacing Scale - Tailwind v4 표준 (고정값, AI 생성 불필요) */
     --spacing-0: 0;
     --spacing: 0.25rem;
+    --spacing-3xs: 0.0625rem; /* 1px */
     --spacing-2xs: 0.125rem; /* 2px */
     --spacing-xs: 0.25rem; /* 4px */
     --spacing-sm: 0.5rem; /* 8px */

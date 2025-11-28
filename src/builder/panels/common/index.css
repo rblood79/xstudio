@@ -1,8 +1,8 @@
 @layer builder-system {
   :root {
     /* Inspector 전용 크기 토큰 */
-    --inspector-control-size: 27px;
-    --inspector-label-width: 27px;
+    --inspector-control-size: calc(var(--text-2xl) + var(--spacing));
+    --inspector-label-width: calc(var(--text-2xl) + var(--spacing));
 
     /* Panel Button 공통 스타일 변수 */
     --panel-btn-bg: var(--surface-variant);
@@ -104,38 +104,51 @@
         .flex-direction {
           grid-area: flex-direction;
         }
+
         .flex-alignment {
           grid-area: flex-alignment;
 
           /* 3x3 alignment grid */
           .react-aria-ToggleButtonGroup {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 3px;
+            grid-template-columns: repeat(3, var(--spacing-xl));
+            grid-template-rows: repeat(3, var(--spacing-xl));
+            gap: 4px;
+            justify-items: center;
             border-radius: var(--radius-md);
+            padding: var(--spacing-2xs);
 
             .react-aria-ToggleButton {
               margin-inline-start: 0;
-              height: var(--inspector-control-size);
+              width: var(--text-xl);
+              height: var(--text-xl);
 
               .alignment-dot {
                 width: var(--spacing);
                 height: var(--spacing);
-                background-color: var(--outline);
+                background-color: var(--color-gray-400);
+              }
+              &[data-selected] {
+                .alignment-dot {
+                  background-color: var(--on-surface);
+                }
               }
             }
           }
         }
+
         .justify-content {
           grid-area: justify-content;
         }
+
         .flex-wrap {
           grid-area: flex-wrap;
         }
+
         .displayGap {
           grid-area: displayGap;
         }
+
         .actions-icon {
           grid-area: icon;
           display: flex;
@@ -149,16 +162,18 @@
         gap: var(--spacing-sm);
         grid-template-areas: "padding margin actions-spacing";
 
-        > * {
+        >* {
           min-width: 0;
         }
 
         .padding {
           grid-area: padding;
         }
+
         .margin {
           grid-area: margin;
         }
+
         .actions-spacing {
           grid-area: actions-spacing;
         }
@@ -170,6 +185,7 @@
           .layout-padding {
             grid-area: layout-padding;
           }
+
           .layout-margin {
             grid-area: layout-margin;
           }
@@ -250,13 +266,14 @@
         "width height actions-size"
         "left top actions-position";
 
-      > * {
+      >* {
         min-width: 0;
       }
 
       .width {
         grid-area: width;
       }
+
       .height {
         grid-area: height;
 
@@ -264,15 +281,19 @@
           transform: rotate(90deg);
         }
       }
+
       .actions-size {
         grid-area: actions-size;
       }
+
       .left {
         grid-area: left;
       }
+
       .top {
         grid-area: top;
       }
+
       .actions-position {
         grid-area: actions-position;
       }
@@ -286,7 +307,7 @@
         gap: var(--spacing-sm);
         grid-template-areas: "background-color background-color icon";
 
-        > * {
+        >* {
           min-width: 0;
         }
       }
@@ -309,7 +330,7 @@
           "border-style border-style border-color"
           "border-width border-radius icon";
 
-        > * {
+        >* {
           min-width: 0;
         }
       }
@@ -345,7 +366,7 @@
         "text-transform . .";
 
       /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
-      > * {
+      >* {
         min-width: 0;
       }
 
@@ -406,12 +427,17 @@
     }
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-      min-height: var(--icon-size);
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing);
+
       &::before {
-        top: 2px;
-        left: 2px;
-        width: calc(var(--indicator-width) - var(--spacing));
-        height: calc(var(--indicator-height) - var(--spacing));
+        top: 0px;
+        left: 0px;
+        width: var(--indicator-width);
+        height: var(--indicator-height);
         border-radius: var(--radius-sm);
         background: var(--surface-container-high);
       }
@@ -419,6 +445,9 @@
       .react-aria-ToggleButton {
         background-color: transparent;
         border-color: transparent;
+        max-width: var(--text-xl);
+        height: var(--text-xl);
+        padding: 0;
 
         &[data-pressed] {
           background: transparent;
@@ -430,6 +459,9 @@
           background: transparent;
           border-color: transparent;
           color: var(--surface);
+          svg {
+            stroke: var(--on-surface);
+          }
 
           &[data-pressed] {
             background: transparent;
@@ -475,9 +507,11 @@
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm);
+
       .fieldset-actions {
         grid-area: icon;
         display: flex;
+
         .react-aria-Button {
           background-color: var(--surface-variant);
           border-color: transparent;
@@ -607,7 +641,7 @@
       padding: var(--spacing-xs);
 
       .react-aria-ColorSwatch {
-        height: var(--text-lg);
+        height: var(--text-xl);
         border-radius: var(--radius-sm);
       }
     }
@@ -617,7 +651,7 @@
       border-radius: var(--radius-md);
       width: 100%;
       min-width: 0;
-      min-height: var(--inspector-control-size);
+      padding: var(--spacing);
       box-shadow: var(--inset-shadow-sm);
 
       .react-aria-Select,
@@ -639,6 +673,7 @@
           width: var(--text-xl);
           height: var(--text-xl);
           border-radius: var(--radius-sm);
+          margin-right: 0;
           /* Layer 우선순위로 builder-system.css 값 사용
            * 수정 불필요 - ComboBox.css와 동일한 변수명 */
         }
@@ -674,9 +709,9 @@
           display: flex;
           align-items: center;
           gap: var(--spacing-xs);
-          padding: 0 3px 0 0;
+          padding: 0;
           background-color: transparent;
-          border-color: transparent;
+          border-width: 0;
           min-width: 0;
           width: 100%;
 
@@ -708,14 +743,12 @@
       .react-aria-Switch {
         width: 100%;
         background-color: transparent;
-        border: 1px solid transparent;
-        border-left-width: 0px;
+        border-width: 0;
         border-radius: var(--border-radius);
         font-size: var(--text-xs);
         line-height: var(--text-xs--line-height);
-        padding: var(--spacing-2xs) var(--spacing) var(--spacing-2xs)
-          calc(var(--spacing) * 1.378);
-        padding-inline-start: var(--inspector-label-width);
+        padding: 0;
+        padding-inline-start: var(--spacing);
         flex-direction: row-reverse;
 
         /* Remove focus ring from Switch itself */
@@ -742,19 +775,13 @@
     }
 
     .control-label {
-      position: absolute;
       display: flex;
       align-items: center;
       justify-content: center;
       align-self: self-start;
-      width: var(--inspector-label-width);
-      height: 25px;
-      padding: var(--spacing-2xs) var(--spacing-2xs);
+      padding: var(--spacing-2xs);
       text-align: center;
       background-color: transparent;
-      border: 1px solid transparent;
-      border-right-width: 0;
-      border-radius: var(--radius-md) 0 0 var(--radius-md);
       font-size: var(--text-xs);
       color: var(--on-surface-variant);
     }
@@ -771,8 +798,8 @@
       border-radius: var(--border-radius);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
-      padding: calc(var(--spacing) * 1.125);
-      padding-inline-start: var(--inspector-label-width);
+      padding: var(--spacing-3xs);
+      padding-inline-start: var(--spacing);
 
       /* ⭐ 개별 Input 포커스 스타일 제거 - 부모 Group에서 처리 */
       &:focus {

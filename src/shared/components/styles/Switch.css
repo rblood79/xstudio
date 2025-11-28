@@ -16,7 +16,7 @@
 
     .indicator {
       width: calc(var(--text-4xl) + 4px);
-      height: calc(var(--text-xl) + 2px);
+      height: calc(var(--text-lg) + 2px);
       border-radius: var(--text-xl);
       border: 2px solid var(--outline);
       background: var(--surface-container-highest);
@@ -26,7 +26,7 @@
         content: "";
         display: block;
         width: var(--text-lg);
-        height: var(--text-lg);
+        height: 100% !important;
         border-radius: var(--text-lg);
         margin: 0px;
         background: var(--outline);
@@ -180,7 +180,7 @@
 
     .indicator {
       width: calc(var(--text-4xl) + 4px);
-      height: calc(var(--text-xl) + 2px);
+      height: calc(var(--text-lg) + 2px);
       border-radius: var(--text-xl);
 
       &:before {

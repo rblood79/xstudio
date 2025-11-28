@@ -41,7 +41,7 @@ const STORM_CONFIG = {
   verticalWave: 4.0,          // 수직 파동
   dustLayerCount: 4,          // 먼지 레이어 수
   vortexStrength: 2.5,        // 소용돌이 강도
-  convergenceForce: 0.15,     // 텍스트로 수렴하는 힘
+  convergenceForce: 1.0,      // 텍스트로 수렴하는 힘 (1.0 = 완전 수렴)
 } as const;
 
 // ==================== 타입 ====================
@@ -420,19 +420,18 @@ const DESERT_STORM_VERTEX_SHADER = `
     float breezeIntensity = 1.0 - morphProgress;
 
     // 위치 계산
-    vec3 pos = position;
+    // 기본 위치에서 시작
+    vec3 scatteredPos = position;
 
     // 산들바람 효과 (평상시)
-    pos += breezeMove * breezeIntensity;
+    scatteredPos += breezeMove * breezeIntensity;
 
     // 폭풍 효과 (마우스 이벤트 시)
-    pos += stormMove * stormIntensity;
+    scatteredPos += stormMove * stormIntensity * 0.3;
 
-    // 텍스트로 수렴 (폭풍과 함께)
-    // morphProgress가 높아질수록 타겟 위치로 끌려감
-    float convergence = morphProgress * morphProgress * convergenceForce;
-    vec3 toTarget = currentTarget - pos;
-    pos += toTarget * convergence * (1.0 + random * 0.3);
+    // 타겟 위치 (SVG/텍스트 형태) - 백업 파일 방식: mix 사용
+    // morphProgress가 1이면 완전히 currentTarget으로 이동
+    vec3 pos = mix(scatteredPos, currentTarget, morphProgress * convergenceForce);
 
     // 최종 위치에서 미세한 진동 (텍스트 형성 후에도 살아있는 느낌)
     vec3 vibration = vec3(
