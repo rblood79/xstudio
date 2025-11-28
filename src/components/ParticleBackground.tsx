@@ -44,6 +44,28 @@ const STORM_CONFIG = {
   convergenceForce: 1.0,      // 텍스트로 수렴하는 힘 (1.0 = 완전 수렴)
 } as const;
 
+// 마우스 상호작용 설정
+const MOUSE_CONFIG = {
+  // 회오리 (누르고 있을 때) - 가속도 방식
+  vortexAcceleration: 0.3,      // 회오리 가속도 (초당 성장률 증가)
+  vortexMaxStrength: 6.0,       // 최대 회오리 강도
+  vortexRadius: 200.0,          // 회오리 영향 반경
+  vortexRotationSpeed: 0.25,    // 회전 속도 (절반으로 감소)
+
+  // 밀어내기 + 바람 (이동 시) - 더 부드럽게
+  pushStrength: 8.0,            // 밀어내기 강도 (감소)
+  windStrength: 5.0,            // 바람 강도 (감소)
+  influenceRadius: 80.0,        // 영향 반경 (감소)
+  radiusSpeedMultiplier: 15.0,  // 속도에 따른 반경 증가량 (감소)
+
+  // 감쇠 - 흩어질 때 천천히 (버튼 아웃처럼)
+  velocityDecay: 0.85,          // 속도 감쇠율
+  vortexDecay: 0.985,           // 회오리 감쇠율 (더 천천히 흩어짐)
+
+  // 마우스 추적 - 회오리가 천천히 따라옴
+  vortexPositionLerp: 0.03,     // 회오리 중심 보간 속도 (낮을수록 천천히)
+} as const;
+
 // ==================== 타입 ====================
 export type MorphContent =
   | { type: "text"; value: string }
@@ -278,6 +300,15 @@ const DESERT_STORM_VERTEX_SHADER = `
   uniform float vortexStrength;
   uniform float convergenceForce;
 
+  // 마우스 상호작용
+  uniform vec2 mousePosition;
+  uniform vec2 mouseVelocity;
+  uniform float mouseSpeed;
+  uniform float mouseVortex;
+  uniform float mouseVortexAngle;  // 누적 회전 각도
+  uniform float mouseInfluenceRadius;
+  uniform vec2 vortexCenter;       // 회오리 중심 (천천히 따라옴)
+
   varying float vAlpha;
   varying float vLayer;
   varying float vMorph;
@@ -441,6 +472,89 @@ const DESERT_STORM_VERTEX_SHADER = `
     ) * morphProgress;
     pos += vibration;
 
+    // ========== 마우스 상호작용 ==========
+    // 파티클 위치를 마우스 좌표계로 변환 (카메라 z=200 기준)
+    vec2 particleScreen = pos.xy / 200.0;
+    vec2 toMouse = particleScreen - mousePosition;
+    float distToMouse = length(toMouse);
+
+    // 영향 범위 (속도에 따라 확장)
+    float dynamicRadius = mouseInfluenceRadius / 200.0;
+    float influence = 1.0 - smoothstep(0.0, dynamicRadius, distToMouse);
+
+    if (influence > 0.01) {
+      vec2 dirFromMouse = normalize(toMouse + vec2(0.001));
+
+      // 1. 밀어내기 효과 (마우스 이동 시) - 매우 부드럽게
+      float pushInfluence = influence * influence * influence; // 세제곱으로 더 부드러운 감쇠
+      float pushForce = mouseSpeed * pushInfluence * 3.0;
+      pos.xy += dirFromMouse * pushForce;
+
+      // 2. 바람 효과 (마우스 이동 방향으로) - 매우 부드럽게
+      pos.xy += mouseVelocity * pushInfluence * 30.0;
+
+      // 3. 회오리 효과 (마우스 누르고 있을 때)
+      if (mouseVortex > 0.01) {
+        // 회오리 중심 기준으로 거리 계산 (천천히 따라오는 중심)
+        vec2 toVortexCenter = particleScreen - vortexCenter;
+        float distToVortex = length(toVortexCenter);
+
+        // 회오리 영향 범위
+        float vortexRadius = dynamicRadius * 2.5;
+        float vortexInfluence = 1.0 - smoothstep(0.0, vortexRadius, distToVortex);
+
+        // === 불규칙한 회오리 형태 ===
+        // 각 파티클마다 고유한 노이즈 오프셋 (random 기반)
+        float particlePhase = random * 6.28318;
+
+        // 시간과 거리에 따른 불규칙한 회전 속도
+        float noiseInput = distToVortex * 3.0 + particlePhase + time * 0.5;
+        float rotationNoise = snoise(vec3(noiseInput, random * 10.0, time * 0.3));
+
+        // 기본 회전 + 노이즈 변동 (±30% 정도)
+        float distFactor = 1.0 - smoothstep(0.0, vortexRadius * 0.6, distToVortex);
+        float baseAngle = mouseVortexAngle * (0.15 + distFactor * 0.6);
+        float angle = baseAngle * (1.0 + rotationNoise * 0.3);
+
+        // 불규칙한 반경 변화 (소용돌이 팔 형태)
+        float armNoise = snoise(vec3(
+          atan(toVortexCenter.y, toVortexCenter.x) * 2.0 + time * 0.2,
+          distToVortex * 5.0,
+          random * 5.0
+        ));
+        float radiusWobble = 1.0 + armNoise * 0.25 * mouseVortex;
+
+        float cosA = cos(angle);
+        float sinA = sin(angle);
+
+        // 불규칙한 반경으로 회전
+        vec2 wobbledCenter = toVortexCenter * radiusWobble;
+        vec2 rotated = vec2(
+          wobbledCenter.x * cosA - wobbledCenter.y * sinA,
+          wobbledCenter.x * sinA + wobbledCenter.y * cosA
+        );
+
+        // 접선 방향 불규칙 이동 (소용돌이 팔 사이로 흩어짐)
+        vec2 tangent = vec2(-toVortexCenter.y, toVortexCenter.x);
+        float tangentNoise = snoise(vec3(particleScreen * 3.0, time * 0.4)) * 0.15;
+        rotated += normalize(tangent + vec2(0.001)) * tangentNoise * mouseVortex;
+
+        // 회오리 중심 + 회전된 상대 위치 = 새 위치
+        vec2 newScreenPos = vortexCenter + rotated;
+
+        // 회전 위치로 부드럽게 블렌딩
+        float blendFactor = vortexInfluence * mouseVortex * 0.12;
+        vec2 blendedScreen = mix(particleScreen, newScreenPos, clamp(blendFactor, 0.0, 0.9));
+        pos.xy = blendedScreen * 200.0;
+
+        // 불규칙한 끌어당김 (중심으로 가면서 흔들림)
+        float pullNoise = snoise(vec3(particleScreen.x * 2.0 + time, particleScreen.y * 2.0 + random * 8.0, mouseVortexAngle * 0.1));
+        float pullStrength = mouseVortex * vortexInfluence * (0.8 + pullNoise * 0.4);
+        vec2 pullDir = normalize(toVortexCenter + vec2(0.0001));
+        pos.xy -= pullDir * pullStrength;
+      }
+    }
+
     // 알파값 (폭풍 시 더 밝게)
     float distFade = 1.0 - smoothstep(180.0, 350.0, length(pos.xy));
     float stormBrightness = 1.0 + morphProgress * 0.4;
@@ -498,6 +612,26 @@ export function ParticleBackground() {
   const transitionProgressRef = useRef(1);
   const geometryRef = useRef<THREE.BufferGeometry | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  // 마우스 상태 추적
+  const mouseRef = useRef({
+    x: 0,
+    y: 0,
+    targetX: 0,           // 목표 위치 (실제 마우스)
+    targetY: 0,
+    velocityX: 0,
+    velocityY: 0,
+    smoothVelocityX: 0,   // 부드러운 속도
+    smoothVelocityY: 0,
+    isPressed: false,
+    pressedTime: 0,
+    vortexStrength: 0,
+    vortexVelocity: 0,    // 회오리 성장 속도 (가속도용)
+    vortexAngle: 0,       // 회오리 누적 각도
+    vortexCenterX: 0,     // 회오리 중심 위치 (천천히 따라옴)
+    vortexCenterY: 0,
+  });
+  const lastMouseRef = useRef({ x: 0, y: 0, time: 0 });
 
   useEffect(() => {
     const geometry = geometryRef.current;
@@ -582,6 +716,14 @@ export function ParticleBackground() {
         verticalWave: { value: STORM_CONFIG.verticalWave },
         vortexStrength: { value: STORM_CONFIG.vortexStrength },
         convergenceForce: { value: STORM_CONFIG.convergenceForce },
+        // 마우스 상호작용
+        mousePosition: { value: new THREE.Vector2(0, 0) },
+        mouseVelocity: { value: new THREE.Vector2(0, 0) },
+        mouseSpeed: { value: 0 },
+        mouseVortex: { value: 0 },
+        mouseVortexAngle: { value: 0 },
+        mouseInfluenceRadius: { value: MOUSE_CONFIG.influenceRadius },
+        vortexCenter: { value: new THREE.Vector2(0, 0) },
       },
       vertexShader: DESERT_STORM_VERTEX_SHADER,
       fragmentShader: DESERT_STORM_FRAGMENT_SHADER,
@@ -605,6 +747,36 @@ export function ParticleBackground() {
     const clock = new THREE.Clock();
     let animationFrameId: number;
 
+    // 마우스 이벤트 핸들러
+    const handleMouseMove = (e: MouseEvent) => {
+      const now = performance.now();
+      const dt = Math.max((now - lastMouseRef.current.time) / 1000, 0.001);
+
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      // 목표 위치와 속도 저장 (실제 위치는 animate에서 보간)
+      mouseRef.current.velocityX = (x - lastMouseRef.current.x) / dt;
+      mouseRef.current.velocityY = (y - lastMouseRef.current.y) / dt;
+      mouseRef.current.targetX = x;
+      mouseRef.current.targetY = y;
+
+      lastMouseRef.current = { x, y, time: now };
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // 버튼, 링크, role="button" 요소 위에서는 회오리 비활성화
+      if ((e.target as HTMLElement).closest('button, a, [role="button"], input, select, textarea')) {
+        return;
+      }
+      mouseRef.current.isPressed = true;
+      mouseRef.current.pressedTime = 0;
+    };
+
+    const handleMouseUp = () => {
+      mouseRef.current.isPressed = false;
+    };
+
     const animate = () => {
       const delta = clock.getDelta();
       material.uniforms.time.value += delta;
@@ -616,6 +788,73 @@ export function ParticleBackground() {
       transitionProgressRef.current += (1 - transitionProgressRef.current) * TRANSITION_SPEED;
       material.uniforms.transitionProgress.value = transitionProgressRef.current;
 
+      // ========== 마우스 상호작용 업데이트 ==========
+      const mouse = mouseRef.current;
+
+      // 마우스 위치 부드럽게 보간 (즉각 반응 방지)
+      const posLerp = 0.08; // 위치 보간 속도 (낮을수록 부드러움)
+      mouse.x += (mouse.targetX - mouse.x) * posLerp;
+      mouse.y += (mouse.targetY - mouse.y) * posLerp;
+
+      // 속도도 부드럽게 보간
+      const velLerp = 0.1;
+      mouse.smoothVelocityX += (mouse.velocityX - mouse.smoothVelocityX) * velLerp;
+      mouse.smoothVelocityY += (mouse.velocityY - mouse.smoothVelocityY) * velLerp;
+
+      // 회오리 중심은 더 천천히 따라옴 (마우스 이동 시 자연스럽게)
+      const vortexLerp = MOUSE_CONFIG.vortexPositionLerp;
+      mouse.vortexCenterX += (mouse.x - mouse.vortexCenterX) * vortexLerp;
+      mouse.vortexCenterY += (mouse.y - mouse.vortexCenterY) * vortexLerp;
+
+      // 회오리: 가속도 방식 - 누르고 있으면 점점 빨라짐
+      if (mouse.isPressed) {
+        mouse.pressedTime += delta;
+        // 가속도: 시간이 지날수록 성장 속도가 빨라짐
+        mouse.vortexVelocity += MOUSE_CONFIG.vortexAcceleration * delta;
+        // 강도 = 속도 적분 (가속도 → 속도 → 위치 개념)
+        mouse.vortexStrength = Math.min(
+          mouse.vortexStrength + mouse.vortexVelocity * delta,
+          MOUSE_CONFIG.vortexMaxStrength
+        );
+        // 회오리 각도 누적 (강도에 비례, 회전 속도 절반)
+        mouse.vortexAngle += delta * MOUSE_CONFIG.vortexRotationSpeed * (1 + mouse.vortexStrength * 0.4);
+      } else {
+        // 감쇠 - 버튼 아웃처럼 천천히 흩어짐
+        mouse.vortexStrength *= MOUSE_CONFIG.vortexDecay;
+        mouse.vortexVelocity *= 0.95; // 속도 감쇠도 천천히
+        // 회전은 감쇠 중에도 계속 (점점 느려짐)
+        if (mouse.vortexStrength > 0.01) {
+          mouse.vortexAngle += delta * MOUSE_CONFIG.vortexRotationSpeed * mouse.vortexStrength * 0.3;
+        }
+        if (mouse.vortexStrength < 0.01) {
+          mouse.vortexStrength = 0;
+          mouse.vortexVelocity = 0;
+          mouse.vortexAngle = 0;
+        }
+      }
+
+      // 속도 감쇠
+      mouse.velocityX *= MOUSE_CONFIG.velocityDecay;
+      mouse.velocityY *= MOUSE_CONFIG.velocityDecay;
+
+      // Uniform 업데이트
+      const mouseSpeed = Math.sqrt(mouse.smoothVelocityX ** 2 + mouse.smoothVelocityY ** 2);
+      material.uniforms.mousePosition.value.set(mouse.x, mouse.y);
+      // 부드러운 속도 벡터 전달
+      material.uniforms.mouseVelocity.value.set(
+        mouse.smoothVelocityX * 0.03,
+        mouse.smoothVelocityY * 0.03
+      );
+      material.uniforms.mouseSpeed.value = Math.min(mouseSpeed * 0.3, 3);
+      material.uniforms.mouseVortex.value = mouse.vortexStrength;
+      material.uniforms.mouseVortexAngle.value = mouse.vortexAngle;
+      // 회오리 중심 (천천히 따라오는 위치)
+      material.uniforms.vortexCenter.value.set(mouse.vortexCenterX, mouse.vortexCenterY);
+      // 회오리 시 영향 범위 확장
+      const vortexBonus = mouse.vortexStrength > 0 ? mouse.vortexStrength * 25 : 0;
+      material.uniforms.mouseInfluenceRadius.value =
+        MOUSE_CONFIG.influenceRadius + mouseSpeed * MOUSE_CONFIG.radiusSpeedMultiplier + vortexBonus;
+
       renderer.render(scene, camera);
       animationFrameId = requestAnimationFrame(animate);
     };
@@ -626,13 +865,23 @@ export function ParticleBackground() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
+
+    // 이벤트 리스너 등록
     window.addEventListener("resize", onResize);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mouseleave", handleMouseUp);
 
     return () => {
       geometryRef.current = null;
       materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseleave", handleMouseUp);
       mediaQuery.removeEventListener("change", handleThemeChange);
       mountElement.removeChild(renderer.domElement);
       geometry.dispose();
