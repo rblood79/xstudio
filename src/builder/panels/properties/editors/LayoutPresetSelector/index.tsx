@@ -53,7 +53,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // 프리셋 적용 훅
-  const { existingSlots, applyPreset, isApplying } = usePresetApply({
+  const { existingSlots, currentPresetKey, applyPreset, isApplying } = usePresetApply({
     layoutId,
     bodyElementId,
   });
@@ -80,6 +80,12 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
   // 프리셋 클릭 핸들러
   const handlePresetClick = useCallback(
     (presetKey: string) => {
+      // ⭐ 동일한 프리셋이 이미 적용되어 있으면 무시
+      if (currentPresetKey === presetKey) {
+        console.log(`[Preset] "${presetKey}" is already applied, skipping`);
+        return;
+      }
+
       setSelectedPresetKey(presetKey);
 
       // 기존 Slot이 있으면 다이얼로그 표시
@@ -90,7 +96,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         applyPreset(presetKey, "replace");
       }
     },
-    [existingSlots.length, applyPreset]
+    [existingSlots.length, currentPresetKey, applyPreset]
   );
 
   // 다이얼로그 확인 핸들러
@@ -132,12 +138,13 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                 if (!preset) return null;
 
                 const isSelected = selectedPresetKey === presetKey;
+                const isApplied = currentPresetKey === presetKey;
 
                 return (
                   <Button
                     key={presetKey}
                     variant="default"
-                    className={`preset-item ${isSelected ? "selected" : ""}`}
+                    className={`preset-item ${isSelected ? "selected" : ""} ${isApplied ? "applied" : ""}`}
                     onPress={() => handlePresetClick(presetKey)}
                     isDisabled={isApplying}
                   >
@@ -147,6 +154,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                       height={60}
                     />
                     <span className="preset-name">{preset.name}</span>
+                    {isApplied && <span className="preset-applied-badge">적용됨</span>}
                   </Button>
                 );
               })}

@@ -31,6 +31,14 @@ export interface PreviewPage {
   slug: string;
   order_num: number;
   layout_id?: string | null;
+  parent_id?: string | null;  // Nested Routes 지원
+}
+
+// Layout 타입 (Nested Routes & Slug System)
+export interface PreviewLayout {
+  id: string;
+  name: string;
+  slug?: string | null;
 }
 
 // Theme Variable 타입
@@ -90,7 +98,9 @@ export interface PreviewStoreState extends StateHierarchy {
   currentPath: string;
   setCurrentPath: (path: string) => void;
 
-  // Layout
+  // Layouts (Nested Routes & Slug System)
+  layouts: PreviewLayout[];
+  setLayouts: (layouts: PreviewLayout[]) => void;
   currentLayoutId: string | null;
   setCurrentLayoutId: (layoutId: string | null) => void;
 

@@ -18,6 +18,9 @@ interface PagesTabProps {
   pages: Page[];
   pageList: { remove: (...keys: string[]) => void };
   handleAddPage: () => Promise<void>;
+  /** ⭐ Nested Routes & Slug System */
+  addPageWithParams?: (params: import('../hooks/usePageManager').AddPageParams) => Promise<{ success: boolean; error?: Error }>;
+  projectId?: string;
   renderTree: <
     T extends { id: string; parent_id?: string | null; order_num?: number }
   >(
@@ -47,6 +50,8 @@ export function PagesTab({
   pages,
   pageList,
   handleAddPage,
+  addPageWithParams,
+  projectId,
   renderTree,
   renderElementTree,
   fetchElements,
@@ -87,6 +92,8 @@ export function PagesTab({
         pages={pages}
         pageList={pageList}
         handleAddPage={handleAddPage}
+        addPageWithParams={addPageWithParams}
+        projectId={projectId}
         renderTree={renderTree}
         fetchElements={fetchElements}
       />

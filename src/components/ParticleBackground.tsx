@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useRef, ReactNode, useCallback, useState } from "react";
 import * as THREE from "three";
 
+
 // ==================== 상수 ====================
 const PARTICLE_COUNT = 18000;
 const CANVAS_WIDTH = 2400;
@@ -74,7 +75,7 @@ const STORM_CONFIG = {
   turbulence: 4.0,
   gustStrength: 12.0,
   gustFrequency: 0.6,
-  convergenceForce: 0.18,
+  convergenceForce: 0.85,  // 수렴력 크게 증가 (0.18 → 0.85)
   dustLayerCount: 5,
 } as const;
 
@@ -543,24 +544,23 @@ const DESERT_SAND_VERTEX_SHADER = `
 
     // ========== 최종 위치 계산 ==========
 
-    // 평상시 모래바람 (morphProgress가 낮을 때)
-    float breezeIntensity = 1.0 - morphProgress * 0.7;
-    pos += breezeMove * breezeIntensity;
+    // 1. 기본 위치 계산: position → currentTarget 직접 보간 (backup 방식)
+    // morphProgress가 1이면 완전히 currentTarget으로 이동
+    vec3 morphedPos = mix(position, currentTarget, morphProgress);
 
-    // 회오리 효과 (클릭 시, morphProgress와 독립적)
-    pos += vortexMove;
+    // 2. 평상시 모래바람 효과 (morphProgress가 낮을 때만)
+    float breezeIntensity = (1.0 - morphProgress) * (1.0 - morphProgress);
+    morphedPos += breezeMove * breezeIntensity;
 
-    // 폭풍 효과 (morphProgress에 따라)
-    pos += stormMove * morphProgress;
+    // 3. 폭풍 효과 (morphProgress 중간 단계에서)
+    float stormIntensity = morphProgress * (1.0 - morphProgress) * 4.0; // 0.5에서 최대
+    morphedPos += stormMove * stormIntensity * 0.5;
 
-    // 텍스트로 수렴 (morphProgress가 높을 때)
-    float convergence = morphProgress * morphProgress * convergenceForce;
-    vec3 toTarget = currentTarget - pos;
+    // 4. 회오리 효과 (클릭 시, morphProgress와 독립적)
+    // 회오리가 활성화되면 morph 위치에서 벗어남
+    morphedPos += vortexMove * (1.0 - morphProgress * 0.3);
 
-    // 회오리가 활성화되면 수렴 약화 (회오리가 더 우선)
-    convergence *= (1.0 - vortexInfluence * 0.5);
-
-    pos += toTarget * convergence * (1.0 + random * 0.25);
+    pos = morphedPos;
 
     // 미세한 진동 (살아있는 느낌)
     vec3 vibration = vec3(
@@ -646,16 +646,11 @@ const DESERT_SAND_FRAGMENT_SHADER = `
 // ==================== 컴포넌트 ====================
 export function ParticleBackground() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const { targetMorphRef, contentRef, contentVersion, vortexRef } = useParticleBackground();
+  const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
   const morphProgressRef = useRef(0);
   const transitionProgressRef = useRef(1);
   const geometryRef = useRef<THREE.BufferGeometry | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-
-  // 마우스 클릭 상태
-  const isMouseDownRef = useRef(false);
-  const mouseDownTimeRef = useRef(0);
-  const lastMousePosRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const geometry = geometryRef.current;
@@ -708,11 +703,10 @@ export function ParticleBackground() {
       randoms[i] = Math.random();
 
       // 높이 레이어 (0: 바닥 굵은 알갱이, 1: 상층 미세 먼지)
-      // 바닥에 더 많은 파티클 배치
       const heightRandom = Math.random();
-      heightLayers[i] = heightRandom * heightRandom; // 제곱으로 바닥층에 집중
+      heightLayers[i] = heightRandom * heightRandom;
 
-      // 층별 파티클 크기 (바닥: 크고 무거움, 상층: 작고 가벼움)
+      // 층별 파티클 크기
       const baseSize = 250 + Math.random() * 80;
       particleSizes[i] = baseSize * (1.0 - heightLayers[i] * 0.5);
     }
@@ -740,7 +734,7 @@ export function ParticleBackground() {
         colorSecondary: { value: new THREE.Vector3(colors.secondary.r, colors.secondary.g, colors.secondary.b) },
         colorDust: { value: new THREE.Vector3(colors.dust.r, colors.dust.g, colors.dust.b) },
 
-        // 회오리
+        // 회오리 (비활성화)
         vortexActive: { value: 0 },
         vortexCenter: { value: new THREE.Vector2(0, 0) },
         vortexStrength: { value: 0 },
@@ -795,60 +789,6 @@ export function ParticleBackground() {
 
     scene.add(new THREE.Points(geometry, material));
 
-    // ==================== 마우스 이벤트 ====================
-    const screenToWorld = (clientX: number, clientY: number) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-      // 3D 월드 좌표로 변환
-      const vector = new THREE.Vector3(x, y, 0.5);
-      vector.unproject(camera);
-      const dir = vector.sub(camera.position).normalize();
-      const distance = -camera.position.z / dir.z;
-      const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-
-      return { x: pos.x, y: pos.y };
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      isMouseDownRef.current = true;
-      mouseDownTimeRef.current = performance.now();
-
-      const worldPos = screenToWorld(e.clientX, e.clientY);
-      lastMousePosRef.current = worldPos;
-
-      vortexRef.current = {
-        active: true,
-        x: worldPos.x,
-        y: worldPos.y,
-        strength: 0,
-        radius: VORTEX_CONFIG.minRadius,
-        height: 0,
-      };
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isMouseDownRef.current) {
-        const worldPos = screenToWorld(e.clientX, e.clientY);
-        lastMousePosRef.current = worldPos;
-
-        // 회오리 중심 부드럽게 이동
-        vortexRef.current.x += (worldPos.x - vortexRef.current.x) * 0.1;
-        vortexRef.current.y += (worldPos.y - vortexRef.current.y) * 0.1;
-      }
-    };
-
-    const handleMouseUp = () => {
-      isMouseDownRef.current = false;
-      vortexRef.current.active = false;
-    };
-
-    // 이벤트 리스너 등록
-    renderer.domElement.addEventListener("mousedown", handleMouseDown);
-    renderer.domElement.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
     // ==================== 애니메이션 루프 ====================
     const clock = new THREE.Clock();
     let animationFrameId: number;
@@ -865,42 +805,6 @@ export function ParticleBackground() {
       // 전환 진행도
       transitionProgressRef.current += (1 - transitionProgressRef.current) * TRANSITION_SPEED;
       material.uniforms.transitionProgress.value = transitionProgressRef.current;
-
-      // 회오리 업데이트
-      if (isMouseDownRef.current && vortexRef.current.active) {
-        const holdTime = (performance.now() - mouseDownTimeRef.current) / 1000;
-
-        // 강도: 누른 시간에 따라 증가 (최대 1.0)
-        const targetStrength = Math.min(holdTime * VORTEX_CONFIG.growthRate, 1.0);
-        vortexRef.current.strength += (targetStrength - vortexRef.current.strength) * 0.1;
-
-        // 반경: 강도에 따라 증가
-        const targetRadius = VORTEX_CONFIG.minRadius +
-          (VORTEX_CONFIG.maxRadius - VORTEX_CONFIG.minRadius) * vortexRef.current.strength;
-        vortexRef.current.radius += (targetRadius - vortexRef.current.radius) * 0.08;
-
-        // 높이: 강도에 따라 증가
-        const targetHeight = VORTEX_CONFIG.maxHeight * vortexRef.current.strength;
-        vortexRef.current.height += (targetHeight - vortexRef.current.height) * 0.06;
-      } else {
-        // 회오리 서서히 소멸
-        vortexRef.current.strength *= 0.92;
-        vortexRef.current.radius *= 0.95;
-        vortexRef.current.height *= 0.93;
-
-        if (vortexRef.current.strength < 0.01) {
-          vortexRef.current.strength = 0;
-          vortexRef.current.radius = VORTEX_CONFIG.minRadius;
-          vortexRef.current.height = 0;
-        }
-      }
-
-      // 셰이더 유니폼 업데이트
-      material.uniforms.vortexActive.value = vortexRef.current.strength > 0.01 ? 1 : 0;
-      material.uniforms.vortexCenter.value.set(vortexRef.current.x, vortexRef.current.y);
-      material.uniforms.vortexStrength.value = vortexRef.current.strength;
-      material.uniforms.vortexRadius.value = vortexRef.current.radius;
-      material.uniforms.vortexHeight.value = vortexRef.current.height;
 
       renderer.render(scene, camera);
       animationFrameId = requestAnimationFrame(animate);
@@ -921,16 +825,13 @@ export function ParticleBackground() {
       materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("mouseup", handleMouseUp);
-      renderer.domElement.removeEventListener("mousedown", handleMouseDown);
-      renderer.domElement.removeEventListener("mousemove", handleMouseMove);
       mediaQuery.removeEventListener("change", handleThemeChange);
       mountElement.removeChild(renderer.domElement);
       geometry.dispose();
       material.dispose();
       renderer.dispose();
     };
-  }, [targetMorphRef, contentRef, vortexRef]);
+  }, [targetMorphRef, contentRef]);
 
   return (
     <div
@@ -939,7 +840,7 @@ export function ParticleBackground() {
         position: "fixed",
         inset: 0,
         zIndex: -1,
-        cursor: "crosshair",
+        pointerEvents: "none",
       }}
     />
   );

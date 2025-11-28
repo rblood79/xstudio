@@ -15,10 +15,11 @@ import type {
 } from '../types';
 import type { Element, Page } from '../../../types/core/store.types';
 import type { DesignToken } from '../../../types/theme';
+import type { Layout } from '../../../types/builder/layout.types';
 import { LRUCache } from './LRUCache';
 
 const DB_NAME = 'xstudio';
-const DB_VERSION = 5; // ✅ 버전 5: elements.layout_id 인덱스 추가 (Layout/Slot System)
+const DB_VERSION = 6; // ✅ 버전 6: layouts.order_num, layouts.slug 인덱스 추가 (Nested Routes)
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -121,11 +122,28 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         }
 
         // ✅ 버전 4: Layouts store (Layout/Slot System)
+        // ✅ 버전 6: order_num, slug 인덱스 추가 (Nested Routes)
         if (!db.objectStoreNames.contains('layouts')) {
           const layoutsStore = db.createObjectStore('layouts', { keyPath: 'id' });
           layoutsStore.createIndex('project_id', 'project_id', { unique: false });
           layoutsStore.createIndex('name', 'name', { unique: false });
-          console.log('[IndexedDB] Created store: layouts');
+          layoutsStore.createIndex('order_num', 'order_num', { unique: false });
+          layoutsStore.createIndex('slug', 'slug', { unique: false });
+          console.log('[IndexedDB] Created store: layouts with order_num, slug indexes');
+        } else {
+          // ✅ 버전 6: 기존 layouts 스토어에 order_num, slug 인덱스 추가
+          const transaction = (event.target as IDBOpenDBRequest).transaction;
+          if (transaction) {
+            const layoutsStore = transaction.objectStore('layouts');
+            if (!layoutsStore.indexNames.contains('order_num')) {
+              layoutsStore.createIndex('order_num', 'order_num', { unique: false });
+              console.log('[IndexedDB] Added index: layouts.order_num');
+            }
+            if (!layoutsStore.indexNames.contains('slug')) {
+              layoutsStore.createIndex('slug', 'slug', { unique: false });
+              console.log('[IndexedDB] Added index: layouts.slug');
+            }
+          }
         }
 
         console.log('[IndexedDB] Schema upgrade completed');
@@ -765,9 +783,9 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   // === Layouts (Layout/Slot System) ===
 
   layouts = {
-    insert: async (layout: { id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }) => {
+    insert: async (layout: Layout): Promise<Layout> => {
       const now = new Date().toISOString();
-      const layoutWithTimestamps = {
+      const layoutWithTimestamps: Layout = {
         ...layout,
         created_at: layout.created_at || now,
         updated_at: layout.updated_at || now,
@@ -776,12 +794,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       return layoutWithTimestamps;
     },
 
-    update: async (id: string, updates: Partial<{ name: string; description: string }>) => {
+    update: async (id: string, updates: Partial<Layout>): Promise<Layout> => {
       const existing = await this.layouts.getById(id);
       if (!existing) {
         throw new Error(`Layout ${id} not found`);
       }
-      const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      const updated: Layout = { ...existing, ...updates, updated_at: new Date().toISOString() };
       await this.putToStore('layouts', updated);
       return updated;
     },
@@ -790,16 +808,16 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       await this.deleteFromStore('layouts', id);
     },
 
-    getById: async (id: string) => {
-      return this.getFromStore<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts', id);
+    getById: async (id: string): Promise<Layout | null> => {
+      return this.getFromStore<Layout>('layouts', id);
     },
 
-    getByProject: async (projectId: string) => {
-      return this.getAllByIndex<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts', 'project_id', projectId);
+    getByProject: async (projectId: string): Promise<Layout[]> => {
+      return this.getAllByIndex<Layout>('layouts', 'project_id', projectId);
     },
 
-    getAll: async () => {
-      return this.getAllFromStore<{ id: string; name: string; project_id: string; description?: string; created_at?: string; updated_at?: string }>('layouts');
+    getAll: async (): Promise<Layout[]> => {
+      return this.getAllFromStore<Layout>('layouts');
     },
   };
 

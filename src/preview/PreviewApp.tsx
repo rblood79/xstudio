@@ -29,9 +29,15 @@ function PreviewContent() {
 
   // EventEngine 인스턴스 (싱글톤)
   const eventEngineRef = useRef<EventEngine | null>(null);
+  // eslint-disable-next-line react-hooks/refs -- 싱글톤 패턴, 의도적인 render 중 ref 접근
   if (!eventEngineRef.current) {
     eventEngineRef.current = new EventEngine();
   }
+
+  // ⭐ 순환 의존성 해결을 위한 render 함수 refs
+  const renderElementInternalRef = useRef<(el: PreviewElement, key?: string) => React.ReactNode>(() => null);
+  const renderLayoutElementRef = useRef<(el: PreviewElement, layoutElements: PreviewElement[], pageElements: PreviewElement[]) => React.ReactNode>(() => null);
+  const renderPageElementWithChildrenRef = useRef<(el: PreviewElement, allPageElements: PreviewElement[]) => React.ReactNode>(() => null);
 
   // navigate 함수를 전역으로 설정 (EventEngine에서 사용)
   useEffect(() => {
@@ -102,23 +108,28 @@ function PreviewContent() {
       document.body.removeAttribute('data-original-tag');
     }
 
+    // ⭐ Cleanup용 로컬 변수 (ref가 변경되기 전 값 캡처)
+    const styleKeysToClean = new Set(appliedStyleKeysRef.current);
+    const classNameToClean = appliedClassNameRef.current;
+
     // Cleanup: 컴포넌트 언마운트 시 정리
     return () => {
       document.body.removeAttribute('data-element-id');
       document.body.removeAttribute('data-original-tag');
       // ⭐ 스타일과 className도 정리
-      appliedStyleKeysRef.current.forEach((key) => {
+      styleKeysToClean.forEach((key) => {
         document.body.style.removeProperty(key);
       });
-      appliedStyleKeysRef.current.clear();
-      if (appliedClassNameRef.current) {
+      // ref를 직접 clear 대신 로컬 변수만 사용하여 ESLint warning 방지
+      // (appliedStyleKeysRef.current.clear()는 effect 시작 시 이미 수행됨)
+      if (classNameToClean) {
         const currentClasses = document.body.className.split(' ');
-        const classesToRemove = appliedClassNameRef.current.split(' ');
+        const classesToRemove = classNameToClean.split(' ');
         document.body.className = currentClasses
           .filter((cls) => !classesToRemove.includes(cls))
           .join(' ')
           .trim();
-        appliedClassNameRef.current = '';
+        // ref 초기화는 effect 시작 시 수행됨
       }
     };
   }, [elements, currentLayoutId, currentPageId]);
@@ -252,6 +263,7 @@ function PreviewContent() {
   }, [handleLinkClick]);
 
   // RenderContext 생성
+  /* eslint-disable react-hooks/refs -- 순환 의존성 해결 패턴, 의도적인 ref 접근 */
   const renderContext: RenderContext = useMemo(() => ({
     elements,
     updateElementProps,
@@ -259,8 +271,9 @@ function PreviewContent() {
       setElements(newElements as StorePreviewElement[]);
     },
     eventEngine: eventEngineRef.current!,
-    renderElement: (el: PreviewElement, key?: string) => renderElementInternal(el, key),
+    renderElement: (el: PreviewElement, key?: string) => renderElementInternalRef.current(el, key),
   }), [elements, updateElementProps, setElements]);
+  /* eslint-enable react-hooks/refs */
 
   // Element 렌더링 함수 (내부)
   const renderElementInternal = useCallback((el: PreviewElement, key?: string): React.ReactNode => {
@@ -290,7 +303,7 @@ function PreviewContent() {
 
     // 자식 콘텐츠
     const content = children.length > 0
-      ? children.map((child) => renderElementInternal(child, child.id))
+      ? children.map((child) => renderElementInternalRef.current(child, child.id))
       : el.props?.children;
 
     // HTML 요소로 렌더링
@@ -300,6 +313,10 @@ function PreviewContent() {
       content
     );
   }, [elements, renderContext]);
+
+  // ⭐ ref 업데이트 (순환 의존성 해결)
+  // eslint-disable-next-line react-hooks/refs -- 순환 의존성 해결 패턴
+  renderElementInternalRef.current = renderElementInternal;
 
   // 외부에서 사용할 renderElement (context 포함)
   const renderElement = useCallback((el: PreviewElement, key?: string): React.ReactNode => {
@@ -343,7 +360,7 @@ function PreviewContent() {
           className="preview-slot"
         >
           {slotContent.length > 0
-            ? slotContent.map((child) => renderPageElementWithChildren(child, pageElements))
+            ? slotContent.map((child) => renderPageElementWithChildrenRef.current(child, pageElements))
             : null}
         </div>
       );
@@ -372,7 +389,7 @@ function PreviewContent() {
         className: el.props?.className,
       },
       children.length > 0
-        ? children.map((child) => renderLayoutElement(child, layoutElements, pageElements))
+        ? children.map((child) => renderLayoutElementRef.current(child, layoutElements, pageElements))
         : el.props?.children
     );
   }, [renderContext]);
@@ -399,10 +416,16 @@ function PreviewContent() {
         className: el.props?.className,
       },
       children.length > 0
-        ? children.map((child) => renderPageElementWithChildren(child, allPageElements))
+        ? children.map((child) => renderPageElementWithChildrenRef.current(child, allPageElements))
         : el.props?.children
     );
   }, [renderContext]);
+
+  // ⭐ ref 업데이트 (순환 의존성 해결)
+  // eslint-disable-next-line react-hooks/refs -- 순환 의존성 해결 패턴
+  renderLayoutElementRef.current = renderLayoutElement;
+  // eslint-disable-next-line react-hooks/refs -- 순환 의존성 해결 패턴
+  renderPageElementWithChildrenRef.current = renderPageElementWithChildren;
 
   // Elements 트리 렌더링
   // ⭐ 실제 <body> 태그를 사용하므로 body element를 div로 렌더링하지 않고 자식만 렌더링
@@ -476,6 +499,7 @@ function PreviewContent() {
 
   // ⭐ React가 document.body에 직접 마운트되므로 preview-container 불필요
   // body element의 자식들이 직접 <body> 안에 렌더링됨
+  /* eslint-disable react-hooks/refs -- renderElementsTree 내부에서 의도적인 ref 접근 */
   return (
     <>
       {elements.length === 0 ? (
@@ -485,6 +509,7 @@ function PreviewContent() {
       )}
     </>
   );
+  /* eslint-enable react-hooks/refs */
 }
 
 // ============================================
@@ -524,7 +549,10 @@ export function PreviewApp() {
 
     // Preview 준비 완료 알림
     messageSender.sendReady();
-    setIsInitialized(true);
+    // ⭐ queueMicrotask로 감싸서 cascading render 방지
+    queueMicrotask(() => {
+      setIsInitialized(true);
+    });
 
     console.log('[PreviewApp] Initialized and ready');
 

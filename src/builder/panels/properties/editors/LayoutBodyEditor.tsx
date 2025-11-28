@@ -18,6 +18,7 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { LayoutPresetSelector } from "./LayoutPresetSelector";
+import { LayoutSlugEditor } from "./LayoutSlugEditor";
 
 export const LayoutBodyEditor = memo(
   function LayoutBodyEditor({
@@ -74,6 +75,9 @@ export const LayoutBodyEditor = memo(
             <LayoutPresetSelector layoutId={layoutId} bodyElementId={elementId} />
           </PropertySection>
         )}
+
+        {/* ⭐ Nested Routes & Slug System: Layout slug 편집 */}
+        {layoutId && <LayoutSlugEditor layoutId={layoutId} />}
 
         {/* Layout Section */}
         <PropertySection title="Layout">

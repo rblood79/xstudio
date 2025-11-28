@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import type { PreviewStoreState, PreviewElement, PreviewPage, ThemeVar, DataSource, DataState } from './types';
+import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, DataState } from './types';
 
 export const createPreviewStore = () => create<PreviewStoreState>((set, get) => ({
   // ============================================
@@ -33,8 +33,10 @@ export const createPreviewStore = () => create<PreviewStoreState>((set, get) => 
   setCurrentPath: (path: string) => set({ currentPath: path }),
 
   // ============================================
-  // Layout
+  // Layouts (Nested Routes & Slug System)
   // ============================================
+  layouts: [],
+  setLayouts: (layouts: PreviewLayout[]) => set({ layouts }),
   currentLayoutId: null,
   setCurrentLayoutId: (layoutId: string | null) => set({ currentLayoutId: layoutId }),
 

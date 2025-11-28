@@ -138,6 +138,19 @@ export interface UpdatePageInfoMessage extends PreviewMessage {
   layoutId: string | null;
 }
 
+/**
+ * Nested Routes & Slug System: Layout 목록 업데이트 메시지
+ * Layout 변경 시 Preview에 전달하여 URL 계산에 사용
+ */
+export interface UpdateLayoutsMessage extends PreviewMessage {
+  type: "UPDATE_LAYOUTS";
+  layouts: Array<{
+    id: string;
+    name: string;
+    slug?: string | null;
+  }>;
+}
+
 export interface ElementSelectedMessage extends PreviewMessage {
   type: "ELEMENT_SELECTED";
   elementId: string;
@@ -173,5 +186,6 @@ export type MessageType =
   | SetDarkModeMessage
   | SetEditModeMessage
   | UpdatePageInfoMessage
+  | UpdateLayoutsMessage
   | ElementSelectedMessage
   | ElementsDragSelectedMessage;

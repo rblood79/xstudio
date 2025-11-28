@@ -1,14 +1,17 @@
-import { CirclePlus } from 'lucide-react';
-import { iconProps } from '../../utils/ui/uiConstants';
 import { pagesApi } from '../../services/api/PagesApiService';
 import { useStore } from '../stores';
 import { getDB } from '../../lib/db';
 import type { Page as UnifiedPage } from '../../types/builder/unified.types';
+import { AddPageDialog, type AddPageDialogResult } from '../components/AddPageDialog';
+import type { AddPageParams } from '../hooks/usePageManager';
 
 interface PagesProps {
     pages: UnifiedPage[];
     pageList: { remove: (...keys: string[]) => void };
     handleAddPage: () => void;
+    /** ⭐ Nested Routes & Slug System: 파라미터를 받아서 페이지 추가 */
+    addPageWithParams?: (params: AddPageParams) => Promise<{ success: boolean; error?: Error }>;
+    projectId?: string;
     renderTree: (
         items: UnifiedPage[],
         getLabel: (item: UnifiedPage) => string,
@@ -18,8 +21,32 @@ interface PagesProps {
     fetchElements: (pageId: string) => Promise<void>;
 }
 
-export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElements }: PagesProps) {
+export function Pages({ pages, pageList, handleAddPage, addPageWithParams, projectId, renderTree, fetchElements }: PagesProps) {
     const setPages = useStore((state) => state.setPages);
+
+    /**
+     * ⭐ Nested Routes & Slug System: AddPageDialog에서 제출 시 호출
+     */
+    const handleDialogSubmit = async (result: AddPageDialogResult): Promise<void> => {
+        if (!addPageWithParams || !projectId) {
+            // Fallback to legacy method
+            handleAddPage();
+            return;
+        }
+
+        const params: AddPageParams = {
+            projectId,
+            title: result.title,
+            slug: result.slug,
+            layoutId: result.layoutId,
+            parentId: result.parentId,
+        };
+
+        const response = await addPageWithParams(params);
+        if (!response.success) {
+            throw response.error || new Error('Failed to create page');
+        }
+    };
 
     const handleDeletePage = async (page: UnifiedPage) => {
         try {
@@ -83,13 +110,11 @@ export function Pages({ pages, pageList, handleAddPage, renderTree, fetchElement
             <div className="panel-header">
                 <h3 className='panel-title'>Pages</h3>
                 <div className="header-actions">
-                    <button
-                        className='iconButton'
-                        aria-label="Add Page"
-                        onClick={handleAddPage}
-                    >
-                        <CirclePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
-                    </button>
+                    {/* ⭐ Nested Routes & Slug System: AddPageDialog 사용 */}
+                    <AddPageDialog
+                        onSubmit={handleDialogSubmit}
+                        existingPagesCount={pages.length}
+                    />
                 </div>
             </div>
 

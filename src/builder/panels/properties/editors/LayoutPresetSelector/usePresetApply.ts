@@ -30,6 +30,8 @@ interface UsePresetApplyOptions {
 interface UsePresetApplyReturn {
   /** 현재 Layout의 기존 Slot 목록 */
   existingSlots: ExistingSlotInfo[];
+  /** 현재 적용된 프리셋 키 (감지된 경우) */
+  currentPresetKey: string | null;
   /** 프리셋 적용 함수 */
   applyPreset: (presetKey: string, mode: PresetApplyMode) => Promise<void>;
   /** 적용 중 여부 */
@@ -71,6 +73,28 @@ export function usePresetApply({
         };
       });
   }, [elements, layoutId]);
+
+  // 현재 적용된 프리셋 감지
+  const currentPresetKey = useMemo((): string | null => {
+    if (existingSlots.length === 0) return null;
+
+    const existingSlotNames = new Set(existingSlots.map((s) => s.slotName));
+
+    // 각 프리셋과 비교하여 slot 이름이 정확히 일치하는지 확인
+    for (const [presetKey, preset] of Object.entries(LAYOUT_PRESETS)) {
+      const presetSlotNames = new Set(preset.slots.map((s) => s.name));
+
+      // 크기가 같고 모든 이름이 일치하면 동일한 프리셋
+      if (
+        existingSlotNames.size === presetSlotNames.size &&
+        [...existingSlotNames].every((name) => presetSlotNames.has(name))
+      ) {
+        return presetKey;
+      }
+    }
+
+    return null;
+  }, [existingSlots]);
 
   // 프리셋 적용 함수
   const applyPreset = useCallback(
@@ -198,6 +222,7 @@ export function usePresetApply({
 
   return {
     existingSlots,
+    currentPresetKey,
     applyPreset,
     isApplying,
   };

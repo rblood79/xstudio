@@ -258,6 +258,26 @@ export const handleUpdatePageInfo = (
 };
 
 /**
+ * UPDATE_LAYOUTS 메시지 처리
+ * Nested Routes & Slug System: Layout 목록 업데이트
+ */
+export const handleUpdateLayouts = (
+  data: MessageType,
+  setLayouts?: (layouts: Array<{ id: string; name: string; slug?: string | null }>) => void
+) => {
+  if (data.type === "UPDATE_LAYOUTS") {
+    const { layouts } = data as { type: string; layouts: Array<{ id: string; name: string; slug?: string | null }> };
+
+    // 콜백이 있으면 호출
+    if (setLayouts) {
+      setLayouts(layouts);
+    }
+
+    console.log("[preview] Layouts updated:", layouts.length, "layouts");
+  }
+};
+
+/**
  * REQUEST_ELEMENT_SELECTION 메시지 처리
  * Builder가 요청한 요소를 선택하고 rect 정보와 함께 응답
  *
@@ -373,13 +393,15 @@ export const handleRequestElementSelection = (
 /**
  * 모든 메시지 타입 처리
  * ⭐ Layout/Slot System: setPageInfo 콜백 추가
+ * ⭐ Nested Routes: setLayouts 콜백 추가
  */
 export const handleMessage = (
   event: MessageEvent,
   elements: PreviewElement[],
   setElements: (elements: PreviewElement[]) => void,
   updateElementProps: (id: string, props: Record<string, unknown>) => void,
-  setPageInfo?: (pageId: string | null, layoutId: string | null) => void
+  setPageInfo?: (pageId: string | null, layoutId: string | null) => void,
+  setLayouts?: (layouts: Array<{ id: string; name: string; slug?: string | null }>) => void
 ) => {
   // Origin 체크 (보안)
   if (event.origin !== window.location.origin) {
@@ -404,4 +426,6 @@ export const handleMessage = (
   handleSetDarkMode(data);
   handleSetEditMode(data);
   handleRequestElementSelection(data, elements);
+  // ⭐ Nested Routes & Slug System: Layout 목록 업데이트
+  handleUpdateLayouts(data, setLayouts);
 };

@@ -27,6 +27,8 @@ interface SidebarProps {
   pages: Page[];
   pageList: { remove: (...keys: string[]) => void };
   handleAddPage: () => Promise<void>;
+  /** ⭐ Nested Routes & Slug System */
+  addPageWithParams?: (params: import('../hooks/usePageManager').AddPageParams) => Promise<{ success: boolean; error?: Error }>;
   handleAddElement: (
     tag: string,
     parentId?: string,
@@ -43,6 +45,7 @@ export default function Sidebar({
   pages,
   pageList,
   handleAddPage,
+  addPageWithParams,
   handleAddElement,
   fetchElements,
   selectedPageId,
@@ -2084,6 +2087,7 @@ export default function Sidebar({
             pages={pages}
             pageList={pageList}
             handleAddPage={handleAddPage}
+            addPageWithParams={addPageWithParams}
             renderTree={renderTree}
             renderElementTree={renderElementTree}
             fetchElements={fetchElements}

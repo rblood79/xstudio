@@ -34,7 +34,7 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Hooks
   const { requestAutoSelectAfterUpdate } = useIframeMessenger();
-  const { pageList, addPage, fetchElements, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
+  const { pageList, addPage, addPageWithParams, fetchElements, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
   const { handleAddElement } = useElementCreator();
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
@@ -128,6 +128,7 @@ export function NodesPanel({ isActive }: PanelProps) {
         pages={unifiedPages}
         pageList={pageList}
         handleAddPage={handleAddPage}
+        addPageWithParams={addPageWithParams}
         handleAddElement={handleAddElementWrapper}
         fetchElements={handleFetchElements}
         selectedPageId={currentPageId}

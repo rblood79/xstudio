@@ -1,0 +1,292 @@
+/**
+ * Add Page Dialog
+ *
+ * 페이지 생성 다이얼로그.
+ * title, slug, layout, parent를 선택할 수 있음.
+ *
+ * ⭐ Nested Routes & Slug System: Page 생성 시 계층 구조 설정
+ */
+
+import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  DialogTrigger,
+  Modal,
+  Dialog,
+  Heading,
+  Button,
+  Label,
+  Input,
+  TextField,
+} from "react-aria-components";
+import { CirclePlus, FolderTree, Layout, Link, AlertCircle } from "lucide-react";
+import { useStore } from "../stores";
+import { useLayoutsStore } from "../stores/layouts";
+import { generateSlugFromTitle, validateSlug } from "../../utils/slugValidator";
+import { generatePageUrl } from "../../utils/urlGenerator";
+import { iconProps } from "../../utils/ui/uiConstants";
+import "./AddPageDialog.css";
+
+export interface AddPageDialogResult {
+  title: string;
+  slug: string;
+  layoutId: string | null;
+  parentId: string | null;
+}
+
+interface AddPageDialogProps {
+  onSubmit: (result: AddPageDialogResult) => Promise<void>;
+  existingPagesCount: number;
+}
+
+export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [layoutId, setLayoutId] = useState<string | null>(null);
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Store data
+  const pages = useStore((state) => state.pages);
+  const layouts = useLayoutsStore((state) => state.layouts);
+
+  // Default values
+  const defaultTitle = `Page ${existingPagesCount + 1}`;
+  const defaultSlug = `/page-${existingPagesCount + 1}`;
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(defaultTitle);
+      setSlug(defaultSlug);
+      setLayoutId(null);
+      setParentId(null);
+      setSlugError(null);
+      setIsSubmitting(false);
+    }
+  }, [isOpen, defaultTitle, defaultSlug]);
+
+  // Auto-generate slug from title
+  const handleTitleChange = useCallback((value: string) => {
+    setTitle(value);
+    // Only auto-generate if slug hasn't been manually edited
+    const generatedSlug = `/${generateSlugFromTitle(value)}`;
+    setSlug(generatedSlug);
+
+    // Validate
+    const validation = validateSlug(generatedSlug);
+    setSlugError(validation.isValid ? null : validation.error || null);
+  }, []);
+
+  // Handle slug change
+  const handleSlugChange = useCallback((value: string) => {
+    setSlug(value);
+    const validation = validateSlug(value);
+    setSlugError(validation.isValid ? null : validation.error || null);
+  }, []);
+
+  // Handle parent change with circular reference check
+  const handleParentChange = useCallback((value: string) => {
+    const newParentId = value || null;
+    setParentId(newParentId);
+  }, []);
+
+  // Preview URL
+  const previewUrl = useMemo(() => {
+    const layout = layoutId ? layouts.find((l) => l.id === layoutId) : null;
+
+    // Create a temporary page object for URL generation
+    const tempPage = {
+      id: "temp",
+      title,
+      slug,
+      project_id: "",
+      parent_id: parentId,
+      layout_id: layoutId,
+      order_num: 0,
+    };
+
+    return generatePageUrl({
+      page: tempPage,
+      layout: layout
+        ? { id: layout.id, name: layout.name, project_id: layout.project_id, slug: layout.slug || undefined }
+        : null,
+      allPages: pages.map((p) => ({
+        id: p.id,
+        title: p.name,
+        slug: p.slug || "",
+        project_id: p.project_id || "",
+        parent_id: p.parent_id,
+        layout_id: p.layout_id,
+        order_num: p.order_num,
+      })),
+    });
+  }, [title, slug, layoutId, parentId, layouts, pages]);
+
+  // Handle submit
+  const handleSubmit = useCallback(async () => {
+    // Validate
+    const validation = validateSlug(slug);
+    if (!validation.isValid) {
+      setSlugError(validation.error || "Invalid slug");
+      return;
+    }
+
+    if (!title.trim()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit({
+        title: title.trim(),
+        slug,
+        layoutId,
+        parentId,
+      });
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to create page:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [title, slug, layoutId, parentId, onSubmit]);
+
+  // Parent options (exclude circular references)
+  const parentOptions = useMemo(() => {
+    return pages.map((p) => ({
+      value: p.id,
+      label: p.name,
+    }));
+  }, [pages]);
+
+  // Layout options
+  const layoutOptions = useMemo(() => {
+    return layouts.map((l) => ({
+      value: l.id,
+      label: l.slug ? `${l.name} (${l.slug})` : l.name,
+    }));
+  }, [layouts]);
+
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+      <Button className="iconButton" aria-label="Add Page">
+        <CirclePlus
+          color={iconProps.color}
+          strokeWidth={iconProps.stroke}
+          size={iconProps.size}
+        />
+      </Button>
+
+      <Modal className="add-page-modal">
+        <Dialog className="add-page-dialog">
+          <Heading slot="title" className="add-page-title">
+            <CirclePlus size={20} />
+            Add New Page
+          </Heading>
+
+          <div className="add-page-form">
+            {/* Title */}
+            <TextField className="add-page-field">
+              <Label>Title</Label>
+              <Input
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                placeholder={defaultTitle}
+              />
+            </TextField>
+
+            {/* Slug */}
+            <TextField className="add-page-field" isInvalid={!!slugError}>
+              <Label>
+                <Link size={14} />
+                URL Slug
+              </Label>
+              <Input
+                value={slug}
+                onChange={(e) => handleSlugChange(e.target.value)}
+                placeholder={defaultSlug}
+              />
+              {slugError && (
+                <div className="add-page-error">
+                  <AlertCircle size={12} />
+                  <span>{slugError}</span>
+                </div>
+              )}
+              <div className="add-page-hint">
+                Auto-generated from title. Edit if needed.
+              </div>
+            </TextField>
+
+            {/* Layout (Optional) */}
+            <div className="add-page-field">
+              <Label>
+                <Layout size={14} />
+                Layout (Optional)
+              </Label>
+              <select
+                value={layoutId || ""}
+                onChange={(e) => setLayoutId(e.target.value || null)}
+                className="add-page-select"
+              >
+                <option value="">None</option>
+                {layoutOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Parent Page (Optional) */}
+            <div className="add-page-field">
+              <Label>
+                <FolderTree size={14} />
+                Parent Page (Optional)
+              </Label>
+              <select
+                value={parentId || ""}
+                onChange={(e) => handleParentChange(e.target.value)}
+                className="add-page-select"
+              >
+                <option value="">None (Root Level)</option>
+                {parentOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* URL Preview */}
+            <div className="add-page-preview">
+              <span className="add-page-preview-label">Preview URL:</span>
+              <code className="add-page-preview-url">{previewUrl}</code>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="add-page-actions">
+            <Button
+              className="add-page-cancel"
+              onPress={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="add-page-submit"
+              onPress={handleSubmit}
+              isDisabled={isSubmitting || !title.trim() || !!slugError}
+            >
+              {isSubmitting ? "Creating..." : "Create Page"}
+            </Button>
+          </div>
+        </Dialog>
+      </Modal>
+    </DialogTrigger>
+  );
+}
+
+export default AddPageDialog;

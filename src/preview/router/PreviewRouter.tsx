@@ -5,7 +5,7 @@
  * Builder의 BrowserRouter와 완전히 분리되어 동작합니다.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   MemoryRouter,
   Routes,
@@ -15,7 +15,9 @@ import {
   type NavigateFunction,
 } from 'react-router-dom';
 import { usePreviewStore } from '../store';
-import type { PreviewPage } from '../store/types';
+import type { PreviewLayout } from '../store/types';
+import { generatePageUrl } from '../../utils/urlGenerator';
+import type { Page } from '../../types/builder/unified.types';
 
 // ============================================
 // Router Context (navigate 함수 공유용)
@@ -110,28 +112,73 @@ interface PreviewRouterProps {
 
 export function PreviewRouter({ renderElements, children }: PreviewRouterProps) {
   const pages = usePreviewStore((s) => s.pages);
+  const layouts = usePreviewStore((s) => s.layouts);
   const currentPath = usePreviewStore((s) => s.currentPath);
-  const navigateRef = useRef<NavigateFunction | null>(null);
+  const [navigate, setNavigate] = useState<NavigateFunction | null>(null);
 
   const handleNavigateReady = React.useCallback((nav: NavigateFunction) => {
-    navigateRef.current = nav;
+    setNavigate(() => nav);
   }, []);
 
   // 초기 경로 설정
   const initialEntries = [currentPath || '/'];
 
+  // ⭐ Nested Routes & Slug System: 각 페이지의 최종 URL 계산
+  const routeConfigs = useMemo(() => {
+    // PreviewPage를 Page 타입으로 변환 (generatePageUrl 호환)
+    const pagesAsPage: Page[] = pages.map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      project_id: '', // Preview에서는 사용하지 않음
+      parent_id: p.parent_id,
+      layout_id: p.layout_id,
+      order_num: p.order_num,
+    }));
+
+    return pages.map((page) => {
+      // Layout 찾기
+      const layout = page.layout_id
+        ? layouts.find((l: PreviewLayout) => l.id === page.layout_id)
+        : null;
+
+      // 최종 URL 계산
+      const finalUrl = generatePageUrl({
+        page: {
+          id: page.id,
+          title: page.title,
+          slug: page.slug,
+          project_id: '',
+          parent_id: page.parent_id,
+          layout_id: page.layout_id,
+          order_num: page.order_num,
+        },
+        layout: layout
+          ? { id: layout.id, name: layout.name, project_id: '', slug: layout.slug || undefined }
+          : null,
+        allPages: pagesAsPage,
+      });
+
+      return {
+        pageId: page.id,
+        path: finalUrl,
+        layoutId: page.layout_id,
+      };
+    });
+  }, [pages, layouts]);
+
   return (
-    <RouterContext.Provider value={{ navigate: navigateRef.current }}>
+    <RouterContext.Provider value={{ navigate }}>
       <MemoryRouter initialEntries={initialEntries}>
         <RouterNavigator onNavigateReady={handleNavigateReady} />
         <Routes>
-          {/* 동적으로 페이지 라우트 생성 */}
-          {pages.map((page: PreviewPage) => (
+          {/* ⭐ Nested Routes: 동적으로 계산된 URL로 페이지 라우트 생성 */}
+          {routeConfigs.map(({ pageId, path }) => (
             <Route
-              key={page.id}
-              path={page.slug || '/'}
+              key={pageId}
+              path={path}
               element={
-                <PageRenderer pageId={page.id} renderElements={renderElements} />
+                <PageRenderer pageId={pageId} renderElements={renderElements} />
               }
             />
           ))}

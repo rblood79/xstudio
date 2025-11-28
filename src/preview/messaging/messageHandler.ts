@@ -5,7 +5,7 @@
  * Preview Runtime은 이 핸들러를 통해서만 데이터를 수신합니다.
  */
 
-import type { PreviewStoreState, PreviewElement, PreviewPage, ThemeVar, DataSource } from '../store/types';
+import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource } from '../store/types';
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -80,6 +80,11 @@ export interface UpdateDataSourcesMessage {
   dataSources: DataSource[];
 }
 
+export interface UpdateLayoutsMessage {
+  type: 'UPDATE_LAYOUTS';
+  layouts: PreviewLayout[];
+}
+
 export interface UpdateAuthContextMessage {
   type: 'UPDATE_AUTH_CONTEXT';
   token: string | null;
@@ -99,6 +104,7 @@ export type BuilderToPreviewMessage =
   | SetDarkModeMessage
   | UpdatePageInfoMessage
   | UpdatePagesMessage
+  | UpdateLayoutsMessage
   | UpdateDataSourcesMessage
   | UpdateAuthContextMessage
   | RequestElementSelectionMessage;
@@ -116,6 +122,7 @@ type StoreActions = Pick<
   | 'setCurrentPageId'
   | 'setCurrentLayoutId'
   | 'setPages'
+  | 'setLayouts'
   | 'setDataSources'
   | 'setAuthToken'
   | 'setReady'
@@ -183,6 +190,10 @@ export class MessageHandler {
 
       case 'UPDATE_PAGES':
         this.handleUpdatePages(data);
+        break;
+
+      case 'UPDATE_LAYOUTS':
+        this.handleUpdateLayouts(data);
         break;
 
       case 'UPDATE_DATA_SOURCES':
@@ -262,6 +273,12 @@ export class MessageHandler {
     const pages = data.pages || [];
     this.store.setPages(pages);
     console.log(`[Preview] Pages updated: ${pages.length} pages`);
+  }
+
+  private handleUpdateLayouts(data: UpdateLayoutsMessage): void {
+    const layouts = data.layouts || [];
+    this.store.setLayouts(layouts);
+    console.log(`[Preview] Layouts updated: ${layouts.length} layouts`);
   }
 
   private handleUpdateDataSources(data: UpdateDataSourcesMessage): void {

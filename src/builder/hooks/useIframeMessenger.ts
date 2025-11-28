@@ -26,6 +26,7 @@ export interface UseIframeMessengerReturn {
     sendElementSelectedMessage: (elementId: string, props?: ElementProps) => void;
     requestElementSelection: (elementId: string) => void;
     requestAutoSelectAfterUpdate: (elementId: string) => void;
+    sendLayoutsToIframe: () => void;
     isIframeReady: boolean;
 }
 
@@ -50,6 +51,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // ⭐ Layout/Slot System: Edit Mode 구독
     const editMode = useEditModeStore((state) => state.mode);
     const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
+
+    // ⭐ Nested Routes & Slug System: Layouts 구독
+    const layouts = useLayoutsStore((state) => state.layouts);
 
     // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
     const filteredElements = useMemo(() => {
@@ -128,6 +132,41 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('📄 [Builder] Sent UPDATE_PAGE_INFO:', { pageId, layoutId });
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
+    // ⭐ Nested Routes & Slug System: Layouts를 iframe에 전송
+    const sendLayoutsToIframe = useCallback(() => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        // 현재 layouts 가져오기
+        const currentLayouts = useLayoutsStore.getState().layouts;
+
+        // PreviewLayout 형태로 변환 (id, name, slug만 전송)
+        const previewLayouts = currentLayouts.map((l) => ({
+            id: l.id,
+            name: l.name,
+            slug: l.slug || null,
+        }));
+
+        const message = {
+            type: "UPDATE_LAYOUTS",
+            layouts: previewLayouts,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_LAYOUTS",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('🏗️ [Builder] Sent UPDATE_LAYOUTS:', previewLayouts.length, 'layouts');
+    }, []); // ✅ 의존성 제거 (Ref 사용)
+
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
@@ -193,6 +232,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 // ⭐ Layout/Slot System: Page 정보 전송
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
                 console.log(`✅ [Builder] Sent queued UPDATE_PAGE_INFO`);
+            } else if (item.type === "UPDATE_LAYOUTS") {
+                // ⭐ Nested Routes & Slug System: Layouts 전송
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_LAYOUTS`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -224,7 +267,11 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
             // ⭐ Layout/Slot System: persist hydration 완료 후 요소 전송
             // (새로고침 시 editMode가 아직 hydration 안 됐을 수 있음)
-            const sendInitialElements = () => {
+            const sendInitialData = () => {
+                // ⭐ Nested Routes & Slug System: 초기 layouts 전송
+                sendLayoutsToIframe();
+
+                // Elements 전송
                 const currentElements = useStore.getState().elements;
                 if (currentElements.length > 0) {
                     // Phase 2.1 최적화: 참조 저장 (중복 전송 방지)
@@ -239,7 +286,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
             if (editModeHydrated && layoutsHydrated) {
                 // 이미 hydration 완료 → 즉시 전송
-                sendInitialElements();
+                sendInitialData();
             } else {
                 // hydration 대기 후 전송
                 console.log('⏳ [PREVIEW_READY] persist hydration 대기 중...');
@@ -247,8 +294,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                     const editDone = useEditModeStore.persist?.hasHydrated?.() ?? true;
                     const layoutDone = useLayoutsStore.persist?.hasHydrated?.() ?? true;
                     if (editDone && layoutDone) {
-                        console.log('✅ [PREVIEW_READY] persist hydration 완료 → 요소 전송');
-                        sendInitialElements();
+                        console.log('✅ [PREVIEW_READY] persist hydration 완료 → 요소/layouts 전송');
+                        sendInitialData();
                     } else {
                         // 다음 프레임에서 다시 확인
                         requestAnimationFrame(checkHydration);
@@ -506,7 +553,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -663,6 +710,32 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         sendPageInfoToIframe(currentPageId, layoutId);
     }, [currentPageId, pages, sendPageInfoToIframe]);
 
+    // ⭐ Nested Routes & Slug System: Layouts가 변경될 때마다 iframe에 전송
+    const lastSentLayoutsRef = useRef<string>('');
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // JSON 문자열로 비교 (slug 변경 감지 포함)
+        const layoutsJson = JSON.stringify(layouts.map(l => ({
+            id: l.id,
+            name: l.name,
+            slug: l.slug,
+        })));
+
+        // 이전 값과 같으면 스킵
+        if (lastSentLayoutsRef.current === layoutsJson) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentLayoutsRef.current = layoutsJson;
+        sendLayoutsToIframe();
+    }, [layouts, sendLayoutsToIframe]);
+
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
@@ -704,6 +777,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         sendElementSelectedMessage,
         requestElementSelection,
         requestAutoSelectAfterUpdate,
+        sendLayoutsToIframe,
         isIframeReady
     };
 };

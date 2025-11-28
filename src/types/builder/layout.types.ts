@@ -20,6 +20,11 @@ export interface Layout {
   name: string;
   project_id: string;
   description?: string;
+
+  // Nested Routes & Slug System
+  order_num?: number; // 정렬 순서
+  slug?: string; // URL base path (e.g., "/products")
+
   created_at?: string;
   updated_at?: string;
 }
@@ -29,12 +34,16 @@ export interface Layout {
  */
 export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
   description?: string;
+  order_num?: number; // 정렬 순서
+  slug?: string; // URL base path (e.g., "/products")
 };
 
 /**
  * Layout 업데이트 시 필요한 필드
  */
-export type LayoutUpdate = Partial<Pick<Layout, "name" | "description">>;
+export type LayoutUpdate = Partial<
+  Pick<Layout, "name" | "description" | "slug" | "order_num">
+>;
 
 // ============================================
 // Slot (Element의 특수 형태)

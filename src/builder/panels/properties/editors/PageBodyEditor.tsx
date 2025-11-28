@@ -17,6 +17,7 @@ import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { PageLayoutSelector } from "./PageLayoutSelector";
+import { PageParentSelector } from "./PageParentSelector";
 
 export const PageBodyEditor = memo(
   function PageBodyEditor({
@@ -70,6 +71,9 @@ export const PageBodyEditor = memo(
 
         {/* ⭐ Page 전용: Layout 선택 */}
         {currentPageId && <PageLayoutSelector pageId={currentPageId} />}
+
+        {/* ⭐ Nested Routes & Slug System: Parent Page 선택 */}
+        {currentPageId && <PageParentSelector pageId={currentPageId} />}
 
         {/* Layout Section */}
         <PropertySection title="Layout">

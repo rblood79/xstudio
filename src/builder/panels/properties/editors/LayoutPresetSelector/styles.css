@@ -39,6 +39,7 @@
 
   /* ========== Preset Item ========== */
   .preset-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -66,9 +67,32 @@
     background: var(--color-primary-100);
   }
 
+  .preset-item.applied {
+    border-color: var(--color-success-500);
+    background: var(--color-success-50);
+    cursor: default;
+  }
+
+  .preset-item.applied:hover {
+    border-color: var(--color-success-500);
+    background: var(--color-success-50);
+  }
+
   .preset-item[data-disabled] {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .preset-applied-badge {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    padding: 1px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    background: var(--color-success-500);
+    color: var(--color-white);
+    border-radius: var(--radius-sm);
   }
 
   .preset-name {

@@ -15,7 +15,7 @@
 }
 
 .overlay-tag {
-  font-family: var(--font-mono);
+  font-family: var(--font-pixel);
   font-size: var(--text-xs);
   text-transform: uppercase;
   padding: var(--spacing) var(--spacing-sm);
@@ -24,7 +24,10 @@
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
-  /*margin-left: -0.05rem;*/
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
 }
 
 .overlay-tag-parent {

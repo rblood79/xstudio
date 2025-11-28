@@ -16,12 +16,24 @@ export interface ApiResult<T> {
     error?: Error;
 }
 
+/**
+ * ⭐ Nested Routes & Slug System: 페이지 생성 파라미터
+ */
+export interface AddPageParams {
+    projectId: string;
+    title: string;
+    slug: string;
+    layoutId?: string | null;
+    parentId?: string | null;
+}
+
 export interface UsePageManagerReturn {
     pages: ApiPage[];
     selectedPageId: string | null;
     setSelectedPageId: (id: string | null) => void;
     fetchElements: (pageId: string) => Promise<ApiResult<Element[]>>;
     addPage: (projectId: string) => Promise<ApiResult<ApiPage>>;
+    addPageWithParams: (params: AddPageParams) => Promise<ApiResult<ApiPage>>;
     initializeProject: (projectId: string) => Promise<ApiResult<ApiPage[]>>;
     // 직접 접근 (필요시)
     pageList: ReturnType<typeof useListData<ApiPage>>;
@@ -219,6 +231,88 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
     };
 
     /**
+     * addPageWithParams - 파라미터를 받아서 새 페이지 추가
+     * ⭐ Nested Routes & Slug System: title, slug, layoutId, parentId를 지정하여 생성
+     *
+     * @returns ApiResult (성공 시 data, 실패 시 error)
+     */
+    const addPageWithParams = async (
+        params: AddPageParams
+    ): Promise<ApiResult<ApiPage>> => {
+        const { projectId, title, slug, layoutId = null, parentId = null } = params;
+
+        try {
+            // Zustand store의 pages를 사용하여 최대 order_num을 찾기
+            const currentPages = useStore.getState().pages;
+
+            // 현재 페이지들의 최대 order_num을 찾아서 +1
+            const maxOrderNum = currentPages.reduce((max, page) =>
+                Math.max(max, page.order_num || 0), -1
+            );
+            const nextOrderNum = maxOrderNum + 1;
+
+            // IndexedDB에 새 페이지 저장
+            const db = await getDB();
+            const newPageData = {
+                id: ElementUtils.generateId(),
+                project_id: projectId,
+                name: title,
+                slug: slug,
+                parent_id: parentId,
+                order_num: nextOrderNum,
+                layout_id: layoutId,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+
+            const newPage = await db.pages.insert(newPageData);
+
+            // useListData에 추가 (ApiPage 타입으로 변환)
+            const apiPage: ApiPage = {
+                id: newPage.id,
+                project_id: newPage.project_id,
+                title: newPage.name,
+                slug: newPage.slug,
+                parent_id: newPage.parent_id,
+                order_num: newPage.order_num,
+                created_at: newPage.created_at,
+                updated_at: newPage.updated_at
+            };
+            pageList.append(apiPage);
+            setSelectedPageId(newPage.id);
+            setCurrentPageId(newPage.id);
+
+            // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
+            setPages([...currentPages, newPage]);
+
+            // 새 페이지에 기본 body 요소 생성
+            const bodyElement: Element = {
+                id: ElementUtils.generateId(),
+                tag: 'body',
+                props: {} as ElementProps,
+                parent_id: null,
+                page_id: newPage.id,
+                order_num: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+
+            // IndexedDB에 저장
+            await db.elements.insert(bodyElement);
+            console.log('✅ [IndexedDB] body 요소 생성:', bodyElement.id);
+
+            // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
+            await fetchElements(newPage.id);
+
+            console.log('✅ 페이지 추가 완료 (with params):', newPage.name, 'slug:', newPage.slug);
+            return { success: true, data: apiPage };
+        } catch (error) {
+            console.error('페이지 생성 에러 (with params):', error);
+            return { success: false, error: error as Error };
+        }
+    };
+
+    /**
      * initializeProject - 프로젝트 초기화
      * useCallback으로 래핑하여 불필요한 재생성 방지
      * 
@@ -311,6 +405,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         setSelectedPageId,
         fetchElements,
         addPage,
+        addPageWithParams,
         initializeProject,
         pageList, // 직접 접근 (필요시)
     };

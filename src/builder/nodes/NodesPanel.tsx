@@ -19,6 +19,8 @@ interface NodesPanelProps {
   pages: Page[];
   pageList: { remove: (...keys: string[]) => void };
   handleAddPage: () => Promise<void>;
+  /** ⭐ Nested Routes & Slug System */
+  addPageWithParams?: (params: import('../hooks/usePageManager').AddPageParams) => Promise<{ success: boolean; error?: Error }>;
   renderTree: <
     T extends { id: string; parent_id?: string | null; order_num?: number }
   >(
@@ -49,6 +51,7 @@ export function NodesPanel({
   pages,
   pageList,
   handleAddPage,
+  addPageWithParams,
   renderTree,
   renderElementTree,
   fetchElements,
@@ -95,6 +98,8 @@ export function NodesPanel({
           pages={pages}
           pageList={pageList}
           handleAddPage={handleAddPage}
+          addPageWithParams={addPageWithParams}
+          projectId={projectId}
           renderTree={renderTree}
           renderElementTree={renderElementTree}
           fetchElements={fetchElements}
@@ -122,6 +127,8 @@ export function NodesPanel({
     pages,
     pageList,
     handleAddPage,
+    addPageWithParams,
+    projectId,
     renderTree,
     renderElementTree,
     fetchElements,
@@ -131,7 +138,6 @@ export function NodesPanel({
     sendElementSelectedMessage,
     requestAutoSelectAfterUpdate,
     collapseAllTreeItems,
-    projectId,
   ]);
 
   return (

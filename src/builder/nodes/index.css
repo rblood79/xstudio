@@ -205,3 +205,59 @@
   color: var(--color-secondary-700);
   border-radius: var(--radius-sm);
 }
+
+/* ========================================
+ * Nested Routes - 계층 트리 들여쓰기
+ * data-depth 속성에 따른 padding-left
+ * ======================================== */
+
+.element[data-depth="0"] .elementItem {
+  padding-left: var(--spacing-sm);
+}
+
+.element[data-depth="1"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 1 + var(--spacing-sm));
+}
+
+.element[data-depth="2"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 2 + var(--spacing-sm));
+}
+
+.element[data-depth="3"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 3 + var(--spacing-sm));
+}
+
+.element[data-depth="4"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 4 + var(--spacing-sm));
+}
+
+.element[data-depth="5"] .elementItem {
+  padding-left: calc(var(--spacing-lg) * 5 + var(--spacing-sm));
+}
+
+/* Pages 트리의 자식 페이지 표시 (URL 배지) */
+.page-url-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+  margin-left: var(--spacing-sm);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  background-color: var(--surface-variant);
+  color: var(--on-surface-variant);
+  border-radius: var(--radius-sm);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 자식이 있는 페이지 (폴더 아이콘) */
+.element[data-has-children="true"] .elementItemIcon svg {
+  stroke: var(--color-primary-500);
+}
+
+/* 자식이 없는 페이지 (파일 아이콘) */
+.element[data-has-children="false"] .elementItemIcon svg {
+  stroke: var(--on-surface-variant);
+}
