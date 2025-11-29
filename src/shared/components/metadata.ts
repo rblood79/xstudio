@@ -757,19 +757,6 @@ export const componentMetadata: ComponentMeta[] = [
     },
   },
 
-  // Layout System
-  {
-    type: "Slot",
-    label: "Slot",
-    category: "Layout",
-    icon: "📦",
-    inspector: {
-      hasCustomEditor: true,
-      editorName: "SlotEditor",
-      dataBindingType: null,
-      supportedEvents: [],
-    },
-  },
 ];
 
 /**
