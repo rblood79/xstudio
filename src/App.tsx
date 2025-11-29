@@ -8,7 +8,10 @@ import {
   Brain,
   Box,
   Play,
-  Github,
+  BotMessageSquare,
+  CircleDivide,
+  CirclePercent,
+  Pyramid,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
 import { ParticleButton } from "./components/ParticleButton";
@@ -97,13 +100,17 @@ function App() {
   return (
     <main
       style={{
-        position: "relative",
-        height: "100vh",
-        display: "flex",
+        position: "absolute",
+        display: "grid",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 10,
-        cursor: "crosshair",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateRows: "repeat(3, 1fr)",
+        aspectRatio: "1/1",
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
       }}
       onMouseDown={handleVortexStart}
       onMouseMove={handleVortexMove}
@@ -116,15 +123,26 @@ function App() {
       <ParticleButton size="sm" variant="ghost">
         <CloudUpload />
       </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <Brain />
-      </ParticleButton>
+
       <ParticleButton size="sm" variant="ghost">
         <Box />
       </ParticleButton>
       <ParticleButton size="sm" variant="ghost">
-        <Github />
+        <CircleDivide />
       </ParticleButton>
+      <ParticleButton size="sm" variant="ghost">
+        <Brain />
+      </ParticleButton>
+      <ParticleButton size="sm" variant="ghost">
+        <BotMessageSquare />
+      </ParticleButton>
+      <ParticleButton size="sm" variant="ghost">
+        <CirclePercent />
+      </ParticleButton>
+      <ParticleButton size="sm" variant="ghost">
+        <Pyramid />
+      </ParticleButton>
+
       <ParticleButton
         size="sm"
         variant="ghost"

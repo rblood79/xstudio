@@ -463,7 +463,7 @@ export function useDataBinding<T = unknown>(
 
   // path가 있으면 경로로 접근
   if (path && rawData !== null && rawData !== undefined) {
-    const pathParts = path.split(/[.\[\]]+/).filter(Boolean);
+    const pathParts = path.split(/[.[\]]+/).filter(Boolean);
     let current: unknown = rawData;
 
     for (const part of pathParts) {

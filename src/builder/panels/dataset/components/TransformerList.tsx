@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Workflow, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useTransformers } from "../../../stores/data";
-import type { Transformer, TransformLevel } from "../../../../types/builder/data.types";
+import type { TransformLevel } from "../../../../types/builder/data.types";
 
 interface TransformerListProps {
   projectId: string;

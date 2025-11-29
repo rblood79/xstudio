@@ -1,7 +1,8 @@
 import { useAsyncList } from "react-stately";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
+import { useDatasetStore } from "../stores/dataset";
 
 /**
  * Collection 데이터 바인딩을 위한 공통 Hook
@@ -9,6 +10,11 @@ import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
  * React Stately의 useAsyncList를 사용하여 비동기 데이터 로딩을 자동화합니다.
  * Static, API, Supabase 데이터 소스를 통합 처리합니다.
  * Select, ListBox, Menu, Tree 등 Collection 컴포넌트에서 공통으로 사용됩니다.
+ *
+ * Dataset 지원:
+ * - datasetId가 있으면 Dataset Store에서 데이터를 가져옵니다.
+ * - dataBinding이 있으면 직접 데이터를 로드합니다.
+ * - 둘 다 있으면 datasetId가 우선합니다.
  */
 
 export interface UseCollectionDataOptions {
@@ -18,6 +24,10 @@ export interface UseCollectionDataOptions {
   componentName: string;
   /** Mock API 실패 시 사용할 기본 데이터 */
   fallbackData?: Record<string, unknown>[];
+  /** Dataset ID (dataBinding 대신 사용) */
+  datasetId?: string;
+  /** 컴포넌트 ID (Dataset consumer 등록용) */
+  elementId?: string;
 }
 
 export interface UseCollectionDataResult {
@@ -208,7 +218,33 @@ export function useCollectionData({
   dataBinding,
   componentName,
   fallbackData = [],
+  datasetId,
+  elementId,
 }: UseCollectionDataOptions): UseCollectionDataResult {
+  // Dataset Store 접근
+  const datasetState = useDatasetStore((state) =>
+    datasetId ? state.datasetStates.get(datasetId) : undefined
+  );
+  const addConsumer = useDatasetStore((state) => state.addConsumer);
+  const removeConsumer = useDatasetStore((state) => state.removeConsumer);
+  const loadDataset = useDatasetStore((state) => state.loadDataset);
+
+  // Dataset consumer 등록/해제
+  useEffect(() => {
+    if (datasetId && elementId) {
+      addConsumer(datasetId, elementId);
+
+      // Dataset이 아직 로드되지 않았으면 로드
+      if (!datasetState || datasetState.status === "idle") {
+        loadDataset(datasetId);
+      }
+
+      return () => {
+        removeConsumer(datasetId, elementId);
+      };
+    }
+  }, [datasetId, elementId, addConsumer, removeConsumer, loadDataset, datasetState]);
+
   // 정렬 상태
   const [sortDescriptor, setSortDescriptor] = useState<{
     column: string;
@@ -220,6 +256,11 @@ export function useCollectionData({
 
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
+      // datasetId가 있으면 Dataset Store에서 데이터 사용 (useAsyncList 스킵)
+      if (datasetId) {
+        return { items: [] };
+      }
+
       // dataBinding이 없으면 빈 배열 반환
       if (!dataBinding || dataBinding.type !== "collection") {
         return { items: [] };
@@ -282,7 +323,12 @@ export function useCollectionData({
 
   // 필터링 및 정렬된 데이터
   const processedData = useMemo(() => {
-    let result = [...list.items];
+    // datasetId가 있으면 Dataset Store에서 데이터 사용
+    const sourceData = datasetId && datasetState
+      ? datasetState.data
+      : list.items;
+
+    let result = [...sourceData];
 
     // 필터링 적용
     if (filterText.trim()) {
@@ -315,18 +361,36 @@ export function useCollectionData({
     }
 
     return result;
-  }, [list.items, filterText, sortDescriptor]);
+  }, [list.items, filterText, sortDescriptor, datasetId, datasetState]);
 
   // 페이지네이션 지원 (향후 구현)
   // 현재는 API가 cursor를 반환하지 않으므로 loadMore는 undefined
   const loadMore = undefined; // API가 cursor 지원 시 list.loadMore 사용
   const hasMore = false; // API가 cursor 지원 시 true/false 판단
 
+  // Dataset 사용 시 reload 함수 재정의
+  const reload = useCallback(() => {
+    if (datasetId) {
+      loadDataset(datasetId);
+    } else {
+      list.reload();
+    }
+  }, [datasetId, loadDataset, list]);
+
+  // 로딩/에러 상태: datasetId가 있으면 Dataset Store에서, 아니면 useAsyncList에서
+  const loading = datasetId
+    ? datasetState?.status === "loading"
+    : list.isLoading;
+
+  const error = datasetId
+    ? datasetState?.error || null
+    : list.error ? list.error.message : null;
+
   return {
     data: processedData,
-    loading: list.isLoading,
-    error: list.error ? list.error.message : null,
-    reload: list.reload,
+    loading,
+    error,
+    reload,
     sort,
     filterText,
     setFilterText,

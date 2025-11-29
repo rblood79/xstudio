@@ -98,13 +98,13 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
     [endpoint.headers, handleBasicUpdate]
   );
 
-  // Query Params 업데이트
-  const handleAddQueryParam = useCallback(() => {
+  // Query Params 업데이트 (future feature - Query Params tab)
+  const _handleAddQueryParam = useCallback(() => {
     const newParams = { ...endpoint.queryParams, "": "" };
     handleBasicUpdate({ queryParams: newParams });
   }, [endpoint.queryParams, handleBasicUpdate]);
 
-  const handleUpdateQueryParam = useCallback(
+  const _handleUpdateQueryParam = useCallback(
     (oldKey: string, newKey: string, value: string) => {
       const newParams = { ...endpoint.queryParams };
       if (oldKey !== newKey) {
@@ -116,7 +116,7 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
     [endpoint.queryParams, handleBasicUpdate]
   );
 
-  const handleDeleteQueryParam = useCallback(
+  const _handleDeleteQueryParam = useCallback(
     (key: string) => {
       const newParams = { ...endpoint.queryParams };
       delete newParams[key];
@@ -124,6 +124,11 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
     },
     [endpoint.queryParams, handleBasicUpdate]
   );
+
+  // Silence unused variable warnings for future feature handlers
+  void _handleAddQueryParam;
+  void _handleUpdateQueryParam;
+  void _handleDeleteQueryParam;
 
   // 테스트 실행
   const handleTest = useCallback(async () => {

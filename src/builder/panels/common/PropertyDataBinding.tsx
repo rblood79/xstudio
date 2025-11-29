@@ -93,10 +93,14 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   const [name, setName] = useState(value?.name || '');
   const [path, setPath] = useState(value?.path || '');
 
-  // Sync with prop value
+  // Sync with prop value when external value changes
+  // This pattern is intentional for controlled/uncontrolled hybrid component
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSource(value?.source || '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(value?.name || '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPath(value?.path || '');
   }, [value]);
 

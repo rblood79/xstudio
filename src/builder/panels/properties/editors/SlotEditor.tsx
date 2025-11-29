@@ -7,10 +7,13 @@
  * - name: Slot 식별자 (예: content, sidebar, navigation)
  * - required: 필수 여부 (true면 Page에서 반드시 채워야 함)
  * - description: Slot 설명 (UI 표시용)
+ *
+ * 추가 기능:
+ * - 콘텐츠 미리보기: Slot 내부 자식 요소 목록 표시
  */
 
-import { memo, useMemo } from "react";
-import { Layers, FileText, AlertCircle, Type } from "lucide-react";
+import { memo, useMemo, useCallback } from "react";
+import { Layers, FileText, AlertCircle, Type, Box, Eye } from "lucide-react";
 import {
   PropertyInput,
   PropertySwitch,
@@ -19,32 +22,73 @@ import {
 } from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
+import { useInspectorState } from "../../../inspector/stores/useInspectorState";
 
 export const SlotEditor = memo(function SlotEditor({
   elementId,
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  // Get customId from element in store
-  const customId = useMemo(() => {
-    const element = useStore.getState().elementsMap.get(elementId);
-    return element?.customId || "";
+  // Get customId and children from element in store
+  const { customId, children } = useMemo(() => {
+    const elementsMap = useStore.getState().elementsMap;
+    const element = elementsMap.get(elementId);
+
+    // Find children of this slot
+    const slotChildren: Array<{ id: string; tag: string; customId?: string }> = [];
+    elementsMap.forEach((el) => {
+      if (el.parent_id === elementId) {
+        slotChildren.push({
+          id: el.id,
+          tag: el.tag,
+          customId: el.customId,
+        });
+      }
+    });
+
+    // Sort by order_num
+    slotChildren.sort((a, b) => {
+      const elA = elementsMap.get(a.id);
+      const elB = elementsMap.get(b.id);
+      return (elA?.order_num || 0) - (elB?.order_num || 0);
+    });
+
+    return {
+      customId: element?.customId || "",
+      children: slotChildren,
+    };
   }, [elementId]);
 
-  const updateProp = (key: string, value: unknown) => {
+  // Get setSelectedElement for navigation
+  const setSelectedElement = useInspectorState((state) => state.setSelectedElement);
+
+  const updateProp = useCallback((key: string, value: unknown) => {
     const updatedProps = {
       ...currentProps,
       [key]: value,
     };
     onUpdate(updatedProps);
-  };
+  }, [currentProps, onUpdate]);
 
-  const updateCustomId = (newCustomId: string) => {
+  const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
       updateElement(elementId, { customId: newCustomId });
     }
-  };
+  }, [elementId]);
+
+  // Navigate to child element
+  const handleChildClick = useCallback((childId: string) => {
+    const elementsMap = useStore.getState().elementsMap;
+    const childElement = elementsMap.get(childId);
+    if (childElement) {
+      setSelectedElement({
+        id: childElement.id,
+        type: childElement.tag,
+        properties: childElement.props as Record<string, unknown>,
+      });
+    }
+  }, [setSelectedElement]);
 
   return (
     <>
@@ -86,6 +130,40 @@ export const SlotEditor = memo(function SlotEditor({
           icon={AlertCircle}
           description="Pages must provide content for this slot"
         />
+      </PropertySection>
+
+      {/* Slot Content Preview Section */}
+      <PropertySection title="Slot Content" icon={Eye}>
+        {children.length === 0 ? (
+          <div className="slot-children-preview">
+            <div className="slot-children-empty">
+              No content in this slot yet
+            </div>
+          </div>
+        ) : (
+          <div className="slot-children-preview">
+            {children.map((child) => (
+              <div
+                key={child.id}
+                className="slot-child-item"
+                onClick={() => handleChildClick(child.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    handleChildClick(child.id);
+                  }
+                }}
+              >
+                <Box size={14} className="slot-child-icon" />
+                <span className="slot-child-name">
+                  {child.customId || child.tag}
+                </span>
+                <span className="slot-child-type">{child.tag}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </PropertySection>
 
       {/* Info Section */}

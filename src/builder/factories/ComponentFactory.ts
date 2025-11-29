@@ -36,6 +36,10 @@ import {
   createTable,
   createColumnGroup,
 } from "./definitions/TableComponents";
+import {
+  createDatasetDefinition,
+  createSlotDefinition,
+} from "./definitions/DataComponents";
 
 /**
  * 통합 컴포넌트 팩토리
@@ -61,6 +65,9 @@ export class ComponentFactory {
     ListBox: ComponentFactory.createListBox,
     GridList: ComponentFactory.createGridList,
     Table: ComponentFactory.createTable,
+    // ⭐ Data Components
+    Dataset: ComponentFactory.createDataset,
+    Slot: ComponentFactory.createSlot,
   };
 
   /**
@@ -209,6 +216,26 @@ export class ComponentFactory {
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
     return this.createComponent(createGridListDefinition, context);
+  }
+
+  // ==================== Data Components ====================
+
+  /**
+   * Dataset 컴포넌트 (비시각적, 데이터 관리용)
+   */
+  private static async createDataset(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createDatasetDefinition, context);
+  }
+
+  /**
+   * Slot 컴포넌트 (Layout 전용, Page 콘텐츠 삽입 위치)
+   */
+  private static async createSlot(
+    context: ComponentCreationContext
+  ): Promise<ComponentCreationResult> {
+    return this.createComponent(createSlotDefinition, context);
   }
 
   /**

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
-import type { Variable as VariableType, VariableScope } from "../../../../types/builder/data.types";
+import type { Variable as VariableType } from "../../../../types/builder/data.types";
 
 interface VariableListProps {
   projectId: string;

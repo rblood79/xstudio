@@ -8,6 +8,7 @@ import * as LayoutRenderers from "./LayoutRenderers";
 import * as DateRenderers from "./DateRenderers";
 import * as CollectionRenderers from "./CollectionRenderers";
 import * as TableRenderer from "./TableRenderer";
+import * as DataRenderers from "./DataRenderers";
 import { PreviewElement, RenderContext } from "../types";
 
 /**
@@ -84,6 +85,9 @@ export const rendererMap: Record<
   Column: TableRenderer.renderColumn,
   Row: TableRenderer.renderRow,
   Cell: TableRenderer.renderCell,
+
+  // Data 컴포넌트
+  Dataset: DataRenderers.renderDataset,
 };
 
 export {
@@ -93,4 +97,5 @@ export {
   DateRenderers,
   CollectionRenderers,
   TableRenderer,
+  DataRenderers,
 };

@@ -3,7 +3,7 @@
 > **Note**: 이 문서는 CLAUDE.md에서 분리된 계획 중인 기능들입니다.
 > 구현 완료 시 해당 섹션을 `docs/features/`로 이동합니다.
 
-**최종 업데이트**: 2025-11-26
+**최종 업데이트**: 2025-11-30
 
 ---
 
@@ -303,7 +303,7 @@ src/builder/
 
 ## 🗄️ Dataset Component Architecture
 
-**Status**: 📋 Planning Phase
+**Status**: ✅ All Phases Complete (Phase 1-6) (2025-11-30)
 
 ### Overview
 
@@ -386,50 +386,160 @@ Dataset component architecture enables centralized data management and reuse acr
 
 ### Implementation Plan
 
-#### Phase 1: Core Infrastructure ⏳
+#### Phase 1: Core Infrastructure ✅ COMPLETE
 
-**Files to Create**:
-- `src/builder/components/Dataset.tsx`
-- `src/builder/stores/dataset.ts`
-- `src/types/dataset.types.ts`
+**Files Created**:
+- `src/types/dataset.types.ts` - Dataset 타입 정의
+- `src/builder/stores/dataset.ts` - Zustand 스토어 (캐싱, 자동 새로고침, consumer 추적)
+- `src/builder/components/Dataset.tsx` - Dataset 컴포넌트 (비시각적)
 
-#### Phase 2: Component Integration ⏳
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| Dataset 등록/해제 | ✅ | registerDataset, unregisterDataset |
+| 데이터 로드 | ✅ | loadDataset (MOCK_DATA, REST API 지원) |
+| 캐싱 | ✅ | TTL 기반 캐시 (기본 5분) |
+| Consumer 추적 | ✅ | 어떤 컴포넌트가 Dataset 사용 중인지 추적 |
+| 자동 새로고침 | ✅ | refreshInterval prop으로 주기적 새로고침 |
 
-**Files to Modify** (add `datasetId` prop):
-- `src/builder/components/ListBox.tsx`
-- `src/builder/components/GridList.tsx`
-- `src/builder/components/Select.tsx`
-- `src/builder/components/ComboBox.tsx`
-- `src/builder/components/Menu.tsx`
-- `src/builder/components/TagGroup.tsx`
-- `src/builder/components/Tree.tsx`
-- `src/builder/components/Table.tsx`
+#### Phase 2: Component Integration ✅ COMPLETE
 
-#### Phase 3: Inspector UI ⏳
+**Files Modified**:
+- `src/builder/hooks/useCollectionData.ts` - datasetId prop 추가
 
-**Files to Create**:
-- `src/builder/inspector/properties/editors/DatasetEditor.tsx`
-- `src/builder/panels/datasets/DatasetsPanel.tsx`
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| datasetId prop | ✅ | Collection 컴포넌트에서 Dataset 참조 |
+| Consumer 자동 등록 | ✅ | 컴포넌트 마운트 시 자동 등록 |
+| 로딩/에러 상태 통합 | ✅ | Dataset Store의 상태를 useCollectionData에서 반환 |
 
-#### Phase 4: Component Factory ⏳
+**사용 예**:
+```tsx
+// Dataset 정의
+<Dataset
+  id="users-dataset"
+  dataBinding={{
+    type: "collection",
+    source: "api",
+    config: { baseUrl: "MOCK_DATA", endpoint: "/users" }
+  }}
+/>
 
-**Files to Modify**:
-- `src/builder/factories/definitions/DataComponents.ts`
-- `src/builder/components/metadata.ts`
+// Collection 컴포넌트에서 참조
+<ListBox datasetId="users-dataset" />
+<Select datasetId="users-dataset" />
+```
 
-#### Phase 5: Preview Integration ⏳
+#### Phase 3: Inspector UI ✅ COMPLETE
 
-**Files to Modify**:
-- `src/builder/preview/types/index.ts`
-- `src/builder/hooks/useIframeMessenger.ts`
-- `src/builder/preview/messageHandlers.ts`
+**Files Created**:
+- `src/builder/panels/properties/editors/DatasetEditor.tsx` - Dataset 속성 편집기
 
-#### Phase 6: Advanced Features (Optional) ⏳
+**Files Modified**:
+- `src/builder/panels/properties/editors/index.ts` - DatasetEditor export 추가
+- `src/builder/panels/common/index.css` - DatasetEditor 스타일 추가
+- `src/shared/components/metadata.ts` - Dataset 메타데이터 추가
 
-- Dataset Transform (JSONPath, sorting, mapping)
-- Dataset Dependencies (usage tracking, auto-cleanup)
-- Dataset Caching (localStorage, TTL)
-- Dataset Polling (auto-refresh, background update)
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| Dataset ID 편집 | ✅ | 고유 식별자 설정 |
+| Data Binding 설정 | ✅ | PropertyDataBinding 컴포넌트 사용 |
+| Auto Refresh 설정 | ✅ | 자동 로드, 새로고침 간격 |
+| 상태 모니터링 | ✅ | 로딩/에러/성공 상태, 아이템 수, Consumer 수 표시 |
+| 수동 로드/새로고침 | ✅ | Load Data, Refresh 버튼 |
+
+#### Phase 4: Component Factory ✅ COMPLETE
+
+**Files Created**:
+- `src/builder/factories/definitions/DataComponents.ts` - Dataset, Slot 팩토리 정의
+
+**Files Modified**:
+- `src/builder/factories/ComponentFactory.ts` - Dataset, Slot 등록
+
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| Dataset Factory | ✅ | createDatasetDefinition - 기본 dataBinding 설정 포함 |
+| Slot Factory | ✅ | createSlotDefinition - Layout 전용 컴포넌트 |
+| ownerFields 패턴 | ✅ | Layout/Page 모드에 따른 page_id/layout_id 설정 |
+
+#### Phase 5: Preview Integration ✅ COMPLETE
+
+**Files Created**:
+- `src/canvas/renderers/DataRenderers.tsx` - Canvas용 Dataset 렌더러
+
+**Files Modified**:
+- `src/canvas/renderers/index.ts` - Dataset 렌더러 등록
+
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| Dataset 렌더러 | ✅ | 비시각적 컴포넌트 (null 반환) |
+| 데이터 로드 | ✅ | Runtime Store의 dataStates 활용 |
+| Auto-refresh | ✅ | refreshInterval 지원 |
+| AbortController | ✅ | 컴포넌트 언마운트 시 요청 취소 |
+
+#### Phase 6: Advanced Features ✅ COMPLETE
+
+**Files Modified**:
+- `src/types/dataset.types.ts` - DatasetTransform, persistCache 추가
+- `src/builder/stores/dataset.ts` - Transform 적용, Cache Persistence
+
+**6.1 Transform System** ✅
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| Filter | ✅ | eq, ne, gt, gte, lt, lte, contains, startsWith, endsWith |
+| Sort | ✅ | field, direction (asc/desc) |
+| Limit/Offset | ✅ | 페이지네이션 지원 |
+| Select | ✅ | 필드 projection |
+| Map | ✅ | 필드 renaming |
+
+**사용 예**:
+```typescript
+// DatasetConfig.transform
+{
+  filter: [
+    { field: 'status', operator: 'eq', value: 'active' },
+    { field: 'age', operator: 'gte', value: 18 }
+  ],
+  sort: { field: 'name', direction: 'asc' },
+  limit: 10,
+  offset: 0,
+  select: ['id', 'name', 'email'],
+  map: { 'userName': 'name' }  // userName → name 으로 변경
+}
+```
+
+**6.2 Consumer Reference** ✅
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| addConsumer | ✅ | 컴포넌트가 Dataset 사용 시 등록 |
+| removeConsumer | ✅ | 컴포넌트 언마운트 시 해제 |
+| consumers 추적 | ✅ | DatasetEditor에서 Consumer 수 표시 |
+
+**6.3 Cache Persistence** ✅
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| persistCache 옵션 | ✅ | localStorage에 캐시 영속화 |
+| TTL 기반 만료 | ✅ | cacheTTL 설정에 따른 자동 만료 |
+| 캐시 복원 | ✅ | 페이지 새로고침 시 localStorage에서 복원 |
+| 캐시 정리 | ✅ | unregister/clearAll 시 자동 정리 |
+
+**사용 예**:
+```typescript
+// DatasetConfig
+{
+  id: 'users-dataset',
+  name: 'Users',
+  dataBinding: { ... },
+  useCache: true,
+  cacheTTL: 5 * 60 * 1000,  // 5분
+  persistCache: true,  // localStorage에 저장
+  transform: { ... }
+}
+```
 
 ---
 
@@ -448,9 +558,9 @@ Page
 
 ### Priority
 
-- **High Priority**: Phase 1-2 (Core + Component integration)
-- **Medium Priority**: Phase 3-4 (Inspector UI + Factory)
-- **Low Priority**: Phase 5-6 (Preview + Advanced)
+- ~~**High Priority**: Phase 1-2 (Core + Component integration)~~ ✅ Complete
+- ~~**Medium Priority**: Phase 3-4 (Inspector UI + Factory)~~ ✅ Complete
+- ~~**Low Priority**: Phase 5-6 (Preview + Advanced)~~ ✅ Complete
 
 ---
 
@@ -462,21 +572,22 @@ Page
 > - [LAYOUT_PRESET_SYSTEM.md](features/LAYOUT_PRESET_SYSTEM.md) - Phase 6 완료 상세
 > - [LAYOUT_SLOT_SYSTEM_PLAN_V2.md](LAYOUT_SLOT_SYSTEM_PLAN_V2.md) - 전체 Layout/Slot 시스템 계획
 
-### 1. SlotEditor 구현
+### 1. SlotEditor 구현 ✅ COMPLETE
 
-**필요성**: Slot 요소 선택 시 전용 에디터 필요
+**Status**: 구현 완료 (2025-11-30)
 
-**기능**:
-| 기능 | 설명 |
-|------|------|
-| name 편집 | Slot 이름 변경 (gridArea 연동) |
-| required 토글 | 필수 Slot 여부 |
-| description | Slot 용도 설명 |
-| defaultStyle | 기본 너비/높이 |
-| 콘텐츠 미리보기 | Slot 내부 요소 목록 |
+**구현된 기능**:
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| name 편집 | ✅ | Slot 이름 변경 |
+| required 토글 | ✅ | 필수 Slot 여부 |
+| description | ✅ | Slot 용도 설명 |
+| 콘텐츠 미리보기 | ✅ | Slot 내부 자식 요소 목록, 클릭 시 해당 요소로 이동 |
+| defaultStyle | ⏳ | 향후 추가 예정 |
 
-**Files to Create**:
+**Files**:
 - `src/builder/panels/properties/editors/SlotEditor.tsx`
+- `src/builder/panels/common/index.css` (SlotEditor 스타일 추가)
 
 ---
 
@@ -549,11 +660,11 @@ CREATE TABLE custom_presets (
 
 ### 구현 우선순위
 
-| 순위 | 기능 | 이유 |
-|------|------|------|
-| **1** | SlotEditor | Slot 선택 시 즉시 필요 |
-| **2** | Grid/Flex 편집 | 프리셋 미세 조정 필수 |
-| **3** | 프리셋 저장 | 편의 기능, 기본 프리셋으로 충분 |
+| 순위 | 기능 | 상태 | 이유 |
+|------|------|------|------|
+| ~~1~~ | ~~SlotEditor~~ | ✅ 완료 | Slot 선택 시 즉시 필요 |
+| **1** | Grid/Flex 편집 | 📋 | 프리셋 미세 조정 필수 |
+| **2** | 프리셋 저장 | 📋 | 편의 기능, 기본 프리셋으로 충분 |
 
 ---
 

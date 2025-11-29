@@ -26,8 +26,8 @@
 - [Panel System Standardization (2025-11-13)](#panel-system-standardization)
 - [Layout Preset System (2025-11-26)](#layout-preset-system)
 - [Preview Runtime Isolation (2025-11-27)](#preview-runtime-isolation)
-- [Data Panel System - Phase 5 (2025-11-30)](#data-panel-system)
-- [Nested Routes - Dynamic Parameters (2025-11-30)](#nested-routes-dynamic-parameters)
+- [Data Panel System - Phase 1-6 (2025-11-30)](#data-panel-system)
+- [Nested Routes System - Phase 1-6 (2025-11-30)](#nested-routes-system)
 
 ---
 
@@ -682,7 +682,7 @@ src/preview/
 
 ## Data Panel System
 
-**Status**: ✅ Phase 1-5 Complete (2025-11-30)
+**Status**: ✅ Phase 1-6 Complete (2025-11-30)
 
 ### Overview
 데이터 관리 시스템으로 DataTable, API Endpoint, Variable을 통합 관리하고 컴포넌트와 바인딩합니다.
@@ -728,30 +728,82 @@ const { value, setValue } = useVariable('currentUserId');
 const params = useRouteParams();
 ```
 
+### Phase 6: Testing & Polish
+
+**코드 품질 검증 완료**
+- TypeScript: 0 errors (`npx tsc --noEmit` 통과)
+- ESLint: 0 errors, 17 warnings (react-refresh 관련 minor 경고)
+- Vitest: 21개 테스트 모두 통과
+
+**수정된 파일**
+- `DatasetPanel.tsx` - 사용하지 않는 import 제거
+- `ApiEndpointList.tsx` - 사용하지 않는 타입 import 제거
+- `DataTableList.tsx` - 사용하지 않는 타입 import 제거
+- `TransformerList.tsx` - 사용하지 않는 타입 import 제거
+- `VariableList.tsx` - 사용하지 않는 타입 import 제거
+- `ApiEndpointEditor.tsx` - 미사용 함수에 `_` 접두사 추가
+- `PropertyDataBinding.tsx` - setState ESLint 경고 주석 추가
+- `useDataSource.ts` - 불필요한 regex escape 제거
+
 ### Documentation
 - [DATA_PANEL_SYSTEM.md](features/DATA_PANEL_SYSTEM.md)
 
 ---
 
-## Nested Routes Dynamic Parameters
+## Nested Routes System
 
-**Status**: ✅ Phase 3 Complete (2025-11-30)
+**Status**: ✅ Phase 1-6 Complete (2025-11-30)
 
 ### Overview
-동적 라우트 파라미터 지원 (`/products/:productId`)
+중첩 라우트 및 Slug 시스템 - 계층적 페이지 구조, 동적 라우트 파라미터, Property Editor 통합
+
+### Phase Completion
+
+| Phase   | Status | Description                        |
+| ------- | ------ | ---------------------------------- |
+| Phase 1 | ✅     | Foundation (Types, DB)             |
+| Phase 2 | ✅     | Page Creation UI (Router)          |
+| Phase 3 | ✅     | Dynamic Route Parameters           |
+| Phase 4 | ✅     | Property Editors (이미 구현됨)     |
+| Phase 5 | ✅     | NodesPanel Tree (이미 구현됨)      |
+| Phase 6 | ✅     | Testing & Polish                   |
 
 ### Key Features
+
+**Phase 3 - Dynamic Route Parameters**
 - **urlGenerator.ts 확장**: extractDynamicParams, hasDynamicParams, fillDynamicParams, matchDynamicUrl
 - **useCanvasParams Hook**: Canvas 컴포넌트에서 동적 파라미터 접근
 - **RuntimeStore 연동**: routeParams 상태 관리
 - **라우트 정렬**: 정적 라우트가 동적 라우트보다 먼저 매칭
 
+**Phase 4 - Property Editors**
+- **LayoutSlugEditor.tsx**: Layout base slug 편집, URL 프리뷰
+- **PageParentSelector.tsx**: Parent 선택 + Page slug 편집
+- **PageBodyEditor.tsx**: Layout/Parent 통합 편집 UI
+- **generatePageUrl**: 실시간 최종 URL 계산
+
+**Phase 5 - NodesPanel Tree**
+- **renderTree 함수**: parent_id 기반 재귀적 트리 렌더링
+- **hasChildren 함수**: 자식 페이지 존재 확인
+- **CSS 들여쓰기**: data-depth 기반 계층 시각화 (0-5 레벨)
+- **PagesTab 통합**: Pages + Layers 래핑
+
+**Phase 6 - Testing & Polish**
+- **TypeScript**: 0 errors (`npx tsc --noEmit` 통과)
+- **ESLint**: 0 errors (minor warnings only)
+- **Vitest**: 21개 테스트 모두 통과
+- **코드 품질**: 모든 NESTED_ROUTES 관련 파일 정상 작동 확인
+
 ### Files
 ```
-src/utils/urlGenerator.ts         # 동적 파라미터 유틸리티 함수
-src/canvas/router/CanvasRouter.tsx  # useCanvasParams, 라우트 정렬
-src/canvas/store/types.ts         # routeParams 타입
-src/canvas/store/runtimeStore.ts  # routeParams 상태/액션
+src/utils/urlGenerator.ts                                     # 동적 파라미터 유틸리티
+src/canvas/router/CanvasRouter.tsx                            # useCanvasParams, 라우트 정렬
+src/builder/panels/properties/editors/LayoutSlugEditor.tsx    # Layout slug 편집
+src/builder/panels/properties/editors/PageParentSelector.tsx  # Parent 선택 + slug
+src/builder/panels/properties/editors/PageBodyEditor.tsx      # 통합 편집 UI
+src/builder/sidebar/index.tsx                                 # renderTree 함수
+src/builder/nodes/index.css                                   # data-depth 스타일
+src/builder/nodes/PagesTab/PagesTab.tsx                       # Pages + Layers
 ```
 
 ### Usage Example
@@ -770,6 +822,10 @@ function ProductDetail() {
 const { data } = useDataSource('getProduct', {
   params: { productId: '{{route.productId}}' }
 });
+
+// 계층적 페이지 트리 렌더링
+renderTree(pages, getLabel, onClick, onDelete, null, 0)
+// → parent_id 기반 재귀 렌더링 with depth 들여쓰기
 ```
 
 ### Documentation

@@ -16,7 +16,6 @@ import {
   Globe,
   Variable,
   Workflow,
-  Plus,
   RefreshCw,
 } from "lucide-react";
 import type { PanelProps } from "../core/types";

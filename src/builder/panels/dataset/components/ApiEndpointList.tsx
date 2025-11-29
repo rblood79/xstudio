@@ -7,7 +7,6 @@
 import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
-import type { ApiEndpoint, HttpMethod } from "../../../../types/builder/data.types";
 
 interface ApiEndpointListProps {
   projectId: string;
