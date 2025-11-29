@@ -1,10 +1,10 @@
-# Preview Runtime Isolation
+# Canvas Runtime Isolation
 
 **Status**: ✅ Phase 1 Complete (2025-11-27)
 
 ## Overview
 
-Preview Runtime은 Builder와 완전히 분리된 독립적인 React 애플리케이션입니다. `srcdoc` iframe 내에서 실행되며, `postMessage`를 통해서만 Builder와 통신합니다.
+Canvas Runtime은 Builder와 완전히 분리된 독립적인 React 애플리케이션입니다. `srcdoc` iframe 내에서 실행되며, `postMessage`를 통해서만 Builder와 통신합니다.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ Preview Runtime은 Builder와 완전히 분리된 독립적인 React 애플리�
 ┌─────────────────────────────────────────────────────────────┐
 │                        Builder                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Sidebar    │  │   Preview    │  │  Inspector   │      │
+│  │   Sidebar    │  │   Canvas     │  │  Inspector   │      │
 │  │              │  │   (iframe)   │  │              │      │
 │  │              │  │      ↓       │  │              │      │
 │  └──────────────┘  │  postMessage │  └──────────────┘      │
@@ -22,15 +22,15 @@ Preview Runtime은 Builder와 완전히 분리된 독립적인 React 애플리�
          ┌───────────────────┴───────────────────┐
          ▼                                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Preview Runtime                          │
+│                    Canvas Runtime                           │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │                  srcdoc iframe                        │  │
 │  │  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │  │
-│  │  │ PreviewApp │  │   Store    │  │  MessageHandler│  │  │
-│  │  │  (React)   │  │  (Zustand) │  │  (postMessage) │  │  │
+│  │  │ CanvasApp  │  │   Store    │  │  MessageHandler│  │  │
+│  │  │  (React)   │  │ (runtime)  │  │  (postMessage) │  │  │
 │  │  └────────────┘  └────────────┘  └────────────────┘  │  │
 │  │  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │  │
-│  │  │ Renderers  │  │   Router   │  │  EventEngine   │  │  │
+│  │  │ Renderers  │  │CanvasRouter│  │  EventEngine   │  │  │
 │  │  │ (React     │  │ (Memory)   │  │  (Actions)     │  │  │
 │  │  │  Aria)     │  │            │  │                │  │  │
 │  │  └────────────┘  └────────────┘  └────────────────┘  │  │
@@ -46,12 +46,12 @@ Preview Runtime은 Builder와 완전히 분리된 독립적인 React 애플리�
 - 사용자 코드가 Builder를 오염시킬 수 없음
 
 ### 2. State Independence
-- Preview 전용 Zustand store (`previewStore.ts`)
+- Canvas 전용 Zustand store (`runtimeStore.ts`)
 - Builder store와 완전히 분리
 - postMessage를 통한 단방향 데이터 플로우
 
 ### 3. CSS/Style Isolation
-- Preview 내부 스타일이 Builder에 영향 없음
+- Canvas 내부 스타일이 Builder에 영향 없음
 - Design tokens는 postMessage로 동적 주입
 - Theme switching 독립적 처리
 
@@ -63,19 +63,19 @@ Preview Runtime은 Builder와 완전히 분리된 독립적인 React 애플리�
 ## File Structure
 
 ```
-src/preview/
+src/canvas/
 ├── index.tsx              # Entry point (srcdoc에서 실행)
-├── PreviewApp.tsx         # Main React component
+├── App.tsx                # Main React component
 ├── messaging/
 │   ├── index.ts           # Exports
 │   └── messageHandler.ts  # postMessage 수신/발신
 ├── store/
 │   ├── index.ts           # Exports
-│   ├── previewStore.ts    # Zustand store
+│   ├── runtimeStore.ts    # Zustand store
 │   └── types.ts           # Type definitions
 ├── router/
 │   ├── index.ts           # Exports
-│   └── PreviewRouter.tsx  # MemoryRouter 기반
+│   └── CanvasRouter.tsx   # MemoryRouter 기반
 ├── renderers/
 │   ├── index.ts           # Renderer map
 │   ├── CollectionRenderers.tsx
@@ -85,7 +85,7 @@ src/preview/
 │   ├── SelectionRenderers.tsx
 │   └── TableRenderer.tsx
 ├── types/
-│   └── index.ts           # Preview-specific types
+│   └── index.ts           # Canvas-specific types
 └── utils/
     ├── eventHandlers.ts   # Event handling utilities
     ├── layoutResolver.ts  # Layout/Slot resolution
@@ -96,7 +96,7 @@ src/preview/
 
 ## Communication Protocol
 
-### Builder → Preview Messages
+### Builder → Canvas Messages
 
 | Message Type | Purpose | Payload |
 |--------------|---------|---------|
@@ -110,11 +110,11 @@ src/preview/
 | `UPDATE_PAGES` | Page list | `{ pages }` |
 | `REQUEST_ELEMENT_SELECTION` | Auto-select request | `{ elementId }` |
 
-### Preview → Builder Messages
+### Canvas → Builder Messages
 
 | Message Type | Purpose | Payload |
 |--------------|---------|---------|
-| `PREVIEW_READY` | Initialization complete | (none) |
+| `CANVAS_READY` | Initialization complete | (none) |
 | `ELEMENTS_UPDATED_ACK` | Elements received | `{ elementCount, timestamp }` |
 | `ELEMENT_SELECTED` | User clicked element | `{ elementId, rect, props, style }` |
 | `ELEMENT_COMPUTED_STYLE` | Computed styles (deferred) | `{ elementId, computedStyle }` |
@@ -125,7 +125,7 @@ src/preview/
 성능 최적화를 위해 요소 선택 시 두 단계로 분리:
 
 ```
-User Click in Preview
+User Click in Canvas
        │
        ▼
 ┌──────────────────┐
@@ -150,17 +150,18 @@ User Click in Preview
    - Inherited values
 ```
 
-## Preview Store State
+## Runtime Store State
 
 ```typescript
-interface PreviewStoreState {
+interface RuntimeStoreState {
   // Elements
-  elements: PreviewElement[];
+  elements: RuntimeElement[];
   setElements: (elements) => void;
   updateElementProps: (id, props) => void;
 
   // Pages & Layout
-  pages: PreviewPage[];
+  pages: RuntimePage[];
+  layouts: RuntimeLayout[];
   currentPageId: string | null;
   currentLayoutId: string | null;
   currentPath: string;
@@ -189,7 +190,7 @@ interface PreviewStoreState {
 
 ## State Hierarchy
 
-Preview Runtime은 3단계 상태 계층을 지원:
+Canvas Runtime은 3단계 상태 계층을 지원:
 
 1. **App State** (`app.*`): 전역 상태 (user, theme, settings)
 2. **Page State** (`page.*`): 페이지별 상태 (form data, filters)
@@ -209,7 +210,7 @@ getState('app.user.name'); // 'John'
 페이지 전환 후 요소 자동 선택을 위한 ACK 패턴:
 
 ```
-Builder                          Preview
+Builder                          Canvas
    │                                │
    │─── UPDATE_ELEMENTS ───────────>│
    │    (+ register pending select) │
@@ -243,17 +244,35 @@ srcdoc 모드 테스트를 위한 localStorage 기반 persistence:
 
 ```typescript
 // Enable srcdoc testing
-localStorage.setItem('preview_srcdoc_test', 'true');
+localStorage.setItem('canvas_srcdoc_test', 'true');
 
 // Check current mode
-const isSrcdocMode = localStorage.getItem('preview_srcdoc_test') === 'true';
+const isSrcdocMode = localStorage.getItem('canvas_srcdoc_test') === 'true';
+```
+
+## Legacy Compatibility
+
+기존 코드와의 호환성을 위해 다음 alias가 제공됩니다:
+
+```typescript
+// Store aliases
+export { getRuntimeStore as getPreviewStore } from './store';
+export { useRuntimeStore as usePreviewStore } from './store';
+
+// Router aliases
+export const PreviewRouter = CanvasRouter;
+export const navigateInPreview = navigateInCanvas;
+
+// Type aliases
+export type PreviewElement = RuntimeElement;
+export type PreviewStoreState = RuntimeStoreState;
 ```
 
 ## Future Phases
 
 ### Phase 2: Event System Integration
 - EventEngine 완전 분리
-- Action 실행 Preview 내부에서 처리
+- Action 실행 Canvas 내부에서 처리
 - Custom JavaScript 실행 샌드박싱
 
 ### Phase 3: Full Isolation
@@ -263,6 +282,6 @@ const isSrcdocMode = localStorage.getItem('preview_srcdoc_test') === 'true';
 
 ## Related Documentation
 
-- [CLAUDE.md - Preview System](../CLAUDE.md#preview-system-iframe)
+- [CLAUDE.md - Canvas Runtime](../../CLAUDE.md#canvas-runtime-iframe)
 - [PERFORMANCE_REPORT.md](../PERFORMANCE_REPORT.md)
 - [PROPERTIES_PANEL_OPTIMIZATION.md](../PROPERTIES_PANEL_OPTIMIZATION.md)

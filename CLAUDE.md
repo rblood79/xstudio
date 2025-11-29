@@ -55,7 +55,7 @@ The builder consists of four main areas:
 
 1. **BuilderHeader** - Top toolbar with save/undo/redo controls
 2. **Sidebar** - Page tree and element hierarchy navigation
-3. **Preview** - iframe-based real-time preview of the page
+3. **Canvas** - iframe-based real-time canvas for editing (BuilderCanvas component)
 4. **Inspector** - Property editor for selected elements with inline style management
 
 ### State Management (Zustand)
@@ -103,15 +103,23 @@ User Action → Zustand Store → Supabase API → Real-time Update
 2. Send postMessage to iframe (for preview sync)
 3. Save to Supabase (async, failures don't break memory state)
 
-### Preview System (iframe)
+### Canvas Runtime (iframe)
 
-The preview runs in an isolated iframe (`src/builder/preview/index.tsx`):
+The canvas runs in an isolated srcdoc iframe with its own React application (`src/canvas/index.tsx`):
 
+- **Independent Zustand store** (`runtimeStore`) - completely separate from Builder state
 - Receives element updates via `postMessage` with origin validation
-- Queues messages until `PREVIEW_READY` state
+- Queues messages until `CANVAS_READY` state
 - Renders React Aria Components dynamically based on element tree
 - Handles component-specific rendering (Tabs, Tables, Collections, etc.)
 - **Collects computed styles** from DOM elements and sends to Inspector
+- **CanvasRouter** - MemoryRouter-based internal routing for page navigation
+
+**Key Files:**
+- `src/canvas/index.tsx` - Canvas runtime entry point
+- `src/canvas/store/runtimeStore.ts` - Independent Zustand store
+- `src/canvas/router/CanvasRouter.tsx` - MemoryRouter-based routing
+- `src/canvas/App.tsx` - Canvas React application
 
 ### Inspector Style Management System
 
@@ -1756,7 +1764,7 @@ TagGroup supports columnMapping for dynamic data rendering, plus a special `remo
 - **Undo-friendly**: Changes tracked in history system
 - **Restorable**: Simple UI to restore all removed items at once
 
-### Preview iframe Communication
+### Canvas iframe Communication
 
 **Always validate postMessage origins:**
 
@@ -1769,10 +1777,10 @@ window.addEventListener('message', (event) => {
 });
 ```
 
-**Queue messages until preview is ready:**
+**Queue messages until canvas is ready:**
 
 ```tsx
-if (!previewReady) {
+if (!canvasReady) {
   messageQueue.push(message);
 } else {
   window.parent.postMessage(message, '*');
@@ -2232,7 +2240,7 @@ Copilot learns from code patterns. Tips:
 17. ✅ **M3 Color System** - Real-time M3 role visualization in Theme Studio
 18. ✅ **Panel Standardization** - Consistent naming, hooks compliance, unified styles
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
-20. ✅ **Preview Runtime Isolation** - srcdoc iframe, 독립 Zustand store, postMessage 통신 ([상세](docs/features/PREVIEW_RUNTIME_ISOLATION.md))
+20. ✅ **Canvas Runtime Isolation** - srcdoc iframe, 독립 runtimeStore, postMessage 통신 ([상세](docs/features/CANVAS_RUNTIME_ISOLATION.md))
 
 **Key Achievements**:
 - Zero TypeScript errors
