@@ -162,7 +162,7 @@
         gap: var(--spacing-sm);
         grid-template-areas: "padding margin actions-spacing";
 
-        >* {
+        > * {
           min-width: 0;
         }
 
@@ -266,7 +266,7 @@
         "width height actions-size"
         "left top actions-position";
 
-      >* {
+      > * {
         min-width: 0;
       }
 
@@ -307,7 +307,7 @@
         gap: var(--spacing-sm);
         grid-template-areas: "background-color background-color icon";
 
-        >* {
+        > * {
           min-width: 0;
         }
       }
@@ -330,7 +330,7 @@
           "border-style border-style border-color"
           "border-width border-radius icon";
 
-        >* {
+        > * {
           min-width: 0;
         }
       }
@@ -366,7 +366,7 @@
         "text-transform . .";
 
       /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
-      >* {
+      > * {
         min-width: 0;
       }
 
@@ -427,7 +427,6 @@
     }
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -475,9 +474,7 @@
     /* Section Header */
     .section-header {
       height: var(--header-height);
-      font-size: var(--text-xs);
-      line-height: var(--text-xs);
-      font-weight: var(--font-weight-bold);
+
       background-color: var(--surface-variant);
       border-bottom: 1px solid var(--outline-variant);
       display: flex;
@@ -490,7 +487,8 @@
       padding: var(--spacing-sm);
       border-bottom: 0;
       font-weight: var(--font-weight-semibold);
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
     }
 
     .section-header .section-actions {

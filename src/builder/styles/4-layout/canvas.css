@@ -12,6 +12,9 @@
     flex-direction: column;
     position: relative;
     z-index: 1;
+
+    align-items: center;
+    justify-content: center;
   }
 
   /* Background Container */
@@ -95,9 +98,6 @@
   /* Panel Header */
   .app aside .panel-header {
     height: var(--header-height);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs);
-    font-weight: var(--font-weight-bold);
     background-color: var(--surface-variant);
     border-bottom: 1px solid var(--outline-variant);
     display: flex;
@@ -107,6 +107,7 @@
   }
 
   .panel-header .iconButton {
+    border-width: 0px;
     padding: var(--spacing-sm);
   }
 

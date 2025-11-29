@@ -76,14 +76,14 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
 
     // Validate
     const validation = validateSlug(generatedSlug);
-    setSlugError(validation.isValid ? null : validation.error || null);
+    setSlugError(validation.valid ? null : validation.error || null);
   }, []);
 
   // Handle slug change
   const handleSlugChange = useCallback((value: string) => {
     setSlug(value);
     const validation = validateSlug(value);
-    setSlugError(validation.isValid ? null : validation.error || null);
+    setSlugError(validation.valid ? null : validation.error || null);
   }, []);
 
   // Handle parent change with circular reference check
@@ -128,7 +128,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
   const handleSubmit = useCallback(async () => {
     // Validate
     const validation = validateSlug(slug);
-    if (!validation.isValid) {
+    if (!validation.valid) {
       setSlugError(validation.error || "Invalid slug");
       return;
     }

@@ -6,6 +6,7 @@
 
   /* App Root - Main Grid Layout */
   .app {
+    background-color: var(--surface-variant);
     height: 100vh;
     overflow: hidden;
     display: grid;
