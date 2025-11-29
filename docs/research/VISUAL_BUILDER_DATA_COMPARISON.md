@@ -272,42 +272,164 @@ REST API Integration:
 | Plasmic | ❌ | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code | ✅ Code |
 | Appsmith | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | FlutterFlow | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ |
+| **XStudio** | ✅ DataTable | 🔮 예정 | 🔮 예정 | ❌ | ✅ | ❌ | ❌ | ❌ |
+
+> **XStudio 내장 DB = DataTable**
+> - 스키마 정의 (key, type, required, default)
+> - Mock 데이터 저장 (UI 개발용)
+> - Runtime 데이터 캐싱 (API 응답 저장)
+> - **API 없이 독립 동작 가능** → Webflow CMS와 유사한 역할
+> - 추후 Oracle/PostgreSQL 직접 연결 예정
 
 ### 3.2 바인딩 문법
 
-| 빌더 | 문법 | 예시 |
-|------|------|------|
-| Webflow | 필드 선택 UI | (drag & drop) |
-| Bubble | 표현식 빌더 | `Current User's Orders:first item's total` |
-| Retool | 무스타쉬 | `{{query1.data[0].name}}` |
-| Framer | 토큰 | `:city` in URL, bind to variable |
-| Plasmic | 동적 값 | `$ctx.products.length` |
-| Builder.io | State 접근 | `state.products[0].name` |
-| Appsmith | 무스타쉬 | `{{Table1.selectedRow.id}}` |
-| FlutterFlow | JSON Path | `item['user']['name']` |
+| 빌더 | 문법 | 예시 | 학습 난이도 |
+|------|------|------|------------|
+| Webflow | 필드 선택 UI | (drag & drop) | ⭐ 쉬움 |
+| Bubble | 표현식 빌더 | `Current User's Orders:first item's total` | ⭐⭐⭐ 높음 |
+| Retool | 무스타쉬 | `{{query1.data[0].name}}` | ⭐⭐ 보통 |
+| Framer | 토큰 | `:city` in URL, bind to variable | ⭐ 쉬움 |
+| Plasmic | 동적 값 | `$ctx.products.length` | ⭐⭐ 보통 |
+| Builder.io | State 접근 | `state.products[0].name` | ⭐⭐ 보통 |
+| Appsmith | 무스타쉬 | `{{Table1.selectedRow.id}}` | ⭐⭐ 보통 |
+| FlutterFlow | JSON Path | `item['user']['name']` | ⭐⭐ 보통 |
+| **XStudio** | **하이브리드** | Visual Picker → `{{users[0].name}}` 자동 생성 | ⭐ 쉬움 |
+
+> **XStudio 바인딩 UX**: Visual Picker + 무스타쉬 하이브리드
+>
+> ```
+> ┌─────────────────────────────────────────┐
+> │  🔗 Data Binding                        │
+> ├─────────────────────────────────────────┤
+> │  ┌─────────────────────────────────┐    │
+> │  │ 🔍 Search data source...       ▼│    │  ← ComboBox (검색 가능)
+> │  └─────────────────────────────────┘    │
+> │                                         │
+> │  📂 DataTables                          │
+> │    └─ users                             │
+> │        ├─ id                            │
+> │        ├─ name     ← 클릭 시 자동 삽입  │
+> │        ├─ email                         │
+> │        └─ avatar                        │
+> │  📂 Variables                           │
+> │    ├─ authToken                         │
+> │    └─ currentPage                       │
+> │                                         │
+> │  ───────────────────────────────────    │
+> │  Result: {{users[0].name}}              │  ← 자동 생성
+> │  ───────────────────────────────────    │
+> │                                         │
+> │  ☑️ Advanced Mode (직접 입력)           │
+> └─────────────────────────────────────────┘
+> ```
+>
+> **장점**:
+> - 노코드 사용자: 드래그 드랍 / 클릭으로 바인딩
+> - 개발자: Advanced Mode에서 직접 무스타쉬 작성
+> - 자동완성: 타이핑 시 데이터 소스 자동 제안
 
 ### 3.3 데이터 변환
 
-| 빌더 | 변환 방식 | 언어 | 제한사항 |
-|------|----------|------|----------|
-| Webflow | ❌ 없음 | - | CMS 구조 그대로 사용 |
-| Bubble | 표현식 | Bubble 표현식 | 복잡한 변환 어려움 |
-| Retool | Transformer | JavaScript | Read-only (side effect 불가) |
-| Framer | ❌ 없음 | - | API 응답 그대로 사용 |
-| Plasmic | Code Component | JavaScript/TypeScript | 코드 작성 필요 |
-| Appsmith | JS Objects | JavaScript | Async 지원 |
-| FlutterFlow | Custom Functions | Dart | 제한적 |
+| 빌더 | 변환 방식 | 언어 | 제한사항 | 유연성 |
+|------|----------|------|----------|--------|
+| Webflow | ❌ 없음 | - | CMS 구조 그대로 사용 | ⭐ |
+| Bubble | 표현식 | Bubble 표현식 | 복잡한 변환 어려움 | ⭐⭐ |
+| Retool | Transformer | JavaScript | Read-only (side effect 불가) | ⭐⭐⭐⭐ |
+| Framer | ❌ 없음 | - | API 응답 그대로 사용 | ⭐ |
+| Plasmic | Code Component | JavaScript/TypeScript | 코드 작성 필요 | ⭐⭐⭐⭐⭐ |
+| Appsmith | JS Objects | JavaScript | Async 지원 | ⭐⭐⭐⭐ |
+| FlutterFlow | Custom Functions | Dart | 제한적 | ⭐⭐ |
+| **XStudio** | **3단계 하이브리드** | JS/TS | 노코드→로우코드→풀코드 | ⭐⭐⭐⭐⭐ |
+
+> **XStudio 변환**: 3단계 하이브리드 시스템 (Plasmic 수준 + 노코드 접근성)
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────┐
+> │  Level 1: 노코드 (Response Mapping)        👤 누구나        │
+> ├─────────────────────────────────────────────────────────────┤
+> │  { dataPath: "data.items",                                  │
+> │    fieldMappings: { id: "product_id", name: "title" } }     │
+> └─────────────────────────────────────────────────────────────┘
+> ┌─────────────────────────────────────────────────────────────┐
+> │  Level 2: 로우코드 (Transformer)          👨‍💻 기본 JS       │
+> ├─────────────────────────────────────────────────────────────┤
+> │  return data.map(item => ({                                 │
+> │    ...item, fullPrice: `$${item.price}`                     │
+> │  }))                                                        │
+> └─────────────────────────────────────────────────────────────┘
+> ┌─────────────────────────────────────────────────────────────┐
+> │  Level 3: 풀코드 (Custom Function)        🧑‍💻 개발자        │
+> ├─────────────────────────────────────────────────────────────┤
+> │  // TypeScript, async/await, 외부 라이브러리 지원           │
+> │  export async function transform(data: Product[]) {         │
+> │    const enriched = await Promise.all(                      │
+> │      data.map(async (item) => {                             │
+> │        const stock = await fetchStock(item.id);             │
+> │        return { ...item, stock };                           │
+> │      })                                                     │
+> │    );                                                       │
+> │    return enriched.filter(p => p.stock > 0);                │
+> │  }                                                          │
+> └─────────────────────────────────────────────────────────────┘
+> ```
+>
+> **차별점**: Plasmic은 Level 3만 지원 → XStudio는 Level 1~3 모두 지원
 
 ### 3.4 실시간 업데이트
 
-| 빌더 | 지원 | 방식 | 제한사항 |
-|------|------|------|----------|
-| Webflow | ❌ | - | 정적 사이트 |
-| Bubble | ✅ | 내장 DB 변경 감지 | Bubble DB만 |
-| Retool | ⚠️ | Polling | WebSocket 제한적 |
-| Framer | ❌ | - | Fetch는 1회성 |
-| FlutterFlow | ✅ | Firestore Realtime | Firestore만 |
-| Appsmith | ⚠️ | Polling, WebSocket | 설정 필요 |
+| 빌더 | 지원 | 방식 | 제한사항 | 적합 용도 |
+|------|------|------|----------|----------|
+| Webflow | ❌ | - | 정적 사이트 | 콘텐츠 사이트 |
+| Bubble | ✅ | 내장 DB 변경 감지 | Bubble DB만 | SaaS 앱 |
+| Retool | ⚠️ | Polling | WebSocket 제한적 | 대시보드 |
+| Framer | ❌ | - | Fetch는 1회성 | 마케팅 사이트 |
+| FlutterFlow | ✅ | Firestore Realtime | Firestore만 | 모바일 앱 |
+| Appsmith | ⚠️ | Polling, WebSocket | 설정 필요 | 어드민 패널 |
+| **XStudio** | ⚠️ | Event-driven Refresh | WebSocket 미지원 | 엔터프라이즈 어드민 |
+
+> **XStudio 전략**: 실시간 WebSocket 대신 **Event-driven Refresh** 방식 채택
+> - `onPageLoad` → API 호출 → DataTable 갱신
+> - `onInterval` → 주기적 폴링 (선택적)
+> - `onComponentEvent` → 사용자 액션 트리거
+> - **이유**: 외부 REST API 기반이므로 WebSocket 실시간은 비현실적, 이벤트 기반 갱신이 실용적
+
+### 3.5 XStudio 종합 포지셔닝
+
+| 기능 영역 | XStudio 접근법 | 벤치마크 빌더 | 차별점 |
+|----------|--------------|--------------|--------|
+| **데이터 저장** | DataTable (스키마 + Mock + Runtime) | Bubble Data Type | 내장 DB로 독립 동작 + API 연동 가능 |
+| **API 연동** | REST API Endpoint | Retool Resource | 노코드 필드 매핑 + 선택적 Transformer |
+| **상태 관리** | Variables (Global/Page) | Appsmith App State | localStorage 영속화 옵션 |
+| **바인딩** | **Visual Picker + 무스타쉬** | Webflow (UI) + Retool (문법) | 노코드 클릭 + 고급 직접입력 |
+| **변환** | **3단계 하이브리드** (노코드→로우코드→풀코드) | Plasmic + Retool | Plasmic 유연성 + 노코드 접근성 |
+| **실시간** | Event-driven Refresh | Appsmith Polling | 실용적 (REST 기반) |
+| **타겟 유저** | SI/엔터프라이즈 | Retool/Appsmith | 기업 내부 시스템 통합 |
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         XStudio 포지셔닝 맵                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│                    코드 필요 ↑                                          │
+│                              │                                          │
+│              ┌───────────────┼───────────────┐                          │
+│              │    Plasmic    │               │                          │
+│              │               │   OutSystems  │                          │
+│              │               │    Mendix     │                          │
+│  노코드 중심 ├───────────────┼───────────────┤ 엔터프라이즈             │
+│              │               │               │                          │
+│              │   Webflow  ┌──┴──┐  Retool    │                          │
+│              │   Framer   │XStu-│  Appsmith  │                          │
+│              │   Bubble   │ dio │            │                          │
+│              │            └──┬──┘            │                          │
+│              └───────────────┼───────────────┘                          │
+│                              │                                          │
+│                    개인/SMB ↓                                           │
+│                                                                         │
+│  💡 XStudio = Retool 수준 기능 + 노코드 친화적 UX + 엔터프라이즈 타겟   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 

@@ -1,7 +1,8 @@
 # Data Panel System Design
 
-**Status:** Draft
+**Status:** Draft (v2.0 - Redesigned)
 **Created:** 2025-11-28
+**Updated:** 2025-11-29
 **Author:** Claude
 **Related:** Event System, DataBinding, Collection Components
 
@@ -20,67 +21,84 @@
 
 Frontend 개발자가 Backend API 없이도 화면을 먼저 개발할 수 있는 **데이터 추상화 시스템** 구축
 
-### 1.3 Design Principles
+### 1.3 XStudio 포지셔닝 (업계 최고 수준)
 
-**참고한 빌더들:**
+| 기능 영역 | XStudio 접근법 | 벤치마크 | 점수 |
+|----------|--------------|---------|------|
+| **데이터 저장** | DataTable (스키마 + Mock + Runtime) | Bubble | ⭐⭐⭐⭐ |
+| **바인딩 UX** | Visual Picker + 무스타쉬 | Webflow + Retool | ⭐⭐⭐⭐⭐ |
+| **변환** | 3단계 하이브리드 (노코드→로우코드→풀코드) | Plasmic + Retool | ⭐⭐⭐⭐⭐ |
+| **실시간** | Event-driven Refresh | Appsmith | ⭐⭐⭐ |
+| **총점** | | | **21/25** 🏆 |
+
+### 1.4 Design Principles
+
+**참고한 빌더들의 장점 조합:**
+- **Webflow**: 드래그 드랍 바인딩 UX (⭐ 쉬움)
 - **Retool**: Query + Transformer 패턴
-- **Appsmith**: Datasource + 리액티브 바인딩
-- **Bubble**: Data Type + Workflow
-- **FlutterFlow**: Backend Query + Custom Data Type
+- **Plasmic**: Full JS/TS Code Component (⭐⭐⭐⭐⭐ 유연성)
+- **Appsmith**: Datasource + 리액티브 바인딩 `{{}}`
+- **Bubble**: Data Type 스키마 정의
+- **FlutterFlow**: Mock → Real 전환 패턴
 
 **핵심 원칙:**
 1. **스키마 우선** - 데이터 구조를 먼저 정의
 2. **Mock 데이터** - API 없이 UI 개발 가능
-3. **선언적 바인딩** - 컴포넌트와 데이터 연결
-4. **이벤트 기반** - API 호출 시점 제어
+3. **Visual + Code** - 노코드 사용자와 개발자 모두 지원
+4. **3단계 변환** - 복잡도에 따라 선택
 
 ---
 
 ## 2. Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Data Panel Architecture                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    Data Panel (UI)                        │   │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │   │
-│  │  │ DataTables  │ │ API         │ │ Variables           │ │   │
-│  │  │ Tab         │ │ Endpoints   │ │ (Global State)      │ │   │
-│  │  │             │ │ Tab         │ │ Tab                 │ │   │
-│  │  └─────────────┘ └─────────────┘ └─────────────────────┘ │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    Data Store (Zustand)                   │   │
-│  │                                                           │   │
-│  │  dataTables: Map<string, DataTable>                       │   │
-│  │  apiEndpoints: Map<string, ApiEndpoint>                   │   │
-│  │  variables: Map<string, Variable>                         │   │
-│  │                                                           │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    Runtime Engine                         │   │
-│  │                                                           │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐   │   │
-│  │  │ API Caller  │  │ Data        │  │ Binding         │   │   │
-│  │  │             │  │ Transformer │  │ Resolver        │   │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────────┘   │   │
-│  │                                                           │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    Component Layer                        │   │
-│  │                                                           │   │
-│  │  ListBox ← dataSource: "users"                            │   │
-│  │  GridList ← dataSource: "products"                        │   │
-│  │  Text ← binding: "{{users[0].name}}"                      │   │
-│  │                                                           │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Data Panel Architecture (v2.0)                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │                    Data Panel (UI)                                  │ │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌───────────┐ ┌─────────────────┐ │ │
+│  │  │ DataTables  │ │ API         │ │ Variables │ │ Transformers    │ │ │
+│  │  │ Tab         │ │ Endpoints   │ │ Tab       │ │ Tab (NEW)       │ │ │
+│  │  │             │ │ Tab         │ │           │ │                 │ │ │
+│  │  └─────────────┘ └─────────────┘ └───────────┘ └─────────────────┘ │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │                    Data Store (Zustand)                             │ │
+│  │                                                                     │ │
+│  │  dataTables: Map<string, DataTable>                                 │ │
+│  │  apiEndpoints: Map<string, ApiEndpoint>                             │ │
+│  │  variables: Map<string, Variable>                                   │ │
+│  │  transformers: Map<string, Transformer>  ← NEW (3단계 변환)         │ │
+│  │                                                                     │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │                    Runtime Engine                                   │ │
+│  │                                                                     │ │
+│  │  ┌─────────────┐  ┌──────────────────────────┐  ┌────────────────┐ │ │
+│  │  │ API Caller  │  │ 3-Tier Transformer       │  │ Binding        │ │ │
+│  │  │             │  │ ┌──────────────────────┐ │  │ Resolver       │ │ │
+│  │  │             │  │ │L1: Response Mapping  │ │  │ (Visual Picker │ │ │
+│  │  │             │  │ │L2: JS Transformer    │ │  │  + Mustache)   │ │ │
+│  │  │             │  │ │L3: Custom Function   │ │  │                │ │ │
+│  │  │             │  │ └──────────────────────┘ │  │                │ │ │
+│  │  └─────────────┘  └──────────────────────────┘  └────────────────┘ │ │
+│  │                                                                     │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                ↓                                         │
+│  ┌────────────────────────────────────────────────────────────────────┐ │
+│  │                    Component Layer                                  │ │
+│  │                                                                     │ │
+│  │  ListBox ← dataSource: "users"                                      │ │
+│  │  GridList ← dataSource: "products"                                  │ │
+│  │  Text ← binding: "{{users[0].name}}"  (Visual Picker로 생성)        │ │
+│  │                                                                     │ │
+│  └────────────────────────────────────────────────────────────────────┘ │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -321,9 +339,51 @@ type VariableType =
 
 ---
 
-### 3.4 DataBinding (데이터 바인딩)
+### 3.4 DataBinding (데이터 바인딩) - Visual Picker 하이브리드
 
-**역할:** 컴포넌트 속성과 데이터 연결
+**역할:** 컴포넌트 속성과 데이터 연결 (노코드 UI + 고급 직접입력)
+
+**XStudio 바인딩 UX (⭐⭐⭐⭐⭐ - Webflow 수준 쉬움 + Retool 파워)**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🔗 Data Binding                                            │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ 🔍 Search data source...                           ▼│    │  ← ComboBox (검색 가능)
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  📂 DataTables                                              │
+│    └─ users                                                 │
+│        ├─ id           ← 클릭 시 {{users[0].id}} 삽입       │
+│        ├─ name         ← 클릭 시 {{users[0].name}} 삽입     │
+│        ├─ email                                             │
+│        └─ avatar                                            │
+│  📂 Variables                                               │
+│    ├─ authToken        ← 클릭 시 {{variables.authToken}}    │
+│    ├─ currentPage                                           │
+│    └─ selectedUserId                                        │
+│  📂 API Responses                                           │
+│    └─ getUsers.data                                         │
+│                                                             │
+│  ───────────────────────────────────────────────────────    │
+│  Result: {{users[0].name}}                                  │  ← 자동 생성된 표현식
+│  ───────────────────────────────────────────────────────    │
+│                                                             │
+│  ☑️ Advanced Mode (직접 입력)                               │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ {{users.filter(u => u.role === 'admin')[0].name}}   │    │  ← 복잡한 표현식 직접 작성
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  💡 자동완성: 입력 중 데이터 소스 제안                       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**장점:**
+- **노코드 사용자**: 클릭만으로 바인딩 완성 (Webflow 수준)
+- **개발자**: Advanced Mode에서 JavaScript 표현식 직접 작성
+- **자동완성**: `{{`  입력 시 데이터 소스 자동 제안
 
 ```typescript
 // Element.dataBinding 확장
@@ -376,6 +436,156 @@ interface BindingExpression {
   }
 }
 ```
+
+---
+
+### 3.5 Transformer (3단계 변환 시스템) - NEW
+
+**역할:** API 응답 데이터 변환 (Plasmic 수준 유연성 + 노코드 접근성)
+
+**XStudio 변환 시스템 (⭐⭐⭐⭐⭐ - 업계 최고)**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    3단계 데이터 변환 시스템                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Level 1: 노코드 (Response Mapping)              👤 누구나       │
+│  ────────────────────────────────────────────────────────────── │
+│  │ Data Path:     [data.users                              ]│   │
+│  │ Field Mappings:                                          │   │
+│  │   user_name → name                                       │   │
+│  │   user_email → email                                     │   │
+│  │   created_at → createdAt                                 │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  Level 2: 로우코드 (Transformer)                 👨‍💻 기본 JS     │
+│  ────────────────────────────────────────────────────────────── │
+│  │ ┌────────────────────────────────────────────────────────┐│  │
+│  │ │ return data.map(item => ({                            ││  │
+│  │ │   ...item,                                            ││  │
+│  │ │   fullName: `${item.firstName} ${item.lastName}`,     ││  │
+│  │ │   formattedPrice: `$${item.price.toFixed(2)}`         ││  │
+│  │ │ }))                                                   ││  │
+│  │ └────────────────────────────────────────────────────────┘│  │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  Level 3: 풀코드 (Custom Function)               🧑‍💻 개발자      │
+│  ────────────────────────────────────────────────────────────── │
+│  │ ┌────────────────────────────────────────────────────────┐│  │
+│  │ │ // TypeScript 지원, async/await, 외부 라이브러리       ││  │
+│  │ │ export async function transformProducts(              ││  │
+│  │ │   data: Product[],                                    ││  │
+│  │ │   context: TransformContext                           ││  │
+│  │ │ ): Promise<EnrichedProduct[]> {                       ││  │
+│  │ │                                                       ││  │
+│  │ │   const enriched = await Promise.all(                 ││  │
+│  │ │     data.map(async (item) => {                        ││  │
+│  │ │       const stock = await context.api.fetchStock(     ││  │
+│  │ │         item.id                                       ││  │
+│  │ │       );                                              ││  │
+│  │ │       const rating = await context.api.fetchRating(   ││  │
+│  │ │         item.id                                       ││  │
+│  │ │       );                                              ││  │
+│  │ │       return {                                        ││  │
+│  │ │         ...item,                                      ││  │
+│  │ │         stock,                                        ││  │
+│  │ │         rating,                                       ││  │
+│  │ │         available: stock > 0                          ││  │
+│  │ │       };                                              ││  │
+│  │ │     })                                                ││  │
+│  │ │   );                                                  ││  │
+│  │ │                                                       ││  │
+│  │ │   return enriched                                     ││  │
+│  │ │     .filter(p => p.available)                         ││  │
+│  │ │     .sort((a, b) => b.rating - a.rating);             ││  │
+│  │ │ }                                                     ││  │
+│  │ └────────────────────────────────────────────────────────┘│  │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  💡 차별점: Plasmic은 Level 3만 지원                             │
+│            XStudio는 Level 1~3 모두 지원!                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+```typescript
+// Transformer 타입 정의
+interface Transformer {
+  id: string;
+  name: string;
+  project_id: string;
+
+  // 변환 레벨
+  level: TransformLevel;
+
+  // Level 1: Response Mapping (노코드)
+  responseMapping?: {
+    dataPath: string;              // "data.users"
+    fieldMappings: FieldMapping[]; // 필드명 변환
+  };
+
+  // Level 2: JS Transformer (로우코드)
+  jsTransformer?: {
+    code: string;                  // JavaScript 코드
+    // 자동으로 `data`와 `context` 변수가 주입됨
+  };
+
+  // Level 3: Custom Function (풀코드)
+  customFunction?: {
+    code: string;                  // TypeScript 함수 전체
+    functionName: string;          // export된 함수명
+    dependencies?: string[];       // 외부 라이브러리 (lodash, dayjs 등)
+  };
+
+  // 공통
+  inputDataTable?: string;         // 입력 DataTable
+  outputDataTable?: string;        // 출력 DataTable
+  enabled: boolean;
+
+  created_at?: string;
+  updated_at?: string;
+}
+
+type TransformLevel = "level1_mapping" | "level2_transformer" | "level3_custom";
+
+interface FieldMapping {
+  sourceKey: string;               // API 응답 필드명
+  targetKey: string;               // DataTable 필드명
+  transform?: "uppercase" | "lowercase" | "trim" | "number" | "boolean" | "date";
+}
+
+interface TransformContext {
+  // 다른 DataTable 접근
+  dataTables: Record<string, unknown[]>;
+
+  // 변수 접근
+  variables: Record<string, unknown>;
+
+  // 추가 API 호출 (Level 3 전용)
+  api: {
+    fetch: (url: string, options?: RequestInit) => Promise<unknown>;
+    fetchStock: (productId: string) => Promise<number>;
+    fetchRating: (productId: string) => Promise<number>;
+  };
+
+  // 유틸리티
+  utils: {
+    formatDate: (date: string, format: string) => string;
+    formatCurrency: (amount: number, currency: string) => string;
+  };
+}
+```
+
+**비교: XStudio vs 경쟁사**
+
+| 빌더 | Level 1 | Level 2 | Level 3 | 총점 |
+|------|---------|---------|---------|------|
+| **XStudio** | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| Plasmic | ❌ | ❌ | ✅ | ⭐⭐⭐ |
+| Retool | ❌ | ✅ | ❌ | ⭐⭐⭐ |
+| Appsmith | ❌ | ✅ | ❌ | ⭐⭐⭐ |
+| Webflow | ❌ | ❌ | ❌ | ⭐ |
 
 ---
 
@@ -546,6 +756,7 @@ export interface ApiEndpoint {
   bodyTemplate?: string;
   responseMapping: ResponseMapping;
   targetDataTable?: string;
+  transformerId?: string;          // NEW: 연결된 Transformer
   timeout?: number;
   retryCount?: number;
   created_at?: string;
@@ -577,7 +788,18 @@ export interface ResponseMapping {
 export interface FieldMapping {
   sourceKey: string;
   targetKey: string;
+  transform?: FieldTransformType;  // NEW: 필드 레벨 변환
 }
+
+// NEW: 필드 변환 타입
+export type FieldTransformType =
+  | "uppercase"
+  | "lowercase"
+  | "trim"
+  | "number"
+  | "boolean"
+  | "date"
+  | "json";
 
 export interface PaginationConfig {
   type: "offset" | "cursor" | "page";
@@ -599,6 +821,86 @@ export interface Variable {
 }
 
 export type VariableType = "string" | "number" | "boolean" | "object" | "array";
+
+// ============================================================
+// NEW: 3단계 Transformer 타입 정의
+// ============================================================
+
+export interface Transformer {
+  id: string;
+  name: string;
+  project_id: string;
+
+  // 변환 레벨
+  level: TransformLevel;
+
+  // Level 1: Response Mapping (노코드)
+  responseMapping?: Level1ResponseMapping;
+
+  // Level 2: JS Transformer (로우코드)
+  jsTransformer?: Level2JsTransformer;
+
+  // Level 3: Custom Function (풀코드)
+  customFunction?: Level3CustomFunction;
+
+  // 공통
+  inputDataTable?: string;
+  outputDataTable?: string;
+  enabled: boolean;
+
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type TransformLevel =
+  | "level1_mapping"      // 노코드: 필드 매핑만
+  | "level2_transformer"  // 로우코드: 간단한 JS
+  | "level3_custom";      // 풀코드: TypeScript + async
+
+// Level 1: 노코드 필드 매핑
+export interface Level1ResponseMapping {
+  dataPath: string;
+  fieldMappings: TransformFieldMapping[];
+}
+
+export interface TransformFieldMapping {
+  sourceKey: string;
+  targetKey: string;
+  transform?: FieldTransformType;
+  defaultValue?: unknown;
+}
+
+// Level 2: 로우코드 JavaScript
+export interface Level2JsTransformer {
+  code: string;  // return data.map(...)
+  // 자동 주입: data (입력), context (컨텍스트)
+}
+
+// Level 3: 풀코드 TypeScript
+export interface Level3CustomFunction {
+  code: string;           // 전체 함수 코드
+  functionName: string;   // export된 함수명
+  dependencies?: string[]; // ["lodash", "dayjs"]
+}
+
+// Transformer 실행 컨텍스트
+export interface TransformContext {
+  dataTables: Record<string, unknown[]>;
+  variables: Record<string, unknown>;
+  api: TransformApiContext;
+  utils: TransformUtilsContext;
+}
+
+export interface TransformApiContext {
+  fetch: (url: string, options?: RequestInit) => Promise<unknown>;
+}
+
+export interface TransformUtilsContext {
+  formatDate: (date: string | Date, format: string) => string;
+  formatCurrency: (amount: number, currency?: string) => string;
+  parseJSON: (str: string) => unknown;
+  get: (obj: unknown, path: string, defaultValue?: unknown) => unknown;
+}
 ```
 
 ---
@@ -610,13 +912,21 @@ export type VariableType = "string" | "number" | "boolean" | "object" | "array";
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { DataTable, ApiEndpoint, Variable } from '../../types/builder/data.types';
+import type {
+  DataTable,
+  ApiEndpoint,
+  Variable,
+  Transformer,           // NEW
+  TransformContext,      // NEW
+  TransformLevel,        // NEW
+} from '../../types/builder/data.types';
 
 interface DataState {
   // Collections
   dataTables: DataTable[];
   apiEndpoints: ApiEndpoint[];
   variables: Variable[];
+  transformers: Transformer[];   // NEW: 3단계 변환기
 
   // Runtime Data (메모리에만 존재)
   runtimeData: Map<string, Record<string, unknown>[]>;
@@ -640,16 +950,23 @@ interface DataState {
   deleteVariable: (id: string) => void;
   setVariableValue: (name: string, value: unknown) => void;
 
+  // Actions - Transformer (NEW)
+  addTransformer: (transformer: Transformer) => void;
+  updateTransformer: (id: string, updates: Partial<Transformer>) => void;
+  deleteTransformer: (id: string) => void;
+  executeTransformer: (id: string, inputData: unknown[]) => Promise<unknown[]>;
+
   // Actions - Runtime
   setRuntimeData: (dataTableName: string, data: Record<string, unknown>[]) => void;
   clearRuntimeData: (dataTableName: string) => void;
 
-  // Actions - API Execution
+  // Actions - API Execution (with Transformer integration)
   executeApi: (endpointId: string, params?: Record<string, unknown>) => Promise<void>;
 
   // Getters
   getDataTableData: (name: string) => Record<string, unknown>[];
   getVariableValue: (name: string) => unknown;
+  getTransformContext: () => TransformContext;  // NEW
 }
 
 export const useDataStore = create<DataState>()(
@@ -658,6 +975,7 @@ export const useDataStore = create<DataState>()(
       dataTables: [],
       apiEndpoints: [],
       variables: [],
+      transformers: [],          // NEW
       runtimeData: new Map(),
       loadingApis: new Set(),
 
@@ -734,6 +1052,147 @@ export const useDataStore = create<DataState>()(
           }));
         }
       },
+
+      // ============================================================
+      // NEW: Transformer Actions (3단계 변환)
+      // ============================================================
+
+      addTransformer: (transformer) => {
+        set((state) => ({
+          transformers: [...state.transformers, transformer]
+        }));
+      },
+
+      updateTransformer: (id, updates) => {
+        set((state) => ({
+          transformers: state.transformers.map((t) =>
+            t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t
+          )
+        }));
+      },
+
+      deleteTransformer: (id) => {
+        set((state) => ({
+          transformers: state.transformers.filter((t) => t.id !== id)
+        }));
+      },
+
+      executeTransformer: async (id, inputData) => {
+        const transformer = get().transformers.find((t) => t.id === id);
+        if (!transformer || !transformer.enabled) {
+          return inputData;
+        }
+
+        const context = get().getTransformContext();
+
+        switch (transformer.level) {
+          case 'level1_mapping': {
+            // Level 1: 노코드 Response Mapping
+            const { dataPath, fieldMappings } = transformer.responseMapping || {};
+
+            let data = inputData;
+
+            // Extract data from path
+            if (dataPath) {
+              const paths = dataPath.split('.');
+              for (const path of paths) {
+                data = (data as Record<string, unknown>)?.[path] as unknown[];
+              }
+            }
+
+            // Apply field mappings
+            if (Array.isArray(data) && fieldMappings?.length) {
+              data = data.map((item: Record<string, unknown>) => {
+                const mapped: Record<string, unknown> = {};
+                fieldMappings.forEach((mapping) => {
+                  const value = item[mapping.sourceKey];
+                  mapped[mapping.targetKey] = applyFieldTransform(
+                    value,
+                    mapping.transform
+                  );
+                });
+                return mapped;
+              });
+            }
+
+            return data as unknown[];
+          }
+
+          case 'level2_transformer': {
+            // Level 2: 로우코드 JavaScript
+            const { code } = transformer.jsTransformer || {};
+            if (!code) return inputData;
+
+            try {
+              // 안전한 eval 대체 (new Function 사용)
+              const fn = new Function('data', 'context', code);
+              return fn(inputData, context);
+            } catch (error) {
+              console.error('Transformer execution error:', error);
+              return inputData;
+            }
+          }
+
+          case 'level3_custom': {
+            // Level 3: 풀코드 TypeScript
+            // 실제 구현 시 별도 모듈 로더 필요
+            const { code, functionName } = transformer.customFunction || {};
+            if (!code || !functionName) return inputData;
+
+            try {
+              // TODO: 별도의 샌드박스 환경에서 실행
+              // 프로덕션에서는 Web Worker 또는 iframe 샌드박스 사용
+              const fn = new Function('data', 'context', `
+                ${code}
+                return ${functionName}(data, context);
+              `);
+              return await fn(inputData, context);
+            } catch (error) {
+              console.error('Custom function execution error:', error);
+              return inputData;
+            }
+          }
+
+          default:
+            return inputData;
+        }
+      },
+
+      getTransformContext: () => ({
+        dataTables: Object.fromEntries(
+          get().dataTables.map((dt) => [dt.name, get().getDataTableData(dt.name)])
+        ),
+        variables: Object.fromEntries(
+          get().variables.map((v) => [v.name, v.defaultValue])
+        ),
+        api: {
+          fetch: async (url, options) => {
+            const response = await fetch(url, options);
+            return response.json();
+          },
+        },
+        utils: {
+          formatDate: (date, format) => {
+            // 간단한 날짜 포맷팅 (dayjs 사용 권장)
+            return new Date(date).toLocaleDateString();
+          },
+          formatCurrency: (amount, currency = 'USD') => {
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency,
+            }).format(amount);
+          },
+          parseJSON: (str) => JSON.parse(str),
+          get: (obj, path, defaultValue) => {
+            const keys = path.split('.');
+            let result: unknown = obj;
+            for (const key of keys) {
+              result = (result as Record<string, unknown>)?.[key];
+            }
+            return result ?? defaultValue;
+          },
+        },
+      }),
 
       // Runtime Actions
       setRuntimeData: (dataTableName, data) => {
