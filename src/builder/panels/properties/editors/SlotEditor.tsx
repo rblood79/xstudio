@@ -22,7 +22,7 @@ import {
 } from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
-import { useInspectorState } from "../../../inspector/stores/useInspectorState";
+import { useInspectorState } from "../../../inspector/hooks/useInspectorState";
 
 export const SlotEditor = memo(function SlotEditor({
   elementId,
