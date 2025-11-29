@@ -87,7 +87,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   ];
 
   return (
-    <nav className="sidebar-nav">
+    <nav className="panel-nav">
       <ul className="nav-list">
         {tabs.map((tab) => (
           <li key={tab.id}>

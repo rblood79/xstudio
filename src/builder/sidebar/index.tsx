@@ -2082,7 +2082,7 @@ export default function Sidebar({
 
     if (activeTabs.has("nodes")) {
       contents.push(
-        <div key="nodes" className="sidebar-section nodes">
+        <div key="nodes" className="panel-section nodes">
           <NodesPanelWithTabs
             pages={pages}
             pageList={pageList}
@@ -2105,7 +2105,7 @@ export default function Sidebar({
 
     if (activeTabs.has("components")) {
       contents.push(
-        <div key="components" className="sidebar-section components">
+        <div key="components" className="panel-section components">
           <Components
             handleAddElement={handleAddElement}
             selectedElementId={selectedElementId}
@@ -2116,7 +2116,7 @@ export default function Sidebar({
 
     if (activeTabs.has("theme")) {
       contents.push(
-        <div key="theme" className="sidebar-section theme">
+        <div key="theme" className="panel-section theme">
           <ThemesPanel isActive={true} />
         </div>
       );
@@ -2124,7 +2124,7 @@ export default function Sidebar({
 
     if (activeTabs.has("ai")) {
       contents.push(
-        <div key="ai" className="sidebar-section ai">
+        <div key="ai" className="panel-section ai">
           <AIPanel isActive={true} />
         </div>
       );
@@ -2132,7 +2132,7 @@ export default function Sidebar({
 
     if (activeTabs.has("settings")) {
       contents.push(
-        <div key="settings" className="sidebar-section settings settings">
+        <div key="settings" className="panel-section settings">
           <SettingsPanel isActive={true} />
         </div>
       );
@@ -2141,7 +2141,7 @@ export default function Sidebar({
     return contents.length > 0 ? (
       contents
     ) : (
-      <div className="sidebar-empty-state"></div>
+      <div className="panel-empty-state"></div>
     );
   };
 
@@ -2173,7 +2173,7 @@ export default function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-container">{renderContent()}</div>
+      <div className="panel-content">{renderContent()}</div>
       {children}
     </aside>
   );

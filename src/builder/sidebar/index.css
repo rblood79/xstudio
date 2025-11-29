@@ -260,16 +260,7 @@
     }
   }
 
-  .sidebar-section-title {
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-medium);
-    padding: 0 12px;
-    display: none;
-  }
-
   /* Empty States */
-  .panel-empty-state,
-  .sidebar-empty-state,
   .panel-empty-state {
     display: flex;
     justify-content: center;
@@ -297,40 +288,4 @@
     cursor: pointer;
   }
 
-  /* Backward Compatibility - 기존 sidebar-* 클래스들 유지 */
-  .sidebar-nav {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    width: var(--panel-nav-width);
-    height: 100%;
-    justify-content: space-between;
-    background-color: var(--surface);
-    border-right: 1px solid var(--outline-variant);
-  }
-
-  .sidebar-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-  }
-
-  .sidebar-section {
-    width: 100%;
-    &.sidebar-content {
-      display: flex;
-      flex-direction: column;
-    }
-
-    &.components {
-      width: var(--sidebar-width);
-    }
-  }
-
-  /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
-  .nodes-panel .sidebar-nav {
-    display: none;
-  }
 }
