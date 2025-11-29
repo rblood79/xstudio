@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import postcssImport from "postcss-import";
 import postcssNested from "postcss-nested";
 import path from "path";
 
@@ -52,7 +51,7 @@ export default defineConfig(({ command }) => {
     },
     css: {
       postcss: {
-        plugins: [postcssImport(), postcssNested()],
+        plugins: [postcssNested()],
       },
       modules: {
         // CSS Modules 설정

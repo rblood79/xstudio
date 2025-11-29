@@ -1,0 +1,17 @@
+@layer builder-system {
+  /* ========================================
+   * Footer Layout
+   * Extracted from main/index.css
+   * ======================================== */
+
+  .app footer {
+    isolation: isolate;
+    grid-area: footer;
+    background: var(--highlight-background-hover);
+  }
+
+  .app footer .contents {
+    height: fit-content;
+    display: none;
+  }
+}

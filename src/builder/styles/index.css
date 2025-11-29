@@ -26,7 +26,8 @@
  *
  * 5. Modules Layer
  *    - Feature-specific modules
- *    - Main, Sidebar, Inspector, ThemeStudio
+ *    - Panel navigation, containers, element tree
+ *    - Theme Studio
  *
  * Note: Component styles (React Aria) are imported separately
  * via src/shared/components/index.css
@@ -47,26 +48,13 @@
 /* @import './3-utilities/spacing.css'; */
 
 /* ==================== 4. Layout Layer ==================== */
-/* @import './4-layout/grid.css'; */
-/* @import './4-layout/header.css'; */
-/* @import './4-layout/panels.css'; */
+@import './4-layout/header.css';
+@import './4-layout/workspace.css';
+@import './4-layout/footer.css';
 
 /* ==================== 5. Modules Layer ==================== */
-/* @import './5-modules/main.css'; */
-/* @import './5-modules/sidebar.css'; */
-/* @import './5-modules/inspector.css'; */
-/* @import './5-modules/theme-studio.css'; */
-
-/* Temporary: Legacy imports (will be migrated) */
-@import '../main/index.css';
-@import '../sidebar/index.css';
-/* Note: Inspector CSS is handled via panels/common/index.css */
-
-/* ==================== Theme Studio ==================== */
-@import '../panels/themes/styles/ThemeStudio.css';
-@import '../panels/themes/styles/TokenEditor.css';
-@import '../panels/themes/styles/AIThemeGenerator.css';
-@import '../panels/themes/styles/FigmaImporter.css';
-@import '../panels/themes/styles/ThemeExporter.css';
-@import '../panels/themes/styles/DarkModeGenerator.css';
-@import '../panels/themes/styles/FigmaPluginExporter.css';
+@import './5-modules/panel-nav.css';
+@import './5-modules/panel-container.css';
+@import './5-modules/element-tree.css';
+@import './5-modules/error-loading.css';
+@import './5-modules/themes/index.css';

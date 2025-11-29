@@ -8,6 +8,8 @@ import {
   useParams,
   useLocation,
 } from "react-router";
+
+// Single CSS entry point - all imports handled in index.css via @import
 import "./index.css";
 import App from "./App.tsx";
 import Dashboard from "./dashboard";
