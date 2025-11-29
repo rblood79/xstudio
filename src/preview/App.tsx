@@ -521,7 +521,7 @@ function PreviewContent() {
 // Preview App Component
 // ============================================
 
-export function PreviewApp() {
+export function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const messageHandlerRef = useRef<MessageHandler | null>(null);
 
@@ -559,7 +559,7 @@ export function PreviewApp() {
       setIsInitialized(true);
     });
 
-    console.log('[PreviewApp] Initialized and ready');
+    console.log('[Preview App] Initialized and ready');
 
     return () => {
       window.removeEventListener('message', handleMessage);
@@ -586,4 +586,4 @@ export function PreviewApp() {
   );
 }
 
-export default PreviewApp;
+export default App;
