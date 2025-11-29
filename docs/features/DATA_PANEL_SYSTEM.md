@@ -13,6 +13,7 @@
 ### 1.1 Problem Statement
 
 현재 XStudio의 데이터 관리:
+
 - `MOCK_DATA`는 컴포넌트 테스트용 샘플 데이터
 - 실제 외부 API 연동 구조 없음
 - Frontend 개발 시 Backend API 완성 전까지 화면 개발 어려움
@@ -23,17 +24,18 @@ Frontend 개발자가 Backend API 없이도 화면을 먼저 개발할 수 있�
 
 ### 1.3 XStudio 포지셔닝 (업계 최고 수준)
 
-| 기능 영역 | XStudio 접근법 | 벤치마크 | 점수 |
-|----------|--------------|---------|------|
-| **데이터 저장** | DataTable (스키마 + Mock + Runtime) | Bubble | ⭐⭐⭐⭐ |
-| **바인딩 UX** | Visual Picker + 무스타쉬 | Webflow + Retool | ⭐⭐⭐⭐⭐ |
-| **변환** | 3단계 하이브리드 (노코드→로우코드→풀코드) | Plasmic + Retool | ⭐⭐⭐⭐⭐ |
-| **실시간** | Event-driven Refresh | Appsmith | ⭐⭐⭐ |
-| **총점** | | | **21/25** 🏆 |
+| 기능 영역       | XStudio 접근법                            | 벤치마크         | 점수         |
+| --------------- | ----------------------------------------- | ---------------- | ------------ |
+| **데이터 저장** | DataTable (스키마 + Mock + Runtime)       | Bubble           | ⭐⭐⭐⭐     |
+| **바인딩 UX**   | Visual Picker + 무스타쉬                  | Webflow + Retool | ⭐⭐⭐⭐⭐   |
+| **변환**        | 3단계 하이브리드 (노코드→로우코드→풀코드) | Plasmic + Retool | ⭐⭐⭐⭐⭐   |
+| **실시간**      | Event-driven Refresh                      | Appsmith         | ⭐⭐⭐       |
+| **총점**        |                                           |                  | **21/25** 🏆 |
 
 ### 1.4 Design Principles
 
 **참고한 빌더들의 장점 조합:**
+
 - **Webflow**: 드래그 드랍 바인딩 UX (⭐ 쉬움)
 - **Retool**: Query + Transformer 패턴
 - **Plasmic**: Full JS/TS Code Component (⭐⭐⭐⭐⭐ 유연성)
@@ -42,6 +44,7 @@ Frontend 개발자가 Backend API 없이도 화면을 먼저 개발할 수 있�
 - **FlutterFlow**: Mock → Real 전환 패턴
 
 **핵심 원칙:**
+
 1. **스키마 우선** - 데이터 구조를 먼저 정의
 2. **Mock 데이터** - API 없이 UI 개발 가능
 3. **Visual + Code** - 노코드 사용자와 개발자 모두 지원
@@ -112,7 +115,7 @@ Frontend 개발자가 Backend API 없이도 화면을 먼저 개발할 수 있�
 ```typescript
 interface DataTable {
   id: string;
-  name: string;                    // "users", "products"
+  name: string; // "users", "products"
   project_id: string;
 
   // Schema Definition
@@ -126,16 +129,16 @@ interface DataTable {
   runtimeData?: Record<string, unknown>[];
 
   // Settings
-  useMockData: boolean;            // true면 mockData 사용, false면 API 결과 사용
+  useMockData: boolean; // true면 mockData 사용, false면 API 결과 사용
 
   created_at?: string;
   updated_at?: string;
 }
 
 interface DataField {
-  key: string;                     // "id", "name", "email"
-  type: DataFieldType;             // "string", "number", "boolean", "date", "array", "object"
-  label?: string;                  // UI 표시용 레이블
+  key: string; // "id", "name", "email"
+  type: DataFieldType; // "string", "number", "boolean", "date", "array", "object"
+  label?: string; // UI 표시용 레이블
   required?: boolean;
   defaultValue?: unknown;
 
@@ -171,8 +174,18 @@ type DataFieldType =
     { "key": "createdAt", "type": "datetime" }
   ],
   "mockData": [
-    { "id": "u-001", "name": "John Doe", "email": "john@example.com", "role": "admin" },
-    { "id": "u-002", "name": "Jane Smith", "email": "jane@example.com", "role": "user" }
+    {
+      "id": "u-001",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "admin"
+    },
+    {
+      "id": "u-002",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "role": "user"
+    }
   ],
   "useMockData": true
 }
@@ -187,13 +200,13 @@ type DataFieldType =
 ```typescript
 interface ApiEndpoint {
   id: string;
-  name: string;                    // "getUsers", "createUser"
+  name: string; // "getUsers", "createUser"
   project_id: string;
 
   // Request Configuration
-  method: HttpMethod;              // "GET", "POST", "PUT", "DELETE", "PATCH"
-  baseUrl: string;                 // "https://api.example.com"
-  path: string;                    // "/users" or "/users/{{userId}}"
+  method: HttpMethod; // "GET", "POST", "PUT", "DELETE", "PATCH"
+  baseUrl: string; // "https://api.example.com"
+  path: string; // "/users" or "/users/{{userId}}"
 
   // Headers
   headers: ApiHeader[];
@@ -203,17 +216,17 @@ interface ApiEndpoint {
 
   // Body (POST, PUT, PATCH)
   bodyType: "json" | "form-data" | "x-www-form-urlencoded" | "none";
-  bodyTemplate?: string;           // JSON template with variables
+  bodyTemplate?: string; // JSON template with variables
 
   // Response Handling
   responseMapping: ResponseMapping;
 
   // Target DataTable
-  targetDataTable?: string;        // DataTable name to populate
+  targetDataTable?: string; // DataTable name to populate
 
   // Settings
-  timeout?: number;                // ms, default 30000
-  retryCount?: number;             // default 0
+  timeout?: number; // ms, default 30000
+  retryCount?: number; // default 0
 
   created_at?: string;
   updated_at?: string;
@@ -221,32 +234,32 @@ interface ApiEndpoint {
 
 interface ApiHeader {
   key: string;
-  value: string;                   // Can include variables: "Bearer {{authToken}}"
+  value: string; // Can include variables: "Bearer {{authToken}}"
   enabled: boolean;
 }
 
 interface ApiParam {
   key: string;
-  value: string;                   // Can include variables: "{{searchQuery}}"
+  value: string; // Can include variables: "{{searchQuery}}"
   type: "string" | "number" | "boolean";
   required: boolean;
 }
 
 interface ResponseMapping {
   // JSON Path to data array/object
-  dataPath: string;                // "data", "response.items", "results"
+  dataPath: string; // "data", "response.items", "results"
 
   // Field mappings (optional, for renaming)
   fieldMappings?: {
-    sourceKey: string;             // API response field
-    targetKey: string;             // DataTable field
+    sourceKey: string; // API response field
+    targetKey: string; // DataTable field
   }[];
 
   // Pagination (optional)
   pagination?: {
     type: "offset" | "cursor" | "page";
-    totalPath?: string;            // "meta.total"
-    nextCursorPath?: string;       // "meta.nextCursor"
+    totalPath?: string; // "meta.total"
+    nextCursorPath?: string; // "meta.nextCursor"
   };
 }
 
@@ -264,13 +277,27 @@ type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   "baseUrl": "https://api.example.com",
   "path": "/users",
   "headers": [
-    { "key": "Authorization", "value": "Bearer {{authToken}}", "enabled": true },
+    {
+      "key": "Authorization",
+      "value": "Bearer {{authToken}}",
+      "enabled": true
+    },
     { "key": "Content-Type", "value": "application/json", "enabled": true }
   ],
   "queryParams": [
-    { "key": "page", "value": "{{currentPage}}", "type": "number", "required": false },
+    {
+      "key": "page",
+      "value": "{{currentPage}}",
+      "type": "number",
+      "required": false
+    },
     { "key": "limit", "value": "20", "type": "number", "required": false },
-    { "key": "search", "value": "{{searchQuery}}", "type": "string", "required": false }
+    {
+      "key": "search",
+      "value": "{{searchQuery}}",
+      "type": "string",
+      "required": false
+    }
   ],
   "bodyType": "none",
   "responseMapping": {
@@ -298,29 +325,24 @@ type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 ```typescript
 interface Variable {
   id: string;
-  name: string;                    // "authToken", "currentUser", "theme"
+  name: string; // "authToken", "currentUser", "theme"
   project_id: string;
 
   type: VariableType;
   defaultValue?: unknown;
 
   // Persistence
-  persist: boolean;                // localStorage에 저장할지
+  persist: boolean; // localStorage에 저장할지
 
   // Scope
-  scope: "global" | "page";        // 전역 또는 페이지 범위
-  page_id?: string;                // scope가 "page"인 경우
+  scope: "global" | "page"; // 전역 또는 페이지 범위
+  page_id?: string; // scope가 "page"인 경우
 
   created_at?: string;
   updated_at?: string;
 }
 
-type VariableType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "object"
-  | "array";
+type VariableType = "string" | "number" | "boolean" | "object" | "array";
 ```
 
 **예시:**
@@ -381,15 +403,16 @@ type VariableType =
 ```
 
 **장점:**
+
 - **노코드 사용자**: 클릭만으로 바인딩 완성 (Webflow 수준)
 - **개발자**: Advanced Mode에서 JavaScript 표현식 직접 작성
-- **자동완성**: `{{`  입력 시 데이터 소스 자동 제안
+- **자동완성**: `{{` 입력 시 데이터 소스 자동 제안
 
 ```typescript
 // Element.dataBinding 확장
 interface DataBinding {
   // Collection Binding (ListBox, GridList 등)
-  dataSource?: string;             // DataTable name: "users"
+  dataSource?: string; // DataTable name: "users"
 
   // Field Bindings
   bindings?: {
@@ -404,16 +427,16 @@ interface BindingExpression {
   value?: unknown;
 
   // type: "dataTable"
-  dataTable?: string;              // "users"
-  field?: string;                  // "name"
-  index?: number | string;         // 0 or "{{selectedIndex}}"
+  dataTable?: string; // "users"
+  field?: string; // "name"
+  index?: number | string; // 0 or "{{selectedIndex}}"
 
   // type: "variable"
-  variable?: string;               // "currentUser"
-  path?: string;                   // "profile.name"
+  variable?: string; // "currentUser"
+  path?: string; // "profile.name"
 
   // type: "expression"
-  expression?: string;             // "{{users.length > 0 ? users[0].name : 'No data'}}"
+  expression?: string; // "{{users.length > 0 ? users[0].name : 'No data'}}"
 }
 ```
 
@@ -521,26 +544,26 @@ interface Transformer {
 
   // Level 1: Response Mapping (노코드)
   responseMapping?: {
-    dataPath: string;              // "data.users"
+    dataPath: string; // "data.users"
     fieldMappings: FieldMapping[]; // 필드명 변환
   };
 
   // Level 2: JS Transformer (로우코드)
   jsTransformer?: {
-    code: string;                  // JavaScript 코드
+    code: string; // JavaScript 코드
     // 자동으로 `data`와 `context` 변수가 주입됨
   };
 
   // Level 3: Custom Function (풀코드)
   customFunction?: {
-    code: string;                  // TypeScript 함수 전체
-    functionName: string;          // export된 함수명
-    dependencies?: string[];       // 외부 라이브러리 (lodash, dayjs 등)
+    code: string; // TypeScript 함수 전체
+    functionName: string; // export된 함수명
+    dependencies?: string[]; // 외부 라이브러리 (lodash, dayjs 등)
   };
 
   // 공통
-  inputDataTable?: string;         // 입력 DataTable
-  outputDataTable?: string;        // 출력 DataTable
+  inputDataTable?: string; // 입력 DataTable
+  outputDataTable?: string; // 출력 DataTable
   enabled: boolean;
 
   created_at?: string;
@@ -550,9 +573,15 @@ interface Transformer {
 type TransformLevel = "level1_mapping" | "level2_transformer" | "level3_custom";
 
 interface FieldMapping {
-  sourceKey: string;               // API 응답 필드명
-  targetKey: string;               // DataTable 필드명
-  transform?: "uppercase" | "lowercase" | "trim" | "number" | "boolean" | "date";
+  sourceKey: string; // API 응답 필드명
+  targetKey: string; // DataTable 필드명
+  transform?:
+    | "uppercase"
+    | "lowercase"
+    | "trim"
+    | "number"
+    | "boolean"
+    | "date";
 }
 
 interface TransformContext {
@@ -579,13 +608,13 @@ interface TransformContext {
 
 **비교: XStudio vs 경쟁사**
 
-| 빌더 | Level 1 | Level 2 | Level 3 | 총점 |
-|------|---------|---------|---------|------|
-| **XStudio** | ✅ | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
-| Plasmic | ❌ | ❌ | ✅ | ⭐⭐⭐ |
-| Retool | ❌ | ✅ | ❌ | ⭐⭐⭐ |
-| Appsmith | ❌ | ✅ | ❌ | ⭐⭐⭐ |
-| Webflow | ❌ | ❌ | ❌ | ⭐ |
+| 빌더        | Level 1 | Level 2 | Level 3 | 총점       |
+| ----------- | ------- | ------- | ------- | ---------- |
+| **XStudio** | ✅      | ✅      | ✅      | ⭐⭐⭐⭐⭐ |
+| Plasmic     | ❌      | ❌      | ✅      | ⭐⭐⭐     |
+| Retool      | ❌      | ✅      | ❌      | ⭐⭐⭐     |
+| Appsmith    | ❌      | ✅      | ❌      | ⭐⭐⭐     |
+| Webflow     | ❌      | ❌      | ❌      | ⭐         |
 
 ---
 
@@ -690,18 +719,20 @@ CREATE POLICY "Users can manage own project variables"
 // src/lib/db/indexedDB/adapter.ts 확장
 
 // Store 생성
-const dataTablesStore = db.createObjectStore('dataTables', { keyPath: 'id' });
-dataTablesStore.createIndex('project_id', 'project_id', { unique: false });
-dataTablesStore.createIndex('name', 'name', { unique: false });
+const dataTablesStore = db.createObjectStore("dataTables", { keyPath: "id" });
+dataTablesStore.createIndex("project_id", "project_id", { unique: false });
+dataTablesStore.createIndex("name", "name", { unique: false });
 
-const apiEndpointsStore = db.createObjectStore('apiEndpoints', { keyPath: 'id' });
-apiEndpointsStore.createIndex('project_id', 'project_id', { unique: false });
-apiEndpointsStore.createIndex('name', 'name', { unique: false });
+const apiEndpointsStore = db.createObjectStore("apiEndpoints", {
+  keyPath: "id",
+});
+apiEndpointsStore.createIndex("project_id", "project_id", { unique: false });
+apiEndpointsStore.createIndex("name", "name", { unique: false });
 
-const variablesStore = db.createObjectStore('variables', { keyPath: 'id' });
-variablesStore.createIndex('project_id', 'project_id', { unique: false });
-variablesStore.createIndex('name', 'name', { unique: false });
-variablesStore.createIndex('page_id', 'page_id', { unique: false });
+const variablesStore = db.createObjectStore("variables", { keyPath: "id" });
+variablesStore.createIndex("project_id", "project_id", { unique: false });
+variablesStore.createIndex("name", "name", { unique: false });
+variablesStore.createIndex("page_id", "page_id", { unique: false });
 ```
 
 ---
@@ -756,7 +787,7 @@ export interface ApiEndpoint {
   bodyTemplate?: string;
   responseMapping: ResponseMapping;
   targetDataTable?: string;
-  transformerId?: string;          // NEW: 연결된 Transformer
+  transformerId?: string; // NEW: 연결된 Transformer
   timeout?: number;
   retryCount?: number;
   created_at?: string;
@@ -788,7 +819,7 @@ export interface ResponseMapping {
 export interface FieldMapping {
   sourceKey: string;
   targetKey: string;
-  transform?: FieldTransformType;  // NEW: 필드 레벨 변환
+  transform?: FieldTransformType; // NEW: 필드 레벨 변환
 }
 
 // NEW: 필드 변환 타입
@@ -853,9 +884,9 @@ export interface Transformer {
 }
 
 export type TransformLevel =
-  | "level1_mapping"      // 노코드: 필드 매핑만
-  | "level2_transformer"  // 로우코드: 간단한 JS
-  | "level3_custom";      // 풀코드: TypeScript + async
+  | "level1_mapping" // 노코드: 필드 매핑만
+  | "level2_transformer" // 로우코드: 간단한 JS
+  | "level3_custom"; // 풀코드: TypeScript + async
 
 // Level 1: 노코드 필드 매핑
 export interface Level1ResponseMapping {
@@ -872,14 +903,14 @@ export interface TransformFieldMapping {
 
 // Level 2: 로우코드 JavaScript
 export interface Level2JsTransformer {
-  code: string;  // return data.map(...)
+  code: string; // return data.map(...)
   // 자동 주입: data (입력), context (컨텍스트)
 }
 
 // Level 3: 풀코드 TypeScript
 export interface Level3CustomFunction {
-  code: string;           // 전체 함수 코드
-  functionName: string;   // export된 함수명
+  code: string; // 전체 함수 코드
+  functionName: string; // export된 함수명
   dependencies?: string[]; // ["lodash", "dayjs"]
 }
 
@@ -910,23 +941,23 @@ export interface TransformUtilsContext {
 ```typescript
 // src/builder/stores/data.ts
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type {
   DataTable,
   ApiEndpoint,
   Variable,
-  Transformer,           // NEW
-  TransformContext,      // NEW
-  TransformLevel,        // NEW
-} from '../../types/builder/data.types';
+  Transformer, // NEW
+  TransformContext, // NEW
+  TransformLevel, // NEW
+} from "../../types/builder/data.types";
 
 interface DataState {
   // Collections
   dataTables: DataTable[];
   apiEndpoints: ApiEndpoint[];
   variables: Variable[];
-  transformers: Transformer[];   // NEW: 3단계 변환기
+  transformers: Transformer[]; // NEW: 3단계 변환기
 
   // Runtime Data (메모리에만 존재)
   runtimeData: Map<string, Record<string, unknown>[]>;
@@ -957,16 +988,22 @@ interface DataState {
   executeTransformer: (id: string, inputData: unknown[]) => Promise<unknown[]>;
 
   // Actions - Runtime
-  setRuntimeData: (dataTableName: string, data: Record<string, unknown>[]) => void;
+  setRuntimeData: (
+    dataTableName: string,
+    data: Record<string, unknown>[]
+  ) => void;
   clearRuntimeData: (dataTableName: string) => void;
 
   // Actions - API Execution (with Transformer integration)
-  executeApi: (endpointId: string, params?: Record<string, unknown>) => Promise<void>;
+  executeApi: (
+    endpointId: string,
+    params?: Record<string, unknown>
+  ) => Promise<void>;
 
   // Getters
   getDataTableData: (name: string) => Record<string, unknown>[];
   getVariableValue: (name: string) => unknown;
-  getTransformContext: () => TransformContext;  // NEW
+  getTransformContext: () => TransformContext; // NEW
 }
 
 export const useDataStore = create<DataState>()(
@@ -975,70 +1012,76 @@ export const useDataStore = create<DataState>()(
       dataTables: [],
       apiEndpoints: [],
       variables: [],
-      transformers: [],          // NEW
+      transformers: [], // NEW
       runtimeData: new Map(),
       loadingApis: new Set(),
 
       // DataTable Actions
       addDataTable: (dataTable) => {
         set((state) => ({
-          dataTables: [...state.dataTables, dataTable]
+          dataTables: [...state.dataTables, dataTable],
         }));
       },
 
       updateDataTable: (id, updates) => {
         set((state) => ({
           dataTables: state.dataTables.map((dt) =>
-            dt.id === id ? { ...dt, ...updates, updated_at: new Date().toISOString() } : dt
-          )
+            dt.id === id
+              ? { ...dt, ...updates, updated_at: new Date().toISOString() }
+              : dt
+          ),
         }));
       },
 
       deleteDataTable: (id) => {
         set((state) => ({
-          dataTables: state.dataTables.filter((dt) => dt.id !== id)
+          dataTables: state.dataTables.filter((dt) => dt.id !== id),
         }));
       },
 
       // API Endpoint Actions
       addApiEndpoint: (endpoint) => {
         set((state) => ({
-          apiEndpoints: [...state.apiEndpoints, endpoint]
+          apiEndpoints: [...state.apiEndpoints, endpoint],
         }));
       },
 
       updateApiEndpoint: (id, updates) => {
         set((state) => ({
           apiEndpoints: state.apiEndpoints.map((ep) =>
-            ep.id === id ? { ...ep, ...updates, updated_at: new Date().toISOString() } : ep
-          )
+            ep.id === id
+              ? { ...ep, ...updates, updated_at: new Date().toISOString() }
+              : ep
+          ),
         }));
       },
 
       deleteApiEndpoint: (id) => {
         set((state) => ({
-          apiEndpoints: state.apiEndpoints.filter((ep) => ep.id !== id)
+          apiEndpoints: state.apiEndpoints.filter((ep) => ep.id !== id),
         }));
       },
 
       // Variable Actions
       addVariable: (variable) => {
         set((state) => ({
-          variables: [...state.variables, variable]
+          variables: [...state.variables, variable],
         }));
       },
 
       updateVariable: (id, updates) => {
         set((state) => ({
           variables: state.variables.map((v) =>
-            v.id === id ? { ...v, ...updates, updated_at: new Date().toISOString() } : v
-          )
+            v.id === id
+              ? { ...v, ...updates, updated_at: new Date().toISOString() }
+              : v
+          ),
         }));
       },
 
       deleteVariable: (id) => {
         set((state) => ({
-          variables: state.variables.filter((v) => v.id !== id)
+          variables: state.variables.filter((v) => v.id !== id),
         }));
       },
 
@@ -1048,7 +1091,7 @@ export const useDataStore = create<DataState>()(
           set((state) => ({
             variables: state.variables.map((v) =>
               v.name === name ? { ...v, defaultValue: value } : v
-            )
+            ),
           }));
         }
       },
@@ -1059,21 +1102,23 @@ export const useDataStore = create<DataState>()(
 
       addTransformer: (transformer) => {
         set((state) => ({
-          transformers: [...state.transformers, transformer]
+          transformers: [...state.transformers, transformer],
         }));
       },
 
       updateTransformer: (id, updates) => {
         set((state) => ({
           transformers: state.transformers.map((t) =>
-            t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t
-          )
+            t.id === id
+              ? { ...t, ...updates, updated_at: new Date().toISOString() }
+              : t
+          ),
         }));
       },
 
       deleteTransformer: (id) => {
         set((state) => ({
-          transformers: state.transformers.filter((t) => t.id !== id)
+          transformers: state.transformers.filter((t) => t.id !== id),
         }));
       },
 
@@ -1086,15 +1131,16 @@ export const useDataStore = create<DataState>()(
         const context = get().getTransformContext();
 
         switch (transformer.level) {
-          case 'level1_mapping': {
+          case "level1_mapping": {
             // Level 1: 노코드 Response Mapping
-            const { dataPath, fieldMappings } = transformer.responseMapping || {};
+            const { dataPath, fieldMappings } =
+              transformer.responseMapping || {};
 
             let data = inputData;
 
             // Extract data from path
             if (dataPath) {
-              const paths = dataPath.split('.');
+              const paths = dataPath.split(".");
               for (const path of paths) {
                 data = (data as Record<string, unknown>)?.[path] as unknown[];
               }
@@ -1118,22 +1164,22 @@ export const useDataStore = create<DataState>()(
             return data as unknown[];
           }
 
-          case 'level2_transformer': {
+          case "level2_transformer": {
             // Level 2: 로우코드 JavaScript
             const { code } = transformer.jsTransformer || {};
             if (!code) return inputData;
 
             try {
               // 안전한 eval 대체 (new Function 사용)
-              const fn = new Function('data', 'context', code);
+              const fn = new Function("data", "context", code);
               return fn(inputData, context);
             } catch (error) {
-              console.error('Transformer execution error:', error);
+              console.error("Transformer execution error:", error);
               return inputData;
             }
           }
 
-          case 'level3_custom': {
+          case "level3_custom": {
             // Level 3: 풀코드 TypeScript
             // 실제 구현 시 별도 모듈 로더 필요
             const { code, functionName } = transformer.customFunction || {};
@@ -1142,13 +1188,17 @@ export const useDataStore = create<DataState>()(
             try {
               // TODO: 별도의 샌드박스 환경에서 실행
               // 프로덕션에서는 Web Worker 또는 iframe 샌드박스 사용
-              const fn = new Function('data', 'context', `
+              const fn = new Function(
+                "data",
+                "context",
+                `
                 ${code}
                 return ${functionName}(data, context);
-              `);
+              `
+              );
               return await fn(inputData, context);
             } catch (error) {
-              console.error('Custom function execution error:', error);
+              console.error("Custom function execution error:", error);
               return inputData;
             }
           }
@@ -1160,7 +1210,10 @@ export const useDataStore = create<DataState>()(
 
       getTransformContext: () => ({
         dataTables: Object.fromEntries(
-          get().dataTables.map((dt) => [dt.name, get().getDataTableData(dt.name)])
+          get().dataTables.map((dt) => [
+            dt.name,
+            get().getDataTableData(dt.name),
+          ])
         ),
         variables: Object.fromEntries(
           get().variables.map((v) => [v.name, v.defaultValue])
@@ -1176,15 +1229,15 @@ export const useDataStore = create<DataState>()(
             // 간단한 날짜 포맷팅 (dayjs 사용 권장)
             return new Date(date).toLocaleDateString();
           },
-          formatCurrency: (amount, currency = 'USD') => {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
+          formatCurrency: (amount, currency = "USD") => {
+            return new Intl.NumberFormat("en-US", {
+              style: "currency",
               currency,
             }).format(amount);
           },
           parseJSON: (str) => JSON.parse(str),
           get: (obj, path, defaultValue) => {
-            const keys = path.split('.');
+            const keys = path.split(".");
             let result: unknown = obj;
             for (const key of keys) {
               result = (result as Record<string, unknown>)?.[key];
@@ -1220,7 +1273,7 @@ export const useDataStore = create<DataState>()(
 
         // Mark as loading
         set((state) => ({
-          loadingApis: new Set([...state.loadingApis, endpointId])
+          loadingApis: new Set([...state.loadingApis, endpointId]),
         }));
 
         try {
@@ -1229,7 +1282,7 @@ export const useDataStore = create<DataState>()(
 
           // Replace path variables
           url = url.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-            return String(params[key] ?? get().getVariableValue(key) ?? '');
+            return String(params[key] ?? get().getVariableValue(key) ?? "");
           });
 
           // Build query string
@@ -1237,7 +1290,7 @@ export const useDataStore = create<DataState>()(
           endpoint.queryParams.forEach((param) => {
             let value = param.value;
             value = value.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-              return String(params[key] ?? get().getVariableValue(key) ?? '');
+              return String(params[key] ?? get().getVariableValue(key) ?? "");
             });
             if (value) {
               queryParams.append(param.key, value);
@@ -1254,7 +1307,7 @@ export const useDataStore = create<DataState>()(
             if (header.enabled) {
               let value = header.value;
               value = value.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-                return String(params[key] ?? get().getVariableValue(key) ?? '');
+                return String(params[key] ?? get().getVariableValue(key) ?? "");
               });
               headers[header.key] = value;
             }
@@ -1262,7 +1315,7 @@ export const useDataStore = create<DataState>()(
 
           // Build body
           let body: string | undefined;
-          if (endpoint.bodyType === 'json' && endpoint.bodyTemplate) {
+          if (endpoint.bodyType === "json" && endpoint.bodyTemplate) {
             let bodyStr = endpoint.bodyTemplate;
             bodyStr = bodyStr.replace(/\{\{(\w+)\}\}/g, (_, key) => {
               const value = params[key] ?? get().getVariableValue(key);
@@ -1288,14 +1341,17 @@ export const useDataStore = create<DataState>()(
           // Extract data using dataPath
           let data = json;
           if (endpoint.responseMapping.dataPath) {
-            const paths = endpoint.responseMapping.dataPath.split('.');
+            const paths = endpoint.responseMapping.dataPath.split(".");
             for (const path of paths) {
               data = data?.[path];
             }
           }
 
           // Apply field mappings
-          if (Array.isArray(data) && endpoint.responseMapping.fieldMappings?.length) {
+          if (
+            Array.isArray(data) &&
+            endpoint.responseMapping.fieldMappings?.length
+          ) {
             data = data.map((item: Record<string, unknown>) => {
               const mapped: Record<string, unknown> = { ...item };
               endpoint.responseMapping.fieldMappings!.forEach((mapping) => {
@@ -1312,9 +1368,11 @@ export const useDataStore = create<DataState>()(
 
           // Store in runtime data
           if (endpoint.targetDataTable) {
-            get().setRuntimeData(endpoint.targetDataTable, Array.isArray(data) ? data : [data]);
+            get().setRuntimeData(
+              endpoint.targetDataTable,
+              Array.isArray(data) ? data : [data]
+            );
           }
-
         } finally {
           // Clear loading state
           set((state) => {
@@ -1343,7 +1401,7 @@ export const useDataStore = create<DataState>()(
       },
     }),
     {
-      name: 'xstudio-data-store',
+      name: "xstudio-data-store",
       partialize: (state) => ({
         dataTables: state.dataTables,
         apiEndpoints: state.apiEndpoints,
@@ -1529,12 +1587,12 @@ export const useDataStore = create<DataState>()(
 interface ApiCallAction {
   type: "apiCall";
   config: {
-    endpointId: string;           // API Endpoint ID
-    params?: Record<string, unknown>;  // Override parameters
+    endpointId: string; // API Endpoint ID
+    params?: Record<string, unknown>; // Override parameters
 
     // 성공/실패 핸들링
-    onSuccess?: string;           // 다음 Action ID
-    onError?: string;             // 에러 시 Action ID
+    onSuccess?: string; // 다음 Action ID
+    onError?: string; // 에러 시 Action ID
   };
 }
 
@@ -1562,7 +1620,7 @@ interface RefreshDataTableAction {
   type: "refreshDataTable";
   config: {
     dataTableName: string;
-    apiEndpointId?: string;       // Optional: specific API to call
+    apiEndpointId?: string; // Optional: specific API to call
   };
 }
 ```
@@ -1685,57 +1743,57 @@ function renderListBox(element: Element, children: React.ReactNode) {
 
 ### Phase 1: Foundation (기반 작업) - 1주
 
-| Task | File | Priority |
-|------|------|----------|
-| Type definitions | `src/types/builder/data.types.ts` | P0 |
-| Database migration | `supabase/migrations/` | P0 |
-| IndexedDB schema | `src/lib/db/indexedDB/adapter.ts` | P0 |
-| Zustand store | `src/builder/stores/data.ts` | P0 |
+| Task               | File                              | Priority |
+| ------------------ | --------------------------------- | -------- |
+| Type definitions   | `src/types/builder/data.types.ts` | P0       |
+| Database migration | `supabase/migrations/`            | P0       |
+| IndexedDB schema   | `src/lib/db/indexedDB/adapter.ts` | P0       |
+| Zustand store      | `src/builder/stores/data.ts`      | P0       |
 
 ### Phase 2: DataTable UI - 1주
 
-| Task | File | Priority |
-|------|------|----------|
-| Data Panel component | `src/builder/panels/data/DataPanel.tsx` | P1 |
-| DataTable list | `src/builder/panels/data/DataTableList.tsx` | P1 |
-| DataTable editor | `src/builder/panels/data/DataTableEditor.tsx` | P1 |
-| Schema editor | `src/builder/panels/data/SchemaEditor.tsx` | P1 |
-| Mock data editor | `src/builder/panels/data/MockDataEditor.tsx` | P1 |
+| Task                 | File                                          | Priority |
+| -------------------- | --------------------------------------------- | -------- |
+| Data Panel component | `src/builder/panels/data/DataPanel.tsx`       | P1       |
+| DataTable list       | `src/builder/panels/data/DataTableList.tsx`   | P1       |
+| DataTable editor     | `src/builder/panels/data/DataTableEditor.tsx` | P1       |
+| Schema editor        | `src/builder/panels/data/SchemaEditor.tsx`    | P1       |
+| Mock data editor     | `src/builder/panels/data/MockDataEditor.tsx`  | P1       |
 
 ### Phase 3: API Endpoint UI - 1주
 
-| Task | File | Priority |
-|------|------|----------|
-| API Endpoint list | `src/builder/panels/data/ApiEndpointList.tsx` | P1 |
-| API Endpoint editor | `src/builder/panels/data/ApiEndpointEditor.tsx` | P1 |
-| Request builder | `src/builder/panels/data/RequestBuilder.tsx` | P1 |
-| Response mapping UI | `src/builder/panels/data/ResponseMappingEditor.tsx` | P1 |
-| Test request feature | `src/builder/panels/data/ApiTester.tsx` | P2 |
+| Task                 | File                                                | Priority |
+| -------------------- | --------------------------------------------------- | -------- |
+| API Endpoint list    | `src/builder/panels/data/ApiEndpointList.tsx`       | P1       |
+| API Endpoint editor  | `src/builder/panels/data/ApiEndpointEditor.tsx`     | P1       |
+| Request builder      | `src/builder/panels/data/RequestBuilder.tsx`        | P1       |
+| Response mapping UI  | `src/builder/panels/data/ResponseMappingEditor.tsx` | P1       |
+| Test request feature | `src/builder/panels/data/ApiTester.tsx`             | P2       |
 
 ### Phase 4: Variables UI - 0.5주
 
-| Task | File | Priority |
-|------|------|----------|
-| Variables list | `src/builder/panels/data/VariablesList.tsx` | P1 |
-| Variable editor | `src/builder/panels/data/VariableEditor.tsx` | P1 |
+| Task            | File                                         | Priority |
+| --------------- | -------------------------------------------- | -------- |
+| Variables list  | `src/builder/panels/data/VariablesList.tsx`  | P1       |
+| Variable editor | `src/builder/panels/data/VariableEditor.tsx` | P1       |
 
 ### Phase 5: Integration - 1주
 
-| Task | File | Priority |
-|------|------|----------|
-| DataSource hook | `src/builder/preview/hooks/useDataSource.ts` | P1 |
-| Collection renderers update | `src/builder/preview/renderers/` | P1 |
-| Event System actions | `src/builder/inspector/events/actions/` | P1 |
-| Property Editor binding | `src/builder/inspector/properties/` | P2 |
+| Task                        | File                                         | Priority |
+| --------------------------- | -------------------------------------------- | -------- |
+| DataSource hook             | `src/builder/preview/hooks/useDataSource.ts` | P1       |
+| Collection renderers update | `src/builder/preview/renderers/`             | P1       |
+| Event System actions        | `src/builder/inspector/events/actions/`      | P1       |
+| Property Editor binding     | `src/builder/inspector/properties/`          | P2       |
 
 ### Phase 6: Testing & Polish - 0.5주
 
-| Task | Priority |
-|------|----------|
-| Unit tests | P2 |
-| E2E tests | P2 |
-| Documentation | P2 |
-| MOCK_DATA migration | P2 |
+| Task                | Priority |
+| ------------------- | -------- |
+| Unit tests          | P2       |
+| E2E tests           | P2       |
+| Documentation       | P2       |
+| MOCK_DATA migration | P2       |
 
 ---
 
@@ -1817,7 +1875,7 @@ interface GraphQLEndpoint extends ApiEndpoint {
 interface RealtimeConfig {
   type: "websocket" | "sse" | "polling";
   url: string;
-  interval?: number;  // polling interval
+  interval?: number; // polling interval
 }
 ```
 
@@ -1829,7 +1887,7 @@ interface DataTransformer {
   name: string;
   inputDataTable: string;
   outputDataTable: string;
-  transformFn: string;  // JavaScript function
+  transformFn: string; // JavaScript function
 }
 ```
 
@@ -1868,6 +1926,14 @@ interface DataTransformer {
 
 ## 16. 리스크 및 보완 계획 (v2.1 로드맵)
 
+### 16.0 재점검 코멘트 (v2.1 세부 보완 제안)
+
+- **샌드박스 실행 보증 강화:** 리소스 제한만으로는 부족하므로, (1) 의존성 해시 화이트리스트 및 NPM install 금지, (2) 빌드된 번들에 대한 무결성 체크섬 검증, (3) 무한 루프 탐지를 위한 step counter/`Worker.terminate()` 강제 종료 절차를 명시하면 운영 리스크를 줄일 수 있습니다.
+- **공격 표면 축소:** `context` 객체로만 입출력을 허용하고, `globalThis`, `eval`, `Function` 재정의 등 위험한 전역 접근을 프리플라이트 시점에 static linting으로 차단하는 규칙(ESLint 플러그인 수준)과 런타임 gate(Proxy 기반 접근 탐지)를 병행하는 것이 안전합니다.
+- **재시도·백오프 정합성:** 현재 재시도 설계에 *idempotency*와 _jitter_ 규칙이 없으므로, `retryPolicy`에 `jitter: 'full' | 'equal'`, `idempotent: boolean`을 추가하고, 비-idempotent 요청은 재시도 제한/사용자 확인이 필요함을 명시하세요. 또한 취소 가능한 요청(`AbortController`)과 in-flight dedupe(`cacheKey` 기준) 플래그를 함께 두면 중복 실행을 줄일 수 있습니다.
+- **스키마 검증 파이프라인 명확화:** Zod 기반 검증을 도입했다면, (1) 스키마 버전별 캐싱(파싱 비용 절감), (2) DataField → Zod 변환 실패 시 로그/알람 경로, (3) `coerce` 동작 시 타입 변환 규칙(숫자/날짜)과 손실 위험에 대한 정책을 명문화하는 것이 필요합니다.
+- **관측성 연결:** 샌드박스/재시도/검증 결과를 ExecutionLog에 구조화해 저장(샌드박스 종료 사유, 재시도 횟수, 검증 실패 필드 목록)하면 운영자가 문제를 재현 없이 파악할 수 있습니다.
+
 ### 16.1 보안 리스크 (P0 - 즉시 해결 필요)
 
 #### Transformer 샌드박스 설계
@@ -1905,11 +1971,12 @@ interface DataTransformer {
 ```typescript
 // 샌드박스 실행 인터페이스 (Phase 2에서 구현)
 interface SandboxConfig {
-  timeoutMs: number;           // 실행 시간 제한
-  memoryLimitMb: number;       // 메모리 제한
-  allowedGlobals: string[];    // 허용된 전역 객체
-  networkWhitelist: string[];  // 허용된 도메인
+  timeoutMs: number; // 실행 시간 제한
+  memoryLimitMb: number; // 메모리 제한
+  allowedGlobals: string[]; // 허용된 전역 객체
+  networkWhitelist: string[]; // 허용된 도메인
   dependencyWhitelist: string[]; // 허용된 라이브러리
+  blockedTokens?: string[]; // 금지된 글로벌 식별자 (window, document 등)
 }
 
 interface SandboxResult<T> {
@@ -1918,7 +1985,7 @@ interface SandboxResult<T> {
   error?: {
     message: string;
     stack?: string;
-    type: 'timeout' | 'memory' | 'syntax' | 'runtime';
+    type: "timeout" | "memory" | "syntax" | "runtime";
   };
   metrics: {
     executionTimeMs: number;
@@ -1926,6 +1993,20 @@ interface SandboxResult<T> {
   };
 }
 ```
+
+**추가 보완 체크리스트 (샌드박스 실행 전/후):**
+
+- 사전 정적 분석으로 `import`, `require`, `while(true)` 등 블랙리스트 토큰 탐지 → 실패 시 실행 거부.
+- `allowedGlobals` 외 모든 전역 객체를 `Proxy`로 감시, 접근 시 오류/로그 남기기.
+- Web Worker/iframe 종료 시점에 메모리 스냅샷을 찍어 `memoryUsedMb` 이상 누수 감지 → 반복 초과 시 엔진 재시작.
+- 샌드박스 버전·해시를 Execution Log에 기록하여 동일 코드 재현성 확보.
+
+// ✅ 리뷰 코멘트 (보완 필요)
+// - 샌드박스 초기화 시 dependencyWhitelist에 버전 고정(semver range 금지) 및 무결성 해시 체크 필요
+// - Web Worker/iframe 종료 후에도 dangling promise 방지용 abort hook 필요
+// - memoryLimit 초과 측정은 브라우저별 지원 여부가 달라, fallback(데이터 사이즈 상한) 정의 필요
+// - sandbox 내부 로그는 ExecutionLog에 적재하되, isSecret 변수는 반드시 마스킹 처리해야 함
+// - transform 컨텍스트에서 route/page 스코프 객체 접근 허용 범위를 명시적으로 정의해야 함
 
 #### API 비밀값 관리
 
@@ -1974,26 +2055,26 @@ interface ApiEndpoint {
 
   // NEW: 재시도 정책
   retryPolicy?: {
-    maxRetries: number;           // 최대 재시도 횟수 (기본: 3)
-    backoffType: 'exponential' | 'linear' | 'fixed';
-    initialDelayMs: number;       // 초기 대기 시간 (기본: 1000)
-    maxDelayMs: number;           // 최대 대기 시간 (기본: 30000)
-    retryableStatuses: number[];  // 재시도할 HTTP 상태 (기본: [408, 429, 500, 502, 503, 504])
+    maxRetries: number; // 최대 재시도 횟수 (기본: 3)
+    backoffType: "exponential" | "linear" | "fixed";
+    initialDelayMs: number; // 초기 대기 시간 (기본: 1000)
+    maxDelayMs: number; // 최대 대기 시간 (기본: 30000)
+    retryableStatuses: number[]; // 재시도할 HTTP 상태 (기본: [408, 429, 500, 502, 503, 504])
   };
 
   // NEW: 캐시 정책
   cachePolicy?: {
     enabled: boolean;
-    ttlSeconds: number;           // 캐시 유효 시간
+    ttlSeconds: number; // 캐시 유효 시간
     staleWhileRevalidate: boolean; // 백그라운드 갱신
-    cacheKey?: string;            // 커스텀 캐시 키 (기본: URL + params)
+    cacheKey?: string; // 커스텀 캐시 키 (기본: URL + params)
   };
 
   // NEW: 서킷브레이커
   circuitBreaker?: {
     enabled: boolean;
-    failureThreshold: number;     // 연속 실패 횟수 (기본: 5)
-    resetTimeoutMs: number;       // 리셋 대기 시간 (기본: 30000)
+    failureThreshold: number; // 연속 실패 횟수 (기본: 5)
+    resetTimeoutMs: number; // 리셋 대기 시간 (기본: 30000)
   };
 }
 ```
@@ -2025,28 +2106,42 @@ API 호출 흐름 (신뢰성 강화)
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**재시도/백오프 설계 보완:**
+
+- 기본값: `maxRetries=3`, `backoffType='exponential'` + **풀 지터**(`initialDelayMs=200`, `maxDelayMs=5000`).
+- **Idempotency-Key 자동 주입**: `method`가 `POST|PATCH|PUT`이고 `retryPolicy` 설정 시 `headers['Idempotency-Key']` 생성 옵션 제공.
+- **서킷 브레이커 상태 공유**: `circuitBreaker` 상태를 프로젝트 단위 메모리 스토어에 저장하여 동일 엔드포인트를 쓰는 위젯 간 일관성 확보.
+- **Fallback 동작**: 재시도/서킷 실패 시 `cachePolicy`가 켜져 있으면 `stale` 데이터 반환, 없으면 DataTable `lastSuccessfulData`를 반환하도록 옵션화.
+- **운영 모니터링**: ExecutionLog에 재시도 횟수, 백오프 지연, 서킷 상태 변화를 기록해 SLA 알람 연동.
+
 #### 동시성/경합 처리
 
 ```typescript
 // DataTable 동시 접근 정책
 interface ConcurrencyPolicy {
   // 동일 DataTable에 복수 API 응답 시
-  mergeStrategy: 'replace' | 'merge' | 'append' | 'queue';
+  mergeStrategy: "replace" | "merge" | "append" | "queue";
 
   // Optimistic Update
   optimisticUpdate?: {
     enabled: boolean;
     rollbackOnFailure: boolean;
-    conflictResolution: 'server-wins' | 'client-wins' | 'manual';
+    conflictResolution: "server-wins" | "client-wins" | "manual";
   };
 
   // 요청 중복 방지
   deduplication?: {
     enabled: boolean;
-    windowMs: number;  // 중복 판단 시간 창
+    windowMs: number; // 중복 판단 시간 창
   };
 }
 ```
+
+// ✅ 리뷰 코멘트 (보완 필요)
+// - mergeStrategy 별 멱등성(idempotency) 요구사항을 표로 정의하면, PATCH/POST 호출 시 위험도를 낮출 수 있음
+// - deduplication window를 탭/세션 단위로 공유할지 여부를 명시하고, 로컬 캐시 키 구성식을 추가해야 함
+// - optimisticUpdate가 실패했을 때 rollback 전후 데이터 상태를 ExecutionLog에 남기고, UI revert 애니메이션 여부 결정 필요
+// - circuitBreaker와의 연계(연속 실패 시 optimisticUpdate 차단 등) 정책을 정의하면 일관성 확보에 도움
 
 ---
 
@@ -2061,14 +2156,14 @@ interface SchemaValidation {
 
   // 검증 시점
   validateOn: {
-    apiResponse: boolean;    // API 응답 수신 시
-    mockDataLoad: boolean;   // Mock 데이터 로드 시
+    apiResponse: boolean; // API 응답 수신 시
+    mockDataLoad: boolean; // Mock 데이터 로드 시
     beforeTransform: boolean; // 변환 전
-    afterTransform: boolean;  // 변환 후
+    afterTransform: boolean; // 변환 후
   };
 
   // 실패 시 동작
-  onValidationError: 'throw' | 'warn' | 'coerce' | 'fallback';
+  onValidationError: "throw" | "warn" | "coerce" | "fallback";
 
   // 스키마에서 Zod 스키마 자동 생성
   // DataField[] → z.object({...})
@@ -2083,9 +2178,16 @@ interface ValidationResult {
     received: string;
     message: string;
   }[];
-  coercedData?: unknown[];  // onValidationError='coerce' 시
+  coercedData?: unknown[]; // onValidationError='coerce' 시
 }
 ```
+
+**스키마 검증 확장 포인트:**
+
+- `DataField`에 `enum`, `minLength`, `maxLength`, `pattern`, `relation`(refTable/refField) 메타데이터를 추가하고 Zod 스키마 생성 시 반영.
+- `beforeTransform` 단계에서 **필수 필드 누락·타입 오류**가 발생하고 `onValidationError='fallback'`이면 `mockData`로 대체해 UI 무중단 렌더링.
+- **환경별 정책**: dev 기본값 `warn`, prod 기본값 `throw`로 설정하여 조기 탐지와 운영 안전성을 동시에 달성.
+- **검증 통계**: ValidationResult를 ExecutionLog에 연계, 필드별 오류율을 메트릭으로 수집해 DataTable 품질 지표에 노출.
 
 ---
 
@@ -2099,10 +2201,10 @@ interface ExecutionLog {
   timestamp: string;
 
   // 실행 유형
-  type: 'api_call' | 'transform' | 'binding_resolve';
+  type: "api_call" | "transform" | "binding_resolve";
 
   // 상태
-  status: 'pending' | 'success' | 'failure' | 'timeout';
+  status: "pending" | "success" | "failure" | "timeout";
 
   // 상세 정보
   details: {
@@ -2159,16 +2261,16 @@ Data Panel 실행 로그 UI
 ```typescript
 // 스키마 버전 관리
 interface VersionedEntity {
-  version: number;           // 스키마 버전
+  version: number; // 스키마 버전
   createdAt: string;
   updatedAt: string;
-  updatedBy?: string;        // 수정자 ID
+  updatedBy?: string; // 수정자 ID
 
   // 변경 이력 (최근 10개)
   changelog?: {
     version: number;
     timestamp: string;
-    changes: string[];       // "Added field: email", "Removed field: legacy_id"
+    changes: string[]; // "Added field: email", "Removed field: legacy_id"
     author?: string;
   }[];
 }
@@ -2176,16 +2278,16 @@ interface VersionedEntity {
 // 마이그레이션 정책
 interface MigrationPolicy {
   // 스키마 변경 시
-  onSchemaChange: 'auto-migrate' | 'manual' | 'reject';
+  onSchemaChange: "auto-migrate" | "manual" | "reject";
 
   // 필드 추가
-  newFieldDefault: 'null' | 'schema-default' | 'prompt';
+  newFieldDefault: "null" | "schema-default" | "prompt";
 
   // 필드 삭제
-  removedFieldAction: 'drop' | 'archive' | 'reject';
+  removedFieldAction: "drop" | "archive" | "reject";
 
   // 타입 변경
-  typeChangeAction: 'coerce' | 'reject';
+  typeChangeAction: "coerce" | "reject";
 }
 ```
 
@@ -2193,15 +2295,15 @@ interface MigrationPolicy {
 
 ### 16.6 구현 우선순위 (권장)
 
-| Phase | 항목 | 예상 기간 | 의존성 |
-|-------|------|----------|-------|
-| **Phase 1** | 기본 기능 (현재 설계) | 5주 | - |
-| **Phase 2** | 보안 샌드박스 + 비밀값 관리 | 2주 | Phase 1 |
-| **Phase 3** | 재시도/캐싱/서킷브레이커 | 1.5주 | Phase 1 |
-| **Phase 4** | 스키마 검증 (Zod 통합) | 1주 | Phase 1 |
-| **Phase 5** | 실행 로그 UI | 1주 | Phase 1 |
-| **Phase 6** | 버전 관리/마이그레이션 | 1.5주 | Phase 4 |
-| **Phase 7** | 테스트 가이드/템플릿 | 1주 | Phase 1-4 |
+| Phase       | 항목                        | 예상 기간 | 의존성    |
+| ----------- | --------------------------- | --------- | --------- |
+| **Phase 1** | 기본 기능 (현재 설계)       | 5주       | -         |
+| **Phase 2** | 보안 샌드박스 + 비밀값 관리 | 2주       | Phase 1   |
+| **Phase 3** | 재시도/캐싱/서킷브레이커    | 1.5주     | Phase 1   |
+| **Phase 4** | 스키마 검증 (Zod 통합)      | 1주       | Phase 1   |
+| **Phase 5** | 실행 로그 UI                | 1주       | Phase 1   |
+| **Phase 6** | 버전 관리/마이그레이션      | 1.5주     | Phase 4   |
+| **Phase 7** | 테스트 가이드/템플릿        | 1주       | Phase 1-4 |
 
 **총 예상: 13주 (기본 5주 + 보완 8주)**
 

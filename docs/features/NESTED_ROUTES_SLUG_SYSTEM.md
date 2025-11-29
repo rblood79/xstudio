@@ -10,9 +10,9 @@
 
 ## 변경 이력
 
-| 버전 | 날짜 | 변경 내용 |
-|------|------|-----------|
-| v1.0 | 2025-11-28 | 초안 작성 |
+| 버전 | 날짜       | 변경 내용                                             |
+| ---- | ---------- | ----------------------------------------------------- |
+| v1.0 | 2025-11-28 | 초안 작성                                             |
 | v2.0 | 2025-11-29 | Data Panel 통합, 동적 라우트 지원, Visual Picker 연동 |
 
 ---
@@ -22,6 +22,7 @@
 ### 1.1 Problem Statement
 
 현재 XStudio의 페이지 라우팅 시스템:
+
 - 페이지 생성 시 slug가 `/page-1`, `/page-2` 형태로 자동 생성
 - 중첩 경로 (`/products/category/item`) 지원 없음
 - Layout과 URL 구조의 연관성 없음
@@ -33,6 +34,7 @@
 ### 1.3 v2.0 확장 목표
 
 **동적 라우트 + Data Panel 통합:**
+
 - `/products/:productId` 같은 동적 라우트 지원
 - DataTable과 라우트 파라미터 자동 바인딩
 - Visual Picker로 라우트 파라미터 선택
@@ -80,6 +82,7 @@
 ```
 
 **Rationale:**
+
 - Layout의 본질 = 반복을 줄이기 위한 미리 정의된 구조
 - 같은 Layout을 쓰는 페이지들 = 같은 섹션/카테고리 = 같은 URL 패턴
 - 하지만 다양한 고객 요구를 위해 자유로운 URL도 지원 필요
@@ -101,8 +104,8 @@ export interface Layout {
   description?: string;
 
   // ✅ NEW FIELDS
-  order_num?: number;     // 정렬 순서
-  slug?: string;          // URL base path (e.g., "/products")
+  order_num?: number; // 정렬 순서
+  slug?: string; // URL base path (e.g., "/products")
 
   created_at?: string;
   updated_at?: string;
@@ -119,14 +122,16 @@ export interface Layout {
  */
 export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
   description?: string;
-  order_num?: number;  // ✅ 추가
-  slug?: string;       // ✅ 추가
+  order_num?: number; // ✅ 추가
+  slug?: string; // ✅ 추가
 };
 
 /**
  * Layout 업데이트 시 필요한 필드
  */
-export type LayoutUpdate = Partial<Pick<Layout, "name" | "description" | "slug">>;  // ✅ slug 추가
+export type LayoutUpdate = Partial<
+  Pick<Layout, "name" | "description" | "slug">
+>; // ✅ slug 추가
 ```
 
 ### 2.3 Page Type (기존 유지)
@@ -136,9 +141,9 @@ export type LayoutUpdate = Partial<Pick<Layout, "name" | "description" | "slug">
 
 export interface Page {
   id: string;
-  title: string;           // 페이지 제목
+  title: string; // 페이지 제목
   project_id: string;
-  slug: string;            // URL 경로 - 절대경로(/로 시작) 또는 상대경로
+  slug: string; // URL 경로 - 절대경로(/로 시작) 또는 상대경로
   parent_id?: string | null;
   order_num?: number;
   layout_id?: string | null;
@@ -149,12 +154,12 @@ export interface Page {
 
 **⚠️ 중요: slug 필드 사용 규칙**
 
-| 상황 | slug 값 | 최종 URL |
-|------|---------|----------|
-| 절대 경로 | `/products/shoes` | `/products/shoes` (그대로 사용) |
-| Layout 있음 + 상대 경로 | `nike` | `{Layout.slug}/nike` |
-| parent_id 있음 + 상대 경로 | `nike` | `{부모 URL}/nike` |
-| 상대 경로만 | `page-1` | `/page-1` |
+| 상황                       | slug 값           | 최종 URL                        |
+| -------------------------- | ----------------- | ------------------------------- |
+| 절대 경로                  | `/products/shoes` | `/products/shoes` (그대로 사용) |
+| Layout 있음 + 상대 경로    | `nike`            | `{Layout.slug}/nike`            |
+| parent_id 있음 + 상대 경로 | `nike`            | `{부모 URL}/nike`               |
+| 상대 경로만                | `page-1`          | `/page-1`                       |
 
 ### 2.4 Database Migration (Supabase)
 
@@ -186,31 +191,33 @@ const DB_VERSION = 6;
 
 // onupgradeneeded 핸들러 내부
 // ✅ 버전 6: layouts 스토어에 order_num, slug 인덱스 추가
-if (!db.objectStoreNames.contains('layouts')) {
-  const layoutsStore = db.createObjectStore('layouts', { keyPath: 'id' });
-  layoutsStore.createIndex('project_id', 'project_id', { unique: false });
-  layoutsStore.createIndex('name', 'name', { unique: false });
-  layoutsStore.createIndex('order_num', 'order_num', { unique: false });  // ✅ 추가
-  layoutsStore.createIndex('slug', 'slug', { unique: false });            // ✅ 추가
-  console.log('[IndexedDB] Created store: layouts with order_num, slug indexes');
+if (!db.objectStoreNames.contains("layouts")) {
+  const layoutsStore = db.createObjectStore("layouts", { keyPath: "id" });
+  layoutsStore.createIndex("project_id", "project_id", { unique: false });
+  layoutsStore.createIndex("name", "name", { unique: false });
+  layoutsStore.createIndex("order_num", "order_num", { unique: false }); // ✅ 추가
+  layoutsStore.createIndex("slug", "slug", { unique: false }); // ✅ 추가
+  console.log(
+    "[IndexedDB] Created store: layouts with order_num, slug indexes"
+  );
 } else {
   // 기존 스토어에 인덱스 추가
   const transaction = (event.target as IDBOpenDBRequest).transaction;
   if (transaction) {
-    const layoutsStore = transaction.objectStore('layouts');
-    if (!layoutsStore.indexNames.contains('order_num')) {
-      layoutsStore.createIndex('order_num', 'order_num', { unique: false });
-      console.log('[IndexedDB] Added index: layouts.order_num');
+    const layoutsStore = transaction.objectStore("layouts");
+    if (!layoutsStore.indexNames.contains("order_num")) {
+      layoutsStore.createIndex("order_num", "order_num", { unique: false });
+      console.log("[IndexedDB] Added index: layouts.order_num");
     }
-    if (!layoutsStore.indexNames.contains('slug')) {
-      layoutsStore.createIndex('slug', 'slug', { unique: false });
-      console.log('[IndexedDB] Added index: layouts.slug');
+    if (!layoutsStore.indexNames.contains("slug")) {
+      layoutsStore.createIndex("slug", "slug", { unique: false });
+      console.log("[IndexedDB] Added index: layouts.slug");
     }
   }
 }
 
 // ✅ layouts API 타입 수정 (인라인 타입 → Layout 타입 import)
-import type { Layout } from '../../../types/builder/layout.types';
+import type { Layout } from "../../../types/builder/layout.types";
 
 layouts = {
   insert: async (layout: Layout) => {
@@ -220,7 +227,7 @@ layouts = {
       created_at: layout.created_at || now,
       updated_at: layout.updated_at || now,
     };
-    await this.putToStore('layouts', layoutWithTimestamps);
+    await this.putToStore("layouts", layoutWithTimestamps);
     return layoutWithTimestamps;
   },
 
@@ -229,25 +236,29 @@ layouts = {
     if (!existing) {
       throw new Error(`Layout ${id} not found`);
     }
-    const updated: Layout = { ...existing, ...updates, updated_at: new Date().toISOString() };
-    await this.putToStore('layouts', updated);
+    const updated: Layout = {
+      ...existing,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    await this.putToStore("layouts", updated);
     return updated;
   },
 
   delete: async (id: string): Promise<void> => {
-    await this.deleteFromStore('layouts', id);
+    await this.deleteFromStore("layouts", id);
   },
 
   getById: async (id: string): Promise<Layout | null> => {
-    return this.getFromStore<Layout>('layouts', id);
+    return this.getFromStore<Layout>("layouts", id);
   },
 
   getByProject: async (projectId: string): Promise<Layout[]> => {
-    return this.getAllByIndex<Layout>('layouts', 'project_id', projectId);
+    return this.getAllByIndex<Layout>("layouts", "project_id", projectId);
   },
 
   getAll: async (): Promise<Layout[]> => {
-    return this.getAllFromStore<Layout>('layouts');
+    return this.getAllFromStore<Layout>("layouts");
   },
 };
 ```
@@ -303,8 +314,8 @@ Page: { slug: "/special-post", layout_id: "layout-1" }  // 절대 경로
 ```typescript
 // src/utils/urlGenerator.ts
 
-import type { Page } from '../types/builder/unified.types';
-import type { Layout } from '../types/builder/layout.types';
+import type { Page } from "../types/builder/unified.types";
+import type { Layout } from "../types/builder/layout.types";
 
 interface GeneratePageUrlParams {
   page: Page;
@@ -319,9 +330,13 @@ interface GeneratePageUrlParams {
  * @param layout - 페이지에 적용된 Layout (optional)
  * @param allPages - 전체 페이지 목록 (parent_id 기반 URL 생성 시 필요)
  */
-export function generatePageUrl({ page, layout, allPages }: GeneratePageUrlParams): string {
+export function generatePageUrl({
+  page,
+  layout,
+  allPages,
+}: GeneratePageUrlParams): string {
   // 1. 절대 경로인 경우 그대로 반환
-  if (page.slug.startsWith('/')) {
+  if (page.slug.startsWith("/")) {
     return page.slug;
   }
 
@@ -344,11 +359,11 @@ export function generatePageUrl({ page, layout, allPages }: GeneratePageUrlParam
  * 부모 페이지 경로를 재귀적으로 구성합니다.
  */
 function buildParentPath(parentId: string, allPages: Page[]): string {
-  const parent = allPages.find(p => p.id === parentId);
-  if (!parent) return '';
+  const parent = allPages.find((p) => p.id === parentId);
+  if (!parent) return "";
 
   // 부모가 절대 경로면 그대로 반환
-  if (parent.slug.startsWith('/')) {
+  if (parent.slug.startsWith("/")) {
     return parent.slug;
   }
 
@@ -364,7 +379,7 @@ function buildParentPath(parentId: string, allPages: Page[]): string {
  * URL 정규화 (연속 슬래시 제거)
  */
 function normalizeUrl(url: string): string {
-  return url.replace(/\/+/g, '/');
+  return url.replace(/\/+/g, "/");
 }
 
 /**
@@ -386,11 +401,11 @@ export function hasCircularReference(
   const visited = new Set<string>();
 
   while (currentId) {
-    if (currentId === pageId) return true;  // 순환 발견
+    if (currentId === pageId) return true; // 순환 발견
     if (visited.has(currentId)) return true; // 이미 방문 (무한 루프 방지)
     visited.add(currentId);
 
-    const parent = allPages.find(p => p.id === currentId);
+    const parent = allPages.find((p) => p.id === currentId);
     currentId = parent?.parent_id || null;
   }
 
@@ -405,7 +420,7 @@ export function getNestingDepth(pageId: string, allPages: Page[]): number {
   let currentId: string | null = pageId;
 
   while (currentId) {
-    const page = allPages.find(p => p.id === currentId);
+    const page = allPages.find((p) => p.id === currentId);
     if (!page?.parent_id) break;
     depth++;
     currentId = page.parent_id;
@@ -443,7 +458,7 @@ export interface Page {
   layout_id?: string | null;
 
   // ✅ v2.0 NEW: 동적 라우트 설정
-  routeParams?: RouteParam[];      // 동적 파라미터 정의
+  routeParams?: RouteParam[]; // 동적 파라미터 정의
   dataBindings?: PageDataBinding[]; // 라우트 → DataTable 바인딩
 
   created_at?: string;
@@ -451,22 +466,22 @@ export interface Page {
 }
 
 export interface RouteParam {
-  name: string;           // 파라미터 이름 (productId)
-  type: 'string' | 'number';
+  name: string; // 파라미터 이름 (productId)
+  type: "string" | "number";
   required: boolean;
   defaultValue?: string;
   validation?: {
-    pattern?: string;     // 정규식 패턴
-    min?: number;         // 숫자 최소값
-    max?: number;         // 숫자 최대값
+    pattern?: string; // 정규식 패턴
+    min?: number; // 숫자 최소값
+    max?: number; // 숫자 최대값
   };
 }
 
 export interface PageDataBinding {
-  dataTableId: string;    // 바인딩할 DataTable ID
-  paramName: string;      // 라우트 파라미터 이름
-  fieldPath: string;      // DataTable 필드 경로 (id, slug 등)
-  autoLoad: boolean;      // 페이지 진입 시 자동 로드
+  dataTableId: string; // 바인딩할 DataTable ID
+  paramName: string; // 라우트 파라미터 이름
+  fieldPath: string; // DataTable 필드 경로 (id, slug 등)
+  autoLoad: boolean; // 페이지 진입 시 자동 로드
 }
 ```
 
@@ -508,7 +523,7 @@ export interface PageDataBinding {
  */
 export function extractRouteParams(slug: string): string[] {
   const matches = slug.match(/:([a-zA-Z][a-zA-Z0-9]*)/g);
-  return matches ? matches.map(m => m.slice(1)) : [];
+  return matches ? matches.map((m) => m.slice(1)) : [];
 }
 
 /**
@@ -521,8 +536,8 @@ export function matchRouteParams(
   pattern: string,
   url: string
 ): Record<string, string> | null {
-  const patternParts = pattern.split('/').filter(Boolean);
-  const urlParts = url.split('/').filter(Boolean);
+  const patternParts = pattern.split("/").filter(Boolean);
+  const urlParts = url.split("/").filter(Boolean);
 
   if (patternParts.length !== urlParts.length) return null;
 
@@ -532,7 +547,7 @@ export function matchRouteParams(
     const patternPart = patternParts[i];
     const urlPart = urlParts[i];
 
-    if (patternPart.startsWith(':')) {
+    if (patternPart.startsWith(":")) {
       params[patternPart.slice(1)] = urlPart;
     } else if (patternPart !== urlPart) {
       return null;
@@ -659,9 +674,9 @@ return data.filter(item => item.id === productId);
 ```typescript
 // src/preview/hooks/useRouteDataBinding.ts
 
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useDataPanelStore } from '../../stores/dataPanel';
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useDataPanelStore } from "../../stores/dataPanel";
 
 export function useRouteDataBinding(page: Page) {
   const params = useParams();
@@ -740,11 +755,14 @@ export interface AddPageParams {
 }
 
 // ✅ 기본값 생성 함수 (다이얼로그에서 사용)
-export function generatePageDefaults(existingPages: Page[]): { title: string; slug: string } {
+export function generatePageDefaults(existingPages: Page[]): {
+  title: string;
+  slug: string;
+} {
   const nextNum = existingPages.length + 1;
   return {
     title: `Page ${nextNum}`,
-    slug: `/page-${nextNum}`  // 절대 경로로 기본 생성
+    slug: `/page-${nextNum}`, // 절대 경로로 기본 생성
   };
 }
 
@@ -755,15 +773,19 @@ const addPage = async (params: AddPageParams): Promise<ApiResult<ApiPage>> => {
   // 순환 참조 검증
   if (parentId) {
     const { pages } = useStore.getState();
-    if (hasCircularReference('', parentId, pages)) {
-      return { success: false, error: new Error('Circular reference detected') };
+    if (hasCircularReference("", parentId, pages)) {
+      return {
+        success: false,
+        error: new Error("Circular reference detected"),
+      };
     }
   }
 
   try {
     const currentPages = useStore.getState().pages;
-    const maxOrderNum = currentPages.reduce((max, page) =>
-      Math.max(max, page.order_num || 0), -1
+    const maxOrderNum = currentPages.reduce(
+      (max, page) => Math.max(max, page.order_num || 0),
+      -1
     );
 
     const db = await getDB();
@@ -800,22 +822,25 @@ export interface SlugValidationResult {
 export function validateSlug(slug: string): SlugValidationResult {
   // 1. 빈 값 체크
   if (!slug.trim()) {
-    return { valid: false, error: 'Slug cannot be empty' };
+    return { valid: false, error: "Slug cannot be empty" };
   }
 
   // 2. 유효 문자 체크 (영문, 숫자, 하이픈, 슬래시)
   if (!/^[a-z0-9\-\/]+$/i.test(slug)) {
-    return { valid: false, error: 'Slug can only contain letters, numbers, hyphens, and slashes' };
+    return {
+      valid: false,
+      error: "Slug can only contain letters, numbers, hyphens, and slashes",
+    };
   }
 
   // 3. 연속 슬래시 체크
   if (/\/\/+/.test(slug)) {
-    return { valid: false, error: 'Slug cannot contain consecutive slashes' };
+    return { valid: false, error: "Slug cannot contain consecutive slashes" };
   }
 
   // 4. 끝 슬래시 체크
-  if (slug.endsWith('/') && slug !== '/') {
-    return { valid: false, error: 'Slug cannot end with a slash' };
+  if (slug.endsWith("/") && slug !== "/") {
+    return { valid: false, error: "Slug cannot end with a slash" };
   }
 
   return { valid: true };
@@ -828,10 +853,10 @@ export function generateSlugFromTitle(title: string): string {
   return title
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '')  // 특수문자 제거
-    .replace(/\s+/g, '-')           // 공백 → 하이픈
-    .replace(/-+/g, '-')            // 연속 하이픈 제거
-    .replace(/^-|-$/g, '');         // 앞뒤 하이픈 제거
+    .replace(/[^a-z0-9\s-]/g, "") // 특수문자 제거
+    .replace(/\s+/g, "-") // 공백 → 하이픈
+    .replace(/-+/g, "-") // 연속 하이픈 제거
+    .replace(/^-|-$/g, ""); // 앞뒤 하이픈 제거
 }
 ```
 
@@ -866,11 +891,15 @@ export function generateSlugFromTitle(title: string): string {
 ```typescript
 // src/builder/inspector/properties/editors/PageEditor.tsx
 
-import { useMemo } from 'react';
-import { useLayoutsStore } from '../../../stores/layouts';
-import { useStore } from '../../../stores';
-import { generatePageUrl, getNestingDepth, hasCircularReference } from '../../../../utils/urlGenerator';
-import { PropertyInput, PropertySelect } from '../../components';
+import { useMemo } from "react";
+import { useLayoutsStore } from "../../../stores/layouts";
+import { useStore } from "../../../stores";
+import {
+  generatePageUrl,
+  getNestingDepth,
+  hasCircularReference,
+} from "../../../../utils/urlGenerator";
+import { PropertyInput, PropertySelect } from "../../components";
 
 interface PageEditorProps {
   page: Page;
@@ -880,7 +909,7 @@ interface PageEditorProps {
 export function PageEditor({ page, onUpdate }: PageEditorProps) {
   const layouts = useLayoutsStore((s) => s.layouts);
   const pages = useStore((s) => s.pages);
-  const selectedLayout = layouts.find(l => l.id === page.layout_id);
+  const selectedLayout = layouts.find((l) => l.id === page.layout_id);
 
   // URL 미리보기 계산
   const previewUrl = useMemo(() => {
@@ -896,7 +925,7 @@ export function PageEditor({ page, onUpdate }: PageEditorProps) {
   const handleParentChange = (newParentId: string | null) => {
     if (newParentId && hasCircularReference(page.id, newParentId, pages)) {
       // 순환 참조 경고 표시
-      console.warn('Circular reference detected');
+      console.warn("Circular reference detected");
       return;
     }
     onUpdate({ parent_id: newParentId });
@@ -933,14 +962,14 @@ export function PageEditor({ page, onUpdate }: PageEditorProps) {
 
         <PropertySelect
           label="Layout"
-          value={page.layout_id || ''}
+          value={page.layout_id || ""}
           onChange={(value) => onUpdate({ layout_id: value || null })}
           options={[
-            { value: '', label: 'None' },
-            ...layouts.map(l => ({
+            { value: "", label: "None" },
+            ...layouts.map((l) => ({
               value: l.id,
-              label: `${l.name}${l.slug ? ` (${l.slug})` : ''}`
-            }))
+              label: `${l.name}${l.slug ? ` (${l.slug})` : ""}`,
+            })),
           ]}
         />
 
@@ -957,13 +986,13 @@ export function PageEditor({ page, onUpdate }: PageEditorProps) {
 
         <PropertySelect
           label="Parent Page"
-          value={page.parent_id || ''}
+          value={page.parent_id || ""}
           onChange={(value) => handleParentChange(value || null)}
           options={[
-            { value: '', label: 'None (Root)' },
+            { value: "", label: "None (Root)" },
             ...pages
-              .filter(p => p.id !== page.id)  // 자기 자신 제외
-              .map(p => ({ value: p.id, label: p.title }))
+              .filter((p) => p.id !== page.id) // 자기 자신 제외
+              .map((p) => ({ value: p.id, label: p.title })),
           ]}
         />
 
@@ -984,7 +1013,7 @@ export function PageEditor({ page, onUpdate }: PageEditorProps) {
 ```typescript
 // src/builder/inspector/properties/editors/LayoutEditor.tsx
 
-import { PropertyInput } from '../../components';
+import { PropertyInput } from "../../components";
 
 interface LayoutEditorProps {
   layout: Layout;
@@ -1006,7 +1035,7 @@ export function LayoutEditor({ layout, onUpdate }: LayoutEditorProps) {
 
         <PropertyInput
           label="Description"
-          value={layout.description || ''}
+          value={layout.description || ""}
           onChange={(value) => onUpdate({ description: value })}
           placeholder="Optional description"
         />
@@ -1017,14 +1046,15 @@ export function LayoutEditor({ layout, onUpdate }: LayoutEditorProps) {
 
         <PropertyInput
           label="Base Slug"
-          value={layout.slug || ''}
+          value={layout.slug || ""}
           onChange={(value) => onUpdate({ slug: value || undefined })}
           placeholder="/products (optional)"
         />
 
         <div className="slug-help">
-          이 Layout을 사용하는 모든 페이지는<br/>
-          <code>{layout.slug || '/'}</code> 하위 경로에 생성됩니다.
+          이 Layout을 사용하는 모든 페이지는
+          <br />
+          <code>{layout.slug || "/"}</code> 하위 경로에 생성됩니다.
         </div>
       </fieldset>
     </div>
@@ -1063,17 +1093,18 @@ export interface PreviewStoreState extends StateHierarchy {
 ```typescript
 // src/preview/store/previewStore.ts
 
-export const createPreviewStore = () => create<PreviewStoreState>((set, get) => ({
-  // ... 기존 코드 ...
+export const createPreviewStore = () =>
+  create<PreviewStoreState>((set, get) => ({
+    // ... 기존 코드 ...
 
-  // ============================================
-  // Layouts (NEW)
-  // ============================================
-  layouts: [],
-  setLayouts: (layouts: PreviewLayout[]) => set({ layouts }),
+    // ============================================
+    // Layouts (NEW)
+    // ============================================
+    layouts: [],
+    setLayouts: (layouts: PreviewLayout[]) => set({ layouts }),
 
-  // ... 기존 코드 ...
-}));
+    // ... 기존 코드 ...
+  }));
 ```
 
 ### 6.3 postMessage 메시지 타입 추가
@@ -1118,16 +1149,19 @@ case 'UPDATE_LAYOUTS': {
 const sendLayoutsToPreview = useCallback((layouts: Layout[]) => {
   if (!iframeRef.current?.contentWindow) return;
 
-  const previewLayouts: PreviewLayout[] = layouts.map(l => ({
+  const previewLayouts: PreviewLayout[] = layouts.map((l) => ({
     id: l.id,
     name: l.name,
     slug: l.slug,
   }));
 
-  iframeRef.current.contentWindow.postMessage({
-    type: 'UPDATE_LAYOUTS',
-    layouts: previewLayouts,
-  }, '*');
+  iframeRef.current.contentWindow.postMessage(
+    {
+      type: "UPDATE_LAYOUTS",
+      layouts: previewLayouts,
+    },
+    "*"
+  );
 }, []);
 
 // useLayoutsStore 구독하여 변경 시 전송
@@ -1145,40 +1179,42 @@ useEffect(() => {
 ```typescript
 // src/preview/router/PreviewRouter.tsx
 
-import { useMemo } from 'react';
-import { usePreviewStore } from '../store';
-import { generatePageUrl } from '../../utils/urlGenerator';
+import { useMemo } from "react";
+import { usePreviewStore } from "../store";
+import { generatePageUrl } from "../../utils/urlGenerator";
 
 export function PreviewRouter({ renderElements }: PreviewRouterProps) {
   const pages = usePreviewStore((s) => s.pages);
-  const layouts = usePreviewStore((s) => s.layouts);  // ✅ layouts 추가
+  const layouts = usePreviewStore((s) => s.layouts); // ✅ layouts 추가
 
   // 각 페이지의 최종 URL 계산
   const routeConfigs = useMemo(() => {
-    return pages.map(page => {
-      const layout = layouts.find(l => l.id === page.layout_id);
+    return pages.map((page) => {
+      const layout = layouts.find((l) => l.id === page.layout_id);
       const finalUrl = generatePageUrl({
-        page: { ...page, title: page.title },  // Page 타입 맞추기
+        page: { ...page, title: page.title }, // Page 타입 맞추기
         layout,
-        allPages: pages.map(p => ({ ...p, title: p.title }))
+        allPages: pages.map((p) => ({ ...p, title: p.title })),
       });
 
       return {
         pageId: page.id,
         path: finalUrl,
-        layoutId: page.layout_id
+        layoutId: page.layout_id,
       };
     });
   }, [pages, layouts]);
 
   return (
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={["/"]}>
       <Routes>
         {routeConfigs.map(({ pageId, path }) => (
           <Route
             key={pageId}
             path={path}
-            element={<PageRenderer pageId={pageId} renderElements={renderElements} />}
+            element={
+              <PageRenderer pageId={pageId} renderElements={renderElements} />
+            }
           />
         ))}
         <Route path="*" element={<NotFound />} />
@@ -1214,7 +1250,7 @@ export function PreviewRouter({ renderElements }: PreviewRouterProps) {
 ```typescript
 // src/builder/panels/nodes/utils/pageTreeBuilder.ts
 
-import type { Page } from '../../../../types/builder/unified.types';
+import type { Page } from "../../../../types/builder/unified.types";
 
 export interface PageTreeNode {
   page: Page;
@@ -1230,12 +1266,12 @@ export function buildPageTree(pages: Page[]): PageTreeNode[] {
   const roots: PageTreeNode[] = [];
 
   // 1. 모든 노드 생성
-  pages.forEach(page => {
+  pages.forEach((page) => {
     nodeMap.set(page.id, { page, children: [], depth: 0 });
   });
 
   // 2. 부모-자식 관계 연결
-  pages.forEach(page => {
+  pages.forEach((page) => {
     const node = nodeMap.get(page.id)!;
 
     if (page.parent_id && nodeMap.has(page.parent_id)) {
@@ -1250,7 +1286,7 @@ export function buildPageTree(pages: Page[]): PageTreeNode[] {
   // 3. order_num으로 정렬
   const sortNodes = (nodes: PageTreeNode[]) => {
     nodes.sort((a, b) => (a.page.order_num || 0) - (b.page.order_num || 0));
-    nodes.forEach(node => sortNodes(node.children));
+    nodes.forEach((node) => sortNodes(node.children));
   };
   sortNodes(roots);
 
@@ -1263,7 +1299,7 @@ export function buildPageTree(pages: Page[]): PageTreeNode[] {
 ```typescript
 // src/builder/panels/nodes/NodesPanel.tsx (일부)
 
-import { buildPageTree } from './utils/pageTreeBuilder';
+import { buildPageTree } from "./utils/pageTreeBuilder";
 
 // 페이지 트리 렌더링
 function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
@@ -1273,13 +1309,13 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
   return (
     <div className="page-tree-item" style={{ paddingLeft: `${depth * 16}px` }}>
       <button
-        className={`page-item ${isSelected ? 'selected' : ''}`}
+        className={`page-item ${isSelected ? "selected" : ""}`}
         onClick={() => onSelect(page.id)}
       >
-        {children.length > 0 ? '📁' : '📄'} {page.title}
+        {children.length > 0 ? "📁" : "📄"} {page.title}
       </button>
 
-      {children.map(child => (
+      {children.map((child) => (
         <PageTreeItem
           key={child.page.id}
           node={child}
@@ -1298,104 +1334,104 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 
 ### Phase 1: Foundation (기반 작업) - P0
 
-| Task | File | Description |
-|------|------|-------------|
+| Task                                   | File                                | Description                             |
+| -------------------------------------- | ----------------------------------- | --------------------------------------- |
 | Layout 타입에 `order_num`, `slug` 추가 | `src/types/builder/layout.types.ts` | Layout, LayoutCreate, LayoutUpdate 수정 |
-| IndexedDB 스키마 업데이트 | `src/lib/db/indexedDB/adapter.ts` | DB_VERSION 증가 (5→6), 인덱스 추가 |
-| IndexedDB layouts API 타입 수정 | `src/lib/db/indexedDB/adapter.ts` | 인라인 타입 → Layout 타입 import |
-| types.ts 타입 일치 확인 | `src/lib/db/types.ts` | Layout 타입 import 확인 |
-| Supabase 마이그레이션 | `supabase/migrations/` | (Supabase 사용 시) |
+| IndexedDB 스키마 업데이트              | `src/lib/db/indexedDB/adapter.ts`   | DB_VERSION 증가 (5→6), 인덱스 추가      |
+| IndexedDB layouts API 타입 수정        | `src/lib/db/indexedDB/adapter.ts`   | 인라인 타입 → Layout 타입 import        |
+| types.ts 타입 일치 확인                | `src/lib/db/types.ts`               | Layout 타입 import 확인                 |
+| Supabase 마이그레이션                  | `supabase/migrations/`              | (Supabase 사용 시)                      |
 
 ### Phase 2: Page Creation UI - P1
 
-| Task | File | Description |
-|------|------|-------------|
-| AddPageDialog 컴포넌트 | `src/builder/components/AddPageDialog.tsx` | 다이얼로그 UI |
-| usePageManager 수정 | `src/builder/hooks/usePageManager.ts` | AddPageParams, generatePageDefaults 추가 |
-| slug 검증 유틸리티 | `src/utils/slugValidator.ts` | validateSlug, generateSlugFromTitle |
-| URL 생성 유틸리티 | `src/utils/urlGenerator.ts` | generatePageUrl, hasCircularReference, getNestingDepth |
-| NodesPanel과 다이얼로그 연동 | `src/builder/panels/nodes/NodesPanel.tsx` | Add 버튼 → 다이얼로그 열기 |
+| Task                         | File                                       | Description                                            |
+| ---------------------------- | ------------------------------------------ | ------------------------------------------------------ |
+| AddPageDialog 컴포넌트       | `src/builder/components/AddPageDialog.tsx` | 다이얼로그 UI                                          |
+| usePageManager 수정          | `src/builder/hooks/usePageManager.ts`      | AddPageParams, generatePageDefaults 추가               |
+| slug 검증 유틸리티           | `src/utils/slugValidator.ts`               | validateSlug, generateSlugFromTitle                    |
+| URL 생성 유틸리티            | `src/utils/urlGenerator.ts`                | generatePageUrl, hasCircularReference, getNestingDepth |
+| NodesPanel과 다이얼로그 연동 | `src/builder/panels/nodes/NodesPanel.tsx`  | Add 버튼 → 다이얼로그 열기                             |
 
 ### Phase 3: Property Editors - P1
 
-| Task | File | Description |
-|------|------|-------------|
-| PageEditor 컴포넌트 생성 | `src/builder/inspector/properties/editors/PageEditor.tsx` | 페이지 속성 편집기 |
-| LayoutEditor에 slug 필드 추가 | `src/builder/inspector/properties/editors/LayoutEditor.tsx` | Base Slug 입력 필드 |
-| URL 미리보기 컴포넌트 | `src/builder/components/UrlPreview.tsx` | 실시간 URL 미리보기 |
-| 깊은 중첩 경고 UI | `src/builder/inspector/` | nestingDepth >= 3 경고 |
+| Task                          | File                                                        | Description            |
+| ----------------------------- | ----------------------------------------------------------- | ---------------------- |
+| PageEditor 컴포넌트 생성      | `src/builder/inspector/properties/editors/PageEditor.tsx`   | 페이지 속성 편집기     |
+| LayoutEditor에 slug 필드 추가 | `src/builder/inspector/properties/editors/LayoutEditor.tsx` | Base Slug 입력 필드    |
+| URL 미리보기 컴포넌트         | `src/builder/components/UrlPreview.tsx`                     | 실시간 URL 미리보기    |
+| 깊은 중첩 경고 UI             | `src/builder/inspector/`                                    | nestingDepth >= 3 경고 |
 
 ### Phase 4: Preview & Router Integration - P1
 
-| Task | File | Description |
-|------|------|-------------|
-| PreviewStoreState에 layouts 추가 | `src/preview/store/types.ts` | PreviewLayout 타입, layouts 배열 |
-| Preview Store 수정 | `src/preview/store/previewStore.ts` | setLayouts 액션 |
-| UPDATE_LAYOUTS 메시지 핸들러 | `src/preview/utils/messageHandlers.ts` | layouts 수신 처리 |
-| Builder에서 layouts 전송 | `src/builder/hooks/useIframeMessenger.ts` | postMessage 전송 |
-| PreviewRouter 업데이트 | `src/preview/router/PreviewRouter.tsx` | generatePageUrl 사용 |
+| Task                             | File                                      | Description                      |
+| -------------------------------- | ----------------------------------------- | -------------------------------- |
+| PreviewStoreState에 layouts 추가 | `src/preview/store/types.ts`              | PreviewLayout 타입, layouts 배열 |
+| Preview Store 수정               | `src/preview/store/previewStore.ts`       | setLayouts 액션                  |
+| UPDATE_LAYOUTS 메시지 핸들러     | `src/preview/utils/messageHandlers.ts`    | layouts 수신 처리                |
+| Builder에서 layouts 전송         | `src/builder/hooks/useIframeMessenger.ts` | postMessage 전송                 |
+| PreviewRouter 업데이트           | `src/preview/router/PreviewRouter.tsx`    | generatePageUrl 사용             |
 
 ### Phase 5: NodesPanel 트리 표시 - P1
 
-| Task | File | Description |
-|------|------|-------------|
+| Task                     | File                                                | Description        |
+| ------------------------ | --------------------------------------------------- | ------------------ |
 | pageTreeBuilder 유틸리티 | `src/builder/panels/nodes/utils/pageTreeBuilder.ts` | buildPageTree 함수 |
-| NodesPanel 트리 렌더링 | `src/builder/panels/nodes/NodesPanel.tsx` | 계층 구조 표시 |
-| 트리 들여쓰기 CSS | `src/builder/panels/nodes/index.css` | depth 기반 padding |
+| NodesPanel 트리 렌더링   | `src/builder/panels/nodes/NodesPanel.tsx`           | 계층 구조 표시     |
+| 트리 들여쓰기 CSS        | `src/builder/panels/nodes/index.css`                | depth 기반 padding |
 
 ### Phase 6: Testing & Polish - P2
 
-| Task | Description |
-|------|-------------|
-| 단위 테스트 (urlGenerator) | generatePageUrl, hasCircularReference 테스트 |
-| 단위 테스트 (slugValidator) | validateSlug, generateSlugFromTitle 테스트 |
-| E2E 테스트 (페이지 생성 플로우) | 다이얼로그 → 페이지 생성 → URL 확인 |
-| 기존 페이지 마이그레이션 스크립트 | 기존 절대 경로 페이지 하위 호환성 확인 |
+| Task                              | Description                                  |
+| --------------------------------- | -------------------------------------------- |
+| 단위 테스트 (urlGenerator)        | generatePageUrl, hasCircularReference 테스트 |
+| 단위 테스트 (slugValidator)       | validateSlug, generateSlugFromTitle 테스트   |
+| E2E 테스트 (페이지 생성 플로우)   | 다이얼로그 → 페이지 생성 → URL 확인          |
+| 기존 페이지 마이그레이션 스크립트 | 기존 절대 경로 페이지 하위 호환성 확인       |
 
 ### Phase 7: 동적 라우트 (v2.0) - P1
 
-| Task | File | Description |
-|------|------|-------------|
-| Page 타입 확장 | `src/types/builder/unified.types.ts` | routeParams, dataBindings 필드 추가 |
-| RouteParam, PageDataBinding 타입 | `src/types/builder/unified.types.ts` | 동적 라우트 관련 타입 정의 |
-| 라우트 유틸리티 | `src/utils/routeUtils.ts` | extractRouteParams, matchRouteParams, generateUrlWithParams |
-| 동적 라우트 감지 | `src/utils/urlGenerator.ts` | `:paramName` 패턴 처리 |
-| PageEditor 확장 | `src/builder/inspector/properties/editors/PageEditor.tsx` | Route Parameters UI |
-| Preview 라우트 매칭 | `src/preview/router/PreviewRouter.tsx` | React Router 동적 세그먼트 지원 |
+| Task                             | File                                                      | Description                                                 |
+| -------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------- |
+| Page 타입 확장                   | `src/types/builder/unified.types.ts`                      | routeParams, dataBindings 필드 추가                         |
+| RouteParam, PageDataBinding 타입 | `src/types/builder/unified.types.ts`                      | 동적 라우트 관련 타입 정의                                  |
+| 라우트 유틸리티                  | `src/utils/routeUtils.ts`                                 | extractRouteParams, matchRouteParams, generateUrlWithParams |
+| 동적 라우트 감지                 | `src/utils/urlGenerator.ts`                               | `:paramName` 패턴 처리                                      |
+| PageEditor 확장                  | `src/builder/inspector/properties/editors/PageEditor.tsx` | Route Parameters UI                                         |
+| Preview 라우트 매칭              | `src/preview/router/PreviewRouter.tsx`                    | React Router 동적 세그먼트 지원                             |
 
 ### Phase 8: Data Panel 통합 (v2.0) - P1
 
-| Task | File | Description |
-|------|------|-------------|
-| Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx` | `route` 카테고리 추가 |
-| 라우트 파라미터 바인딩 UI | `src/builder/inspector/properties/editors/PageEditor.tsx` | Data Bindings 섹션 |
-| useRouteDataBinding 훅 | `src/preview/hooks/useRouteDataBinding.ts` | 라우트 변경 시 자동 데이터 로드 |
-| 바인딩 표현식 확장 | `src/utils/bindingResolver.ts` | `{{route.paramName}}` 지원 |
-| Transformer context 확장 | `src/stores/dataPanel/transformerExecutor.ts` | `context.route` 접근 |
-| API Endpoint 라우트 치환 | `src/stores/dataPanel/apiExecutor.ts` | URL에서 `{{route.xxx}}` 치환 |
+| Task                          | File                                                      | Description                     |
+| ----------------------------- | --------------------------------------------------------- | ------------------------------- |
+| Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx`              | `route` 카테고리 추가           |
+| 라우트 파라미터 바인딩 UI     | `src/builder/inspector/properties/editors/PageEditor.tsx` | Data Bindings 섹션              |
+| useRouteDataBinding 훅        | `src/preview/hooks/useRouteDataBinding.ts`                | 라우트 변경 시 자동 데이터 로드 |
+| 바인딩 표현식 확장            | `src/utils/bindingResolver.ts`                            | `{{route.paramName}}` 지원      |
+| Transformer context 확장      | `src/stores/dataPanel/transformerExecutor.ts`             | `context.route` 접근            |
+| API Endpoint 라우트 치환      | `src/stores/dataPanel/apiExecutor.ts`                     | URL에서 `{{route.xxx}}` 치환    |
 
 ### Phase 9: Data Panel 통합 고급 (v2.0) - P2
 
-| Task | File | Description |
-|------|------|-------------|
-| 자동 API 엔드포인트 생성 | `src/stores/dataPanel/` | DataBinding 설정 시 자동 API 생성 |
-| 라우트 검증 | `src/utils/routeValidator.ts` | 라우트 파라미터 유효성 검증 |
-| 404 페이지 처리 | `src/preview/router/` | 잘못된 파라미터 시 에러 페이지 |
-| SSG/SSR 프리렌더링 힌트 | `src/types/builder/unified.types.ts` | 정적 경로 목록 생성 지원 |
+| Task                     | File                                 | Description                       |
+| ------------------------ | ------------------------------------ | --------------------------------- |
+| 자동 API 엔드포인트 생성 | `src/stores/dataPanel/`              | DataBinding 설정 시 자동 API 생성 |
+| 라우트 검증              | `src/utils/routeValidator.ts`        | 라우트 파라미터 유효성 검증       |
+| 404 페이지 처리          | `src/preview/router/`                | 잘못된 파라미터 시 에러 페이지    |
+| SSG/SSR 프리렌더링 힌트  | `src/types/builder/unified.types.ts` | 정적 경로 목록 생성 지원          |
 
 ### 구현 일정 요약
 
-| Phase | 내용 | 예상 기간 | 우선순위 |
-|-------|------|----------|----------|
-| Phase 1 | 기반 작업 (타입, DB) | 2일 | P0 |
-| Phase 2 | Page 생성 UI | 3일 | P1 |
-| Phase 3 | Property Editors | 2일 | P1 |
-| Phase 4 | Preview & Router | 2일 | P1 |
-| Phase 5 | NodesPanel 트리 | 1일 | P1 |
-| Phase 6 | 테스트 & 폴리시 | 2일 | P2 |
-| **Phase 7** | **동적 라우트 (v2.0)** | **3일** | **P1** |
-| **Phase 8** | **Data Panel 통합 (v2.0)** | **3일** | **P1** |
-| **Phase 9** | **고급 기능 (v2.0)** | **2일** | **P2** |
+| Phase       | 내용                       | 예상 기간 | 우선순위 |
+| ----------- | -------------------------- | --------- | -------- |
+| Phase 1     | 기반 작업 (타입, DB)       | 2일       | P0       |
+| Phase 2     | Page 생성 UI               | 3일       | P1       |
+| Phase 3     | Property Editors           | 2일       | P1       |
+| Phase 4     | Preview & Router           | 2일       | P1       |
+| Phase 5     | NodesPanel 트리            | 1일       | P1       |
+| Phase 6     | 테스트 & 폴리시            | 2일       | P2       |
+| **Phase 7** | **동적 라우트 (v2.0)**     | **3일**   | **P1**   |
+| **Phase 8** | **Data Panel 통합 (v2.0)** | **3일**   | **P1**   |
+| **Phase 9** | **고급 기능 (v2.0)**       | **2일**   | **P2**   |
 
 **총 예상: 20일 (v1.0: 12일 + v2.0: 8일)**
 
@@ -1523,7 +1559,7 @@ Page B: { parent_id: "page-a" }  // ❌ 순환 참조
 // PageEditor에서 사용
 const handleParentChange = (newParentId: string | null) => {
   if (newParentId && hasCircularReference(page.id, newParentId, pages)) {
-    showToast('Cannot set parent: circular reference detected');
+    showToast("Cannot set parent: circular reference detected");
     return;
   }
   onUpdate({ parent_id: newParentId });
@@ -1538,38 +1574,92 @@ const handleParentChange = (newParentId: string | null) => {
 해결: getNestingDepth() 함수로 깊이 계산, 3단계 이상 시 경고 표시
 ```
 
----
+diff --git a/docs/features/NESTED_ROUTES_SLUG_SYSTEM.md b/docs/features/NESTED_ROUTES_SLUG_SYSTEM.md
+index 5564e91d8188eb90d1afb64bafcfb35ada2dbd67..3a49a1fe7e996b21d8fb774cab6dbef29ec12168 100644
+--- a/docs/features/NESTED_ROUTES_SLUG_SYSTEM.md
++++ b/docs/features/NESTED_ROUTES_SLUG_SYSTEM.md
+@@ -1516,50 +1516,78 @@ Layout B: { slug: "/products" } // ❌ 같은 프로젝트 내 중복 불가
+Page A: { parent_id: "page-b" }
+Page B: { parent_id: "page-a" } // ❌ 순환 참조
 
-## 11. Migration Strategy
+해결: hasCircularReference() 함수로 검증
 
-### 11.1 Existing Data Migration
+````
 
 ```typescript
-// 기존 페이지의 slug는 그대로 유지 (절대 경로)
-// Layout에 slug를 추가해도 기존 페이지는 영향 없음
+// PageEditor에서 사용
+const handleParentChange = (newParentId: string | null) => {
+  if (newParentId && hasCircularReference(page.id, newParentId, pages)) {
+    showToast('Cannot set parent: circular reference detected');
+    return;
+  }
+  onUpdate({ parent_id: newParentId });
+};
+````
 
-// 예시: 기존 데이터
-{ id: 'p1', slug: '/page-1', layout_id: 'layout-1' }
+### 10.3 깊은 중첩
 
-// Layout에 slug 추가 후
-Layout: { id: 'layout-1', slug: '/products' }
+```
+/level1/level2/level3/level4/level5/page  // ⚠️ SEO 비권장
 
-// 기존 페이지는 여전히 /page-1 으로 접근 가능
-// (절대 경로이므로 Layout.slug 무시)
+해결: getNestingDepth() 함수로 깊이 계산, 3단계 이상 시 경고 표시
 ```
 
-### 11.2 Backward Compatibility
++### 10.4 라우트 파라미터 보안/검증
 
-- 절대 경로 (`/`로 시작)는 항상 그대로 사용
-- Layout.slug는 선택적 (undefined 허용)
-- 기존 페이지 수정 없이 동작
-- IndexedDB 버전 업그레이드로 기존 데이터 유지
+- +`` markdown
++필요한 추가 안전장치:
++1) 허용 리스트 기반 파라미터 스키마: `RouteParamSchema`(type, pattern, allowList)로 정의하고, 동적 세그먼트 매칭 시 Zod/Built-in validator로 1차 검증.
++2) URL 인코딩 일관화: 미인코딩 값 삽입 방지를 위해 `generateUrlWithParams` 내부에서 `encodeURIComponent` 강제 적용, 중복 인코딩 탐지 로깅.
++3) 서버/클라이언트 분리 정책: 민감한 파라미터(예: 토큰, 내부 ID)는 프리뷰/클라이언트 라우팅에서 사용 금지 태그(`sensitive: true`)를 두고, 존재 시 에러/가드 페이지로 전환.
++4) 파라미터 누수 방지: `postMessage`로 프리뷰에 전달 시 민감 키 마스킹, 브레드크럼/메트릭 로거에서도 동일 키 필터링 규칙 재사용.
++ ``
+- +### 10.5 에러 처리(라우트 매칭/데이터 로드)
+- +`` markdown
++1) 매칭 실패 가드: `matchRouteParams`가 null을 반환하면 404 템플릿 렌더 + 실패 이벤트 발행(`route:nomatch`).
++2) 데이터 로드 오류: 라우트 파라미터가 API/데이터테이블 로드에 사용될 때, (a) 파라미터 검증 실패 → 400 뷰, (b) API 실패 → 5xx/네트워크 전용 에러 뷰, (c) 변환/바인딩 실패 → 422 뷰로 세분화.
++3) 회복 UX: 에러 페이지에 "다시 시도"(API 재호출), "상위로 이동"(부모 URL), "홈으로 이동" CTA 제공.
++4) 로깅: 에러 타입/파라미터/현재 URL을 ExecutionLog와 동일 구조로 기록해 Data Panel 관측성과 연결.
++ ``
+- +### 10.6 캐싱/프리패치 정책
+- +`` markdown
++1) 라우트 파라미터 기반 캐시 키: `cacheKey = route.path + JSON.stringify(sortedParams)` 규칙을 명시해 동일 페이지 이동 시 데이터 재사용.
++2) stale-while-revalidate: 캐시된 데이터 즉시 표시 후 백그라운드 갱신 옵션을 Router 설정(`revalidateOnFocus`, `revalidateInterval`)으로 노출.
++3) 프리패치: Navigation 트리/노드 패널 hover 시 하위 페이지의 정적 자원과 주요 API를 프리패치하는 훅(옵션) 추가.
++4) 무효화 규칙: slug/routeParam 변경 시 관련 캐시를 일괄 삭제할 `invalidateRouteCache(slug, params)` 헬퍼 정의.
++ ``
+- ***
 
----
+  ## 11. Migration Strategy
+
+  ### 11.1 Existing Data Migration
+
+  ```typescript
+  // 기존 페이지의 slug는 그대로 유지 (절대 경로)
+  // Layout에 slug를 추가해도 기존 페이지는 영향 없음
+
+  // 예시: 기존 데이터
+  { id: 'p1', slug: '/page-1', layout_id: 'layout-1' }
+
+  // Layout에 slug 추가 후
+  Layout: { id: 'layout-1', slug: '/products' }
+
+  // 기존 페이지는 여전히 /page-1 으로 접근 가능
+  // (절대 경로이므로 Layout.slug 무시)
+  ```
+
+  ### 11.2 Backward Compatibility
+
+  - 절대 경로 (`/`로 시작)는 항상 그대로 사용
+  - Layout.slug는 선택적 (undefined 허용)
+  - 기존 페이지 수정 없이 동작
+
+  ***
 
 ## 12. Success Criteria
 
 ### 필수 (P0/P1)
+
 - [ ] Layout 타입에 order_num, slug 필드 추가 완료
 - [ ] LayoutCreate, LayoutUpdate 타입 수정 완료
 - [ ] IndexedDB layouts 스토어에 order_num, slug 인덱스 추가
@@ -1587,12 +1677,14 @@ Layout: { id: 'layout-1', slug: '/products' }
 - [ ] TypeScript 타입 오류 0개
 
 ### 권장 (P2)
+
 - [ ] 순환 참조 검증 및 경고 표시
 - [ ] 깊은 중첩 경고 UI (3단계 이상)
 - [ ] 단위 테스트 작성
 - [ ] E2E 테스트 작성
 
 ### v2.0 동적 라우트 (P1)
+
 - [ ] Page 타입에 routeParams, dataBindings 필드 추가
 - [ ] RouteParam, PageDataBinding 타입 정의
 - [ ] 라우트 유틸리티 (extractRouteParams, matchRouteParams, generateUrlWithParams)
@@ -1600,6 +1692,7 @@ Layout: { id: 'layout-1', slug: '/products' }
 - [ ] Preview Router에서 동적 세그먼트 (`:param`) 지원
 
 ### v2.0 Data Panel 통합 (P1)
+
 - [ ] Visual Picker에 `route` 카테고리 추가
 - [ ] PageEditor에 Data Bindings UI 추가
 - [ ] useRouteDataBinding 훅 구현
@@ -1608,6 +1701,7 @@ Layout: { id: 'layout-1', slug: '/products' }
 - [ ] API Endpoint URL에서 `{{route.xxx}}` 치환
 
 ### v2.0 고급 기능 (P2)
+
 - [ ] DataBinding 설정 시 자동 API 엔드포인트 생성
 - [ ] 라우트 파라미터 유효성 검증
 - [ ] 404 페이지 처리 (잘못된 파라미터)
