@@ -540,6 +540,7 @@ export function App() {
       setCurrentPageId: storeState.setCurrentPageId,
       setCurrentLayoutId: storeState.setCurrentLayoutId,
       setPages: storeState.setPages,
+      setLayouts: storeState.setLayouts,
       setDataSources: storeState.setDataSources,
       setAuthToken: storeState.setAuthToken,
       setReady: storeState.setReady,
