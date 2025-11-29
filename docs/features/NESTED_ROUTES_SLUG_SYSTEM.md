@@ -1,10 +1,24 @@
 # Nested Routes & Slug System Design
 
-**Status:** v2.0 (Data Panel 통합)
+**Status:** v2.1 (Phase 1-3 Complete)
 **Created:** 2025-11-28
-**Updated:** 2025-11-29
+**Updated:** 2025-11-30
 **Author:** Claude
 **Related:** Layout/Slot System, Page Management, Data Panel System
+
+---
+
+## Implementation Progress
+
+| Phase   | Status | Description                        |
+| ------- | ------ | ---------------------------------- |
+| Phase 1 | ✅     | Foundation (Types, DB)             |
+| Phase 2 | ✅     | Page Creation UI (Router)          |
+| Phase 3 | ✅     | Dynamic Route Parameters           |
+| Phase 4 | 📋     | Property Editors                   |
+| Phase 5 | 📋     | NodesPanel Tree                    |
+| Phase 6 | 📋     | Testing & Polish                   |
+| Phase 7 | 📋     | Data Panel Integration (advanced)  |
 
 ---
 
@@ -14,6 +28,7 @@
 | ---- | ---------- | ----------------------------------------------------- |
 | v1.0 | 2025-11-28 | 초안 작성                                             |
 | v2.0 | 2025-11-29 | Data Panel 통합, 동적 라우트 지원, Visual Picker 연동 |
+| v2.1 | 2025-11-30 | Phase 3 동적 라우트 구현 완료                         |
 
 ---
 
@@ -1392,16 +1407,74 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 | E2E 테스트 (페이지 생성 플로우)   | 다이얼로그 → 페이지 생성 → URL 확인          |
 | 기존 페이지 마이그레이션 스크립트 | 기존 절대 경로 페이지 하위 호환성 확인       |
 
-### Phase 7: 동적 라우트 (v2.0) - P1
+### Phase 7: 동적 라우트 (v2.0) - P1 ✅ COMPLETE
 
-| Task                             | File                                                      | Description                                                 |
-| -------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------- |
-| Page 타입 확장                   | `src/types/builder/unified.types.ts`                      | routeParams, dataBindings 필드 추가                         |
-| RouteParam, PageDataBinding 타입 | `src/types/builder/unified.types.ts`                      | 동적 라우트 관련 타입 정의                                  |
-| 라우트 유틸리티                  | `src/utils/routeUtils.ts`                                 | extractRouteParams, matchRouteParams, generateUrlWithParams |
-| 동적 라우트 감지                 | `src/utils/urlGenerator.ts`                               | `:paramName` 패턴 처리                                      |
-| PageEditor 확장                  | `src/builder/panels/properties/editors/PageEditor.tsx` | Route Parameters UI                                         |
-| Canvas 라우트 매칭               | `src/canvas/router/CanvasRouter.tsx`                     | React Router 동적 세그먼트 지원                             |
+| Task                             | File                                   | Status | Description                      |
+| -------------------------------- | -------------------------------------- | ------ | -------------------------------- |
+| 동적 라우트 유틸리티 확장        | `src/utils/urlGenerator.ts`            | ✅     | 동적 파라미터 추출/매칭 함수     |
+| Canvas 라우트 파라미터 훅        | `src/canvas/router/CanvasRouter.tsx`   | ✅     | useCanvasParams 훅               |
+| RuntimeStore 라우트 파라미터     | `src/canvas/store/runtimeStore.ts`     | ✅     | routeParams 상태/액션            |
+| 라우트 정렬 (정적 우선)          | `src/canvas/router/CanvasRouter.tsx`   | ✅     | 정적 라우트가 동적보다 먼저 매칭 |
+
+#### Phase 7 구현 세부 내용
+
+**1. urlGenerator.ts 확장** (`src/utils/urlGenerator.ts`)
+
+```typescript
+// 동적 파라미터 추출
+extractDynamicParams('/products/:categoryId/:itemId')
+// → ['categoryId', 'itemId']
+
+// 동적 라우트 여부 확인
+hasDynamicParams('/products/:id') // → true
+hasDynamicParams('/products/shoes') // → false
+
+// 파라미터 값 채우기
+fillDynamicParams('/products/:id', { id: '123' })
+// → '/products/123'
+
+// URL 매칭
+matchDynamicUrl('/products/:id', '/products/123')
+// → { id: '123' }
+```
+
+**2. useCanvasParams 훅** (`src/canvas/router/CanvasRouter.tsx`)
+
+```typescript
+// Canvas 컴포넌트에서 동적 파라미터 접근
+function ProductDetail() {
+  const params = useCanvasParams();
+  // params = { productId: '123', categoryId: 'shoes' }
+
+  return <div>Product ID: {params.productId}</div>;
+}
+```
+
+**3. RuntimeStore 연동** (`src/canvas/store/runtimeStore.ts`)
+
+```typescript
+// PageRenderer에서 자동 저장
+useEffect(() => {
+  setRouteParams(params as Record<string, string>);
+}, [params, setRouteParams]);
+
+// useDataSource에서 변수 치환
+const { data } = useDataSource('getProduct', {
+  params: { productId: '{{route.productId}}' }
+});
+```
+
+**4. 라우트 정렬** (`src/canvas/router/CanvasRouter.tsx`)
+
+```typescript
+// 정적 라우트가 동적 라우트보다 먼저 매칭되도록 정렬
+// /products/new → /products/:id 순서로 정렬
+routeConfigs.sort((a, b) => {
+  if (a.isDynamic && !b.isDynamic) return 1;  // 동적은 뒤로
+  if (!a.isDynamic && b.isDynamic) return -1; // 정적은 앞으로
+  return bSegments - aSegments; // 더 구체적인 경로 먼저
+});
+```
 
 ### Phase 8: Data Panel 통합 (v2.0) - P1
 

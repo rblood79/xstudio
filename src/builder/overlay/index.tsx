@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useStore } from "../stores";
-import { ChevronUp } from "lucide-react";
+import { Maximize2 } from "lucide-react";
 import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
@@ -23,11 +23,13 @@ interface OverlayData {
 export default function SelectionOverlay() {
   const selectedElementId = useStore((state) => state.selectedElementId);
   // ⭐ Multi-select state
-  const selectedElementIds = useStore((state) => state.selectedElementIds || []);
+  const selectedElementIds = useStore(
+    (state) => state.selectedElementIds || []
+  );
   const multiSelectMode = useStore((state) => state.multiSelectMode || false);
 
   // 🔍 Debug: Track rapid remounts (only in dev)
-  useOverlayDebug('SelectionOverlay', selectedElementId || 'none');
+  useOverlayDebug("SelectionOverlay", selectedElementId || "none");
 
   // 성능 최적화: Map 사용 (O(1) 조회)
   const elementsMap = useStore((state) => state.elementsMap);
@@ -38,81 +40,88 @@ export default function SelectionOverlay() {
   const [selectedTag, setSelectedTag] = useState<string>("");
 
   // ⭐ Multi-select state: Map of elementId -> overlay data
-  const [multiOverlays, setMultiOverlays] = useState<Map<string, OverlayData>>(new Map());
+  const [multiOverlays, setMultiOverlays] = useState<Map<string, OverlayData>>(
+    new Map()
+  );
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
   // Tag 표시 로직 (useMemo로 최적화, Map 사용)
   const displayTag = useMemo(() => {
-    const element = selectedElementId ? elementsMap.get(selectedElementId) : null;
+    const element = selectedElementId
+      ? elementsMap.get(selectedElementId)
+      : null;
     return element?.tag || selectedTag || "";
   }, [elementsMap, selectedElementId, selectedTag]);
 
   // immediate: true면 RAF 없이 즉시 실행 (초기 선택 시 사용)
   // immediate: false면 기존 RAF 사용 (ResizeObserver, 스크롤 등)
-  const updatePosition = useCallback((immediate = false) => {
-    const calculatePosition = () => {
-      const iframe = iframeRef.current;
-      if (!iframe?.contentDocument || !selectedElementId) {
-        setOverlayRect(null);
-        return;
-      }
+  const updatePosition = useCallback(
+    (immediate = false) => {
+      const calculatePosition = () => {
+        const iframe = iframeRef.current;
+        if (!iframe?.contentDocument || !selectedElementId) {
+          setOverlayRect(null);
+          return;
+        }
 
-      let element = iframe.contentDocument.querySelector(
-        `[data-element-id="${selectedElementId}"]`
-      ) as HTMLElement;
+        let element = iframe.contentDocument.querySelector(
+          `[data-element-id="${selectedElementId}"]`
+        ) as HTMLElement;
 
-      // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
-      // (실제 body에 data-element-id가 설정되어 있음)
-      if (!element) {
-        const selectedElement = elementsMap.get(selectedElementId);
-        if (selectedElement?.tag === 'body') {
-          // 실제 <body> 태그에서 찾기
-          if (iframe.contentDocument.body.getAttribute('data-element-id')) {
-            element = iframe.contentDocument.body;
-            console.log(`🔄 [Overlay] body element → 실제 <body> 태그 사용`);
+        // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
+        // (실제 body에 data-element-id가 설정되어 있음)
+        if (!element) {
+          const selectedElement = elementsMap.get(selectedElementId);
+          if (selectedElement?.tag === "body") {
+            // 실제 <body> 태그에서 찾기
+            if (iframe.contentDocument.body.getAttribute("data-element-id")) {
+              element = iframe.contentDocument.body;
+              console.log(`🔄 [Overlay] body element → 실제 <body> 태그 사용`);
+            }
           }
         }
-      }
 
-      if (!element) {
-        setOverlayRect(null);
-        setSelectedTag("");
-        return;
-      }
+        if (!element) {
+          setOverlayRect(null);
+          setSelectedTag("");
+          return;
+        }
 
-      const elementRect = element.getBoundingClientRect();
-      const newRect = {
-        top: elementRect.top,
-        left: elementRect.left,
-        width: elementRect.width,
-        height: elementRect.height,
+        const elementRect = element.getBoundingClientRect();
+        const newRect = {
+          top: elementRect.top,
+          left: elementRect.left,
+          width: elementRect.width,
+          height: elementRect.height,
+        };
+
+        setOverlayRect(newRect);
+        // ⭐ body 태그 선택 시 'body' 표시
+        setSelectedTag(element.tagName.toLowerCase());
       };
 
-      setOverlayRect(newRect);
-      // ⭐ body 태그 선택 시 'body' 표시
-      setSelectedTag(element.tagName.toLowerCase());
-    };
-
-    if (immediate) {
-      // 초기 선택: RAF 스킵하여 즉시 오버레이 표시
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = null;
-      }
-      calculatePosition();
-    } else {
-      // ResizeObserver, 스크롤 등: 기존 RAF 배치 처리
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-      rafIdRef.current = requestAnimationFrame(() => {
-        rafIdRef.current = null;
+      if (immediate) {
+        // 초기 선택: RAF 스킵하여 즉시 오버레이 표시
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
         calculatePosition();
-      });
-    }
-  }, [selectedElementId, elementsMap]);
+      } else {
+        // ResizeObserver, 스크롤 등: 기존 RAF 배치 처리
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+        }
+        rafIdRef.current = requestAnimationFrame(() => {
+          rafIdRef.current = null;
+          calculatePosition();
+        });
+      }
+    },
+    [selectedElementId, elementsMap]
+  );
 
   // ⭐ Update multi-select overlay positions
   const updateMultiOverlays = useCallback(() => {
@@ -132,9 +141,9 @@ export default function SelectionOverlay() {
       // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
       if (!element) {
         const selectedElement = elementsMap.get(elementId);
-        if (selectedElement?.tag === 'body') {
+        if (selectedElement?.tag === "body") {
           // 실제 <body> 태그에서 찾기
-          if (iframe.contentDocument!.body.getAttribute('data-element-id')) {
+          if (iframe.contentDocument!.body.getAttribute("data-element-id")) {
             element = iframe.contentDocument!.body;
           }
         }
@@ -159,22 +168,27 @@ export default function SelectionOverlay() {
 
   // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
   const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {
-    return Array.from(multiOverlays.entries()).map(([elementId, overlayData]) => ({
-      id: elementId,
-      rect: {
-        left: overlayData.rect.left,
-        top: overlayData.rect.top,
-        right: overlayData.rect.left + overlayData.rect.width,
-        bottom: overlayData.rect.top + overlayData.rect.height,
-        width: overlayData.rect.width,
-        height: overlayData.rect.height,
-      },
-      isPrimary: elementId === selectedElementId,
-    }));
+    return Array.from(multiOverlays.entries()).map(
+      ([elementId, overlayData]) => ({
+        id: elementId,
+        rect: {
+          left: overlayData.rect.left,
+          top: overlayData.rect.top,
+          right: overlayData.rect.left + overlayData.rect.width,
+          bottom: overlayData.rect.top + overlayData.rect.height,
+          width: overlayData.rect.width,
+          height: overlayData.rect.height,
+        },
+        isPrimary: elementId === selectedElementId,
+      })
+    );
   }, [multiOverlays, selectedElementId]);
 
   // ⭐ Apply virtual scrolling to only render visible overlays
-  const visibleOverlays = useVisibleOverlays(overlaysForVirtualScrolling, iframeRef);
+  const visibleOverlays = useVisibleOverlays(
+    overlaysForVirtualScrolling,
+    iframeRef
+  );
 
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
   useEffect(() => {
@@ -211,7 +225,7 @@ export default function SelectionOverlay() {
     if (!iframe?.contentDocument) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOverlayRect(null);
-       
+
       setSelectedTag("");
       return;
     }
@@ -312,8 +326,12 @@ export default function SelectionOverlay() {
 
           return (
             <div
-              key={`overlay-${elementId}-${isPrimary ? 'primary' : 'secondary'}`}
-              className={`overlay-element multi-select ${isPrimary ? 'primary' : 'secondary'}`}
+              key={`overlay-${elementId}-${
+                isPrimary ? "primary" : "secondary"
+              }`}
+              className={`overlay-element multi-select ${
+                isPrimary ? "primary" : "secondary"
+              }`}
               style={{
                 top: overlayData.rect.top,
                 left: overlayData.rect.left,
@@ -325,7 +343,7 @@ export default function SelectionOverlay() {
               {isPrimary && (
                 <div className="overlay-info">
                   <div className="overlay-tag-parent">
-                    <ChevronUp size={16} />
+                    <Maximize2 size={16} />
                   </div>
                   <div className="overlay-tag">{tag}</div>
                 </div>
@@ -365,7 +383,7 @@ export default function SelectionOverlay() {
       >
         <div className="overlay-info">
           <div className="overlay-tag-parent">
-            <ChevronUp size={16} />
+            <Maximize2 size={16} />
           </div>
           <div className="overlay-tag">{displayTag}</div>
         </div>

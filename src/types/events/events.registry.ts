@@ -106,6 +106,13 @@ export const IMPLEMENTED_ACTION_TYPES = [
   "selectItem",
   "clearSelection",
 
+  // Data Panel Integration (구현됨)
+  "fetchDataTable",      // DataTable 데이터 fetch
+  "refreshDataTable",    // DataTable 데이터 새로고침
+  "executeApi",          // API Endpoint 실행
+  "setVariable",         // Variable 값 설정
+  "getVariable",         // Variable 값 가져오기
+
   // 향후 구현 예정:
   // 'update_props',        // 요소 props 업데이트
   // 'trigger_animation',   // 애니메이션 트리거
@@ -192,6 +199,10 @@ export const ACTION_CATEGORIES = {
   collection: {
     label: "Collection Operations",
     actions: ["filterCollection", "selectItem", "clearSelection"] as const,
+  },
+  dataPanel: {
+    label: "Data Panel",
+    actions: ["fetchDataTable", "refreshDataTable", "executeApi", "setVariable", "getVariable"] as const,
   },
   custom: {
     label: "Custom",

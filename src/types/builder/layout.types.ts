@@ -25,6 +25,10 @@ export interface Layout {
   order_num?: number; // 정렬 순서
   slug?: string; // URL base path (e.g., "/products")
 
+  // 404 Page Strategy
+  notFoundPageId?: string; // Layout 전용 404 페이지 ID
+  inheritNotFound?: boolean; // true면 프로젝트 기본 404 상속 (기본값: true)
+
   created_at?: string;
   updated_at?: string;
 }
@@ -42,7 +46,7 @@ export type LayoutCreate = Pick<Layout, "name" | "project_id"> & {
  * Layout 업데이트 시 필요한 필드
  */
 export type LayoutUpdate = Partial<
-  Pick<Layout, "name" | "description" | "slug" | "order_num">
+  Pick<Layout, "name" | "description" | "slug" | "order_num" | "notFoundPageId" | "inheritNotFound">
 >;
 
 // ============================================

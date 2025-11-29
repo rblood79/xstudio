@@ -12,11 +12,12 @@ import {
   Route,
   useNavigate,
   useLocation,
+  useParams as useRouterParams,
   type NavigateFunction,
 } from 'react-router-dom';
 import { useRuntimeStore } from '../store';
 import type { RuntimeLayout } from '../store/types';
-import { generatePageUrl } from '../../utils/urlGenerator';
+import { generatePageUrl, hasDynamicParams } from '../../utils/urlGenerator';
 import type { Page } from '../../types/builder/unified.types';
 
 // ============================================
@@ -38,6 +39,31 @@ export function useCanvasNavigate() {
 export const usePreviewNavigate = useCanvasNavigate;
 
 // ============================================
+// Route Params Hook (동적 파라미터 접근용)
+// ============================================
+
+/**
+ * 동적 라우트 파라미터에 접근하는 훅
+ *
+ * React Router의 useParams를 래핑하여 Canvas 컨텍스트에서 사용
+ *
+ * @example
+ * // Route: /products/:categoryId/items/:itemId
+ * // URL: /products/shoes/items/123
+ *
+ * function ProductDetail() {
+ *   const params = useCanvasParams();
+ *   // params = { categoryId: 'shoes', itemId: '123' }
+ * }
+ */
+export function useCanvasParams(): Record<string, string | undefined> {
+  return useRouterParams();
+}
+
+// Legacy alias
+export const usePreviewParams = useCanvasParams;
+
+// ============================================
 // Page Renderer Component
 // ============================================
 
@@ -48,10 +74,19 @@ interface PageRendererProps {
 
 function PageRenderer({ pageId, renderElements }: PageRendererProps) {
   const setCurrentPageId = useRuntimeStore((s) => s.setCurrentPageId);
+  const setRouteParams = useRuntimeStore((s) => s.setRouteParams);
+  const params = useRouterParams();
 
   useEffect(() => {
     setCurrentPageId(pageId);
   }, [pageId, setCurrentPageId]);
+
+  // 동적 라우트 파라미터 저장
+  useEffect(() => {
+    if (setRouteParams) {
+      setRouteParams(params as Record<string, string>);
+    }
+  }, [params, setRouteParams]);
 
   return <>{renderElements()}</>;
 }
@@ -60,7 +95,16 @@ function PageRenderer({ pageId, renderElements }: PageRendererProps) {
 // Not Found Component
 // ============================================
 
-function NotFound() {
+interface NotFoundProps {
+  layoutId?: string | null;
+  originalUrl?: string;
+  renderElements?: () => React.ReactNode;
+}
+
+/**
+ * 기본 404 컴포넌트
+ */
+function DefaultNotFound({ originalUrl }: { originalUrl?: string }) {
   return (
     <div
       style={{
@@ -75,8 +119,66 @@ function NotFound() {
     >
       <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>404</h1>
       <p style={{ color: '#666' }}>Page not found</p>
+      {originalUrl && (
+        <p style={{ color: '#999', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+          {originalUrl}
+        </p>
+      )}
     </div>
   );
+}
+
+/**
+ * Layout별 404 페이지 렌더러
+ * (Hook 규칙을 준수하기 위해 별도 컴포넌트로 분리)
+ */
+function LayoutNotFoundPage({
+  pageId,
+  renderElements,
+}: {
+  pageId: string;
+  renderElements?: () => React.ReactNode;
+}) {
+  const setCurrentPageId = useRuntimeStore((s) => s.setCurrentPageId);
+
+  useEffect(() => {
+    setCurrentPageId(pageId);
+  }, [pageId, setCurrentPageId]);
+
+  return <>{renderElements?.()}</>;
+}
+
+/**
+ * Layout별 404 페이지 또는 기본 404 렌더링
+ *
+ * 404 처리 계층:
+ * 1. Layout.notFoundPageId가 있으면 해당 페이지 렌더링 (Layout 유지)
+ * 2. Layout.inheritNotFound !== false면 프로젝트 기본 404 사용
+ * 3. 설정된 404 페이지가 없으면 DefaultNotFound 컴포넌트
+ */
+function NotFound({ layoutId, originalUrl, renderElements }: NotFoundProps) {
+  const layouts = useRuntimeStore((s) => s.layouts);
+  const pages = useRuntimeStore((s) => s.pages);
+
+  // Layout별 404 페이지 찾기
+  const layout = layoutId ? layouts.find((l) => l.id === layoutId) : null;
+  const notFoundPageId = (layout as RuntimeLayout & { notFoundPageId?: string })?.notFoundPageId;
+
+  // 프로젝트 기본 404은 아직 미구현 (TODO: Project 타입에 defaultNotFoundPageId 추가 후)
+  // const projectDefaultNotFoundPageId = project?.defaultNotFoundPageId;
+
+  // Layout에 notFoundPageId가 있으면 해당 페이지 사용
+  if (notFoundPageId) {
+    const notFoundPage = pages.find((p) => p.id === notFoundPageId);
+    if (notFoundPage) {
+      return (
+        <LayoutNotFoundPage pageId={notFoundPageId} renderElements={renderElements} />
+      );
+    }
+  }
+
+  // 기본 404 컴포넌트
+  return <DefaultNotFound originalUrl={originalUrl} />;
 }
 
 // ============================================
@@ -139,7 +241,7 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
       order_num: p.order_num,
     }));
 
-    return pages.map((page) => {
+    const configs = pages.map((page) => {
       // Layout 찾기
       const layout = page.layout_id
         ? layouts.find((l: RuntimeLayout) => l.id === page.layout_id)
@@ -166,7 +268,20 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
         pageId: page.id,
         path: finalUrl,
         layoutId: page.layout_id,
+        isDynamic: hasDynamicParams(finalUrl),
       };
+    });
+
+    // 정적 라우트가 동적 라우트보다 먼저 매칭되도록 정렬
+    // React Router는 순서대로 매칭하므로 /products/new가 /products/:id 보다 먼저 와야 함
+    return configs.sort((a, b) => {
+      // 정적 라우트가 먼저
+      if (a.isDynamic && !b.isDynamic) return 1;
+      if (!a.isDynamic && b.isDynamic) return -1;
+      // 더 구체적인 경로가 먼저 (세그먼트 수가 많은 것)
+      const aSegments = a.path.split('/').length;
+      const bSegments = b.path.split('/').length;
+      return bSegments - aSegments;
     });
   }, [pages, layouts]);
 
@@ -194,8 +309,15 @@ export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
             />
           )}
 
-          {/* 404 페이지 */}
-          <Route path="*" element={<NotFound />} />
+          {/* 404 페이지 - Layout별 404 또는 기본 404 */}
+          <Route
+            path="*"
+            element={
+              <NotFound
+                renderElements={renderElements}
+              />
+            }
+          />
         </Routes>
         {children}
       </MemoryRouter>

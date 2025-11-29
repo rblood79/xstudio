@@ -26,6 +26,8 @@
 - [Panel System Standardization (2025-11-13)](#panel-system-standardization)
 - [Layout Preset System (2025-11-26)](#layout-preset-system)
 - [Preview Runtime Isolation (2025-11-27)](#preview-runtime-isolation)
+- [Data Panel System - Phase 5 (2025-11-30)](#data-panel-system)
+- [Nested Routes - Dynamic Parameters (2025-11-30)](#nested-routes-dynamic-parameters)
 
 ---
 
@@ -678,10 +680,107 @@ src/preview/
 
 ---
 
+## Data Panel System
+
+**Status**: ✅ Phase 1-5 Complete (2025-11-30)
+
+### Overview
+데이터 관리 시스템으로 DataTable, API Endpoint, Variable을 통합 관리하고 컴포넌트와 바인딩합니다.
+
+### Phase 5: Integration (Canvas + Property Editor)
+
+#### Key Features
+- **useDataSource Hook**: DataTable/API 데이터 fetch, 캐싱, 변수 치환 지원
+- **useVariable Hook**: Variable 값 접근 및 설정
+- **useRouteParams Hook**: 동적 라우트 파라미터 접근
+- **useDataBinding Hook**: 컴포넌트 속성-데이터 소스 연결
+- **PropertyDataBinding Component**: Property Editor에서 바인딩 UI
+- **Event System Actions**: fetchDataTable, refreshDataTable, executeApi, setVariable, getVariable
+
+### Files
+```
+src/canvas/hooks/
+├── useDataSource.ts      # 데이터 소스 통합 훅 (~490 lines)
+└── index.ts              # 훅 exports
+
+src/builder/panels/common/
+├── PropertyDataBinding.tsx   # 데이터 바인딩 UI (~290 lines)
+├── PropertyDataBinding.css   # 스타일
+└── index.ts                  # export 추가
+
+src/types/events/
+├── events.registry.ts    # 데이터 액션 타입 추가
+└── events.types.ts       # 액션 값 타입 추가
+```
+
+### Usage Example
+```typescript
+// Property Editor에서 바인딩 설정
+<PropertyDataBinding
+  label="데이터 소스"
+  value={currentProps.dataBinding}
+  onChange={handleDataBindingChange}
+/>
+
+// Canvas에서 데이터 사용
+const { data, loading, error } = useDataSource('users');
+const { value, setValue } = useVariable('currentUserId');
+const params = useRouteParams();
+```
+
+### Documentation
+- [DATA_PANEL_SYSTEM.md](features/DATA_PANEL_SYSTEM.md)
+
+---
+
+## Nested Routes Dynamic Parameters
+
+**Status**: ✅ Phase 3 Complete (2025-11-30)
+
+### Overview
+동적 라우트 파라미터 지원 (`/products/:productId`)
+
+### Key Features
+- **urlGenerator.ts 확장**: extractDynamicParams, hasDynamicParams, fillDynamicParams, matchDynamicUrl
+- **useCanvasParams Hook**: Canvas 컴포넌트에서 동적 파라미터 접근
+- **RuntimeStore 연동**: routeParams 상태 관리
+- **라우트 정렬**: 정적 라우트가 동적 라우트보다 먼저 매칭
+
+### Files
+```
+src/utils/urlGenerator.ts         # 동적 파라미터 유틸리티 함수
+src/canvas/router/CanvasRouter.tsx  # useCanvasParams, 라우트 정렬
+src/canvas/store/types.ts         # routeParams 타입
+src/canvas/store/runtimeStore.ts  # routeParams 상태/액션
+```
+
+### Usage Example
+```typescript
+// 동적 파라미터 추출
+extractDynamicParams('/products/:categoryId/:itemId')
+// → ['categoryId', 'itemId']
+
+// Canvas에서 사용
+function ProductDetail() {
+  const params = useCanvasParams();
+  // params = { productId: '123' }
+}
+
+// API에서 변수 치환
+const { data } = useDataSource('getProduct', {
+  params: { productId: '{{route.productId}}' }
+});
+```
+
+### Documentation
+- [NESTED_ROUTES_SLUG_SYSTEM.md](features/NESTED_ROUTES_SLUG_SYSTEM.md)
+
+---
+
 ## Summary Statistics
 
-### Total Features Completed: 20
-### Total Lines of Code Added: ~15,000+
+### Total Features Completed: 22
+### Total Lines of Code Added: ~16,000+
 ### Code Reduction Achieved: 37-88% in refactored areas
 ### Performance Improvements:
 - CPU Usage: 30-40% reduction
@@ -696,9 +795,11 @@ src/preview/
 ✅ Panel system standardization
 ✅ Layout Preset System with Slot auto-creation
 ✅ Preview Runtime Isolation (srcdoc iframe, independent store)
+✅ Data Panel System Phase 1-5 (Types, Store, UI, Editors, Integration)
+✅ Nested Routes Dynamic Parameters (urlGenerator, useCanvasParams, routeParams)
 ✅ Comprehensive documentation
 
 ---
 
-**Last Updated**: 2025-11-27
+**Last Updated**: 2025-11-30
 **Next Steps**: See [PLANNED_FEATURES.md](PLANNED_FEATURES.md) for upcoming implementations

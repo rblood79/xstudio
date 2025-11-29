@@ -5,8 +5,10 @@ import "./App.css";
 import {
   SquarePlus,
   CloudUpload,
+  Brain,
   Box,
   Play,
+  Github,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
 import { ParticleButton } from "./components/ParticleButton";
@@ -39,42 +41,48 @@ function App() {
   }, []);
 
   // 회오리 시작 (마우스 다운)
-  const handleVortexStart = useCallback((e: React.MouseEvent) => {
-    // 버튼 위에서는 회오리 시작 안함
-    if ((e.target as HTMLElement).closest('button')) return;
+  const handleVortexStart = useCallback(
+    (e: React.MouseEvent) => {
+      // 버튼 위에서는 회오리 시작 안함
+      if ((e.target as HTMLElement).closest("button")) return;
 
-    const { x, y } = screenToWorld(e.clientX, e.clientY);
+      const { x, y } = screenToWorld(e.clientX, e.clientY);
 
-    vortexRef.current = {
-      active: true,
-      x,
-      y,
-      strength: 0.1,
-      radius: 20,
-      height: 0,
-    };
+      vortexRef.current = {
+        active: true,
+        x,
+        y,
+        strength: 0.1,
+        radius: 20,
+        height: 0,
+      };
 
-    // 누르는 동안 점점 강해짐
-    vortexIntervalRef.current = setInterval(() => {
-      if (vortexRef.current.active) {
-        vortexRef.current.strength = Math.min(
-          vortexRef.current.strength + VORTEX_GROWTH_RATE,
-          VORTEX_MAX_STRENGTH
-        );
-        vortexRef.current.radius = 20 + vortexRef.current.strength * 160;
-        vortexRef.current.height = vortexRef.current.strength * 250;
-      }
-    }, 16);
-  }, [vortexRef, screenToWorld]);
+      // 누르는 동안 점점 강해짐
+      vortexIntervalRef.current = setInterval(() => {
+        if (vortexRef.current.active) {
+          vortexRef.current.strength = Math.min(
+            vortexRef.current.strength + VORTEX_GROWTH_RATE,
+            VORTEX_MAX_STRENGTH
+          );
+          vortexRef.current.radius = 20 + vortexRef.current.strength * 160;
+          vortexRef.current.height = vortexRef.current.strength * 250;
+        }
+      }, 16);
+    },
+    [vortexRef, screenToWorld]
+  );
 
   // 회오리 이동 (마우스 무브)
-  const handleVortexMove = useCallback((e: React.MouseEvent) => {
-    if (!vortexRef.current.active) return;
+  const handleVortexMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!vortexRef.current.active) return;
 
-    const { x, y } = screenToWorld(e.clientX, e.clientY);
-    vortexRef.current.x = x;
-    vortexRef.current.y = y;
-  }, [vortexRef, screenToWorld]);
+      const { x, y } = screenToWorld(e.clientX, e.clientY);
+      vortexRef.current.x = x;
+      vortexRef.current.y = y;
+    },
+    [vortexRef, screenToWorld]
+  );
 
   // 회오리 종료 (마우스 업) - 천천히 흩어지도록
   const handleVortexEnd = useCallback(() => {
@@ -109,9 +117,19 @@ function App() {
         <CloudUpload />
       </ParticleButton>
       <ParticleButton size="sm" variant="ghost">
+        <Brain />
+      </ParticleButton>
+      <ParticleButton size="sm" variant="ghost">
         <Box />
       </ParticleButton>
-      <ParticleButton size="sm" variant="ghost" onClick={() => navigate("/signin")}>
+      <ParticleButton size="sm" variant="ghost">
+        <Github />
+      </ParticleButton>
+      <ParticleButton
+        size="sm"
+        variant="ghost"
+        onClick={() => navigate("/signin")}
+      >
         <Play />
       </ParticleButton>
     </main>

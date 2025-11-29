@@ -1679,9 +1679,18 @@
   .history-info {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: var(--spacing-2xs);
-    flex: 1;
+    font-family: var(--font-pixel);
+    font-weight: var(--font-weight-normal);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    padding: var(--spacing) var(--spacing-sm);
+    cursor: default;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
   }
 
   .history-label {

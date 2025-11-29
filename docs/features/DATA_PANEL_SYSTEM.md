@@ -1,10 +1,23 @@
 # Data Panel System Design
 
-**Status:** Draft (v2.0 - Redesigned)
+**Status:** In Progress (v2.1 - Phase 5 Complete)
 **Created:** 2025-11-28
-**Updated:** 2025-11-29
+**Updated:** 2025-11-30
 **Author:** Claude
 **Related:** Event System, DataBinding, Collection Components
+
+---
+
+## Implementation Progress
+
+| Phase   | Status | Description                     |
+| ------- | ------ | ------------------------------- |
+| Phase 1 | ✅     | Types, Store, IndexedDB         |
+| Phase 2 | ✅     | UI (Tabs, Lists)                |
+| Phase 3 | ✅     | DataTable, API Endpoint Editors |
+| Phase 4 | ✅     | Variable Editor                 |
+| Phase 5 | ✅     | Integration (Canvas + Events)   |
+| Phase 6 | 📋     | Testing & Polish                |
 
 ---
 
@@ -1789,14 +1802,88 @@ function renderListBox(element: Element, children: React.ReactNode) {
 | Variables list  | `src/builder/panels/data/VariablesList.tsx`  | P1       |
 | Variable editor | `src/builder/panels/data/VariableEditor.tsx` | P1       |
 
-### Phase 5: Integration - 1주
+### Phase 5: Integration - 1주 ✅ COMPLETE
 
-| Task                        | File                                         | Priority |
-| --------------------------- | -------------------------------------------- | -------- |
-| DataSource hook             | `src/canvas/hooks/useDataSource.ts` | P1       |
-| Collection renderers update | `src/canvas/renderers/`             | P1       |
-| Event System actions        | `src/builder/events/actions/`      | P1       |
-| Property Editor binding     | `src/builder/panels/properties/`          | P2       |
+| Task                        | File                                                | Priority | Status |
+| --------------------------- | --------------------------------------------------- | -------- | ------ |
+| DataSource hook             | `src/canvas/hooks/useDataSource.ts`                 | P1       | ✅     |
+| Collection renderers update | `src/canvas/renderers/` (이미 dataBinding 지원)     | P1       | ✅     |
+| Event System actions        | `src/types/events/events.registry.ts`               | P1       | ✅     |
+| Property Editor binding     | `src/builder/panels/common/PropertyDataBinding.tsx` | P2       | ✅     |
+
+#### Phase 5 구현 세부 내용
+
+**1. useDataSource 훅** (`src/canvas/hooks/useDataSource.ts`)
+
+Canvas Runtime에서 데이터 소스에 접근하는 통합 훅:
+
+```typescript
+// DataTable/API 데이터 fetch
+const { data, loading, error, refetch } = useDataSource('users');
+
+// API Endpoint 실행
+const { data, loading, error, execute } = useDataSource('fetchUsers', {
+  autoFetch: true,
+  params: { page: 1 }
+});
+
+// Variable 접근
+const { value, setValue, exists } = useVariable('currentUserId');
+
+// Route Parameters
+const params = useRouteParams(); // { productId: '123' }
+
+// 데이터 바인딩
+const userName = useDataBinding({
+  source: 'dataTable',
+  name: 'users',
+  path: 'items[0].name',
+  defaultValue: 'Unknown'
+});
+```
+
+**2. Event System 데이터 액션** (`src/types/events/events.registry.ts`)
+
+```typescript
+// 추가된 액션 타입
+"fetchDataTable",      // DataTable 데이터 fetch
+"refreshDataTable",    // DataTable 데이터 새로고침
+"executeApi",          // API Endpoint 실행
+"setVariable",         // Variable 값 설정
+"getVariable",         // Variable 값 조회
+
+// ACTION_CATEGORIES에 추가
+dataPanel: {
+  label: "Data Panel",
+  actions: ["fetchDataTable", "refreshDataTable", "executeApi", "setVariable", "getVariable"]
+}
+```
+
+**3. PropertyDataBinding 컴포넌트** (`src/builder/panels/common/PropertyDataBinding.tsx`)
+
+Property Editor에서 속성을 데이터 소스에 바인딩하는 UI:
+
+```typescript
+interface DataBindingValue {
+  source: 'dataTable' | 'api' | 'variable' | 'route';
+  name: string;
+  path?: string;
+  defaultValue?: unknown;
+}
+
+// 사용 예시
+<PropertyDataBinding
+  label="데이터 소스"
+  value={currentProps.dataBinding}
+  onChange={(binding) => updateProp('dataBinding', binding)}
+/>
+```
+
+기능:
+- 소스 타입 선택 (DataTable, API, Variable, Route Param)
+- Data Store에서 소스 목록 자동 로드
+- 데이터 경로 설정 (`items[0].name`, `user.email`)
+- 바인딩 표현식 프리뷰 (`{{dataTable.users.items[0].name}}`)
 
 ### Phase 6: Testing & Polish - 0.5주
 
@@ -2596,4 +2683,258 @@ interface MigrationPolicy {
 
 ---
 
-## 17. 참고 자료
+## 17. 통합 예시 (Integration Examples)
+
+### 17.1 ListBox with DataBinding
+
+ListBox 컴포넌트에 데이터 바인딩을 적용하는 전체 예시:
+
+**Step 1: DataTable 정의** (Data Panel에서)
+
+```typescript
+// DataTable: users
+{
+  name: "users",
+  schema: [
+    { key: "id", type: "string", required: true },
+    { key: "name", type: "string", required: true },
+    { key: "email", type: "string" },
+    { key: "role", type: "string" }
+  ],
+  mockData: [
+    { id: "1", name: "Alice", email: "alice@example.com", role: "admin" },
+    { id: "2", name: "Bob", email: "bob@example.com", role: "user" },
+    { id: "3", name: "Charlie", email: "charlie@example.com", role: "user" }
+  ],
+  useMockData: true
+}
+```
+
+**Step 2: Property Editor에서 바인딩 설정**
+
+```tsx
+// ListBoxEditor.tsx - Data Binding 섹션
+<PropertySection title="Data Binding" icon={Database}>
+  <PropertyDataBinding
+    label="데이터 소스"
+    value={currentProps.dataBinding}
+    onChange={handleDataBindingChange}
+  />
+</PropertySection>
+
+// 사용자가 설정한 바인딩 값
+{
+  source: 'dataTable',
+  name: 'users',
+  path: undefined,  // 전체 데이터 사용
+  defaultValue: []
+}
+
+// 바인딩 표현식 프리뷰: {{dataTable.users}}
+```
+
+**Step 3: Canvas Runtime에서 데이터 사용**
+
+```tsx
+// useDataSource 훅으로 데이터 fetch
+function ListBoxRenderer({ element }) {
+  const { dataBinding } = element.props;
+
+  // 데이터 바인딩이 있으면 데이터 소스에서 로드
+  const { data, loading, error } = useDataSource(
+    dataBinding?.name || '',
+    { autoFetch: !!dataBinding }
+  );
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  // 동적 아이템 렌더링
+  return (
+    <ListBox>
+      {(data || []).map((item) => (
+        <ListBoxItem key={item.id} id={item.id}>
+          {item.name}
+        </ListBoxItem>
+      ))}
+    </ListBox>
+  );
+}
+```
+
+**Step 4: Event System으로 데이터 새로고침**
+
+```typescript
+// 버튼 클릭 → DataTable 새로고침 이벤트
+{
+  event_type: 'onClick',
+  actions: [
+    {
+      type: 'refreshDataTable',
+      config: {
+        dataTableName: 'users',
+        forceRefresh: true
+      }
+    }
+  ]
+}
+```
+
+### 17.2 Form with Variable Binding
+
+폼 제출 후 Variable을 업데이트하는 예시:
+
+**Step 1: Variable 정의**
+
+```typescript
+// Variable: formSubmitResult
+{
+  name: "formSubmitResult",
+  type: "object",
+  scope: "page",
+  defaultValue: null,
+  persist: false
+}
+```
+
+**Step 2: Form Submit 이벤트 설정**
+
+```typescript
+// Form onSubmit 이벤트
+{
+  event_type: 'onSubmit',
+  actions: [
+    // 1. API 호출
+    {
+      type: 'executeApi',
+      config: {
+        apiEndpointName: 'createUser',
+        params: {
+          name: '{{form.name}}',
+          email: '{{form.email}}'
+        },
+        targetVariable: 'formSubmitResult',
+        onSuccess: 'showSuccessToast',
+        onError: 'showErrorToast'
+      }
+    },
+    // 2. 성공 시 DataTable 새로고침
+    {
+      type: 'refreshDataTable',
+      config: {
+        dataTableName: 'users'
+      },
+      condition: '{{formSubmitResult.success}}'
+    }
+  ]
+}
+```
+
+**Step 3: Variable 값 표시**
+
+```tsx
+// useVariable 훅으로 결과 표시
+function SubmitResultDisplay() {
+  const { value } = useVariable('formSubmitResult');
+
+  if (!value) return null;
+
+  return (
+    <div className={value.success ? 'success' : 'error'}>
+      {value.message}
+    </div>
+  );
+}
+```
+
+### 17.3 Dynamic Route + DataBinding
+
+동적 라우트 파라미터와 데이터 바인딩 조합:
+
+**Step 1: 페이지 URL 설정**
+
+```
+/products/:productId
+```
+
+**Step 2: API Endpoint 정의**
+
+```typescript
+// ApiEndpoint: getProduct
+{
+  name: "getProduct",
+  method: "GET",
+  url: "https://api.example.com/products/{{route.productId}}",
+  headers: {
+    "Authorization": "Bearer {{variable.authToken}}"
+  }
+}
+```
+
+**Step 3: 컴포넌트에서 Route Param 바인딩**
+
+```tsx
+// PropertyDataBinding에서 route 소스 선택
+{
+  source: 'route',
+  name: 'productId',  // URL의 :productId
+  path: undefined
+}
+
+// Canvas에서 사용
+function ProductDetail() {
+  const params = useRouteParams();
+  const { data: product, loading } = useDataSource('getProduct', {
+    params: { productId: params.productId }
+  });
+
+  if (loading) return <Loading />;
+
+  return (
+    <Card>
+      <h1>{product.name}</h1>
+      <p>{product.description}</p>
+      <span>${product.price}</span>
+    </Card>
+  );
+}
+```
+
+### 17.4 파일 구조 요약
+
+```
+src/
+├── canvas/
+│   ├── hooks/
+│   │   ├── useDataSource.ts      # ✅ 데이터 소스 통합 훅
+│   │   └── index.ts              # ✅ 훅 exports
+│   └── store/
+│       ├── types.ts              # ✅ routeParams 타입
+│       └── runtimeStore.ts       # ✅ routeParams 상태
+│
+├── builder/
+│   ├── panels/
+│   │   ├── common/
+│   │   │   ├── PropertyDataBinding.tsx   # ✅ 데이터 바인딩 UI
+│   │   │   ├── PropertyDataBinding.css   # ✅ 스타일
+│   │   │   └── index.ts                  # ✅ export 추가
+│   │   ├── properties/
+│   │   │   └── editors/
+│   │   │       └── ListBoxEditor.tsx     # ✅ 통합 예시
+│   │   └── dataset/
+│   │       └── editors/
+│   │           ├── DataTableEditor.tsx   # Phase 3
+│   │           ├── ApiEndpointEditor.tsx # Phase 3
+│   │           └── VariableEditor.tsx    # Phase 4
+│   └── stores/
+│       └── data.ts                       # Phase 1
+│
+└── types/
+    └── events/
+        ├── events.registry.ts    # ✅ 데이터 액션 타입 추가
+        └── events.types.ts       # ✅ 액션 값 타입 추가
+```
+
+---
+
+## 18. 참고 자료

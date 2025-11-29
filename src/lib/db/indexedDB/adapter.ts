@@ -16,10 +16,16 @@ import type {
 import type { Element, Page } from '../../../types/core/store.types';
 import type { DesignToken } from '../../../types/theme';
 import type { Layout } from '../../../types/builder/layout.types';
+import type {
+  DataTable,
+  ApiEndpoint,
+  Variable,
+  Transformer,
+} from '../../../types/builder/data.types';
 import { LRUCache } from './LRUCache';
 
 const DB_NAME = 'xstudio';
-const DB_VERSION = 6; // ✅ 버전 6: layouts.order_num, layouts.slug 인덱스 추가 (Nested Routes)
+const DB_VERSION = 7; // ✅ 버전 7: Data Panel 테이블 추가 (data_tables, api_endpoints, variables, transformers)
 
 export class IndexedDBAdapter implements DatabaseAdapter {
   private db: IDBDatabase | null = null;
@@ -144,6 +150,45 @@ export class IndexedDBAdapter implements DatabaseAdapter {
               console.log('[IndexedDB] Added index: layouts.slug');
             }
           }
+        }
+
+        // ✅ 버전 7: Data Panel 스토어들 추가
+        // DataTables store
+        if (!db.objectStoreNames.contains('data_tables')) {
+          const dataTablesStore = db.createObjectStore('data_tables', { keyPath: 'id' });
+          dataTablesStore.createIndex('project_id', 'project_id', { unique: false });
+          dataTablesStore.createIndex('name', 'name', { unique: false });
+          console.log('[IndexedDB] Created store: data_tables');
+        }
+
+        // ApiEndpoints store
+        if (!db.objectStoreNames.contains('api_endpoints')) {
+          const apiEndpointsStore = db.createObjectStore('api_endpoints', { keyPath: 'id' });
+          apiEndpointsStore.createIndex('project_id', 'project_id', { unique: false });
+          apiEndpointsStore.createIndex('name', 'name', { unique: false });
+          apiEndpointsStore.createIndex('targetDataTable', 'targetDataTable', { unique: false });
+          console.log('[IndexedDB] Created store: api_endpoints');
+        }
+
+        // Variables store
+        if (!db.objectStoreNames.contains('variables')) {
+          const variablesStore = db.createObjectStore('variables', { keyPath: 'id' });
+          variablesStore.createIndex('project_id', 'project_id', { unique: false });
+          variablesStore.createIndex('name', 'name', { unique: false });
+          variablesStore.createIndex('scope', 'scope', { unique: false });
+          variablesStore.createIndex('page_id', 'page_id', { unique: false });
+          console.log('[IndexedDB] Created store: variables');
+        }
+
+        // Transformers store
+        if (!db.objectStoreNames.contains('transformers')) {
+          const transformersStore = db.createObjectStore('transformers', { keyPath: 'id' });
+          transformersStore.createIndex('project_id', 'project_id', { unique: false });
+          transformersStore.createIndex('name', 'name', { unique: false });
+          transformersStore.createIndex('level', 'level', { unique: false });
+          transformersStore.createIndex('inputDataTable', 'inputDataTable', { unique: false });
+          transformersStore.createIndex('outputDataTable', 'outputDataTable', { unique: false });
+          console.log('[IndexedDB] Created store: transformers');
         }
 
         console.log('[IndexedDB] Schema upgrade completed');
@@ -821,6 +866,214 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     },
   };
 
+  // === Data Tables (Data Panel System) ===
+
+  data_tables = {
+    insert: async (dataTable: DataTable): Promise<DataTable> => {
+      const now = new Date().toISOString();
+      const dataTableWithTimestamps: DataTable = {
+        ...dataTable,
+        created_at: dataTable.created_at || now,
+        updated_at: dataTable.updated_at || now,
+      };
+      await this.putToStore('data_tables', dataTableWithTimestamps);
+      return dataTableWithTimestamps;
+    },
+
+    update: async (id: string, updates: Partial<DataTable>): Promise<DataTable> => {
+      const existing = await this.data_tables.getById(id);
+      if (!existing) {
+        throw new Error(`DataTable ${id} not found`);
+      }
+      const updated: DataTable = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('data_tables', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('data_tables', id);
+    },
+
+    getById: async (id: string): Promise<DataTable | null> => {
+      return this.getFromStore<DataTable>('data_tables', id);
+    },
+
+    getByProject: async (projectId: string): Promise<DataTable[]> => {
+      return this.getAllByIndex<DataTable>('data_tables', 'project_id', projectId);
+    },
+
+    getByName: async (name: string): Promise<DataTable | null> => {
+      const results = await this.getAllByIndex<DataTable>('data_tables', 'name', name);
+      return results[0] || null;
+    },
+
+    getAll: async (): Promise<DataTable[]> => {
+      return this.getAllFromStore<DataTable>('data_tables');
+    },
+  };
+
+  // === API Endpoints (Data Panel System) ===
+
+  api_endpoints = {
+    insert: async (apiEndpoint: ApiEndpoint): Promise<ApiEndpoint> => {
+      const now = new Date().toISOString();
+      const apiEndpointWithTimestamps: ApiEndpoint = {
+        ...apiEndpoint,
+        created_at: apiEndpoint.created_at || now,
+        updated_at: apiEndpoint.updated_at || now,
+      };
+      await this.putToStore('api_endpoints', apiEndpointWithTimestamps);
+      return apiEndpointWithTimestamps;
+    },
+
+    update: async (id: string, updates: Partial<ApiEndpoint>): Promise<ApiEndpoint> => {
+      const existing = await this.api_endpoints.getById(id);
+      if (!existing) {
+        throw new Error(`ApiEndpoint ${id} not found`);
+      }
+      const updated: ApiEndpoint = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('api_endpoints', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('api_endpoints', id);
+    },
+
+    getById: async (id: string): Promise<ApiEndpoint | null> => {
+      return this.getFromStore<ApiEndpoint>('api_endpoints', id);
+    },
+
+    getByProject: async (projectId: string): Promise<ApiEndpoint[]> => {
+      return this.getAllByIndex<ApiEndpoint>('api_endpoints', 'project_id', projectId);
+    },
+
+    getByName: async (name: string): Promise<ApiEndpoint | null> => {
+      const results = await this.getAllByIndex<ApiEndpoint>('api_endpoints', 'name', name);
+      return results[0] || null;
+    },
+
+    getByTargetDataTable: async (tableName: string): Promise<ApiEndpoint[]> => {
+      return this.getAllByIndex<ApiEndpoint>('api_endpoints', 'targetDataTable', tableName);
+    },
+
+    getAll: async (): Promise<ApiEndpoint[]> => {
+      return this.getAllFromStore<ApiEndpoint>('api_endpoints');
+    },
+  };
+
+  // === Variables (Data Panel System) ===
+
+  variables = {
+    insert: async (variable: Variable): Promise<Variable> => {
+      const now = new Date().toISOString();
+      const variableWithTimestamps: Variable = {
+        ...variable,
+        created_at: variable.created_at || now,
+        updated_at: variable.updated_at || now,
+      };
+      await this.putToStore('variables', variableWithTimestamps);
+      return variableWithTimestamps;
+    },
+
+    update: async (id: string, updates: Partial<Variable>): Promise<Variable> => {
+      const existing = await this.variables.getById(id);
+      if (!existing) {
+        throw new Error(`Variable ${id} not found`);
+      }
+      const updated: Variable = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('variables', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('variables', id);
+    },
+
+    getById: async (id: string): Promise<Variable | null> => {
+      return this.getFromStore<Variable>('variables', id);
+    },
+
+    getByProject: async (projectId: string): Promise<Variable[]> => {
+      return this.getAllByIndex<Variable>('variables', 'project_id', projectId);
+    },
+
+    getByName: async (name: string): Promise<Variable | null> => {
+      const results = await this.getAllByIndex<Variable>('variables', 'name', name);
+      return results[0] || null;
+    },
+
+    getByScope: async (scope: string): Promise<Variable[]> => {
+      return this.getAllByIndex<Variable>('variables', 'scope', scope);
+    },
+
+    getByPage: async (pageId: string): Promise<Variable[]> => {
+      return this.getAllByIndex<Variable>('variables', 'page_id', pageId);
+    },
+
+    getAll: async (): Promise<Variable[]> => {
+      return this.getAllFromStore<Variable>('variables');
+    },
+  };
+
+  // === Transformers (Data Panel System) ===
+
+  transformers = {
+    insert: async (transformer: Transformer): Promise<Transformer> => {
+      const now = new Date().toISOString();
+      const transformerWithTimestamps: Transformer = {
+        ...transformer,
+        created_at: transformer.created_at || now,
+        updated_at: transformer.updated_at || now,
+      };
+      await this.putToStore('transformers', transformerWithTimestamps);
+      return transformerWithTimestamps;
+    },
+
+    update: async (id: string, updates: Partial<Transformer>): Promise<Transformer> => {
+      const existing = await this.transformers.getById(id);
+      if (!existing) {
+        throw new Error(`Transformer ${id} not found`);
+      }
+      const updated: Transformer = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('transformers', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('transformers', id);
+    },
+
+    getById: async (id: string): Promise<Transformer | null> => {
+      return this.getFromStore<Transformer>('transformers', id);
+    },
+
+    getByProject: async (projectId: string): Promise<Transformer[]> => {
+      return this.getAllByIndex<Transformer>('transformers', 'project_id', projectId);
+    },
+
+    getByName: async (name: string): Promise<Transformer | null> => {
+      const results = await this.getAllByIndex<Transformer>('transformers', 'name', name);
+      return results[0] || null;
+    },
+
+    getByLevel: async (level: string): Promise<Transformer[]> => {
+      return this.getAllByIndex<Transformer>('transformers', 'level', level);
+    },
+
+    getByInputDataTable: async (tableName: string): Promise<Transformer[]> => {
+      return this.getAllByIndex<Transformer>('transformers', 'inputDataTable', tableName);
+    },
+
+    getByOutputDataTable: async (tableName: string): Promise<Transformer[]> => {
+      return this.getAllByIndex<Transformer>('transformers', 'outputDataTable', tableName);
+    },
+
+    getAll: async (): Promise<Transformer[]> => {
+      return this.getAllFromStore<Transformer>('transformers');
+    },
+  };
+
   // === Metadata ===
 
   metadata = {
@@ -927,12 +1180,14 @@ export class IndexedDBAdapter implements DatabaseAdapter {
     clear: async (): Promise<void> => {
       const db = this.ensureDB();
       return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(
-          ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata', 'layouts'],
-          'readwrite'
-        );
+        const stores = [
+          'projects', 'pages', 'elements', 'design_tokens', 'design_themes',
+          'history', 'metadata', 'layouts',
+          // ✅ 버전 7: Data Panel 스토어들 추가
+          'data_tables', 'api_endpoints', 'variables', 'transformers'
+        ];
+        const tx = db.transaction(stores, 'readwrite');
 
-        const stores = ['projects', 'pages', 'elements', 'design_tokens', 'design_themes', 'history', 'metadata', 'layouts'];
         let completed = 0;
 
         stores.forEach((storeName) => {

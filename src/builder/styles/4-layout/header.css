@@ -47,12 +47,6 @@
     flex: 0;
   }
 
-  .header_contents .history-info {
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    color: var(--on-surface);
-  }
-
   .header_contents .aria-ToggleButton {
     padding: var(--spacing) var(--spacing-sm);
   }
@@ -94,7 +88,7 @@
       background-color: var(--outline-variant);
       box-shadow: var(--inset-shadow-sm);
       border-radius: var(--radius-lg);
-      gap: var(--spacing-2xs);
+      gap: var(--spacing-xs);
       padding: var(--spacing-xs);
 
       &::before {

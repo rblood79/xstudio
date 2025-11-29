@@ -33,6 +33,12 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
   setCurrentPath: (path: string) => set({ currentPath: path }),
 
   // ============================================
+  // Route Parameters (동적 라우트 파라미터)
+  // ============================================
+  routeParams: {},
+  setRouteParams: (params: Record<string, string>) => set({ routeParams: params }),
+
+  // ============================================
   // Layouts (Nested Routes & Slug System)
   // ============================================
   layouts: [],

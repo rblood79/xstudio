@@ -98,6 +98,10 @@ export interface RuntimeStoreState extends StateHierarchy {
   currentPath: string;
   setCurrentPath: (path: string) => void;
 
+  // Route Parameters (동적 라우트 파라미터)
+  routeParams: Record<string, string>;
+  setRouteParams: (params: Record<string, string>) => void;
+
   // Layouts (Nested Routes & Slug System)
   layouts: RuntimeLayout[];
   setLayouts: (layouts: RuntimeLayout[]) => void;

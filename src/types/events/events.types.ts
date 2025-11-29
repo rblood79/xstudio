@@ -99,6 +99,38 @@ export interface SendAnalyticsActionValue {
     customData?: Record<string, unknown>;
 }
 
+// Data Panel Integration Action Values
+export interface FetchDataTableActionValue {
+    dataTableName: string;
+    params?: Record<string, unknown>;
+    targetVariable?: string; // 결과를 저장할 변수
+}
+
+export interface RefreshDataTableActionValue {
+    dataTableName: string;
+    forceRefresh?: boolean;
+}
+
+export interface ExecuteApiActionValue {
+    apiEndpointName: string;
+    params?: Record<string, unknown>;
+    targetDataTable?: string; // 결과를 저장할 DataTable
+    targetVariable?: string;  // 결과를 저장할 Variable
+    onSuccess?: string;       // 성공 시 실행할 액션 ID
+    onError?: string;         // 실패 시 실행할 액션 ID
+}
+
+export interface SetVariableActionValue {
+    variableName: string;
+    value: unknown;
+    scope?: 'global' | 'page' | 'component';
+}
+
+export interface GetVariableActionValue {
+    variableName: string;
+    targetVariable?: string; // 가져온 값을 저장할 다른 변수
+}
+
 // 모든 액션 값 타입의 유니온
 export type ActionValue =
     | NavigateActionValue
@@ -112,7 +144,12 @@ export type ActionValue =
     | UpdatePropsActionValue
     | TriggerAnimationActionValue
     | PlaySoundActionValue
-    | SendAnalyticsActionValue;
+    | SendAnalyticsActionValue
+    | FetchDataTableActionValue
+    | RefreshDataTableActionValue
+    | ExecuteApiActionValue
+    | SetVariableActionValue
+    | GetVariableActionValue;
 
 // 개별 액션 정의
 export interface EventAction {
@@ -269,6 +306,12 @@ export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
     filterCollection: '컬렉션 필터',
     selectItem: '항목 선택',
     clearSelection: '선택 해제',
+    // Data Panel
+    fetchDataTable: 'DataTable 조회',
+    refreshDataTable: 'DataTable 새로고침',
+    executeApi: 'API 실행',
+    setVariable: '변수 설정',
+    getVariable: '변수 조회',
     // 구현 예정:
     // update_props: '속성 업데이트',
     // trigger_animation: '애니메이션 실행',
