@@ -1,19 +1,19 @@
 /**
- * Preview Store - 독립 Zustand 스토어
+ * Runtime Store - 독립 Zustand 스토어
  *
  * Builder와 완전히 분리된 상태 관리.
  * postMessage를 통해서만 데이터를 수신합니다.
  */
 
 import { create } from 'zustand';
-import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, DataState } from './types';
+import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState } from './types';
 
-export const createPreviewStore = () => create<PreviewStoreState>((set, get) => ({
+export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => ({
   // ============================================
   // Elements
   // ============================================
   elements: [],
-  setElements: (elements: PreviewElement[]) => set({ elements }),
+  setElements: (elements: RuntimeElement[]) => set({ elements }),
   updateElementProps: (id: string, props: Record<string, unknown>) => {
     set((state) => ({
       elements: state.elements.map((el) =>
@@ -26,7 +26,7 @@ export const createPreviewStore = () => create<PreviewStoreState>((set, get) => 
   // Pages
   // ============================================
   pages: [],
-  setPages: (pages: PreviewPage[]) => set({ pages }),
+  setPages: (pages: RuntimePage[]) => set({ pages }),
   currentPageId: null,
   setCurrentPageId: (pageId: string | null) => set({ currentPageId: pageId }),
   currentPath: '/',
@@ -36,7 +36,7 @@ export const createPreviewStore = () => create<PreviewStoreState>((set, get) => 
   // Layouts (Nested Routes & Slug System)
   // ============================================
   layouts: [],
-  setLayouts: (layouts: PreviewLayout[]) => set({ layouts }),
+  setLayouts: (layouts: RuntimeLayout[]) => set({ layouts }),
   currentLayoutId: null,
   setCurrentLayoutId: (layoutId: string | null) => set({ currentLayoutId: layoutId }),
 
@@ -192,7 +192,7 @@ function applyThemeVars(vars: ThemeVar[], isDarkMode: boolean): void {
   const root = document.documentElement;
 
   // 기존 커스텀 스타일 제거
-  const existingStyle = document.getElementById('preview-theme-vars');
+  const existingStyle = document.getElementById('runtime-theme-vars');
   if (existingStyle) {
     existingStyle.remove();
   }
@@ -216,7 +216,7 @@ function applyThemeVars(vars: ThemeVar[], isDarkMode: boolean): void {
   }
 
   const styleEl = document.createElement('style');
-  styleEl.id = 'preview-theme-vars';
+  styleEl.id = 'runtime-theme-vars';
   styleEl.textContent = cssText;
   document.head.appendChild(styleEl);
 
@@ -229,21 +229,21 @@ function applyThemeVars(vars: ThemeVar[], isDarkMode: boolean): void {
 // ============================================
 
 // 싱글톤 스토어 인스턴스
-let storeInstance: ReturnType<typeof createPreviewStore> | null = null;
+let storeInstance: ReturnType<typeof createRuntimeStore> | null = null;
 
-export function getPreviewStore() {
+export function getRuntimeStore() {
   if (!storeInstance) {
-    storeInstance = createPreviewStore();
+    storeInstance = createRuntimeStore();
   }
   return storeInstance;
 }
 
-export function usePreviewStore<T>(selector: (state: PreviewStoreState) => T): T {
-  const store = getPreviewStore();
+export function useRuntimeStore<T>(selector: (state: RuntimeStoreState) => T): T {
+  const store = getRuntimeStore();
   return store(selector);
 }
 
 // 전체 상태 접근 (non-React 환경용)
-export function getPreviewStoreState() {
-  return getPreviewStore().getState();
+export function getRuntimeStoreState() {
+  return getRuntimeStore().getState();
 }

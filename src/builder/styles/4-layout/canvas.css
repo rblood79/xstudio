@@ -1,6 +1,6 @@
 @layer builder-system {
   /* ========================================
-   * Workspace Layout
+   * Canvas Layout
    * Extracted from main/index.css
    * ======================================== */
 
@@ -24,22 +24,22 @@
     background-color: var(--surface-variant);
   }
 
-  /* Workspace */
-  .app .workspace {
+  /* Canvas */
+  .app .canvas {
     padding: 0;
     background: var(--background-color);
     border: 1px solid var(--outline-variant);
     will-change: transform;
   }
 
-  .workspace .workspace_overlay {
+  .canvas .canvas_overlay {
     position: absolute;
     transform-origin: center;
     will-change: transform;
   }
 
-  /* Workspace Width Label */
-  .workspace::before {
+  /* Canvas Width Label */
+  .canvas::before {
     content: " " attr(data-max-width) "px ";
     display: block;
     width: auto;
@@ -57,8 +57,8 @@
     text-align: center;
   }
 
-  /* Workspace Height Label */
-  .workspace::after {
+  /* Canvas Height Label */
+  .canvas::after {
     transform-origin: center center;
     content: " " attr(data-max-height) "px ";
     display: block;
