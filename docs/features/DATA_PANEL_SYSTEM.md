@@ -1696,7 +1696,7 @@ Button Click Event
 ### 9.2 DataSource Resolution
 
 ```typescript
-// src/builder/preview/hooks/useDataSource.ts
+// src/canvas/hooks/useDataSource.ts
 
 export function useDataSource(dataSourceName: string) {
   const getDataTableData = useDataStore((s) => s.getDataTableData);
@@ -1793,10 +1793,10 @@ function renderListBox(element: Element, children: React.ReactNode) {
 
 | Task                        | File                                         | Priority |
 | --------------------------- | -------------------------------------------- | -------- |
-| DataSource hook             | `src/builder/preview/hooks/useDataSource.ts` | P1       |
-| Collection renderers update | `src/builder/preview/renderers/`             | P1       |
-| Event System actions        | `src/builder/inspector/events/actions/`      | P1       |
-| Property Editor binding     | `src/builder/inspector/properties/`          | P2       |
+| DataSource hook             | `src/canvas/hooks/useDataSource.ts` | P1       |
+| Collection renderers update | `src/canvas/renderers/`             | P1       |
+| Event System actions        | `src/builder/events/actions/`      | P1       |
+| Property Editor binding     | `src/builder/panels/properties/`          | P2       |
 
 ### Phase 6: Testing & Polish - 0.5주
 

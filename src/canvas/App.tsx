@@ -9,7 +9,6 @@ import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { useRuntimeStore, getRuntimeStore } from './store';
 import { CanvasRouter, setGlobalNavigate } from './router';
 import { MessageHandler, messageSender } from './messaging';
-import type { RuntimeElement as StoreRuntimeElement } from './store/types';
 import { useNavigate } from 'react-router-dom';
 import { rendererMap } from './renderers';
 import type { PreviewElement, RenderContext } from './types';

@@ -676,7 +676,7 @@ return data.filter(item => item.id === productId);
 ### 라우트 변경 시 데이터 자동 갱신
 
 ```typescript
-// src/preview/hooks/useRouteDataBinding.ts
+// src/canvas/hooks/useRouteDataBinding.ts
 
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -893,7 +893,7 @@ export function generateSlugFromTitle(title: string): string {
 ### 5.2 Page Editor Component
 
 ```typescript
-// src/builder/inspector/properties/editors/PageEditor.tsx
+// src/builder/panels/properties/editors/PageEditor.tsx
 
 import { useMemo } from "react";
 import { useLayoutsStore } from "../../../stores/layouts";
@@ -1015,7 +1015,7 @@ export function PageEditor({ page, onUpdate }: PageEditorProps) {
 ### 5.3 Layout Property Editor (slug 추가)
 
 ```typescript
-// src/builder/inspector/properties/editors/LayoutEditor.tsx
+// src/builder/panels/properties/editors/LayoutEditor.tsx
 
 import { PropertyInput } from "../../components";
 
@@ -1068,44 +1068,44 @@ export function LayoutEditor({ layout, onUpdate }: LayoutEditorProps) {
 
 ---
 
-## 6. Preview Integration
+## 6. Canvas Runtime Integration
 
-### 6.1 Preview Store 타입 수정
+### 6.1 Canvas Runtime Store 타입 수정
 
 ```typescript
-// src/preview/store/types.ts
+// src/canvas/store/types.ts
 
-// ✅ Layout 타입 추가 (Preview용 최소 타입)
-export interface PreviewLayout {
+// ✅ Layout 타입 추가 (Canvas Runtime용 최소 타입)
+export interface CanvasLayout {
   id: string;
   name: string;
   slug?: string | null;
 }
 
-// ✅ PreviewStoreState에 layouts 추가
-export interface PreviewStoreState extends StateHierarchy {
+// ✅ RuntimeStoreState에 layouts 추가
+export interface RuntimeStoreState extends StateHierarchy {
   // ... 기존 필드들 ...
 
   // ✅ Layouts 추가
-  layouts: PreviewLayout[];
-  setLayouts: (layouts: PreviewLayout[]) => void;
+  layouts: CanvasLayout[];
+  setLayouts: (layouts: CanvasLayout[]) => void;
 }
 ```
 
-### 6.2 Preview Store 수정
+### 6.2 Canvas Runtime Store 수정
 
 ```typescript
-// src/preview/store/previewStore.ts
+// src/canvas/store/runtimeStore.ts
 
-export const createPreviewStore = () =>
-  create<PreviewStoreState>((set, get) => ({
+export const createRuntimeStore = () =>
+  create<RuntimeStoreState>((set, get) => ({
     // ... 기존 코드 ...
 
     // ============================================
     // Layouts (NEW)
     // ============================================
     layouts: [],
-    setLayouts: (layouts: PreviewLayout[]) => set({ layouts }),
+    setLayouts: (layouts: CanvasLayout[]) => set({ layouts }),
 
     // ... 기존 코드 ...
   }));
@@ -1114,16 +1114,16 @@ export const createPreviewStore = () =>
 ### 6.3 postMessage 메시지 타입 추가
 
 ```typescript
-// src/preview/messaging/types.ts (또는 적절한 위치)
+// src/canvas/messaging/types.ts (또는 적절한 위치)
 
 // ✅ UPDATE_LAYOUTS 메시지 타입 추가
 export interface UpdateLayoutsMessage {
   type: 'UPDATE_LAYOUTS';
-  layouts: PreviewLayout[];
+  layouts: CanvasLayout[];
 }
 
 // 기존 메시지 유니온에 추가
-export type PreviewMessage =
+export type CanvasMessage =
   | UpdateElementsMessage
   | UpdatePagesMessage
   | UpdateLayoutsMessage  // ✅ 추가
@@ -1133,12 +1133,12 @@ export type PreviewMessage =
 ### 6.4 Message Handler 수정
 
 ```typescript
-// src/preview/utils/messageHandlers.ts
+// src/canvas/utils/messageHandlers.ts
 
 // ✅ UPDATE_LAYOUTS 핸들러 추가
 case 'UPDATE_LAYOUTS': {
   const { layouts } = message;
-  console.log('[Preview] Received layouts:', layouts.length);
+  console.log('[Canvas] Received layouts:', layouts.length);
   setLayouts(layouts);
   break;
 }
@@ -1149,11 +1149,11 @@ case 'UPDATE_LAYOUTS': {
 ```typescript
 // src/builder/hooks/useIframeMessenger.ts (또는 적절한 위치)
 
-// Layout 변경 시 Preview에 전송
-const sendLayoutsToPreview = useCallback((layouts: Layout[]) => {
+// Layout 변경 시 Canvas에 전송
+const sendLayoutsToCanvas = useCallback((layouts: Layout[]) => {
   if (!iframeRef.current?.contentWindow) return;
 
-  const previewLayouts: PreviewLayout[] = layouts.map((l) => ({
+  const canvasLayouts: CanvasLayout[] = layouts.map((l) => ({
     id: l.id,
     name: l.name,
     slug: l.slug,
@@ -1162,7 +1162,7 @@ const sendLayoutsToPreview = useCallback((layouts: Layout[]) => {
   iframeRef.current.contentWindow.postMessage(
     {
       type: "UPDATE_LAYOUTS",
-      layouts: previewLayouts,
+      layouts: canvasLayouts,
     },
     "*"
   );
@@ -1172,24 +1172,24 @@ const sendLayoutsToPreview = useCallback((layouts: Layout[]) => {
 useEffect(() => {
   const unsubscribe = useLayoutsStore.subscribe(
     (state) => state.layouts,
-    (layouts) => sendLayoutsToPreview(layouts)
+    (layouts) => sendLayoutsToCanvas(layouts)
   );
   return unsubscribe;
-}, [sendLayoutsToPreview]);
+}, [sendLayoutsToCanvas]);
 ```
 
-### 6.6 PreviewRouter 업데이트
+### 6.6 CanvasRouter 업데이트
 
 ```typescript
-// src/preview/router/PreviewRouter.tsx
+// src/canvas/router/CanvasRouter.tsx
 
 import { useMemo } from "react";
-import { usePreviewStore } from "../store";
+import { useRuntimeStore } from "../store/runtimeStore";
 import { generatePageUrl } from "../../utils/urlGenerator";
 
-export function PreviewRouter({ renderElements }: PreviewRouterProps) {
-  const pages = usePreviewStore((s) => s.pages);
-  const layouts = usePreviewStore((s) => s.layouts); // ✅ layouts 추가
+export function CanvasRouter({ renderElements }: CanvasRouterProps) {
+  const pages = useRuntimeStore((s) => s.pages);
+  const layouts = useRuntimeStore((s) => s.layouts); // ✅ layouts 추가
 
   // 각 페이지의 최종 URL 계산
   const routeConfigs = useMemo(() => {
@@ -1360,20 +1360,20 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 
 | Task                          | File                                                        | Description            |
 | ----------------------------- | ----------------------------------------------------------- | ---------------------- |
-| PageEditor 컴포넌트 생성      | `src/builder/inspector/properties/editors/PageEditor.tsx`   | 페이지 속성 편집기     |
-| LayoutEditor에 slug 필드 추가 | `src/builder/inspector/properties/editors/LayoutEditor.tsx` | Base Slug 입력 필드    |
+| PageEditor 컴포넌트 생성      | `src/builder/panels/properties/editors/PageEditor.tsx`   | 페이지 속성 편집기     |
+| LayoutEditor에 slug 필드 추가 | `src/builder/panels/properties/editors/LayoutEditor.tsx` | Base Slug 입력 필드    |
 | URL 미리보기 컴포넌트         | `src/builder/components/UrlPreview.tsx`                     | 실시간 URL 미리보기    |
-| 깊은 중첩 경고 UI             | `src/builder/inspector/`                                    | nestingDepth >= 3 경고 |
+| 깊은 중첩 경고 UI             | `src/builder/panels/properties/`                            | nestingDepth >= 3 경고 |
 
-### Phase 4: Preview & Router Integration - P1
+### Phase 4: Canvas Runtime & Router Integration - P1
 
 | Task                             | File                                      | Description                      |
 | -------------------------------- | ----------------------------------------- | -------------------------------- |
-| PreviewStoreState에 layouts 추가 | `src/preview/store/types.ts`              | PreviewLayout 타입, layouts 배열 |
-| Preview Store 수정               | `src/preview/store/previewStore.ts`       | setLayouts 액션                  |
-| UPDATE_LAYOUTS 메시지 핸들러     | `src/preview/utils/messageHandlers.ts`    | layouts 수신 처리                |
+| CanvasStoreState에 layouts 추가  | `src/canvas/store/types.ts`               | CanvasLayout 타입, layouts 배열  |
+| Canvas Store 수정                | `src/canvas/store/runtimeStore.ts`        | setLayouts 액션                  |
+| UPDATE_LAYOUTS 메시지 핸들러     | `src/canvas/messaging/messageHandlers.ts` | layouts 수신 처리                |
 | Builder에서 layouts 전송         | `src/builder/hooks/useIframeMessenger.ts` | postMessage 전송                 |
-| PreviewRouter 업데이트           | `src/preview/router/PreviewRouter.tsx`    | generatePageUrl 사용             |
+| CanvasRouter 업데이트            | `src/canvas/router/CanvasRouter.tsx`      | generatePageUrl 사용             |
 
 ### Phase 5: NodesPanel 트리 표시 - P1
 
@@ -1400,16 +1400,16 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 | RouteParam, PageDataBinding 타입 | `src/types/builder/unified.types.ts`                      | 동적 라우트 관련 타입 정의                                  |
 | 라우트 유틸리티                  | `src/utils/routeUtils.ts`                                 | extractRouteParams, matchRouteParams, generateUrlWithParams |
 | 동적 라우트 감지                 | `src/utils/urlGenerator.ts`                               | `:paramName` 패턴 처리                                      |
-| PageEditor 확장                  | `src/builder/inspector/properties/editors/PageEditor.tsx` | Route Parameters UI                                         |
-| Preview 라우트 매칭              | `src/preview/router/PreviewRouter.tsx`                    | React Router 동적 세그먼트 지원                             |
+| PageEditor 확장                  | `src/builder/panels/properties/editors/PageEditor.tsx` | Route Parameters UI                                         |
+| Canvas 라우트 매칭               | `src/canvas/router/CanvasRouter.tsx`                     | React Router 동적 세그먼트 지원                             |
 
 ### Phase 8: Data Panel 통합 (v2.0) - P1
 
 | Task                          | File                                                      | Description                     |
 | ----------------------------- | --------------------------------------------------------- | ------------------------------- |
 | Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx`              | `route` 카테고리 추가           |
-| 라우트 파라미터 바인딩 UI     | `src/builder/inspector/properties/editors/PageEditor.tsx` | Data Bindings 섹션              |
-| useRouteDataBinding 훅        | `src/preview/hooks/useRouteDataBinding.ts`                | 라우트 변경 시 자동 데이터 로드 |
+| 라우트 파라미터 바인딩 UI     | `src/builder/panels/properties/editors/PageEditor.tsx` | Data Bindings 섹션              |
+| useRouteDataBinding 훅        | `src/canvas/hooks/useRouteDataBinding.ts`                | 라우트 변경 시 자동 데이터 로드 |
 | 바인딩 표현식 확장            | `src/utils/bindingResolver.ts`                            | `{{route.paramName}}` 지원      |
 | Transformer context 확장      | `src/stores/dataPanel/transformerExecutor.ts`             | `context.route` 접근            |
 | API Endpoint 라우트 치환      | `src/stores/dataPanel/apiExecutor.ts`                     | URL에서 `{{route.xxx}}` 치환    |
@@ -1420,7 +1420,7 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 | ------------------------ | ------------------------------------ | --------------------------------- |
 | 자동 API 엔드포인트 생성 | `src/stores/dataPanel/`              | DataBinding 설정 시 자동 API 생성 |
 | 라우트 검증              | `src/utils/routeValidator.ts`        | 라우트 파라미터 유효성 검증       |
-| 404 페이지 처리          | `src/preview/router/`                | 잘못된 파라미터 시 에러 페이지    |
+| 404 페이지 처리          | `src/canvas/router/`                | 잘못된 파라미터 시 에러 페이지    |
 | SSG/SSR 프리렌더링 힌트  | `src/types/builder/unified.types.ts` | 정적 경로 목록 생성 지원          |
 
 ### 구현 일정 요약
@@ -1430,7 +1430,7 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 | Phase 1     | 기반 작업 (타입, DB)       | 2일       | P0       |
 | Phase 2     | Page 생성 UI               | 3일       | P1       |
 | Phase 3     | Property Editors           | 2일       | P1       |
-| Phase 4     | Preview & Router           | 2일       | P1       |
+| Phase 4     | Canvas Runtime & Router    | 2일       | P1       |
 | Phase 5     | NodesPanel 트리            | 1일       | P1       |
 | Phase 6     | 테스트 & 폴리시            | 2일       | P2       |
 | **Phase 7** | **동적 라우트 (v2.0)**     | **3일**   | **P1**   |
@@ -1702,15 +1702,15 @@ export interface Project {
 }
 ```
 
-#### PreviewRouter 404 처리
+#### CanvasRouter 404 처리
 
 ```typescript
-// src/preview/router/PreviewRouter.tsx
+// src/canvas/router/CanvasRouter.tsx
 
 function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
   const { data, error, isLoading } = useRouteDataBinding(page);
-  const layouts = usePreviewStore((s) => s.layouts);
-  const project = usePreviewStore((s) => s.project);
+  const layouts = useRuntimeStore((s) => s.layouts);
+  const project = useRuntimeStore((s) => s.project);
 
   // 데이터 로드 실패 시 404 처리
   if (error?.status === 404) {
@@ -1823,9 +1823,9 @@ function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
 - [ ] Property Editor에서 Page slug 편집 가능
 - [ ] Property Editor에서 Layout slug 편집 가능
 - [ ] URL 미리보기 실시간 표시
-- [ ] Preview Store에 layouts 배열 추가
+- [ ] Canvas Runtime Store에 layouts 배열 추가
 - [ ] postMessage로 layouts 전달 구현
-- [ ] Preview Router에서 계층적 URL 정상 동작
+- [ ] Canvas Router에서 계층적 URL 정상 동작
 - [ ] NodesPanel 계층 트리 표시
 - [ ] 기존 페이지 하위 호환성 유지
 - [ ] TypeScript 타입 오류 0개
@@ -1843,7 +1843,7 @@ function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
 - [ ] RouteParam, PageDataBinding 타입 정의
 - [ ] 라우트 유틸리티 (extractRouteParams, matchRouteParams, generateUrlWithParams)
 - [ ] PageEditor에 Route Parameters UI 추가
-- [ ] Preview Router에서 동적 세그먼트 (`:param`) 지원
+- [ ] Canvas Router에서 동적 세그먼트 (`:param`) 지원
 
 ### v2.0 Data Panel 통합 (P1)
 
@@ -1860,7 +1860,7 @@ function PageRenderer({ pageId, layoutId, renderElements }: PageRendererProps) {
 - [ ] Project 타입에 defaultNotFoundPageId, defaultErrorPageId 필드 추가
 - [ ] Project Settings UI에 Error Pages 설정 추가
 - [ ] Layout Editor에 Error Handling 섹션 추가
-- [ ] PreviewRouter에서 404 계층적 처리 구현
+- [ ] CanvasRouter에서 404 계층적 처리 구현
 - [ ] 데이터 로드 실패 시 Layout 유지하며 404 페이지 렌더링
 - [ ] DefaultNotFound 컴포넌트 구현
 
