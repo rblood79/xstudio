@@ -49,7 +49,7 @@
 
 /* ==================== 4. Layout Layer ==================== */
 @import './4-layout/header.css';
-@import './4-layout/workspace.css';
+@import './4-layout/canvas.css';
 @import './4-layout/footer.css';
 
 /* ==================== 5. Modules Layer ==================== */

@@ -131,7 +131,7 @@ src/
 │   │   ├── themes/              # ThemesPanel
 │   │   ├── ai/                  # AIPanel
 │   │   └── settings/            # SettingsPanel
-│   ├── 👁️ preview/              # iframe 프리뷰
+│   ├── 👁️ canvas/               # Canvas Runtime (iframe 내부 실행)
 │   ├── 📊 stores/               # Zustand 상태 관리 (모듈화됨)
 │   │   ├── utils/               # Store 유틸리티 모듈
 │   │   └── history/             # Undo/Redo 히스토리 모듈
@@ -158,9 +158,9 @@ src/
 ```
 BuilderCore (메인)
 ├── BuilderHeader (툴바)
-├── BuilderWorkspace (작업 영역)
+├── BuilderCanvas (캔버스 영역)
 │   ├── Sidebar (페이지/요소 트리)
-│   ├── Preview (iframe 프리뷰 + computed styles 수집)
+│   ├── Canvas iframe (srcdoc 기반 + computed styles 수집)
 │   └── Inspector (9개 모듈형 패널)
 │       ├── NodesPanel (페이지/레이어 트리)
 │       ├── ComponentsPanel (컴포넌트 라이브러리)
@@ -182,7 +182,7 @@ BuilderCore (메인)
 ```
 UI 액션 → Zustand Store → Supabase API → Real-time Update
                 ↓
-         iframe 프리뷰 동기화 (양방향)
+         Canvas iframe 동기화 (postMessage, 양방향)
          ↓
     Inspector Panels ↔ Builder 스타일/속성 동기화
          ↓

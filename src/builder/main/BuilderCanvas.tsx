@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useStore } from '../stores';
 import { generatePreviewSrcdoc, shouldUseSrcdoc } from './previewSrcdoc';
 
-export interface BuilderWorkspaceProps {
+export interface BuilderCanvasProps {
     projectId?: string;
     breakpoint: Set<string>;
     breakpoints: Array<{
@@ -16,7 +16,7 @@ export interface BuilderWorkspaceProps {
     children?: React.ReactNode;
 }
 
-export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
+export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     projectId,
     breakpoint,
     breakpoints,
@@ -114,7 +114,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
                 }}
             >
                 <div
-                    className="workspace"
+                    className="canvas"
                     data-max-width={currentBreakpoint?.max_width?.toString() || '100%'}
                     data-max-height={currentBreakpoint?.max_height?.toString() || '100%'}
                     style={{

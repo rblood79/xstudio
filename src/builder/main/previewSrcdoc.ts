@@ -79,8 +79,8 @@ export function generateDevSrcdoc(projectId: string): string {
           console.warn('[Preview] React Refresh not available:', e.message);
         }
 
-        // 3. preview 로드 (React가 body에 직접 마운트됨)
-        await import('/src/preview/index.tsx');
+        // 3. canvas runtime 로드 (React가 body에 직접 마운트됨)
+        await import('/src/canvas/index.tsx');
 
         console.log('[Preview] Runtime loaded successfully');
       } catch (err) {

@@ -1,30 +1,30 @@
 /**
- * Preview App - Preview Runtime 메인 컴포넌트
+ * Canvas App - Canvas Runtime 메인 컴포넌트
  *
- * srcdoc iframe 내에서 독립적으로 실행되는 Preview 앱입니다.
+ * srcdoc iframe 내에서 독립적으로 실행되는 Canvas 앱입니다.
  * Builder와 완전히 분리된 React 앱으로 동작합니다.
  */
 
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
-import { usePreviewStore, getPreviewStore } from './store';
-import { PreviewRouter, setGlobalNavigate } from './router';
+import { useRuntimeStore, getRuntimeStore } from './store';
+import { CanvasRouter, setGlobalNavigate } from './router';
 import { MessageHandler, messageSender } from './messaging';
-import type { PreviewElement as StorePreviewElement } from './store/types';
+import type { RuntimeElement as StoreRuntimeElement } from './store/types';
 import { useNavigate } from 'react-router-dom';
 import { rendererMap } from './renderers';
 import type { PreviewElement, RenderContext } from './types';
 import { EventEngine } from '../utils/events/eventEngine';
 
 // ============================================
-// Preview Content Component
+// Canvas Content Component
 // ============================================
 
-function PreviewContent() {
-  const elements = usePreviewStore((s) => s.elements) as PreviewElement[];
-  const updateElementProps = usePreviewStore((s) => s.updateElementProps);
-  const setElements = usePreviewStore((s) => s.setElements);
-  const currentLayoutId = usePreviewStore((s) => s.currentLayoutId);
-  const currentPageId = usePreviewStore((s) => s.currentPageId);
+function CanvasContent() {
+  const elements = useRuntimeStore((s) => s.elements) as PreviewElement[];
+  const updateElementProps = useRuntimeStore((s) => s.updateElementProps);
+  const setElements = useRuntimeStore((s) => s.setElements);
+  const currentLayoutId = useRuntimeStore((s) => s.currentLayoutId);
+  const currentPageId = useRuntimeStore((s) => s.currentPageId);
   const navigate = useNavigate();
 
   // EventEngine 인스턴스 (싱글톤)
@@ -526,7 +526,7 @@ export function App() {
   const messageHandlerRef = useRef<MessageHandler | null>(null);
 
   // 스토어에서 필요한 함수들 가져오기
-  const store = getPreviewStore();
+  const store = getRuntimeStore();
 
   // MessageHandler 초기화
   useEffect(() => {
@@ -567,9 +567,9 @@ export function App() {
     };
   }, [store]);
 
-  // 렌더링 함수 (PreviewRouter에 전달)
+  // 렌더링 함수 (CanvasRouter에 전달)
   const renderElements = useCallback(() => {
-    return <PreviewContent />;
+    return <CanvasContent />;
   }, []);
 
   if (!isInitialized) {
@@ -581,9 +581,9 @@ export function App() {
   }
 
   return (
-    <PreviewRouter renderElements={renderElements}>
+    <CanvasRouter renderElements={renderElements}>
       {/* 추가 오버레이나 UI 요소는 여기에 */}
-    </PreviewRouter>
+    </CanvasRouter>
   );
 }
 

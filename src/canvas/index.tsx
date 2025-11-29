@@ -1,7 +1,7 @@
 /**
- * Preview Runtime Entry Point
+ * Canvas Runtime Entry Point
  *
- * srcdoc iframe 내에서 독립적으로 실행되는 Preview Runtime의 진입점입니다.
+ * srcdoc iframe 내에서 독립적으로 실행되는 Canvas Runtime의 진입점입니다.
  * Builder의 main.tsx와 완전히 분리된 별도의 React 앱입니다.
  */
 
@@ -17,7 +17,7 @@ import '../shared/components/styles/index.css';
 
 const injectBaseStyles = () => {
   const style = document.createElement('style');
-  style.id = 'preview-base-styles';
+  style.id = 'canvas-base-styles';
   style.textContent = `
     * {
       box-sizing: border-box;
@@ -38,7 +38,7 @@ const injectBaseStyles = () => {
       background: var(--background-color, #ffffff);
     }
 
-    .preview-empty {
+    .canvas-empty {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -47,7 +47,7 @@ const injectBaseStyles = () => {
       font-size: 14px;
     }
 
-    .preview-loading {
+    .canvas-loading {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -55,6 +55,10 @@ const injectBaseStyles = () => {
       color: #666;
       font-size: 14px;
     }
+
+    /* Legacy class names for backward compatibility */
+    .preview-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; }
+    .preview-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 14px; }
 
     /* Lasso Selection Box */
     .lasso-selection-box {
@@ -74,14 +78,15 @@ const injectBaseStyles = () => {
 };
 
 // ============================================
-// Initialize Preview Runtime
+// Initialize Canvas Runtime
 // ============================================
 
-function initPreviewRuntime() {
+function initCanvasRuntime() {
   // 기본 스타일 주입
   injectBaseStyles();
 
-  // Preview 마커 설정
+  // Canvas 마커 설정 (legacy: data-preview도 유지)
+  document.body.setAttribute('data-canvas', 'true');
   document.body.setAttribute('data-preview', 'true');
 
   // ⭐ 원천적 해결: React를 document.body에 직접 마운트
@@ -91,7 +96,7 @@ function initPreviewRuntime() {
   const reactRoot = createRoot(document.body);
   reactRoot.render(<App />);
 
-  console.log('[Preview Runtime] Initialized - React mounted directly on document.body');
+  console.log('[Canvas Runtime] Initialized - React mounted directly on document.body');
 }
 
 // ============================================
@@ -99,9 +104,9 @@ function initPreviewRuntime() {
 // ============================================
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initPreviewRuntime);
+  document.addEventListener('DOMContentLoaded', initCanvasRuntime);
 } else {
-  initPreviewRuntime();
+  initCanvasRuntime();
 }
 
 // ============================================
@@ -109,6 +114,10 @@ if (document.readyState === 'loading') {
 // ============================================
 
 export { App } from './App';
-export { getPreviewStore, usePreviewStore } from './store';
-export { navigateInPreview } from './router';
+export { getRuntimeStore, useRuntimeStore } from './store';
+export { navigateInCanvas } from './router';
 export { messageSender } from './messaging';
+
+// Legacy exports for backward compatibility
+export { getRuntimeStore as getPreviewStore, useRuntimeStore as usePreviewStore } from './store';
+export { navigateInCanvas as navigateInPreview } from './router';

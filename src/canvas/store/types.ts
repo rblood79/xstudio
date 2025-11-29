@@ -1,14 +1,14 @@
 /**
- * Preview Runtime Store Types
+ * Canvas Runtime Store Types
  *
- * Preview Runtime은 Builder와 완전히 독립된 상태를 관리합니다.
+ * Canvas Runtime은 Builder와 완전히 독립된 상태를 관리합니다.
  * postMessage를 통해서만 데이터를 수신합니다.
  */
 
 import type { CSSProperties } from 'react';
 
-// Element 타입 (Preview에서 사용하는 최소 타입)
-export interface PreviewElement {
+// Element 타입 (Runtime에서 사용하는 최소 타입)
+export interface RuntimeElement {
   id: string;
   tag: string;
   props: Record<string, unknown> & {
@@ -25,7 +25,7 @@ export interface PreviewElement {
 }
 
 // Page 타입
-export interface PreviewPage {
+export interface RuntimePage {
   id: string;
   title: string;
   slug: string;
@@ -35,7 +35,7 @@ export interface PreviewPage {
 }
 
 // Layout 타입 (Nested Routes & Slug System)
-export interface PreviewLayout {
+export interface RuntimeLayout {
   id: string;
   name: string;
   slug?: string | null;
@@ -83,24 +83,24 @@ export interface StateHierarchy {
   componentStates: Map<string, Record<string, unknown>>;
 }
 
-// Preview Store State
-export interface PreviewStoreState extends StateHierarchy {
+// Runtime Store State
+export interface RuntimeStoreState extends StateHierarchy {
   // Elements
-  elements: PreviewElement[];
-  setElements: (elements: PreviewElement[]) => void;
+  elements: RuntimeElement[];
+  setElements: (elements: RuntimeElement[]) => void;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
 
   // Pages
-  pages: PreviewPage[];
-  setPages: (pages: PreviewPage[]) => void;
+  pages: RuntimePage[];
+  setPages: (pages: RuntimePage[]) => void;
   currentPageId: string | null;
   setCurrentPageId: (pageId: string | null) => void;
   currentPath: string;
   setCurrentPath: (path: string) => void;
 
   // Layouts (Nested Routes & Slug System)
-  layouts: PreviewLayout[];
-  setLayouts: (layouts: PreviewLayout[]) => void;
+  layouts: RuntimeLayout[];
+  setLayouts: (layouts: RuntimeLayout[]) => void;
   currentLayoutId: string | null;
   setCurrentLayoutId: (layoutId: string | null) => void;
 
@@ -128,3 +128,9 @@ export interface PreviewStoreState extends StateHierarchy {
   isReady: boolean;
   setReady: (ready: boolean) => void;
 }
+
+// Legacy type aliases for backward compatibility
+export type PreviewElement = RuntimeElement;
+export type PreviewPage = RuntimePage;
+export type PreviewLayout = RuntimeLayout;
+export type PreviewStoreState = RuntimeStoreState;

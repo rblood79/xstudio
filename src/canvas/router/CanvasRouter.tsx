@@ -1,7 +1,7 @@
 /**
- * Preview Router - MemoryRouter 기반 내부 라우팅
+ * Canvas Router - MemoryRouter 기반 내부 라우팅
  *
- * Preview Runtime 내에서 독립적인 라우팅을 처리합니다.
+ * Canvas Runtime 내에서 독립적인 라우팅을 처리합니다.
  * Builder의 BrowserRouter와 완전히 분리되어 동작합니다.
  */
 
@@ -14,8 +14,8 @@ import {
   useLocation,
   type NavigateFunction,
 } from 'react-router-dom';
-import { usePreviewStore } from '../store';
-import type { PreviewLayout } from '../store/types';
+import { useRuntimeStore } from '../store';
+import type { RuntimeLayout } from '../store/types';
 import { generatePageUrl } from '../../utils/urlGenerator';
 import type { Page } from '../../types/builder/unified.types';
 
@@ -29,10 +29,13 @@ interface RouterContextValue {
 
 const RouterContext = React.createContext<RouterContextValue>({ navigate: null });
 
-export function usePreviewNavigate() {
+export function useCanvasNavigate() {
   const ctx = React.useContext(RouterContext);
   return ctx.navigate;
 }
+
+// Legacy alias
+export const usePreviewNavigate = useCanvasNavigate;
 
 // ============================================
 // Page Renderer Component
@@ -44,7 +47,7 @@ interface PageRendererProps {
 }
 
 function PageRenderer({ pageId, renderElements }: PageRendererProps) {
-  const setCurrentPageId = usePreviewStore((s) => s.setCurrentPageId);
+  const setCurrentPageId = useRuntimeStore((s) => s.setCurrentPageId);
 
   useEffect(() => {
     setCurrentPageId(pageId);
@@ -87,7 +90,7 @@ interface RouterNavigatorProps {
 function RouterNavigator({ onNavigateReady }: RouterNavigatorProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const setCurrentPath = usePreviewStore((s) => s.setCurrentPath);
+  const setCurrentPath = useRuntimeStore((s) => s.setCurrentPath);
 
   useEffect(() => {
     onNavigateReady(navigate);
@@ -102,18 +105,18 @@ function RouterNavigator({ onNavigateReady }: RouterNavigatorProps) {
 }
 
 // ============================================
-// Preview Router Component
+// Canvas Router Component
 // ============================================
 
-interface PreviewRouterProps {
+interface CanvasRouterProps {
   renderElements: () => React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function PreviewRouter({ renderElements, children }: PreviewRouterProps) {
-  const pages = usePreviewStore((s) => s.pages);
-  const layouts = usePreviewStore((s) => s.layouts);
-  const currentPath = usePreviewStore((s) => s.currentPath);
+export function CanvasRouter({ renderElements, children }: CanvasRouterProps) {
+  const pages = useRuntimeStore((s) => s.pages);
+  const layouts = useRuntimeStore((s) => s.layouts);
+  const currentPath = useRuntimeStore((s) => s.currentPath);
   const [navigate, setNavigate] = useState<NavigateFunction | null>(null);
 
   const handleNavigateReady = React.useCallback((nav: NavigateFunction) => {
@@ -125,12 +128,12 @@ export function PreviewRouter({ renderElements, children }: PreviewRouterProps) 
 
   // ⭐ Nested Routes & Slug System: 각 페이지의 최종 URL 계산
   const routeConfigs = useMemo(() => {
-    // PreviewPage를 Page 타입으로 변환 (generatePageUrl 호환)
+    // RuntimePage를 Page 타입으로 변환 (generatePageUrl 호환)
     const pagesAsPage: Page[] = pages.map((p) => ({
       id: p.id,
       title: p.title,
       slug: p.slug,
-      project_id: '', // Preview에서는 사용하지 않음
+      project_id: '', // Canvas에서는 사용하지 않음
       parent_id: p.parent_id,
       layout_id: p.layout_id,
       order_num: p.order_num,
@@ -139,7 +142,7 @@ export function PreviewRouter({ renderElements, children }: PreviewRouterProps) 
     return pages.map((page) => {
       // Layout 찾기
       const layout = page.layout_id
-        ? layouts.find((l: PreviewLayout) => l.id === page.layout_id)
+        ? layouts.find((l: RuntimeLayout) => l.id === page.layout_id)
         : null;
 
       // 최종 URL 계산
@@ -200,6 +203,10 @@ export function PreviewRouter({ renderElements, children }: PreviewRouterProps) 
   );
 }
 
+// Legacy alias
+export const PreviewRouter = CanvasRouter;
+export type PreviewRouterProps = CanvasRouterProps;
+
 // ============================================
 // Navigation Helper (EventEngine에서 사용)
 // ============================================
@@ -215,15 +222,18 @@ export function getGlobalNavigate(): NavigateFunction | null {
 }
 
 /**
- * Preview 내부에서 네비게이션 수행
+ * Canvas 내부에서 네비게이션 수행
  * EventEngine에서 호출됩니다.
  */
-export function navigateInPreview(path: string, options?: { replace?: boolean }) {
+export function navigateInCanvas(path: string, options?: { replace?: boolean }) {
   if (globalNavigate) {
     globalNavigate(path, options);
     return true;
   }
 
-  console.warn('[PreviewRouter] Navigate function not available yet');
+  console.warn('[CanvasRouter] Navigate function not available yet');
   return false;
 }
+
+// Legacy alias
+export const navigateInPreview = navigateInCanvas;

@@ -9,7 +9,7 @@ import { historyManager } from "../stores/history";
 import "../panels";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
-import { BuilderWorkspace } from "./BuilderWorkspace";
+import { BuilderCanvas } from "./BuilderCanvas";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
@@ -496,7 +496,7 @@ export const BuilderCore: React.FC = () => {
         onPublish={handlePublish}
       />
 
-      <BuilderWorkspace
+      <BuilderCanvas
         projectId={projectId}
         breakpoint={new Set(Array.from(breakpoint).map(String))}
         breakpoints={breakpoints}
@@ -505,7 +505,7 @@ export const BuilderCore: React.FC = () => {
       >
         <Grid />
         {showOverlay && <SelectionOverlay />}
-      </BuilderWorkspace>
+      </BuilderCanvas>
 
       <aside className="sidebar">
         <PanelSlot side="left" />
