@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import postcssImport from "postcss-import";
 import postcssNested from "postcss-nested";
 import path from "path";
+import { resolve } from "path";
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -14,6 +15,13 @@ export default defineConfig(({ command }) => {
       // 'baseline-widely-available'은 Vite 7의 기본값
       // 더 넓은 호환성이 필요하면 'modules' 사용
       target: "baseline-widely-available", // 또는 'modules'
+      // 멀티페이지 빌드 설정 (index.html, workflow.html)
+      rollupOptions: {
+        input: {
+          main: resolve(__dirname, "index.html"),
+          workflow: resolve(__dirname, "workflow.html"),
+        },
+      },
     },
     resolve: {
       alias: {

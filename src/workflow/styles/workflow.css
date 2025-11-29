@@ -1,0 +1,336 @@
+/**
+ * Workflow Visualization Styles
+ *
+ * ReactFlow 기반 워크플로우 시각화 스타일
+ * CSS 변수를 사용하여 테마와 일관성 유지
+ */
+
+/* ============================================
+   CSS Variables (Fallbacks)
+   ============================================ */
+
+:root {
+  --workflow-bg: #f8fafc;
+  --workflow-border: #e2e8f0;
+  --workflow-text: #1e293b;
+  --workflow-text-muted: #64748b;
+  --workflow-primary: #3b82f6;
+  --workflow-primary-light: #eff6ff;
+  --workflow-secondary: #8b5cf6;
+  --workflow-secondary-light: #f5f3ff;
+  --workflow-success: #22c55e;
+  --workflow-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --workflow-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   Workflow App Container
+   ============================================ */
+
+.workflow-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--workflow-bg);
+}
+
+/* ============================================
+   Workflow Toolbar
+   ============================================ */
+
+.workflow-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid var(--workflow-border);
+  box-shadow: var(--workflow-shadow);
+  z-index: 10;
+}
+
+.workflow-toolbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--workflow-text);
+}
+
+.workflow-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.workflow-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--workflow-text-muted);
+  background: var(--workflow-bg);
+  border: 1px solid var(--workflow-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.workflow-toolbar-btn:hover:not(:disabled) {
+  background: white;
+  border-color: var(--workflow-primary);
+  color: var(--workflow-primary);
+}
+
+.workflow-toolbar-btn.active {
+  background: var(--workflow-primary-light);
+  border-color: var(--workflow-primary);
+  color: var(--workflow-primary);
+}
+
+.workflow-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Workflow Canvas
+   ============================================ */
+
+.workflow-canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================
+   Workflow Nodes - Base
+   ============================================ */
+
+.workflow-node {
+  min-width: 180px;
+  background: white;
+  border: 2px solid var(--workflow-border);
+  border-radius: 8px;
+  box-shadow: var(--workflow-shadow);
+  transition: all 0.15s ease;
+}
+
+.workflow-node:hover {
+  box-shadow: var(--workflow-shadow-lg);
+}
+
+.workflow-node.selected {
+  border-color: var(--workflow-primary);
+  box-shadow: 0 0 0 2px var(--workflow-primary-light), var(--workflow-shadow-lg);
+}
+
+/* ============================================
+   Workflow Node Header
+   ============================================ */
+
+.workflow-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--workflow-primary-light);
+  border-bottom: 1px solid var(--workflow-border);
+  border-radius: 6px 6px 0 0;
+}
+
+.workflow-layout-header {
+  background: var(--workflow-secondary-light);
+}
+
+.workflow-node-icon {
+  color: var(--workflow-primary);
+  flex-shrink: 0;
+}
+
+.workflow-layout-header .workflow-node-icon {
+  color: var(--workflow-secondary);
+}
+
+.workflow-node-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--workflow-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   Workflow Node Content
+   ============================================ */
+
+.workflow-node-content {
+  padding: 10px 12px;
+}
+
+.workflow-node-slug {
+  font-size: 11px;
+  font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+  color: var(--workflow-text-muted);
+  margin-bottom: 8px;
+}
+
+.workflow-node-description {
+  font-size: 11px;
+  color: var(--workflow-text-muted);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.workflow-node-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.workflow-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--workflow-text-muted);
+}
+
+.workflow-stat svg {
+  opacity: 0.7;
+}
+
+/* ============================================
+   Workflow Node Badge
+   ============================================ */
+
+.workflow-node-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.workflow-badge-layout {
+  background: var(--workflow-secondary-light);
+  color: var(--workflow-secondary);
+}
+
+/* ============================================
+   Workflow Handles
+   ============================================ */
+
+.workflow-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--workflow-primary) !important;
+  border: 2px solid white !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.workflow-handle-target {
+  top: -5px !important;
+}
+
+.workflow-handle-source {
+  bottom: -5px !important;
+}
+
+/* ============================================
+   Layout Node Specific
+   ============================================ */
+
+.workflow-layout-node {
+  min-width: 200px;
+}
+
+.workflow-layout-node .workflow-handle {
+  background: var(--workflow-secondary) !important;
+}
+
+/* ============================================
+   Loading / Error / Empty States
+   ============================================ */
+
+.workflow-loading,
+.workflow-error,
+.workflow-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--workflow-text-muted);
+}
+
+.workflow-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--workflow-border);
+  border-top-color: var(--workflow-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.workflow-error {
+  color: #ef4444;
+}
+
+.workflow-empty span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.workflow-empty p {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* ============================================
+   ReactFlow Overrides
+   ============================================ */
+
+.react-flow__controls {
+  box-shadow: var(--workflow-shadow) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: white !important;
+  border-bottom: 1px solid var(--workflow-border) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--workflow-bg) !important;
+}
+
+.react-flow__minimap {
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: var(--workflow-shadow) !important;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
