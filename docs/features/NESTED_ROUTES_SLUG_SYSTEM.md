@@ -1,10 +1,19 @@
 # Nested Routes & Slug System Design
 
-**Status:** Draft
+**Status:** v2.0 (Data Panel 통합)
 **Created:** 2025-11-28
 **Updated:** 2025-11-29
 **Author:** Claude
-**Related:** Layout/Slot System, Page Management
+**Related:** Layout/Slot System, Page Management, Data Panel System
+
+---
+
+## 변경 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|-----------|
+| v1.0 | 2025-11-28 | 초안 작성 |
+| v2.0 | 2025-11-29 | Data Panel 통합, 동적 라우트 지원, Visual Picker 연동 |
 
 ---
 
@@ -21,7 +30,40 @@
 
 `/products/shoes/nike` 같은 중첩 라우트를 지원하면서, Layout 시스템과 자연스럽게 통합
 
-### 1.3 Design Principle
+### 1.3 v2.0 확장 목표
+
+**동적 라우트 + Data Panel 통합:**
+- `/products/:productId` 같은 동적 라우트 지원
+- DataTable과 라우트 파라미터 자동 바인딩
+- Visual Picker로 라우트 파라미터 선택
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   v2.0 통합 아키텍처                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  URL: /products/:productId                                   │
+│                    ↓                                         │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Route Parameter: { productId: "123" }                   ││
+│  └─────────────────────────────────────────────────────────┘│
+│                    ↓                                         │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ API Endpoint: /api/products/{{route.productId}}         ││
+│  └─────────────────────────────────────────────────────────┘│
+│                    ↓                                         │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ DataTable: products (자동 필터링/로드)                   ││
+│  └─────────────────────────────────────────────────────────┘│
+│                    ↓                                         │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Component Binding: {{products.name}}                    ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.4 Design Principle
 
 **Case 2 (계층 기반)를 기본으로, Layout slug는 선택적 옵션**
 
@@ -370,6 +412,282 @@ export function getNestingDepth(pageId: string, allPages: Page[]): number {
   }
 
   return depth;
+}
+```
+
+---
+
+## 3.4 동적 라우트 (v2.0 NEW)
+
+### 동적 세그먼트 문법
+
+```typescript
+// Page.slug 동적 세그먼트 패턴
+/products/:productId          // 단일 파라미터
+/users/:userId/posts/:postId  // 다중 파라미터
+/blog/[...slug]               // Catch-all (선택적)
+```
+
+### Page 타입 확장
+
+```typescript
+// src/types/builder/unified.types.ts
+
+export interface Page {
+  id: string;
+  title: string;
+  project_id: string;
+  slug: string;
+  parent_id?: string | null;
+  order_num?: number;
+  layout_id?: string | null;
+
+  // ✅ v2.0 NEW: 동적 라우트 설정
+  routeParams?: RouteParam[];      // 동적 파라미터 정의
+  dataBindings?: PageDataBinding[]; // 라우트 → DataTable 바인딩
+
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RouteParam {
+  name: string;           // 파라미터 이름 (productId)
+  type: 'string' | 'number';
+  required: boolean;
+  defaultValue?: string;
+  validation?: {
+    pattern?: string;     // 정규식 패턴
+    min?: number;         // 숫자 최소값
+    max?: number;         // 숫자 최대값
+  };
+}
+
+export interface PageDataBinding {
+  dataTableId: string;    // 바인딩할 DataTable ID
+  paramName: string;      // 라우트 파라미터 이름
+  fieldPath: string;      // DataTable 필드 경로 (id, slug 등)
+  autoLoad: boolean;      // 페이지 진입 시 자동 로드
+}
+```
+
+### 동적 라우트 예시
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Page: Product Detail                                        │
+├─────────────────────────────────────────────────────────────┤
+│  Slug: /products/:productId                                  │
+│                                                              │
+│  Route Parameters:                                           │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Name: productId                                         ││
+│  │ Type: string                                            ││
+│  │ Required: true                                          ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+│  Data Bindings:                                              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ DataTable: products                                     ││
+│  │ Match: productId → products.id                          ││
+│  │ Auto Load: ✅                                           ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+│  Preview URL: /products/123                                  │
+│               └─ products DataTable에서 id=123 자동 로드     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 라우트 파라미터 추출 유틸리티
+
+```typescript
+// src/utils/routeUtils.ts
+
+/**
+ * slug에서 동적 파라미터 이름 추출
+ * /products/:productId → ['productId']
+ */
+export function extractRouteParams(slug: string): string[] {
+  const matches = slug.match(/:([a-zA-Z][a-zA-Z0-9]*)/g);
+  return matches ? matches.map(m => m.slice(1)) : [];
+}
+
+/**
+ * 실제 URL에서 파라미터 값 추출
+ * pattern: /products/:productId
+ * url: /products/123
+ * → { productId: '123' }
+ */
+export function matchRouteParams(
+  pattern: string,
+  url: string
+): Record<string, string> | null {
+  const patternParts = pattern.split('/').filter(Boolean);
+  const urlParts = url.split('/').filter(Boolean);
+
+  if (patternParts.length !== urlParts.length) return null;
+
+  const params: Record<string, string> = {};
+
+  for (let i = 0; i < patternParts.length; i++) {
+    const patternPart = patternParts[i];
+    const urlPart = urlParts[i];
+
+    if (patternPart.startsWith(':')) {
+      params[patternPart.slice(1)] = urlPart;
+    } else if (patternPart !== urlPart) {
+      return null;
+    }
+  }
+
+  return params;
+}
+
+/**
+ * 파라미터 값으로 URL 생성
+ * pattern: /products/:productId
+ * params: { productId: '123' }
+ * → /products/123
+ */
+export function generateUrlWithParams(
+  pattern: string,
+  params: Record<string, string>
+): string {
+  return pattern.replace(/:([a-zA-Z][a-zA-Z0-9]*)/g, (_, name) => {
+    return params[name] || `:${name}`;
+  });
+}
+```
+
+---
+
+## 3.5 Data Panel 통합 (v2.0 NEW)
+
+### 라우트 → DataTable 자동 바인딩
+
+```
+사용자 흐름:
+1. /products/:productId 페이지 생성
+2. productId 파라미터 → products DataTable 바인딩 설정
+3. 페이지 진입 시 자동으로 API 호출
+   GET /api/products/{{route.productId}}
+4. 응답 데이터가 products DataTable에 저장
+5. 컴포넌트에서 {{products.name}} 바인딩 사용
+```
+
+### Visual Picker에서 라우트 파라미터 접근
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🔍 Variable Picker                                          │
+├─────────────────────────────────────────────────────────────┤
+│  ▼ route (현재 페이지 라우트)                                │
+│    ├─ productId: "123"                                       │
+│    └─ categoryId: "shoes"                                    │
+│                                                              │
+│  ▼ dataTables                                                │
+│    ├─ products (1 row)                                       │
+│    │   ├─ id: "123"                                          │
+│    │   ├─ name: "Nike Air Max"                               │
+│    │   ├─ price: 129000                                      │
+│    │   └─ ...                                                │
+│    └─ categories                                             │
+│                                                              │
+│  ▼ variables                                                 │
+│    ├─ user                                                   │
+│    └─ settings                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 바인딩 표현식 예시
+
+```typescript
+// 라우트 파라미터 직접 사용
+{{route.productId}}
+
+// DataTable 데이터 사용 (라우트로 필터된)
+{{products.name}}
+{{products.price | currency}}
+
+// API 엔드포인트에서 라우트 파라미터 사용
+{
+  "baseUrl": "https://api.example.com",
+  "endpoint": "/products/{{route.productId}}",
+  "method": "GET"
+}
+
+// Transformer에서 라우트 파라미터 접근
+// Level 2 (JS Transformer)
+const productId = context.route.productId;
+return data.filter(item => item.id === productId);
+```
+
+### Page + DataTable 연동 설정 UI
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📄 Page: Product Detail                                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ▼ Route Settings                                            │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ Slug: /products/:productId                              ││
+│  │                                                         ││
+│  │ Parameters:                                             ││
+│  │ ┌───────────┬─────────┬──────────┬─────────────────┐   ││
+│  │ │ Name      │ Type    │ Required │ Validation       │   ││
+│  │ ├───────────┼─────────┼──────────┼─────────────────┤   ││
+│  │ │ productId │ string  │ ✅       │ [0-9]+           │   ││
+│  │ └───────────┴─────────┴──────────┴─────────────────┘   ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+│  ▼ Data Bindings                              [+ Add]       │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ DataTable: [products            ▼]                      ││
+│  │ Match Field: [id                ▼]                      ││
+│  │ Route Param: [productId         ▼]                      ││
+│  │ Auto Load: [✅]                                         ││
+│  │                                                         ││
+│  │ API Endpoint: (자동 생성)                               ││
+│  │ GET /api/products/{{route.productId}}                   ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 라우트 변경 시 데이터 자동 갱신
+
+```typescript
+// src/preview/hooks/useRouteDataBinding.ts
+
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDataPanelStore } from '../../stores/dataPanel';
+
+export function useRouteDataBinding(page: Page) {
+  const params = useParams();
+  const { executeApiEndpoint, setDataTable } = useDataPanelStore();
+
+  useEffect(() => {
+    if (!page.dataBindings?.length) return;
+
+    // 라우트 파라미터 변경 시 데이터 자동 로드
+    page.dataBindings.forEach(async (binding) => {
+      if (!binding.autoLoad) return;
+
+      const paramValue = params[binding.paramName];
+      if (!paramValue) return;
+
+      // API 호출 (라우트 파라미터 치환)
+      const result = await executeApiEndpoint(binding.apiEndpointId, {
+        route: params,
+      });
+
+      // DataTable 업데이트
+      if (result.success) {
+        setDataTable(binding.dataTableId, result.data);
+      }
+    });
+  }, [params, page.dataBindings]);
 }
 ```
 
@@ -1034,6 +1352,53 @@ function PageTreeItem({ node, onSelect, selectedPageId }: PageTreeItemProps) {
 | E2E 테스트 (페이지 생성 플로우) | 다이얼로그 → 페이지 생성 → URL 확인 |
 | 기존 페이지 마이그레이션 스크립트 | 기존 절대 경로 페이지 하위 호환성 확인 |
 
+### Phase 7: 동적 라우트 (v2.0) - P1
+
+| Task | File | Description |
+|------|------|-------------|
+| Page 타입 확장 | `src/types/builder/unified.types.ts` | routeParams, dataBindings 필드 추가 |
+| RouteParam, PageDataBinding 타입 | `src/types/builder/unified.types.ts` | 동적 라우트 관련 타입 정의 |
+| 라우트 유틸리티 | `src/utils/routeUtils.ts` | extractRouteParams, matchRouteParams, generateUrlWithParams |
+| 동적 라우트 감지 | `src/utils/urlGenerator.ts` | `:paramName` 패턴 처리 |
+| PageEditor 확장 | `src/builder/inspector/properties/editors/PageEditor.tsx` | Route Parameters UI |
+| Preview 라우트 매칭 | `src/preview/router/PreviewRouter.tsx` | React Router 동적 세그먼트 지원 |
+
+### Phase 8: Data Panel 통합 (v2.0) - P1
+
+| Task | File | Description |
+|------|------|-------------|
+| Visual Picker 라우트 카테고리 | `src/builder/panels/data/VariablePicker.tsx` | `route` 카테고리 추가 |
+| 라우트 파라미터 바인딩 UI | `src/builder/inspector/properties/editors/PageEditor.tsx` | Data Bindings 섹션 |
+| useRouteDataBinding 훅 | `src/preview/hooks/useRouteDataBinding.ts` | 라우트 변경 시 자동 데이터 로드 |
+| 바인딩 표현식 확장 | `src/utils/bindingResolver.ts` | `{{route.paramName}}` 지원 |
+| Transformer context 확장 | `src/stores/dataPanel/transformerExecutor.ts` | `context.route` 접근 |
+| API Endpoint 라우트 치환 | `src/stores/dataPanel/apiExecutor.ts` | URL에서 `{{route.xxx}}` 치환 |
+
+### Phase 9: Data Panel 통합 고급 (v2.0) - P2
+
+| Task | File | Description |
+|------|------|-------------|
+| 자동 API 엔드포인트 생성 | `src/stores/dataPanel/` | DataBinding 설정 시 자동 API 생성 |
+| 라우트 검증 | `src/utils/routeValidator.ts` | 라우트 파라미터 유효성 검증 |
+| 404 페이지 처리 | `src/preview/router/` | 잘못된 파라미터 시 에러 페이지 |
+| SSG/SSR 프리렌더링 힌트 | `src/types/builder/unified.types.ts` | 정적 경로 목록 생성 지원 |
+
+### 구현 일정 요약
+
+| Phase | 내용 | 예상 기간 | 우선순위 |
+|-------|------|----------|----------|
+| Phase 1 | 기반 작업 (타입, DB) | 2일 | P0 |
+| Phase 2 | Page 생성 UI | 3일 | P1 |
+| Phase 3 | Property Editors | 2일 | P1 |
+| Phase 4 | Preview & Router | 2일 | P1 |
+| Phase 5 | NodesPanel 트리 | 1일 | P1 |
+| Phase 6 | 테스트 & 폴리시 | 2일 | P2 |
+| **Phase 7** | **동적 라우트 (v2.0)** | **3일** | **P1** |
+| **Phase 8** | **Data Panel 통합 (v2.0)** | **3일** | **P1** |
+| **Phase 9** | **고급 기능 (v2.0)** | **2일** | **P2** |
+
+**총 예상: 20일 (v1.0: 12일 + v2.0: 8일)**
+
 ---
 
 ## 9. UI Mockups
@@ -1227,6 +1592,27 @@ Layout: { id: 'layout-1', slug: '/products' }
 - [ ] 단위 테스트 작성
 - [ ] E2E 테스트 작성
 
+### v2.0 동적 라우트 (P1)
+- [ ] Page 타입에 routeParams, dataBindings 필드 추가
+- [ ] RouteParam, PageDataBinding 타입 정의
+- [ ] 라우트 유틸리티 (extractRouteParams, matchRouteParams, generateUrlWithParams)
+- [ ] PageEditor에 Route Parameters UI 추가
+- [ ] Preview Router에서 동적 세그먼트 (`:param`) 지원
+
+### v2.0 Data Panel 통합 (P1)
+- [ ] Visual Picker에 `route` 카테고리 추가
+- [ ] PageEditor에 Data Bindings UI 추가
+- [ ] useRouteDataBinding 훅 구현
+- [ ] `{{route.paramName}}` 바인딩 표현식 지원
+- [ ] Transformer context에 `context.route` 접근 가능
+- [ ] API Endpoint URL에서 `{{route.xxx}}` 치환
+
+### v2.0 고급 기능 (P2)
+- [ ] DataBinding 설정 시 자동 API 엔드포인트 생성
+- [ ] 라우트 파라미터 유효성 검증
+- [ ] 404 페이지 처리 (잘못된 파라미터)
+- [ ] SSG/SSR 프리렌더링 힌트
+
 ---
 
 ## 13. References
@@ -1235,3 +1621,4 @@ Layout: { id: 'layout-1', slug: '/products' }
 - [Framer Page Structure](https://janeui.com/articles/framer-page-structure)
 - [React Router Nested Routes](https://reactrouter.com/start/declarative/routing)
 - [XStudio Layout/Slot System](./LAYOUT_PRESET_SYSTEM.md)
+- [XStudio Data Panel System](./DATA_PANEL_SYSTEM.md)
