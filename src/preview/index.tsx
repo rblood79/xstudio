@@ -6,7 +6,7 @@
  */
 
 import { createRoot } from 'react-dom/client';
-import { PreviewApp } from './PreviewApp';
+import { App } from './App';
 
 // React Aria 컴포넌트 스타일 (srcdoc에서 필요)
 import '../shared/components/styles/index.css';
@@ -89,7 +89,7 @@ function initPreviewRuntime() {
   // - body element가 실제 <body> 태그와 1:1 매핑
   // - 에디터 Overlay는 Builder 측(iframe 바깥)에서 처리되므로 충돌 없음
   const reactRoot = createRoot(document.body);
-  reactRoot.render(<PreviewApp />);
+  reactRoot.render(<App />);
 
   console.log('[Preview Runtime] Initialized - React mounted directly on document.body');
 }
@@ -108,7 +108,7 @@ if (document.readyState === 'loading') {
 // Exports (번들 시 사용)
 // ============================================
 
-export { PreviewApp } from './PreviewApp';
+export { App } from './App';
 export { getPreviewStore, usePreviewStore } from './store';
 export { navigateInPreview } from './router';
 export { messageSender } from './messaging';
