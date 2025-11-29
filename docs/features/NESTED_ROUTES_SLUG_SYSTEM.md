@@ -1538,6 +1538,205 @@ const handleParentChange = (newParentId: string | null) => {
 해결: getNestingDepth() 함수로 깊이 계산, 3단계 이상 시 경고 표시
 ```
 
+### 10.4 동적 라우트 보안 리스크 (v2.0)
+
+```
+문제: 라우트 파라미터가 API URL에 직접 치환
+/api/products/{{route.productId}}
+
+악의적 입력:
+productId = "../../../admin/users"
+→ /api/products/../../../admin/users (Path Traversal)
+
+productId = "1; DROP TABLE products"
+→ SQL Injection (백엔드 취약 시)
+```
+
+**해결 방안:**
+
+```typescript
+// src/utils/routeParamSanitizer.ts
+
+/**
+ * 라우트 파라미터 검증 및 살균
+ */
+export function sanitizeRouteParam(
+  value: string,
+  validation?: RouteParam['validation']
+): { valid: boolean; sanitized: string; error?: string } {
+  // 1. 기본 살균 (특수문자 제거)
+  const sanitized = value
+    .replace(/\.\./g, '')           // Path traversal 방지
+    .replace(/[<>'"`;]/g, '')       // XSS/Injection 기본 방지
+    .trim();
+
+  // 2. 패턴 검증
+  if (validation?.pattern) {
+    const regex = new RegExp(`^${validation.pattern}$`);
+    if (!regex.test(sanitized)) {
+      return { valid: false, sanitized, error: `Pattern mismatch: ${validation.pattern}` };
+    }
+  }
+
+  // 3. 숫자 범위 검증
+  if (validation?.min !== undefined || validation?.max !== undefined) {
+    const num = Number(sanitized);
+    if (isNaN(num)) {
+      return { valid: false, sanitized, error: 'Not a number' };
+    }
+    if (validation.min !== undefined && num < validation.min) {
+      return { valid: false, sanitized, error: `Below minimum: ${validation.min}` };
+    }
+    if (validation.max !== undefined && num > validation.max) {
+      return { valid: false, sanitized, error: `Above maximum: ${validation.max}` };
+    }
+  }
+
+  return { valid: true, sanitized };
+}
+
+/**
+ * API URL에서 라우트 파라미터 안전하게 치환
+ */
+export function safeInterpolateUrl(
+  urlTemplate: string,
+  params: Record<string, string>,
+  routeParams: RouteParam[]
+): { url: string; errors: string[] } {
+  const errors: string[] = [];
+
+  const url = urlTemplate.replace(/\{\{route\.(\w+)\}\}/g, (_, paramName) => {
+    const paramDef = routeParams.find(p => p.name === paramName);
+    const rawValue = params[paramName] || '';
+
+    const { valid, sanitized, error } = sanitizeRouteParam(rawValue, paramDef?.validation);
+
+    if (!valid && error) {
+      errors.push(`${paramName}: ${error}`);
+    }
+
+    return encodeURIComponent(sanitized);  // URL 인코딩 필수
+  });
+
+  return { url, errors };
+}
+```
+
+### 10.5 Data Binding 실패 처리 (v2.0)
+
+```
+문제: API 호출 실패 시 컴포넌트가 빈 데이터 표시
+
+시나리오:
+1. /products/999 접근 (존재하지 않는 productId)
+2. API 404 반환
+3. DataTable 비어있음
+4. {{products.name}} → undefined
+```
+
+**해결 방안:**
+
+```typescript
+// src/preview/hooks/useRouteDataBinding.ts 확장
+
+interface DataBindingState {
+  loading: boolean;
+  error: Error | null;
+  notFound: boolean;  // 404 여부
+}
+
+export function useRouteDataBinding(page: Page) {
+  const params = useParams();
+  const navigate = useNavigate();
+  const [state, setState] = useState<DataBindingState>({
+    loading: true,
+    error: null,
+    notFound: false,
+  });
+
+  useEffect(() => {
+    if (!page.dataBindings?.length) return;
+
+    const loadData = async () => {
+      setState({ loading: true, error: null, notFound: false });
+
+      for (const binding of page.dataBindings) {
+        if (!binding.autoLoad) continue;
+
+        const paramValue = params[binding.paramName];
+        if (!paramValue) continue;
+
+        try {
+          const result = await executeApiEndpoint(binding.apiEndpointId, {
+            route: params,
+          });
+
+          if (!result.success) {
+            if (result.status === 404) {
+              setState({ loading: false, error: null, notFound: true });
+              // 옵션: 404 페이지로 리다이렉트
+              // navigate('/404', { replace: true });
+              return;
+            }
+            throw new Error(result.error);
+          }
+
+          setDataTable(binding.dataTableId, result.data);
+        } catch (error) {
+          setState({ loading: false, error: error as Error, notFound: false });
+          console.error(`[RouteDataBinding] Failed to load ${binding.dataTableId}:`, error);
+        }
+      }
+
+      setState({ loading: false, error: null, notFound: false });
+    };
+
+    loadData();
+  }, [params, page.dataBindings]);
+
+  return state;
+}
+```
+
+### 10.6 라우트 파라미터 캐싱 전략 (v2.0)
+
+```
+문제: 같은 라우트 파라미터로 반복 이동 시 불필요한 API 호출
+
+예시:
+1. /products/123 → API 호출
+2. /products/456 → API 호출
+3. /products/123 → 또 API 호출? ❌
+
+해결: Data Panel의 cachePolicy 활용
+```
+
+```typescript
+// PageDataBinding 확장
+interface PageDataBinding {
+  dataTableId: string;
+  paramName: string;
+  fieldPath: string;
+  autoLoad: boolean;
+
+  // ✅ NEW: 캐싱 정책 (Data Panel 연동)
+  cachePolicy?: {
+    enabled: boolean;
+    ttlSeconds: number;           // 캐시 유효 시간
+    cacheKey?: string;            // 커스텀 캐시 키 (기본: route params)
+    staleWhileRevalidate: boolean;
+  };
+}
+
+// 캐시 키 생성
+function getCacheKey(binding: PageDataBinding, params: Record<string, string>): string {
+  if (binding.cacheKey) {
+    return binding.cacheKey.replace(/\{\{route\.(\w+)\}\}/g, (_, name) => params[name] || '');
+  }
+  return `${binding.dataTableId}:${binding.paramName}:${params[binding.paramName]}`;
+}
+```
+
 ---
 
 ## 11. Migration Strategy
