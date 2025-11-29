@@ -30,7 +30,6 @@ export class HierarchyManager {
     private static elementMap: Map<string, ElementNode> = new Map();
     private static treeCache: Map<string, ElementTree> = new Map();
     private static childrenCache: Map<string, Element[]> = new Map();
-    private static orderNumCache: Map<string, number> = new Map();
 
     // 성능 최적화 설정
     private static config: CacheConfig = {
@@ -181,22 +180,17 @@ export class HierarchyManager {
     }
 
     /**
-     * 다음 order_num 계산 (캐시 활용)
+     * 다음 order_num 계산
+     *
+     * ⚠️ 캐시 사용 안 함: 연속 요소 생성 시 중복 order_num 방지
+     * 같은 elements 배열로 여러 요소를 연속 생성하면 캐시 키가 동일하여
+     * 같은 order_num이 반환되는 문제가 있었음
      */
     static calculateNextOrderNum(parentId: string | null, elements: Element[]): number {
-        const cacheKey = `orderNum:${parentId || 'null'}:${this.generateCacheKey(elements)}`;
-
-        if (this.orderNumCache.has(cacheKey)) {
-            return this.orderNumCache.get(cacheKey)!;
-        }
-
         const siblings = elements.filter(el => el.parent_id === parentId);
         const nextOrderNum = siblings.length > 0
             ? Math.max(...siblings.map(el => el.order_num || 0)) + 1
             : 1;
-
-        // 캐시에 저장
-        this.orderNumCache.set(cacheKey, nextOrderNum);
 
         return nextOrderNum;
     }
@@ -240,16 +234,8 @@ export class HierarchyManager {
             }
         });
 
-        this.orderNumCache.forEach((_, key) => {
-            const parentId = key.split(':')[1];
-            if (parentIds.has(parentId === 'null' ? null : parentId)) {
-                keysToDelete.push(key);
-            }
-        });
-
         keysToDelete.forEach(key => {
             this.childrenCache.delete(key);
-            this.orderNumCache.delete(key);
         });
     }
 
@@ -283,13 +269,11 @@ export class HierarchyManager {
     static getPerformanceStats(): {
         cacheSize: number;
         childrenCacheSize: number;
-        orderNumCacheSize: number;
         hitRate: number;
     } {
         return {
             cacheSize: this.treeCache.size,
             childrenCacheSize: this.childrenCache.size,
-            orderNumCacheSize: this.orderNumCache.size,
             hitRate: 0 // TODO: 히트율 계산 로직 추가
         };
     }
@@ -589,13 +573,12 @@ export class HierarchyManager {
         this.treeCache.clear();
         this.elementMap.clear();
         this.childrenCache.clear();
-        this.orderNumCache.clear();
     }
 
     /**
      * 특정 캐시만 클리어
      */
-    static clearSpecificCache(type: 'tree' | 'children' | 'orderNum' | 'all'): void {
+    static clearSpecificCache(type: 'tree' | 'children' | 'all'): void {
         switch (type) {
             case 'tree':
                 this.treeCache.clear();
@@ -603,9 +586,6 @@ export class HierarchyManager {
                 break;
             case 'children':
                 this.childrenCache.clear();
-                break;
-            case 'orderNum':
-                this.orderNumCache.clear();
                 break;
             case 'all':
                 this.clearCache();

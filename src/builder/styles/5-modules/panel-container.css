@@ -182,7 +182,7 @@
   }
 
   .panel-section {
-    /* border-right: 1px solid var(--builder-sidebar-border); */
+    width: 100%;
 
     &.sidebar-content {
       display: flex;
