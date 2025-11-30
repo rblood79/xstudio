@@ -133,6 +133,7 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   leftPanels: [
     'nodes',
     'components',
+    'dataset',
     'theme',
     'ai',
     'settings',
